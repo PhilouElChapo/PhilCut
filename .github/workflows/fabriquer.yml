@@ -75,9 +75,17 @@ jobs:
           Copy-Item "$($d.FullName)\bin\ffmpeg.exe", "$($d.FullName)\bin\ffprobe.exe" bin\
           Copy-Item "$($d.FullName)\LICENSE.txt" bin\LICENCE_FFMPEG.txt -ErrorAction SilentlyContinue
           & bin\ffmpeg.exe -version | Select-Object -First 1
-      - name: Version et icone
+      - name: Version, icone et identifiants
         shell: pwsh
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
+          DROPBOX_CLIENT_ID: ${{ secrets.DROPBOX_CLIENT_ID }}
+          BOX_CLIENT_ID: ${{ secrets.BOX_CLIENT_ID }}
+          BOX_CLIENT_SECRET: ${{ secrets.BOX_CLIENT_SECRET }}
         run: |
+          python outils_dev\identifiants_ci.py
           $v = (Select-String -Path app\config.py -Pattern 'VERSION = "([^"]+)"').Matches[0].Groups[1].Value
           echo "VERSION=$v" >> $env:GITHUB_ENV
           python outils_dev\icone.py
@@ -148,10 +156,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ffmpeg libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 \
             libxcb-shape0 libxcb-xinerama0 libxcb-randr0 libxcb-image0 libxcb-render-util0 libegl1 libgl1 libdbus-1-3 fontconfig
-      - name: Dependances
+      - name: Dependances et identifiants
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          ONEDRIVE_CLIENT_ID: ${{ secrets.ONEDRIVE_CLIENT_ID }}
+          DROPBOX_CLIENT_ID: ${{ secrets.DROPBOX_CLIENT_ID }}
+          BOX_CLIENT_ID: ${{ secrets.BOX_CLIENT_ID }}
+          BOX_CLIENT_SECRET: ${{ secrets.BOX_CLIENT_SECRET }}
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt pyinstaller
+          python outils_dev/identifiants_ci.py
           echo "VERSION=$(grep -oP 'VERSION = "\K[^"]+' app/config.py)" >> "$GITHUB_ENV"
       - name: PhilCut (archive Linux)
         run: >

@@ -63,7 +63,7 @@ class ErreurAutorisation(Exception):
 
 # Identifiants d'application publics de PhilCut (applications « client public » : ils ne sont pas secrets).
 # Les secrets du depot GitHub ou les variables d'environnement passent avant.
-PUBLICS = {"onedrive": "e6479a20-b120-476d-ba0a-e4f37aa9841c"}
+PUBLICS = {}            # PhilCut a ses propres applications : identifiants fournis par la fabrication (secrets GitHub)
 
 
 def identifiants(fournisseur):
