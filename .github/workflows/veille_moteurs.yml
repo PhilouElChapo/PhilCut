@@ -39,7 +39,7 @@ jobs:
               print("::warning::OpenCV illisible :", e)
           for cle, depot in (("llama.cpp", "ggml-org/llama.cpp"), ("whisper.cpp", "ggml-org/whisper.cpp")):
               try:   # moteurs de l'IA locale portable : publies a part (release moteurs-ia), sans changer PhilCut
-                  nouveau[cle] = json.loads(lire(f"https://api.github.com/repos/{depot}/releases/latest"))["tag_name"]
+                  nouveau[cle] = json.loads(lire(f"https://api.github.com/repos/{depot}/releases?per_page=1"))[0]["tag_name"]
               except Exception as e:
                   print(f"::warning::{cle} illisible :", e)
           try:   # build FFmpeg embarquee (BtbN "latest" : la date de publication fait office de version)

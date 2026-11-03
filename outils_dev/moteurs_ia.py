@@ -56,26 +56,38 @@ def gh(chemin):
         return json.loads(r.read().decode("utf-8"))
 
 
+def _derniere(depot, motifs):
+    """Release la plus récente (parmi les 30 dernières, préversions comprises) qui contient une archive pour chaque motif.
+    motifs : {cle: fonction(nom) -> bool}. Renvoie (tag, {cle: nom})."""
+    vus = []
+    for r in gh(f"repos/{depot}/releases?per_page=30"):
+        if r.get("draft"):
+            continue
+        noms = [a["name"] for a in r.get("assets", [])]
+        vus.append(f"{r['tag_name']}: {', '.join(noms[:12])}")
+        trouve = {k: next((n for n in noms if f(n)), "") for k, f in motifs.items()}
+        if all(trouve.values()):
+            return r["tag_name"], trouve
+    print(f"::warning title={depot}::aucune release avec toutes les archives ; vues : " + " | ".join(vus[:6])[:1500])
+    return "", {k: "" for k in motifs}
+
+
 def versions():
     out = {}
-    ll = gh("repos/ggml-org/llama.cpp/releases/latest")
-    noms = [a["name"] for a in ll.get("assets", [])]
-    out["llama_tag"] = ll["tag_name"]
-    out["llama_win"] = next((n for n in noms if "bin-win-cpu-x64" in n), "")
-    out["llama_linux"] = next((n for n in noms if "bin-ubuntu-x64" in n), "")
-    wh = gh("repos/ggml-org/whisper.cpp/releases/latest")
-    noms_w = [a["name"] for a in wh.get("assets", [])]
-    out["whisper_tag"] = wh["tag_name"]
-    out["whisper_win"] = next((n for n in noms_w if n == "whisper-bin-x64.zip"), "") or next((n for n in noms_w if "bin-x64" in n and "blas" not in n and "cublas" not in n), "")
+    tag, n = _derniere("ggml-org/llama.cpp", {"llama_win": lambda x: "bin-win-cpu-x64" in x and x.endswith(".zip")})
+    out["llama_tag"], out["llama_win"] = tag, n["llama_win"]
+    tag, n = _derniere("ggml-org/whisper.cpp", {"whisper_win": lambda x: x.endswith(".zip") and "x64" in x and "bin" in x
+                                                 and not any(m in x.lower() for m in ("blas", "cublas", "cuda", "vulkan", "arm", "xcframework"))})
+    out["whisper_tag"], out["whisper_win"] = tag, n["whisper_win"]
     for k, v in out.items():
         print(f"{k}={v}")
-    manque = [k for k, v in out.items() if not v]
-    if manque:
-        print("::warning title=Moteurs IA::archive officielle introuvable : " + ", ".join(manque) + " ; noms vus : " + ", ".join(noms + noms_w)[:900])
     if os.environ.get("GITHUB_OUTPUT"):
         with open(os.environ["GITHUB_OUTPUT"], "a") as f:
             for k, v in out.items():
                 f.write(f"{k}={v}\n")
+    if not all(out.values()):
+        print("::error::archives officielles introuvables")
+        sys.exit(1)
     return out
 
 
