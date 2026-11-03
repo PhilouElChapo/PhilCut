@@ -65,10 +65,12 @@ class TestInterface(unittest.TestCase):
     def test_02_dialogues(self):
         from app.dialogues_video import DialogueEffets, DialogueTitre, DialogueGoodie, DialogueExport, DialogueFabrique, DialogueFiche
         from app.preferences import DialoguePreferences
+        from app.dialogues_suivi import DialogueSuivi
         ed = self.f.editeur_courant()
         for dlg in (DialogueEffets(self.f, ed.projet.clips[0], self.f.params, ed.projet.medias), DialogueTitre(self.f), DialogueGoodie(self.f),
                     DialogueExport(self.f, ed.projet, self.f.params), DialogueFabrique(self.f, ed.projet, self.f.params),
-                    DialogueFiche(self.f, ed.projet.medias[0]), DialoguePreferences(self.f, self.f.params)):
+                    DialogueFiche(self.f, ed.projet.medias[0]), DialoguePreferences(self.f, self.f.params),
+                    DialogueSuivi(self.f, ed.projet.medias[0], 0.5)):
             dlg.show()
             app.processEvents()
             self.assertFalse(dlg.grab().isNull())

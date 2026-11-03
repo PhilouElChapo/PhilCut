@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QLi
                                QFrame, QProgressBar, QTabWidget, QScrollArea, QCheckBox, QComboBox, QLineEdit, QSpinBox, QMenu, QMessageBox,
                                QFileDialog, QSizePolicy, QFormLayout, QPlainTextEdit, QAbstractItemView, QInputDialog)
 
-from . import moteur, outils as O, recettes, assistant as A, theme
+from . import moteur, outils as O, recettes, assistant as A, suivi, theme
 from .apercu import Apercu
 from .icones import icone
 from .langue import _
@@ -352,7 +352,7 @@ class Editeur(QWidget):
         self.timeline.proprietes.connect(self.editer_element)
         self.timeline.media_depose.connect(self._depose)
         self.timeline.selection_changee.connect(self._selection)
-        self.timeline.demande_menu.connect(lambda cid, quoi: self.effets_du_clip(cid))
+        self.timeline.demande_menu.connect(self._demande_menu)
         self.split_v.addWidget(self.timeline)
         self.split_v.setSizes([620, 260])
         v.addWidget(self.split_v, 1)
@@ -739,6 +739,65 @@ class Editeur(QWidget):
                 c["effets"].append({"id": "ralenti_fluide", "params": {}})
         self.rafraichir()
 
+    def _demande_menu(self, ident, quoi):
+        if quoi == "suivi":
+            c = self.projet.clip(ident)
+            if c:
+                self.recadrer_suivi(c)
+        elif quoi in ("accrocher", "decrocher"):
+            el = next((e for e in self.projet.titres + self.projet.goodies if e["id"] == ident), None)
+            if el and quoi == "accrocher":
+                self.accrocher(el)
+            elif el:
+                self.projet.marquer()
+                el["suivi"] = None
+                self.rafraichir()
+        else:
+            self.effets_du_clip(ident)
+
+    def recadrer_suivi(self, clip):
+        """Le plan suit une personne : on la désigne sur l'image, puis le suivi tourne en tâche de fond."""
+        from .dialogues_suivi import DialogueSuivi
+        m = self.projet.media(clip["media"])
+        if not m or m.get("genre") != "video":
+            self.encart.message(_("Le recadrage par suivi s'applique à une vidéo."))
+            return
+        d = DialogueSuivi(self, m, clip["src_debut"], recadrage=True, cadre=clip.get("suivi_cadre"))
+        if d.exec() != d.Accepted:
+            return
+        boite, zoom, lissage = d.resultat()
+        self.projet.marquer()
+        t = Tache(lambda tache: suivi.recadrer(self.projet, clip, boite, zoom, lissage, progression=lambda f: tache.avancer(f),
+                                               arret=lambda: tache.arret), _("Suivi"))
+        self.taches.append(t)
+        self.encart.suivre(t, _("Recadrage qui suit la personne dans « {n} »", n=m["nom"]))
+        t.fini.connect(lambda r, e: (self.rafraichir(), self.apercu.rafraichir() if hasattr(self.apercu, "rafraichir") else None))
+        t.start()
+
+    def accrocher(self, element):
+        """Texte ou Goodie qui suit une personne du plan présent à son début."""
+        from .dialogues_suivi import DialogueSuivi
+        clip = next((c for c in self.projet.clips_piste("video") if c["debut"] - 0.05 <= element["debut"] < fin_clip(c)), None)
+        m = self.projet.media(clip["media"]) if clip else None
+        if not m or m.get("genre") != "video":
+            self.encart.message(_("Placez l'élément au-dessus d'un plan vidéo pour l'accrocher à une personne."))
+            return
+        t_src = clip["src_debut"] + (element["debut"] - clip["debut"]) * clip.get("vitesse", 1.0)
+        d = DialogueSuivi(self, m, t_src, recadrage=False)
+        if d.exec() != d.Accepted:
+            return
+        boite, _zoom, lissage = d.resultat()
+        self.projet.marquer()
+        decalage = (0.0, -0.5) if element in self.projet.titres else (0.0, -0.6)
+        if element in self.projet.titres:
+            element["style"] = "etiquette"
+        t = Tache(lambda tache: suivi.accrocher(self.projet, element, m, boite, decalage, lissage, progression=lambda f: tache.avancer(f),
+                                                arret=lambda: tache.arret), _("Suivi"))
+        self.taches.append(t)
+        self.encart.suivre(t, _("Accroché à la personne dans « {n} »", n=m["nom"]))
+        t.fini.connect(lambda r, e: self.rafraichir())
+        t.start()
+
     def cadrage(self):
         c = self._clip_selectionne()
         if not c:
@@ -749,7 +808,7 @@ class Editeur(QWidget):
             a.setCheckable(True)
             a.setChecked(c.get("ajustement", "remplir") == mode)
         m.addSeparator()
-        m.addAction(_("Recadrer en suivant la personne (étiquette + recadrage)…"), lambda: self.encart.message(_("Le recadrage par suivi arrive avec le pack « suivi » ; l'étiquette accrochée est déjà disponible (outil Texte).")))
+        m.addAction(_("Suivre la personne (recadrage automatique)…"), lambda: self.recadrer_suivi(c))
         m.exec(self.cursor().pos())
 
     def _ajouter_effet_selection(self, eid):

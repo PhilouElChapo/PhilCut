@@ -54,6 +54,9 @@ class Exportateur:
         """Met le plan au format du projet : remplir (recadre), contenir_noir (bandes), contenir_flou (fond flou)."""
         L, H = self.L, self.H
         mode = clip.get("ajustement", "remplir")
+        if mode == "suivi" and (clip.get("suivi_cadre") or {}).get("positions"):
+            from . import suivi
+            return suivi.filtre_recadrage(clip["suivi_cadre"], clip, L, H)
         if mode == "contenir_noir":
             return f"scale={L}:{H}:force_original_aspect_ratio=decrease,pad={L}:{H}:(ow-iw)/2:(oh-ih)/2:color=black"
         if mode == "contenir_flou":
@@ -257,6 +260,10 @@ class Exportateur:
                 continue
             dossier = tempfile.mkdtemp(prefix="goodie-", dir=self.tmp)
             motif, n, x, y = GO.rendre(dossier, g, self.L, self.H, self.cad, texte_extra=self.p.d.get("chaine"))
+            if (g.get("suivi") or {}).get("positions"):          # Goodie accroché à une personne
+                from . import suivi
+                cote = max(48, int(self.H * float(g.get("taille", 0.22))))
+                x, y = suivi.position_pixels(g, self.L, self.H, cote, cote)
             self.calques.append((g["debut"], g["fin"], motif, x, y, "over"))
 
     def _superposer(self, base):

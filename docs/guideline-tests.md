@@ -1,4 +1,4 @@
-# PhilCut — guideline de test de la première version (0.1.x)
+# PhilCut — guideline de test (versions 0.1.x et 0.2.x)
 
 Ce document est la feuille de route des tests. On s'y tient : chaque point est testé dans l'ordre, sur la **version portable Windows** (poste Nvidia), avec les vidéos de référence. Pour chaque point, noter : **OK**, **KO** (avec ce qui s'est passé) ou **à revoir** (ça marche mais ce n'est pas ce qu'on voulait). Les remarques se font dans la conversation du projet « Programmation » ou dans un ticket GitHub, en citant le numéro du point (ex. « T3.4 KO »).
 
@@ -77,7 +77,7 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 
 1. Musique importée sous une vidéo avec voix : à l'export, la musique baisse sous la voix (ducking) et le niveau global est normalisé (pas de saturation, contrairement à AV2).
 2. Outil **Voix et son** sur un plan : Débruiter, Voix embellie, Réverbération, Echo, volume, muet ; juger à l'export.
-3. Sous-titres : importer un .srt → rendus à l'export et écrits en .srt à côté si coché. Whisper : cocher le pack (depuis les sources seulement pour l'instant), transcrire AV1.
+3. Sous-titres : importer un .srt → rendus à l'export et écrits en .srt à côté si coché. Whisper (0.2) : Préférences › IA locale, cocher « Voix légère » ou « Voix standard », puis transcrire AV1 : sous-titres en français, sans rien installer sur le poste.
 
 ## T8 — Export
 
@@ -94,7 +94,28 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 3. Sur le **deuxième poste** (même emplacement de synchro) : l'Accueil propose « Sur « pharmacie », 1 projet était ouvert : … Reprendre ».
 4. Préférences : chaque onglet s'ouvre ; changer thème clair → demande de relance ; barre personnalisée (clic droit : icône seule / nom seul / taille ; Personnaliser : ordre, séparateurs) ; volet complet → icônes → masqué (F4) ; export / import des préférences (avec et sans phrase secrète).
 5. Mises à jour : Aide › Vérifier. Quand une 0.1.(x+1) est publiée par GitHub, la proposition apparaît sur l'Accueil ; téléchargement, puis installation seulement après confirmation.
-6. Packs : cocher « Détourage » (depuis les sources : pip l'installe) ; effet Halo possible ensuite.
+6. Packs (0.2) : Préférences › IA locale, cocher « Détourage léger » (5 Mo) puis « Détourage précis » ; effet Halo et feu d'artifice derrière la personne possibles ensuite, depuis la version portable.
+7. Clefs IA (0.2) : saisir les clefs Claude et Gemini, fermer PhilCut, ouvrir `donnees\parametres.json` de la portable avec le Bloc-notes : **aucune clef n'y figure**. Rouvrir PhilCut : les clefs sont toujours là (coffre de Windows). Une 0.1 qui avait des clefs en clair : elles disparaissent du fichier au premier démarrage de la 0.2, sans être perdues.
+8. Comptes (0.2) : relier Google Drive, OneDrive et Dropbox : la page de connexion affiche « PhilCut » (et non PhilPDF), puis le compte apparaît dans PhilCut.
+
+## T11 — Suivi d'une personne et recadrage (0.2)
+
+1. Projet **16:9**, importer **AV1** (vertical). Clic droit sur le plan › Cadrage › **Suivre la personne (recadrage automatique)…**. **Attendu** : l'image du plan, les personnes trouvées encadrées et numérotées ; un clic en choisit une (cadre vert). Essayer aussi de **tracer un cadre** à la souris autour de l'avion F-GDLJ.
+2. Zoom 1,0 et mouvement « Normal », OK : l'encart montre le suivi, puis l'aperçu montre un plan **horizontal qui suit la personne** (ou l'avion). Lire le plan : le cadre bouge sans trembler. Essayer « Doux (cinéma) » et « Réactif », et un zoom de 1,5.
+3. Exporter en YouTube : même cadrage que dans l'aperçu.
+4. L'inverse : projet **9:16** avec un plan horizontal (SV1) : le cadre vertical suit la personne qui marche.
+5. Texte « le Pilote » posé sur le plan, clic droit sur le texte dans la timeline › **Accrocher à une personne…** : le texte suit la tête. « Décrocher » le remet à sa place fixe.
+6. Goodie (altimètre) : même manipulation, le Goodie suit l'avion. Export : identique à l'aperçu.
+7. Cas difficile : la personne passe derrière l'aile ou sort du cadre. **Noter** si le suivi la retrouve ensuite ou s'il reste figé (on réglera la reprise d'après vos essais).
+
+## T12 — IA locale sur le portable Nvidia (0.2)
+
+1. Préférences › IA locale : la case **« Utiliser la carte graphique (Vulkan) : NVIDIA GeForce RTX 3070 Laptop GPU »** est cochée ; « Vision avancée » porte l'étoile « conseillé ici » (sinon « Vision standard »).
+2. **Brancher le secteur**. Cocher le modèle conseillé : taille totale annoncée, téléchargement dans l'encart. Couper le Wi-Fi au milieu puis relancer : il reprend.
+3. Tester l'IA locale : le résultat indique **« Calcul sur : carte graphique (NVIDIA…, Vulkan) »**, avec le temps par vidéo. Ouvrir le Gestionnaire des tâches › Performances : le **GPU 1 (Nvidia)** travaille pendant le test, pas seulement le GPU 0 (Intel).
+4. Décocher « Utiliser la carte graphique » et refaire le test : « Calcul sur : processeur ». **Noter** les deux temps : c'est ce qui décidera si une option CUDA vaut la peine.
+5. Assistant en niveau **IA locale** sur SV1 + SV2 : recette proposée, source « locale:… » affichée.
+6. Fermer PhilCut : plus aucun `llama-server` dans le Gestionnaire des tâches. Supprimer le dossier de la portable : rien ne reste sur le poste (ni au démarrage de Windows, ni dans le registre).
 
 ## T10 — Le JUGE (validation à l'aveugle)
 
@@ -103,11 +124,11 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 3. Verdict de Philippe, en trois lignes : la recette était-elle celle qu'il aurait voulue ? Qu'est-ce qui manquait ? Qu'est-ce qui était de trop ?
 4. Les écarts sont reportés dans les recettes (`app/recettes.py`) et dans les consignes de l'IA (`app/assistant.py`), puis on refait T10.
 
-## Ce qui n'est pas encore dans la 0.1 (ne pas tester)
+## Ce qui n'est pas encore là (ne pas tester)
 
 - Flatpak Linux (archive tar.gz seulement), version Android.
-- Recadrage automatique par suivi de personne (l'étiquette accrochée existe, pas encore le recadrage).
-- Effets sur personne (halo, feu d'artifice derrière, personne en code) dans la version tout-en-un : ils demandent le pack « Détourage », installable depuis les sources pour l'instant.
+- Correction du suivi à la main, plusieurs suivis dans un même plan, effet (halo, feu d'artifice) qui suit la personne : prévus dans une prochaine 0.2.x.
+- Changement de fond après détourage (section 15) : prochaine étape.
 - Vrai autotune de chant (une approximation est posée), bibliothèque musicale libre en ligne (lien vers Free Music Archive en attendant), catalogue d'effets en ligne (le mécanisme est là, le fichier est vide).
 - Packs de Goodies autres qu'Aviation et Maison : les genres existent, le dessin détaillé viendra.
 

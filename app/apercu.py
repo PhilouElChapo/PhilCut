@@ -149,6 +149,8 @@ class Apercu(QGraphicsView):
             self.lecteur.setPlaybackRate(float(c.get("vitesse", 1.0)))
             self.son.setVolume(0.0 if c.get("muet") else float(c.get("volume", 1.0)))
             self._cadrer(c, m)
+        if c.get("ajustement") == "suivi":           # le cadre bouge avec la personne
+            self._cadrer(c, m)
         if abs(self.lecteur.position() - pos_ms) > 80 or not self.en_lecture:
             self.lecteur.setPosition(pos_ms)
         if self.en_lecture and self.lecteur.playbackState() != QMediaPlayer.PlayingState:
@@ -175,6 +177,15 @@ class Apercu(QGraphicsView):
         lw, lh = v.get("largeur") or L, v.get("hauteur") or H
         mode = c.get("ajustement", "remplir")
         r_src, r_dst = lw / lh, L / H
+        if mode == "suivi" and (c.get("suivi_cadre") or {}).get("positions"):
+            from . import suivi
+            t_src = c["src_debut"] + (self.t - c["debut"]) * c.get("vitesse", 1.0)
+            x, y, cw, _ch = suivi.fenetre_source(c["suivi_cadre"], t_src, lw, lh, L, H)
+            e = L / cw
+            self.video.setAspectRatioMode(Qt.IgnoreAspectRatio)
+            self.video.setSize(QSizeF(lw * e, lh * e))
+            self.video.setPos(-x * e, -y * e)
+            return
         if mode == "remplir":
             if r_src > r_dst:
                 h = H
@@ -322,6 +333,11 @@ class Apercu(QGraphicsView):
             return
         L, H = self.projet.taille
         mode = c.get("ajustement", "remplir")
+        if mode == "suivi" and (c.get("suivi_cadre") or {}).get("positions"):
+            from . import suivi
+            x, y, cw, ch = suivi.fenetre_source(c["suivi_cadre"], t_src, px.width(), px.height(), L, H)
+            px = px.copy(int(x), int(y), max(1, int(cw)), max(1, int(ch)))
+            mode = "remplir"
         px2 = px.scaled(L, H, Qt.KeepAspectRatioByExpanding if mode == "remplir" else Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.image_fixe.setPixmap(px2)
         self.image_fixe.setPos((L - px2.width()) / 2, (H - px2.height()) / 2)
@@ -395,6 +411,11 @@ class Apercu(QGraphicsView):
         v = GO.valeur(g, self.t)
         x = float(g.get("x", 0.88)) * L - taille / 2
         y = float(g.get("y", 0.85)) * H - taille / 2
+        pos = (g.get("suivi") or {}).get("positions")
+        if pos:                       # accroché : centré sur le point d'accroche, posé au-dessus
+            from . import suivi
+            x = min(max(suivi.valeur(pos, self.t, 1) * L - taille / 2, 0), L - taille)
+            y = min(max(suivi.valeur(pos, self.t, 2) * H - taille, 0), H - taille)
         cadre = QGraphicsRectItem(0, 0, taille, taille)
         cadre.setBrush(QColor(10, 10, 14, 170))
         cadre.setPen(QPen(QColor(255, 255, 255, 140), 2))

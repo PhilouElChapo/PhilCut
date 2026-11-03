@@ -276,53 +276,14 @@ def appliquer(recette, projet, params=None, choix=None, remplacer=True):
 
 
 def suivre_visage(projet, titre, params=None, pas=0.2):
-    """Calcule les positions d'une etiquette accrochee : suivi OpenCV sur le proxy, de debut a fin."""
-    try:
-        import cv2
-    except ImportError:
-        return False
+    """Etiquette accrochée : la personne de titre["suivi"]["boite"] est suivie (moteur commun app/suivi.py)."""
+    from . import suivi
     s = titre.get("suivi") or {}
     m = projet.media(s.get("media")) if s.get("media") else None
     if not m or not s.get("boite"):
         return False
-    clip = next((c for c in projet.clips_piste("video") if c["media"] == m["id"] and c["debut"] <= titre["debut"] < c["debut"] + 1e9), None)
-    chemin = m.get("proxy") or m["chemin"]
-    cap = cv2.VideoCapture(chemin)
-    L, H = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)), int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    bx, by, bw, bh = s["boite"]
-    t_src = (clip["src_debut"] + (titre["debut"] - clip["debut"]) * clip.get("vitesse", 1.0)) if clip else 0.0
-    cap.set(cv2.CAP_PROP_POS_MSEC, t_src * 1000)
-    ok, img = cap.read()
-    if not ok:
+    try:
+        suivi.accrocher(projet, titre, m, s["boite"], decalage=(0.0, -0.5))
+    except suivi.ErreurSuivi:
         return False
-    tracker = None
-    for nom in ("TrackerCSRT_create", "TrackerKCF_create", "TrackerMIL_create"):
-        if hasattr(cv2, nom):
-            tracker = getattr(cv2, nom)()
-            break
-        if hasattr(cv2, "legacy") and hasattr(cv2.legacy, nom):
-            tracker = getattr(cv2.legacy, nom)()
-            break
-    if tracker is None:
-        return False
-    tracker.init(img, (int(bx * L), int(by * H), max(8, int(bw * L)), max(8, int(bh * H))))
-    positions = [(titre["debut"], bx + bw / 2, by)]
-    cad = cap.get(cv2.CAP_PROP_FPS) or 30
-    saut = max(1, int(pas * cad))
-    t = titre["debut"]
-    v = clip.get("vitesse", 1.0) if clip else 1.0
-    while t < titre["fin"]:
-        for _k in range(saut):
-            ok, img = cap.read()
-            if not ok:
-                break
-        if not ok:
-            break
-        t += saut / cad / v
-        ok2, boite = tracker.update(img)
-        if ok2:
-            x, y, w, h = boite
-            positions.append((round(t, 3), round((x + w / 2) / L, 4), round(y / H, 4)))
-    cap.release()
-    titre["suivi"]["positions"] = positions
-    return len(positions) > 1
+    return len(titre["suivi"].get("positions") or []) > 1
