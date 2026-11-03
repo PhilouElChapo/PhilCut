@@ -185,7 +185,7 @@ def decrire(plan, params, compte=None, emplacement=None):
             genre = parts[1] if len(parts) > 2 else ""
             ident = os.path.splitext(parts[-1])[0]
             x = noms.get(ident) or {}
-            genres = {"logos": _("Logo"), "ecrans_fin": _("Écran de fin"), "autocollants": _("Autocollant"), "filigranes": _("Filigrane"), "recettes": _("Recette"), "musiques": _("Musique")}
+            genres = {"logos": _("Logo"), "ecrans_fin": _("Ecran de fin"), "autocollants": _("Autocollant"), "filigranes": _("Filigrane"), "recettes": _("Recette"), "musiques": _("Musique")}
             titre = _("{genre} « {nom} »", genre=genres.get(genre, genre), nom=x.get("nom") or ident)
             if x.get("categorie"):
                 detail = _("catégorie {c}", c=x["categorie"])

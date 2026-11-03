@@ -457,7 +457,7 @@ DESTINATIONS = {
     "insta": ("Instagram / Reels (9:16)", 1080, 1920, 30, "normale", "128k"),
     "insta_carre": ("Instagram carré (1:1)", 1080, 1080, 30, "normale", "128k"),
     "whatsapp": ("WhatsApp (allégé)", 1280, 720, 30, "allegee", "96k"),
-    "ecran_led": ("Écran LED vertical (9:16, 720p)", 720, 1280, 30, "normale", "96k"),
+    "ecran_led": ("Ecran LED vertical (9:16, 720p)", 720, 1280, 30, "normale", "96k"),
     "original": ("Comme la source", 0, 0, 0, "haute", "192k"),
 }
 

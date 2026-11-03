@@ -125,7 +125,7 @@ def confirmer_envoi(parent, texte, moteur_nom):
     if len(trouves) > 8:
         liste += "\n  • ..."
     r = QMessageBox.warning(parent, _("Données sensibles détectées"),
-                            _("Ce document semble contenir des données sensibles :\n\n{liste}\n\nÊtes-vous sûr de vouloir "
+                            _("Ce document semble contenir des données sensibles :\n\n{liste}\n\nEtes-vous sûr de vouloir "
                               "l'envoyer à l'IA ({moteur}) ?", liste=liste, moteur=moteur_nom),
                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
     return r == QMessageBox.Yes

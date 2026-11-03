@@ -29,7 +29,7 @@ class DialogueTitre(QDialog):
         f.addRow(_("Texte"), self.texte)
         self.style = QComboBox()
         self.style.addItem(_("Titre"), "titre")
-        self.style.addItem(_("Étiquette (accrochée)"), "etiquette")
+        self.style.addItem(_("Etiquette (accrochée)"), "etiquette")
         self.style.setCurrentIndex(1 if t.get("style") == "etiquette" else 0)
         f.addRow(_("Style"), self.style)
         self.anim = QComboBox()
@@ -198,7 +198,7 @@ class DialogueEffets(QDialog):
             return
         fi = E.fiche(k)
         if fi["pack"] and fi["pack"] not in set(self.params.get("effets_coches") or []):
-            QMessageBox.information(self, _("Pack à télécharger"), _("Cet effet a besoin du pack « {p} ». Cochez-le dans Édition › Préférences › Effets ; "
+            QMessageBox.information(self, _("Pack à télécharger"), _("Cet effet a besoin du pack « {p} ». Cochez-le dans Edition › Préférences › Effets ; "
                                                                       "il se télécharge alors sur ce poste.", p=E.PACKS.get(fi["pack"], {}).get("nom", fi["pack"])))
             return
         if fi["famille"] == "transition":
@@ -441,7 +441,7 @@ class DialogueExport(QDialog):
         h.addWidget(self.chemin, 1)
         h.addWidget(b)
         f.addRow(_("Fichier"), h)
-        self.srt = QCheckBox(_("Écrire aussi les sous-titres en .srt (pour YouTube)"))
+        self.srt = QCheckBox(_("Ecrire aussi les sous-titres en .srt (pour YouTube)"))
         f.addRow(self.srt)
         self.drive = QCheckBox(_("Déposer ensuite sur le Drive / NAS de synchronisation"))
         f.addRow(self.drive)
@@ -498,7 +498,7 @@ class DialogueFabrique(QDialog):
         f.addRow(_("Image du logo"), h)
         self.usage = QComboBox()
         self.usage.addItem(_("Au début (intro)"), "debut")
-        self.usage.addItem(_("À la fin"), "fin")
+        self.usage.addItem(_("A la fin"), "fin")
         self.usage.addItem(_("Seulement dans la bibliothèque"), "biblio")
         f.addRow(_("Placer"), self.usage)
         self.onglets.addTab(w, _("Logo et intro"))

@@ -14,7 +14,7 @@ from .langue import _
 
 MODELES_LOGO = {
     "trace": _("Tracé du contour"), "particules": _("Particules qui se rassemblent"), "code": _("Code Matrix qui forme le texte"),
-    "eclat": _("Éclat de lumière"), "lucioles": _("Lucioles"), "carnet": _("Carnet qui s'ouvre"), "glitch": _("Glitch"), "rotation": _("Rotation 3D"),
+    "eclat": _("Eclat de lumière"), "lucioles": _("Lucioles"), "carnet": _("Carnet qui s'ouvre"), "glitch": _("Glitch"), "rotation": _("Rotation 3D"),
 }
 STYLES = [_("sobre"), _("cinéma"), _("néon"), _("aviation"), _("chaleureux"), _("numérique"), _("festif"), _("enfantin")]
 

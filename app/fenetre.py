@@ -86,7 +86,7 @@ class Fenetre(QMainWindow):
         m.addSeparator()
         m.addAction(_("Fermer le projet"), lambda: self.fermer_onglet(self.onglets.currentIndex()), "Ctrl+W")
         m.addAction(_("Quitter"), self.close, QKeySequence.Quit)
-        e = mb.addMenu(_("&Édition"))
+        e = mb.addMenu(_("&Edition"))
         e.addAction(icone("annuler"), _("Annuler|action"), lambda: self._ed(lambda ed: ed.annuler()), QKeySequence.Undo)
         e.addAction(icone("retablir"), _("Rétablir"), lambda: self._ed(lambda ed: ed.refaire()), "Ctrl+Y")
         e.addSeparator()
@@ -124,7 +124,7 @@ class Fenetre(QMainWindow):
         ai.addAction(_("Vérifier les mises à jour…"), lambda: self.verifier_maj(silencieux=False))
         ai.addAction(_("Site du projet (GitHub)"), lambda: webbrowser.open("https://github.com/PhilouElChapo/PhilCut"))
         ai.addSeparator()
-        ai.addAction(_("À propos de PhilCut"), self.a_propos)
+        ai.addAction(_("A propos de PhilCut"), self.a_propos)
 
     def _remplir_recents(self):
         self.menu_recents.clear()
@@ -539,7 +539,7 @@ class Fenetre(QMainWindow):
         try:
             from faster_whisper import WhisperModel      # noqa: F401
         except ImportError:
-            QMessageBox.information(self, _("Sous-titres"), _("Cochez le pack « Sous-titres automatiques (Whisper local) » dans Édition › Préférences › Effets et Goodies : il se télécharge sur ce poste."))
+            QMessageBox.information(self, _("Sous-titres"), _("Cochez le pack « Sous-titres automatiques (Whisper local) » dans Edition › Préférences › Effets et Goodies : il se télécharge sur ce poste."))
             return
         from . import sous_titres as ST
         t = Tache(lambda tache: ST.transcrire_projet(ed.projet, self.params, progression=tache.avancer), _("Transcription"))
@@ -556,7 +556,7 @@ class Fenetre(QMainWindow):
         if not c:
             return
         m = QMenu(self)
-        for lib, eid in ((_("Débruiter le son (vent, moteur)"), "a_debruit"), (_("Voix embellie (narration)"), "a_voix"), (_("Autotune (chant)"), "a_autotune"), (_("Réverbération"), "a_reverb"), (_("Écho"), "a_echo")):
+        for lib, eid in ((_("Débruiter le son (vent, moteur)"), "a_debruit"), (_("Voix embellie (narration)"), "a_voix"), (_("Autotune (chant)"), "a_autotune"), (_("Réverbération"), "a_reverb"), (_("Echo"), "a_echo")):
             a = m.addAction(lib, lambda eid=eid: self._effet_audio(ed, c, eid))
             a.setCheckable(True)
             a.setChecked(eid in (c.get("effets_audio") or []))
@@ -604,7 +604,7 @@ class Fenetre(QMainWindow):
         except Exception as e:    # noqa: BLE001
             QMessageBox.warning(self, _("Déposer"), str(e))
             return
-        QMessageBox.information(self, _("Déposer"), _("Aucun emplacement de synchronisation : choisissez-en un dans Édition › Préférences › Comptes et synchro."))
+        QMessageBox.information(self, _("Déposer"), _("Aucun emplacement de synchronisation : choisissez-en un dans Edition › Préférences › Comptes et synchro."))
 
     # ---------------------------------------------------------------- barre, preferences, aide
     def personnaliser_barre(self):
@@ -808,7 +808,7 @@ class Fenetre(QMainWindow):
             "Double-clic sur un plan : effets et transition · clic droit : vitesse, cadrage, muet"))
 
     def a_propos(self):
-        QMessageBox.about(self, _("À propos de PhilCut"), _(
+        QMessageBox.about(self, _("A propos de PhilCut"), _(
             "<h3>PhilCut {v}</h3><p>Montage vidéo libre (GPL v3) : simple, efficace, effet wahou. Par Philippe Delaye, avec Claude.</p>"
             "<p>Moteurs : FFmpeg {f} (GPL), Qt / PySide6 (LGPL), OpenCV (Apache 2.0), police Nunito (SIL OFL).</p>"
             "<p>Vos rushes restent où ils sont ; rien n'est envoyé à une IA sans votre clic.</p>", v=VERSION, f=moteur.version() or "?"))

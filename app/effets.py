@@ -32,7 +32,7 @@ CATALOGUE = {
     "noir_blanc": ("look", _("Noir et blanc"), _("Noir et blanc contrasté."), [], None),
     "y2k": ("look", _("Y2K"), _("Saturé, lumineux, légère aberration colorée : le style des années 2000."), [], None),
     "cosy": ("look", _("Cosy"), _("Doux, chaud, contraste bas."), [], None),
-    "epure": ("look", _("Épuré"), _("Clair, propre, blancs lumineux."), [], None),
+    "epure": ("look", _("Epuré"), _("Clair, propre, blancs lumineux."), [], None),
     # ---- wahou
     "glow": ("wahou", _("Glow"), _("Lumière diffuse : les hautes lumières rayonnent, rendu rêveur."),
              [("rayon", _("Rayon"), "float", 12.0, 2.0, 40.0), ("intensite", _("Intensité"), "float", 0.6, 0.1, 1.0)], None),
@@ -49,7 +49,7 @@ CATALOGUE = {
                        [("force", _("Force"), "float", 1.0, 0.2, 3.0)], None),
     "feu_artifice": ("wahou", _("Feu d'artifice"), _("Gerbes de particules sur l'image (ou derrière la personne avec le pack IA)."),
                      [("quantite", _("Quantité"), "int", 6, 1, 20)], None),
-    "eclairs": ("wahou", _("Éclairs"), _("Éclairs brefs et flashs."), [("quantite", _("Quantité"), "int", 4, 1, 12)], None),
+    "eclairs": ("wahou", _("Eclairs"), _("Eclairs brefs et flashs."), [("quantite", _("Quantité"), "int", 4, 1, 12)], None),
     # ---- mouvement
     "flou_mouvement": ("mouvement", _("Flou de mouvement"), _("Rend les mouvements et les textes animés plus fluides."),
                        [("images", _("Images mélangées"), "int", 4, 2, 8)], None),
@@ -61,12 +61,12 @@ CATALOGUE = {
                    [("facteur", _("Facteur"), "int", 8, 2, 32)], None),
     # ---- corrections
     "debruiter": ("correction", _("Débruiter"), _("Réduit le grain des vidéos sombres."), [("force", _("Force"), "float", 1.0, 0.2, 3.0)], None),
-    "eclaircir": ("correction", _("Éclaircir"), _("Remonte les basses lumières sans brûler les hautes."), [("force", _("Force"), "float", 1.0, 0.2, 2.0)], None),
+    "eclaircir": ("correction", _("Eclaircir"), _("Remonte les basses lumières sans brûler les hautes."), [("force", _("Force"), "float", 1.0, 0.2, 2.0)], None),
     "nettete": ("correction", _("Netteté"), _("Accentue les détails d'un clip un peu mou (clips IA, proxys)."), [("force", _("Force"), "float", 0.8, 0.2, 2.0)], None),
     "horizon": ("correction", _("Redresser l'horizon"), _("Pivote légèrement l'image."), [("angle", _("Angle (°)"), "float", 0.0, -15.0, 15.0)], None),
     # ---- transitions (posees sur le clip qui ARRIVE ; sans changement de duree)
     "t_fondu_noir": ("transition", _("Fondu au noir"), _("Sortie au noir puis entrée du plan suivant."), [("duree", _("Durée (s)"), "float", 0.6, 0.2, 2.0)], None),
-    "t_fondu_blanc": ("transition", _("Flash blanc"), _("Éclair blanc à la coupe."), [("duree", _("Durée (s)"), "float", 0.4, 0.1, 1.0)], None),
+    "t_fondu_blanc": ("transition", _("Flash blanc"), _("Eclair blanc à la coupe."), [("duree", _("Durée (s)"), "float", 0.4, 0.1, 1.0)], None),
     "t_puzzle": ("transition", _("Puzzle"), _("Le plan arrive en morceaux inclinés qui se rassemblent puis zooment."),
                  [("pieces", _("Morceaux"), "int", 4, 2, 9), ("duree", _("Durée (s)"), "float", 1.2, 0.5, 3.0)], None),
     "t_explosion": ("transition", _("Explosion d'images"), _("Le plan précédent éclate en fragments."),
@@ -87,7 +87,7 @@ CATALOGUE = {
     # ---- matrix
     "pluie_code": ("matrix", _("Pluie de code"), _("Caractères verts qui tombent en surimpression."),
                    [("densite", _("Densité"), "float", 1.0, 0.2, 3.0), ("opacite", _("Opacité"), "float", 0.7, 0.1, 1.0)], None),
-    "matrix_vert": ("matrix", _("Étalonnage Matrix"), _("Vert numérique, contraste fort."), [], None),
+    "matrix_vert": ("matrix", _("Etalonnage Matrix"), _("Vert numérique, contraste fort."), [], None),
     "bullet_time": ("matrix", _("Bullet time"), _("Image figée avec traînées et ralenti extrême."), [("duree", _("Durée (s)"), "float", 1.5, 0.5, 4.0)], None),
 }
 
