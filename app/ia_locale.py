@@ -78,6 +78,8 @@ def modele_conseille(mat):
     """Clef du modèle de vision portable conseillé pour ce poste."""
     vram = mat.get("vram_go") or 0
     ram = mat.get("memoire_go") or 0
+    if vram >= 8:
+        return "vision_avance"
     return "vision_standard" if (vram >= 6 or ram >= 16) else "vision_leger"
 
 
@@ -122,6 +124,7 @@ def tester(params, texte_progression=None):
     portable = cible.startswith("vision_")
     res["qualite"] = (packs_ia.modeles("vision", avec_essai=True).get(cible) or {}).get("qualite", 3) if portable else 3
     texte_progression and texte_progression(_("Démarrage du moteur…"))
+    serveur_periph = None
     debut = time.time()
     try:
         if portable:
@@ -131,6 +134,7 @@ def tester(params, texte_progression=None):
                 r = serveur.generer("Décris cette image en cinq mots.", [_png_essai()], delai=600)
                 res["reponse_s"] = round(time.time() - t1, 1)
                 res["mode"] = serveur.mode
+                serveur_periph = serveur.peripherique
         else:
             r = generer(cible, "Décris cette image en cinq mots.", [_png_essai()], delai=600, params=params)
         res["secondes"] = round(time.time() - debut, 1)
@@ -145,7 +149,7 @@ def tester(params, texte_progression=None):
     nom = (packs_ia.modeles("vision", avec_essai=True).get(cible) or {}).get("nom", cible) if portable else cible
     carte = packs_ia.carte_graphique()
     if res.get("mode") == "gpu":
-        res["materiel_ia"] = _("carte graphique ({c}, Vulkan)", c=carte)
+        res["materiel_ia"] = _("carte graphique ({c}, Vulkan)", c=(serveur_periph or ("", carte))[1] or carte)
     elif portable:
         res["materiel_ia"] = _("processeur, {n} cœurs sur {t}{l}", n=packs_ia.coeurs(params), t=os.cpu_count() or "?",
                                l=_(" (poste léger)") if (params or {}).get("ia_poste_leger", True) else "")

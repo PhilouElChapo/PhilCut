@@ -65,6 +65,35 @@ def carte_graphique():
     return _carte
 
 
+_peripherique = None
+
+
+def peripherique_vulkan():
+    """(identifiant, nom) de la carte dédiée vue par le moteur Vulkan, par exemple ("Vulkan1", "NVIDIA GeForce RTX 3070
+    Laptop GPU"). Sur un portable à deux cartes (Intel intégrée + Nvidia), c'est la Nvidia qui est choisie."""
+    global _peripherique
+    if _peripherique is not None:
+        return _peripherique or None
+    _peripherique = ()
+    if not moteur_installe("vision_gpu"):
+        return None
+    try:
+        r = subprocess.run([executable("vision_gpu"), "--list-devices"], cwd=dossier_moteur("vision_gpu"), env=_env("vision_gpu"),
+                           capture_output=True, text=True, errors="replace", timeout=60, **{k: v for k, v in _options_processus().items() if k != "preexec_fn"})
+        vus = []
+        for ligne in (r.stdout + "\n" + r.stderr).splitlines():
+            ligne = ligne.strip()
+            if ligne.startswith("Vulkan") and ":" in ligne:
+                ident, nom = ligne.split(":", 1)
+                vus.append((ident.strip(), nom.strip()))
+        dedies = [v for v in vus if any(x in v[1].lower() for x in ("nvidia", "geforce", "rtx", "quadro", "radeon", "arc"))
+                  and "integrated" not in v[1].lower() and "uhd" not in v[1].lower()]
+        _peripherique = (dedies or vus or [()])[0]
+    except Exception:       # noqa: BLE001
+        _peripherique = ()
+    return _peripherique or None
+
+
 def gpu_voulu(params=None):
     """La version carte graphique du moteur de vision est utilisée si le poste a une carte dédiée et si l'utilisateur
     ne l'a pas désactivée (Préférences › IA locale)."""
@@ -433,6 +462,7 @@ class ServeurVision:
             raise ErreurIA(_("Moteur de vision absent : décochez puis recochez le modèle dans Préférences › IA locale."))
         self.contexte = contexte
         self.mode = ""          # "gpu" (carte graphique, Vulkan) ou "cpu"
+        self.peripherique = None
         self.proc = None
         self.port = None
         self.journal = os.path.join(dossier(), "journal_vision.txt")
@@ -465,6 +495,10 @@ class ServeurVision:
         cmd = [executable(moteur), "-m", os.path.join(d, roles["modele"]), "--mmproj", os.path.join(d, roles["mmproj"]),
                "--host", "127.0.0.1", "--port", str(self.port), "-t", str(coeurs(self.params)), "-c", str(self.contexte), "-np", "1",
                "-ngl", "99" if moteur == "vision_gpu" else "0"]
+        if moteur == "vision_gpu":
+            self.peripherique = peripherique_vulkan()
+            if self.peripherique:            # portables à deux cartes : la carte dédiée, jamais la puce Intel intégrée
+                cmd += ["--device", self.peripherique[0]]
         self._log = open(self.journal, "w", encoding="utf-8", errors="replace")
         self.proc = subprocess.Popen(cmd, cwd=dossier_moteur(moteur), env=_env(moteur), stdout=self._log, stderr=subprocess.STDOUT,
                                      stdin=subprocess.DEVNULL, **_options_processus())

@@ -221,7 +221,7 @@ class DialoguePreferences(QDialog):
         if not catalogue:
             f.addRow(QLabel(_("Catalogue des modèles injoignable pour l'instant (hors ligne ?). Revenez ici une fois connecté. {e}", e=erreur or "")))
         etat = self.params.get("ia_locale") or {}
-        conseil = etat.get("conseil") or ia_locale.modele_conseille(etat.get("materiel") or {"memoire_go": ia_locale._memoire_go()})
+        conseil = etat.get("conseil") or ia_locale.modele_conseille(etat.get("materiel") or ia_locale.materiel())
         for genre, titre in packs_ia.GENRES.items():
             items = {k: m for k, m in catalogue.items() if m.get("genre") == genre}
             if not items:

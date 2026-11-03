@@ -9,6 +9,13 @@ FAUX_SERVEUR = r'''#!PYTHON
 import json, sys
 from http.server import BaseHTTPRequestHandler, HTTPServer
 a = sys.argv
+if "--list-devices" in a:
+    print("Available devices:")
+    print("  Vulkan0: Intel(R) UHD Graphics (128 MiB, 100 MiB free)")
+    print("  Vulkan1: NVIDIA GeForce RTX 3070 Laptop GPU (8192 MiB, 7900 MiB free)")
+    sys.exit(0)
+if "--device" in a:
+    assert a[a.index("--device") + 1] == "Vulkan1", a
 port = int(a[a.index("--port") + 1])
 assert "-m" in a and "--mmproj" in a and "-t" in a
 class G(BaseHTTPRequestHandler):
@@ -87,6 +94,7 @@ class TestPacksIA(unittest.TestCase):
         from app import packs_ia
         packs_ia._manifeste = None
         packs_ia._carte = ""            # pas de carte graphique, sauf dans test_carte_graphique
+        packs_ia._peripherique = None
         self.P = packs_ia
 
     def tearDown(self):
@@ -137,6 +145,7 @@ class TestPacksIA(unittest.TestCase):
         self.assertTrue(P.moteur_installe("vision_gpu") and P.moteur_installe("vision"))
         with P.ServeurVision(params={}) as s:
             self.assertEqual(s.mode, "gpu")
+            self.assertEqual(s.peripherique, ("Vulkan1", "NVIDIA GeForce RTX 3070 Laptop GPU (8192 MiB, 7900 MiB free)"))
             self.assertEqual(s.generer("x", [b"\x89PNG"]), "1 image(s) vue(s)")
         with P.ServeurVision(params={"ia_gpu": False}) as s:
             self.assertEqual(s.mode, "cpu")
