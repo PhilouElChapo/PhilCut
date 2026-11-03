@@ -47,7 +47,8 @@ def main():
         print(f"::error title=Clef refusee::HTTP {e.code} : {erreur_google(e)}")
         return 1
     noms = [m["name"].split("/")[-1] for m in modeles]
-    veo = sorted(n for n in noms if n.startswith("veo"))
+    veo = sorted(m["name"].split("/")[-1] for m in modeles
+                 if m["name"].split("/")[-1].startswith("veo") or "predictLongRunning" in m.get("supportedGenerationMethods", []))
     gem = [n for n in noms if n.startswith("gemini")]
     print(f"::notice title=Clef valide::{len(noms)} modeles ouverts, dont {len(gem)} Gemini et {len(veo)} Veo")
     print("Modeles Veo : " + (", ".join(veo) or "aucun"))
