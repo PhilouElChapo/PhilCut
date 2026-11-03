@@ -342,7 +342,8 @@ class Exportateur:
                 self.filtres.append("".join(f"[{s}]" for s in pistes) + f"amix=inputs={len(pistes)}:duration=longest:normalize=0[{mix}]")
         out = self._nom("aout")
         lufs = LUFS.get(self.dest, -14)
-        self.filtres.append(f"[{mix}]loudnorm=I={lufs}:TP=-1.5:LRA=11,aresample=48000[{out}]")
+        # format de sortie explicite : FFmpeg 4.x ne sait pas toujours le deviner (piste entièrement silencieuse)
+        self.filtres.append(f"[{mix}]loudnorm=I={lufs}:TP=-1.5:LRA=11,aresample=48000,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo[{out}]")
         return out
 
     def _atempo(self, c):
@@ -375,7 +376,7 @@ class Exportateur:
     def _silence(self, d):
         k = self._entree("-f", "lavfi", "-t", f"{max(0.02, d):.3f}", "-i", "anullsrc=r=48000:cl=stereo")
         nom = self._nom("sil")
-        self.filtres.append(f"[{k}:a]asetpts=PTS-STARTPTS[{nom}]")
+        self.filtres.append(f"[{k}:a]asetpts=PTS-STARTPTS,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo[{nom}]")
         return nom
 
     # ---------------------------------------------------------------- commande complete
