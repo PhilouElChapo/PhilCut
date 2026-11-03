@@ -52,7 +52,7 @@ class Encart(QFrame):
         self.b_stop.show()
         try:
             self.b_stop.clicked.disconnect()
-        except RuntimeError:
+        except (RuntimeError, TypeError):
             pass
         self.b_stop.clicked.connect(tache.stopper)
         tache.progression.connect(lambda f, t: (self.barre.setValue(int(f * 1000)), self.lbl.setText(texte + (" — " + t if t else ""))))
@@ -68,7 +68,7 @@ class Encart(QFrame):
             self.bouton.show()
             try:
                 self.bouton.clicked.disconnect()
-            except RuntimeError:
+            except (RuntimeError, TypeError):
                 pass
             self.bouton.clicked.connect(self.hide)
             return
@@ -79,7 +79,7 @@ class Encart(QFrame):
             self.bouton.show()
             try:
                 self.bouton.clicked.disconnect()
-            except RuntimeError:
+            except (RuntimeError, TypeError):
                 pass
             self.bouton.clicked.connect(lambda: (action[1](), self.hide()))
             QTimer.singleShot(60000, self.hide)

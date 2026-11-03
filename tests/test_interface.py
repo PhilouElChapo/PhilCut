@@ -24,6 +24,13 @@ class TestInterface(unittest.TestCase):
         cls.f.show()
         app.processEvents()
 
+    @classmethod
+    def tearDownClass(cls):
+        cls.f.attendre_taches()
+        app.processEvents()
+        cls.f.close()
+        app.processEvents()
+
     def test_01_nouveau_projet_et_import(self):
         from app import taches
         ed = self.f.nouveau_projet("16:9")
@@ -82,6 +89,7 @@ class TestInterface(unittest.TestCase):
         self.f.onglets.removeTab(self.f.onglets.indexOf(ed))
         ed2 = self.f.ouvrir(chemin)
         self.assertIsNotNone(ed2)
+        self.f.attendre_taches()
         self.assertEqual(len(ed2.projet.clips), 2)
         self.assertIn(chemin, self.f.params["recents"])
 

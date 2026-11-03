@@ -314,7 +314,18 @@ class Fenetre(QMainWindow):
             ed.apercu.arreter()
         self.ecrire_session()
         self.params.enregistrer()
+        self.attendre_taches(8000)
         e.accept()
+
+    def attendre_taches(self, ms=30000):
+        """Attend la fin des taches de fond (Qt refuse qu'un fil soit detruit en cours de route)."""
+        for t in list(self.taches) + sum((list(ed.taches) for ed in self.editeurs()), []):
+            try:
+                if t.isRunning():
+                    t.stopper()
+                    t.wait(ms)
+            except RuntimeError:
+                pass
 
     # ---------------------------------------------------------------- glisser-deposer sur la fenetre
     def dragEnterEvent(self, e):
