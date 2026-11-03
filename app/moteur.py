@@ -63,6 +63,21 @@ def version():
         return ""
 
 
+def version_majeure():
+    """7 pour « 7.1 », 8 pour une build « N-128293-g… » (master BtbN = la plus recente), 0 si inconnue."""
+    v = version()
+    mm = re.match(r"(\d+)\.", v)
+    if mm:
+        return int(mm.group(1))
+    return 99 if v.startswith("N-") else 0
+
+
+def args_script_filtres(chemin):
+    """Le graphe de filtres est long : on le passe par un fichier. FFmpeg 7+ lit « -/filter_complex fichier »,
+    les versions anterieures « -filter_complex_script fichier » (retire dans FFmpeg 8)."""
+    return ["-/filter_complex", chemin] if version_majeure() >= 7 else ["-filter_complex_script", chemin]
+
+
 def lancer(args, entree=None, delai=None, progression=None, duree=None, arret=lambda: False):
     """Lance ffmpeg ; progression(fraction) si la duree de sortie est connue. Leve ErreurMoteur si echec."""
     cmd = [ffmpeg(), "-hide_banner", "-nostdin", "-y"] + list(args)
@@ -373,7 +388,7 @@ def proxy(chemin, params=None, fiche=None, progression=None, arret=lambda: False
         vf.append("format=yuv420p")
     tmp = cible + ".part.mp4"
     args = ["-i", chemin, "-vf", ",".join(vf), "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-g", str(int(cad)),
-            "-c:a", "aac", "-b:a", "128k", "-ac", "2", "-movflags", "+faststart", "-vsync", "cfr", tmp]
+            "-c:a", "aac", "-b:a", "128k", "-ac", "2", "-movflags", "+faststart", "-fps_mode", "cfr", tmp]
     try:
         lancer(args, progression=progression, duree=fiche.get("duree"), arret=arret, delai=None)
     except Exception:

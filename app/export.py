@@ -384,7 +384,7 @@ class Exportateur:
         args = []
         for e in self.entrees:
             args += e
-        args += ["-filter_complex_script", script, "-map", f"[{v}]", "-map", f"[{a}]"]
+        args += moteur.args_script_filtres(script) + ["-map", f"[{v}]", "-map", f"[{a}]"]
         args += moteur.args_encodeur(self.enc, self.qualite)
         args += ["-r", str(self.cad), "-c:a", "aac", "-b:a", self.debit_audio, "-ar", "48000", "-movflags", "+faststart",
                  "-t", f"{self.duree:.3f}", self.sortie]
