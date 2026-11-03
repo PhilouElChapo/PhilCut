@@ -32,7 +32,7 @@ def main():
     if not clef:
         print("::error title=Clef absente::Ajoutez le secret GEMINI_API_KEY dans Settings › Secrets and variables › Actions.")
         return 1
-    print(f"Clef lue : {len(clef)} caracteres, commence par {clef[:4]}…")
+    print(f"Clef lue : {len(clef)} caracteres, commence par {clef[:3]}…")
 
     # 1. la clef ouvre-t-elle l'API ?
     try:

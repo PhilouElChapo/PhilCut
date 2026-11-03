@@ -85,6 +85,7 @@ def masquer(texte):
     t = re.sub(r"GOCSPX-[A-Za-z0-9_\-]+", "GOCSPX-****", t)
     t = re.sub(r"sk-ant-[A-Za-z0-9_\-]+", "sk-ant-****", t)
     t = re.sub(r"AIza[0-9A-Za-z_\-]{20,}", "AIza****", t)
+    t = re.sub(r"\bAQ\.[0-9A-Za-z_\-.]{20,}", "AQ.****", t)          # nouveau format des clefs Google AI Studio
     t = re.sub(r"\b1//[0-9A-Za-z_\-]{20,}", "1//****", t)
     t = re.sub(r"\bya29\.[0-9A-Za-z_\-.]+", "ya29.****", t)
     return re.sub(r'("(?:client_secret|refresh_token|access_token|password|clef_\w+)"\s*:\s*")[^"]+"', r'\1****"', t)
