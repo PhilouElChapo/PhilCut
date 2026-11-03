@@ -37,12 +37,21 @@ jobs:
               nouveau["opencv"] = json.loads(lire("https://pypi.org/pypi/opencv-python-headless/json"))["info"]["version"]
           except Exception as e:
               print("::warning::OpenCV illisible :", e)
+          for cle, depot in (("llama.cpp", "ggml-org/llama.cpp"), ("whisper.cpp", "ggml-org/whisper.cpp")):
+              try:   # moteurs de l'IA locale portable : publies a part (release moteurs-ia), sans changer PhilCut
+                  nouveau[cle] = json.loads(lire(f"https://api.github.com/repos/{depot}/releases/latest"))["tag_name"]
+              except Exception as e:
+                  print(f"::warning::{cle} illisible :", e)
           try:   # build FFmpeg embarquee (BtbN "latest" : la date de publication fait office de version)
               d = json.loads(lire("https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest"))
               nouveau["ffmpeg"] = d.get("published_at", "")[:10]
           except Exception as e:
               print("::warning::FFmpeg illisible :", e)
-          change = [k for k in nouveau if nouveau[k] and connu.get(k) and nouveau[k] != connu[k]]
+          IA = ("llama.cpp", "whisper.cpp")
+          change_ia = [k for k in IA if nouveau.get(k) and nouveau.get(k) != connu.get(k)]
+          change = [k for k in nouveau if k not in IA and nouveau[k] and connu.get(k) and nouveau[k] != connu[k]]
+          for k in change_ia:
+              print(f"::notice title=Nouveau moteur IA::{k} {connu.get(k) or '?'} -> {nouveau[k]}")
           for k in change:
               print(f"::notice title=Nouveau moteur::{k} {connu.get(k) or '?'} -> {nouveau[k]}")
           if not change:
@@ -50,7 +59,13 @@ jobs:
           json.dump(nouveau, open("moteurs.json", "w"), indent=1)
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write("change=" + ("oui" if change else "non") + "\n")
+              f.write("change_ia=" + ("oui" if change_ia else "non") + "\n")
               f.write("quoi=" + ", ".join(f"{k} {nouveau[k]}" for k in change) + "\n")
+      - name: Moteurs IA locaux (fabriques, essayes puis publies a part)
+        if: steps.v.outputs.change_ia == 'oui'
+        run: gh workflow run moteurs_ia.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
       - name: Premier passage (versions notees)
         if: steps.v.outputs.change == 'non'
         run: |

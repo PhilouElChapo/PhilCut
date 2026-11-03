@@ -1,0 +1,160 @@
+# Moteurs de l'IA locale portable : llama.cpp (vision) et whisper.cpp (voix), dernières versions officielles.
+# Windows : archives officielles, réduites au nécessaire. Linux : compilés sur Ubuntu 22.04 (compatibles Zorin 17),
+# toutes variantes de processeur, sans dépendance externe. Chaque archive est essayée pour de vrai avec le code de
+# PhilCut et de petits modèles, puis publiée dans la release « moteurs-ia » avec le catalogue moteurs-ia.json.
+# Lancé à la main, ou par la veille du lundi quand une nouvelle version des moteurs sort.
+name: Moteurs IA locaux
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  catalogue:
+    runs-on: ubuntu-latest
+    outputs:
+      llama_tag: ${{ steps.v.outputs.llama_tag }}
+      llama_win: ${{ steps.v.outputs.llama_win }}
+      whisper_tag: ${{ steps.v.outputs.whisper_tag }}
+      whisper_win: ${{ steps.v.outputs.whisper_win }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Versions des moteurs
+        id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python outils_dev/moteurs_ia.py versions versions.json
+      - name: Modeles (Hugging Face, rembg)
+        run: python outils_dev/moteurs_ia.py modeles modeles.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catalogue
+          path: |
+            versions.json
+            modeles.json
+
+  windows:
+    needs: catalogue
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: catalogue
+          path: dist
+      - name: Archives officielles, reduites au necessaire
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "${{ needs.catalogue.outputs.llama_tag }}" -R ggml-org/llama.cpp -p "${{ needs.catalogue.outputs.llama_win }}" -D brut
+          gh release download "${{ needs.catalogue.outputs.whisper_tag }}" -R ggml-org/whisper.cpp -p "${{ needs.catalogue.outputs.whisper_win }}" -D brut
+          Expand-Archive "brut\${{ needs.catalogue.outputs.llama_win }}" brut\llama
+          Expand-Archive "brut\${{ needs.catalogue.outputs.whisper_win }}" brut\whisper
+          foreach ($m in @(@("llama", "llama-server.exe"), @("whisper", "whisper-cli.exe"))) {
+            $exe = Get-ChildItem "brut\$($m[0])" -Recurse -Filter $m[1] | Select-Object -First 1
+            if (-not $exe) { throw "$($m[1]) introuvable" }
+            New-Item -ItemType Directory -Force "pack\$($m[0])" | Out-Null
+            Copy-Item $exe.FullName "pack\$($m[0])\"
+            Copy-Item "$($exe.DirectoryName)\*.dll" "pack\$($m[0])\"
+            Get-ChildItem "brut\$($m[0])" -Recurse -Include LICENSE*, *.txt | Where-Object { $_.Name -match "LICENSE" } | Select-Object -First 1 | Copy-Item -Destination "pack\$($m[0])\LICENSE.txt"
+          }
+          & pack\llama\llama-server.exe --version
+          & pack\whisper\whisper-cli.exe --help | Select-Object -First 3
+          Compress-Archive pack\llama\* dist\philcut-llama-windows-x64.zip
+          Compress-Archive pack\whisper\* dist\philcut-whisper-windows-x64.zip
+          Get-ChildItem dist | Format-Table Name, Length
+      - name: Essai reel (vision, voix, detourage)
+        env:
+          PARTIEL: "1"
+          PHILCUT_IA_MANIFESTE: dist/moteurs-ia.json
+          PHILCUT_IA_ARCHIVES: dist
+          PHILCUT_IA_DOSSIER: essai_ia
+        run: |
+          pip install numpy opencv-python-headless onnxruntime
+          python outils_dev/moteurs_ia.py assembler dist
+          python outils_dev/essai_ia_locale.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moteurs-windows
+          path: dist/philcut-*-windows-x64.zip
+
+  linux:
+    needs: catalogue
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: catalogue
+          path: dist
+      - name: Outils de compilation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake build-essential espeak-ng ffmpeg
+      - name: Compiler llama.cpp et whisper.cpp
+        run: |
+          set -e
+          OPTS="-DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON -DGGML_OPENMP=OFF -DCMAKE_INSTALL_RPATH=\$ORIGIN -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON"
+          git clone --depth 1 --branch "${{ needs.catalogue.outputs.llama_tag }}" https://github.com/ggml-org/llama.cpp src-llama
+          cmake -S src-llama -B b-llama $OPTS -DLLAMA_CURL=OFF -DLLAMA_OPENSSL=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF
+          cmake --build b-llama -j"$(nproc)"
+          git clone --depth 1 --branch "${{ needs.catalogue.outputs.whisper_tag }}" https://github.com/ggml-org/whisper.cpp src-whisper
+          cmake -S src-whisper -B b-whisper $OPTS -DWHISPER_BUILD_TESTS=OFF -DWHISPER_SDL2=OFF -DWHISPER_CURL=OFF
+          cmake --build b-whisper -j"$(nproc)"
+          for m in llama:llama-server whisper:whisper-cli; do
+            n=${m%%:*}; exe=${m##*:}
+            mkdir -p pack/$n
+            cp "$(find b-$n -type f -name "$exe" | head -1)" pack/$n/
+            find b-$n -name "*.so*" \( -type f -o -type l \) -exec cp -P {} pack/$n/ \;
+            cp src-$n/LICENSE pack/$n/LICENSE.txt 2>/dev/null || true
+            echo "== $n"; ls -la pack/$n
+            echo "Dependances non trouvees :"; LD_LIBRARY_PATH=pack/$n ldd pack/$n/$exe | grep "not found" || echo "aucune"
+          done
+          LD_LIBRARY_PATH=pack/llama pack/llama/llama-server --version
+          LD_LIBRARY_PATH=pack/whisper pack/whisper/whisper-cli --help | head -3
+          tar czf dist/philcut-llama-linux-x64.tar.gz -C pack llama
+          tar czf dist/philcut-whisper-linux-x64.tar.gz -C pack whisper
+          ls -la dist
+      - name: Essai reel (vision, voix, detourage)
+        env:
+          PARTIEL: "1"
+          PHILCUT_IA_MANIFESTE: dist/moteurs-ia.json
+          PHILCUT_IA_ARCHIVES: dist
+          PHILCUT_IA_DOSSIER: essai_ia
+        run: |
+          pip install numpy opencv-python-headless onnxruntime
+          python outils_dev/moteurs_ia.py assembler dist
+          python outils_dev/essai_ia_locale.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: moteurs-linux
+          path: dist/philcut-*-linux-x64.tar.gz
+
+  publier:
+    needs: [catalogue, windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Catalogue moteurs-ia.json et publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python outils_dev/moteurs_ia.py assembler dist
+          if ! gh release view moteurs-ia >/dev/null 2>&1; then
+            gh release create moteurs-ia --prerelease --title "Moteurs IA locaux" \
+              --notes "Moteurs de l'IA locale portable de PhilCut (llama.cpp, whisper.cpp), téléchargés par PhilCut quand vous cochez un modèle dans Préférences › IA locale. Rien à télécharger ici à la main."
+          fi
+          gh release upload moteurs-ia dist/philcut-*.zip dist/philcut-*.tar.gz dist/moteurs-ia.json --clobber
+          echo "::notice title=Publie::llama.cpp ${{ needs.catalogue.outputs.llama_tag }}, whisper.cpp ${{ needs.catalogue.outputs.whisper_tag }}"

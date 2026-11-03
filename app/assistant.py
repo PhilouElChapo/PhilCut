@@ -1,6 +1,6 @@
 """L'assistant de montage : analyse en local, decide avec peu de mots, applique en local.
 
-Trois niveaux (Preferences > Assistant) : recettes sans IA (regles), IA locale (Ollama), IA cloud (Claude ou
+Trois niveaux (Preferences > Assistant) : recettes sans IA (regles), IA locale (portable, sur ce poste), IA cloud (Claude ou
 Gemini avec la clef). Dans tous les cas la sortie est la meme recette JSON (recettes.py), que le volet
 Proposition montre element par element avec une case a cocher et un bouton « autre idée ».
 """
@@ -75,11 +75,10 @@ def proposer(projet, params, fiches=None, indices="", format_=None, duree_cible=
     try:
         if niv == "locale":
             rapporter and rapporter(_("IA locale : envoi de la fiche au modèle…"))
-            etat = params.get("ia_locale") or {}
-            modele = etat.get("modele") or (ia_locale.ollama_present() or [""])[0]
+            modele = ia_locale.modele_actif(params)
             if not modele:
-                raise RuntimeError(_("Aucun modèle local : lancez le test dans Préférences › Assistant."))
-            r = ia_locale.generer(modele, texte, images, systeme=CONSIGNES, json_attendu=True)
+                raise RuntimeError(_("Aucun modèle local : cochez-en un dans Préférences › IA locale."))
+            r = ia_locale.generer(modele, texte, images, systeme=CONSIGNES, json_attendu=True, params=params)
             d = ia.lire_json(r)
             source = "locale:" + modele
         else:
@@ -219,7 +218,7 @@ def autre_idee(projet, params, recette, element, rapporter=None):
               "Réponds par la recette complète en JSON.\n\n{r}", e=element, r=json.dumps(recette, ensure_ascii=False)[:12000])
     try:
         if niv == "locale":
-            d = ia.lire_json(ia_locale.generer((params.get("ia_locale") or {}).get("modele", ""), texte, systeme=CONSIGNES, json_attendu=True))
+            d = ia.lire_json(ia_locale.generer(ia_locale.modele_actif(params), texte, systeme=CONSIGNES, json_attendu=True, params=params))
         else:
             d = ia.demander(params, CONSIGNES, texte, json_attendu=True, max_jetons=6000)
     except Exception as e:        # noqa: BLE001

@@ -21,8 +21,15 @@ Premiers pas
 IA
 --
 Rien n'est envoye sans votre clic. Preferences > Assistant et IA : niveau (sans IA,
-locale, cloud), clefs Claude / Gemini (rangees dans le coffre du systeme), test de
-l'IA locale, Veo (payant, prix affiche), dossier surveille pour Flow.
+locale, cloud), clefs Claude / Gemini (rangees dans le coffre du systeme), Veo
+(payant, prix affiche), dossier surveille pour Flow.
+
+IA locale (Preferences > IA locale) : 100 % portable. Les moteurs et les modeles
+(vision, voix, detourage) se telechargent en cochant une case, taille affichee, et
+se rangent dans le dossier de donnees de PhilCut. Rien ne s'installe sur le poste,
+rien ne demarre avec le systeme : le moteur se lance pendant une analyse puis
+s'arrete. Mode "poste leger" : moitie des coeurs, priorite basse. Decocher libere
+la place ; supprimer le dossier de PhilCut efface tout.
 
 Mises a jour
 ------------

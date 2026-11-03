@@ -1,5 +1,7 @@
 {
  "ffmpeg": "",
  "pyside6": "",
- "opencv": ""
+ "opencv": "",
+ "llama.cpp": "",
+ "whisper.cpp": ""
 }

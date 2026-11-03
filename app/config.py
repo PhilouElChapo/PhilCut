@@ -7,7 +7,7 @@ et rien n'est ecrit ailleurs sur le PC ni dans le registre.
 import json, os, platform, sys
 
 APP = "PhilCut"
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 
 
 def dossier_programme():
@@ -46,6 +46,8 @@ DEFAUTS = {
     "proxys": True,                 # copies legeres des rushes a l'import
     "export_destination": "youtube",
     "ia_locale": {},                # resultat du test materiel, par poste
+    "ia_poste_leger": True,         # IA locale : moitie des coeurs, priorite basse
+    "ia_locale_modeles": {},        # modele choisi par genre (vision, whisper, detourage), par poste
     "assistant_niveau": "recettes",  # recettes | locale | cloud
     "dossier_flow": "",             # dossier surveille pour les clips Flow
     "veo_actif": False,

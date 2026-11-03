@@ -1,4 +1,4 @@
-"""Préférences (jamais « Paramètres ») : Général, Apparence, Export, Assistant et IA, Effets et Goodies (packs à
+"""Préférences (jamais « Paramètres ») : Général, Apparence, Export, Assistant et IA, IA locale, Effets et Goodies (packs à
 cocher), Comptes, Synchronisation, Mises à jour. Reglages communs a tous les postes ou propres a celui-ci."""
 import os, subprocess, sys
 
@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QDialog, QTabWidget, QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QCheckBox,
                                QPushButton, QDialogButtonBox, QSpinBox, QFileDialog, QGroupBox, QPlainTextEdit, QMessageBox, QScrollArea)
 
-from . import effets as E, goodies as GO, ia_locale, moteur, theme
+from . import effets as E, goodies as GO, ia_locale, moteur, packs_ia, theme
 from .config import VERSION, est_portable, dossier_donnees
 from .langue import _, disponibles as langues_disponibles
 from .widgets import boutons_fr, oeil
@@ -26,6 +26,7 @@ class DialoguePreferences(QDialog):
         self._apparence()
         self._export()
         self._assistant()
+        self._ia_locale()
         self._packs()
         self._comptes()
         self._maj()
@@ -190,29 +191,103 @@ class DialoguePreferences(QDialog):
         h.addWidget(b)
         fg.addRow(_("Dossier surveillé (Flow)"), h)
         f.addRow(g)
-        g2 = QGroupBox(_("IA locale (ce poste)"))
-        fl = QFormLayout(g2)
+        f.addRow(QLabel(_("<span style='color:#999'>L'IA locale (modèles, test du poste, mode poste léger) se règle dans l'onglet « IA locale ».</span>")))
+
+    # ---------------------------------------------------------------- IA locale (portable)
+    def _ia_locale(self):
+        f = self._page(_("IA locale"))
+        intro = QLabel(_("Tout se range dans le dossier de PhilCut : rien ne s'installe sur le poste, rien ne démarre avec le système. "
+                         "Le moteur se lance seulement pendant une analyse, puis s'arrête. Rien ne quitte ce poste. "
+                         "Cocher télécharge (taille indiquée), décocher libère la place ; supprimer le dossier de PhilCut efface tout."))
+        intro.setWordWrap(True)
+        f.addRow(intro)
+        self.poste_leger = QCheckBox(_("Mode poste léger : moitié des cœurs, priorité basse (le poste reste utilisable, l'analyse est plus lente)"))
+        self.poste_leger.setChecked(self.params.get("ia_poste_leger", True))
+        f.addRow(self.poste_leger)
+        self.cases_ia = {}
+        try:
+            catalogue = packs_ia.modeles()
+            erreur = None
+        except packs_ia.ErreurIA as e:
+            catalogue, erreur = {}, e
+        if not catalogue:
+            f.addRow(QLabel(_("Catalogue des modèles injoignable pour l'instant (hors ligne ?). Revenez ici une fois connecté. {e}", e=erreur or "")))
         etat = self.params.get("ia_locale") or {}
-        self.lbl_locale = QLabel(etat.get("avis") or _("Pas encore testée. Lancez le test : PhilCut regarde le matériel, interroge Ollama et chronomètre."))
+        conseil = etat.get("conseil") or ia_locale.modele_conseille(etat.get("materiel") or {"memoire_go": ia_locale._memoire_go()})
+        for genre, titre in packs_ia.GENRES.items():
+            items = {k: m for k, m in catalogue.items() if m.get("genre") == genre}
+            if not items:
+                continue
+            g = QGroupBox(titre)
+            fg = QFormLayout(g)
+            for k, m in items.items():
+                deja = packs_ia.installe(k)
+                taille = packs_ia.taille_texte(m.get("taille", 0))
+                lib = f"{m['nom']}  —  {taille}"
+                if deja:
+                    lib += "  ✓ " + _("sur ce poste")
+                elif k == conseil:
+                    lib += "  ★ " + _("conseillé ici")
+                c = QCheckBox(lib)
+                c.setChecked(deja)
+                note = m.get("note") or ""
+                if m.get("memoire_go"):
+                    note += " " + _("Mémoire conseillée : {n} Go.", n=m["memoire_go"])
+                c.setToolTip((note + "\n" + _("Source : {s}", s=m.get("source", ""))).strip())
+                self.cases_ia[k] = c
+                fg.addRow(c)
+                if note:
+                    ln = QLabel(f"<span style='color:#999'>{note.strip()}</span>")
+                    ln.setWordWrap(True)
+                    fg.addRow(ln)
+            f.addRow(g)
+        h = QHBoxLayout()
+        self.lbl_place = QLabel(_("Place utilisée par l'IA locale : {t}", t=packs_ia.taille_texte(packs_ia.taille_dossier()) if packs_ia.installes() else "0"))
+        bo = QPushButton(_("Ouvrir le dossier"))
+        bo.clicked.connect(lambda: self._ouvrir(packs_ia.dossier()))
+        h.addWidget(self.lbl_place, 1)
+        h.addWidget(bo)
+        f.addRow(h)
+        g2 = QGroupBox(_("Test de ce poste"))
+        fl = QFormLayout(g2)
+        self.lbl_locale = QLabel(etat.get("avis") or _("Pas encore testé. Le test regarde le matériel, démarre le moteur, chronomètre une petite question, puis l'arrête."))
         self.lbl_locale.setWordWrap(True)
         fl.addRow(self.lbl_locale)
         mat = etat.get("materiel")
         if mat:
             fl.addRow(QLabel(_("<span style='color:#999'>{s} · {p} ({c} cœurs) · {m} Go · {g}{v}</span>", s=mat.get("systeme"), p=mat.get("processeur", "")[:40], c=mat.get("coeurs"),
                                m=mat.get("memoire_go"), g=mat.get("gpu") or _("carte inconnue"), v=f" {mat.get('vram_go')} Go" if mat.get("vram_go") else "")))
-        b = QPushButton(_("Tester l'IA locale maintenant"))
-        b.clicked.connect(self._tester_locale)
-        fl.addRow(b)
+        self.b_test = QPushButton(_("Tester l'IA locale maintenant"))
+        self.b_test.clicked.connect(self._tester_locale)
+        fl.addRow(self.b_test)
         f.addRow(g2)
 
+    def _ouvrir(self, chemin):
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        QDesktopServices.openUrl(QUrl.fromLocalFile(chemin))
+
     def _tester_locale(self):
-        self.lbl_locale.setText(_("Test en cours (jusqu'à quelques minutes)…"))
-        from PySide6.QtWidgets import QApplication
-        QApplication.processEvents()
-        res = ia_locale.tester(self.params)
-        self.params["ia_locale"] = res
-        self.params.enregistrer()
-        self.lbl_locale.setText(res.get("avis", ""))
+        from .taches import Tache
+        self.params["ia_poste_leger"] = self.poste_leger.isChecked()
+        self.lbl_locale.setText(_("Test en cours : démarrage du moteur et chargement du modèle (jusqu'à quelques minutes)…"))
+        self.b_test.setEnabled(False)
+        t = Tache(lambda tache: ia_locale.tester(self.params), _("Test IA locale"))
+        self._tache_test = t
+        if hasattr(self.fenetre, "taches"):
+            self.fenetre.taches.append(t)
+
+        def fin(res, err):
+            if not err:
+                self.params["ia_locale"] = res
+                self.params.enregistrer()
+            try:                    # la fenêtre des préférences a pu être fermée entre-temps
+                self.b_test.setEnabled(True)
+                self.lbl_locale.setText(_("Test interrompu : {e}", e=err) if err else res.get("avis", ""))
+            except RuntimeError:
+                pass
+        t.fini.connect(fin)
+        t.start()
 
     # ---------------------------------------------------------------- Effets et Goodies (packs)
     def _packs(self):
@@ -222,6 +297,10 @@ class DialoguePreferences(QDialog):
         self.cases_packs = {}
         coches = set(self.params.get("effets_coches") or [])
         for k, p in E.PACKS.items():
+            if p.get("ia"):
+                pret = packs_ia.modele_actif(p["ia"]) is not None
+                f.addRow(QLabel(f"{p['nom']}  —  " + (_("✓ sur ce poste") if pret else _("se règle dans l'onglet « IA locale »"))))
+                continue
             c = QCheckBox(f"{p['nom']}  —  {p.get('taille', '')}")
             c.setToolTip(p.get("description", ""))
             c.setChecked(k in coches)
@@ -348,7 +427,24 @@ class DialoguePreferences(QDialog):
                 self.panneau_comptes.appliquer()
             except Exception:
                 pass
+        p["ia_poste_leger"] = self.poste_leger.isChecked()
+        a_installer = [k for k, c in self.cases_ia.items() if c.isChecked() and not packs_ia.installe(k)]
+        a_retirer = [k for k, c in self.cases_ia.items() if not c.isChecked() and packs_ia.installe(k)]
+        if a_installer or a_retirer:
+            lignes = []
+            if a_installer:
+                total = sum(packs_ia.a_telecharger(k) for k in a_installer)
+                lignes.append(_("Télécharger dans le dossier de PhilCut : {l} ({t} en tout).", l=", ".join(packs_ia.modeles()[k]["nom"] for k in a_installer),
+                                t=packs_ia.taille_texte(total)))
+            if a_retirer:
+                lignes.append(_("Retirer de ce poste : {l}.", l=", ".join((packs_ia.etat().get(k) or {}).get("nom", k) for k in a_retirer)))
+            if QMessageBox.question(self, _("IA locale"), "\n\n".join(lignes) + "\n\n" + _("Continuer ?")) != QMessageBox.Yes:
+                return
+            for k in a_retirer:
+                packs_ia.supprimer(k)
         p.enregistrer()
         for k in apres - avant:
             self.fenetre.telecharger_pack(k)
+        if a_installer:
+            self.fenetre.installer_ia(a_installer)
         self.accept()

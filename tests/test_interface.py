@@ -93,6 +93,49 @@ class TestInterface(unittest.TestCase):
         self.assertEqual(len(ed2.projet.clips), 2)
         self.assertIn(chemin, self.f.params["recents"])
 
+    def test_05_preferences_ia_locale(self):
+        """Onglet IA locale : cocher un modèle le télécharge dans le dossier de PhilCut, décocher le retire."""
+        import hashlib, json
+        from unittest import mock
+        from PySide6.QtWidgets import QMessageBox
+        from app import packs_ia
+        from app.preferences import DialoguePreferences
+        if not packs_ia.onnx_present():
+            self.skipTest("onnxruntime absent")
+        contenu = b"modele-detourage" * 64
+        src = os.path.join(self.d, "u2netp.onnx")
+        open(src, "wb").write(contenu)
+        man = {"format": 1, "moteurs": {}, "modeles": {"detourage_leger": {
+            "genre": "detourage", "nom": "Détourage léger", "taille": len(contenu), "essai": False,
+            "fichiers": [{"nom": "u2netp.onnx", "role": "modele", "url": "file://" + src, "taille": len(contenu), "sha256": hashlib.sha256(contenu).hexdigest()}]}}}
+        chemin = os.path.join(self.d, "moteurs-ia.json")
+        json.dump(man, open(chemin, "w"))
+        os.environ["PHILCUT_IA_MANIFESTE"] = chemin
+        os.environ["PHILCUT_IA_DOSSIER"] = os.path.join(self.d, "ia")
+        packs_ia._manifeste = None
+        try:
+            d = DialoguePreferences(self.f, self.f.params, "IA locale")
+            self.assertIn("detourage_leger", d.cases_ia)
+            self.assertIn("IA locale", d.onglets.tabText(d.onglets.currentIndex()))
+            d.cases_ia["detourage_leger"].setChecked(True)
+            with mock.patch.object(QMessageBox, "question", return_value=QMessageBox.Yes):
+                d.valider()
+            self.f.attendre_taches()
+            app.processEvents()
+            self.assertTrue(packs_ia.installe("detourage_leger"))
+            self.assertEqual(self.f.params["ia_locale_modeles"]["detourage"], "detourage_leger")
+            from app import effets as E
+            self.assertTrue(E.pack_pret("segmentation", self.f.params))
+            d = DialoguePreferences(self.f, self.f.params, "IA locale")
+            d.cases_ia["detourage_leger"].setChecked(False)
+            with mock.patch.object(QMessageBox, "question", return_value=QMessageBox.Yes):
+                d.valider()
+            self.assertFalse(packs_ia.installe("detourage_leger"))
+        finally:
+            os.environ.pop("PHILCUT_IA_MANIFESTE", None)
+            os.environ.pop("PHILCUT_IA_DOSSIER", None)
+            packs_ia._manifeste = None
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

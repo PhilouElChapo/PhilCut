@@ -183,7 +183,7 @@ class VoletProposition(QWidget):
         self.duree.setSuffix(" s")
         f.addRow(_("Durée cible"), self.duree)
         self.niveau = QComboBox()
-        for k, lib in (("recettes", _("Recettes sans IA (gratuit)")), ("locale", _("IA locale (Ollama)")), ("cloud", _("IA cloud (Claude / Gemini)"))):
+        for k, lib in (("recettes", _("Recettes sans IA (gratuit)")), ("locale", _("IA locale (sur ce poste)")), ("cloud", _("IA cloud (Claude / Gemini)"))):
             self.niveau.addItem(lib, k)
             if k == (params.get("assistant_niveau") or "recettes"):
                 self.niveau.setCurrentIndex(self.niveau.count() - 1)

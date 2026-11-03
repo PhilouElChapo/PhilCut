@@ -139,7 +139,7 @@ class DialogueEffets(QDialog):
             for k in E.par_famille().get(fam, []):
                 fi = E.fiche(k)
                 lib = "   " + fi["nom"]
-                if fi["pack"] and fi["pack"] not in coches:
+                if fi["pack"] and not E.pack_pret(fi["pack"], params):
                     lib += _("  (pack « {p} » à télécharger)", p=E.PACKS.get(fi["pack"], {}).get("nom", fi["pack"]))
                 it = QListWidgetItem(lib)
                 it.setData(Qt.UserRole, k)
@@ -197,9 +197,10 @@ class DialogueEffets(QDialog):
         if not k:
             return
         fi = E.fiche(k)
-        if fi["pack"] and fi["pack"] not in set(self.params.get("effets_coches") or []):
-            QMessageBox.information(self, _("Pack à télécharger"), _("Cet effet a besoin du pack « {p} ». Cochez-le dans Edition › Préférences › Effets ; "
-                                                                      "il se télécharge alors sur ce poste.", p=E.PACKS.get(fi["pack"], {}).get("nom", fi["pack"])))
+        if fi["pack"] and not E.pack_pret(fi["pack"], self.params):
+            ou = _("Edition › Préférences › IA locale") if (E.PACKS.get(fi["pack"]) or {}).get("ia") else _("Edition › Préférences › Effets")
+            QMessageBox.information(self, _("Pack à télécharger"), _("Cet effet a besoin du pack « {p} ». Cochez-le dans {o} ; "
+                                                                      "il se télécharge alors dans le dossier de PhilCut.", p=E.PACKS.get(fi["pack"], {}).get("nom", fi["pack"]), o=ou))
             return
         if fi["famille"] == "transition":
             self.transition = {"id": k, "params": dict(E.defauts(k))}

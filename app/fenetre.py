@@ -708,9 +708,38 @@ class Fenetre(QMainWindow):
             subprocess.Popen([sys.executable, os.path.abspath(sys.argv[0])])
         QApplication.quit()
 
+    def installer_ia(self, cles):
+        """Télécharge des modèles d'IA locale (et leur moteur) dans le dossier de PhilCut, en tâche de fond."""
+        from . import packs_ia
+        ed = self.editeur_courant()
+
+        def travail(tache):
+            for i, k in enumerate(cles):
+                packs_ia.installer(k, lambda f, t="", i=i: tache.avancer((i + f) / len(cles), t), arret=lambda: tache.arret)
+                genre = (packs_ia.modeles(avec_essai=True).get(k) or {}).get("genre")
+                if genre:
+                    choix = dict(self.params.get("ia_locale_modeles") or {})
+                    choix[genre] = k
+                    self.params["ia_locale_modeles"] = choix
+            return True
+        t = Tache(travail, _("IA locale"))
+        self.taches.append(t)
+        texte = _("Téléchargement de l'IA locale dans le dossier de PhilCut")
+        if ed:
+            ed.encart.suivre(t, texte)
+        else:
+            t.fini.connect(lambda r, e: QMessageBox.information(self, _("IA locale"), _("✕ {t} : {e}", t=texte, e=e) if e else _("✓ {t}", t=texte)))
+        t.fini.connect(lambda r, e: self.params.enregistrer())
+        t.start()
+
     def telecharger_pack(self, cle):
         from . import effets as E
         p = E.PACKS.get(cle)
+        if p and p.get("ia"):
+            from . import packs_ia
+            if not packs_ia.modele_actif(p["ia"]):
+                self.installer_ia([packs_ia.DEFAUT[p["ia"]]])
+            return
         if not p or not p.get("pip"):
             return
         if getattr(sys, "frozen", False):

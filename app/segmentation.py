@@ -1,7 +1,8 @@
 """Detourage de personne, sur ce poste.
 
-Avec le pack « segmentation » (rembg + onnxruntime, coche dans Preferences > Effets) : vrai masque de la personne.
-Sans le pack : masque approche a partir des visages (OpenCV), suffisant pour un halo ou un feu d'artifice derriere.
+Avec un modele de detourage coche dans Preferences > IA locale (U2-Net, execute par onnxruntime embarque dans
+PhilCut, range dans son dossier) : vrai masque de la personne. A defaut, rembg s'il est installe (lancement depuis
+les sources). Sans rien : masque approche a partir des visages (OpenCV), suffisant pour un halo ou un feu d'artifice.
 """
 import os
 
@@ -15,12 +16,21 @@ except ImportError:
 _session = None
 
 
-def pack_present():
+def _portable():
+    from . import packs_ia
+    return packs_ia.modele_actif("detourage") is not None and packs_ia.onnx_present()
+
+
+def _rembg_present():
     try:
         import rembg, onnxruntime     # noqa: F401
         return True
     except ImportError:
         return False
+
+
+def pack_present():
+    return _portable() or _rembg_present()
 
 
 def _rembg():
@@ -38,7 +48,12 @@ def _cascade():
 def masque_image(img_bgr):
     """Masque 0..255 (H x L) de la ou des personnes."""
     H, L = img_bgr.shape[:2]
-    if pack_present():
+    if _portable():
+        from . import packs_ia
+        m = packs_ia.masque_personne(img_bgr)
+        if m is not None:
+            return m
+    if _rembg_present():
         from rembg import remove
         rgba = remove(cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB), session=_rembg(), only_mask=True)
         m = np.asarray(rgba)

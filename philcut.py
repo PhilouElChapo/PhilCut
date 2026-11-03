@@ -52,6 +52,12 @@ def verifier(sortie):
         lignes.append("multimedia: ok")
     except ImportError as e:
         lignes.append(f"multimedia: absent ({e}) : apercu par images")
+    try:   # detourage portable : onnxruntime embarque dans PhilCut
+        import onnxruntime as ort
+        lignes.append(f"ia locale: onnxruntime {ort.__version__} ({', '.join(ort.get_available_providers())})")
+    except Exception as e:
+        lignes.append(f"ia locale: onnxruntime ERREUR {e}")
+        ok = False
     lignes.append("RESULTAT: " + ("OK" if ok else "ECHEC"))
     with open(sortie, "w", encoding="utf-8") as f:
         f.write("\n".join(lignes) + "\n")

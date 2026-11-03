@@ -93,17 +93,26 @@ CATALOGUE = {
 
 # Packs a telecharger (cases a cocher dans Preferences > Effets) : nom, description, taille indicative, comment l'obtenir
 PACKS = {
-    "segmentation": {"nom": _("Détourage de personne (IA locale)"), "taille": "≈ 180 Mo",
+    "segmentation": {"nom": _("Détourage de personne (IA locale)"), "taille": "≈ 5 à 170 Mo",
                      "description": _("Modèle qui sépare la personne du fond, sur ce poste, sans envoi. Nécessaire aux effets « sur une personne »."),
-                     "pip": ["rembg", "onnxruntime"]},
-    "whisper": {"nom": _("Sous-titres automatiques (Whisper local)"), "taille": "≈ 150 Mo à 1,5 Go selon le modèle",
-                "description": _("Transcrit la voix sur ce poste pour les sous-titres et l'assistant."), "pip": ["faster-whisper"]},
+                     "ia": "detourage"},
+    "whisper": {"nom": _("Sous-titres automatiques (Whisper local)"), "taille": "≈ 150 Mo à 600 Mo selon le modèle",
+                "description": _("Transcrit la voix sur ce poste pour les sous-titres et l'assistant."), "ia": "whisper"},
     "suivi": {"nom": _("Suivi d'objet avancé"), "taille": "≈ 60 Mo", "description": _("Suivi plus robuste (CSRT) pour les étiquettes accrochées."),
               "pip": ["opencv-contrib-python-headless"]},
 }
 
 GENERES = {"feu_artifice", "eclairs", "fuite_lumiere", "t_puzzle", "t_explosion", "t_glitch", "t_balayage", "t_code",
            "pluie_code", "halo", "feu_artifice_derriere", "code_personne", "detourage"}
+
+
+def pack_pret(cle, params=None):
+    """Le pack demandé par un effet est-il prêt sur ce poste ?"""
+    p = PACKS.get(cle) or {}
+    if p.get("ia"):
+        from . import packs_ia
+        return packs_ia.modele_actif(p["ia"], params) is not None
+    return cle in set((params or {}).get("effets_coches") or [])
 
 
 def fiche(ident):
