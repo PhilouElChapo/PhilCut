@@ -1,0 +1,427 @@
+"""L'apercu : lecture de la timeline en temps reel, avec les titres et les Goodies dessines par-dessus.
+
+La lecture utilise le lecteur multimedia de Qt sur les proxys (copies legeres H.264), plan apres plan, a la
+vitesse du plan. Les effets lourds (glow, puzzle, Matrix...) ne sont pas calcules en direct : un bouton
+« Aperçu rendu » exporte en petit le passage choisi pour le juger ; l'export final, lui, est fidele.
+"""
+from PySide6.QtCore import Qt, QTimer, QUrl, QRectF, QPointF, Signal, QSizeF
+from PySide6.QtGui import QColor, QFont, QPainter, QPen, QBrush, QPixmap, QImage
+from PySide6.QtWidgets import QGraphicsView, QGraphicsScene, QGraphicsRectItem, QGraphicsSimpleTextItem, QGraphicsPixmapItem, QWidget, QVBoxLayout, QFrame
+
+from . import goodies as GO
+from .langue import _
+from .projet import fin_clip, duree_clip
+
+import os as _os
+try:
+    if _os.environ.get("PHILCUT_SANS_MULTIMEDIA"):
+        raise ImportError()
+    from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
+    from PySide6.QtMultimediaWidgets import QGraphicsVideoItem
+    MULTIMEDIA = True
+except ImportError:                                     # sans module multimedia : apercu par images fixes
+    MULTIMEDIA = False
+
+
+class Apercu(QGraphicsView):
+    position_changee = Signal(float)
+    etat_lecture = Signal(bool)
+
+    def __init__(self, projet=None, params=None, parent=None):
+        super().__init__(parent)
+        self.projet = projet
+        self.params = params or {}
+        self._scene = QGraphicsScene(self)
+        self.setScene(self._scene)
+        self.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform | QPainter.TextAntialiasing)
+        self.setBackgroundBrush(QColor("#000"))
+        self.setFrameShape(QFrame.NoFrame)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.cadre = QGraphicsRectItem(0, 0, 1920, 1080)
+        self.cadre.setBrush(QColor("#111"))
+        self.cadre.setPen(Qt.NoPen)
+        self._scene.addItem(self.cadre)
+        self.image_fixe = QGraphicsPixmapItem()
+        self._scene.addItem(self.image_fixe)
+        self.video = None
+        self.lecteur = self.son = None
+        self.lecteur_audio = self.son_audio = None
+        if MULTIMEDIA and not self.params.get("apercu_images") and not _os.environ.get("PHILCUT_APERCU_IMAGES"):
+            self.video = QGraphicsVideoItem()
+            self._scene.addItem(self.video)
+            self.lecteur = QMediaPlayer(self)
+            self.son = QAudioOutput(self)
+            self.lecteur.setAudioOutput(self.son)
+            self.lecteur.setVideoOutput(self.video)
+            self.lecteur_audio = QMediaPlayer(self)
+            self.son_audio = QAudioOutput(self)
+            self.lecteur_audio.setAudioOutput(self.son_audio)
+            self.lecteur.errorOccurred.connect(self._erreur)
+        self.calques = []                   # items des titres / goodies
+        self.t = 0.0
+        self.clip = None                    # clip video en cours
+        self.clip_audio = None
+        self.en_lecture = False
+        self.boucle = False
+        self._source = None
+        self._source_audio = None
+        self.sans_video = self.lecteur is None            # apercu par images FFmpeg (secours ou choix dans les Preferences)
+        self._cache_images = {}
+        self._derniere_image = None
+        self.horloge = QTimer(self)
+        self.horloge.setInterval(33)
+        self.horloge.timeout.connect(self._tic)
+        self._t_depart = None
+        self.changer_projet(projet)
+
+    # ---------------------------------------------------------------- projet et format
+    def changer_projet(self, projet):
+        self.projet = projet
+        self.arreter()
+        L, H = projet.taille if projet else (1920, 1080)
+        self.cadre.setRect(0, 0, L, H)
+        if self.video:
+            self.video.setSize(QSizeF(L, H))
+            self.video.setPos(0, 0)
+        self._scene.setSceneRect(0, 0, L, H)
+        self._source = None
+        self.clip = None
+        self.aller_a(0.0)
+        self.ajuster()
+
+    def ajuster(self):
+        self.fitInView(self._scene.sceneRect(), Qt.KeepAspectRatio)
+
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        self.ajuster()
+
+    # ---------------------------------------------------------------- navigation
+    def aller_a(self, t, forcer=False):
+        self.t = max(0.0, float(t))
+        self._placer_video(forcer)
+        self._placer_audio()
+        self._dessiner_calques()
+        self.position_changee.emit(self.t)
+
+    def _url(self, m):
+        chemin = m.get("proxy") or m["chemin"]
+        return QUrl.fromLocalFile(chemin)
+
+    def _placer_video(self, forcer=False):
+        if not self.projet:
+            return
+        c = self.projet.clip_a(self.t, "video")
+        if c is None:
+            self.clip = None
+            if self.lecteur:
+                self.lecteur.pause()
+                if self.video:
+                    self.video.setVisible(False)
+            self.image_fixe.setVisible(False)
+            return
+        m = self.projet.media(c["media"])
+        if m is None:
+            return
+        if m.get("genre") == "image":
+            if self.video:
+                self.video.setVisible(False)
+                self.lecteur.pause()
+            self._montrer_image(m)
+            self.clip = c
+            return
+        if self.sans_video or not self.lecteur:
+            self.clip = c
+            if self.lecteur:
+                self.lecteur.pause()
+            self._image_ffmpeg(c, m)
+            return
+        self.image_fixe.setVisible(False)
+        self.video.setVisible(True)
+        src = self._url(m)
+        pos_ms = int((c["src_debut"] + (self.t - c["debut"]) * c.get("vitesse", 1.0)) * 1000)
+        if self.clip is None or c["id"] != self.clip["id"] or src != self._source or forcer:
+            if src != self._source:
+                self.lecteur.setSource(src)
+                self._source = src
+            self.clip = c
+            self.lecteur.setPlaybackRate(float(c.get("vitesse", 1.0)))
+            self.son.setVolume(0.0 if c.get("muet") else float(c.get("volume", 1.0)))
+            self._cadrer(c, m)
+        if abs(self.lecteur.position() - pos_ms) > 80 or not self.en_lecture:
+            self.lecteur.setPosition(pos_ms)
+        if self.en_lecture and self.lecteur.playbackState() != QMediaPlayer.PlayingState:
+            self.lecteur.play()
+        elif not self.en_lecture:
+            self.lecteur.pause()
+
+    def _montrer_image(self, m):
+        px = QPixmap(m["chemin"])
+        if px.isNull():
+            return
+        L, H = self.projet.taille
+        px = px.scaled(L, H, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+        self.image_fixe.setPixmap(px)
+        self.image_fixe.setPos((L - px.width()) / 2, (H - px.height()) / 2)
+        self.image_fixe.setVisible(True)
+
+    def _cadrer(self, c, m):
+        """Meme regle que l'export : remplir (recadre), ou contenir (bandes)."""
+        if not self.video:
+            return
+        L, H = self.projet.taille
+        v = (m.get("fiche") or {}).get("video") or {}
+        lw, lh = v.get("largeur") or L, v.get("hauteur") or H
+        mode = c.get("ajustement", "remplir")
+        r_src, r_dst = lw / lh, L / H
+        if mode == "remplir":
+            if r_src > r_dst:
+                h = H
+                w = H * r_src
+            else:
+                w = L
+                h = L / r_src
+        else:
+            if r_src > r_dst:
+                w = L
+                h = L / r_src
+            else:
+                h = H
+                w = H * r_src
+        self.video.setAspectRatioMode(Qt.IgnoreAspectRatio)
+        self.video.setSize(QSizeF(w, h))
+        self.video.setPos((L - w) / 2, (H - h) / 2)
+
+    def _placer_audio(self):
+        if not self.projet or not self.lecteur_audio:
+            return
+        c = self.projet.clip_a(self.t, "audio")
+        if c is None:
+            self.clip_audio = None
+            self.lecteur_audio.pause()
+            return
+        m = self.projet.media(c["media"])
+        src = QUrl.fromLocalFile(m["chemin"])
+        pos_ms = int((c["src_debut"] + (self.t - c["debut"]) * c.get("vitesse", 1.0)) * 1000)
+        if self.clip_audio is None or c["id"] != self.clip_audio["id"] or src != self._source_audio:
+            if src != self._source_audio:
+                self.lecteur_audio.setSource(src)
+                self._source_audio = src
+            self.clip_audio = c
+            self.lecteur_audio.setPlaybackRate(float(c.get("vitesse", 1.0)))
+        self.son_audio.setVolume(0.0 if c.get("muet") else float(c.get("volume", 1.0)) * 0.8)
+        if abs(self.lecteur_audio.position() - pos_ms) > 120 or not self.en_lecture:
+            self.lecteur_audio.setPosition(pos_ms)
+        if self.en_lecture:
+            if self.lecteur_audio.playbackState() != QMediaPlayer.PlayingState:
+                self.lecteur_audio.play()
+        else:
+            self.lecteur_audio.pause()
+
+    # ---------------------------------------------------------------- lecture
+    def lire(self):
+        if not self.projet or self.projet.duree() <= 0:
+            return
+        if self.t >= self.projet.duree() - 0.02:
+            self.t = 0.0
+        self.en_lecture = True
+        import time
+        self._t_depart = (time.monotonic(), self.t)
+        self._placer_video(forcer=True)
+        self._placer_audio()
+        self.horloge.start()
+        self.etat_lecture.emit(True)
+
+    def pause(self):
+        self.en_lecture = False
+        self.horloge.stop()
+        if self.lecteur:
+            self.lecteur.pause()
+        if self.lecteur_audio:
+            self.lecteur_audio.pause()
+        self.etat_lecture.emit(False)
+
+    def arreter(self):
+        self.pause()
+
+    def basculer(self):
+        if self.en_lecture:
+            self.pause()
+        else:
+            self.lire()
+
+    def _tic(self):
+        import time
+        if not self.projet:
+            return
+        if self.clip and self.lecteur and not self.sans_video and self.lecteur.playbackState() == QMediaPlayer.PlayingState and self.projet.media(self.clip["media"]).get("genre") != "image":
+            pos = self.lecteur.position() / 1000.0
+            t = self.clip["debut"] + (pos - self.clip["src_debut"]) / self.clip.get("vitesse", 1.0)
+            # le lecteur peut trainer au demarrage : on garde l'horloge comme garde-fou
+            t_h = self._t_depart[1] + (time.monotonic() - self._t_depart[0])
+            if abs(t - t_h) > 0.6:
+                t = t_h
+        else:
+            t = self._t_depart[1] + (time.monotonic() - self._t_depart[0])
+        if self.clip and t >= fin_clip(self.clip) - 0.02:
+            t = fin_clip(self.clip)
+        self.t = t
+        if self.t >= self.projet.duree() - 0.01:
+            if self.boucle:
+                self.t = 0.0
+                self._t_depart = (time.monotonic(), 0.0)
+            else:
+                self.t = self.projet.duree()
+                self.pause()
+                self._dessiner_calques()
+                self.position_changee.emit(self.t)
+                return
+        c = self.projet.clip_a(self.t, "video")
+        if (c is None) != (self.clip is None) or (c and self.clip and c["id"] != self.clip["id"]):
+            self._t_depart = (time.monotonic(), self.t)
+            self._placer_video(forcer=True)
+        elif self.sans_video and c is not None:
+            self._compte = getattr(self, "_compte", 0) + 1
+            if self._compte % 6 == 0:
+                m = self.projet.media(c["media"])
+                if m and m.get("genre") != "image":
+                    self._image_ffmpeg(c, m)
+        ca = self.projet.clip_a(self.t, "audio")
+        if (ca is None) != (self.clip_audio is None) or (ca and self.clip_audio and ca["id"] != self.clip_audio["id"]):
+            self._placer_audio()
+        self._dessiner_calques()
+        self.position_changee.emit(self.t)
+
+    def _erreur(self, err, texte=""):
+        """Le lecteur multimedia n'y arrive pas (codec, carte, pilote) : on passe a l'apercu par images, sans rien casser."""
+        if not self.sans_video:
+            self.sans_video = True
+            if self.video:
+                self.video.setVisible(False)
+            self._placer_video(forcer=True)
+
+    def _image_ffmpeg(self, c, m):
+        """Image du plan a l'instant courant, rendue par FFmpeg (proxy de preference), avec un petit cache."""
+        from . import moteur
+        t_src = c["src_debut"] + (self.t - c["debut"]) * c.get("vitesse", 1.0)
+        cle = (m["id"], round(t_src, 1), c.get("ajustement"))
+        if cle in self._cache_images:
+            px = self._cache_images[cle]
+        else:
+            try:
+                png = moteur.image(m.get("proxy") or m["chemin"], t_src, 960)
+                px = QPixmap()
+                px.loadFromData(png)
+            except Exception:
+                px = QPixmap()
+            if len(self._cache_images) > 60:
+                self._cache_images.pop(next(iter(self._cache_images)))
+            self._cache_images[cle] = px
+        if px.isNull():
+            return
+        L, H = self.projet.taille
+        mode = c.get("ajustement", "remplir")
+        px2 = px.scaled(L, H, Qt.KeepAspectRatioByExpanding if mode == "remplir" else Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        self.image_fixe.setPixmap(px2)
+        self.image_fixe.setPos((L - px2.width()) / 2, (H - px2.height()) / 2)
+        self.image_fixe.setVisible(True)
+
+    # ---------------------------------------------------------------- calques : titres et goodies
+    def _dessiner_calques(self):
+        for it in self.calques:
+            self._scene.removeItem(it)
+        self.calques = []
+        if not self.projet:
+            return
+        L, H = self.projet.taille
+        for t in self.projet.titres:
+            if t["debut"] <= self.t <= t["fin"]:
+                self._titre(t, L, H)
+        for g in self.projet.goodies:
+            if g["debut"] <= self.t <= g["fin"]:
+                self._goodie(g, L, H)
+
+    def _titre(self, t, L, H):
+        taille = H * 0.055 * float(t.get("taille") or 1.0)
+        f = QFont(t.get("police") or "Nunito")
+        f.setPixelSize(int(taille))
+        f.setBold(True)
+        it = QGraphicsSimpleTextItem(t.get("texte", ""))
+        it.setFont(f)
+        it.setBrush(QColor(t.get("couleur") or "#ffffff"))
+        it.setPen(QPen(QColor(0, 0, 0, 160), max(1.0, taille / 18)))
+        x, y = float(t.get("x", 0.5)) * L, float(t.get("y", 0.85)) * H
+        if t.get("suivi") and t["suivi"].get("positions"):
+            pos = t["suivi"]["positions"]
+            p = min(pos, key=lambda z: abs(z[0] - self.t))
+            x, y = float(p[1]) * L, float(p[2]) * H - taille * 1.4
+        r = it.boundingRect()
+        if t.get("style") == "etiquette":
+            fond = QGraphicsRectItem(r.adjusted(-10, -5, 10, 5))
+            fond.setBrush(QColor(0, 0, 0, 160))
+            fond.setPen(Qt.NoPen)
+            fond.setPos(x - r.width() / 2, y - r.height() / 2)
+            fond.setZValue(5)
+            self._scene.addItem(fond)
+            self.calques.append(fond)
+        anim = t.get("animation") or "fondu"
+        age = self.t - t["debut"]
+        if anim == "machine":
+            n = len(t.get("texte", ""))
+            k = min(n, int(age / max(0.02, min(0.09, (t["fin"] - t["debut"]) * 0.5 / max(1, n)))))
+            it.setText(t.get("texte", "")[:k])
+        elif anim == "cinetique":
+            mots = t.get("texte", "").split()
+            pas = (t["fin"] - t["debut"]) / (len(mots) + 1) if mots else 1
+            i = min(len(mots) - 1, int(age / pas)) if mots else 0
+            it.setText(mots[i] if mots else "")
+            r = it.boundingRect()
+        elif anim == "feu":
+            it.setBrush(QColor("#ffa700"))
+            it.setPen(QPen(QColor("#ff2800"), max(1.0, taille / 14)))
+        elif anim == "neon":
+            it.setPen(QPen(QColor(t.get("couleur") or "#ffffff"), max(1.0, taille / 10)))
+        it.setPos(x - r.width() / 2, y - r.height() / 2)
+        it.setZValue(6)
+        if anim in ("fondu", "zoom", "glisse") and age < 0.3:
+            it.setOpacity(max(0.0, age / 0.3))
+        self._scene.addItem(it)
+        self.calques.append(it)
+
+    def _goodie(self, g, L, H):
+        taille = max(48, int(H * float(g.get("taille", 0.22))))
+        nom = GO.GENRES.get(g["genre"], (g["genre"], "", (0, 0)))
+        v = GO.valeur(g, self.t)
+        x = float(g.get("x", 0.88)) * L - taille / 2
+        y = float(g.get("y", 0.85)) * H - taille / 2
+        cadre = QGraphicsRectItem(0, 0, taille, taille)
+        cadre.setBrush(QColor(10, 10, 14, 170))
+        cadre.setPen(QPen(QColor(255, 255, 255, 140), 2))
+        cadre.setPos(x, y)
+        cadre.setZValue(5)
+        self._scene.addItem(cadre)
+        texte = QGraphicsSimpleTextItem(f"{nom[0]}\n{v:,.0f} {nom[1]}".replace(",", " ") if nom[1] else nom[0])
+        f = QFont("Nunito")
+        f.setPixelSize(max(10, taille // 8))
+        f.setBold(True)
+        texte.setFont(f)
+        texte.setBrush(QColor("#ffffff"))
+        r = texte.boundingRect()
+        texte.setPos(x + (taille - r.width()) / 2, y + (taille - r.height()) / 2)
+        texte.setZValue(6)
+        self._scene.addItem(texte)
+        self.calques += [cadre, texte]
+
+    # ---------------------------------------------------------------- image fixe a l'instant (sans multimedia ou pour la miniature)
+    def image_courante(self, largeur=640):
+        """PNG de l'image a l'instant courant, rendu par FFmpeg (miniature, fiche, IA)."""
+        from . import moteur
+        c = self.projet.clip_a(self.t, "video") if self.projet else None
+        if not c:
+            return None
+        m = self.projet.media(c["media"])
+        if m.get("genre") == "image":
+            with open(m["chemin"], "rb") as f:
+                return f.read()
+        return moteur.image(m.get("proxy") or m["chemin"], c["src_debut"] + (self.t - c["debut"]) * c.get("vitesse", 1.0), largeur)

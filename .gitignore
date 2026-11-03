@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+build/
+dist/
+Output/
+*.spec
+bin/*.exe
+bin/*.txt
+ffzip/
+ffmpeg.zip
+donnees/
+verif.txt
+app/identifiants.py
+.flatpak-builder/

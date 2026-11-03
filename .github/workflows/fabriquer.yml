@@ -1,0 +1,186 @@
+# Fabrication automatique de PhilCut dans le cloud GitHub (rien a installer sur le PC).
+# A chaque envoi sur main : tests sous Linux, puis Windows (portable + Setup, FFmpeg embarque) et archive Linux,
+# auto-controle de l'executable, publication dans "Releases" sous le numero VERSION de app/config.py.
+# PhilCut detecte la nouvelle version et la PROPOSE (jamais imposee).
+name: Fabriquer PhilCut
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths-ignore: ["docs/**", "README.md", "catalogue/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FFMPEG_WIN: https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip
+
+jobs:
+  tests:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Bibliotheques du systeme (Qt, FFmpeg)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 \
+            libxcb-shape0 libxcb-xinerama0 libxcb-randr0 libxcb-image0 libxcb-render-util0 libegl1 libgl1 libdbus-1-3 fontconfig
+      - name: Dependances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Tous les tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          set +e
+          echec=0
+          for t in tests/test_*.py; do
+            echo "::group::$t"
+            timeout 900 python "$t" > sortie.txt 2>&1; r=$?
+            cat sortie.txt
+            echo "::endgroup::"
+            if [ $r -ne 0 ]; then
+              echec=1
+              echo "::error title=Test en echec::$t (code $r)"
+              grep -v "^OK" sortie.txt | tail -n 12 | cut -c1-240 | while IFS= read -r l; do echo "::warning title=$t::$l"; done
+            fi
+          done
+          exit $echec
+
+  windows:
+    needs: tests
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Dependances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller pywin32
+      - name: FFmpeg (build GPL, embarque dans bin\)
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri $env:FFMPEG_WIN -OutFile ffmpeg.zip
+          Expand-Archive ffmpeg.zip -DestinationPath ffzip
+          $d = Get-ChildItem ffzip -Directory | Select-Object -First 1
+          New-Item -ItemType Directory -Force bin | Out-Null
+          Copy-Item "$($d.FullName)\bin\ffmpeg.exe", "$($d.FullName)\bin\ffprobe.exe" bin\
+          Copy-Item "$($d.FullName)\LICENSE.txt" bin\LICENCE_FFMPEG.txt -ErrorAction SilentlyContinue
+          & bin\ffmpeg.exe -version | Select-Object -First 1
+      - name: Version et icone
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path app\config.py -Pattern 'VERSION = "([^"]+)"').Matches[0].Groups[1].Value
+          echo "VERSION=$v" >> $env:GITHUB_ENV
+          python outils_dev\icone.py
+      - name: PhilCut.exe
+        run: >
+          pyinstaller --noconfirm --clean --windowed --name PhilCut --icon philcut.ico
+          --add-data "fonts;fonts" --add-data "langues;langues" --add-data "catalogue;catalogue"
+          --add-binary "bin\ffmpeg.exe;bin" --add-binary "bin\ffprobe.exe;bin"
+          --collect-submodules app --collect-submodules keyring --collect-submodules truststore
+          --hidden-import PySide6.QtNetwork --hidden-import PySide6.QtMultimedia --hidden-import PySide6.QtMultimediaWidgets
+          --hidden-import win32ctypes.core --hidden-import sqlite3
+          --exclude-module scipy --exclude-module matplotlib --exclude-module pandas --exclude-module tkinter
+          philcut.py
+      - name: Auto-controle du paquet (FFmpeg embarque, export, titres)
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath dist\PhilCut\PhilCut.exe -ArgumentList "--verifier", "$PWD\verif.txt" -Wait -PassThru
+          Get-Content verif.txt
+          Get-Content verif.txt | ForEach-Object { Write-Output "::notice title=Auto-controle::$_" }
+          if ($p.ExitCode -ne 0) { throw "auto-controle en echec" }
+      - name: Version portable
+        shell: pwsh
+        run: |
+          Copy-Item LISEZMOI.txt, LICENSE dist\PhilCut\
+          Set-Content dist\PhilCut\portable.txt "PhilCut portable : parametres, proxys et projets recents ranges dans le dossier donnees"
+          Compress-Archive -Force -Path dist\PhilCut\* -DestinationPath PhilCut_portable.zip
+          Remove-Item dist\PhilCut\portable.txt
+      - name: Installateur
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DVersion=$env:VERSION installateur.iss
+          Move-Item Output\PhilCut_Setup.exe .
+      - uses: actions/upload-artifact@v5
+        with:
+          name: PhilCut-${{ env.VERSION }}-windows
+          path: |
+            PhilCut_portable.zip
+            PhilCut_Setup.exe
+      - name: Publication de la version
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: PhilCut ${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          body: |
+            PhilCut ${{ env.VERSION }} pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
+            - PhilCut_portable.zip : a decompresser, aucune trace sur le PC (c'est la version de test).
+            - PhilCut_Setup.exe : installation sans droits administrateur.
+            Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
+            Guide de test : docs/guideline-tests.md
+          files: |
+            PhilCut_portable.zip
+            PhilCut_Setup.exe
+
+  linux:
+    needs: tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Bibliotheques du systeme
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends ffmpeg libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-keysyms1 \
+            libxcb-shape0 libxcb-xinerama0 libxcb-randr0 libxcb-image0 libxcb-render-util0 libegl1 libgl1 libdbus-1-3 fontconfig
+      - name: Dependances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+          echo "VERSION=$(grep -oP 'VERSION = "\K[^"]+' app/config.py)" >> "$GITHUB_ENV"
+      - name: PhilCut (archive Linux)
+        run: >
+          pyinstaller --noconfirm --clean --windowed --name PhilCut
+          --add-data "fonts:fonts" --add-data "langues:langues" --add-data "catalogue:catalogue"
+          --collect-submodules app --collect-submodules keyring --collect-submodules truststore
+          --hidden-import PySide6.QtNetwork --hidden-import PySide6.QtMultimedia --hidden-import PySide6.QtMultimediaWidgets --hidden-import sqlite3
+          --exclude-module scipy --exclude-module matplotlib --exclude-module pandas --exclude-module tkinter
+          philcut.py
+      - name: Auto-controle du paquet
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: |
+          dist/PhilCut/PhilCut --verifier "$PWD/verif.txt"; r=$?
+          cat verif.txt
+          exit $r
+      - name: Archive
+        run: |
+          cp LISEZMOI.txt LICENSE lancer.sh dist/PhilCut/
+          tar -C dist -czf PhilCut_linux_x86_64.tar.gz PhilCut
+      - uses: actions/upload-artifact@v5
+        with:
+          name: PhilCut-${{ env.VERSION }}-linux
+          path: PhilCut_linux_x86_64.tar.gz
+      - name: Publication (ajout a la version)
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ env.VERSION }}
+          name: PhilCut ${{ env.VERSION }}
+          target_commitish: ${{ github.sha }}
+          files: PhilCut_linux_x86_64.tar.gz

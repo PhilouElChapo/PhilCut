@@ -1,0 +1,32 @@
+PhilCut - montage video simple, efficace, effet wahou (GPL v3)
+==============================================================
+
+Version portable : decompressez le dossier ou vous voulez et lancez PhilCut.exe.
+Rien n'est ecrit dans le registre ; parametres, proxys et projets recents sont
+dans le dossier "donnees" a cote du programme (fichier portable.txt present).
+
+Premiers pas
+------------
+1. Accueil > "Rushes -> projet" : choisissez vos videos. PhilCut les importe,
+   fabrique des copies legeres (proxys) et ouvre l'assistant.
+2. Dans le volet Proposition : "Analyser et proposer". Cochez ce que vous gardez,
+   "autre idee" pour changer un element, puis "Appliquer".
+3. Espace = lecture, C = couper au curseur, Suppr = supprimer, Ctrl+molette = zoom.
+   Double-clic sur un plan = effets et transition. Clic droit = vitesse, cadrage, muet.
+4. Texte, Goodies, Musique, Fabrique dans la barre d'outils (clic droit sur la barre
+   pour la personnaliser : icones, noms, taille, ordre).
+5. Exporter : YouTube, Insta, WhatsApp, ecran LED. "Apercu rendu" montre 10 s avec
+   tous les effets avant d'exporter.
+
+IA
+--
+Rien n'est envoye sans votre clic. Preferences > Assistant et IA : niveau (sans IA,
+locale, cloud), clefs Claude / Gemini (rangees dans le coffre du systeme), test de
+l'IA locale, Veo (payant, prix affiche), dossier surveille pour Flow.
+
+Mises a jour
+------------
+Verifiees au demarrage (une fois par jour) et PROPOSEES sur l'Accueil : rien n'est
+installe sans vous. Journal des echanges : menu Outils.
+
+Guide de test : docs/guideline-tests.md sur https://github.com/PhilouElChapo/PhilCut

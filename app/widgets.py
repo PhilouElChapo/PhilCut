@@ -1,0 +1,290 @@
+"""Petits composants communs (repris de PhilCut) : disposition en flux, liste ordonnable, boutons en francais,
+icone oeil des mots de passe, saisie d'un secret."""
+from PySide6.QtCore import Qt, QRect, QSize, QPoint, QObject, QEvent, Signal
+from PySide6.QtGui import QIcon, QAction
+from PySide6.QtWidgets import (QLayout, QWidget, QListWidget, QListWidgetItem, QDialog, QDialogButtonBox, QVBoxLayout,
+                               QHBoxLayout, QLabel, QLineEdit, QPushButton, QToolButton, QAbstractItemView, QWidgetItem)
+from .icones import icone
+from .langue import _
+
+
+def boutons_fr(bb):
+    """Libelles francais pour les boutons standard."""
+    noms = {QDialogButtonBox.Ok: "OK", QDialogButtonBox.Cancel: _('Annuler'), QDialogButtonBox.Save: _('Enregistrer'),
+            QDialogButtonBox.Discard: _('Ne pas enregistrer'), QDialogButtonBox.Close: _('Fermer'),
+            QDialogButtonBox.Yes: "Oui", QDialogButtonBox.No: "Non", QDialogButtonBox.Apply: _('Appliquer')}
+    for k, v in noms.items():
+        b = bb.button(k)
+        if b:
+            b.setText(v)
+    return bb
+
+
+# ------------------------------------------------------------------ choix d'une zone
+
+class FluxLayout(QLayout):
+    """Disposition « en flux » : les elements vont a la ligne quand la place manque (barre d'outils sur plusieurs
+    lignes quand la fenetre est etroite, au lieu d'icones cachees)."""
+
+    def __init__(self, parent=None, marge=6, espace=2):
+        super().__init__(parent)
+        self._items = []
+        self.droite = None                            # element colle a droite (volet), hors du flux
+        self.setContentsMargins(marge, 2, marge, 2)
+        self.setSpacing(espace)
+
+    def addItem(self, item):
+        self._items.append(item)
+
+    def set_droite(self, w):
+        from PySide6.QtWidgets import QWidgetItem
+        if w is None:
+            self.droite = None
+        else:
+            self.addChildWidget(w)
+            self.droite = QWidgetItem(w)
+        self.invalidate()
+
+    def count(self):
+        return len(self._items)
+
+    def itemAt(self, i):
+        return self._items[i] if 0 <= i < len(self._items) else None
+
+    def takeAt(self, i):
+        return self._items.pop(i) if 0 <= i < len(self._items) else None
+
+    def expandingDirections(self):
+        return Qt.Orientation(0)
+
+    def hasHeightForWidth(self):
+        return True
+
+    def heightForWidth(self, largeur):
+        return self._placer(QRect(0, 0, largeur, 0), simuler=True)
+
+    def setGeometry(self, r):
+        super().setGeometry(r)
+        self._placer(r, simuler=False)
+
+    def sizeHint(self):
+        return self.minimumSize()
+
+    def minimumSize(self):
+        t = QSize()
+        for it in self._items:
+            t = t.expandedTo(it.minimumSize())
+        m = self.contentsMargins()
+        return t + QSize(m.left() + m.right(), m.top() + m.bottom())
+
+    def _placer(self, r, simuler):
+        m = self.contentsMargins()
+        zone = r.adjusted(m.left(), m.top(), -m.right(), -m.bottom())
+        x, y, haut_ligne = zone.x(), zone.y(), 0
+        e = self.spacing()
+        bas_droite = zone.y()
+        if self.droite is not None and not self.droite.widget().isHidden():
+            td = self.droite.sizeHint()
+            if not simuler:
+                self.droite.setGeometry(QRect(QPoint(zone.right() - td.width() + 1, zone.y()), td))
+            zone = zone.adjusted(0, 0, -(td.width() + e), 0)
+            bas_droite = zone.y() + td.height()
+        for it in self._items:
+            if it.widget() is not None and it.widget().isHidden():
+                continue
+            t = it.sizeHint()
+            if x + t.width() > zone.right() + 1 and haut_ligne > 0:
+                x = zone.x()
+                y += haut_ligne + e
+                haut_ligne = 0
+            if not simuler:
+                it.setGeometry(QRect(QPoint(x, y), t))
+            x += t.width() + e
+            haut_ligne = max(haut_ligne, t.height())
+        return max(y + haut_ligne, bas_droite) - r.y() + m.bottom()
+
+
+def defilable(w):
+    """Barre d'outils qui defile horizontalement quand la fenetre est etroite (au lieu d'empecher de la reduire)."""
+    from PySide6.QtWidgets import QScrollArea, QFrame as _F
+    z = QScrollArea()
+    z.setWidget(w)
+    z.setWidgetResizable(True)
+    z.setFrameShape(_F.NoFrame)
+    z.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    z.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+    z.setStyleSheet("QScrollArea{background:transparent} QScrollBar:horizontal{height:6px}")
+
+    def ajuster():
+        z.setFixedHeight(w.sizeHint().height() + (8 if z.horizontalScrollBar().isVisible() else 0))
+    z.horizontalScrollBar().rangeChanged.connect(lambda *_a: ajuster())
+    ajuster()
+    return z
+
+
+
+class _SurveilleTaille(QObject):
+    def __init__(self, w, rappel):
+        super().__init__(w)
+        self.rappel = rappel
+        w.installEventFilter(self)
+
+    def eventFilter(self, obj, ev):
+        if ev.type() in (ev.Type.Resize, ev.Type.Show):
+            QTimer.singleShot(0, self.rappel)
+        return False
+
+
+
+class _ListeOrdonnable(QListWidget):
+    """Grille d'apercus que l'on reordonne en glissant un element a sa nouvelle place."""
+
+    def __init__(self, rappel):
+        super().__init__()
+        self.rappel = rappel
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)
+        self.setDropIndicatorShown(True)
+        self.setDragDropMode(QListWidget.InternalMove)
+        self.setDefaultDropAction(Qt.MoveAction)
+
+    def place_depot(self, pos):
+        """(index d'insertion, element voisin) pour un depot a cet endroit : sur un element, ou entre deux
+        (l'element le plus proche ; a gauche de son milieu = avant lui, a droite = apres)."""
+        if self.count() == 0:
+            return 0, None
+        proche, dmin = None, None
+        for i in range(self.count()):
+            r = self.visualItemRect(self.item(i))
+            c = r.center()
+            dist = (c.x() - pos.x()) ** 2 + ((c.y() - pos.y()) * 2) ** 2      # la rangee compte plus que la colonne
+            if dmin is None or dist < dmin:
+                proche, dmin = i, dist
+        r = self.visualItemRect(self.item(proche))
+        return (proche if pos.x() < r.center().x() else proche + 1), self.item(proche)
+
+    # Qt refuse le depot quand la souris passe SUR un element (les elements ne sont pas « deposables ») : seul
+    # l'espace vide en fin de liste acceptait. On accepte partout et on dessine nous-memes la barre d'insertion.
+    def _interne(self, ev):
+        return ev.source() is self or (ev.source() is None and
+                                       ev.mimeData().hasFormat("application/x-qabstractitemmodeldatalist"))
+
+    def dragEnterEvent(self, ev):
+        if self._interne(ev):
+            ev.setDropAction(Qt.MoveAction)
+            ev.accept()
+        else:
+            super().dragEnterEvent(ev)
+
+    def dragMoveEvent(self, ev):
+        if not self._interne(ev):
+            return super().dragMoveEvent(ev)
+        ev.setDropAction(Qt.MoveAction)
+        ev.accept()
+        self._barre = self._rect_barre(ev.position().toPoint())
+        self.viewport().update()
+        # defilement automatique pres des bords
+        y, h = ev.position().y(), self.viewport().height()
+        sb = self.verticalScrollBar()
+        if y < 20:
+            sb.setValue(sb.value() - 12)
+        elif y > h - 20:
+            sb.setValue(sb.value() + 12)
+
+    def dragLeaveEvent(self, ev):
+        self._barre = None
+        self.viewport().update()
+        super().dragLeaveEvent(ev)
+
+    def _rect_barre(self, pos):
+        """Barre verticale bleue la ou l'element sera insere."""
+        i, _it = self.place_depot(pos)
+        if self.count() == 0:
+            return None
+        if i < self.count():
+            r = self.visualItemRect(self.item(i))
+            x = r.left() - 3
+        else:
+            r = self.visualItemRect(self.item(self.count() - 1))
+            x = r.right() + 3
+        return QRect(x - 2, r.top() + 4, 4, r.height() - 8)
+
+    def paintEvent(self, ev):
+        super().paintEvent(ev)
+        if getattr(self, "_barre", None) is not None:
+            p = QPainter(self.viewport())
+            p.fillRect(self._barre, QColor("#1462c2"))
+            p.end()
+
+    def dropEvent(self, ev):
+        self._barre = None
+        self.viewport().update()
+        if not self._interne(ev):
+            return super().dropEvent(ev)
+        src = self.currentRow()
+        dst, it = self.place_depot(ev.position().toPoint())
+        ev.setDropAction(Qt.IgnoreAction)
+        ev.accept()
+        if src < 0 or dst in (src, src + 1):
+            return
+        ids = [self.item(i).data(Qt.UserRole)["id"] for i in range(self.count())]
+        x = ids.pop(src)
+        ids.insert(dst - 1 if dst > src else dst, x)
+        cat = (it.data(Qt.UserRole) or {}).get("categorie", "") if it is not None else None
+        self.rappel(ids, x, cat)
+
+
+
+def oeil(champ):
+    """Champ de mot de passe masque, avec un oeil a droite pour l'afficher ou le masquer."""
+    from .icones import icone
+    champ.setEchoMode(QLineEdit.Password)
+    a = champ.addAction(icone("oeil", "#555555"), QLineEdit.TrailingPosition)
+    a.setToolTip(_("Afficher le mot de passe"))
+
+    def basculer():
+        visible = champ.echoMode() == QLineEdit.Password
+        champ.setEchoMode(QLineEdit.Normal if visible else QLineEdit.Password)
+        a.setIcon(icone("oeil_barre" if visible else "oeil", "#555555"))
+        a.setToolTip(_("Masquer le mot de passe") if visible else _("Afficher le mot de passe"))
+    a.triggered.connect(basculer)
+    return champ
+
+
+def demander_secret(parent, titre, texte, indice="", avec_indice=False):
+    """Comme QInputDialog.getText en mode mot de passe, avec l'oeil et un indice eventuel. Renvoie (texte, ok) ;
+    avec_indice (aucun indice encore) : un champ pour en ecrire un, renvoie (texte, ok, indice)."""
+    d = QDialog(parent)
+    d.setWindowTitle(titre)
+    d.setMinimumWidth(420)
+    v = QVBoxLayout(d)
+    lb = QLabel(texte)
+    lb.setWordWrap(True)
+    v.addWidget(lb)
+    if indice:
+        li = QLabel(_("Indice : {indice}", indice=indice))
+        li.setWordWrap(True)
+        li.setStyleSheet("color:#8a5a00")
+        v.addWidget(li)
+    champ = oeil(QLineEdit())
+    v.addWidget(champ)
+    ind = None
+    if avec_indice and not indice:
+        li = QLabel(_("Indice pour vous souvenir du mot de passe principal (facultatif, enregistré en clair et envoyé à vos "
+                      "autres postes ; jamais le mot de passe lui-même) :"))
+        li.setWordWrap(True)
+        li.setStyleSheet("color:#555;font-size:12px")
+        v.addWidget(li)
+        ind = QLineEdit()
+        ind.setPlaceholderText(_("ex. « le code du carnet bleu »"))
+        v.addWidget(ind)
+    bb = boutons_fr(QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel))
+    bb.accepted.connect(d.accept)
+    bb.rejected.connect(d.reject)
+    v.addWidget(bb)
+    champ.setFocus()
+    ok = d.exec() == QDialog.Accepted
+    if avec_indice:
+        return champ.text(), ok, (ind.text().strip() if ind is not None else "")
+    return champ.text(), ok
+

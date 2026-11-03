@@ -1,0 +1,79 @@
+# Veille des moteurs : chaque lundi, regarde si FFmpeg (build BtbN embarquee), PySide6 (Qt) ou OpenCV ont une nouvelle
+# version. Si oui : numero de version de PhilCut +1 dans app/config.py, note dans moteurs.json, puis fabrication.
+# La fabrication passe tous les tests avant de publier : si le nouveau moteur casse quelque chose, rien n'est publie
+# et vos postes gardent la version precedente. Cote utilisateur la mise a jour reste proposee, jamais imposee.
+name: Veille des moteurs
+
+on:
+  schedule:
+    - cron: "23 5 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  veille:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Dernieres versions publiees
+        id: v
+        shell: python
+        run: |
+          import json, os, re, urllib.request
+          def lire(url):
+              req = urllib.request.Request(url, headers={"User-Agent": "PhilCut-veille"})
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  return r.read().decode("utf-8", "replace")
+          connu = json.load(open("moteurs.json"))
+          nouveau = dict(connu)
+          try:
+              nouveau["pyside6"] = json.loads(lire("https://pypi.org/pypi/PySide6-Essentials/json"))["info"]["version"]
+          except Exception as e:
+              print("::warning::PySide6 illisible :", e)
+          try:
+              nouveau["opencv"] = json.loads(lire("https://pypi.org/pypi/opencv-python-headless/json"))["info"]["version"]
+          except Exception as e:
+              print("::warning::OpenCV illisible :", e)
+          try:   # build FFmpeg embarquee (BtbN "latest" : la date de publication fait office de version)
+              d = json.loads(lire("https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest"))
+              nouveau["ffmpeg"] = d.get("published_at", "")[:10]
+          except Exception as e:
+              print("::warning::FFmpeg illisible :", e)
+          change = [k for k in nouveau if nouveau[k] and connu.get(k) and nouveau[k] != connu[k]]
+          for k in change:
+              print(f"::notice title=Nouveau moteur::{k} {connu.get(k) or '?'} -> {nouveau[k]}")
+          if not change:
+              print("::notice title=Veille::moteurs a jour", nouveau)
+          json.dump(nouveau, open("moteurs.json", "w"), indent=1)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("change=" + ("oui" if change else "non") + "\n")
+              f.write("quoi=" + ", ".join(f"{k} {nouveau[k]}" for k in change) + "\n")
+      - name: Premier passage (versions notees)
+        if: steps.v.outputs.change == 'non'
+        run: |
+          git config user.name "PhilCut (veille des moteurs)"
+          git config user.email "actions@users.noreply.github.com"
+          git diff --quiet moteurs.json || (git commit -am "Veille des moteurs : versions de reference" && git push)
+      - name: Nouvelle version de PhilCut
+        if: steps.v.outputs.change == 'oui'
+        run: |
+          python - <<'PY'
+          import re
+          s = open("app/config.py", encoding="utf-8").read()
+          m = re.search(r'VERSION = "(\d+)\.(\d+)\.(\d+)"', s)
+          a, b, c = (int(x) for x in m.groups())
+          s = s.replace(m.group(0), f'VERSION = "{a}.{b}.{c + 1}"')
+          open("app/config.py", "w", encoding="utf-8").write(s)
+          print(f"version {a}.{b}.{c + 1}")
+          PY
+          git config user.name "PhilCut (veille des moteurs)"
+          git config user.email "actions@users.noreply.github.com"
+          git commit -am "Moteurs mis a jour : ${{ steps.v.outputs.quoi }} (fabrication et tests automatiques)"
+          git push
+          gh workflow run fabriquer.yml --ref main
+          echo "::notice title=Fabrication::la fabrication demarre avec les nouveaux moteurs ; publiee seulement si tous les tests passent"
+        env:
+          GH_TOKEN: ${{ github.token }}
