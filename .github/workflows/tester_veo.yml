@@ -1,0 +1,48 @@
+# Essai de la clef Gemini et de Veo, a la demande (onglet Actions › « Tester la clef Gemini et Veo » › Run workflow).
+# La clef vient du secret GEMINI_API_KEY ; elle n'apparait jamais dans le journal.
+name: Tester la clef Gemini et Veo
+
+on:
+  workflow_dispatch:
+    inputs:
+      essai:
+        description: "cle = gratuit (verifie la clef) ; video = PAYANT (un plan Veo de 4 s, environ 0,35 $ avec Veo Lite)"
+        type: choice
+        options: [cle, video]
+        default: cle
+      modele:
+        description: "Modele Veo pour l'essai video"
+        type: choice
+        options: [veo-3.1-lite-generate-preview, veo-3.1-fast-generate-preview, veo-3.1-generate-preview]
+        default: veo-3.1-lite-generate-preview
+
+permissions:
+  contents: read
+
+jobs:
+  essai:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Dependances
+        if: inputs.essai == 'video'
+        run: |
+          sudo apt-get update && sudo apt-get install -y --no-install-recommends libegl1 libgl1 libxkbcommon0 libfontconfig1 libdbus-1-3
+          pip install -r requirements.txt
+      - name: Essai
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ESSAI: ${{ inputs.essai }}
+          MODELE_VEO: ${{ inputs.modele }}
+          QT_QPA_PLATFORM: offscreen
+        run: python outils_dev/tester_veo.py
+      - name: Video produite
+        if: inputs.essai == 'video' && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: essai-veo
+          path: essai_veo/essai_veo.mp4
