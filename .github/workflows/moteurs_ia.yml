@@ -17,6 +17,8 @@ jobs:
     outputs:
       llama_tag: ${{ steps.v.outputs.llama_tag }}
       llama_win: ${{ steps.v.outputs.llama_win }}
+      llama_win_vulkan: ${{ steps.v.outputs.llama_win_vulkan }}
+      llama_linux_vulkan: ${{ steps.v.outputs.llama_linux_vulkan }}
       whisper_tag: ${{ steps.v.outputs.whisper_tag }}
       whisper_win: ${{ steps.v.outputs.whisper_win }}
     steps:
@@ -63,6 +65,16 @@ jobs:
             Copy-Item "$($exe.DirectoryName)\*.dll" "pack\$($m[0])\"
             Get-ChildItem "brut\$($m[0])" -Recurse -Include LICENSE*, *.txt | Where-Object { $_.Name -match "LICENSE" } | Select-Object -First 1 | Copy-Item -Destination "pack\$($m[0])\LICENSE.txt"
           }
+          if ("${{ needs.catalogue.outputs.llama_win_vulkan }}") {   # version carte graphique (Vulkan), facultative
+            gh release download "${{ needs.catalogue.outputs.llama_tag }}" -R ggml-org/llama.cpp -p "${{ needs.catalogue.outputs.llama_win_vulkan }}" -D brut
+            Expand-Archive "brut\${{ needs.catalogue.outputs.llama_win_vulkan }}" brut\vulkan
+            $exe = Get-ChildItem brut\vulkan -Recurse -Filter llama-server.exe | Select-Object -First 1
+            New-Item -ItemType Directory -Force pack\vulkan | Out-Null
+            Copy-Item $exe.FullName pack\vulkan\
+            Copy-Item "$($exe.DirectoryName)\*.dll" pack\vulkan\
+            Copy-Item pack\llama\LICENSE.txt pack\vulkan\ -ErrorAction SilentlyContinue
+            Compress-Archive pack\vulkan\* dist\philcut-llama-vulkan-windows-x64.zip
+          }
           & pack\llama\llama-server.exe --version
           & pack\whisper\whisper-cli.exe --help | Select-Object -First 3
           Compress-Archive pack\llama\* dist\philcut-llama-windows-x64.zip
@@ -100,6 +112,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends cmake build-essential espeak-ng ffmpeg
       - name: Compiler llama.cpp et whisper.cpp
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -e
           OPTS="-DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DGGML_NATIVE=OFF -DGGML_BACKEND_DL=ON -DGGML_CPU_ALL_VARIANTS=ON -DGGML_OPENMP=OFF -DCMAKE_INSTALL_RPATH=\$ORIGIN -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON"
@@ -120,6 +134,19 @@ jobs:
           done
           LD_LIBRARY_PATH=pack/llama pack/llama/llama-server --version
           LD_LIBRARY_PATH=pack/whisper pack/whisper/whisper-cli --help | head -3
+          if [ -n "${{ needs.catalogue.outputs.llama_linux_vulkan }}" ]; then   # version carte graphique (Vulkan), facultative
+            sudo apt-get install -y --no-install-recommends libvulkan1 mesa-vulkan-drivers
+            gh release download "${{ needs.catalogue.outputs.llama_tag }}" -R ggml-org/llama.cpp -p "${{ needs.catalogue.outputs.llama_linux_vulkan }}" -D brut
+            mkdir -p brut/vulkan && case "${{ needs.catalogue.outputs.llama_linux_vulkan }}" in *.zip) unzip -q "brut/${{ needs.catalogue.outputs.llama_linux_vulkan }}" -d brut/vulkan;; *) tar xf "brut/${{ needs.catalogue.outputs.llama_linux_vulkan }}" -C brut/vulkan;; esac
+            exe=$(find brut/vulkan -type f -name llama-server | head -1)
+            mkdir -p pack/vulkan && cp "$exe" pack/vulkan/ && find "$(dirname "$exe")" -maxdepth 1 -name "*.so*" -exec cp -P {} pack/vulkan/ \;
+            cp pack/llama/LICENSE.txt pack/vulkan/ 2>/dev/null || true
+            if LD_LIBRARY_PATH=pack/vulkan pack/vulkan/llama-server --version; then
+              tar czf dist/philcut-llama-vulkan-linux-x64.tar.gz -C pack vulkan
+            else
+              echo "::warning title=Vulkan Linux::l'archive officielle ne tourne pas sur Ubuntu 22.04 : version carte graphique Linux non publiee"
+            fi
+          fi
           tar czf dist/philcut-llama-linux-x64.tar.gz -C pack llama
           tar czf dist/philcut-whisper-linux-x64.tar.gz -C pack whisper
           ls -la dist

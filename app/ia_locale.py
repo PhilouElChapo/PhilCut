@@ -124,22 +124,41 @@ def tester(params, texte_progression=None):
     texte_progression and texte_progression(_("Démarrage du moteur…"))
     debut = time.time()
     try:
-        r = generer(cible, "Décris cette image en cinq mots.", [_png_essai()], delai=600, params=params)
+        if portable:
+            with packs_ia.ServeurVision(cible, params) as serveur:
+                res["demarrage_s"] = round(time.time() - debut, 1)
+                t1 = time.time()
+                r = serveur.generer("Décris cette image en cinq mots.", [_png_essai()], delai=600)
+                res["reponse_s"] = round(time.time() - t1, 1)
+                res["mode"] = serveur.mode
+        else:
+            r = generer(cible, "Décris cette image en cinq mots.", [_png_essai()], delai=600, params=params)
         res["secondes"] = round(time.time() - debut, 1)
         res["reponse"] = r[:120]
     except Exception as e:      # noqa: BLE001
         res["avis"] = _("Le modèle {m} n'a pas répondu : {e}", m=cible, e=e)
         return res
     s = res["secondes"]
-    estim = s * 6                       # une recette ≈ démarrage + fiche + une dizaine de vignettes
+    # une recette ≈ un démarrage + une longue réponse (fiche et une dizaine de vignettes ≈ 10 fois la petite question)
+    estim = res.get("demarrage_s", 0) + res.get("reponse_s", s) * 10 if portable else s * 6
     res["estimation_recette_s"] = round(estim)
     nom = (packs_ia.modeles("vision", avec_essai=True).get(cible) or {}).get("nom", cible) if portable else cible
+    carte = packs_ia.carte_graphique()
+    if res.get("mode") == "gpu":
+        res["materiel_ia"] = _("carte graphique ({c}, Vulkan)", c=carte)
+    elif portable:
+        res["materiel_ia"] = _("processeur, {n} cœurs sur {t}{l}", n=packs_ia.coeurs(params), t=os.cpu_count() or "?",
+                               l=_(" (poste léger)") if (params or {}).get("ia_poste_leger", True) else "")
     if estim < 60:
         res["avis"] = _("Rapide sur ce poste : environ {n} s par vidéo avec « {m} ». Qualité des idées : {q}/5.", n=round(estim), m=nom, q=res["qualite"])
     elif estim < 300:
         res["avis"] = _("Utilisable : environ {n} min par vidéo avec « {m} ». Qualité des idées : {q}/5. L'IA cloud sera plus inspirée.", n=round(estim / 60), m=nom, q=res["qualite"])
     else:
         res["avis"] = _("Lent sur ce poste : environ {n} min par vidéo. Vous pouvez quand même l'utiliser ; sinon les recettes sans IA ou l'IA cloud.", n=round(estim / 60))
+    if res.get("materiel_ia"):
+        res["avis"] += " " + _("Calcul sur : {m}.", m=res["materiel_ia"])
+        if carte and res.get("mode") != "gpu" and (params or {}).get("ia_gpu", True) is not False:
+            res["avis"] += " " + _("La carte graphique n'a pas pu servir (pilote Vulkan absent ?) : le processeur a pris le relais.")
     return res
 
 

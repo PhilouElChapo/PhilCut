@@ -47,6 +47,7 @@ DEFAUTS = {
     "export_destination": "youtube",
     "ia_locale": {},                # resultat du test materiel, par poste
     "ia_poste_leger": True,         # IA locale : moitie des coeurs, priorite basse
+    "ia_gpu": True,                 # IA locale : carte graphique (Vulkan) si presente
     "ia_locale_modeles": {},        # modele choisi par genre (vision, whisper, detourage), par poste
     "assistant_niveau": "recettes",  # recettes | locale | cloud
     "dossier_flow": "",             # dossier surveille pour les clips Flow
@@ -76,7 +77,52 @@ class Parametres(dict):
             pass
         if self.get("dossier_synchro") and not self.get("drive"):   # ancienne 0.1
             self["drive"] = self.pop("dossier_synchro")
+        self._clefs_coffre = {}
+        self._charger_clefs()
         self._communs_vus = self._empreinte_communs()
+
+    # ---- clefs IA : dans le coffre du systeme, jamais dans parametres.json
+    CLEFS_COFFRE = ("clef_claude", "clef_gemini")
+
+    def _charger_clefs(self):
+        """Lit les clefs dans le coffre ; une clef trouvee en clair (version 0.1) y est deplacee puis effacee du fichier."""
+        try:
+            from . import coffre
+        except Exception:
+            return
+        a_migrer = False
+        for k in self.CLEFS_COFFRE:
+            en_clair = super().get(k) or ""
+            try:
+                v = coffre.lire("ia:" + k) or ""
+            except Exception:
+                v = ""
+            if en_clair and en_clair != v:
+                a_migrer = True
+                v = en_clair
+            self[k] = v
+            self._clefs_coffre[k] = None if a_migrer else v
+        if a_migrer:
+            self.enregistrer()
+
+    def _ranger_clefs(self):
+        try:
+            from . import coffre
+        except Exception:
+            return False
+        for k in self.CLEFS_COFFRE:
+            v = super().get(k) or ""
+            if self._clefs_coffre.get(k) == v:
+                continue
+            try:
+                if v:
+                    coffre.enregistrer("ia:" + k, v)
+                else:
+                    coffre.supprimer("ia:" + k)
+                self._clefs_coffre[k] = v
+            except Exception:
+                return False
+        return True
 
     def _empreinte_communs(self):
         try:
@@ -91,9 +137,15 @@ class Parametres(dict):
             import datetime
             self["communs_maj"] = datetime.datetime.now().isoformat(timespec="seconds")
             self._communs_vus = e
+        ok = self._ranger_clefs() if hasattr(self, "_clefs_coffre") else False
+        donnees = dict(self)
+        if ok:
+            for k in self.CLEFS_COFFRE:
+                donnees[k] = ""
         try:
-            with open(self.chemin, "w", encoding="utf-8") as f:
-                json.dump(self, f, ensure_ascii=False, indent=2)
+            with open(self.chemin + ".tmp", "w", encoding="utf-8") as f:
+                json.dump(donnees, f, ensure_ascii=False, indent=2)
+            os.replace(self.chemin + ".tmp", self.chemin)
         except OSError:
             pass
 

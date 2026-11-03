@@ -25,7 +25,7 @@ class ErreurIA(Exception):
 
 # ------------------------------------------------------------------ emplacements
 def dossier():
-    d = os.environ.get("PHILCUT_IA_DOSSIER") or os.path.join(dossier_donnees(), "ia")
+    d = os.path.abspath(os.environ.get("PHILCUT_IA_DOSSIER") or os.path.join(dossier_donnees(), "ia"))
     os.makedirs(d, exist_ok=True)
     return d
 
@@ -43,7 +43,34 @@ def dossier_moteur(genre):
 
 
 def executable(genre):
-    return os.path.join(dossier_moteur(genre), _exe({"vision": "llama-server", "whisper": "whisper-cli"}[genre]))
+    return os.path.join(dossier_moteur(genre), _exe({"vision": "llama-server", "vision_gpu": "llama-server", "whisper": "whisper-cli"}[genre]))
+
+
+# ------------------------------------------------------------------ carte graphique (Vulkan)
+_carte = None
+
+
+def carte_graphique():
+    """Nom de la carte graphique dédiée (Nvidia, AMD, Intel Arc) si ce poste en a une, sinon ""."""
+    global _carte
+    if _carte is None:
+        try:
+            from .ia_locale import materiel
+            m = materiel()
+            nom = m.get("gpu") or ""
+            dediee = m.get("nvidia") or any(x in nom.lower() for x in ("nvidia", "geforce", "rtx", "quadro", "radeon rx", "radeon pro", "arc a", "arc b"))
+            _carte = nom if dediee else ""
+        except Exception:       # noqa: BLE001
+            _carte = ""
+    return _carte
+
+
+def gpu_voulu(params=None):
+    """La version carte graphique du moteur de vision est utilisée si le poste a une carte dédiée et si l'utilisateur
+    ne l'a pas désactivée (Préférences › IA locale)."""
+    if (params or {}).get("ia_gpu", True) is False:
+        return False
+    return bool(carte_graphique()) and bool(moteur_info("vision_gpu"))
 
 
 def dossier_modele(cle):
@@ -176,6 +203,8 @@ def a_telecharger(cle):
     g = m.get("genre")
     if g in ("vision", "whisper") and not moteur_installe(g):
         total += (moteur_info(g) or {}).get("taille", 0)
+    if g == "vision" and gpu_voulu() and not moteur_installe("vision_gpu"):
+        total += (moteur_info("vision_gpu") or {}).get("taille", 0)
     return total
 
 
@@ -320,6 +349,16 @@ def installer(cle, progression=None, arret=lambda: False):
         t = (moteur_info(g) or {}).get("taille", 0)
         installer_moteur(g, prog_part(t, _("moteur {g}", g=g)), arret)
         fait[0] += t
+    if g == "vision" and gpu_voulu() and not moteur_installe("vision_gpu"):
+        t = (moteur_info("vision_gpu") or {}).get("taille", 0)
+        try:        # facultatif : sans lui, le processeur prend le relais
+            installer_moteur("vision_gpu", prog_part(t, _("moteur carte graphique")), arret)
+        except InterruptedError:
+            raise
+        except Exception as e:      # noqa: BLE001
+            from .journal import ecrire
+            ecrire("ia locale", f"moteur carte graphique non installé : {e}")
+        fait[0] += t
     noms = []
     for f in m["fichiers"]:
         cible = os.path.join(dossier_modele(cle), f["nom"])
@@ -340,8 +379,9 @@ def supprimer(cle):
     _noter(cle, None)
     g = e.get("genre")
     if g in ("vision", "whisper") and not installes(g):
-        shutil.rmtree(dossier_moteur(g), ignore_errors=True)
-        _noter(f"moteur_{g}", None)
+        for m in ((g, "vision_gpu") if g == "vision" else (g,)):
+            shutil.rmtree(dossier_moteur(m), ignore_errors=True)
+            _noter(f"moteur_{m}", None)
     shutil.rmtree(os.path.join(dossier(), "tmp"), ignore_errors=True)
 
 
@@ -392,6 +432,7 @@ class ServeurVision:
         if not moteur_installe("vision"):
             raise ErreurIA(_("Moteur de vision absent : décochez puis recochez le modèle dans Préférences › IA locale."))
         self.contexte = contexte
+        self.mode = ""          # "gpu" (carte graphique, Vulkan) ou "cpu"
         self.proc = None
         self.port = None
         self.journal = os.path.join(dossier(), "journal_vision.txt")
@@ -404,13 +445,28 @@ class ServeurVision:
         self.arreter()
 
     def demarrer(self, delai=300):
+        """Carte graphique d'abord si elle est là ; au moindre souci, le processeur prend le relais."""
+        if self.params.get("ia_gpu", True) is not False and moteur_installe("vision_gpu") and carte_graphique():
+            try:
+                self._demarrer("vision_gpu", delai)
+                self.mode = "gpu"
+                return
+            except ErreurIA as e:
+                from .journal import ecrire
+                ecrire("ia locale", f"carte graphique indisponible, passage au processeur : {e}")
+                self.arreter()
+        self._demarrer("vision", delai)
+        self.mode = "cpu"
+
+    def _demarrer(self, moteur, delai):
         roles = etat()[self.cle]["roles"]
         d = dossier_modele(self.cle)
         self.port = _port_libre()
-        cmd = [executable("vision"), "-m", os.path.join(d, roles["modele"]), "--mmproj", os.path.join(d, roles["mmproj"]),
-               "--host", "127.0.0.1", "--port", str(self.port), "-t", str(coeurs(self.params)), "-c", str(self.contexte), "-np", "1"]
+        cmd = [executable(moteur), "-m", os.path.join(d, roles["modele"]), "--mmproj", os.path.join(d, roles["mmproj"]),
+               "--host", "127.0.0.1", "--port", str(self.port), "-t", str(coeurs(self.params)), "-c", str(self.contexte), "-np", "1",
+               "-ngl", "99" if moteur == "vision_gpu" else "0"]
         self._log = open(self.journal, "w", encoding="utf-8", errors="replace")
-        self.proc = subprocess.Popen(cmd, cwd=dossier_moteur("vision"), env=_env("vision"), stdout=self._log, stderr=subprocess.STDOUT,
+        self.proc = subprocess.Popen(cmd, cwd=dossier_moteur(moteur), env=_env(moteur), stdout=self._log, stderr=subprocess.STDOUT,
                                      stdin=subprocess.DEVNULL, **_options_processus())
         debut = time.time()
         while time.time() - debut < delai:

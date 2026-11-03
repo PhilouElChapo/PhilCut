@@ -47,7 +47,8 @@ class TestPacksIA(unittest.TestCase):
         src = os.path.join(self.tmp, "src")
         os.makedirs(src)
         archives = {}
-        for genre, nom, code in (("vision", "llama-server", FAUX_SERVEUR), ("whisper", "whisper-cli", FAUX_WHISPER)):
+        for genre, nom, code in (("vision", "llama-server", FAUX_SERVEUR), ("vision_gpu", "llama-server", FAUX_SERVEUR.replace(
+                'assert "-m" in a', 'assert a[a.index("-ngl") + 1] == "99"; assert "-m" in a')), ("whisper", "whisper-cli", FAUX_WHISPER)):
             buf = io.BytesIO()
             with tarfile.open(fileobj=buf, mode="w:gz") as t:
                 data = code.replace("PYTHON", sys.executable).encode()
@@ -63,7 +64,7 @@ class TestPacksIA(unittest.TestCase):
                 ti.type = tarfile.SYMTYPE
                 ti.linkname = "libggml.so.1"
                 t.addfile(ti)
-            fichier = f"philcut-{'llama' if genre == 'vision' else 'whisper'}-linux-x64.tar.gz"
+            fichier = f"philcut-{ {'vision': 'llama', 'vision_gpu': 'llama-vulkan', 'whisper': 'whisper'}[genre]}-linux-x64.tar.gz"
             with open(os.path.join(src, fichier), "wb") as f:
                 f.write(buf.getvalue())
             archives[genre] = {"linux": {"fichier": fichier, "taille": len(buf.getvalue()), "sha256": _sha(buf.getvalue()), "url": "http://inutile/" + fichier},
@@ -85,6 +86,7 @@ class TestPacksIA(unittest.TestCase):
         os.environ.update(PHILCUT_IA_MANIFESTE=self.man, PHILCUT_IA_ARCHIVES=src, PHILCUT_IA_DOSSIER=os.path.join(self.tmp, "ia"))
         from app import packs_ia
         packs_ia._manifeste = None
+        packs_ia._carte = ""            # pas de carte graphique, sauf dans test_carte_graphique
         self.P = packs_ia
 
     def tearDown(self):
@@ -126,6 +128,26 @@ class TestPacksIA(unittest.TestCase):
         P.supprimer("whisper_leger")
         self.assertEqual(P.etat(), {})
         self.assertFalse(os.path.exists(P.dossier_moteur("whisper")))
+
+    def test_carte_graphique(self):
+        """Carte dédiée : moteur Vulkan installé en plus et utilisé ; s'il échoue, le processeur prend le relais."""
+        P = self.P
+        P._carte = "NVIDIA GeForce RTX 3060"
+        P.installer("vision_leger")
+        self.assertTrue(P.moteur_installe("vision_gpu") and P.moteur_installe("vision"))
+        with P.ServeurVision(params={}) as s:
+            self.assertEqual(s.mode, "gpu")
+            self.assertEqual(s.generer("x", [b"\x89PNG"]), "1 image(s) vue(s)")
+        with P.ServeurVision(params={"ia_gpu": False}) as s:
+            self.assertEqual(s.mode, "cpu")
+        with open(P.executable("vision_gpu"), "w") as f:          # pilote absent ou carte en panne
+            f.write("#!/bin/sh\nexit 3\n")
+        with P.ServeurVision(params={}) as s:
+            self.assertEqual(s.mode, "cpu")
+            self.assertEqual(s.generer("x"), "0 image(s) vue(s)")
+        P.supprimer("vision_leger")
+        self.assertFalse(P.moteur_installe("vision_gpu"))
+        self.assertEqual(P.etat(), {})
 
     def test_empreinte_et_reprise(self):
         P = self.P

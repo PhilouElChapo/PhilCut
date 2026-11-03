@@ -204,6 +204,14 @@ class DialoguePreferences(QDialog):
         self.poste_leger = QCheckBox(_("Mode poste léger : moitié des cœurs, priorité basse (le poste reste utilisable, l'analyse est plus lente)"))
         self.poste_leger.setChecked(self.params.get("ia_poste_leger", True))
         f.addRow(self.poste_leger)
+        carte = packs_ia.carte_graphique()
+        self.ia_gpu = QCheckBox(_("Utiliser la carte graphique (Vulkan) : {c}", c=carte) if carte else
+                                _("Utiliser la carte graphique (Vulkan) si ce poste en a une — aucune carte dédiée détectée ici"))
+        self.ia_gpu.setChecked(self.params.get("ia_gpu", True))
+        self.ia_gpu.setEnabled(bool(carte))
+        self.ia_gpu.setToolTip(_("Bien plus rapide. Rien à installer : le moteur Vulkan est rangé dans le dossier de PhilCut ; "
+                                 "si la carte ou son pilote pose problème, le processeur prend le relais."))
+        f.addRow(self.ia_gpu)
         self.cases_ia = {}
         try:
             catalogue = packs_ia.modeles()
@@ -270,6 +278,7 @@ class DialoguePreferences(QDialog):
     def _tester_locale(self):
         from .taches import Tache
         self.params["ia_poste_leger"] = self.poste_leger.isChecked()
+        self.params["ia_gpu"] = self.ia_gpu.isChecked()
         self.lbl_locale.setText(_("Test en cours : démarrage du moteur et chargement du modèle (jusqu'à quelques minutes)…"))
         self.b_test.setEnabled(False)
         t = Tache(lambda tache: ia_locale.tester(self.params), _("Test IA locale"))
@@ -428,6 +437,7 @@ class DialoguePreferences(QDialog):
             except Exception:
                 pass
         p["ia_poste_leger"] = self.poste_leger.isChecked()
+        p["ia_gpu"] = self.ia_gpu.isChecked()
         a_installer = [k for k, c in self.cases_ia.items() if c.isChecked() and not packs_ia.installe(k)]
         a_retirer = [k for k, c in self.cases_ia.items() if not c.isChecked() and packs_ia.installe(k)]
         if a_installer or a_retirer:

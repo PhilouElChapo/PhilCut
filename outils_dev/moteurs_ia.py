@@ -74,8 +74,11 @@ def _derniere(depot, motifs):
 
 def versions():
     out = {}
-    tag, n = _derniere("ggml-org/llama.cpp", {"llama_win": lambda x: "bin-win-cpu-x64" in x and x.endswith(".zip")})
+    tag, n = _derniere("ggml-org/llama.cpp", {"llama_win": lambda x: "bin-win-cpu-x64" in x and x.endswith(".zip"),
+                                              "llama_win_vulkan": lambda x: "bin-win-vulkan-x64" in x and x.endswith(".zip"),
+                                              "llama_linux_vulkan": lambda x: "bin-ubuntu-vulkan-x64" in x})
     out["llama_tag"], out["llama_win"] = tag, n["llama_win"]
+    out["llama_win_vulkan"], out["llama_linux_vulkan"] = n["llama_win_vulkan"], n["llama_linux_vulkan"]
     tag, n = _derniere("ggml-org/whisper.cpp", {"whisper_win": lambda x: x.endswith(".zip") and "x64" in x and "bin" in x
                                                  and not any(m in x.lower() for m in ("blas", "cublas", "cuda", "vulkan", "arm", "xcframework"))})
     out["whisper_tag"], out["whisper_win"] = tag, n["whisper_win"]
@@ -176,12 +179,15 @@ def assembler(dossier):
     v = json.load(open(os.path.join(dossier, "versions.json")))
     man = {"format": 1, "date": time.strftime("%Y-%m-%d"), "depot": "PhilouElChapo/PhilCut", "tag": "moteurs-ia",
            "moteurs": {"vision": {"nom": "llama.cpp (llama-server)", "version": v["llama_tag"], "licence": "MIT"},
+                       "vision_gpu": {"nom": "llama.cpp Vulkan (carte graphique)", "version": v["llama_tag"], "licence": "MIT"},
                        "whisper": {"nom": "whisper.cpp (whisper-cli)", "version": v["whisper_tag"], "licence": "MIT"}},
            "modeles": json.load(open(os.path.join(dossier, "modeles.json"), encoding="utf-8"))}
-    for genre, prefixe in (("vision", "philcut-llama"), ("whisper", "philcut-whisper")):
+    vus = set()
+    for genre, prefixe in (("vision_gpu", "philcut-llama-vulkan"), ("vision", "philcut-llama"), ("whisper", "philcut-whisper")):
         for systeme in ("windows", "linux"):
             for f in os.listdir(dossier):
-                if f.startswith(f"{prefixe}-{systeme}"):
+                if f.startswith(f"{prefixe}-{systeme}") and f not in vus:
+                    vus.add(f)
                     p = os.path.join(dossier, f)
                     man["moteurs"][genre][systeme] = {"fichier": f, "taille": os.path.getsize(p), "sha256": empreinte(p),
                                                       "url": f"https://github.com/PhilouElChapo/PhilCut/releases/download/moteurs-ia/{f}"}
@@ -190,7 +196,8 @@ def assembler(dossier):
     for g, m in man["moteurs"].items():
         for s in ("windows", "linux"):
             if s not in m:
-                if os.environ.get("PARTIEL"):
+                if os.environ.get("PARTIEL") or g == "vision_gpu":       # la version carte graphique reste facultative
+                    print(f"::warning::moteur {g} {s} absent")
                     continue
                 print(f"::error::moteur {g} {s} absent")
                 return 1

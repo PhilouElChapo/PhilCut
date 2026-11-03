@@ -33,6 +33,8 @@ def main():
 
     # 1. vision
     try:
+        if P.moteur_info("vision_gpu"):   # la machine d'essai n'a pas de carte : on vérifie que le moteur Vulkan démarre ou cède la place
+            P._carte = "carte d'essai (machine sans carte graphique)"
         t0 = time.time()
         P.installer("vision_test", lambda f, t="": None)
         note("Vision installée", f"{P.taille_texte(P.taille_dossier())} en {time.time() - t0:.0f} s")
@@ -41,7 +43,8 @@ def main():
             demarrage = time.time() - t0
             t1 = time.time()
             r = s.generer("Describe this picture in one short sentence.", [png])
-            note("Vision répond", f"{r.strip()[:150]!r} (démarrage {demarrage:.1f} s, réponse {time.time() - t1:.1f} s)")
+            note("Vision répond", f"{r.strip()[:150]!r} (moteur {s.mode}, Vulkan installé : {P.moteur_installe('vision_gpu')}, "
+                                  f"démarrage {demarrage:.1f} s, réponse {time.time() - t1:.1f} s)")
             j = s.generer('Reply with a JSON object {"colour": "<main colour of the sky>"}', [png], json_attendu=True)
             note("Vision JSON", j.strip()[:150])
         assert P.ServeurVision  # serveur arrêté à la sortie du bloc
