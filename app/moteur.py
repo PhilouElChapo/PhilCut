@@ -72,6 +72,11 @@ def version_majeure():
     return 99 if v.startswith("N-") else 0
 
 
+def args_cadence_fixe():
+    """Cadence de sortie constante : « -fps_mode cfr » depuis FFmpeg 5.1, « -vsync cfr » avant (retire dans FFmpeg 8)."""
+    return ["-fps_mode", "cfr"] if version_majeure() >= 5 else ["-vsync", "cfr"]
+
+
 def args_script_filtres(chemin):
     """Le graphe de filtres est long : on le passe par un fichier. FFmpeg 7+ lit « -/filter_complex fichier »,
     les versions anterieures « -filter_complex_script fichier » (retire dans FFmpeg 8)."""
@@ -388,7 +393,7 @@ def proxy(chemin, params=None, fiche=None, progression=None, arret=lambda: False
         vf.append("format=yuv420p")
     tmp = cible + ".part.mp4"
     args = ["-i", chemin, "-vf", ",".join(vf), "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", "-g", str(int(cad)),
-            "-c:a", "aac", "-b:a", "128k", "-ac", "2", "-movflags", "+faststart", "-fps_mode", "cfr", tmp]
+            "-c:a", "aac", "-b:a", "128k", "-ac", "2", "-movflags", "+faststart"] + args_cadence_fixe() + [tmp]
     try:
         lancer(args, progression=progression, duree=fiche.get("duree"), arret=arret, delai=None)
     except Exception:
