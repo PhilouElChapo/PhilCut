@@ -177,12 +177,19 @@ class DialoguePreferences(QDialog):
         self.clef_gemini.setEchoMode(QLineEdit.Password)
         oeil(self.clef_gemini)
         fg.addRow(_("Clef Gemini (Google AI Studio)"), self.clef_gemini)
+        self.clef_fal = QLineEdit(self.params.get("clef_fal", ""))
+        self.clef_fal.setEchoMode(QLineEdit.Password)
+        oeil(self.clef_fal)
+        fg.addRow(_("Clef fal.ai (Kling, Seedance…)"), self.clef_fal)
+        b_conn = QPushButton(_("Connecter une IA : obtenir et tester ma clef…"))
+        b_conn.clicked.connect(self._connecter)
+        fg.addRow(b_conn)
         fg.addRow(QLabel(_("<span style='color:#999'>Rien n'est envoyé sans votre clic. Avant chaque envoi, PhilCut vérifie s'il y a des données sensibles et vous demande confirmation. "
                            "Les clefs vont dans le coffre du système, jamais dans un fichier en clair.</span>")))
         self.confirmer_cout = QCheckBox(_("Afficher le coût estimé et demander confirmation avant chaque envoi à l'IA cloud"))
         self.confirmer_cout.setChecked(self.params.get("ia_confirmer_cout", True))
         fg.addRow(self.confirmer_cout)
-        self.veo = QCheckBox(_("Autoriser la génération Veo par l'API Gemini (payante à la seconde ; prix affiché et confirmation avant chaque plan)"))
+        self.veo = QCheckBox(_("Autoriser les plans vidéo générés par IA payante (Google, fal.ai… ; prix affiché et confirmation avant chaque plan)"))
         self.veo.setChecked(self.params.get("veo_actif", False))
         fg.addRow(self.veo)
         h = QHBoxLayout()
@@ -277,6 +284,17 @@ class DialoguePreferences(QDialog):
         from PySide6.QtCore import QUrl
         from PySide6.QtGui import QDesktopServices
         QDesktopServices.openUrl(QUrl.fromLocalFile(chemin))
+
+    def _connecter(self):
+        from .dialogues_connexion_ia import DialogueConnexionIA
+        from .ia import nettoyer_clef
+        for k, champ in (("clef_claude", self.clef_claude), ("clef_gemini", self.clef_gemini), ("clef_fal", self.clef_fal)):
+            self.params[k] = nettoyer_clef(champ.text())
+        d = DialogueConnexionIA(self, self.params)
+        if d.exec() == QDialog.Accepted:
+            self.clef_claude.setText(self.params.get("clef_claude", ""))
+            self.clef_gemini.setText(self.params.get("clef_gemini", ""))
+            self.clef_fal.setText(self.params.get("clef_fal", ""))
 
     def _tester_locale(self):
         from .taches import Tache
@@ -424,6 +442,7 @@ class DialoguePreferences(QDialog):
         p["ia_moteur"] = self.moteur.currentData()
         p["clef_claude"] = self.clef_claude.text().strip()
         p["clef_gemini"] = self.clef_gemini.text().strip()
+        p["clef_fal"] = self.clef_fal.text().strip()
         p["veo_actif"] = self.veo.isChecked()
         p["ia_confirmer_cout"] = self.confirmer_cout.isChecked()
         p["dossier_flow"] = self.flow.text().strip()

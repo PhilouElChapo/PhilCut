@@ -114,6 +114,7 @@ class Fenetre(QMainWindow):
         asst.addAction(icone("assistant"), _("Analyser et proposer un montage"), lambda: self._editeur_ou_nouveau().outil("assistant"), "Ctrl+Shift+A")
         asst.addAction(icone("liste_fichiers"), _("Fiche vidéo du plan sélectionné"), lambda: self._ed(lambda ed: ed.outil("fiche")))
         asst.addAction(_("Changer le niveau (sans IA, locale, cloud)…"), lambda: self.preferences("Assistant"))
+        asst.addAction(_("Connecter une IA (obtenir et tester ma clef)…"), self.connecter_ia)
         fb = mb.addMenu(_("Fa&brique"))
         fb.addAction(icone("fabrique"), _("Logo, intro, fin, plan IA…"), self.fabrique, "Ctrl+Shift+F")
         ou = mb.addMenu(_("&Outils"))
@@ -449,17 +450,23 @@ class Fenetre(QMainWindow):
             self.params["dossier_flow"] = d.dossier.text().strip()
             self.params.enregistrer()
             if d.voie_veo.isChecked():
+                from . import generateurs_video as GV
                 modele = d.modele_veo.currentData()
-                prix = FAB.prix_veo(modele, d.duree_ia.value())
-                if QMessageBox.question(self, _("Plan IA Google"), _("Générer ce plan avec {m} pour au plus {p} $ environ (facturé sur votre clef Gemini) ?", m=FAB.MODELES_VEO[modele][0], p=prix)) != QMessageBox.Yes:
+                mo = GV.modele(modele, self.params)
+                if not mo:
+                    return
+                prix = GV.prix(mo, d.duree_ia.value())
+                fourn = GV.FOURNISSEURS[mo["fournisseur"]]["nom"]
+                if QMessageBox.question(self, _("Plan IA"), _("Générer ce plan avec {m} pour au plus {p} $ environ (facturé sur votre clef {f}) ?",
+                                                             m=mo["nom"], p=prix, f=fourn)) != QMessageBox.Yes:
                     return
                 dossier = os.path.join(dossier_donnees(), "fabrique")
                 os.makedirs(dossier, exist_ok=True)
-                sortie = os.path.join(dossier, f"veo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4")
-                t = Tache(lambda tache: FAB.generer_veo(self.params, consigne, sortie, modele, d.duree_ia.value(), ed.projet.format, progression=tache.avancer, arret=lambda: tache.arret), _("Veo"))
+                sortie = os.path.join(dossier, f"plan_ia_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4")
+                t = Tache(lambda tache: GV.generer(self.params, modele, consigne, sortie, d.duree_ia.value(), ed.projet.format, progression=tache.avancer, arret=lambda: tache.arret), _("Plan IA"))
                 self.taches.append(t)
-                ed.encart.suivre(t, _("Génération du plan par Google (1 à 6 min)"))
-                t.fini.connect(lambda r, e: ed.importer([sortie]) if not e else QMessageBox.warning(self, _("Plan IA Google"), str(e)))
+                ed.encart.suivre(t, _("Génération du plan par IA (1 à 6 min)"))
+                t.fini.connect(lambda r, e: ed.importer([sortie]) if not e else QMessageBox.warning(self, _("Plan IA"), str(e)))
                 t.start()
             else:
                 avant = FAB.preparer_flow(consigne, d.dossier.text().strip())
@@ -702,6 +709,10 @@ class Fenetre(QMainWindow):
             if avant != (self.params.get("theme"), self.params.get("langue")):
                 if QMessageBox.question(self, _("Préférences"), _("Le thème ou la langue a changé : relancer PhilCut maintenant ?")) == QMessageBox.Yes:
                     self.redemarrer()
+
+    def connecter_ia(self):
+        from .dialogues_connexion_ia import DialogueConnexionIA
+        DialogueConnexionIA(self, self.params).exec()
 
     def redemarrer(self):
         self.close()

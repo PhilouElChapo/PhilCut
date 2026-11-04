@@ -7,7 +7,7 @@ et rien n'est ecrit ailleurs sur le PC ni dans le registre.
 import json, os, platform, sys
 
 APP = "PhilCut"
-VERSION = "0.2.0"
+VERSION = "0.2.1"
 
 
 def dossier_programme():
@@ -42,6 +42,8 @@ DEFAUTS = {
     "ia_moteur": "claude",
     "clef_claude": "",
     "clef_gemini": "",
+    "clef_fal": "",                 # fal.ai : générateurs vidéo (Kling, Seedance…), paiement à l'usage
+    "modeles_video_perso": [],      # modèles fal ajoutés par l'utilisateur : {"modele", "modele_image", "nom", "prix_s"}
     "association_video": False,
     "proxys": True,                 # copies legeres des rushes a l'import
     "export_destination": "youtube",
@@ -82,7 +84,7 @@ class Parametres(dict):
         self._communs_vus = self._empreinte_communs()
 
     # ---- clefs IA : dans le coffre du systeme, jamais dans parametres.json
-    CLEFS_COFFRE = ("clef_claude", "clef_gemini")
+    CLEFS_COFFRE = ("clef_claude", "clef_gemini", "clef_fal")
 
     def _charger_clefs(self):
         """Lit les clefs dans le coffre ; une clef trouvee en clair (version 0.1) y est deplacee puis effacee du fichier."""

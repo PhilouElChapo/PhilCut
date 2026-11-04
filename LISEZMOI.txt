@@ -20,9 +20,12 @@ Premiers pas
 
 IA
 --
-Rien n'est envoye sans votre clic. Preferences > Assistant et IA : niveau (sans IA,
-locale, cloud), clefs Claude / Gemini (rangees dans le coffre du systeme), Veo
-(payant, prix affiche), dossier surveille pour Flow.
+Rien n'est envoye sans votre clic. Chaque utilisateur se sert de SA propre clef :
+PhilCut n'en contient aucune. Assistant > Connecter une IA : pour Claude, Gemini et
+fal.ai (Kling, Seedance...), le lien pour creer sa clef, trois etapes et un test
+gratuit. Les clefs vont dans le coffre du systeme ; la synchro chiffree les copie
+sur vos autres postes si vous l'avez cochee. Le cout estime s'affiche avant chaque
+envoi payant, et avant chaque plan video genere.
 
 IA locale (Preferences > IA locale) : 100 % portable. Les moteurs et les modeles
 (vision, voix, detourage) se telechargent en cochant une case, taille affichee, et

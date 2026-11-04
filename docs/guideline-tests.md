@@ -117,6 +117,17 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 5. Assistant en niveau **IA locale** sur SV1 + SV2 : recette proposée, source « locale:… » affichée.
 6. Fermer PhilCut : plus aucun `llama-server` dans le Gestionnaire des tâches. Supprimer le dossier de la portable : rien ne reste sur le poste (ni au démarrage de Windows, ni dans le registre).
 
+## T13 — Nouveautés 0.2.1
+
+1. **Fondu enchaîné** : deux plans, clic droit › Effets et transition sur le second, « Fondu enchaîné » 1 s. Export : les deux images se mélangent, la durée totale ne change pas. Essayer Cercle, Glissé, Pixels, Fondu flou, Diagonale, Dissolution.
+2. **Rythme** : trois plans et une musique entraînante ; Montage › « Caler les coupes sur les temps de la musique ». **Attendu** : message « n coupe(s) calée(s) (xxx BPM) » ; à la lecture, les coupes tombent sur les temps. Refaire avec « débuts de mesure ». Une recette de l'assistant avec musique cale aussi ses coupes.
+3. **Changer le fond** : Préférences › IA locale › « Détourage précis » coché. Sur un plan avec une personne : Effets › Personne › « Changer le fond » : fond = couleur, puis fond flouté, puis une image du projet ; « Bords adoucis » de 0 à 3. Export : la personne reste nette devant le nouveau fond.
+4. **Image ou logo accroché** : Goodie › « Mes images · Image ou logo », choisir un PNG transparent ; puis clic droit › Accrocher à une personne : le logo la suit.
+5. **Corriger le suivi** : sur un plan suivi où la personne se perd, placer la tête de lecture au moment de l'erreur, clic droit › Cadrage › « Corriger le suivi à la tête de lecture… », redésigner la personne : l'avant est gardé, l'après refait.
+6. **Effets de texte** : Texte › Effet du texte : Contour épais, Ombre portée, Contour et ombre, Lueur, Relief, Couleur qui change ; couleur de l'effet ; police au choix. Export identique à l'aperçu rendu.
+7. **Connecter une IA** : Assistant › Connecter une IA : pour chaque onglet, le bouton ouvre la bonne page, « Tester (gratuit) » valide ou refuse la clef. Coût estimé affiché avant l'envoi en IA cloud (case dans Préférences pour le masquer).
+8. **Plan vidéo par IA** : Fabrique › Plan généré par IA › Générateur IA payant : Omni Flash 360p, prix annoncé, confirmation, clip importé. Avec une clef fal.ai : Kling 3.0 Pro ou Seedance 2.0 (prix plus élevé, annoncé avant).
+
 ## T10 — Le JUGE (validation à l'aveugle)
 
 1. Nouveau projet, importer uniquement la vidéo **JUGE**, aucune indication, niveau Recettes sans IA → Analyser. Appliquer, exporter.

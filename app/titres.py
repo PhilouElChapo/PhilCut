@@ -54,6 +54,30 @@ def ass(projet_titres, largeur, hauteur, cadence=30, sous_titres=()):
     return "\n".join(lignes) + "\n"
 
 
+EFFETS_TEXTE = [("aucun", "Simple"), ("contour", "Contour épais"), ("ombre", "Ombre portée"), ("contour_ombre", "Contour et ombre"),
+                ("lueur", "Lueur"), ("relief", "Relief"), ("couleur_animee", "Couleur qui change")]
+
+
+def tags_effet(t, fs, duree_ms):
+    """Effets combinables du texte (cahier 17.2) en balises ASS : contour, ombre, lueur, relief, couleur animée.
+    couleur2 = couleur du contour, de la lueur ou de la couleur d'arrivée."""
+    e = t.get("effet_texte") or "aucun"
+    c2 = _ass_couleur(t.get("couleur2") or ("#000000" if e in ("contour", "contour_ombre", "relief") else "#ffd24a"))
+    if e == "contour":
+        return f"\\bord{max(2, fs // 9)}\\3c{c2}\\shad0"
+    if e == "ombre":
+        return f"\\bord{max(1, fs // 40)}\\shad{max(2, fs // 11)}\\4c&H000000&\\4a&H50&"
+    if e == "contour_ombre":
+        return f"\\bord{max(2, fs // 10)}\\3c{c2}\\shad{max(2, fs // 12)}\\4c&H000000&\\4a&H60&"
+    if e == "lueur":
+        return f"\\bord{max(3, fs // 7)}\\3c{c2}\\blur{max(4, fs // 5)}\\shad0"
+    if e == "relief":
+        return f"\\bord{max(1, fs // 30)}\\3c&H202020&\\shad{max(2, fs // 16)}\\4c{c2}\\4a&H00&\\be1"
+    if e == "couleur_animee":
+        return f"\\t(0,{duree_ms},\\1c{c2})"
+    return ""
+
+
 def _evenements(t, L, H, cadence):
     x, y = int(float(t.get("x", 0.5)) * L), int(float(t.get("y", 0.85)) * H)
     taille = float(t.get("taille") or 1.0)
@@ -65,7 +89,8 @@ def _evenements(t, L, H, cadence):
     texte = _echapper(t.get("texte", ""))
     d, f = float(t["debut"]), float(t["fin"])
     duree_ms = max(1, int((f - d) * 1000))
-    base = f"\\fn{police}\\fs{fs}\\c{coul}\\pos({x},{y})"
+    fx = tags_effet(t, fs, duree_ms)
+    base = f"\\fn{police}\\fs{fs}\\c{coul}\\pos({x},{y})" + fx
     out = []
     if t.get("suivi") and t["suivi"].get("positions"):
         # une position par pas de temps : plusieurs petits evenements consecutifs
@@ -75,14 +100,14 @@ def _evenements(t, L, H, cadence):
             if tf <= ti or ti >= f or tf <= d:
                 continue
             dx, dy = int(float(px) * L), int(float(py) * H) - int(fs * 1.4)
-            out.append(f"Dialogue: 1,{_t(max(ti, d))},{_t(min(tf, f))},{style_nom},,0,0,0,,{{\\fn{police}\\fs{fs}\\c{coul}\\pos({dx},{dy})}}{texte}")
+            out.append(f"Dialogue: 1,{_t(max(ti, d))},{_t(min(tf, f))},{style_nom},,0,0,0,,{{\\fn{police}\\fs{fs}\\c{coul}\\pos({dx},{dy}){fx}}}{texte}")
         return out
     if anim == "fondu":
         tags = base + "\\fad(300,300)"
     elif anim == "zoom":
         tags = base + "\\fad(150,250)\\fscx40\\fscy40\\t(0,350,\\fscx100\\fscy100)"
     elif anim == "glisse":
-        tags = f"\\fn{police}\\fs{fs}\\c{coul}\\fad(150,250)\\move({x - int(L * 0.15)},{y},{x},{y},0,400)"
+        tags = f"\\fn{police}\\fs{fs}\\c{coul}\\fad(150,250)\\move({x - int(L * 0.15)},{y},{x},{y},0,400)" + fx
     elif anim == "neon":
         tags = (base + f"\\bord{max(2, fs // 10)}\\3c{coul}\\blur{max(4, fs // 6)}\\fad(200,400)"
                 f"\\t(0,120,\\alpha&H60&)\\t(120,220,\\alpha&H00&)\\t(300,380,\\alpha&H50&)\\t(380,480,\\alpha&H00&)")

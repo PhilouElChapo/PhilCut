@@ -78,6 +78,24 @@ class DialogueTitre(QDialog):
         hc.addWidget(self.b_coul)
         hc.addStretch(1)
         f.addRow(_("Couleur"), hc)
+        from .titres import EFFETS_TEXTE
+        from PySide6.QtWidgets import QFontComboBox
+        from PySide6.QtGui import QFont
+        he = QHBoxLayout()
+        self.effet = QComboBox()
+        for k, lib in EFFETS_TEXTE:
+            self.effet.addItem(_(lib), k)
+        self.effet.setCurrentIndex(max(0, self.effet.findData(t.get("effet_texte") or "aucun")))
+        self.couleur2 = t.get("couleur2") or ""
+        self.b_coul2 = QPushButton(_("Couleur de l'effet"))
+        self.b_coul2.clicked.connect(self._choisir2)
+        self._coul2()
+        he.addWidget(self.effet, 1)
+        he.addWidget(self.b_coul2)
+        f.addRow(_("Effet du texte"), he)
+        self.police = QFontComboBox()
+        self.police.setCurrentFont(QFont(t.get("police") or "Nunito"))
+        f.addRow(_("Police"), self.police)
         self.suivre = QComboBox()
         self.suivre.addItem(_("Non"), None)
         for m, boite in medias_visages:
@@ -100,11 +118,22 @@ class DialogueTitre(QDialog):
             self.couleur = c.name()
             self._coul()
 
+    def _coul2(self):
+        if self.couleur2:
+            self.b_coul2.setStyleSheet(f"background:{self.couleur2};color:{'#000' if QColor(self.couleur2).lightness() > 128 else '#fff'};padding:4px 10px")
+
+    def _choisir2(self):
+        c = QColorDialog.getColor(QColor(self.couleur2 or "#000000"), self, _("Couleur du contour, de l'ombre ou de la lueur"))
+        if c.isValid():
+            self.couleur2 = c.name()
+            self._coul2()
+
     def resultat(self):
         t = dict(self.t)
         t.update(texte=self.texte.toPlainText().strip(), style=self.style.currentData(), animation=self.anim.currentData(),
                  debut=self.debut.value(), fin=max(self.debut.value() + 0.3, self.fin.value()), x=self.x.value() / 100, y=self.y.value() / 100,
-                 taille=self.taille.value(), couleur=self.couleur)
+                 taille=self.taille.value(), couleur=self.couleur, effet_texte=self.effet.currentData(), couleur2=self.couleur2,
+                 police=self.police.currentFont().family())
         s = self.suivre.currentData()
         if s:
             t["suivi"] = {"media": s[0], "boite": s[1], "positions": []}
@@ -555,15 +584,28 @@ class DialogueFabrique(QDialog):
         f2.addRow(b_c)
         self.voie_flow = QRadioButton(_("Flow (votre abonnement) : PhilCut copie la consigne, ouvre Flow, puis récupère le clip dans le dossier surveillé"))
         self.voie_flow.setChecked(True)
-        self.voie_veo = QRadioButton(_("Google par l'API Gemini, Omni Flash (payant à la seconde)"))
-        self.voie_veo.setEnabled(bool(params.get("veo_actif")))
+        self.voie_veo = QRadioButton(_("Générateur IA payant avec votre clef (Google, fal.ai : Kling, Seedance…)"))
+        from . import generateurs_video as GV
+        dispo = {m["id"] for m in GV.disponibles(params)}
+        self.voie_veo.setEnabled(bool(params.get("veo_actif")) and bool(dispo))
         f2.addRow(self.voie_flow)
         f2.addRow(self.voie_veo)
         self.modele_veo = QComboBox()
-        for k, (nom, prix, note) in fabrique.MODELES_VEO.items():
-            self.modele_veo.addItem(f"{nom} — {prix:.2f} $/s ({note})", k)
-        self.modele_veo.setCurrentIndex(1)
-        f2.addRow(_("Modèle"), self.modele_veo)
+        for m in GV.modeles(params):
+            lib = f"{m['nom']} — {m.get('prix_s', 0):.2f} $/s ({m.get('note', '')})"
+            if m["id"] not in dispo:
+                lib += "  — " + _("clef {f} à saisir", f=GV.FOURNISSEURS[m["fournisseur"]]["nom"].split(" (")[0])
+            self.modele_veo.addItem(lib, m["id"])
+            if m["id"] not in dispo:
+                self.modele_veo.model().item(self.modele_veo.count() - 1).setEnabled(False)
+        prems = next((i for i in range(self.modele_veo.count()) if self.modele_veo.itemData(i) in dispo), 0)
+        self.modele_veo.setCurrentIndex(max(prems, self.modele_veo.findData("omni-720p") if "omni-720p" in dispo else prems))
+        hm = QHBoxLayout()
+        hm.addWidget(self.modele_veo, 1)
+        b_conn = QPushButton(_("Connecter une IA…"))
+        b_conn.clicked.connect(self._connecter)
+        hm.addWidget(b_conn)
+        f2.addRow(_("Modèle"), hm)
         self.prix = QLabel("")
         f2.addRow(self.prix)
         self.modele_veo.currentIndexChanged.connect(self._prix)
@@ -598,8 +640,19 @@ class DialogueFabrique(QDialog):
                                                           self.duree_ia.value(), self.projet.format))
 
     def _prix(self):
-        self.prix.setText(_("Prix estimé : jusqu'à {p} $ (Google choisit la durée, 3 à 10 s ; confirmation avant envoi)",
-                            p=fabrique.prix_veo(self.modele_veo.currentData(), self.duree_ia.value())))
+        from . import generateurs_video as GV
+        m = GV.modele(self.modele_veo.currentData() or "", self.params)
+        if not m:
+            self.prix.setText("")
+            return
+        precision = _(" (le modèle choisit la durée, 3 à 10 s)") if m.get("duree_auto") else ""
+        self.prix.setText(_("Prix estimé : jusqu'à {p} ${d} ; confirmation avant l'envoi.", p=GV.prix(m, self.duree_ia.value()), d=precision))
+
+    def _connecter(self):
+        from .dialogues_connexion_ia import DialogueConnexionIA
+        if DialogueConnexionIA(self, self.params).exec() == QDialog.Accepted:
+            self.reject()
+            QMessageBox.information(self.parent(), _("Connecter une IA"), _("Clefs enregistrées : rouvrez la Fabrique pour choisir le modèle."))
 
 
 class DialogueFiche(QDialog):
