@@ -150,7 +150,9 @@ class Exportateur:
                 chaine.append(f)
             elif e["id"] in E.GENERES:
                 self._calque_effet(e, c, ctx)
-            if e["id"] in ("double_exposition", "chroma_key", "detourage"):
+            if e["id"] == "detourage":
+                chaine = self._detourage(chaine, e, c, d)
+            elif e["id"] in ("double_exposition", "chroma_key"):
                 chaine = self._avec_second_media(chaine, e, c, d)
         # transition du clip suivant : sortie de celui-ci
         if suivant and suivant.get("transition"):
@@ -169,6 +171,37 @@ class Exportateur:
         nom = self._nom("v")
         self.filtres.append(",".join(chaine) + f"[{nom}]")
         return nom
+
+    def _detourage(self, chaine, e, c, d):
+        """Changer le fond : masque de la personne (segmentation.py) ; nouveau fond = média du projet, fond flouté ou couleur."""
+        p = dict(E.defauts("detourage"))
+        p.update(e.get("params") or {})
+        fond = p.get("fond") or "media"
+        if fond == "media":
+            if not p.get("media") or not self.p.media(p["media"]):
+                self.journal.append("changer le fond : aucune image ou vidéo choisie, fond d'origine gardé")
+                return chaine
+            return self._avec_second_media(chaine, e, c, d)
+        masque = self._masque_sequence(c)
+        if not masque:
+            return chaine
+        km = self._entree("-framerate", str(self.cad), "-i", masque)
+        a, a1, a2, bg, mk, fg, out = (self._nom(x) for x in ("prim", "pa", "pb", "fond", "msk", "fg", "mix"))
+        self.filtres.append(",".join(chaine) + f"[{a}]")
+        if fond == "flou":
+            self.filtres.append(f"[{a}]split[{a1}][{a2}]")
+            self.filtres.append(f"[{a2}]gblur=sigma=40,eq=brightness=-0.08:saturation=0.8[{bg}]")
+        else:
+            a1 = a
+            coul = str(p.get("couleur") or "#1d2b3a").lstrip("#")
+            kc = self._entree("-f", "lavfi", "-t", f"{d:.3f}", "-i", f"color=c=0x{coul}:s={self.L}x{self.H}:r={self.cad}")
+            self.filtres.append(f"[{kc}:v]format=yuv420p[{bg}]")
+        douceur = float(p.get("adoucir", 1.0))
+        flou = f",gblur=sigma={douceur * 2:.2f}" if douceur > 0 else ""
+        self.filtres.append(f"[{km}:v]format=gray,scale={self.L}:{self.H}{flou}[{mk}]")
+        self.filtres.append(f"[{a1}][{mk}]alphamerge[{fg}]")
+        self.filtres.append(f"[{bg}][{fg}]overlay=0:0:format=auto,format=yuv420p[{out}]")
+        return [f"[{out}]null"]
 
     def _avec_second_media(self, chaine, e, c, d):
         """Double exposition / fond vert / detourage : second media mis au format et combine."""
@@ -277,7 +310,7 @@ class Exportateur:
         except ImportError:
             return lambda i: None
         m = self.p.media(c["media"])
-        return segmentation.masques(m["chemin"], c["src_debut"], self.L, self.H, self.cad)
+        return segmentation.masques(m["chemin"], c["src_debut"], self.L, self.H, self.cad, clip=c)
 
     def _masque_sequence(self, c):
         try:
@@ -286,7 +319,7 @@ class Exportateur:
             return None
         m = self.p.media(c["media"])
         d = tempfile.mkdtemp(prefix="masque-", dir=self.tmp)
-        return segmentation.sequence(m["chemin"], c["src_debut"], duree_clip(c), self.L, self.H, self.cad, d)
+        return segmentation.sequence(m["chemin"], c["src_debut"], duree_clip(c), self.L, self.H, self.cad, d, clip=c)
 
     def _goodies(self):
         for g in self.p.goodies:
@@ -324,6 +357,11 @@ class Exportateur:
 
     # ---------------------------------------------------------------- son
     def _son(self):
+        def a_du_son(c):
+            m = self.p.media(c["media"]) or {}
+            return m.get("genre") != "image" and (m.get("fiche") or {}).get("audio") and not c.get("muet")
+        if not any(a_du_son(c) for c in self.p.clips_piste("video")) and not self.p.clips_piste("audio"):
+            return self._silence(self.duree)     # rien à normaliser : loudnorm sur un silence pur donnerait des NaN
         pistes = []
         # son des plans video, bout a bout
         segs = []

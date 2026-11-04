@@ -17,6 +17,8 @@ PACKS = {
     "route": {"nom": _("Route"), "description": _("Compteur de vitesse, carte, kilométrage."), "goodies": ["compteur", "mini_carte", "distance"]},
     "pharmacie": {"nom": _("Pharmacie"), "description": _("Croix verte, horaires, pastille d'annonce, prix."), "goodies": ["croix", "horaires", "pastille", "prix"]},
     "fete": {"nom": _("Fête"), "description": _("Compte à rebours, confettis, date, bandeau."), "goodies": ["compte_a_rebours", "confettis", "date", "bandeau"]},
+    "perso": {"nom": _("Mes images"), "description": _("Logo, autocollant, photo en PNG transparent : à poser, ou à accrocher à une personne qui bouge."),
+              "goodies": ["image"]},
     "maison": {"nom": _("Maison et jardin"), "description": _("Horloge, lune, température, altitude du lieu."), "goodies": ["horloge", "lune", "temperature", "altitude"]},
 }
 
@@ -31,7 +33,7 @@ GENRES = {
     "croix": (_("Croix de pharmacie"), "", (0, 0)), "horaires": (_("Horaires"), "", (0, 0)), "pastille": (_("Pastille d'annonce"), "", (0, 0)),
     "prix": (_("Prix"), "€", (0, 0)), "compte_a_rebours": (_("Compte à rebours"), "s", (0, 0)), "confettis": (_("Confettis"), "", (0, 0)),
     "date": (_("Date"), "", (0, 0)), "bandeau": (_("Bandeau"), "", (0, 0)), "horloge": (_("Horloge"), "", (0, 0)), "lune": (_("Lune"), "", (0, 0)),
-    "temperature": (_("Température"), "°C", (-20, 45)),
+    "temperature": (_("Température"), "°C", (-20, 45)), "image": (_("Image ou logo"), "", (0, 0)),
 }
 
 
@@ -108,6 +110,7 @@ def rendre(dossier, g, L, H, cadence, texte_extra=None):
     nom, unite, (mini, maxi) = GENRES.get(genre, (genre, "", (0, 100)))
     opts = g.get("options") or {}
     police = QFont("Nunito")
+    img_source = QImage(opts.get("chemin") or "") if genre == "image" else None
     for i in range(max(1, n)):
         t = g["debut"] + i / cadence
         v = valeur(g, t)
@@ -118,7 +121,11 @@ def rendre(dossier, g, L, H, cadence, texte_extra=None):
         p.setRenderHint(QPainter.TextAntialiasing)
         c = taille / 2
         r = taille * 0.46
-        if style == "cadran" and genre in ("altimetre", "anemometre", "compas", "variometre", "compte_tours", "boussole", "compteur", "horloge"):
+        if genre == "image":
+            if not img_source.isNull():
+                s = img_source.size().scaled(taille, taille, Qt.KeepAspectRatio)
+                p.drawImage(QRectF((taille - s.width()) / 2, (taille - s.height()) / 2, s.width(), s.height()), img_source)
+        elif style == "cadran" and genre in ("altimetre", "anemometre", "compas", "variometre", "compte_tours", "boussole", "compteur", "horloge"):
             p.setBrush(QColor(15, 15, 20, 225))
             p.setPen(QPen(QColor(230, 230, 230), taille * 0.02))
             p.drawEllipse(QPointF(c, c), r, r)

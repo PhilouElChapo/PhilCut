@@ -68,30 +68,61 @@ def masque_image(img_bgr):
     return m
 
 
-def masques(chemin, debut, L, H, cadence, pas_images=3):
-    """masques(i) -> masque a l'image i (recalcule toutes les `pas_images` images, lisse entre deux)."""
+def cadrer(img, clip, L, H, t_source):
+    """Même cadrage que l'export (export._cadrage) : l'image source mise au format du projet, pour que le masque tombe
+    exactement sur la personne. Les bandes ajoutées (contenir) restent hors masque."""
+    h, w = img.shape[:2]
+    mode = (clip or {}).get("ajustement", "remplir")
+    if mode == "suivi" and ((clip or {}).get("suivi_cadre") or {}).get("positions"):
+        from . import suivi
+        x, y, cw, ch = suivi.fenetre_source(clip["suivi_cadre"], t_source, w, h, L, H)
+        return cv2.resize(img[int(y):int(y + ch), int(x):int(x + cw)], (L, H), interpolation=cv2.INTER_AREA)
+    if mode in ("contenir_noir", "contenir_flou"):
+        e = min(L / w, H / h)
+        nw, nh = max(1, int(round(w * e))), max(1, int(round(h * e)))
+        fond = np.zeros((H, L, 3), dtype=img.dtype)
+        x0, y0 = (L - nw) // 2, (H - nh) // 2
+        fond[y0:y0 + nh, x0:x0 + nw] = cv2.resize(img, (nw, nh), interpolation=cv2.INTER_AREA)
+        return fond
+    e = max(L / w, H / h)
+    nw, nh = int(round(w * e)), int(round(h * e))
+    r = cv2.resize(img, (nw, nh), interpolation=cv2.INTER_AREA)
+    x0, y0 = (nw - L) // 2, (nh - H) // 2
+    return r[y0:y0 + H, x0:x0 + L]
+
+
+def masques(chemin, debut, L, H, cadence, pas_images=3, clip=None):
+    """masques(i) -> masque à l'image i du plan (temps du montage, vitesse comprise), recalculé toutes les
+    `pas_images` images ; même cadrage que l'export."""
     cap = cv2.VideoCapture(chemin)
     cap.set(cv2.CAP_PROP_POS_MSEC, max(0.0, debut) * 1000)
-    cache = {"i": -1, "m": None, "suiv": -1}
+    v = float((clip or {}).get("vitesse", 1.0) or 1.0)
+    cache = {"i": -1, "m": None, "img": None, "t": -1.0}
 
     def f(i):
-        while cache["suiv"] < i:
+        if i == cache["i"]:
+            return cache["m"]
+        t_voulu = debut + i / float(cadence) * v
+        while cache["t"] < t_voulu - 0.5 / max(1.0, cadence):       # on avance dans la source jusqu'à l'instant voulu
             ok, fr = cap.read()
-            cache["suiv"] += 1
             if not ok:
-                return cache["m"]
-            if cache["suiv"] % pas_images == 0 or cache["m"] is None:
-                fr = cv2.resize(fr, (L, H), interpolation=cv2.INTER_AREA)
-                cache["m"] = masque_image(fr)
+                break
+            cache["img"] = fr
+            cache["t"] = cap.get(cv2.CAP_PROP_POS_MSEC) / 1000.0
+        if cache["img"] is None:
+            return cache["m"]
+        if i % pas_images == 0 or cache["m"] is None:
+            cache["m"] = masque_image(cadrer(cache["img"], clip, L, H, t_voulu))
+        cache["i"] = i
         return cache["m"]
     f.fermer = cap.release
     return f
 
 
-def sequence(chemin, debut, duree, L, H, cadence, dossier):
+def sequence(chemin, debut, duree, L, H, cadence, dossier, clip=None):
     """Ecrit les masques en PNG gris (pour alphamerge) ; renvoie le motif."""
     n = int(duree * cadence)
-    f = masques(chemin, debut, L, H, cadence)
+    f = masques(chemin, debut, L, H, cadence, clip=clip)
     for i in range(n):
         m = f(i)
         if m is None:

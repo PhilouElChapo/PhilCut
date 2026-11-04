@@ -653,4 +653,5 @@ def masque_personne(img_bgr, cle=None, params=None):
     sortie = s.run(None, {s.get_inputs()[0].name: x})[0][0, 0]
     mi, ma = float(sortie.min()), float(sortie.max())
     m = (sortie - mi) / max(ma - mi, 1e-6)
+    m = np.clip((m - 0.3) / 0.4, 0.0, 1.0)      # contraste : pas de personne à moitié transparente ni de fond fantôme
     return cv2.resize((m * 255).astype(np.uint8), (L, H), interpolation=cv2.INTER_LINEAR)

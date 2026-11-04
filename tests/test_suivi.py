@@ -72,6 +72,12 @@ class TestSuivi(unittest.TestCase):
         g = p.ajouter_goodie("horloge", 0.5, 3.5)
         suivi.accrocher(p, g, m, self.boite)
         self.assertGreater(len(g["suivi"]["positions"]), 5)
+        logo = os.path.join(self.d, "logo.png")                   # une image (logo) accrochée elle aussi
+        im = np.zeros((64, 64, 4), np.uint8)
+        cv2.circle(im, (32, 32), 28, (0, 200, 255, 255), -1)
+        cv2.imwrite(logo, im)
+        gi = p.ajouter_goodie("image", 0.5, 3.0, taille=0.15, options={"chemin": logo})
+        suivi.accrocher(p, gi, m, self.boite, decalage=(0.0, 0.0))
         out, _j = export.exporter(p, os.path.join(self.d, "suivi.mp4"), "whatsapp", progression=lambda x: None)
         f = moteur.sonder(out)
         self.assertGreater(f["video"]["largeur"], f["video"]["hauteur"])

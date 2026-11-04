@@ -266,6 +266,13 @@ class DialogueEffets(QDialog):
                 w = QCheckBox()
                 w.setChecked(bool(val))
                 w.toggled.connect(lambda v, c=cle, e=e: e.setdefault("params", {}).__setitem__(c, v))
+            elif genre == "choix":       # mini = liste (valeur, libellé)
+                w = QComboBox()
+                for v, l in mini:
+                    w.addItem(l, v)
+                    if v == val:
+                        w.setCurrentIndex(w.count() - 1)
+                w.currentIndexChanged.connect(lambda _i, w=w, c=cle, e=e: e.setdefault("params", {}).__setitem__(c, w.currentData()))
             elif genre == "media":
                 w = QComboBox()
                 w.addItem(_("(choisir)"), "")
@@ -334,6 +341,14 @@ class DialogueGoodie(QDialog):
         f.addRow(_("Taille (part de la hauteur)"), self.taille)
         self.texte = QLineEdit((g.get("options") or {}).get("texte", ""))
         f.addRow(_("Texte (badge, immatriculation…)"), self.texte)
+        hi = QHBoxLayout()
+        self.chemin_image = QLineEdit((g.get("options") or {}).get("chemin", ""))
+        self.chemin_image.setPlaceholderText(_("Pour « Image ou logo » : un PNG transparent de préférence"))
+        b_img = QPushButton(_("Image…"))
+        b_img.clicked.connect(self._choisir_image)
+        hi.addWidget(self.chemin_image, 1)
+        hi.addWidget(b_img)
+        f.addRow(_("Image"), hi)
         self.valeurs = QPlainTextEdit("\n".join(f"{t}\t{v}" for t, v in (g.get("valeurs") or [])))
         self.valeurs.setPlaceholderText(_("Valeurs saisies : une par ligne « seconde  valeur » (ex. 0  0 puis 60  2500). Vide = décor animé."))
         self.valeurs.setMaximumHeight(90)
@@ -348,6 +363,12 @@ class DialogueGoodie(QDialog):
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         f.addRow(bb)
+
+    def _choisir_image(self):
+        p, _f = QFileDialog.getOpenFileName(self, _("Image ou logo"), "", "Images (*.png *.jpg *.jpeg *.webp *.svg)")
+        if p:
+            self.chemin_image.setText(p)
+            self.genre.setCurrentIndex(max(0, self.genre.findData("image")))
 
     def _gpx(self):
         p, _f = QFileDialog.getOpenFileName(self, _("Trace GPX"), "", "GPX (*.gpx)")
@@ -379,6 +400,8 @@ class DialogueGoodie(QDialog):
                     pass
         opts = dict(g.get("options") or {})
         opts["texte"] = self.texte.text().strip()
+        if self.chemin_image.text().strip():
+            opts["chemin"] = self.chemin_image.text().strip()
         g.update(genre=self.genre.currentData(), style=self.style.currentData(), debut=self.debut.value(), fin=max(self.debut.value() + 0.5, self.fin.value()),
                  x=self.x.value() / 100, y=self.y.value() / 100, taille=self.taille.value(), valeurs=sorted(vals), options=opts)
         return g

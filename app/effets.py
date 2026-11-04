@@ -89,8 +89,13 @@ CATALOGUE = {
              [("couleur", _("Couleur"), "couleur", "#ffd36b", 0, 0), ("force", _("Force"), "float", 1.0, 0.2, 2.0)], "segmentation"),
     "feu_artifice_derriere": ("personne", _("Feu d'artifice derrière"), _("Les gerbes passent derrière la personne."),
                               [("quantite", _("Quantité"), "int", 6, 1, 20)], "segmentation"),
-    "detourage": ("personne", _("Détourage sans fond vert"), _("Enlève le fond et pose la personne sur un autre décor."),
-                  [("media", _("Nouveau décor"), "media", "", 0, 0)], "segmentation"),
+    "detourage": ("personne", _("Changer le fond (détourage)"),
+                  _("Enlève le fond sans fond vert et pose la personne sur un autre décor : une image ou une vidéo du projet "
+                    "(un plan généré par la Fabrique, par exemple), le fond d'origine flouté, ou une couleur."),
+                  [("fond", _("Nouveau fond"), "choix", "media", [("media", _("Image ou vidéo du projet")), ("flou", _("Fond d'origine flouté")),
+                                                                   ("couleur", _("Couleur unie"))], 0),
+                   ("media", _("Image ou vidéo"), "media", "", 0, 0), ("couleur", _("Couleur"), "couleur", "#1d2b3a", 0, 0),
+                   ("adoucir", _("Bords adoucis"), "float", 1.0, 0.0, 4.0)], "segmentation"),
     "code_personne": ("matrix", _("Personne en code"), _("La silhouette se remplit de caractères qui défilent puis redevient réelle."),
                       [("duree", _("Durée (s)"), "float", 2.0, 0.5, 6.0)], "segmentation"),
     # ---- matrix

@@ -416,6 +416,15 @@ class Apercu(QGraphicsView):
             from . import suivi
             x = min(max(suivi.valeur(pos, self.t, 1) * L - taille / 2, 0), L - taille)
             y = min(max(suivi.valeur(pos, self.t, 2) * H - taille, 0), H - taille)
+        if g.get("genre") == "image":
+            px = QPixmap((g.get("options") or {}).get("chemin") or "")
+            if not px.isNull():
+                px = px.scaled(taille, taille, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                it = self._scene.addPixmap(px)
+                it.setPos(x + (taille - px.width()) / 2, y + (taille - px.height()) / 2)
+                it.setZValue(6)
+                self.calques.append(it)
+                return
         cadre = QGraphicsRectItem(0, 0, taille, taille)
         cadre.setBrush(QColor(10, 10, 14, 170))
         cadre.setPen(QPen(QColor(255, 255, 255, 140), 2))
