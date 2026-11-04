@@ -119,6 +119,7 @@ class Fenetre(QMainWindow):
         fb.addAction(icone("fabrique"), _("Logo, intro, fin, plan IA…"), self.fabrique, "Ctrl+Shift+F")
         fb.addAction(_("Atelier de logo (créer, modifier, idées par l'IA)…"), self.atelier_logo)
         ou = mb.addMenu(_("&Outils"))
+        ou.addAction(_("Publier (YouTube, Instagram, TikTok…)…"), self.publier)
         ou.addAction(icone("nuage"), _("Déposer l'export sur le Drive / NAS…"), self.partager)
         ou.addAction(_("Synchroniser maintenant"), self.ecrire_session)
         ou.addAction(_("Journal des échanges (Drives, IA)…"), self.journal_echanges)
@@ -405,15 +406,23 @@ class Fenetre(QMainWindow):
             return journal
         t = Tache(travail, _("Export"))
         self.taches.append(t)
-        ed.encart.suivre(t, _("Export vers {f}", f=os.path.basename(sortie)), (_("Ouvrir"), lambda: self.ouvrir_externe(sortie)))
+        ed.encart.suivre(t, _("Export vers {f}", f=os.path.basename(sortie)), (_("Publier…"), lambda: self.publier(sortie)))
         t.fini.connect(lambda r, e: self._exporte(sortie, r, e, d.drive.isChecked()))
         t.start()
+
+    def publier(self, fichier=""):
+        ed = self._editeur_ou_nouveau()
+        from .dialogues_publication import DialoguePublier
+        DialoguePublier(self, ed.projet, self.params, fichier).exec()
 
     def _exporte(self, sortie, journal, erreur, deposer):
         from .journal import ecrire
         if erreur:
             ecrire("export", f"✕ {sortie} : {erreur}")
             return
+        ed = self.editeur_courant()
+        if ed:
+            ed.projet.d["dernier_export"] = sortie
         ecrire("export", f"✓ {sortie}" + (f" ({'; '.join(journal)})" if journal else ""))
         if deposer:
             self.partager(sortie)

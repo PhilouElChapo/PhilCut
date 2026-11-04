@@ -25,6 +25,16 @@ FOURNISSEURS = {
         "env": ("PHILCUT_GOOGLE_ID", "PHILCUT_GOOGLE_SECRET"),
         "retour": "http://127.0.0.1:{port}",
     },
+    "youtube": {           # même application Google que le Drive ; seulement l'envoi de vidéos sur la chaîne
+        "nom": "YouTube",
+        "auth": "https://accounts.google.com/o/oauth2/v2/auth",
+        "jeton": "https://oauth2.googleapis.com/token",
+        "portee": "https://www.googleapis.com/auth/youtube.upload",
+        "extra": {"access_type": "offline", "prompt": "consent"},
+        "env": ("PHILCUT_GOOGLE_ID", "PHILCUT_GOOGLE_SECRET"),
+        "retour": "http://127.0.0.1:{port}",
+        "meme_que": "gdrive",
+    },
     "onedrive": {
         "nom": "OneDrive",
         "auth": "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
@@ -69,6 +79,8 @@ PUBLICS = {}            # PhilCut a ses propres applications : identifiants four
 def identifiants(fournisseur):
     """(client_id, secret) ou (None, None) si PhilCut n'a pas d'identifiant pour ce fournisseur."""
     f = FOURNISSEURS[fournisseur]
+    if f.get("meme_que"):
+        fournisseur = f["meme_que"]
     cid, sec = os.environ.get(f["env"][0]), os.environ.get(f["env"][1])
     if cid:
         return cid.strip(), (sec or "").strip() or None
