@@ -7,6 +7,12 @@ import json, os, re, time, urllib.parse, urllib.request
 from .langue import _
 
 API = "https://api.openverse.org/v1/audio/"
+
+
+def _agent():
+    """Identité HTTP sobre (ASCII, version, adresse du projet) : le pare-feu d'Openverse refuse les autres."""
+    from .config import VERSION
+    return {"User-Agent": f"PhilCut/{VERSION} (+https://github.com/PhilouElChapo/PhilCut)"}
 LICENCES = "cc0,pdm,by,by-sa"          # NC (pas d'usage commercial) et ND (pas de modification) exclues
 AMBIANCES = [("energique", _("Energique"), "upbeat energetic"), ("cinema", _("Cinéma"), "cinematic epic"),
              ("calme", _("Calme"), "calm ambient relaxing"), ("joyeuse", _("Joyeuse"), "happy cheerful"),
@@ -25,7 +31,7 @@ def chercher(texte="", ambiance=None, longueur=None, page=1, taille=20):
     params = {"q": q, "license": LICENCES, "category": "music", "page_size": taille, "page": page, "mature": "false"}
     if longueur:
         params["length"] = longueur
-    req = urllib.request.Request(API + "?" + urllib.parse.urlencode(params), headers={"User-Agent": "PhilCut (montage vidéo libre)"})
+    req = urllib.request.Request(API + "?" + urllib.parse.urlencode(params), headers=_agent())
     try:
         with urllib.request.urlopen(req, timeout=20) as r:
             d = json.loads(r.read().decode("utf-8"))
@@ -73,7 +79,7 @@ def telecharger(morceau, params, progression=None):
     ext = morceau.get("type") if morceau.get("type") in ("mp3", "ogg", "wav", "flac", "m4a") else "mp3"
     chemin = os.path.join(dossier(params), f"{nom}.{ext}")
     if not os.path.exists(chemin):
-        req = urllib.request.Request(morceau["url"], headers={"User-Agent": "PhilCut (montage vidéo libre)"})
+        req = urllib.request.Request(morceau["url"], headers=_agent())
         with urllib.request.urlopen(req, timeout=120) as r, open(chemin + ".part", "wb") as f:
             total = int(r.headers.get("Content-Length") or 0)
             fait = 0

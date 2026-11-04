@@ -31,14 +31,6 @@ def main():
     essai = os.environ.get("ESSAI", "cle")
     if essai == "musique":       # bibliothèque musicale libre (gratuit, sans clef)
         from app import musiques as MU
-        for ua in ("PhilCut (montage vidéo libre)", "PhilCut/0.2 (+https://github.com/PhilouElChapo/PhilCut)",
-                   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"):
-            for url in ("https://api.openverse.org/v1/audio/?q=adventure&page_size=3", "https://api.openverse.org/v1/audio/?q=adventure&license=cc0,by&page_size=3"):
-                try:
-                    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": ua}), timeout=20) as r:
-                        print(f"::notice title=Openverse {r.status}::{ua[:30]} {url[-40:]}")
-                except urllib.error.HTTPError as e:
-                    print(f"::warning title=Openverse {e.code}::{ua[:30]} {url[-40:]} {e.read()[:200]!r}")
         res = MU.chercher("", "aventure", "medium")
         for r in res[:5]:
             print(f"::notice title=Musique::{r['titre']} — {r['auteur']} — {r['licence']} — {int(r['duree'])} s — {r['source']}")
