@@ -32,7 +32,12 @@ class DialoguePublier(QDialog):
         self.titre = QLineEdit(pub.get("titre") or projet.nom or "")
         self.titre.setMaxLength(100)
         f.addRow(_("Titre"), self.titre)
-        self.desc = QPlainTextEdit(pub.get("description") or "")
+        from . import musiques
+        description = pub.get("description") or ""
+        for c in musiques.credits_projet(projet):         # crédit obligatoire des musiques sous licence CC BY
+            if c not in description:
+                description = (description + "\n\n" + c).strip()
+        self.desc = QPlainTextEdit(description)
         self.desc.setMaximumHeight(110)
         f.addRow(_("Description"), self.desc)
         self.mots = QLineEdit(", ".join(pub.get("mots_clefs") or []))

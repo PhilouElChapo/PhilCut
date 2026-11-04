@@ -548,8 +548,17 @@ class Fenetre(QMainWindow):
             for f in sorted(os.listdir(d))[:40]:
                 if est_audio(f):
                     sm.addAction(f, lambda f=f: self._poser_musique(ed, os.path.join(d, f)))
-        m.addAction(_("Bibliothèque libre en ligne (bientôt : catalogue téléchargeable)"), lambda: webbrowser.open("https://freemusicarchive.org/"))
+        m.addAction(_("Bibliothèque musicale libre (chercher, écouter, télécharger)…"), lambda: self.bibliotheque_musicale(ed))
         m.exec(self.cursor().pos())
+
+    def bibliotheque_musicale(self, ed=None, ambiance=None):
+        ed = ed or self._editeur_ou_nouveau()
+        from .dialogues_musiques import DialogueMusiques
+        amb = ambiance or ((ed.projet.d.get("recette") or {}).get("musique") or {}).get("ambiance")
+        corresp = {"energique": "energique", "chaleureuse": "calme", "douce": "calme", "legere": "joyeuse"}
+        d = DialogueMusiques(self, self.params, corresp.get(amb, amb))
+        if d.exec() == QDialog.Accepted and d.chemin:
+            self._poser_musique(ed, d.chemin)
 
     def _poser_musique(self, ed, chemin):
         ed._piste_depot = ("audio", 0.0)

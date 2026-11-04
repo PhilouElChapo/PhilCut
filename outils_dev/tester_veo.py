@@ -29,6 +29,18 @@ def erreur_google(e):
 def main():
     clef = "".join(os.environ.get("GEMINI_API_KEY", "").split())
     essai = os.environ.get("ESSAI", "cle")
+    if essai == "musique":       # bibliothèque musicale libre (gratuit, sans clef)
+        from app import musiques as MU
+        res = MU.chercher("", "aventure", "medium")
+        for r in res[:5]:
+            print(f"::notice title=Musique::{r['titre']} — {r['auteur']} — {r['licence']} — {int(r['duree'])} s — {r['source']}")
+        if not res:
+            print("::error::aucun résultat")
+            return 1
+        os.makedirs("essai_veo", exist_ok=True)
+        chemin = MU.telecharger(res[0], {"musiques_dossier": "essai_veo"})
+        print(f"::notice title=Téléchargé::{os.path.basename(chemin)} ({os.path.getsize(chemin) // 1024} Ko) ; crédit : {MU.credit(res[0])}")
+        return 0
     if not clef:
         print("::error title=Clef absente::Ajoutez le secret GEMINI_API_KEY dans Settings › Secrets and variables › Actions.")
         return 1

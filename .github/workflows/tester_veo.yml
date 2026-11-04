@@ -8,7 +8,7 @@ on:
       essai:
         description: "cle = gratuit (verifie la clef) ; video = PAYANT (un plan court Omni Flash ; environ 0,35 $ en 360p)"
         type: choice
-        options: [cle, video, logo]
+        options: [cle, video, logo, musique]
         default: cle
       modele:
         description: "Modele Veo pour l'essai video"
