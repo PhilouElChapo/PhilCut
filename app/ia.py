@@ -490,6 +490,8 @@ def demander(params, consignes, texte, images=None, json_attendu=False, max_jeto
 
 
 def lire_json(texte):
+    if isinstance(texte, (dict, list)):        # demander(..., json_attendu=True) renvoie déjà l'objet
+        return texte
     t = (texte or "").strip()
     t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t)
     try:
