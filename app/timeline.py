@@ -251,6 +251,7 @@ class ItemCalque(QGraphicsRectItem):
         m.addAction(_("Modifier…"), lambda: self.tl.proprietes.emit(self.elem["id"]))
         m.addAction(_("Accrocher à une personne (suit ses mouvements)…"), lambda: self.tl.demande_menu.emit(self.elem["id"], "accrocher"))
         if self.elem.get("suivi"):
+            m.addAction(_("Corriger le suivi à la tête de lecture…"), lambda: self.tl.demande_menu.emit(self.elem["id"], "corriger"))
             m.addAction(_("Décrocher (position fixe)"), lambda: self.tl.demande_menu.emit(self.elem["id"], "decrocher"))
         m.addAction(_("Supprimer"), lambda: self.tl.supprimer_element(self.elem["id"]))
         m.exec(e.screenPos())
@@ -543,6 +544,8 @@ class Timeline(QGraphicsView):
             a = sm.addAction(_("Suivre la personne (recadrage automatique)…"), lambda: self.demande_menu.emit(clip["id"], "suivi"))
             a.setCheckable(True)
             a.setChecked(clip.get("ajustement") == "suivi")
+            if clip.get("ajustement") == "suivi":
+                sm.addAction(_("Corriger le suivi à la tête de lecture…"), lambda: self.demande_menu.emit(clip["id"], "corriger"))
         a = m.addAction(_("Muet"), lambda: self._muet(clip))
         a.setCheckable(True)
         a.setChecked(bool(clip.get("muet")))

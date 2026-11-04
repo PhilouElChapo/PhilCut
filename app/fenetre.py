@@ -107,6 +107,9 @@ class Fenetre(QMainWindow):
         for oid in ("vitesse", "recadrer", "stabiliser", "texte", "effets", "goodies", "sous_titres", "musique", "voix"):
             o = O.outil(oid)
             mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
+        mo.addSeparator()
+        mo.addAction(_("Caler les coupes sur les temps de la musique"), lambda: self._ed(lambda ed: ed.caler_rythme(False)))
+        mo.addAction(_("Caler les coupes sur les débuts de mesure (plus posé)"), lambda: self._ed(lambda ed: ed.caler_rythme(True)))
         asst = mb.addMenu(_("A&ssistant"))
         asst.addAction(icone("assistant"), _("Analyser et proposer un montage"), lambda: self._editeur_ou_nouveau().outil("assistant"), "Ctrl+Shift+A")
         asst.addAction(icone("liste_fichiers"), _("Fiche vidéo du plan sélectionné"), lambda: self._ed(lambda ed: ed.outil("fiche")))

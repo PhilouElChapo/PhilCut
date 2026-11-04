@@ -269,6 +269,17 @@ def appliquer(recette, projet, params=None, choix=None, remplacer=True):
         dm = float((m.get("fiche") or {}).get("duree") or duree)
         c = projet.ajouter_clip(m["id"], "audio", 0.0, 0.0, min(dm, duree))
         c["volume"] = 0.8
+        if ok("plans") and (recette.get("musique") or {}).get("caler", True):   # coupes sur les temps de la musique
+            try:
+                from . import rythme
+                from .projet import fin_clip
+                if not m.get("rythme"):
+                    m["rythme"] = rythme.analyser(m["chemin"])
+                if rythme.caler(projet, c, m["rythme"], forts=(recette.get("musique") or {}).get("bpm", 100) < 100):
+                    fin_video = max([fin_clip(x) for x in projet.clips_piste("video")] + [0.0])
+                    c["src_fin"] = min(dm, c["src_debut"] + fin_video - c["debut"])
+            except Exception:       # noqa: BLE001 : sans rythme net, on garde les coupes de la recette
+                pass
     projet.d["recette"] = copy.deepcopy(recette)
     projet.d["ducking"] = True
     projet.modifie = True

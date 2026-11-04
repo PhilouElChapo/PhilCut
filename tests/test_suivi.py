@@ -94,6 +94,29 @@ class TestSuivi(unittest.TestCase):
         # sans suivi, l'objet serait coupé ou au bord ; avec suivi il reste près du centre vertical du cadre 16:9
         self.assertLess(max(ecarts), 0.2, ecarts)
 
+    def test_correction_a_la_main(self):
+        """On redésigne l'objet à 2 s : la trajectoire avant 2 s est gardée, celle d'après refaite et correcte."""
+        p = projet.Projet("Corr", "16:9")
+        m = p.ajouter_media(self.v, moteur.sonder(self.v))
+        c = p.ajouter_clip(m["id"])
+        c["ajustement"] = "suivi"
+        c["suivi_cadre"] = {"positions": [(0.0, 0.5, 0.5), (1.0, 0.5, 0.5), (3.9, 0.1, 0.9)], "zoom": 1.0, "lissage": "reactif"}
+        t = 2.0
+        cx = objet_x(t)
+        suivi.corriger_cadre(p, c, t, (cx - 28 / L_SRC, 0.5 - 0.05 - 40 / H_SRC, 56 / L_SRC, 80 / H_SRC))
+        pos = c["suivi_cadre"]["positions"]
+        self.assertEqual(pos[:2], [(0.0, 0.5, 0.5), (1.0, 0.5, 0.5)])
+        apres = [q for q in pos if q[0] >= 2.5]
+        self.assertTrue(apres)
+        for q in apres:
+            self.assertAlmostEqual(q[1], objet_x(q[0]), delta=0.08)
+        g = p.ajouter_goodie("horloge", 0.0, 3.5)
+        suivi.accrocher(p, g, m, self.boite)
+        n_avant = len([q for q in g["suivi"]["positions"] if q[0] < 1.5])
+        suivi.corriger_accroche(p, g, 1.5, (objet_x(1.5) - 28 / L_SRC, 0.48 - 40 / H_SRC, 56 / L_SRC, 80 / H_SRC))
+        self.assertEqual(len([q for q in g["suivi"]["positions"] if q[0] < 1.5]), n_avant)
+        self.assertGreater(g["suivi"]["positions"][-1][0], 3.0)
+
     def test_fenetre_source_dans_l_image(self):
         cadre = {"positions": [(0, 0.02, 0.98), (1, 0.99, 0.01)], "zoom": 1.5}
         for t in (0, 0.5, 1):

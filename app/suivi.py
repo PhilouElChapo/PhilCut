@@ -304,6 +304,37 @@ def accrocher(projet, element, media, boite, decalage=(0.0, -0.6), lissage="norm
     return element
 
 
+def corriger_cadre(projet, clip, t_montage, boite, progression=None, arret=lambda: False):
+    """Le suivi a décroché : on redésigne la personne à l'instant t_montage ; la trajectoire est gardée avant, refaite après."""
+    cadre = clip.get("suivi_cadre") or {}
+    m = projet.media(clip["media"])
+    v = float(clip.get("vitesse", 1.0) or 1.0)
+    t_src = clip["src_debut"] + max(0.0, t_montage - clip["debut"]) * v
+    nouv = suivre(_source(projet, m), t_src, clip["src_fin"], boite, progression=progression, arret=arret)
+    nouv = alleger(lisser(nouv, LISSAGES.get(cadre.get("lissage", "normal"), 0.6)), 0.2)
+    avant = [p for p in cadre.get("positions") or [] if p[0] < t_src - 0.05]
+    cadre["positions"] = avant + [(p[0], p[1], p[2]) for p in nouv]
+    cadre.setdefault("zoom", 1.0)
+    cadre.setdefault("boite", list(boite[:4]))
+    clip["suivi_cadre"] = cadre
+    clip["ajustement"] = "suivi"
+    return clip
+
+
+def corriger_accroche(projet, element, t_montage, boite, progression=None, arret=lambda: False):
+    """Même chose pour un texte, un Goodie ou une image accrochés."""
+    s = element.get("suivi") or {}
+    m = projet.media(s.get("media"))
+    if not m:
+        raise ErreurSuivi("élément non accroché")
+    copie = dict(element, debut=max(element["debut"], t_montage))
+    accrocher(projet, copie, m, boite, tuple(s.get("decalage") or (0.0, -0.6)), s.get("lissage", "normal"), progression, arret)
+    avant = [p for p in s.get("positions") or [] if p[0] < t_montage - 0.05]
+    s["positions"] = avant + copie["suivi"]["positions"]
+    element["suivi"] = s
+    return element
+
+
 def position_pixels(element, L, H, largeur_px, hauteur_px):
     """Expressions overlay x, y (en pixels, coin haut-gauche) d'un élément accroché : centré horizontalement sur le
     point d'accroche, posé au-dessus. Temps = temps du montage."""

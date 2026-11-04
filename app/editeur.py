@@ -740,7 +740,9 @@ class Editeur(QWidget):
         self.rafraichir()
 
     def _demande_menu(self, ident, quoi):
-        if quoi == "suivi":
+        if quoi == "corriger":
+            self.corriger_suivi(ident)
+        elif quoi == "suivi":
             c = self.projet.clip(ident)
             if c:
                 self.recadrer_suivi(c)
@@ -773,6 +775,73 @@ class Editeur(QWidget):
         self.encart.suivre(t, _("Recadrage qui suit la personne dans « {n} »", n=m["nom"]))
         t.fini.connect(lambda r, e: (self.rafraichir(), self.apercu.rafraichir() if hasattr(self.apercu, "rafraichir") else None))
         t.start()
+
+    def caler_rythme(self, forts=False):
+        """Chaque coupe vidéo tombe sur un temps (ou un début de mesure) de la musique de la piste audio."""
+        from . import rythme
+        musique = next(iter(self.projet.clips_piste("audio")), None)
+        if not musique or len(self.projet.clips_piste("video")) < 2:
+            self.encart.message(_("Il faut au moins deux plans vidéo et une musique sur la piste audio."))
+            return
+        m = self.projet.media(musique["media"])
+
+        def travail(tache):
+            tache.avancer(0.1, _("écoute de la musique"))
+            if not m.get("rythme"):
+                m["rythme"] = rythme.analyser(m["chemin"])
+            return m["rythme"]
+
+        def fin(analyse, err):
+            if err or not analyse or not analyse.get("temps"):
+                self.encart.message(_("Pas de rythme net dans cette musique : coupes inchangées."))
+                return
+            self.projet.marquer()
+            n = rythme.caler(self.projet, musique, analyse, forts)
+            self.rafraichir()
+            self.encart.message(_("{n} coupe(s) calée(s) sur la musique ({b} BPM).", n=n, b=int(round(analyse.get("bpm") or 0))))
+        t = Tache(travail, _("Rythme"))
+        self.taches.append(t)
+        self.encart.suivre(t, _("Coupes calées sur « {n} »", n=m["nom"]))
+        t.fini.connect(fin)
+        t.start()
+
+    def corriger_suivi(self, ident):
+        """Le suivi a décroché (personne cachée, sortie du cadre) : on la redésigne à la tête de lecture, le reste est refait."""
+        from .dialogues_suivi import DialogueSuivi
+        t = self.timeline.position
+        clip = self.projet.clip(ident)
+        element = None if clip else next((e for e in self.projet.titres + self.projet.goodies if e["id"] == ident), None)
+        if clip:
+            if not (clip["debut"] <= t < fin_clip(clip)):
+                self.encart.message(_("Placez la tête de lecture sur ce plan, au moment où le suivi se trompe."))
+                return
+            m = self.projet.media(clip["media"])
+        elif element and element.get("suivi"):
+            if not (element["debut"] <= t < element["fin"]):
+                self.encart.message(_("Placez la tête de lecture pendant l'élément, au moment où le suivi se trompe."))
+                return
+            m = self.projet.media(element["suivi"].get("media"))
+            clip = next((c for c in self.projet.clips_piste("video") if c["media"] == m["id"] and c["debut"] <= t < fin_clip(c)), None) if m else None
+        else:
+            return
+        if not m or not clip:
+            return
+        t_src = clip["src_debut"] + (t - clip["debut"]) * clip.get("vitesse", 1.0)
+        d = DialogueSuivi(self, m, t_src, recadrage=False)
+        d.setWindowTitle(_("Corriger le suivi à {t}", t=moteur.duree_texte(t)))
+        if d.exec() != d.Accepted:
+            return
+        boite, _z, _l = d.resultat()
+        self.projet.marquer()
+        if element is None:
+            fonction = lambda tache: suivi.corriger_cadre(self.projet, clip, t, boite, progression=lambda f: tache.avancer(f), arret=lambda: tache.arret)
+        else:
+            fonction = lambda tache: suivi.corriger_accroche(self.projet, element, t, boite, progression=lambda f: tache.avancer(f), arret=lambda: tache.arret)
+        tache = Tache(fonction, _("Suivi"))
+        self.taches.append(tache)
+        self.encart.suivre(tache, _("Correction du suivi à partir de {t}", t=moteur.duree_texte(t)))
+        tache.fini.connect(lambda r, e: self.rafraichir())
+        tache.start()
 
     def accrocher(self, element):
         """Texte ou Goodie qui suit une personne du plan présent à son début."""
