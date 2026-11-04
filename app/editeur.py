@@ -88,6 +88,17 @@ class Encart(QFrame):
         else:
             QTimer.singleShot(4000, self.hide)
 
+    def suivre_message(self, texte, action, duree=20000):
+        """Message avec un bouton d'action (ex. « Voir l'aperçu rendu »)."""
+        self.message(texte, duree)
+        self.bouton.setText(action[0])
+        self.bouton.show()
+        try:
+            self.bouton.clicked.disconnect()
+        except (RuntimeError, TypeError):
+            pass
+        self.bouton.clicked.connect(lambda: (self.hide(), action[1]()))
+
     def message(self, texte, duree=5000):
         self.tache = None
         self.lbl.setText(texte)
@@ -1098,6 +1109,14 @@ class Editeur(QWidget):
             self.projet.marquer()
             c["effets"], c["transition"] = d.resultat()
             self.rafraichir()
+            n = len(c["effets"]) + (1 if c.get("transition") else 0)
+            if n:
+                def voir():
+                    self.timeline.aller_a(c["debut"] + 5.0 - (1.0 if c.get("transition") else 0.0))
+                    self.apercu_rendu()
+                self.encart.suivre_message(_("{n} effet(s) sur « {p} » (✦ sur le plan). La lecture normale ne les montre pas : "
+                                             "« Aperçu rendu » les montre ; pour les modifier, clic droit sur le plan › Effets.", n=n, p=c.get("nom", "")),
+                                           (_("Voir l'aperçu rendu"), voir))
 
     def nouveau_texte(self):
         d = DialogueTitre(self, None, self.timeline.position, max(10.0, self.projet.duree()), self._medias_visages())

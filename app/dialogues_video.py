@@ -356,13 +356,25 @@ class DialogueEffets(QDialog):
                                                                       "il se télécharge alors dans le dossier de PhilCut.", p=E.PACKS.get(fi["pack"], {}).get("nom", fi["pack"]), o=ou))
             return
         if fi["famille"] == "transition":
-            self.transition = {"id": k, "params": dict(E.defauts(k))}
-        else:
-            if any(e["id"] == k for e in self.effets):
+            ed = self.parent()
+            projet = getattr(ed, "projet", None)
+            premier = projet is not None and not any(c["debut"] < self.clip["debut"] - 0.01 for c in projet.clips_piste(self.clip.get("piste", "video")))
+            if premier:
+                QMessageBox.information(self, _("Transition"), _("Une transition se pose sur le plan qui ARRIVE : elle fait le passage entre le plan "
+                                                                 "d'avant et celui-ci. Ce plan est le premier de la timeline : choisissez plutôt le "
+                                                                 "plan suivant (ou un effet « Fondu au noir » pour le début)."))
                 return
-            self.effets.append({"id": k, "params": dict(E.defauts(k))})
+            self.transition = {"id": k, "params": dict(E.defauts(k))}
+            ligne = 0
+        else:
+            if not any(e["id"] == k for e in self.effets):
+                self.effets.append({"id": k, "params": dict(E.defauts(k))})
+            ligne = next(i for i, e in enumerate(self.effets) if e["id"] == k) + (1 if self.transition else 0)
         self._remplir()
-        self.poses.setCurrentRow(self.poses.count() - 1)
+        self.poses.setCurrentRow(ligne)
+        self.aide.setText(_("✓ « {n} » est posé sur ce plan. Réglez-le ci-dessous, puis OK. Pour l'enlever : « Retirer ».", n=fi["nom"]))
+        self._essai = None
+        self._minuteur_apercu.start(300)
 
     def _courant(self):
         it = self.poses.currentItem()
