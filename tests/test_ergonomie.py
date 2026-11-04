@@ -32,6 +32,44 @@ class TestPartie(unittest.TestCase):
         self.assertFalse(p.partie(1, 1.01, True))
 
 
+class TestEffetSurUnePartie(unittest.TestCase):
+    def test_morceau(self):
+        import tempfile
+        from app.config import Parametres
+        p = Parametres()
+        p["bienvenue_vue"] = True
+        p["maj_auto"] = False
+        p["synchro"] = False
+        p.enregistrer()
+        from app.fenetre import Fenetre
+        from app import taches
+        d = tempfile.mkdtemp()
+        v = commun.video_test(d, "long.mp4", duree=12)
+        f = Fenetre()
+        ed = f.nouveau_projet("16:9")
+
+        class T:
+            arret = False
+
+            @staticmethod
+            def avancer(fr, t=""):
+                pass
+        r = taches.importer_media(T, v, f.params, avec_proxy=False)
+        m = ed.projet.ajouter_media(v, r["fiche"])
+        ed.ajouter_a_la_timeline(m["id"])
+        ed.timeline.aller_a(3.0)
+        ed.timeline.marquer_zone(0)
+        ed.timeline.aller_a(5.0)
+        ed.timeline.marquer_zone(1)
+        c = ed.morceau_de_partie(*ed.timeline.zone_valide())
+        self.assertAlmostEqual(c["debut"], 3.0)
+        self.assertAlmostEqual(fin_clip(c), 5.0)
+        self.assertEqual(len(ed.projet.clips), 3)
+        self.assertEqual(ed.timeline.selection(), [c["id"]])
+        ed.projet.modifie = False
+        f.close()
+
+
 class TestHistorique(unittest.TestCase):
     def test_libelles(self):
         p = projet()

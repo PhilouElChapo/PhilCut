@@ -847,6 +847,12 @@ class Editeur(QWidget):
         elif oid == "texte":
             self.nouveau_texte()
         elif oid == "effets":
+            z = self.timeline.zone_valide()
+            if z:                                  # partie choisie (I / O) : on isole ce morceau du plan, puis ses effets
+                c = self.morceau_de_partie(*z)
+                if c:
+                    self.effets_du_clip(c["id"])
+                return
             c = self._clip_selectionne()          # le plan cliqué, sinon celui sous le curseur
             if c:
                 self.effets_du_clip(c["id"])
@@ -907,6 +913,11 @@ class Editeur(QWidget):
                 self.projet.marquer()
                 el["suivi"] = None
                 self.rafraichir()
+        elif quoi == "effets_partie":
+            z = self.timeline.zone_valide()
+            c = self.morceau_de_partie(*z) if z else None
+            if c:
+                self.effets_du_clip(c["id"])
         else:
             self.effets_du_clip(ident)
 
@@ -1038,11 +1049,30 @@ class Editeur(QWidget):
         a, b = self.timeline.zone
         if z:
             self.encart.message(_("Partie sélectionnée : {a} → {b} ({d:.1f} s). Montage › « Supprimer la partie sélectionnée » ou "
-                                  "« Garder seulement la partie sélectionnée ». Echap pour annuler la sélection.",
+                                  "« Garder seulement la partie sélectionnée », ou Effets pour n'habiller que cette partie. Echap pour annuler la sélection.",
                                   a=_tc(z[0]), b=_tc(z[1]), d=z[1] - z[0]), 12000)
         elif a is not None or b is not None:
             self.encart.message(_("Début de la partie marqué. Placez le curseur à la fin et appuyez sur O.") if a is not None else
                                 _("Fin de la partie marquée. Placez le curseur au début et appuyez sur I."), 8000)
+
+    def morceau_de_partie(self, a, b):
+        """Coupe le plan vidéo aux bornes de la partie choisie (I / O) et renvoie le morceau du milieu : un effet posé
+        dessus ne touche que ces secondes-là."""
+        c = self.projet.clip_a((a + b) / 2, "video")
+        if not c:
+            self.encart.message(_("Pas de plan vidéo dans la partie choisie."))
+            return None
+        self.projet.marquer()
+        for t in (a, b):
+            for x in list(self.projet.clips_piste("video")):
+                if x["debut"] + 0.04 < t < fin_clip(x) - 0.04:
+                    self.projet.couper(x["id"], t)
+        m = self.projet.clip_a((a + b) / 2, "video")
+        self.timeline.zone = [None, None]
+        self.rafraichir()
+        self.timeline.selectionner(m["id"])
+        self.encart.message(_("Le plan est coupé à {a} et {b} : les effets ne s'appliqueront qu'à ce morceau.", a=_tc(a), b=_tc(b)), 8000)
+        return m
 
     def partie(self, garder):
         z = self.timeline.zone_valide()

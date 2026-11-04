@@ -602,6 +602,8 @@ class Timeline(QGraphicsView):
         a.setChecked(bool(clip.get("muet")))
         m.addSeparator()
         m.addAction(_("Effets et transition…"), lambda: self.demande_menu.emit(clip["id"], "effets"))
+        if self.zone_valide():
+            m.addAction(_("Effets sur la partie sélectionnée seulement (en jaune)…"), lambda: self.demande_menu.emit(clip["id"], "effets_partie"))
         m.addAction(_("Propriétés…"), lambda: self.proprietes.emit(clip["id"]))
         m.exec(pos)
 
