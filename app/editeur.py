@@ -978,6 +978,9 @@ class Editeur(QWidget):
                 return
             if not ia.confirmer_envoi(self, indices + " " + " ".join(m["nom"] for m in self.projet.medias), ia.nom_moteur(self.params)):
                 return
+            videos = [m for m in self.projet.medias if m.get("genre") == "video"]
+            if not ia.confirmer_cout(self, self.params, 3000 + 900 * len(self.projet.medias), min(12, 4 * len(videos))):
+                return
 
         def travail(tache):
             fiches = A.preparer(self.projet, self.params, progression=lambda f, t: tache.avancer(f * 0.7, t))
@@ -1031,6 +1034,10 @@ class Editeur(QWidget):
     def autre_idee(self, cle):
         if not self.proposition.recette:
             return
+        if (self.proposition.recette.get("source") or "").startswith("cloud"):
+            from . import ia
+            if not ia.confirmer_cout(self, self.params, 4500, 0, _("Autre idée pour « {c} »", c=cle)):
+                return
         t = Tache(lambda tache: A.autre_idee(self.projet, self.params, self.proposition.recette, cle), _("Autre idée"))
         self.taches.append(t)
         self.encart.suivre(t, _("Autre idée pour « {c} »", c=cle))

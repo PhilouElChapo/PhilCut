@@ -131,6 +131,37 @@ def confirmer_envoi(parent, texte, moteur_nom):
     return r == QMessageBox.Yes
 
 
+# ------------------------------------------------------------------ coût estimé avant l'envoi (13.2.4)
+# Tarifs publics indicatifs en $ par million de jetons (entrée, sortie), à revoir avec la veille ; la console de chaque
+# fournisseur fait foi. Le but : un ordre de grandeur honnête avant de cliquer, pas une facture.
+TARIFS = {"claude": (3.0, 15.0), "gemini": (0.5, 3.0)}
+JETONS_IMAGE = {"claude": 250, "gemini": 260}        # petites vignettes (320 px) envoyées par l'assistant
+
+
+def estimer_cout(params, texte_jetons=4000, images=0, sortie_jetons=2500):
+    """(moteur, jetons d'entrée, coût estimé en $) pour une demande à l'IA cloud."""
+    m = moteurs(params)
+    moteur = m[0][0] if m else "claude"
+    entree = int(texte_jetons + images * JETONS_IMAGE.get(moteur, 250))
+    pe, ps = TARIFS.get(moteur, (3.0, 15.0))
+    return moteur, entree, round((entree * pe + sortie_jetons * ps) / 1e6, 4)
+
+
+def confirmer_cout(parent, params, texte_jetons, images, objet=""):
+    """Fenêtre avant chaque envoi payant : jetons, images, coût estimé. True = on envoie."""
+    if params.get("ia_confirmer_cout", True) is False:
+        return True
+    from PySide6.QtWidgets import QMessageBox
+    moteur, entree, cout = estimer_cout(params, texte_jetons, images)
+    cout_txt = (_("moins d'un centime") if cout < 0.01 else _("environ {c} $", c=f"{cout:.2f}".replace(".", ",")))
+    r = QMessageBox.question(parent, _("Envoi à l'IA cloud"),
+                             _("{o}Envoi à {m} : la fiche technique et {n} petite(s) image(s), environ {j} jetons.\n"
+                               "Coût estimé : {c} (indicatif, facturé sur votre clef ; la console du fournisseur fait foi).\n\nEnvoyer ?",
+                               o=(objet + "\n\n") if objet else "", m=nom_moteur(params), n=images, j=f"{entree:,}".replace(",", " "), c=cout_txt),
+                             QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+    return r == QMessageBox.Yes
+
+
 # ------------------------------------------------------------------ appels
 def nettoyer_clef(c):
     """Retire espaces, retours a la ligne et guillemets venus du copier-coller."""

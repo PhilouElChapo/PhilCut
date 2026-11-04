@@ -20,7 +20,7 @@ from . import coffre
 COMMUNS = ["auteur", "langue", "outils_epingles", "barre_rapide", "volet", "ia_moteur", "maj_source", "maj_auto",
            "synchro", "comptes", "comptes_icone", "theme", "synchro_secrets", "barre", "barre_style", "ordre_outils",
            "export_destination", "assistant_niveau", "ia_consignes_recette", "effets_coches", "goodies_coches",
-           "musiques_dossier", "chaine_nom", "fabrique_style", "veo_actif"]
+           "musiques_dossier", "chaine_nom", "fabrique_style", "veo_actif", "ia_confirmer_cout"]
 POSTE = ["secrets_refuses", "disposition_vue", "volet_largeur", "biblio_replies", "sessions_vues", "synchro_etat",
          "machine", "zoom", "racines", "nas", "dernier_dossier", "drive", "drive_compte", "association_video",
          "recherche_racines", "proxys", "ia_locale", "ia_poste_leger", "ia_gpu", "ia_locale_modeles", "dossier_flow", "dossier_proxys", "encodeur", "apercu_images", "ajout_auto", "dernier_dossier_export", "barre_taille"]

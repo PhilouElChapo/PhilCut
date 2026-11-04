@@ -179,6 +179,9 @@ class DialoguePreferences(QDialog):
         fg.addRow(_("Clef Gemini (Google AI Studio)"), self.clef_gemini)
         fg.addRow(QLabel(_("<span style='color:#999'>Rien n'est envoyé sans votre clic. Avant chaque envoi, PhilCut vérifie s'il y a des données sensibles et vous demande confirmation. "
                            "Les clefs vont dans le coffre du système, jamais dans un fichier en clair.</span>")))
+        self.confirmer_cout = QCheckBox(_("Afficher le coût estimé et demander confirmation avant chaque envoi à l'IA cloud"))
+        self.confirmer_cout.setChecked(self.params.get("ia_confirmer_cout", True))
+        fg.addRow(self.confirmer_cout)
         self.veo = QCheckBox(_("Autoriser la génération Veo par l'API Gemini (payante à la seconde ; prix affiché et confirmation avant chaque plan)"))
         self.veo.setChecked(self.params.get("veo_actif", False))
         fg.addRow(self.veo)
@@ -422,6 +425,7 @@ class DialoguePreferences(QDialog):
         p["clef_claude"] = self.clef_claude.text().strip()
         p["clef_gemini"] = self.clef_gemini.text().strip()
         p["veo_actif"] = self.veo.isChecked()
+        p["ia_confirmer_cout"] = self.confirmer_cout.isChecked()
         p["dossier_flow"] = self.flow.text().strip()
         avant = set(p.get("effets_coches") or [])
         apres = {k for k, c in self.cases_packs.items() if c.isChecked()}
