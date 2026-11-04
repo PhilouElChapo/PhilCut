@@ -213,10 +213,17 @@ def _modele_claude(clef, params, forcer=False):
 
 def _modele_gemini(clef, params, forcer=False):
     if not forcer:
-        return params.get("ia_modele_gemini") or _modeles_trouves.get("gemini") or MODELE_GEMINI
+        choix = params.get("ia_modele_gemini") or _modeles_trouves.get("gemini")
+        if choix:
+            return choix
+        try:                    # premier appel de la session : le plus récent des modèles ouverts à cette clef
+            return _modele_gemini(clef, params, forcer=True)
+        except ErreurIA:
+            return MODELE_GEMINI
     d = _http(f"{GEMINI_API}/models?pageSize=200&key={clef}")
     ids = [m["name"].split("/")[-1] for m in d.get("models", [])
            if "generateContent" in m.get("supportedGenerationMethods", [])]
+    ids = [i for i in ids if not any(x in i for x in ("omni", "image", "tts", "audio", "live", "embedding", "robotics"))]
     candidats = [i for i in ids if "flash" in i and "lite" not in i and "exp" not in i and "preview" not in i] or \
                 [i for i in ids if i.startswith("gemini")]
     if not candidats:
@@ -248,7 +255,7 @@ def _modeles_gemini_secours(clef):
         m = re.search(r"gemini-(\d+(?:\.\d+)?)", i)
         return float(m.group(1)) if m else 0
     stables = [i for i in ids if i.startswith("gemini") and "exp" not in i and "preview" not in i
-               and not any(x in i for x in ("embedding", "tts", "image", "audio", "live"))]
+               and not any(x in i for x in ("embedding", "tts", "image", "audio", "live", "omni", "robotics"))]
     flash = sorted([i for i in stables if "flash" in i and "lite" not in i], key=version, reverse=True)
     lite = sorted([i for i in stables if "flash-lite" in i], key=version, reverse=True)
     pro = sorted([i for i in stables if "pro" in i], key=version, reverse=True)
