@@ -31,6 +31,8 @@ class Exportateur:
         self.L, self.H = (d[1], d[2]) if d[1] else projet.taille
         if destination == "original":
             self.L, self.H = projet.taille
+        if destination == "whatsapp" and projet.taille[1] > projet.taille[0]:     # allégé, mais dans le sens du projet
+            self.L, self.H = self.H, self.L
         self.cad = d[3] or projet.cadence
         self.qualite = qualite or d[4]
         self.debit_audio = d[5]
@@ -487,6 +489,34 @@ class Exportateur:
 
     def nettoyer(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
+
+
+def autre_format(projet, destination):
+    """Copie du projet prête pour une autre destination (double export 16:9 + 9:16) : un plan qui suit une personne la
+    suit aussi dans l'autre format ; un plan « remplir » dont l'orientation ne colle pas passe en fond flou (rien de
+    coupé : la personne n'est jamais hors cadre)."""
+    import copy
+    from . import moteur as M
+    p = copy.deepcopy(projet)
+    _n, L, H = M.DESTINATIONS.get(destination, ("", 1920, 1080))[:3]
+    if not L or not H:
+        return p
+    cible_vert = H > L
+    for c in p.clips_piste("video"):
+        if c.get("ajustement", "remplir") != "remplir":
+            continue
+        v = ((p.media(c["media"]) or {}).get("fiche") or {}).get("video") or {}
+        lw, lh = v.get("largeur") or L, v.get("hauteur") or H
+        if (lh > lw) != cible_vert:
+            c["ajustement"] = "contenir_flou"
+    return p
+
+
+def nom_autre(sortie, destination):
+    from . import moteur as M
+    _n, L, H = M.DESTINATIONS.get(destination, ("", 1920, 1080))[:3]
+    base, ext = os.path.splitext(sortie)
+    return f"{base}_{'vertical' if H > L else 'carre' if H == L else 'horizontal'}{ext or '.mp4'}"
 
 
 def exporter(projet, sortie, destination="youtube", params=None, progression=None, arret=lambda: False, sous_titres=(), garder_tmp=False):

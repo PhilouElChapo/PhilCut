@@ -384,17 +384,25 @@ class Fenetre(QMainWindow):
         ed.projet.d["ducking"] = self.params.get("ducking", True)
         import copy
         projet_copie = copy.deepcopy(ed.projet)
+        travaux = [(projet_copie, sortie, dest)]
+        if d.double.isChecked() and d.dest2.currentData() != dest:
+            dest2 = d.dest2.currentData()
+            travaux.append((export.autre_format(ed.projet, dest2), export.nom_autre(sortie, dest2), dest2))
 
         def travail(tache):
-            ex = export.Exportateur(projet_copie, sortie, dest, qualite=qual, encodeur=enc, params=self.params)
-            try:
-                ex.lancer(progression=lambda f: tache.avancer(f), arret=lambda: tache.arret, sous_titres=st)
-                if d.srt.isChecked() and st:
-                    with open(os.path.splitext(sortie)[0] + ".srt", "w", encoding="utf-8") as f:
-                        f.write(titres.srt(st))
-                return ex.journal
-            finally:
-                ex.nettoyer()
+            journal = []
+            for k, (pj, sor, de) in enumerate(travaux):
+                ex = export.Exportateur(pj, sor, de, qualite=qual, encodeur=enc, params=self.params)
+                try:
+                    ex.lancer(progression=lambda f, k=k: tache.avancer((k + f) / len(travaux), os.path.basename(sor)),
+                              arret=lambda: tache.arret, sous_titres=st)
+                    if d.srt.isChecked() and st:
+                        with open(os.path.splitext(sor)[0] + ".srt", "w", encoding="utf-8") as f:
+                            f.write(titres.srt(st))
+                    journal += ex.journal
+                finally:
+                    ex.nettoyer()
+            return journal
         t = Tache(travail, _("Export"))
         self.taches.append(t)
         ed.encart.suivre(t, _("Export vers {f}", f=os.path.basename(sortie)), (_("Ouvrir"), lambda: self.ouvrir_externe(sortie)))

@@ -111,6 +111,27 @@ class TestMoteur(unittest.TestCase):
         self.assertTrue(60 < r1 < 200 and 60 < b1 < 200, (r1, b1))
         self.assertGreater(b2, 180)
 
+    def test_double_export(self):
+        p = projet.Projet("D", "16:9")
+        m = p.ajouter_media(self.v, moteur.sonder(self.v))
+        p.ajouter_clip(m["id"], src_fin=2)
+        p.ajouter_titre("Titre", 0.2, 1.5)
+        d = tempfile.mkdtemp()
+        out, _j = export.exporter(p, os.path.join(d, "h.mp4"), "whatsapp")
+        p2 = export.autre_format(p, "insta")
+        self.assertEqual(p2.clips[0]["ajustement"], "contenir_flou")
+        self.assertEqual(p.clips[0].get("ajustement", "remplir"), "remplir")          # l'original n'est pas touché
+        nom = export.nom_autre(out, "insta")
+        self.assertTrue(nom.endswith("h_vertical.mp4"))
+        out2, _j = export.exporter(p2, nom, "insta")
+        f = moteur.sonder(out2)
+        self.assertEqual((f["video"]["largeur"], f["video"]["hauteur"]), (1080, 1920))
+        pv = projet.Projet("V", "9:16")
+        pv.ajouter_clip(pv.ajouter_media(self.v, moteur.sonder(self.v))["id"], src_fin=1)
+        out3, _j = export.exporter(pv, os.path.join(d, "v.mp4"), "whatsapp")
+        f3 = moteur.sonder(out3)
+        self.assertLess(f3["video"]["largeur"], f3["video"]["hauteur"])
+
     def test_filtres_effets(self):
         ctx = {"cadence": 30, "largeur": 1920, "hauteur": 1080, "duree": 3}
         for k in effets.CATALOGUE:

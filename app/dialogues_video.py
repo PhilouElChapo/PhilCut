@@ -496,6 +496,18 @@ class DialogueExport(QDialog):
         f.addRow(_("Fichier"), h)
         self.srt = QCheckBox(_("Ecrire aussi les sous-titres en .srt (pour YouTube)"))
         f.addRow(self.srt)
+        hd = QHBoxLayout()
+        self.double = QCheckBox(_("Exporter aussi en"))
+        self.dest2 = QComboBox()
+        for k, d in moteur.DESTINATIONS.items():
+            if k != "original":
+                self.dest2.addItem(d[0], k)
+        self.dest2.setCurrentIndex(max(0, self.dest2.findData("insta" if projet.taille[0] >= projet.taille[1] else "youtube")))
+        self.double.setToolTip(_("Deux fichiers d'un coup : par exemple horizontal pour YouTube et vertical pour Instagram. "
+                                 "Les plans qui suivent une personne la suivent dans les deux formats ; les autres passent en fond flou."))
+        hd.addWidget(self.double)
+        hd.addWidget(self.dest2, 1)
+        f.addRow(hd)
         self.drive = QCheckBox(_("Déposer ensuite sur le Drive / NAS de synchronisation"))
         f.addRow(self.drive)
         self.info = QLabel(_("Durée : {d} · {n} plans", d=moteur.duree_texte(projet.duree()), n=len(projet.clips_piste("video"))))
