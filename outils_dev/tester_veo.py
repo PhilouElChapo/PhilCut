@@ -77,8 +77,8 @@ def main():
     # 3. Veo, avec le code de PhilCut
     os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     from app import fabrique
-    modele = os.environ.get("MODELE_VEO") or "veo-3.1-lite-generate-preview"
-    if veo and modele not in veo:
+    modele = os.environ.get("MODELE_VEO") or "gemini-omni-1.1-flash@360p"
+    if modele.startswith("veo") and veo and modele not in veo:
         lite = [n for n in veo if "lite" in n] or [n for n in veo if "fast" in n] or veo
         print(f"{modele} n'est pas ouvert a ce compte : essai avec {lite[0]}")
         modele = lite[0]

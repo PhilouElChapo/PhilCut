@@ -6,15 +6,15 @@ on:
   workflow_dispatch:
     inputs:
       essai:
-        description: "cle = gratuit (verifie la clef) ; video = PAYANT (un plan Veo de 4 s, environ 0,35 $ avec Veo Lite)"
+        description: "cle = gratuit (verifie la clef) ; video = PAYANT (un plan court Omni Flash ; environ 0,35 $ en 360p)"
         type: choice
         options: [cle, video]
         default: cle
       modele:
         description: "Modele Veo pour l'essai video"
         type: choice
-        options: [veo-3.1-lite-generate-preview, veo-3.1-fast-generate-preview, veo-3.1-generate-preview]
-        default: veo-3.1-lite-generate-preview
+        options: [gemini-omni-1.1-flash@360p, gemini-omni-1.1-flash@720p, gemini-omni-1.1-flash@1080p]
+        default: gemini-omni-1.1-flash@360p
 
 permissions:
   contents: read

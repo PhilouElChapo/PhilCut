@@ -214,10 +214,13 @@ def _ease(t):
 
 # ------------------------------------------------------------------ plans IA : Flow (abonnement) et Veo (API)
 URL_FLOW = "https://labs.google/fx/fr/tools/flow"
-MODELES_VEO = {           # id API : (nom, prix $/s 1080p indicatif, note)
-    "veo-3.1-lite-generate-preview": ("Veo 3.1 Lite", 0.08, _("le moins cher")),
-    "veo-3.1-fast-generate-preview": ("Veo 3.1 Fast", 0.12, _("bon compromis")),
-    "veo-3.1-generate-preview": ("Veo 3.1", 0.40, _("meilleure qualité")),
+# Google a arrêté Veo 3.1 le 22 octobre 2026 : la génération passe par Gemini Omni Flash (Interactions API, même clef).
+# Prix relevés le 4 novembre 2026 (indicatifs) : environ 0,10 $/s en 720p, un tiers en 360p ; 1080p et 4K sont agrandis.
+MODELE_VIDEO = "gemini-omni-1.1-flash"
+MODELES_VEO = {           # choix : (nom, prix $/s indicatif, note)
+    "gemini-omni-1.1-flash@360p": ("Omni Flash 360p (brouillon)", 0.035, _("pour essayer une idée")),
+    "gemini-omni-1.1-flash@720p": ("Omni Flash 720p", 0.10, _("bon compromis")),
+    "gemini-omni-1.1-flash@1080p": ("Omni Flash 1080p", 0.10, _("720p agrandi par Google, prix à vérifier")),
 }
 
 
@@ -257,15 +260,88 @@ def nouveaux_clips(dossier_surveille, avant):
 
 
 def prix_veo(modele, duree):
-    return round(MODELES_VEO.get(modele, ("", 0.4, ""))[1] * duree, 2)
+    """Prix estimé ; Omni Flash choisit lui-même la durée (3 à 10 s) : on compte le maximum entre la demande et 10 s."""
+    d = 10 if "omni" in modele else duree
+    return round(MODELES_VEO.get(modele, ("", 0.4, ""))[1] * max(duree, d), 2)
 
 
-def generer_veo(params, consigne, sortie, modele="veo-3.1-fast-generate-preview", duree=8, format_="16:9", image=None, progression=None, arret=lambda: False):
+def _trouver_video(d):
+    """Cherche dans la réponse de l'Interactions API un contenu vidéo : (données base64, uri)."""
+    if isinstance(d, dict):
+        if d.get("type") == "video" and (d.get("data") or d.get("uri")):
+            return d.get("data"), d.get("uri")
+        for v in d.values():
+            r = _trouver_video(v)
+            if r:
+                return r
+    elif isinstance(d, list):
+        for v in d:
+            r = _trouver_video(v)
+            if r:
+                return r
+    return None
+
+
+def generer_omni(clef, consigne, sortie, modele=MODELE_VIDEO, duree=8, format_="16:9", image=None, resolution="720p",
+                 progression=None, arret=lambda: False):
+    """Plan vidéo par Gemini Omni Flash (Interactions API) : demande en tâche de fond, interrogée jusqu'à la fin."""
+    import base64
+    base = "https://generativelanguage.googleapis.com/v1beta"
+    entete = {"Content-Type": "application/json", "x-goog-api-key": clef}
+    texte = consigne.strip() + f"\n\n(Durée souhaitée : environ {int(duree)} secondes.)"
+    if image:
+        with open(image, "rb") as f:
+            img = {"type": "image", "mime_type": "image/png" if image.lower().endswith(".png") else "image/jpeg",
+                   "data": base64.b64encode(f.read()).decode()}
+        entree = [{"type": "text", "text": texte}, img]
+    else:
+        entree = texte
+    corps = {"model": modele, "input": entree, "background": True,
+             "response_format": {"type": "video", "aspect_ratio": "9:16" if format_ == "9:16" else "16:9", "resolution": resolution}}
+    req = urllib.request.Request(f"{base}/interactions", data=json.dumps(corps).encode("utf-8"), headers=entete)
+    with urllib.request.urlopen(req, timeout=180) as r:
+        it = json.loads(r.read().decode("utf-8"))
+    debut = time.time()
+    while it.get("status") not in ("completed", "failed", "cancelled") and not _trouver_video(it):
+        if arret():
+            raise InterruptedError()
+        if not it.get("id"):
+            raise RuntimeError(_("Réponse inattendue de Google : {r}", r=str(it)[:200]))
+        time.sleep(6)
+        progression and progression(min(0.9, (time.time() - debut) / 240))
+        req = urllib.request.Request(f"{base}/interactions/{it['id']}", headers=entete)
+        with urllib.request.urlopen(req, timeout=60) as r:
+            it = json.loads(r.read().decode("utf-8"))
+        if time.time() - debut > 900:
+            raise RuntimeError(_("La génération met trop de temps ; réessayez plus tard."))
+    if it.get("status") in ("failed", "cancelled"):
+        raise RuntimeError(_("Google a refusé ou interrompu la génération : {e}", e=str(it.get("error") or it.get("status"))[:300]))
+    trouve = _trouver_video(it)
+    if not trouve:
+        raise RuntimeError(_("Google n'a renvoyé aucune vidéo (contenu refusé ?)."))
+    data, uri = trouve
+    if data:
+        with open(sortie, "wb") as f:
+            f.write(base64.b64decode(data))
+    else:
+        if uri.startswith("files/"):
+            uri = f"{base}/{uri}:download?alt=media"
+        req = urllib.request.Request(uri, headers={"x-goog-api-key": clef})
+        with urllib.request.urlopen(req, timeout=300) as r, open(sortie, "wb") as f:
+            f.write(r.read())
+    progression and progression(1.0)
+    return sortie
+
+
+def generer_veo(params, consigne, sortie, modele="gemini-omni-1.1-flash@720p", duree=8, format_="16:9", image=None, progression=None, arret=lambda: False):
     """Generation par l'API Gemini (clef Gemini des Preferences). Longue (1 a 6 min) : on interroge l'operation jusqu'a la fin."""
     from . import ia
     clef = ia.nettoyer_clef(params.get("clef_gemini", ""))
     if not clef:
         raise RuntimeError(_("Clef Gemini absente (Préférences › IA)."))
+    if not modele.startswith("veo"):         # Gemini Omni Flash (modèle@résolution)
+        nom, _a, resolution = modele.partition("@")
+        return generer_omni(clef, consigne, sortie, nom, duree, format_, image, resolution or "720p", progression, arret)
     base = "https://generativelanguage.googleapis.com/v1beta"
     inst = {"prompt": consigne}
     if image:

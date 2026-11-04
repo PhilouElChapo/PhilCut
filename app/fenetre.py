@@ -448,15 +448,15 @@ class Fenetre(QMainWindow):
             if d.voie_veo.isChecked():
                 modele = d.modele_veo.currentData()
                 prix = FAB.prix_veo(modele, d.duree_ia.value())
-                if QMessageBox.question(self, _("Veo"), _("Générer ce plan avec {m} pour environ {p} $ (facturé sur votre clef Gemini) ?", m=FAB.MODELES_VEO[modele][0], p=prix)) != QMessageBox.Yes:
+                if QMessageBox.question(self, _("Plan IA Google"), _("Générer ce plan avec {m} pour au plus {p} $ environ (facturé sur votre clef Gemini) ?", m=FAB.MODELES_VEO[modele][0], p=prix)) != QMessageBox.Yes:
                     return
                 dossier = os.path.join(dossier_donnees(), "fabrique")
                 os.makedirs(dossier, exist_ok=True)
                 sortie = os.path.join(dossier, f"veo_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4")
                 t = Tache(lambda tache: FAB.generer_veo(self.params, consigne, sortie, modele, d.duree_ia.value(), ed.projet.format, progression=tache.avancer, arret=lambda: tache.arret), _("Veo"))
                 self.taches.append(t)
-                ed.encart.suivre(t, _("Génération Veo (1 à 6 min)"))
-                t.fini.connect(lambda r, e: ed.importer([sortie]) if not e else QMessageBox.warning(self, _("Veo"), str(e)))
+                ed.encart.suivre(t, _("Génération du plan par Google (1 à 6 min)"))
+                t.fini.connect(lambda r, e: ed.importer([sortie]) if not e else QMessageBox.warning(self, _("Plan IA Google"), str(e)))
                 t.start()
             else:
                 avant = FAB.preparer_flow(consigne, d.dossier.text().strip())

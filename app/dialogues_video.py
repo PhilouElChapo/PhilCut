@@ -532,7 +532,7 @@ class DialogueFabrique(QDialog):
         f2.addRow(b_c)
         self.voie_flow = QRadioButton(_("Flow (votre abonnement) : PhilCut copie la consigne, ouvre Flow, puis récupère le clip dans le dossier surveillé"))
         self.voie_flow.setChecked(True)
-        self.voie_veo = QRadioButton(_("Veo par l'API Gemini (payant à la seconde)"))
+        self.voie_veo = QRadioButton(_("Google par l'API Gemini, Omni Flash (payant à la seconde)"))
         self.voie_veo.setEnabled(bool(params.get("veo_actif")))
         f2.addRow(self.voie_flow)
         f2.addRow(self.voie_veo)
@@ -540,7 +540,7 @@ class DialogueFabrique(QDialog):
         for k, (nom, prix, note) in fabrique.MODELES_VEO.items():
             self.modele_veo.addItem(f"{nom} — {prix:.2f} $/s ({note})", k)
         self.modele_veo.setCurrentIndex(1)
-        f2.addRow(_("Modèle Veo"), self.modele_veo)
+        f2.addRow(_("Modèle"), self.modele_veo)
         self.prix = QLabel("")
         f2.addRow(self.prix)
         self.modele_veo.currentIndexChanged.connect(self._prix)
@@ -575,7 +575,7 @@ class DialogueFabrique(QDialog):
                                                           self.duree_ia.value(), self.projet.format))
 
     def _prix(self):
-        self.prix.setText(_("Prix estimé Veo : {p} $ (indicatif, vérifié au démarrage du projet ; confirmation avant envoi)",
+        self.prix.setText(_("Prix estimé : jusqu'à {p} $ (Google choisit la durée, 3 à 10 s ; confirmation avant envoi)",
                             p=fabrique.prix_veo(self.modele_veo.currentData(), self.duree_ia.value())))
 
 
