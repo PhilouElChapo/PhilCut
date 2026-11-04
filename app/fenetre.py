@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (QMainWindow, QTabWidget, QMessageBox, QFileDialog
 from . import mise_a_jour, moteur, outils as O, theme, fabrique as FAB
 from .accueil import PageAccueil
 from .config import Parametres, VERSION, est_portable, EXTENSION_PROJET, est_video, est_audio, est_image, dossier_donnees
-from .editeur import Editeur
+from .editeur import Editeur, Encart
 from .icones import icone, logo
 from .langue import _
 from .projet import Projet
@@ -45,6 +45,8 @@ class Fenetre(QMainWindow):
         self.onglets.tabBar().setTabButton(0, self.onglets.tabBar().ButtonPosition.RightSide, None)
         self.setCentralWidget(self.onglets)
         self.taches = []
+        self.encart_global = Encart(self)          # progression visible même sans projet ouvert (téléchargements…)
+        self.statusBar().addPermanentWidget(self.encart_global, 1)
         self._menus()
         self.statusBar().showMessage(_("PhilCut {v}", v=VERSION) + (_(" · version portable") if est_portable() else "") +
                                      (_(" · FFmpeg {f}", f=moteur.version()) if moteur.disponible() else _(" · FFmpeg INTROUVABLE : import et export impossibles")))
@@ -100,6 +102,8 @@ class Fenetre(QMainWindow):
         a.addAction(_("Tout voir dans la timeline"), lambda: self._ed(lambda ed: ed.timeline.ajuster()), "Ctrl+0")
         a.addAction(_("Zoom avant"), lambda: self._ed(lambda ed: ed.timeline.zoomer(1.3)), "Ctrl++")
         a.addAction(_("Zoom arrière"), lambda: self._ed(lambda ed: ed.timeline.zoomer(1 / 1.3)), "Ctrl+-")
+        a.addAction(_("Images de la timeline plus grandes (Alt + molette)"), lambda: self._ed(lambda ed: ed.timeline.hauteur_images(1.3)), "Alt++")
+        a.addAction(_("Images de la timeline plus petites"), lambda: self._ed(lambda ed: ed.timeline.hauteur_images(1 / 1.3)), "Alt+-")
         a.addSeparator()
         a.addAction(_("Volet de droite : complet / icônes / masqué"), lambda: self._ed(lambda ed: ed.basculer_volet()), "F4")
         a.addAction(_("Personnaliser la barre d'outils…"), self.personnaliser_barre)
@@ -108,11 +112,16 @@ class Fenetre(QMainWindow):
             o = O.outil(oid)
             mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
         mo.addSeparator()
+        mo.addAction(_("Début de la partie à sélectionner (au curseur)"), lambda: self._ed(lambda ed: ed.timeline.marquer_zone(0)), "I")
+        mo.addAction(_("Fin de la partie à sélectionner (au curseur)"), lambda: self._ed(lambda ed: ed.timeline.marquer_zone(1)), "O")
+        mo.addAction(_("Supprimer la partie sélectionnée (la suite se recolle)"), lambda: self._ed(lambda ed: ed.partie(False)))
+        mo.addAction(_("Garder seulement la partie sélectionnée"), lambda: self._ed(lambda ed: ed.partie(True)))
+        mo.addSeparator()
         mo.addAction(_("Caler les coupes sur les temps de la musique"), lambda: self._ed(lambda ed: ed.caler_rythme(False)))
         mo.addAction(_("Caler les coupes sur les débuts de mesure (plus posé)"), lambda: self._ed(lambda ed: ed.caler_rythme(True)))
         asst = mb.addMenu(_("A&ssistant"))
         asst.addAction(icone("assistant"), _("Analyser et proposer un montage"), lambda: self._editeur_ou_nouveau().outil("assistant"), "Ctrl+Shift+A")
-        asst.addAction(icone("liste_fichiers"), _("Fiche vidéo du plan sélectionné"), lambda: self._ed(lambda ed: ed.outil("fiche")))
+        asst.addAction(icone("info"), _("Fiche vidéo du plan sélectionné"), lambda: self._ed(lambda ed: ed.outil("fiche")))
         asst.addAction(_("Changer le niveau (sans IA, locale, cloud)…"), lambda: self.preferences("Assistant"))
         asst.addAction(_("Connecter une IA (obtenir et tester ma clef)…"), self.connecter_ia)
         fb = mb.addMenu(_("Fa&brique"))
@@ -708,7 +717,7 @@ class Fenetre(QMainWindow):
 
     def partager(self, chemin=None):
         if not chemin:
-            chemin, _f = QFileDialog.getOpenFileName(self, _("Vidéo à déposer"), self.params.get("dernier_dossier_export") or "", "MP4 (*.mp4)")
+            chemin, _f = QFileDialog.getOpenFileName(self, _("Vidéo à déposer"), self.params.get("dernier_dossier_export") or __import__("app.session", fromlist=["x"]).dossier_systeme("videos"), "MP4 (*.mp4)")
             if not chemin:
                 return
         try:
@@ -840,6 +849,11 @@ class Fenetre(QMainWindow):
             subprocess.Popen([sys.executable, os.path.abspath(sys.argv[0])])
         QApplication.quit()
 
+    def suivre_tache(self, t, texte, action=None):
+        """Progression d'une tâche : dans l'encart du projet ouvert, sinon dans la barre du bas de la fenêtre."""
+        ed = self.editeur_courant()
+        (ed.encart if ed else self.encart_global).suivre(t, texte, action)
+
     def installer_ia(self, cles):
         """Télécharge des modèles d'IA locale (et leur moteur) dans le dossier de PhilCut, en tâche de fond."""
         from . import packs_ia
@@ -857,10 +871,8 @@ class Fenetre(QMainWindow):
         t = Tache(travail, _("IA locale"))
         self.taches.append(t)
         texte = _("Téléchargement de l'IA locale dans le dossier de PhilCut")
-        if ed:
-            ed.encart.suivre(t, texte)
-        else:
-            t.fini.connect(lambda r, e: QMessageBox.information(self, _("IA locale"), _("✕ {t} : {e}", t=texte, e=e) if e else _("✓ {t}", t=texte)))
+        self.suivre_tache(t, texte)
+        t.fini.connect(lambda r, e: e and QMessageBox.warning(self, _("IA locale"), _("✕ {t} : {e}", t=texte, e=e)))
         t.fini.connect(lambda r, e: self.params.enregistrer())
         t.start()
 
@@ -888,8 +900,7 @@ class Fenetre(QMainWindow):
             return True
         t = Tache(travail, _("Pack"))
         self.taches.append(t)
-        if ed:
-            ed.encart.suivre(t, _("Téléchargement du pack « {n} »", n=p["nom"]))
+        self.suivre_tache(t, _("Téléchargement du pack « {n} »", n=p["nom"]))
         t.start()
 
     def bienvenue(self, seulement_synchro=False):

@@ -140,6 +140,22 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 8. **Sous-titres karaoké** : un plan où l'on parle, Sous-titres › « Sous-titres karaoké » : chaque mot se colore en jaune au moment où il est dit (rendu rapide ou export).
 9. **Doublage** : cocher aussi « English voice » et un modèle de vision (ou avoir une clef Claude/Gemini). Voix › « Doubler la vidéo dans une autre langue… », Anglais. **Attendu** : la voix d'origine baisse, la voix anglaise arrive sur la piste Voix, phrase par phrase au bon moment, sous-titres anglais ajoutés.
 
+## T15 — Corrections 0.2.3 (retours du premier test)
+
+1. **Préférences** : Edition › Préférences : **aucune fenêtre noire de console** ne s'ouvre. Aucun onglet ne défile de côté ; les textes longs passent à la ligne ; les boutons (« Connecter une IA », « Vérifier maintenant »…) sont à leur taille, à gauche.
+2. **Téléchargement des packs** : sans projet ouvert, cocher une voix dans IA locale, OK : la progression s'affiche **en bas de la fenêtre**.
+3. **Dossiers** : Importer et Exporter proposent d'abord le dossier **Vidéos** du système, puis le dernier dossier choisi.
+4. **Volet** : le bouton Volet est à l'extrême droite de la barre ; 2e clic : une colonne d'icônes nommées (Proposition, Propriétés), un clic dessus rouvre le volet. Fiche vidéo a sa propre icône (i).
+5. **Médias du projet** (ex-Bibliothèque) : une ligne explique à quoi sert la colonne.
+6. **Timeline** : les images ne sont plus écrasées ; Alt + molette (ou Affichage › Images de la timeline plus grandes) les agrandit ; Ctrl + molette zoome dans le temps.
+7. **Image affichée** : bouton image sous la vidéo : enregistre l'image du curseur en PNG pleine définition (dossier Images par défaut).
+8. **Annuler / Rétablir** : la petite flèche à côté montre la liste (« Effets de … », « Coupe de … ») ; cliquer une ligne annule jusque-là.
+9. **Partie de la vidéo** : curseur au début, touche I ; curseur à la fin, touche O : la partie est en jaune. Montage › « Supprimer la partie sélectionnée » ou « Garder seulement la partie sélectionnée ». Echap annule la sélection.
+10. **Son** : bouton haut-parleur sous la vidéo : clic = tout couper ; flèche = choisir les pistes écoutées, « Ecouter seulement la voix off ». **La voix off s'entend maintenant à la lecture.**
+11. **Effets** : cliquer un effet du catalogue : un aperçu de 2 à 3 s sur votre plan se fabrique et tourne en boucle à droite ; « Poser sur ce plan », régler, « Revoir avec les réglages », OK.
+12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
+13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
+
 ## T10 — Le JUGE (validation à l'aveugle)
 
 1. Nouveau projet, importer uniquement la vidéo **JUGE**, aucune indication, niveau Recettes sans IA → Analyser. Appliquer, exporter.

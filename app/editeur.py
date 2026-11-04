@@ -16,6 +16,8 @@ from .projet import fin_clip, duree_clip
 from .taches import Tache, importer_media
 from .timeline import Timeline, MIME_MEDIA
 from .widgets import FluxLayout, _SurveilleTaille
+from .timeline import _tc
+from .session import dossier_systeme
 from .dialogues_video import DialogueTitre, DialogueEffets, DialogueGoodie, DialogueVitesse, DialogueFiche
 
 
@@ -152,7 +154,7 @@ class Bibliotheque(QListWidget):
         if it:
             ident = it.data(Qt.UserRole)
             m.addAction(icone("plus"), _("Ajouter à la fin de la timeline"), lambda: self.ajouter.emit(ident))
-            m.addAction(icone("liste_fichiers"), _("Fiche vidéo"), lambda: self.fiche.emit(ident))
+            m.addAction(icone("info"), _("Fiche vidéo"), lambda: self.fiche.emit(ident))
             m.addAction(icone("supprimer"), _("Retirer du projet"), lambda: self.retirer.emit(ident))
         m.exec(self.mapToGlobal(pos))
 
@@ -304,7 +306,9 @@ class Editeur(QWidget):
         vg = QVBoxLayout(g)
         vg.setContentsMargins(6, 6, 6, 6)
         hg = QHBoxLayout()
-        lb = QLabel(_("<b>Bibliothèque</b>"))
+        lb = QLabel(_("<b>Médias du projet</b>"))
+        lb.setToolTip(_("Vos rushes, musiques et images importés dans ce projet. Ils restent à leur place sur le disque. "
+                        "Glissez-les sur la timeline, ou double-cliquez pour les ajouter à la fin."))
         hg.addWidget(lb)
         hg.addStretch(1)
         b_imp = QToolButton()
@@ -313,6 +317,10 @@ class Editeur(QWidget):
         b_imp.clicked.connect(self.importer)
         hg.addWidget(b_imp)
         vg.addLayout(hg)
+        aide = QLabel(_("Vos rushes, musiques et images. Glissez-les sur la timeline."))
+        aide.setWordWrap(True)
+        aide.setStyleSheet("color:%s;font-size:11px" % theme.COULEURS["texte2"])
+        vg.addWidget(aide)
         self.biblio = Bibliotheque()
         self.biblio.ajouter.connect(lambda i: self.ajouter_a_la_timeline(i))
         self.biblio.fiche.connect(self.montrer_fiche)
@@ -342,7 +350,29 @@ class Editeur(QWidget):
         self.proprietes.setContentsMargins(8, 8, 8, 8)
         self.volet.addTab(self.proprietes, icone("liste_fichiers", theme.COULEURS["texte2"]), _("Propriétés"))
         self.split_h.addWidget(self.volet)
-        self.split_h.setSizes([260, 900, 340])
+        # volet réduit : une colonne d'icônes nommées ; un clic rouvre le volet sur l'onglet choisi
+        self.volet_icones = QFrame()
+        self.volet_icones.setStyleSheet("QFrame{background:%s;border-left:1px solid %s}" % (theme.COULEURS["surface"], theme.COULEURS["bord_leger"]))
+        vi = QVBoxLayout(self.volet_icones)
+        vi.setContentsMargins(4, 8, 4, 8)
+        vi.setSpacing(6)
+        for i, (ic, lib, aide) in enumerate(((("assistant"), _("Proposition"), _("Ouvrir la proposition de l'assistant de montage")),
+                                             ("liste_fichiers", _("Propriétés"), _("Ouvrir les propriétés du plan, du texte ou du Goodie sélectionné")))):
+            b = QToolButton()
+            b.setIcon(icone(ic, theme.COULEURS["texte"]))
+            b.setIconSize(QSize(22, 22))
+            b.setText(lib)
+            b.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+            b.setToolTip(aide)
+            b.setAutoRaise(True)
+            b.setStyleSheet("QToolButton{font-size:10px}")
+            b.clicked.connect(lambda _c=False, i=i: self._ouvrir_volet(i))
+            vi.addWidget(b)
+        vi.addStretch(1)
+        self.volet_icones.setFixedWidth(78)
+        self.volet_icones.hide()
+        self.split_h.addWidget(self.volet_icones)
+        self.split_h.setSizes([260, 900, 340, 0])
         self.split_h.setStretchFactor(1, 1)
         self.split_v.addWidget(self.split_h)
         # ---- bas : timeline
@@ -353,6 +383,7 @@ class Editeur(QWidget):
         self.timeline.media_depose.connect(self._depose)
         self.timeline.selection_changee.connect(self._selection)
         self.timeline.demande_menu.connect(self._demande_menu)
+        self.timeline.zone_changee.connect(self._zone_changee)
         self.split_v.addWidget(self.timeline)
         self.split_v.setSizes([620, 260])
         v.addWidget(self.split_v, 1)
@@ -369,7 +400,15 @@ class Editeur(QWidget):
         w = QFrame()
         w.setObjectName("barre")
         w.setStyleSheet("QFrame#barre{background:%s;border-bottom:1px solid %s} QToolButton{font-size:11px}" % (theme.COULEURS["surface"], theme.COULEURS["bord_leger"]))
-        self.flux = FluxLayout(w, marge=6, espace=2)
+        h = QHBoxLayout(w)
+        h.setContentsMargins(0, 0, 6, 0)
+        h.setSpacing(0)
+        zone_flux = QWidget()
+        self.flux = FluxLayout(zone_flux, marge=6, espace=2)
+        h.addWidget(zone_flux, 1)
+        self.coin_droit = QHBoxLayout()           # le bouton Volet reste toujours à l'extrême droite
+        self.coin_droit.setContentsMargins(0, 6, 0, 6)
+        h.addLayout(self.coin_droit)
         self.barre_w = w
         w.setContextMenuPolicy(Qt.CustomContextMenu)
         w.customContextMenuRequested.connect(lambda p: self._menu_barre(w.mapToGlobal(p)))
@@ -391,12 +430,13 @@ class Editeur(QWidget):
 
     def construire_barre(self):
         fl = self.flux
-        while fl.count():
-            it = fl.takeAt(0)
-            w = it.widget() if it is not None else None
-            if w is not None:
-                w.setParent(None)
-                w.deleteLater()
+        for lay in (fl, self.coin_droit):
+            while lay.count():
+                it = lay.takeAt(0)
+                w = it.widget() if it is not None else None
+                if w is not None:
+                    w.setParent(None)
+                    w.deleteLater()
         for cle in self.params.get("barre") or O.BARRE_DEFAUT:
             if cle == "|":
                 s = QFrame()
@@ -404,9 +444,11 @@ class Editeur(QWidget):
                 s.setStyleSheet("color:%s" % theme.COULEURS["bord"])
                 fl.addWidget(s)
             elif cle == "annuler":
-                fl.addWidget(self._bouton("annuler", _("Annuler|action"), self.annuler, _("Annuler (Ctrl+Z)")))
+                fl.addWidget(self._bouton_historique("annuler", _("Annuler|action"), self.annuler,
+                                                     _("Annuler (Ctrl+Z) — la flèche montre la liste des actions à annuler"), True))
             elif cle == "retablir":
-                fl.addWidget(self._bouton("retablir", _("Rétablir"), self.refaire, _("Rétablir (Ctrl+Y)")))
+                fl.addWidget(self._bouton_historique("retablir", _("Rétablir"), self.refaire,
+                                                     _("Rétablir (Ctrl+Y) — la flèche montre la liste des actions à rétablir"), False))
             elif cle == "lecture":
                 fl.addWidget(self._bouton("lecture", _("Lecture"), lambda: self.apercu.basculer(), _("Lecture / pause (Espace)")))
             elif cle == "zoom":
@@ -425,8 +467,9 @@ class Editeur(QWidget):
                 b.toggled.connect(lambda on: setattr(self.timeline, "aimant", on))
                 fl.addWidget(b)
             elif cle == "volet":
-                b = self._bouton("liste_fichiers", _("Volet"), self.basculer_volet, _("Volet de droite : complet → icônes → masqué"))
-                fl.addWidget(b)
+                b = self._bouton("volet_droit", _("Volet"), self.basculer_volet,
+                                 _("Volet de droite (Proposition de l'assistant, Propriétés du plan) : affiché → réduit à une colonne d'icônes → masqué. Touche F4."))
+                self.coin_droit.addWidget(b)
             else:
                 o = O.outil(cle)
                 if o:
@@ -461,25 +504,25 @@ class Editeur(QWidget):
         self.params.enregistrer()
         self.appliquer_volet()
 
+    def _ouvrir_volet(self, onglet):
+        self.params["volet"] = "complet"
+        self.params.enregistrer()
+        self.appliquer_volet()
+        self.volet.setCurrentIndex(onglet)
+
     def appliquer_volet(self):
         mode = self.params.get("volet", "complet")
-        if mode == "masque":
-            self.volet.hide()
-        else:
-            self.volet.show()
-            tailles = self.split_h.sizes()
+        self.volet.setVisible(mode == "complet")
+        self.volet_icones.setVisible(mode == "icones")
+        tailles = self.split_h.sizes()
+        if len(tailles) == 4:
+            if mode == "complet" and tailles[2] < 120:
+                tailles[1] -= 340 - tailles[2]
+                tailles[2] = 340
             if mode == "icones":
-                self.volet.setMaximumWidth(44)
-                self.volet.tabBar().setExpanding(False)
-                for i in range(self.volet.count()):
-                    self.volet.setTabText(i, "")
-            else:
-                self.volet.setMaximumWidth(16777215)
-                self.volet.setTabText(0, _("Proposition"))
-                self.volet.setTabText(1, _("Propriétés"))
-                if tailles and tailles[-1] < 120:
-                    tailles[-1] = 340
-                    self.split_h.setSizes(tailles)
+                tailles[1] += tailles[3] - 78
+                tailles[3] = 78
+            self.split_h.setSizes(tailles)
 
     # ---------------------------------------------------------------- transport
     def _transport(self):
@@ -502,6 +545,29 @@ class Editeur(QWidget):
         b_boucle.setCheckable(True)
         b_boucle.toggled.connect(lambda on: setattr(self.apercu, "boucle", on))
         h.addWidget(b_boucle)
+        # son de l'aperçu : tout couper, ou écouter une seule piste (la voix off seule, par exemple)
+        self.b_son = QToolButton()
+        self.b_son.setIcon(icone("volume", theme.COULEURS["texte"]))
+        self.b_son.setIconSize(QSize(22, 22))
+        self.b_son.setAutoRaise(True)
+        self.b_son.setToolTip(_("Son de l'aperçu : clic pour couper / remettre ; flèche pour choisir les pistes écoutées (vidéo, musique, voix)"))
+        self.b_son.setPopupMode(QToolButton.MenuButtonPopup)
+        self.b_son.clicked.connect(lambda: self._son(None))
+        ms = QMenu(self.b_son)
+        self._actions_son = {}
+        for piste, lib in (("video", _("Son des plans vidéo")), ("audio", _("Musique")), ("voix", _("Voix off"))):
+            a = ms.addAction(lib)
+            a.setCheckable(True)
+            a.setChecked(True)
+            a.toggled.connect(lambda on, p=piste: self.apercu.couper_son(p, not on))
+            self._actions_son[piste] = a
+        ms.addSeparator()
+        ms.addAction(_("Ecouter seulement la voix off"), lambda: self._seulement("voix"))
+        ms.addAction(_("Ecouter seulement la musique"), lambda: self._seulement("audio"))
+        ms.addAction(_("Tout réentendre"), lambda: self._seulement(None))
+        self.b_son.setMenu(ms)
+        h.addWidget(self.b_son)
+        h.addWidget(self._petit("image", _("Enregistrer l'image affichée (PNG, pleine définition)"), self.extraire_image))
         h.addStretch(1)
         self.lbl_duree = QLabel("")
         self.lbl_duree.setStyleSheet("color:%s" % theme.COULEURS["texte2"])
@@ -511,6 +577,47 @@ class Editeur(QWidget):
         b_rendu.clicked.connect(self.apercu_rendu)
         h.addWidget(b_rendu)
         return w
+
+    def _son(self, coupe=None):
+        self.apercu.couper_son(None, coupe)
+        self.b_son.setIcon(icone("muet" if self.apercu.muet_general else "volume", theme.COULEURS["texte"]))
+
+    def _seulement(self, piste):
+        for p, a in self._actions_son.items():
+            a.setChecked(piste is None or p == piste)
+        if self.apercu.muet_general:
+            self._son(False)
+
+    def extraire_image(self):
+        """Enregistre l'image sous le curseur, depuis le rush d'origine (pleine définition)."""
+        t = self.timeline.position
+        c = self.projet.clip_a(t, "video")
+        m = self.projet.media(c["media"]) if c else None
+        if not m:
+            QMessageBox.information(self, _("Image"), _("Placez le curseur sur un plan vidéo."))
+            return
+        src = c["src_debut"] + (t - c["debut"]) * c.get("vitesse", 1.0)
+        dossier = self.params.get("dossier_images") or dossier_systeme("images")
+        nom = f"{os.path.splitext(m['nom'])[0]}_{src:.2f}s.png".replace(".", "_", 1)
+        chemin, _f = QFileDialog.getSaveFileName(self, _("Enregistrer l'image"), os.path.join(dossier, nom), "PNG (*.png);;JPEG (*.jpg)")
+        if not chemin:
+            return
+        self.params["dossier_images"] = os.path.dirname(chemin)
+        self.params.enregistrer()
+        largeur = int((m.get("fiche") or {}).get("largeur") or 3840)
+        try:
+            from . import moteur
+            png = moteur.image(m["chemin"], src, largeur)
+            if chemin.lower().endswith((".jpg", ".jpeg")):
+                pm = QPixmap()
+                pm.loadFromData(png)
+                pm.save(chemin, "JPG", 95)
+            else:
+                with open(chemin, "wb") as f:
+                    f.write(png)
+            self.encart.message(_("Image enregistrée : {f}", f=chemin))
+        except Exception as e:      # noqa: BLE001
+            QMessageBox.warning(self, _("Image"), str(e))
 
     def _petit(self, ic, aide, f):
         b = QToolButton()
@@ -550,13 +657,43 @@ class Editeur(QWidget):
         self.apercu.aller_a(self.timeline.position, forcer=True)
         self.titre_change.emit()
 
+    def _bouton_historique(self, ic, texte, f, aide, annuler):
+        """Annuler / Rétablir avec la liste des actions : on voit ce qui sera annulé ; un clic annule jusque-là."""
+        b = self._bouton(ic, texte, f, aide)
+        b.setPopupMode(QToolButton.MenuButtonPopup)
+        m = QMenu(b)
+
+        def remplir():
+            m.clear()
+            annul, retab = self.projet.historique()
+            liste = annul if annuler else retab
+            if not liste:
+                m.addAction(_("Rien à annuler") if annuler else _("Rien à rétablir")).setEnabled(False)
+                return
+            for i, lib in enumerate(liste[:20]):
+                m.addAction(f"{i + 1}. {lib}", lambda n=i + 1: self._plusieurs(annuler, n))
+        m.aboutToShow.connect(remplir)
+        b.setMenu(m)
+        return b
+
+    def _plusieurs(self, annuler, n):
+        for _i in range(n):
+            if not (self.projet.annuler() if annuler else self.projet.refaire()):
+                break
+        self.rafraichir()
+        self.encart.message(_("{n} action(s) annulée(s).", n=n) if annuler else _("{n} action(s) rétablie(s).", n=n), 3000)
+
     def annuler(self):
+        a = (self.projet.historique()[0] or [""])[0]
         if self.projet.annuler():
             self.rafraichir()
+            self.encart.message(_("Annulé : {a}", a=a), 3000)
 
     def refaire(self):
+        a = (self.projet.historique()[1] or [""])[0]
         if self.projet.refaire():
             self.rafraichir()
+            self.encart.message(_("Rétabli : {a}", a=a), 3000)
 
     def _selection(self, ids):
         if not ids:
@@ -583,7 +720,8 @@ class Editeur(QWidget):
     def importer(self, chemins=None):
         if not chemins:
             filtres = _("Vidéos, sons, images") + " (*.mp4 *.mov *.mkv *.m4v *.webm *.avi *.mts *.m2ts *.3gp *.mp3 *.wav *.m4a *.aac *.flac *.ogg *.jpg *.jpeg *.png *.webp *.heic);;" + _("Tous") + " (*)"
-            chemins, _f = QFileDialog.getOpenFileNames(self, _("Importer"), self.params.get("dernier_dossier") or "", filtres)
+            chemins, _f = QFileDialog.getOpenFileNames(self, _("Importer des rushes, musiques ou images"),
+                                                       self.params.get("dernier_dossier") or dossier_systeme("videos"), filtres)
         if not chemins:
             return
         self.params["dernier_dossier"] = os.path.dirname(chemins[0])
@@ -685,13 +823,9 @@ class Editeur(QWidget):
         elif oid == "recadrer":
             self.cadrage()
         elif oid == "stabiliser":
-            self._ajouter_effet_selection("stabiliser")
+            self.stabiliser()
         elif oid == "assistant":
-            self.volet.show()
-            self.volet.setCurrentIndex(0)
-            if self.params.get("volet") == "masque":
-                self.params["volet"] = "complet"
-                self.appliquer_volet()
+            self._ouvrir_volet(0)
         elif oid == "fiche":
             ids = self.timeline.selection()
             c = self.projet.clip(ids[0]) if ids else None
@@ -702,11 +836,11 @@ class Editeur(QWidget):
         elif oid == "texte":
             self.nouveau_texte()
         elif oid == "effets":
-            ids = self.timeline.selection()
-            if ids:
-                self.effets_du_clip(ids[0])
+            c = self._clip_selectionne()          # le plan cliqué, sinon celui sous le curseur
+            if c:
+                self.effets_du_clip(c["id"])
             else:
-                self.encart.message(_("Sélectionnez d'abord un plan dans la timeline."))
+                self.encart.message(_("Cliquez d'abord sur un plan dans la timeline, puis sur Effets."))
         elif oid == "goodies":
             self.nouveau_goodie()
         elif oid in ("sous_titres", "musique", "voix", "fabrique", "exporter", "partager"):
@@ -888,6 +1022,63 @@ class Editeur(QWidget):
         m.addAction(_("Suivre la personne (recadrage automatique)…"), lambda: self.recadrer_suivi(c))
         m.exec(self.cursor().pos())
 
+    def _zone_changee(self):
+        z = self.timeline.zone_valide()
+        a, b = self.timeline.zone
+        if z:
+            self.encart.message(_("Partie sélectionnée : {a} → {b} ({d:.1f} s). Montage › « Supprimer la partie sélectionnée » ou "
+                                  "« Garder seulement la partie sélectionnée ». Echap pour annuler la sélection.",
+                                  a=_tc(z[0]), b=_tc(z[1]), d=z[1] - z[0]), 12000)
+        elif a is not None or b is not None:
+            self.encart.message(_("Début de la partie marqué. Placez le curseur à la fin et appuyez sur O.") if a is not None else
+                                _("Fin de la partie marquée. Placez le curseur au début et appuyez sur I."), 8000)
+
+    def partie(self, garder):
+        z = self.timeline.zone_valide()
+        if not z:
+            QMessageBox.information(self, _("Partie de la vidéo"), _(
+                "Pour choisir une partie de la vidéo :\n\n1. placez le curseur rouge au début voulu et appuyez sur I (ou Montage › Début de la partie) ;\n"
+                "2. placez-le à la fin et appuyez sur O (Montage › Fin de la partie).\n\nLa partie apparaît en jaune ; vous pouvez alors la supprimer "
+                "ou ne garder qu'elle. Pour couper simplement un plan en deux : C (Couper)."))
+            return
+        self.projet.marquer()
+        if self.projet.partie(z[0], z[1], garder):
+            self.timeline.zone = [None, None]
+            self.rafraichir()
+            self.timeline.aller_a(0.0 if garder else z[0])
+            self.encart.message(_("Seule la partie sélectionnée est gardée (Annuler pour revenir).") if garder else
+                                _("Partie supprimée, la suite s'est recollée (Annuler pour revenir)."), 6000)
+        else:
+            self.projet.annuler()
+
+    def stabiliser(self):
+        c = self._clip_selectionne()
+        if not c:
+            QMessageBox.information(self, _("Stabiliser"), _("Stabiliser enlève les tremblements d'un plan filmé à la main, en marchant ou "
+                                                            "depuis un avion.\n\nCliquez d'abord sur un plan dans la timeline, puis sur Stabiliser."))
+            return
+        deja = any(e["id"] == "stabiliser" for e in c.get("effets") or [])
+        m = QMessageBox(self)
+        m.setWindowTitle(_("Stabiliser « {n} »", n=c.get("nom", "")))
+        m.setText(_("<b>Stabiliser</b> enlève les tremblements d'un plan filmé à la main (marche, voiture, avion).<br><br>"
+                    "PhilCut recadre très légèrement chaque image pour compenser les secousses : le bord de l'image est un peu rogné. "
+                    "Le résultat se voit avec « Aperçu rendu » (sous la vidéo) et à l'export, pas pendant la lecture normale.<br><br>"
+                    "Pour un horizon penché, utilisez l'effet « Redresser l'horizon » (Effets)."))
+        b_ok = m.addButton(_("Retirer la stabilisation") if deja else _("Stabiliser ce plan"), QMessageBox.AcceptRole)
+        m.addButton(_("Annuler"), QMessageBox.RejectRole)
+        m.exec()
+        if m.clickedButton() is not b_ok:
+            return
+        self.projet.marquer()
+        if deja:
+            c["effets"] = [e for e in c["effets"] if e["id"] != "stabiliser"]
+            self.rafraichir()
+            self.encart.message(_("Stabilisation retirée."))
+        else:
+            c.setdefault("effets", []).append({"id": "stabiliser", "params": {}})
+            self.rafraichir()
+            self.encart.message(_("Plan stabilisé : regardez le résultat avec « Aperçu rendu »."), 6000)
+
     def _ajouter_effet_selection(self, eid):
         c = self._clip_selectionne()
         if not c:
@@ -1063,23 +1254,7 @@ class Editeur(QWidget):
         sortie = os.path.join(tempfile.gettempdir(), "philcut_apercu.mp4")
 
         def travail(tache):
-            p = copy.deepcopy(self.projet)
-            # on garde seulement la fenetre [debut, fin] : couper et decaler
-            for piste in ("video", "audio"):
-                for c in list(p.clips_piste(piste)):
-                    if fin_clip(c) <= debut or c["debut"] >= fin:
-                        p.d["clips"].remove(c)
-                        continue
-                    if c["debut"] < debut:
-                        c["src_debut"] += (debut - c["debut"]) * c.get("vitesse", 1.0)
-                        c["debut"] = debut
-                    if fin_clip(c) > fin:
-                        c["src_fin"] = c["src_debut"] + (fin - c["debut"]) * c.get("vitesse", 1.0)
-                    c["debut"] -= debut
-            for x in p.titres + p.goodies:
-                x["debut"], x["fin"] = max(0.0, x["debut"] - debut), max(0.0, min(fin, x["fin"]) - debut)
-            p.d["titres"] = [t for t in p.titres if t["fin"] > 0.05]
-            p.d["goodies"] = [g for g in p.goodies if g["fin"] > 0.05]
+            p = export.extrait(self.projet, debut, fin)
             ex = export.Exportateur(p, sortie, "whatsapp", qualite="allegee", encodeur="libx264", params=self.params)
             try:
                 return ex.lancer(progression=lambda f: tache.avancer(f), arret=lambda: tache.arret)

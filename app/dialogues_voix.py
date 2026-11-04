@@ -3,7 +3,7 @@ import os
 
 from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout, QLabel,
-                               QMessageBox, QPlainTextEdit, QPushButton, QSlider, QVBoxLayout)
+                               QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QSlider, QVBoxLayout)
 
 from . import voix as V
 from .langue import _
@@ -58,6 +58,12 @@ class DialogueEnregistrement(QDialog):
             self.micro.addItem(_("Aucun micro trouvé"))
             self.micro.setEnabled(False)
         f.addRow(_("Micro"), self.micro)
+        self.niveau = QProgressBar()
+        self.niveau.setRange(0, 100)
+        self.niveau.setTextVisible(False)
+        self.niveau.setFixedHeight(12)
+        self.niveau.setToolTip(_("Niveau du micro en direct : parlez normalement, la barre doit monter vers les trois quarts sans toucher le bout."))
+        f.addRow(_("Niveau"), self.niveau)
         m, s = divmod(debut, 60)
         f.addRow(_("Début"), QLabel(_("{m}:{s:04.1f} (position du curseur)", m=int(m), s=s)))
         lay.addLayout(f)
@@ -72,6 +78,10 @@ class DialogueEnregistrement(QDialog):
         self.b_rec.clicked.connect(self.basculer)
         self.temps = QLabel("0:00.0")
         h.addWidget(self.b_rec)
+        self.b_ecoute = QPushButton(_("▶ Ecouter la prise"))
+        self.b_ecoute.setEnabled(False)
+        self.b_ecoute.clicked.connect(self.ecouter)
+        h.addWidget(self.b_ecoute)
         h.addWidget(self.temps)
         h.addStretch(1)
         lay.addLayout(h)
@@ -87,6 +97,67 @@ class DialogueEnregistrement(QDialog):
         self.minuteur = QTimer(self)
         self.minuteur.timeout.connect(self._tic)
         self.session = self.enregistreur = None
+        self.lecteur = None
+        self.source = self.flux = None
+        self.micro.currentIndexChanged.connect(lambda _i: self._vumetre())
+        self.vu = QTimer(self)
+        self.vu.timeout.connect(self._lire_niveau)
+        self._vumetre()
+
+    # ---- vumètre : le micro est écouté dès l'ouverture, pour vérifier qu'il capte avant d'enregistrer
+    def _vumetre(self):
+        self._arreter_vumetre()
+        if not self._appareils:
+            return
+        try:
+            from PySide6.QtMultimedia import QAudioFormat, QAudioSource
+            fmt = QAudioFormat()
+            fmt.setSampleRate(16000)
+            fmt.setChannelCount(1)
+            fmt.setSampleFormat(QAudioFormat.Int16)
+            self.source = QAudioSource(self._appareils[self.micro.currentIndex()], fmt, self)
+            self.flux = self.source.start()
+            self.vu.start(60)
+        except Exception:       # noqa: BLE001 : pas de vumètre, l'enregistrement reste possible
+            self.source = self.flux = None
+
+    def _arreter_vumetre(self):
+        self.vu.stop()
+        if self.source is not None:
+            try:
+                self.source.stop()
+            except Exception:       # noqa: BLE001
+                pass
+        self.source = self.flux = None
+
+    def _lire_niveau(self):
+        if self.flux is None:
+            return
+        d = bytes(self.flux.readAll())
+        if len(d) < 2:
+            return
+        import array
+        a = array.array("h", d[: len(d) // 2 * 2])
+        crete = max(abs(min(a)), abs(max(a))) / 32768.0
+        import math
+        db = 20 * math.log10(max(crete, 1e-4))          # -80 dB … 0 dB
+        self.niveau.setValue(int(max(0, min(100, (db + 60) / 60 * 100))))
+
+    def ecouter(self):
+        from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+        if self.lecteur is None:
+            self.lecteur = QMediaPlayer(self)
+            self._sortie = QAudioOutput(self)
+            self.lecteur.setAudioOutput(self._sortie)
+        if self.lecteur.playbackState() == QMediaPlayer.PlayingState:
+            self.lecteur.stop()
+            self.b_ecoute.setText(_("▶ Ecouter la prise"))
+            return
+        self.lecteur.setSource(QUrl.fromLocalFile(self.chemin))
+        self.lecteur.play()
+        self.b_ecoute.setText(_("■ Arrêter l'écoute"))
+        self.lecteur.playbackStateChanged.connect(
+            lambda st: st == QMediaPlayer.StoppedState and self.b_ecoute.setText(_("▶ Ecouter la prise")))
 
     def basculer(self):
         if self.enregistreur and self.enregistreur.recorderState() != self.enregistreur.RecorderState.StoppedState:
@@ -117,6 +188,9 @@ class DialogueEnregistrement(QDialog):
         self._t0 = time.monotonic()
         self.minuteur.start(100)
         self.b_rec.setText(_("■ Arrêter"))
+        self.b_ecoute.setEnabled(False)
+        if self.lecteur is not None:
+            self.lecteur.stop()
         self.bb.button(QDialogButtonBox.Ok).setEnabled(False)
         self.micro.setEnabled(False)
 
@@ -133,6 +207,7 @@ class DialogueEnregistrement(QDialog):
     def _fichier_pret(self):
         ok = bool(self.chemin) and os.path.exists(self.chemin) and os.path.getsize(self.chemin) > 2000
         self.bb.button(QDialogButtonBox.Ok).setEnabled(ok)
+        self.b_ecoute.setEnabled(ok)
         self.info.setText(_("Prise enregistrée. « Poser sur la piste Voix », ou « Recommencer ».") if ok
                           else _("Rien n'a été enregistré : vérifiez le micro (et l'autorisation du micro dans Windows)."))
 
@@ -143,11 +218,17 @@ class DialogueEnregistrement(QDialog):
 
     def accepter(self):
         self.effets = [c.eid for c in self.cases if c.isChecked()]
+        self._arreter_vumetre()
+        if self.lecteur is not None:
+            self.lecteur.stop()
         self.accept()
 
     def reject(self):
         if self.enregistreur and self.enregistreur.recorderState() != self.enregistreur.RecorderState.StoppedState:
             self.enregistreur.stop()
+        self._arreter_vumetre()
+        if self.lecteur is not None:
+            self.lecteur.stop()
         super().reject()
 
 

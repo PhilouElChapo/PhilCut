@@ -158,7 +158,11 @@ class DialogueEffets(QDialog):
         v = QVBoxLayout(self)
         h = QHBoxLayout()
         gauche = QVBoxLayout()
-        gauche.addWidget(QLabel(_("<b>Catalogue</b> — double-clic pour poser")))
+        mode = QLabel(_("<b>1.</b> Cliquez un effet du catalogue : son aperçu se fabrique sur votre plan (à droite). "
+                        "<b>2.</b> « Poser sur ce plan » (ou double-clic). <b>3.</b> Réglez-le, puis <b>OK</b>."))
+        mode.setWordWrap(True)
+        v.addWidget(mode)
+        gauche.addWidget(QLabel(_("<b>Catalogue</b>")))
         self.cat = QListWidget()
         coches = set(params.get("effets_coches") or [])
         for fam, nom in E.FAMILLES:
@@ -175,7 +179,15 @@ class DialogueEffets(QDialog):
                 it.setToolTip(fi["description"])
                 self.cat.addItem(it)
         self.cat.itemDoubleClicked.connect(self._poser)
+        self.cat.currentItemChanged.connect(lambda it, _p: self._choisi(it))
         gauche.addWidget(self.cat, 1)
+        self.b_poser = QPushButton(_("Poser sur ce plan →"))
+        self.b_poser.setEnabled(False)
+        self.b_poser.clicked.connect(lambda: self.cat.currentItem() and self._poser(self.cat.currentItem()))
+        hp = QHBoxLayout()
+        hp.addWidget(self.b_poser)
+        hp.addStretch(1)
+        gauche.addLayout(hp)
         h.addLayout(gauche, 1)
         droite = QVBoxLayout()
         droite.addWidget(QLabel(_("<b>Sur ce plan</b>")))
@@ -198,6 +210,44 @@ class DialogueEffets(QDialog):
         self.form = QFormLayout(self.grp)
         droite.addWidget(self.grp)
         h.addLayout(droite, 1)
+        # ---- aperçu : quelques secondes du plan, rendues avec les effets
+        apercu = QVBoxLayout()
+        apercu.addWidget(QLabel(_("<b>Aperçu sur votre plan</b>")))
+        self.ecran = None
+        self.lecteur = None
+        try:
+            from PySide6.QtMultimedia import QMediaPlayer
+            from PySide6.QtMultimediaWidgets import QVideoWidget
+            if not params.get("apercu_images"):
+                self.ecran = QVideoWidget()
+                self.ecran.setMinimumSize(320, 200)
+                self.lecteur = QMediaPlayer(self)
+                self.lecteur.setVideoOutput(self.ecran)
+                self.lecteur.setLoops(QMediaPlayer.Infinite)
+                apercu.addWidget(self.ecran, 1)
+        except Exception:       # noqa: BLE001
+            self.ecran = None
+        if self.ecran is None:
+            self.ecran_image = QLabel()
+            self.ecran_image.setMinimumSize(320, 200)
+            self.ecran_image.setAlignment(Qt.AlignCenter)
+            apercu.addWidget(self.ecran_image, 1)
+        self.etat_apercu = QLabel(_("Choisissez un effet pour le voir."))
+        self.etat_apercu.setWordWrap(True)
+        self.etat_apercu.setStyleSheet("color:#999")
+        apercu.addWidget(self.etat_apercu)
+        hb2 = QHBoxLayout()
+        self.b_apercu = QPushButton(_("↻ Revoir avec les réglages"))
+        self.b_apercu.clicked.connect(lambda: self._apercu())
+        hb2.addWidget(self.b_apercu)
+        hb2.addStretch(1)
+        apercu.addLayout(hb2)
+        h.addLayout(apercu, 1)
+        self._tache_apercu = None
+        self._minuteur_apercu = QTimer(self)
+        self._minuteur_apercu.setSingleShot(True)
+        self._minuteur_apercu.timeout.connect(self._apercu)
+        self.resize(1180, 620)
         v.addLayout(h, 1)
         self.aide = QLabel("")
         self.aide.setWordWrap(True)
@@ -208,6 +258,80 @@ class DialogueEffets(QDialog):
         bb.rejected.connect(self.reject)
         v.addWidget(bb)
         self._remplir()
+
+    def _choisi(self, it):
+        k = it.data(Qt.UserRole) if it else None
+        self.b_poser.setEnabled(bool(k))
+        if not k:
+            return
+        fi = E.fiche(k)
+        self.aide.setText(f"<b>{fi['nom']}</b> — {fi['description']}")
+        self._essai = k
+        self._minuteur_apercu.start(500)
+
+    def _apercu(self):
+        """Fabrique 2 à 3 s du plan avec les effets posés et l'effet choisi dans le catalogue, puis le joue en boucle."""
+        ed = self.parent()
+        projet = getattr(ed, "projet", None)
+        if projet is None or not projet.clip(self.clip.get("id", "")):
+            self.etat_apercu.setText(_("Aperçu indisponible ici."))
+            return
+        import tempfile
+        from .taches import Tache
+        from . import export
+        effets = [dict(e) for e in self.effets]
+        transition = self.transition
+        k = getattr(self, "_essai", None)
+        fi = E.fiche(k) if k else None
+        if fi and not (fi["pack"] and not E.pack_pret(fi["pack"], self.params)):
+            if fi["famille"] == "transition":
+                transition = {"id": k, "params": dict(E.defauts(k))} if not (transition and transition["id"] == k) else transition
+            elif not any(e["id"] == k for e in effets):
+                effets.append({"id": k, "params": dict(E.defauts(k))})
+        if self._tache_apercu is not None:
+            self._tache_apercu.stopper()
+        self._n_apercu = getattr(self, "_n_apercu", 0) + 1
+        sortie = os.path.join(tempfile.gettempdir(), f"philcut_effet_{os.getpid()}_{self._n_apercu % 3}.mp4")
+        t = getattr(getattr(ed, "timeline", None), "position", self.clip["debut"])
+        nom = (fi or {}).get("nom") or _("vos effets")
+        self.etat_apercu.setText(_("Fabrication de l'aperçu : {n}…", n=nom))
+        tache = Tache(lambda tc: export.apercu_effet(projet, self.clip["id"], effets, transition, t, sortie, self.params,
+                                                     arret=lambda: tc.arret), _("Aperçu d'effet"))
+        self._tache_apercu = tache
+        if hasattr(ed, "taches"):
+            ed.taches.append(tache)
+
+        def fini(r, e, tache=tache):
+            if tache is not self._tache_apercu:
+                return
+            self._tache_apercu = None
+            try:
+                if e:
+                    self.etat_apercu.setText(_("Aperçu impossible : {e}", e=str(e)[:160]))
+                    return
+                pose = fi is None or any(x["id"] == k for x in self.effets) or (self.transition or {}).get("id") == k
+                self.etat_apercu.setText(_("Aperçu : {n} (en boucle).", n=nom) + ("" if pose else _(" Pas encore posé : « Poser sur ce plan ».")))
+                if self.lecteur is not None:
+                    from PySide6.QtCore import QUrl
+                    self.lecteur.setSource(QUrl.fromLocalFile(sortie))
+                    self.lecteur.play()
+                else:
+                    from PySide6.QtGui import QPixmap
+                    png = moteur.image(sortie, 1.0, 480)
+                    pm = QPixmap()
+                    pm.loadFromData(png)
+                    self.ecran_image.setPixmap(pm.scaled(self.ecran_image.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            except RuntimeError:        # fenêtre déjà fermée
+                pass
+        tache.fini.connect(fini)
+        tache.start()
+
+    def done(self, r):
+        if self._tache_apercu is not None:
+            self._tache_apercu.stopper()
+        if self.lecteur is not None:
+            self.lecteur.stop()
+        super().done(r)
 
     def _remplir(self):
         self.poses.clear()
@@ -487,7 +611,8 @@ class DialogueExport(QDialog):
         f.addRow(_("Qualité"), self.qualite)
         h = QHBoxLayout()
         nom = (projet.nom or "video").replace("/", "-") + ".mp4"
-        dossier = params.get("dernier_dossier_export") or os.path.join(os.path.expanduser("~"), "Videos" if os.path.isdir(os.path.join(os.path.expanduser("~"), "Videos")) else "")
+        from .session import dossier_systeme
+        dossier = params.get("dernier_dossier_export") or dossier_systeme("videos")
         self.chemin = QLineEdit(os.path.join(dossier, nom))
         b = QPushButton(_("Parcourir…"))
         b.clicked.connect(self._parcourir)
@@ -533,6 +658,12 @@ class DialogueFabrique(QDialog):
         self.resize(640, 520)
         self.projet, self.params, self.recette = projet, params, recette or projet.d.get("recette") or {}
         v = QVBoxLayout(self)
+        intro = QLabel(_("<b>La Fabrique</b> crée ce que vos rushes n'ont pas : un <b>logo animé</b> ou une <b>intro</b> / <b>fin</b> de vidéo "
+                         "(onglet 1), ou un <b>plan généré par IA</b> à partir d'une phrase, par exemple « survol des collines de Provence au "
+                         "lever du soleil » (onglet 2). Le résultat arrive dans les médias du projet, prêt à poser sur la timeline. "
+                         "Pour dessiner votre logo lui-même : Fabrique › Atelier de logo."))
+        intro.setWordWrap(True)
+        v.addWidget(intro)
         self.onglets = QTabWidget()
         v.addWidget(self.onglets, 1)
         # ---- logo / intro

@@ -67,12 +67,19 @@ class ItemClip(QGraphicsRectItem):
             p.save()
             p.setClipRect(r.adjusted(1, 1, -1, -1))
             vh = r.height() - 18
-            # la bande contient 24 vignettes du media entier ; on affiche la portion [src_debut, src_fin]
+            # la bande contient 24 vignettes du média entier : chacune est posée à ses vraies proportions (pas
+            # écrasée), en prenant pour chaque case l'image du moment qu'elle couvre
             d_med = float((self.media.get("fiche") or {}).get("duree") or 1)
-            x0 = self.clip["src_debut"] / d_med * self.vignette.width()
-            x1 = self.clip["src_fin"] / d_med * self.vignette.width()
-            src = QRectF(x0, 0, max(1, x1 - x0), self.vignette.height())
-            p.drawPixmap(QRectF(r.x() + 1, r.y() + 16, r.width() - 2, vh), self.vignette, src)
+            n = 24
+            tw, th = self.vignette.width() / n, self.vignette.height()
+            case = max(8.0, vh * tw / max(1, th))
+            v = self.clip.get("vitesse", 1.0)
+            x = 0.0
+            while x < r.width():
+                t = self.clip["src_debut"] + (x + case / 2) / self.tl.pps * v
+                i = max(0, min(n - 1, int(t / d_med * n)))
+                p.drawPixmap(QRectF(r.x() + 1 + x, r.y() + 16, case, vh), self.vignette, QRectF(i * tw, 0, tw, th))
+                x += case
             p.restore()
         elif piste in ("audio", "voix") and self.media and self.media.get("onde"):
             onde = self.media["onde"]
@@ -262,6 +269,7 @@ class Timeline(QGraphicsView):
     position_changee = Signal(float)
     selection_changee = Signal(list)        # identifiants selectionnes
     modifie = Signal()
+    zone_changee = Signal()                 # partie sélectionnée (I / O) modifiée
     proprietes = Signal(str)                # double clic : identifiant
     media_depose = Signal(str, str, float)  # media_id, piste, instant
     demande_menu = Signal(str, object)      # (clip_id, position ecran) pour la fenetre (effets, etc.)
@@ -279,6 +287,8 @@ class Timeline(QGraphicsView):
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
+        self.zone = [None, None]        # partie sélectionnée : début (I) et fin (O)
+        self.h_video = H_VIDEO          # hauteur de la piste vidéo : Alt + molette ou Affichage › Images de la timeline
         self.setMinimumHeight(H_REGLE + H_VIDEO + H_AUDIO + H_VOIX + H_CALQUE * 2 + 14)
         self.setFrameShape(QFrame.NoFrame)
         self.setBackgroundBrush(_c("fond"))
@@ -289,8 +299,8 @@ class Timeline(QGraphicsView):
     # ---- disposition des pistes
     def _pistes(self):
         y = H_REGLE
-        out = {"video": (y, H_VIDEO)}
-        y += H_VIDEO
+        out = {"video": (y, self.h_video)}
+        y += self.h_video
         out["audio"] = (y, H_AUDIO)
         y += H_AUDIO
         out["voix"] = (y, H_VOIX)
@@ -301,7 +311,12 @@ class Timeline(QGraphicsView):
         return out
 
     def hauteur_totale(self):
-        return H_REGLE + H_VIDEO + H_AUDIO + H_VOIX + H_CALQUE * 2
+        return H_REGLE + self.h_video + H_AUDIO + H_VOIX + H_CALQUE * 2
+
+    def hauteur_images(self, facteur):
+        """Agrandit ou réduit les images de la piste vidéo (de 50 à 220 pixels de haut)."""
+        self.h_video = int(max(50, min(220, self.h_video * facteur)))
+        self.reconstruire()
 
     def reconstruire(self):
         sel = {it.clip["id"] for it in self._scene.items() if isinstance(it, ItemClip) and it.isSelected()}
@@ -359,6 +374,15 @@ class Timeline(QGraphicsView):
             t += pas
 
     def drawForeground(self, p, r):
+        a, b = self.zone
+        if a is not None or b is not None:          # partie sélectionnée : bande jaune sur la règle, voile sur les pistes
+            xa = MARGE_G + (a if a is not None else b) * self.pps
+            xb = MARGE_G + (b if b is not None else a) * self.pps
+            p.fillRect(QRectF(xa, 0, max(2.0, xb - xa), H_REGLE), QColor(255, 210, 74, 150))
+            p.fillRect(QRectF(xa, H_REGLE, max(2.0, xb - xa), self.hauteur_totale() - H_REGLE), QColor(255, 210, 74, 38))
+            p.setPen(QPen(QColor("#ffd24a"), 1.5))
+            for x in (xa, xb):
+                p.drawLine(QLineF(x, 0, x, self.hauteur_totale()))
         # colonne des noms de pistes (fixe a gauche de la vue)
         x0 = self.mapToScene(0, 0).x()
         p.fillRect(QRectF(x0, 0, MARGE_G, self.hauteur_totale()), _c("fond"))
@@ -437,7 +461,10 @@ class Timeline(QGraphicsView):
         super().mouseReleaseEvent(e)
 
     def wheelEvent(self, e):
-        if e.modifiers() & Qt.ControlModifier:
+        if e.modifiers() & Qt.AltModifier:
+            d = e.angleDelta().y() or e.angleDelta().x()        # Alt fait parfois passer la molette en horizontal
+            self.hauteur_images(1.15 if d > 0 else 1 / 1.15)
+        elif e.modifiers() & Qt.ControlModifier:
             self.zoomer(1.2 if e.angleDelta().y() > 0 else 1 / 1.2, e.position().x())
         else:
             self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - e.angleDelta().y())
@@ -464,6 +491,14 @@ class Timeline(QGraphicsView):
             self.supprimer_selection(refermer=not (e.modifiers() & Qt.ShiftModifier))
         elif k == Qt.Key_C and not e.modifiers():
             self.couper_au_curseur()
+        elif k == Qt.Key_I and not e.modifiers():
+            self.marquer_zone(0)
+        elif k == Qt.Key_O and not e.modifiers():
+            self.marquer_zone(1)
+        elif k == Qt.Key_Escape:
+            self.zone = [None, None]
+            self.zone_changee.emit()
+            self.viewport().update()
         elif k == Qt.Key_Home:
             self.aller_a(0)
         elif k == Qt.Key_End:
@@ -474,6 +509,19 @@ class Timeline(QGraphicsView):
             self.aller_a(self.position + (1.0 if e.modifiers() & Qt.ShiftModifier else 1.0 / (self.projet.cadence if self.projet else 30)))
         else:
             super().keyPressEvent(e)
+
+    # ---- partie sélectionnée (entrée / sortie)
+    def marquer_zone(self, i):
+        self.zone[i] = self.position
+        a, b = self.zone
+        if a is not None and b is not None and b < a:
+            self.zone = [b, a]
+        self.zone_changee.emit()
+        self.viewport().update()
+
+    def zone_valide(self):
+        a, b = self.zone
+        return (a, b) if a is not None and b is not None and b - a > 0.04 else None
 
     # ---- actions
     def selection(self):

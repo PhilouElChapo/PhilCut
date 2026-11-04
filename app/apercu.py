@@ -23,6 +23,9 @@ except ImportError:                                     # sans module multimedia
     MULTIMEDIA = False
 
 
+PISTES_SON = ("audio", "voix")
+
+
 class Apercu(QGraphicsView):
     position_changee = Signal(float)
     etat_lecture = Signal(bool)
@@ -47,6 +50,9 @@ class Apercu(QGraphicsView):
         self.video = None
         self.lecteur = self.son = None
         self.lecteur_audio = self.son_audio = None
+        self.sons = {}
+        self.pistes_muettes = set()          # pistes coupées à l'écoute (bouton haut-parleur de chaque piste)
+        self.muet_general = False
         if MULTIMEDIA and not self.params.get("apercu_images") and not _os.environ.get("PHILCUT_APERCU_IMAGES"):
             self.video = QGraphicsVideoItem()
             self._scene.addItem(self.video)
@@ -54,9 +60,11 @@ class Apercu(QGraphicsView):
             self.son = QAudioOutput(self)
             self.lecteur.setAudioOutput(self.son)
             self.lecteur.setVideoOutput(self.video)
-            self.lecteur_audio = QMediaPlayer(self)
-            self.son_audio = QAudioOutput(self)
-            self.lecteur_audio.setAudioOutput(self.son_audio)
+            for piste in PISTES_SON:            # un lecteur par piste de son : musique et voix off
+                lp, so = QMediaPlayer(self), QAudioOutput(self)
+                lp.setAudioOutput(so)
+                self.sons[piste] = {"lecteur": lp, "sortie": so, "clip": None, "source": None}
+            self.lecteur_audio, self.son_audio = self.sons["audio"]["lecteur"], self.sons["audio"]["sortie"]
             self.lecteur.errorOccurred.connect(self._erreur)
         self.calques = []                   # items des titres / goodies
         self.t = 0.0
@@ -147,8 +155,8 @@ class Apercu(QGraphicsView):
                 self._source = src
             self.clip = c
             self.lecteur.setPlaybackRate(float(c.get("vitesse", 1.0)))
-            self.son.setVolume(0.0 if c.get("muet") else float(c.get("volume", 1.0)))
             self._cadrer(c, m)
+        self.son.setVolume(0.0 if (c.get("muet") or self.muet_general or "video" in self.pistes_muettes) else float(c.get("volume", 1.0)))
         if c.get("ajustement") == "suivi":           # le cadre bouge avec la personne
             self._cadrer(c, m)
         if abs(self.lecteur.position() - pos_ms) > 80 or not self.en_lecture:
@@ -205,30 +213,45 @@ class Apercu(QGraphicsView):
         self.video.setPos((L - w) / 2, (H - h) / 2)
 
     def _placer_audio(self):
-        if not self.projet or not self.lecteur_audio:
+        if not self.projet or not self.sons:
             return
-        c = self.projet.clip_a(self.t, "audio")
-        if c is None:
-            self.clip_audio = None
-            self.lecteur_audio.pause()
-            return
-        m = self.projet.media(c["media"])
-        src = QUrl.fromLocalFile(m["chemin"])
-        pos_ms = int((c["src_debut"] + (self.t - c["debut"]) * c.get("vitesse", 1.0)) * 1000)
-        if self.clip_audio is None or c["id"] != self.clip_audio["id"] or src != self._source_audio:
-            if src != self._source_audio:
-                self.lecteur_audio.setSource(src)
-                self._source_audio = src
-            self.clip_audio = c
-            self.lecteur_audio.setPlaybackRate(float(c.get("vitesse", 1.0)))
-        self.son_audio.setVolume(0.0 if c.get("muet") else float(c.get("volume", 1.0)) * 0.8)
-        if abs(self.lecteur_audio.position() - pos_ms) > 120 or not self.en_lecture:
-            self.lecteur_audio.setPosition(pos_ms)
-        if self.en_lecture:
-            if self.lecteur_audio.playbackState() != QMediaPlayer.PlayingState:
-                self.lecteur_audio.play()
+        for piste, sp in self.sons.items():
+            lp, so = sp["lecteur"], sp["sortie"]
+            c = self.projet.clip_a(self.t, piste)
+            m = self.projet.media(c["media"]) if c else None
+            if c is None or not m:
+                sp["clip"] = None
+                lp.pause()
+                continue
+            src = QUrl.fromLocalFile(m["chemin"])
+            pos_ms = int((c["src_debut"] + (self.t - c["debut"]) * c.get("vitesse", 1.0)) * 1000)
+            if sp["clip"] is None or c["id"] != sp["clip"]["id"] or src != sp["source"]:
+                if src != sp["source"]:
+                    lp.setSource(src)
+                    sp["source"] = src
+                sp["clip"] = c
+                lp.setPlaybackRate(float(c.get("vitesse", 1.0)))
+            coupe = c.get("muet") or self.muet_general or piste in self.pistes_muettes
+            so.setVolume(0.0 if coupe else min(1.0, float(c.get("volume", 1.0)) * (0.8 if piste == "audio" else 1.0)))
+            if abs(lp.position() - pos_ms) > 120 or not self.en_lecture:
+                lp.setPosition(pos_ms)
+            if self.en_lecture:
+                if lp.playbackState() != QMediaPlayer.PlayingState:
+                    lp.play()
+            else:
+                lp.pause()
+        self.clip_audio = self.sons["audio"]["clip"]
+
+    def couper_son(self, piste=None, coupe=None):
+        """Couper / remettre le son : de tout l'aperçu (piste=None) ou d'une piste (video, audio, voix)."""
+        if piste is None:
+            self.muet_general = (not self.muet_general) if coupe is None else bool(coupe)
         else:
-            self.lecteur_audio.pause()
+            if coupe is None:
+                coupe = piste not in self.pistes_muettes
+            (self.pistes_muettes.add if coupe else self.pistes_muettes.discard)(piste)
+        self._placer_video(False)
+        self._placer_audio()
 
     # ---------------------------------------------------------------- lecture
     def lire(self):
@@ -249,8 +272,8 @@ class Apercu(QGraphicsView):
         self.horloge.stop()
         if self.lecteur:
             self.lecteur.pause()
-        if self.lecteur_audio:
-            self.lecteur_audio.pause()
+        for sp in self.sons.values():
+            sp["lecteur"].pause()
         self.etat_lecture.emit(False)
 
     def arreter(self):
@@ -298,9 +321,11 @@ class Apercu(QGraphicsView):
                 m = self.projet.media(c["media"])
                 if m and m.get("genre") != "image":
                     self._image_ffmpeg(c, m)
-        ca = self.projet.clip_a(self.t, "audio")
-        if (ca is None) != (self.clip_audio is None) or (ca and self.clip_audio and ca["id"] != self.clip_audio["id"]):
-            self._placer_audio()
+        for piste, sp in self.sons.items():
+            ca = self.projet.clip_a(self.t, piste)
+            if (ca is None) != (sp["clip"] is None) or (ca and sp["clip"] and ca["id"] != sp["clip"]["id"]):
+                self._placer_audio()
+                break
         self._dessiner_calques()
         self.position_changee.emit(self.t)
 

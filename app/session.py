@@ -118,7 +118,10 @@ def dossiers_connus(params=None):
         if sys.platform == "win32":
             for clef, guid in (("documents", "{FDD39AD0-238F-46AF-ADB4-6C85480369C7}"),
                                ("telechargements", "{374DE290-123F-4565-9164-39C4925E467B}"),
-                               ("bureau", "{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}")):
+                               ("bureau", "{B4BFCC3A-DB2C-424C-B029-7FE99A87C641}"),
+                               ("videos", "{18989B1D-99B5-455B-841C-AB7C74E4DDFC}"),
+                               ("images", "{33E28130-4E1E-4676-835A-98395C3BC3BB}"),
+                               ("musique", "{4BD8D571-6D19-48D3-BE97-422220080E43}")):
                 try:
                     _cache_connus[clef] = _dossier_windows(guid)
                 except Exception:
@@ -127,11 +130,20 @@ def dossiers_connus(params=None):
             _cache_connus["documents"] = _dossier_linux("DOCUMENTS", ["Documents"])
             _cache_connus["telechargements"] = _dossier_linux("DOWNLOAD", ["Téléchargements", "Downloads"])
             _cache_connus["bureau"] = _dossier_linux("DESKTOP", ["Bureau", "Desktop"])
+            _cache_connus["videos"] = _dossier_linux("VIDEOS", ["Vidéos", "Videos"])
+            _cache_connus["images"] = _dossier_linux("PICTURES", ["Images", "Pictures"])
+            _cache_connus["musique"] = _dossier_linux("MUSIC", ["Musique", "Music"])
         _cache_connus["maison"] = maison
     d = {k: v for k, v in _cache_connus.items() if v and os.path.isdir(v)}
     if params is not None and params.get("nas") and os.path.isdir(params["nas"]):
         d["nas"] = params["nas"]
     return d
+
+
+def dossier_systeme(genre="videos"):
+    """Dossier Vidéos (ou Images, Musique, Documents) du système ; à défaut le dossier personnel."""
+    d = dossiers_connus()
+    return d.get(genre) or d.get("documents") or os.path.expanduser("~")
 
 
 JOURS_RECENTS = 30          # recents montres sur l'Accueil : 30 derniers jours,

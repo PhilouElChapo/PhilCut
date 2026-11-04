@@ -288,3 +288,63 @@ def demander_secret(parent, titre, texte, indice="", avec_indice=False):
         return champ.text(), ok, (ind.text().strip() if ind is not None else "")
     return champ.text(), ok
 
+
+
+# ------------------------------------------------------------------ mise en page : jamais de défilement horizontal
+class CaseLongue(QWidget):
+    """Case à cocher dont le texte passe à la ligne (une QCheckBox ne sait pas le faire et élargit toute la fenêtre).
+    Mêmes appels que QCheckBox : isChecked, setChecked, toggled, text, setText, setToolTip, setEnabled."""
+    toggled = Signal(bool)
+
+    def __init__(self, texte="", parent=None):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QCheckBox, QSizePolicy
+        h = QHBoxLayout(self)
+        h.setContentsMargins(0, 0, 0, 0)
+        h.setSpacing(8)
+        self.case = QCheckBox()
+        self.libelle = QLabel(texte)
+        self.libelle.setWordWrap(True)
+        self.libelle.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        self.libelle.mousePressEvent = lambda e: self.case.isEnabled() and self.case.toggle()
+        h.addWidget(self.case, 0, Qt.AlignTop)
+        h.addWidget(self.libelle, 1)
+        self.case.toggled.connect(self.toggled.emit)
+
+    def isChecked(self):
+        return self.case.isChecked()
+
+    def setChecked(self, v):
+        self.case.setChecked(bool(v))
+
+    def text(self):
+        return self.libelle.text()
+
+    def setText(self, t):
+        self.libelle.setText(t)
+
+    def setToolTip(self, t):
+        super().setToolTip(t)
+        self.case.setToolTip(t)
+        self.libelle.setToolTip(t)
+
+
+def a_gauche(*widgets):
+    """Boutons à leur taille, alignés à gauche (règle commune : pas de bouton étiré sur toute la largeur)."""
+    h = QHBoxLayout()
+    h.setContentsMargins(0, 0, 0, 0)
+    for w in widgets:
+        h.addWidget(w)
+    h.addStretch(1)
+    return h
+
+
+def page_a_largeur(zone):
+    """Zone défilante qui suit la largeur de la fenêtre : défilement vertical seulement, textes repliés."""
+    zone.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    w = zone.widget()
+    if w is not None:
+        for lbl in w.findChildren(QLabel):
+            if not lbl.pixmap() or lbl.pixmap().isNull():
+                lbl.setWordWrap(True)
+    return zone

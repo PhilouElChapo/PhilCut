@@ -3,13 +3,13 @@ cocher), Comptes, Synchronisation, Mises à jour. Reglages communs a tous les po
 import os, subprocess, sys
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QDialog, QTabWidget, QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox, QCheckBox,
+from PySide6.QtWidgets import (QDialog, QTabWidget, QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox,
                                QPushButton, QDialogButtonBox, QSpinBox, QFileDialog, QGroupBox, QPlainTextEdit, QMessageBox, QScrollArea)
 
 from . import effets as E, goodies as GO, ia_locale, moteur, packs_ia, theme
 from .config import VERSION, est_portable, dossier_donnees
 from .langue import _, disponibles as langues_disponibles
-from .widgets import boutons_fr, oeil
+from .widgets import CaseLongue as QCheckBox, a_gauche, page_a_largeur, boutons_fr, oeil
 
 
 class DialoguePreferences(QDialog):
@@ -30,6 +30,9 @@ class DialoguePreferences(QDialog):
         self._packs()
         self._comptes()
         self._maj()
+        for i in range(self.onglets.count()):
+            page_a_largeur(self.onglets.widget(i))
+        self.onglets.setUsesScrollButtons(True)
         bb = boutons_fr(QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel))
         bb.accepted.connect(self.valider)
         bb.rejected.connect(self.reject)
@@ -109,7 +112,7 @@ class DialoguePreferences(QDialog):
         f.addRow(_("Taille des icônes"), self.barre_taille)
         b = QPushButton(_("Personnaliser la barre d'outils…"))
         b.clicked.connect(lambda: self.fenetre.personnaliser_barre())
-        f.addRow(b)
+        f.addRow(a_gauche(b))
         self.volet = QComboBox()
         for lib, m in ((_("Complet"), "complet"), (_("Icônes seules"), "icones"), (_("Masqué"), "masque")):
             self.volet.addItem(lib, m)
@@ -183,7 +186,7 @@ class DialoguePreferences(QDialog):
         fg.addRow(_("Clef fal.ai (Kling, Seedance…)"), self.clef_fal)
         b_conn = QPushButton(_("Connecter une IA : obtenir et tester ma clef…"))
         b_conn.clicked.connect(self._connecter)
-        fg.addRow(b_conn)
+        fg.addRow(a_gauche(b_conn))
         fg.addRow(QLabel(_("<span style='color:#999'>Rien n'est envoyé sans votre clic. Avant chaque envoi, PhilCut vérifie s'il y a des données sensibles et vous demande confirmation. "
                            "Les clefs vont dans le coffre du système, jamais dans un fichier en clair.</span>")))
         self.confirmer_cout = QCheckBox(_("Afficher le coût estimé et demander confirmation avant chaque envoi à l'IA cloud"))
@@ -277,7 +280,7 @@ class DialoguePreferences(QDialog):
                                m=mat.get("memoire_go"), g=mat.get("gpu") or _("carte inconnue"), v=f" {mat.get('vram_go')} Go" if mat.get("vram_go") else "")))
         self.b_test = QPushButton(_("Tester l'IA locale maintenant"))
         self.b_test.clicked.connect(self._tester_locale)
-        fl.addRow(self.b_test)
+        fl.addRow(a_gauche(self.b_test))
         f.addRow(g2)
 
     def _ouvrir(self, chemin):
@@ -347,7 +350,7 @@ class DialoguePreferences(QDialog):
             f.addRow(c, QLabel(f"<span style='color:#999'>{p['description']}</span>"))
         b = QPushButton(_("Chercher de nouveaux effets en ligne"))
         b.clicked.connect(lambda: QMessageBox.information(self, _("Catalogue"), _("{n} effet(s) ajouté(s).", n=E.catalogue_en_ligne())))
-        f.addRow(b)
+        f.addRow(a_gauche(b))
 
     # ---------------------------------------------------------------- Comptes et synchro (repris de PhilPDF)
     def _comptes(self):
@@ -367,7 +370,7 @@ class DialoguePreferences(QDialog):
         f.addRow(self.synchro_secrets)
         b = QPushButton(_("Choisir l'emplacement de synchronisation…"))
         b.clicked.connect(lambda: self.fenetre.bienvenue(seulement_synchro=True))
-        f.addRow(b)
+        f.addRow(a_gauche(b))
         h = QHBoxLayout()
         be = QPushButton(_("Exporter les préférences…"))
         be.clicked.connect(lambda: self.fenetre.exporter_reglages(self))
@@ -391,7 +394,7 @@ class DialoguePreferences(QDialog):
         f.addRow(_("Source"), self.maj_source)
         b = QPushButton(_("Vérifier maintenant"))
         b.clicked.connect(lambda: self.fenetre.verifier_maj(silencieux=False))
-        f.addRow(b)
+        f.addRow(a_gauche(b))
         f.addRow(QLabel(_("<span style='color:#999'>PhilCut {v} · FFmpeg {f} · Les moteurs open source sont surveillés chaque semaine sur GitHub : une nouvelle version recompilée et testée vous est proposée.</span>", v=VERSION, f=moteur.version() or "?")))
 
     # ---------------------------------------------------------------- outils

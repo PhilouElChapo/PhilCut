@@ -108,6 +108,14 @@ class Projet:
         self.modifie = True
         return True
 
+    def historique(self):
+        """(à annuler, à rétablir) : libellés des actions, la plus récente d'abord."""
+        etats = self._pile + [self.d]
+        annul = [decrire(etats[i], etats[i + 1]) for i in range(len(etats) - 1)][::-1]
+        suite = [self.d] + self._refaire[::-1]
+        retab = [decrire(suite[i], suite[i + 1]) for i in range(len(suite) - 1)]
+        return annul, retab
+
     # ---------------------------------------------------------------- medias
     def ajouter_media(self, chemin, fiche=None):
         for m in self.medias:
@@ -177,6 +185,61 @@ class Projet:
             if c["debut"] < t < fin_clip(c):
                 return self.couper(c["id"], t)
         return None
+
+    def partie(self, a, b, garder):
+        """Sélection [a, b] de la timeline. garder=True : on ne garde qu'elle (elle passe au début) ;
+        garder=False : on la supprime et la suite se recolle. Toutes les pistes, textes et Goodies compris."""
+        a, b = sorted((max(0.0, a), max(0.0, b)))
+        if b - a < 0.04:
+            return False
+        for piste in ("video", "audio", "voix"):
+            for t in (a, b):
+                for c in list(self.clips_piste(piste)):
+                    if c["debut"] + 0.04 < t < fin_clip(c) - 0.04:
+                        self.couper(c["id"], t)
+        largeur = b - a
+
+        def dedans(d, f):
+            return d >= a - 0.02 and f <= b + 0.02
+        clips = []
+        for c in self.clips:
+            d, f = c["debut"], fin_clip(c)
+            if garder:
+                if dedans(d, f):
+                    c["debut"] = d - a
+                    clips.append(c)
+            else:
+                if dedans(d, f):
+                    continue
+                if d >= b - 0.02:
+                    c["debut"] = d - largeur
+                clips.append(c)
+        self.d["clips"] = clips
+        for cle in ("titres", "goodies"):
+            out = []
+            for e in self.d.get(cle) or []:
+                d, f = e["debut"], e["fin"]
+                if garder:
+                    d, f = max(d, a) - a, min(f, b) - a
+                else:
+                    if d >= a and f <= b:
+                        continue
+                    d = d if d < a else (a if d < b else d - largeur)
+                    f = f if f <= a else (a if f <= b else f - largeur)
+                if f - d > 0.05:
+                    e["debut"], e["fin"] = d, f
+                    out.append(e)
+            self.d[cle] = out
+        st = []
+        for x in self.d.get("sous_titres") or []:
+            d, f = x[0], x[1]
+            if garder and d >= a and f <= b + 0.02:
+                st.append([d - a, f - a] + list(x[2:]))
+            elif not garder and (f <= a or d >= b):
+                st.append([d - (largeur if d >= b else 0), f - (largeur if d >= b else 0)] + list(x[2:]))
+        self.d["sous_titres"] = st
+        self.modifie = True
+        return True
 
     def deplacer(self, ident, debut):
         c = self.clip(ident)
@@ -309,3 +372,46 @@ def _empreinte(chemin):
         return h.hexdigest()[:24]
     except OSError:
         return ""
+
+
+def _nom(x):
+    return x.get("nom") or x.get("texte", "")[:30] or x.get("genre") or "?"
+
+
+def decrire(avant, apres):
+    """Ce qui a changé entre deux états du projet, en quelques mots (liste d'Annuler / Rétablir)."""
+    from .langue import _
+    for cle, quoi in (("clips", _("plan")), ("titres", _("texte")), ("goodies", _("Goodie"))):
+        a = {x["id"]: x for x in avant.get(cle) or []}
+        b = {x["id"]: x for x in apres.get(cle) or []}
+        ajoutes = [b[i] for i in b if i not in a]
+        retires = [a[i] for i in a if i not in b]
+        if cle == "clips" and len(ajoutes) == 1 and not retires and any(
+                a[i].get("media") == ajoutes[0].get("media") and abs(a[i].get("src_fin", 0) - b[i].get("src_fin", 0)) > 1e-3 for i in a if i in b):
+            return _("Coupe de « {n} »", n=_nom(ajoutes[0]))
+        if ajoutes and not retires:
+            return _("Ajout ({q}) « {n} »", q=quoi, n=_nom(ajoutes[0])) if len(ajoutes) == 1 else _("Ajout de {k} éléments", k=len(ajoutes))
+        if retires and not ajoutes:
+            return _("Suppression de « {n} »", n=_nom(retires[0])) if len(retires) == 1 else _("Suppression de {k} éléments", k=len(retires))
+        if ajoutes or retires:
+            return _("Montage refait ({k} éléments)", k=len(ajoutes) + len(retires))
+        for i in a:
+            if a[i] != b[i]:
+                diff = {k for k in set(a[i]) | set(b[i]) if a[i].get(k) != b[i].get(k)}
+                n = _nom(b[i])
+                for cles, lib in ((("effets", "transition"), _("Effets de « {n} »")), (("effets_audio",), _("Retouche de la voix de « {n} »")),
+                                  (("vitesse",), _("Vitesse de « {n} »")), (("volume", "muet"), _("Son de « {n} »")),
+                                  (("ajustement", "cadrage", "suivi"), _("Cadrage de « {n} »")), (("src_debut", "src_fin"), _("Longueur de « {n} »")),
+                                  (("debut", "fin", "piste"), _("Déplacement de « {n} »")), (("texte", "animation", "couleur", "taille", "police", "effet_texte"), _("Texte « {n} »"))):
+                    if diff & set(cles):
+                        return lib.format(n=n) if "{n}" in lib else lib
+                return _("Réglage de « {n} »", n=n)
+    if (avant.get("sous_titres") or []) != (apres.get("sous_titres") or []):
+        return _("Sous-titres")
+    am = {m["id"] for m in avant.get("medias") or []}
+    nouveaux = [m for m in apres.get("medias") or [] if m["id"] not in am]
+    if nouveaux:
+        return _("Import de « {n} »", n=nouveaux[0].get("nom", ""))
+    if len(apres.get("medias") or []) < len(avant.get("medias") or []):
+        return _("Retrait d'un média")
+    return _("Modification du projet")

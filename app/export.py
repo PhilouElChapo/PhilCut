@@ -559,6 +559,53 @@ def nom_autre(sortie, destination):
     return f"{base}_{'vertical' if H > L else 'carre' if H == L else 'horizontal'}{ext or '.mp4'}"
 
 
+def extrait(projet, debut, fin):
+    """Copie du projet réduite au passage [debut, fin], ramené à 0 (aperçu rendu, aperçu d'un effet)."""
+    import copy
+    p = copy.deepcopy(projet)
+    for piste in ("video", "audio", "voix"):
+        for c in list(p.clips_piste(piste)):
+            if fin_clip(c) <= debut or c["debut"] >= fin:
+                p.d["clips"].remove(c)
+                continue
+            if c["debut"] < debut:
+                c["src_debut"] += (debut - c["debut"]) * c.get("vitesse", 1.0)
+                c["debut"] = debut
+                c["transition"] = None
+            if fin_clip(c) > fin:
+                c["src_fin"] = c["src_debut"] + (fin - c["debut"]) * c.get("vitesse", 1.0)
+            c["debut"] -= debut
+    for x in p.titres + p.goodies:
+        x["debut"], x["fin"] = max(0.0, x["debut"] - debut), max(0.0, min(fin, x["fin"]) - debut)
+    p.d["titres"] = [t for t in p.titres if t["fin"] > 0.05]
+    p.d["goodies"] = [g for g in p.goodies if g["fin"] > 0.05]
+    p.d["sous_titres"] = []
+    return p
+
+
+def apercu_effet(projet, clip_id, effets, transition, t, sortie, params=None, arret=lambda: False):
+    """Petit film de 2 à 3 s montrant le plan avec ces effets (ou cette transition), pour juger avant de poser."""
+    p = extrait(projet, 0, projet.duree())
+    c = p.clip(clip_id)
+    if not c:
+        raise ValueError("plan introuvable")
+    c["effets"] = [dict(e) for e in effets]
+    c["transition"] = dict(transition) if transition else None
+    if transition:
+        d = float((transition.get("params") or {}).get("duree", 1.0))
+        a, b = max(0.0, c["debut"] - d - 0.5), min(fin_clip(c), c["debut"] + d + 1.0)
+    else:
+        a = min(max(c["debut"], t - 0.3), max(c["debut"], fin_clip(c) - 2.5))
+        b = min(fin_clip(c), a + 2.5)
+    p = extrait(p, a, b)
+    p.d["musique"] = None
+    ex = Exportateur(p, sortie, "whatsapp", qualite="allegee", encodeur="libx264", params=params)
+    try:
+        return ex.lancer(arret=arret)
+    finally:
+        ex.nettoyer()
+
+
 def exporter(projet, sortie, destination="youtube", params=None, progression=None, arret=lambda: False, sous_titres=(), garder_tmp=False):
     ex = Exportateur(projet, sortie, destination, params=params)
     try:

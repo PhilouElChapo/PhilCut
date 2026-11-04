@@ -14,14 +14,26 @@ from .langue import _
 OLLAMA = os.environ.get("PHILCUT_OLLAMA", "http://127.0.0.1:11434")
 
 
+_materiel = None
+
+
 def materiel():
-    """Ce que l'on sait du poste, sans rien installer."""
+    """Ce que l'on sait du poste, sans rien installer. Calculé une fois par session, sans fenêtre de console."""
+    global _materiel
+    if _materiel is None:
+        _materiel = _materiel_lire()
+    return dict(_materiel)
+
+
+def _materiel_lire():
+    from .moteur import _sans_console
+    cache = _sans_console()
     m = {"systeme": platform.system(), "version": platform.release(), "processeur": platform.processor() or platform.machine(),
          "coeurs": os.cpu_count() or 1, "memoire_go": _memoire_go(), "gpu": "", "vram_go": 0.0, "nvidia": False}
     nv = shutil.which("nvidia-smi")
     if nv:
         try:
-            out = subprocess.run([nv, "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=10).stdout
+            out = subprocess.run([nv, "--query-gpu=name,memory.total", "--format=csv,noheader,nounits"], capture_output=True, text=True, timeout=10, **cache).stdout
             nom, mem = out.strip().splitlines()[0].split(",")
             m.update(gpu=nom.strip(), vram_go=round(float(mem) / 1024, 1), nvidia=True)
         except Exception:
@@ -29,8 +41,9 @@ def materiel():
     if not m["gpu"]:
         if sys.platform == "win32":
             try:
-                out = subprocess.run(["wmic", "path", "win32_VideoController", "get", "name"], capture_output=True, text=True, timeout=10).stdout
-                noms = [l.strip() for l in out.splitlines()[1:] if l.strip()]
+                out = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command",
+                                      "(Get-CimInstance Win32_VideoController).Name"], capture_output=True, text=True, timeout=15, **cache).stdout
+                noms = [l.strip() for l in out.splitlines() if l.strip()]
                 m["gpu"] = ", ".join(noms)
             except Exception:
                 pass
