@@ -67,11 +67,12 @@ class TestInterface(unittest.TestCase):
         from app.preferences import DialoguePreferences
         from app.dialogues_suivi import DialogueSuivi
         from app.dialogues_connexion_ia import DialogueConnexionIA
+        from app.dialogues_logo import DialogueLogo
         ed = self.f.editeur_courant()
         for dlg in (DialogueEffets(self.f, ed.projet.clips[0], self.f.params, ed.projet.medias), DialogueTitre(self.f), DialogueGoodie(self.f),
                     DialogueExport(self.f, ed.projet, self.f.params), DialogueFabrique(self.f, ed.projet, self.f.params),
                     DialogueFiche(self.f, ed.projet.medias[0]), DialoguePreferences(self.f, self.f.params),
-                    DialogueSuivi(self.f, ed.projet.medias[0], 0.5), DialogueConnexionIA(self.f, self.f.params)):
+                    DialogueSuivi(self.f, ed.projet.medias[0], 0.5), DialogueConnexionIA(self.f, self.f.params), DialogueLogo(self.f, self.f.params, nom="Phil Aviation")):
             dlg.show()
             app.processEvents()
             self.assertFalse(dlg.grab().isNull())

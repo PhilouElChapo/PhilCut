@@ -70,6 +70,18 @@ def main():
     if not texte_ok:
         print("::warning title=Gemini::aucune reponse texte")
 
+    if essai == "logo":           # trois logos proposés par Gemini (texte, moins d'un centime)
+        os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+        from PySide6.QtWidgets import QApplication
+        QApplication.instance() or QApplication([])
+        from app import logo as LG
+        props = LG.proposer_ia({"clef_gemini": clef, "ia_moteur": "gemini"}, "Phil Aviation", "aviation, chaîne YouTube de vols en Provence")
+        os.makedirs("essai_veo", exist_ok=True)
+        for i, p in enumerate(props):
+            LG.rendre(dict(p, fond=p.get("fond") or "#30303a"), 512).save(os.path.join("essai_veo", f"logo_{i + 1}.png"))
+            print(f"::notice title=Logo {i + 1}::{p['nom']} — " + ", ".join(
+                (e.get("forme") or "texte « " + e.get("texte", "") + " »") for e in p["elements"]))
+        return 0
     if essai != "video":
         print("Essai gratuit termine. Pour un vrai plan Veo, relancez avec essai = video (payant).")
         return 0 if texte_ok else 1

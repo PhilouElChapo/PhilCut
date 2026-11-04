@@ -117,6 +117,7 @@ class Fenetre(QMainWindow):
         asst.addAction(_("Connecter une IA (obtenir et tester ma clef)…"), self.connecter_ia)
         fb = mb.addMenu(_("Fa&brique"))
         fb.addAction(icone("fabrique"), _("Logo, intro, fin, plan IA…"), self.fabrique, "Ctrl+Shift+F")
+        fb.addAction(_("Atelier de logo (créer, modifier, idées par l'IA)…"), self.atelier_logo)
         ou = mb.addMenu(_("&Outils"))
         ou.addAction(icone("nuage"), _("Déposer l'export sur le Drive / NAS…"), self.partager)
         ou.addAction(_("Synchroniser maintenant"), self.ecrire_session)
@@ -421,10 +422,22 @@ class Fenetre(QMainWindow):
             self.params.enregistrer()
             self.accueil.rafraichir()
 
-    def fabrique(self):
+    def atelier_logo(self):
+        """Atelier de logo ; « Enregistrer et animer » enchaîne sur la Fabrique avec ce logo."""
+        from .dialogues_logo import DialogueLogo
+        d = DialogueLogo(self, self.params)
+        if d.exec() == QDialog.Accepted and d.png:
+            self.fabrique(image=d.png, texte=d.logo.get("nom"))
+
+    def fabrique(self, image=None, texte=None):
         ed = self._editeur_ou_nouveau()
         from .dialogues_video import DialogueFabrique
         d = DialogueFabrique(self, ed.projet, self.params)
+        if image:
+            d.image.setText(image)
+            d.onglets.setCurrentIndex(0)
+        if texte:
+            d.texte.setText(texte)
         if d.exec() != QDialog.Accepted:
             return
         L, H = ed.projet.taille

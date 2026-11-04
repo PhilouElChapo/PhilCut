@@ -546,8 +546,12 @@ class DialogueFabrique(QDialog):
         self.image.setPlaceholderText(_("PNG ou SVG de votre logo (facultatif)"))
         b = QPushButton(_("Parcourir…"))
         b.clicked.connect(self._image)
+        b_at = QPushButton(_("Créer dans l'atelier…"))
+        b_at.setToolTip(_("Atelier de logo : gabarits, textes, formes, idées par Claude ou Gemini."))
+        b_at.clicked.connect(self._atelier)
         h.addWidget(self.image, 1)
         h.addWidget(b)
+        h.addWidget(b_at)
         f.addRow(_("Image du logo"), h)
         self.usage = QComboBox()
         self.usage.addItem(_("Au début (intro)"), "debut")
@@ -629,6 +633,12 @@ class DialogueFabrique(QDialog):
         p, _f = QFileDialog.getOpenFileName(self, _("Image du logo"), "", "Images (*.png *.svg *.jpg *.jpeg)")
         if p:
             self.image.setText(p)
+
+    def _atelier(self):
+        from .dialogues_logo import DialogueLogo
+        d = DialogueLogo(self, self.params, nom=self.texte.text().strip())
+        if d.exec() == QDialog.Accepted and d.png:
+            self.image.setText(d.png)
 
     def _dossier(self):
         p = QFileDialog.getExistingDirectory(self, _("Dossier où Flow dépose les clips"), self.dossier.text())
