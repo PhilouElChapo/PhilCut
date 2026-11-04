@@ -73,8 +73,17 @@ def main():
                 piper = True
             except Exception as e:      # noqa: BLE001
                 print(f"::warning title=Voix de synthèse::{e}")
-        if piper and shutil.which("ffmpeg"):
-            subprocess.run(["ffmpeg", "-y", "-i", brut, "-ac", "1", "-ar", "16000", wav], check=True, capture_output=True)
+        if piper:                 # 22 050 Hz → 16 000 Hz pour whisper (sans FFmpeg, absent des machines Windows)
+            import numpy as np, wave
+            with wave.open(brut) as w:
+                taux, x = w.getframerate(), np.frombuffer(w.readframes(w.getnframes()), dtype="<i2").astype(float)
+            n = int(len(x) * 16000 / taux)
+            y = np.interp(np.linspace(0, len(x) - 1, n), np.arange(len(x)), x).astype("<i2")
+            with wave.open(wav, "wb") as w:
+                w.setnchannels(1)
+                w.setsampwidth(2)
+                w.setframerate(16000)
+                w.writeframes(y.tobytes())
             espeak = "piper"
         elif espeak and shutil.which("ffmpeg"):
             subprocess.run([espeak, "-v", "fr", "-s", "140", "-w", brut, phrase], check=True)
