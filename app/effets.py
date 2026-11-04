@@ -75,6 +75,15 @@ CATALOGUE = {
     "t_zoom": ("transition", _("Zoom"), _("Zoom rapide vers l'avant à la coupe."), [("duree", _("Durée (s)"), "float", 0.5, 0.2, 1.5)], None),
     "t_balayage": ("transition", _("Balayage"), _("Un volet traverse l'image."), [("duree", _("Durée (s)"), "float", 0.5, 0.2, 1.5)], None),
     "t_code": ("transition", _("Dissolution en code"), _("L'image se dissout en caractères verts (Matrix)."), [("duree", _("Durée (s)"), "float", 1.0, 0.4, 2.5)], None),
+    # ---- transitions « fusion » : les deux plans se mélangent (FFmpeg xfade) ; la fin du plan précédent se prolonge
+    #      pendant la transition (images suivantes du rush, ou dernière image figée) : la durée du montage ne change pas
+    "t_fondu_enchaine": ("transition", _("Fondu enchaîné"), _("Les deux plans se mélangent en douceur."), [("duree", _("Durée (s)"), "float", 0.8, 0.2, 3.0)], None),
+    "t_dissolution": ("transition", _("Dissolution"), _("Le plan suivant apparaît par petits points."), [("duree", _("Durée (s)"), "float", 0.8, 0.2, 3.0)], None),
+    "t_glisse": ("transition", _("Glissé"), _("Le plan suivant pousse le précédent vers la gauche."), [("duree", _("Durée (s)"), "float", 0.6, 0.2, 2.0)], None),
+    "t_cercle": ("transition", _("Cercle"), _("Le plan suivant s'ouvre en cercle depuis le centre."), [("duree", _("Durée (s)"), "float", 0.8, 0.2, 2.0)], None),
+    "t_pixels": ("transition", _("Pixels"), _("L'image se pixellise puis se reforme sur le plan suivant."), [("duree", _("Durée (s)"), "float", 0.7, 0.2, 2.0)], None),
+    "t_flou_fondu": ("transition", _("Fondu flou"), _("Passage flou et lumineux d'un plan à l'autre."), [("duree", _("Durée (s)"), "float", 0.7, 0.2, 2.0)], None),
+    "t_diagonale": ("transition", _("Diagonale"), _("Le plan suivant arrive en biais depuis un coin."), [("duree", _("Durée (s)"), "float", 0.6, 0.2, 2.0)], None),
     # ---- personne (IA)
     "halo": ("personne", _("Halo"), _("Aura lumineuse autour de la personne détourée."),
              [("couleur", _("Couleur"), "couleur", "#ffd36b", 0, 0), ("force", _("Force"), "float", 1.0, 0.2, 2.0)], "segmentation"),
@@ -217,6 +226,17 @@ def filtre(effet, ctx=None):
     if i == "bullet_time":
         return "tmix=frames=6,eq=contrast=1.15:saturation=0.85"
     return None
+
+
+XFADE = {"t_fondu_enchaine": "fade", "t_dissolution": "dissolve", "t_glisse": "slideleft", "t_cercle": "circleopen",
+         "t_pixels": "pixelize", "t_flou_fondu": "hblur", "t_diagonale": "diagbr"}
+
+
+def fusion(effet):
+    """(nom xfade, durée) pour une transition « fusion », sinon None."""
+    if not effet or effet.get("id") not in XFADE:
+        return None
+    return XFADE[effet["id"]], max(0.1, float(_p(effet, "duree")))
 
 
 def filtre_sortie_transition(effet):

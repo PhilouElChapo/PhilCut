@@ -12,17 +12,17 @@ from .langue import _
 
 TYPES = {
     "vol": {"nom": _("Vol"), "logo": "code", "musique": {"ambiance": "energique", "bpm": 120, "energie": 0.75}, "look": "ciel_altitude",
-            "goodies": ["altimetre", "anemometre"], "transitions": ["t_puzzle", "t_zoom", "t_fondu_noir"], "plan_s": (4, 9)},
+            "goodies": ["altimetre", "anemometre"], "transitions": ["t_puzzle", "t_fondu_enchaine", "t_zoom", "t_fondu_noir"], "plan_s": (4, 9)},
     "visite": {"nom": _("Visite / ambiance d'un lieu"), "logo": "lucioles", "musique": {"ambiance": "chaleureuse", "bpm": 85, "energie": 0.4},
-               "look": "nuit_chaude", "goodies": ["horloge"], "transitions": ["t_fondu_noir", "t_balayage"], "plan_s": (3, 7)},
+               "look": "nuit_chaude", "goodies": ["horloge"], "transitions": ["t_fondu_enchaine", "t_fondu_noir", "t_flou_fondu"], "plan_s": (3, 7)},
     "portrait": {"nom": _("Portrait / personne"), "logo": "eclat", "musique": {"ambiance": "douce", "bpm": 95, "energie": 0.5}, "look": "cosy",
-                 "goodies": [], "transitions": ["t_fondu_blanc", "t_zoom"], "plan_s": (2.5, 6)},
+                 "goodies": [], "transitions": ["t_fondu_enchaine", "t_fondu_blanc", "t_zoom"], "plan_s": (2.5, 6)},
     "clip_ia": {"nom": _("Clip de photos animées"), "logo": "particules", "musique": {"ambiance": "energique", "bpm": 110, "energie": 0.7},
-                "look": "glow", "goodies": [], "transitions": ["t_glitch", "t_zoom", "t_balayage"], "plan_s": (2, 5)},
+                "look": "glow", "goodies": [], "transitions": ["t_glitch", "t_zoom", "t_glisse", "t_pixels"], "plan_s": (2, 5)},
     "annonce": {"nom": _("Annonce / pharmacie"), "logo": "trace", "musique": {"ambiance": "legere", "bpm": 100, "energie": 0.5}, "look": "epure",
-                "goodies": ["croix", "horaires"], "transitions": ["t_balayage"], "plan_s": (3, 6)},
+                "goodies": ["croix", "horaires"], "transitions": ["t_glisse", "t_cercle"], "plan_s": (3, 6)},
     "generique": {"nom": _("Montage"), "logo": "trace", "musique": {"ambiance": "douce", "bpm": 100, "energie": 0.5}, "look": "cinema",
-                  "goodies": [], "transitions": ["t_fondu_noir", "t_zoom"], "plan_s": (3, 8)},
+                  "goodies": [], "transitions": ["t_fondu_noir", "t_fondu_enchaine", "t_zoom"], "plan_s": (3, 8)},
 }
 
 

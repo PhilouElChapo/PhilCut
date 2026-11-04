@@ -23,7 +23,7 @@ Réponds UNIQUEMENT par un objet JSON avec ces clefs :
 - "look": un effet de look parmi ciel_altitude, nuit_chaude, cinema, cosy, epure, vintage, noir_blanc, y2k ou ""
 - "plans": liste ordonnée de {"media": id, "src_debut": s, "src_fin": s, "vitesse": 0.25..8, "effets": [ids], "transition": id ou null, "cadrage": remplir|contenir_noir|contenir_flou, "pourquoi": "..."}
    Effets possibles : glow, glitch, flou_mouvement, ralenti_fluide, stabiliser, debruiter, eclaircir, nettete, pluie_code, matrix_vert, feu_artifice, eclairs, fuite_lumiere, separation_rvb, hyperlapse, bullet_time
-   Transitions possibles : t_fondu_noir, t_fondu_blanc, t_puzzle, t_explosion, t_glitch, t_zoom, t_balayage, t_code
+   Transitions possibles : t_fondu_enchaine, t_fondu_noir, t_fondu_blanc, t_dissolution, t_glisse, t_cercle, t_pixels, t_flou_fondu, t_diagonale, t_puzzle, t_explosion, t_glitch, t_zoom, t_balayage, t_code
 - "textes": liste de {"texte": "...", "debut": s (dans le montage), "fin": s, "animation": fondu|zoom|glisse|machine|neon|feu|tournoyant|cinetique, "style": titre|etiquette, "x": 0..1, "y": 0..1, "taille": 0.5..2, "suivre_visage": bool, "media": id si étiquette, "pourquoi": "..."}
 - "goodies": liste de {"genre": altimetre|anemometre|compas|horizon|variometre|chrono|immatriculation|horloge|boussole|altitude|distance|compte_a_rebours|date|bandeau, "debut": s, "fin": s, "x": 0..1, "y": 0..1, "taille": 0.1..0.4, "pourquoi": "..."}
 - "publication": {"titre": "...", "description": "...", "mots_clefs": [...]}
@@ -209,7 +209,7 @@ def autre_idee(projet, params, recette, element, rapporter=None):
             r["textes"][i] = dict(r["textes"][i], animation=random.choice([a for a in anims if a != r["textes"][i].get("animation")]))
         elif element.startswith("plan:"):
             i = int(element.split(":")[1])
-            trs = ["t_fondu_noir", "t_fondu_blanc", "t_puzzle", "t_glitch", "t_zoom", "t_balayage", "t_code"]
+            trs = ["t_fondu_enchaine", "t_fondu_noir", "t_fondu_blanc", "t_cercle", "t_glisse", "t_puzzle", "t_glitch", "t_zoom", "t_balayage", "t_code"]
             r["plans"] = list(recette["plans"])
             cur = (r["plans"][i].get("transition") or {}).get("id")
             r["plans"][i] = dict(r["plans"][i], transition={"id": random.choice([t for t in trs if t != cur]), "params": {}})

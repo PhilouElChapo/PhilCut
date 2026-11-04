@@ -59,9 +59,10 @@ class Exportateur:
             return suivi.filtre_recadrage(clip["suivi_cadre"], clip, L, H)
         if mode == "contenir_noir":
             return f"scale={L}:{H}:force_original_aspect_ratio=decrease,pad={L}:{H}:(ow-iw)/2:(oh-ih)/2:color=black"
-        if mode == "contenir_flou":
-            return (f"split[cf_a][cf_b];[cf_b]scale={L}:{H}:force_original_aspect_ratio=increase,crop={L}:{H},gblur=sigma=30,eq=brightness=-0.08[cf_fond];"
-                    f"[cf_a]scale={L}:{H}:force_original_aspect_ratio=decrease[cf_dev];[cf_fond][cf_dev]overlay=(W-w)/2:(H-h)/2")
+        if mode == "contenir_flou":         # étiquettes uniques : plusieurs plans peuvent avoir un fond flou
+            a, b, fo, dv = self._nom("cfa"), self._nom("cfb"), self._nom("cff"), self._nom("cfd")
+            return (f"split[{a}][{b}];[{b}]scale={L}:{H}:force_original_aspect_ratio=increase,crop={L}:{H},gblur=sigma=30,eq=brightness=-0.08[{fo}];"
+                    f"[{a}]scale={L}:{H}:force_original_aspect_ratio=decrease[{dv}];[{fo}][{dv}]overlay=(W-w)/2:(H-h)/2")
         return f"scale={L}:{H}:force_original_aspect_ratio=increase,crop={L}:{H}"
 
     # ---------------------------------------------------------------- bande video
@@ -70,14 +71,29 @@ class Exportateur:
         segs = []
         t = 0.0
         self.calques = []           # (debut, fin, entree, x, y)
+        longueurs, fusions = [], []        # durée réelle de chaque segment, transition « fusion » avec le précédent
+        ext_prec = 0.0
         for i, c in enumerate(clips):
             if c["debut"] > t + 0.02:           # trou : noir
                 segs.append(self._noir(c["debut"] - t))
-            segs.append(self._clip_video(c, clips[i + 1] if i + 1 < len(clips) else None))
+                longueurs.append(c["debut"] - t)
+                fusions.append(None)
+                ext_prec = 0.0
+            suivant = clips[i + 1] if i + 1 < len(clips) else None
+            fs = E.fusion(suivant.get("transition")) if suivant and abs(suivant["debut"] - fin_clip(c)) < 0.05 else None
+            ext = min(fs[1], duree_clip(suivant) * 0.9) if fs else 0.0
+            # fusion avec le précédent : il a été prolongé de ext_prec (seulement s'il touche ce plan)
+            fe = E.fusion(c.get("transition"))
+            fusions.append((fe[0], ext_prec) if fe and ext_prec > 0 else None)
+            segs.append(self._clip_video(c, suivant, ext))
+            longueurs.append(duree_clip(c) + ext)
+            ext_prec = ext
             t = fin_clip(c)
         duree_titres = max([x.get("fin", 0) for x in self.p.titres + self.p.goodies] + [0])
         if duree_titres > t + 0.02:
             segs.append(self._noir(duree_titres - t))
+            longueurs.append(duree_titres - t)
+            fusions.append(None)
             t = duree_titres
         self.duree = t
         if not segs:
@@ -85,26 +101,42 @@ class Exportateur:
             self.duree = 1.0
         if len(segs) == 1:
             return segs[0]
-        nom = self._nom("vcat")
-        self.filtres.append("".join(f"[{s}]" for s in segs) + f"concat=n={len(segs)}:v=1:a=0[{nom}]")
-        return nom
+        if not any(fusions):
+            nom = self._nom("vcat")
+            self.filtres.append("".join(f"[{s}]" for s in segs) + f"concat=n={len(segs)}:v=1:a=0[{nom}]")
+            return nom
+        # avec des fusions : on enchaîne deux à deux ; le segment précédent a été prolongé de la durée de la fusion
+        cour, long_cour = segs[0], longueurs[0]
+        for s, lg, fu in zip(segs[1:], longueurs[1:], fusions[1:]):
+            nom = self._nom("vx")
+            if fu:
+                genre, d = fu
+                self.filtres.append(f"[{cour}][{s}]xfade=transition={genre}:duration={d:.3f}:offset={long_cour - d:.3f}[{nom}]")
+                long_cour = long_cour + lg - d
+            else:
+                self.filtres.append(f"[{cour}][{s}]concat=n=2:v=1:a=0[{nom}]")
+                long_cour += lg
+            cour = nom
+        return cour
 
     def _noir(self, duree):
         k = self._entree("-f", "lavfi", "-t", f"{duree:.3f}", "-i", f"color=c=black:s={self.L}x{self.H}:r={self.cad}")
         nom = self._nom("noir")
-        self.filtres.append(f"[{k}:v]format=yuv420p[{nom}]")
+        self.filtres.append(f"[{k}:v]format=yuv420p,setsar=1[{nom}]")
         return nom
 
-    def _clip_video(self, c, suivant):
+    def _clip_video(self, c, suivant, ext=0.0):
+        """ext : prolongation (s) de la fin du plan pour une transition « fusion » avec le suivant : images suivantes
+        du rush si elles existent, sinon dernière image figée."""
         m = self.p.media(c["media"])
         fiche = m.get("fiche") or {}
         v = fiche.get("video") or {}
         d = duree_clip(c)
         if m["genre"] == "image":
-            k = self._entree("-loop", "1", "-framerate", str(self.cad), "-t", f"{d:.3f}", "-i", m["chemin"])
+            k = self._entree("-loop", "1", "-framerate", str(self.cad), "-t", f"{d + ext:.3f}", "-i", m["chemin"])
             chaine = [f"[{k}:v]format=yuv420p,setpts=PTS-STARTPTS"]
         else:
-            k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
+            k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']) + ext * c.get('vitesse', 1.0):.3f}", "-i", m["chemin"])
             chaine = [f"[{k}:v]setpts=(PTS-STARTPTS)/{c.get('vitesse', 1.0):.4f}"]
             if v.get("hdr"):
                 chaine.append("zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=hable,zscale=t=bt709:m=bt709:r=tv,format=yuv420p")
@@ -125,13 +157,15 @@ class Exportateur:
             fs = E.filtre_sortie_transition(suivant["transition"])
             if fs:
                 chaine.append(fs.replace("{fin}", f"{d:.3f}"))
-        if c.get("transition"):
+        if c.get("transition") and not E.fusion(c["transition"]):
             f = E.filtre(c["transition"], ctx)
             if f:
                 chaine.append(f)
             else:
                 self._calque_transition(c["transition"], c, ctx)
-        chaine.append(f"trim=duration={d:.3f},setpts=PTS-STARTPTS")
+        if ext > 0:
+            chaine.append(f"tpad=stop_mode=clone:stop_duration={ext:.3f}")
+        chaine.append(f"trim=duration={d + ext:.3f},setpts=PTS-STARTPTS,setsar=1")
         nom = self._nom("v")
         self.filtres.append(",".join(chaine) + f"[{nom}]")
         return nom

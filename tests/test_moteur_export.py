@@ -71,12 +71,52 @@ class TestMoteur(unittest.TestCase):
         f = moteur.sonder(out)
         self.assertEqual((f["video"]["largeur"], f["video"]["hauteur"]), (1080, 1920))
 
+    def test_fondu_enchaine_et_fusions(self):
+        """Fusions (xfade) : la durée du montage ne change pas ; au milieu de la fusion les deux plans se mélangent ;
+        deux plans en fond flou dans le même montage (étiquettes uniques) ; trou noir puis texte final."""
+        import cv2
+        d = tempfile.mkdtemp()
+        rouge = os.path.join(d, "r.mp4")
+        bleu = os.path.join(d, "b.mp4")
+        moteur.lancer(["-f", "lavfi", "-i", "color=c=red:s=320x240:r=30:d=3", "-pix_fmt", "yuv420p", rouge])
+        moteur.lancer(["-f", "lavfi", "-i", "color=c=blue:s=240x320:r=30:d=3", "-pix_fmt", "yuv420p", bleu])
+        p = projet.Projet("F", "16:9")
+        mr = p.ajouter_media(rouge, moteur.sonder(rouge))
+        mb = p.ajouter_media(bleu, moteur.sonder(bleu))
+        a = p.ajouter_clip(mr["id"], src_fin=2)         # le rush continue après 2 s : la fusion prend ces images
+        b = p.ajouter_clip(mb["id"], src_fin=2)
+        b["transition"] = {"id": "t_fondu_enchaine", "params": {"duree": 1.0}}
+        b["ajustement"] = "contenir_flou"
+        c = p.ajouter_clip(mr["id"], src_debut=2, src_fin=3)  # fin du rush : dernière image figée pendant la fusion
+        c["transition"] = {"id": "t_cercle", "params": {"duree": 0.5}}
+        c["ajustement"] = "contenir_flou"
+        p.ajouter_titre("Fin", 5.0, 6.0)
+        out, _j = export.exporter(p, os.path.join(d, "f.mp4"), "whatsapp")
+        f = moteur.sonder(out)
+        self.assertAlmostEqual(f["duree"], 6.0, delta=0.15)
+        cap = cv2.VideoCapture(out)
+
+        def couleur(t):
+            cap.set(cv2.CAP_PROP_POS_MSEC, t * 1000)
+            ok, img = cap.read()
+            self.assertTrue(ok)
+            bb, _g, rr = img[img.shape[0] // 2, img.shape[1] // 2].astype(int)
+            return rr, bb
+        r0, b0 = couleur(1.0)
+        r1, b1 = couleur(2.5)          # milieu du fondu enchaîné : un mélange de rouge et de bleu
+        r2, b2 = couleur(3.5)
+        cap.release()
+        self.assertGreater(r0, 180)
+        self.assertLess(b0, 80)
+        self.assertTrue(60 < r1 < 200 and 60 < b1 < 200, (r1, b1))
+        self.assertGreater(b2, 180)
+
     def test_filtres_effets(self):
         ctx = {"cadence": 30, "largeur": 1920, "hauteur": 1080, "duree": 3}
         for k in effets.CATALOGUE:
             e = {"id": k, "params": effets.defauts(k)}
             f = effets.filtre(e, ctx)
-            if k in effets.GENERES:
+            if k in effets.GENERES or k in effets.XFADE:
                 self.assertIsNone(f, k)
             elif k not in ("double_exposition", "chroma_key", "detourage"):
                 self.assertTrue(f, k)
