@@ -16,7 +16,32 @@ FILTRES_AUDIO = {
     "a_autotune": "acompressor=threshold=-16dB:ratio=4,chorus=0.6:0.9:50|60:0.4|0.32:0.25|0.4:2|1.3",      # approximation en attendant un vrai correcteur de justesse
     "a_reverb": "aecho=0.8:0.9:40|60|90:0.35|0.25|0.15",
     "a_echo": "aecho=0.8:0.88:320:0.4",
+    # voix « harmonieuse » : coupe des graves sourds, débruitage, sifflements adoucis, moins nasale, chaleur et présence,
+    # dynamique tenue, léger espace ; tout en local
+    "a_harmonieuse": "highpass=f=80,afftdn=nf=-25:tn=1,deesser=i=0.4,equalizer=f=1000:t=q:w=1.4:g=-3,equalizer=f=200:t=q:w=1:g=2,"
+                     "equalizer=f=4500:t=q:w=1:g=1.5,acompressor=threshold=-20dB:ratio=3:attack=8:release=150:makeup=4,"
+                     "aecho=0.8:0.6:25:0.10,alimiter=limit=0.95",
+    "a_desser": "deesser=i=0.5",
+    "a_anti_nasal": "equalizer=f=1000:t=q:w=1.4:g=-4",
+    "a_chaude": "equalizer=f=150:t=q:w=1:g=3,equalizer=f=6000:t=q:w=1:g=-2",
+    "a_claire": "highpass=f=120,equalizer=f=3500:t=q:w=1:g=3",
+    "a_radio": "highpass=f=300,lowpass=f=3400,acompressor=threshold=-22dB:ratio=6:attack=5:release=80:makeup=6,aeval=val(0)*0.9|val(1)*0.9",
+    "a_grave": "rubberband=pitch=0.9:formant=preserved",
+    "a_aigu": "rubberband=pitch=1.1:formant=preserved",
 }
+TIMBRE_SECOURS = {"a_grave": "asetrate=48000*0.9,aresample=48000,atempo=1.111", "a_aigu": "asetrate=48000*1.1,aresample=48000,atempo=0.909"}
+VOIX = [("a_harmonieuse", "Voix harmonieuse (tout en un)"), ("a_voix", "Voix embellie (narration)"), ("a_debruit", "Débruiter (vent, moteur)"),
+        ("a_desser", "Adoucir les « s » qui sifflent"), ("a_anti_nasal", "Moins nasale"), ("a_chaude", "Plus chaude"), ("a_claire", "Plus claire"),
+        ("a_grave", "Timbre plus grave"), ("a_aigu", "Timbre plus aigu"), ("a_radio", "Effet radio (ATC)"),
+        ("a_autotune", "Autotune (chant)"), ("a_reverb", "Réverbération"), ("a_echo", "Echo")]
+
+
+def filtre_audio(eid):
+    """Filtre d'un préréglage de voix ; le changement de timbre se replie sur asetrate si rubberband manque."""
+    f = FILTRES_AUDIO.get(eid)
+    if eid in TIMBRE_SECOURS and not moteur.filtre_disponible("rubberband"):
+        return TIMBRE_SECOURS[eid]
+    return f
 
 LUFS = {"youtube": -14, "youtube4k": -14, "insta": -14, "insta_carre": -14, "whatsapp": -16, "ecran_led": -14, "original": -14}
 
@@ -362,7 +387,7 @@ class Exportateur:
         def a_du_son(c):
             m = self.p.media(c["media"]) or {}
             return m.get("genre") != "image" and (m.get("fiche") or {}).get("audio") and not c.get("muet")
-        if not any(a_du_son(c) for c in self.p.clips_piste("video")) and not self.p.clips_piste("audio"):
+        if not any(a_du_son(c) for c in self.p.clips_piste("video")) and not self.p.clips_piste("audio") and not self.p.clips_piste("voix"):
             return self._silence(self.duree)     # rien à normaliser : loudnorm sur un silence pur donnerait des NaN
         pistes = []
         # son des plans video, bout a bout
@@ -382,7 +407,22 @@ class Exportateur:
                 nom = self._nom("acat")
                 self.filtres.append("".join(f"[{s}]" for s in segs) + f"concat=n={len(segs)}:v=0:a=1[{nom}]")
                 pistes.append(nom)
-        # musiques et voix off : piste audio, decalees a leur position
+        # voix off et doublage (piste « voix ») : mélangées au son des plans, elles font baisser la musique
+        voix = []
+        for c in self.p.clips_piste("voix"):
+            m = self.p.media(c["media"])
+            k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
+            nom = self._nom("vo")
+            fx = "".join("," + f for f in (filtre_audio(e) for e in (c.get("effets_audio") or [])) if f)
+            self.filtres.append(f"[{k}:a]asetpts=PTS-STARTPTS{self._atempo(c)}{fx},volume={0.0 if c.get('muet') else c.get('volume', 1.0):.3f},"
+                                f"aresample=48000,aformat=channel_layouts=stereo,adelay={int(c['debut'] * 1000)}|{int(c['debut'] * 1000)}[{nom}]")
+            voix.append(nom)
+        if voix:
+            base = pistes[:1]
+            nom = self._nom("voixmix")
+            self.filtres.append("".join(f"[{x}]" for x in base + voix) + f"amix=inputs={len(base + voix)}:duration=longest:normalize=0[{nom}]")
+            pistes = [nom]
+        # musiques : piste audio, decalees a leur position
         for c in self.p.clips_piste("audio"):
             m = self.p.media(c["media"])
             d = duree_clip(c)
@@ -442,7 +482,7 @@ class Exportateur:
             return self._silence(d)
         k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
         nom = self._nom("a")
-        fx = "".join("," + f for f in (FILTRES_AUDIO.get(e) for e in (c.get("effets_audio") or [])) if f)
+        fx = "".join("," + f for f in (filtre_audio(e) for e in (c.get("effets_audio") or [])) if f)
         self.filtres.append(f"[{k}:a]asetpts=PTS-STARTPTS{self._atempo(c)}{fx},volume={c.get('volume', 1.0):.3f},"
                             f"aresample=48000,aformat=channel_layouts=stereo,atrim=duration={d:.3f},apad=whole_dur={d:.3f}[{nom}]")
         return nom

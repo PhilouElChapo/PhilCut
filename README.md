@@ -21,6 +21,7 @@ Dernière version : [Releases](https://github.com/PhilouElChapo/PhilCut/releases
 - Textes animés (fondu, zoom, glissé, machine à écrire, néon, feu, tournoyant, mots au rythme) et étiquettes accrochées à une personne (suivi OpenCV).
 - Goodies : altimètre, anémomètre, cap, horizon, variomètre, chrono, horloge, boussole, badges… valeurs saisies ou tirées d'une trace GPX.
 - Assistant de montage à trois niveaux : recettes sans IA (gratuit), IA locale 100 % portable (moteurs llama.cpp et whisper.cpp et modèles rangés dans le dossier de PhilCut, lancés seulement à la demande, en priorité basse ; testée et mesurée sur le poste), IA cloud (Claude ou Gemini avec votre clef). Volet Proposition avec cases à cocher et « autre idée ».
+- Voix : voix off au micro sur une piste Voix (la musique baisse toute seule), retouches non destructives (voix harmonieuse, « s » adoucis, moins nasale, timbre, radio), voix de synthèse locale (Piper, portable) ou Gemini en option, doublage dans une autre langue (écoute et voix sur le poste, traduction locale ou Claude/Gemini), sous-titres karaoké mot à mot.
 - Fabrique : logos et intros animés (tracé, particules, code, éclat, lucioles, carnet, glitch, rotation) ; plans générés par IA via Flow (abonnement, dossier surveillé) ou Veo (API, prix affiché).
 - Son : musique avec baisse automatique sous la voix, débruitage, voix embellie, réverbération, écho, normalisation YouTube ; sous-titres .srt ou Whisper local (pack).
 - Export YouTube, Insta, WhatsApp, écran LED, avec l'encodeur de la carte (NVENC, QuickSync, AMF, VA-API) ou x264.

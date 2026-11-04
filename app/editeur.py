@@ -615,7 +615,14 @@ class Editeur(QWidget):
             m = self.projet.ajouter_media(chemin, r["fiche"])
             m.update(proxy=r.get("proxy", ""), vignettes=r.get("vignettes", ""), onde=r.get("onde") or [], niveaux=r.get("niveaux"))
             self.biblio.remplir(self.projet)
-            if not self.projet.clips and m["genre"] in ("video", "image") and self.params.get("ajout_auto", True):
+            depot = getattr(self, "_piste_depot", None)
+            self._piste_depot = None
+            if depot:                     # fichier déposé ou posé sur une piste précise (musique, voix off…)
+                c = self.ajouter_a_la_timeline(m["id"], depot[0], depot[1])
+                if c and len(depot) > 2:          # réglages du plan posé (retouches de voix…)
+                    c.update(depot[2])
+                    self.rafraichir()
+            elif not self.projet.clips and m["genre"] in ("video", "image") and self.params.get("ajout_auto", True):
                 self.ajouter_a_la_timeline(m["id"])
             self._modifie()
         self._importer_suivant()
@@ -631,6 +638,7 @@ class Editeur(QWidget):
         self.projet.ranger(c["piste"])
         self.rafraichir()
         self.timeline.selectionner(c["id"])
+        return c
 
     def _depose(self, ident, piste, t):
         if ident.startswith("fichier:"):

@@ -569,7 +569,8 @@ class Fenetre(QMainWindow):
         if not ed:
             return
         m = QMenu(self)
-        m.addAction(_("Transcrire la voix (Whisper local, pack à cocher)"), lambda: self._transcrire(ed))
+        m.addAction(_("Sous-titres automatiques (voix transcrite sur ce poste)"), lambda: self._transcrire(ed))
+        m.addAction(_("Sous-titres karaoké (chaque mot s'allume quand il est dit)"), lambda: self._transcrire(ed, karaoke=True))
         m.addAction(_("Importer un fichier .srt…"), lambda: self._importer_srt(ed))
         if ed.projet.d.get("sous_titres"):
             m.addAction(_("Retirer les sous-titres"), lambda: (ed.projet.marquer(), ed.projet.d.__setitem__("sous_titres", []), ed.rafraichir()))
@@ -584,14 +585,13 @@ class Fenetre(QMainWindow):
                 ed.projet.d["sous_titres"] = titres.lire_srt(f.read())
             ed.encart.message(_("{n} sous-titres importés (rendus à l'export).", n=len(ed.projet.d["sous_titres"])))
 
-    def _transcrire(self, ed):
-        try:
-            from faster_whisper import WhisperModel      # noqa: F401
-        except ImportError:
-            QMessageBox.information(self, _("Sous-titres"), _("Cochez le pack « Sous-titres automatiques (Whisper local) » dans Edition › Préférences › Effets et Goodies : il se télécharge sur ce poste."))
-            return
+    def _transcrire(self, ed, karaoke=False):
         from . import sous_titres as ST
-        t = Tache(lambda tache: ST.transcrire_projet(ed.projet, self.params, progression=tache.avancer), _("Transcription"))
+        if not ST.disponible():
+            QMessageBox.information(self, _("Sous-titres"), _("Cochez un modèle « Voix (sous-titres automatiques) » dans Edition › Préférences › IA locale : "
+                                                             "il se range dans le dossier de PhilCut, rien n'est installé dans Windows."))
+            return
+        t = Tache(lambda tache: ST.transcrire_projet(ed.projet, self.params, progression=tache.avancer, karaoke=karaoke), _("Transcription"))
         self.taches.append(t)
         ed.encart.suivre(t, _("Transcription de la voix (local)"))
         t.fini.connect(lambda r, e: (ed.projet.d.__setitem__("sous_titres", r), ed.encart.message(_("{n} sous-titres.", n=len(r)))) if r and not e else None)
@@ -602,11 +602,19 @@ class Fenetre(QMainWindow):
         if not ed:
             return
         c = ed._clip_selectionne()
-        if not c:
-            return
         m = QMenu(self)
-        for lib, eid in ((_("Débruiter le son (vent, moteur)"), "a_debruit"), (_("Voix embellie (narration)"), "a_voix"), (_("Autotune (chant)"), "a_autotune"), (_("Réverbération"), "a_reverb"), (_("Echo"), "a_echo")):
-            a = m.addAction(lib, lambda eid=eid: self._effet_audio(ed, c, eid))
+        from .export import VOIX
+        m.addAction(_("Enregistrer une voix off au micro…"), self.enregistrer_voix)
+        m.addAction(_("Voix off lue par une voix de synthèse…"), self.voix_synthese)
+        m.addAction(_("Doubler la vidéo dans une autre langue…"), self.doubler)
+        if not c:
+            m.addSeparator()
+            m.addAction(_("(choisissez un plan pour retoucher sa voix)")).setEnabled(False)
+            m.exec(self.cursor().pos())
+            return
+        m.addSeparator()
+        for eid, lib in VOIX:
+            a = m.addAction(_(lib), lambda eid=eid: self._effet_audio(ed, c, eid))
             a.setCheckable(True)
             a.setChecked(eid in (c.get("effets_audio") or []))
         m.addSeparator()
@@ -616,6 +624,77 @@ class Fenetre(QMainWindow):
         a.setCheckable(True)
         a.setChecked(bool(c.get("muet")))
         m.exec(self.cursor().pos())
+
+    # ---------------------------------------------------------------- voix off, synthèse, doublage
+    def _poser_voix(self, ed, chemin, debut, effets=()):
+        ed._piste_depot = ("voix", float(debut), {"effets_audio": list(effets)} if effets else {})
+        ed.importer([chemin])
+
+    def enregistrer_voix(self):
+        ed = self.editeur_courant()
+        if not ed:
+            return
+        from .dialogues_voix import DialogueEnregistrement
+        debut = ed.timeline.position
+        d = DialogueEnregistrement(self, self.params, debut, getattr(ed, "apercu", None))
+        if d.exec() == QDialog.Accepted and d.chemin:
+            self._poser_voix(ed, d.chemin, debut, d.effets)
+
+    def voix_synthese(self):
+        ed = self.editeur_courant()
+        if not ed:
+            return
+        from .dialogues_voix import DialogueSynthese
+        from . import voix as V
+        debut = ed.timeline.position
+        d = DialogueSynthese(self, self.params, debut)
+        if d.exec() != QDialog.Accepted:
+            return
+        r = d.reglages
+        if r["moteur"] == "gemini":
+            if QMessageBox.question(self, _("Voix de synthèse"), _("Lecture par Gemini : environ {p} $ sur votre compte. Continuer ?",
+                                    p=f"{V.prix_gemini(r['texte']):.3f}".replace(".", ","))) != QMessageBox.Yes:
+                return
+        sortie = V.nouveau_nom(self.params, "synthese")
+        t = Tache(lambda tache: V.lire(r["texte"], sortie, self.params, r["moteur"], r["voix"], r["vitesse"]), _("Voix de synthèse"))
+        self.taches.append(t)
+        ed.encart.suivre(t, _("Lecture du texte par la voix de synthèse"))
+        t.fini.connect(lambda res, e: self._poser_voix(ed, res, debut, d.effets) if res and not e else
+                       (e and QMessageBox.warning(self, _("Voix de synthèse"), str(e))))
+        t.start()
+
+    def doubler(self):
+        ed = self.editeur_courant()
+        if not ed:
+            return
+        from .dialogues_voix import DialogueDoublage
+        from . import voix as V
+        d = DialogueDoublage(self, self.params)
+        if d.exec() != QDialog.Accepted:
+            return
+        r = d.reglages
+        sortie = V.nouveau_nom(self.params, f"doublage_{r['langue']}")
+        import copy
+        projet = copy.deepcopy(ed.projet)
+        t = Tache(lambda tache: V.doubler(projet, self.params, r["langue"], sortie, r["voix"], r["moteur"], r["en_ligne"],
+                                          progression=tache.avancer, arret=lambda: tache.arret), _("Doublage"))
+        self.taches.append(t)
+        ed.encart.suivre(t, _("Doublage en cours (écoute, traduction, lecture)"))
+
+        def fini(res, e):
+            if e or not res:
+                if e:
+                    QMessageBox.warning(self, _("Doublage"), str(e))
+                return
+            chemin, st = res
+            ed.projet.marquer()
+            V.baisser_originaux(ed.projet)
+            if r["sous_titres"]:
+                ed.projet.d["sous_titres"] = st
+            self._poser_voix(ed, chemin, 0.0)
+            ed.encart.message(_("Doublage posé sur la piste Voix ; la voix d'origine est baissée (Voix › Volume pour la régler)."))
+        t.fini.connect(fini)
+        t.start()
 
     def _effet_audio(self, ed, c, eid):
         ed.projet.marquer()

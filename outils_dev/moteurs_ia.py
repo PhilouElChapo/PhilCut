@@ -34,6 +34,16 @@ WHISPER = {
     "whisper_test": ("Voix (essai, tiny)", "ggml-tiny.bin", 1),
 }
 WHISPER_DEPOTS = ["ggerganov/whisper.cpp", "ggml-org/whisper.cpp"]
+PIPER_TAG = "2023.11.14-2"            # dernière version autonome (exécutable) de Piper
+VOIX_SYNTHESE = {                       # clef : (nom, chemin dans rhasspy/piper-voices, qualité)
+    "voix_fr_femme": ("Voix française, femme (Siwis)", "fr/fr_FR/siwis/medium/fr_FR-siwis-medium", 3),
+    "voix_fr_homme": ("Voix française, homme (Tom)", "fr/fr_FR/tom/medium/fr_FR-tom-medium", 3),
+    "voix_en_femme": ("English voice, female (Lessac)", "en/en_US/lessac/medium/en_US-lessac-medium", 4),
+    "voix_en_homme": ("English voice, male (Alan, UK)", "en/en_GB/alan/medium/en_GB-alan-medium", 3),
+    "voix_es": ("Voz española (Davefx)", "es/es_ES/davefx/medium/es_ES-davefx-medium", 3),
+    "voix_de": ("Deutsche Stimme (Thorsten)", "de/de_DE/thorsten/medium/de_DE-thorsten-medium", 4),
+    "voix_it": ("Voce italiana (Paola)", "it/it_IT/paola/medium/it_IT-paola-medium", 3),
+}
 DETOURAGE = {
     "detourage_leger": ("Détourage léger (u2netp)", "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2netp.onnx", 2),
     "detourage_precis": ("Détourage précis, spécial personnes (u2net human seg)", "https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net_human_seg.onnx", 4),
@@ -152,6 +162,21 @@ def modeles(sortie):
             print(f"::notice title={cle}::{f} ({fichiers[f]['taille'] / 1e6:.0f} Mo)")
         else:
             print(f"::warning title={cle}::{f} introuvable")
+    try:
+        voix_hf = _hf_fichiers("rhasspy/piper-voices")
+    except Exception as e:              # noqa: BLE001
+        print(f"::warning title=Voix de synthèse::piper-voices indisponible ({e})")
+        voix_hf = {}
+    for cle, (nom, chemin, q) in VOIX_SYNTHESE.items():
+        f1, f2 = chemin + ".onnx", chemin + ".onnx.json"
+        if f1 in voix_hf and f2 in voix_hf:
+            fichiers = [{"nom": os.path.basename(f), "role": r, "url": f"https://huggingface.co/rhasspy/piper-voices/resolve/main/{f}",
+                         "taille": voix_hf[f]["taille"], "sha256": voix_hf[f]["sha256"]} for f, r in ((f1, "modele"), (f2, "config"))]
+            cat[cle] = {"genre": "voix", "nom": nom, "source": "rhasspy/piper-voices", "qualite": q, "essai": False, "langue": chemin[:2],
+                        "fichiers": fichiers, "taille": sum(x["taille"] for x in fichiers)}
+            print(f"::notice title={cle}::{os.path.basename(f1)} ({cat[cle]['taille'] / 1e6:.0f} Mo)")
+        else:
+            print(f"::warning title={cle}::{chemin} introuvable")
     for cle, (nom, url, q) in DETOURAGE.items():
         try:
             t = taille_distante(url)
@@ -183,10 +208,11 @@ def assembler(dossier):
     man = {"format": 1, "date": time.strftime("%Y-%m-%d"), "depot": "PhilouElChapo/PhilCut", "tag": "moteurs-ia",
            "moteurs": {"vision": {"nom": "llama.cpp (llama-server)", "version": v["llama_tag"], "licence": "MIT"},
                        "vision_gpu": {"nom": "llama.cpp Vulkan (carte graphique)", "version": v["llama_tag"], "licence": "MIT"},
-                       "whisper": {"nom": "whisper.cpp (whisper-cli)", "version": v["whisper_tag"], "licence": "MIT"}},
+                       "whisper": {"nom": "whisper.cpp (whisper-cli)", "version": v["whisper_tag"], "licence": "MIT"},
+                       "voix": {"nom": "Piper (voix de synthèse)", "version": PIPER_TAG, "licence": "MIT"}},
            "modeles": json.load(open(os.path.join(dossier, "modeles.json"), encoding="utf-8"))}
     vus = set()
-    for genre, prefixe in (("vision_gpu", "philcut-llama-vulkan"), ("vision", "philcut-llama"), ("whisper", "philcut-whisper")):
+    for genre, prefixe in (("vision_gpu", "philcut-llama-vulkan"), ("vision", "philcut-llama"), ("whisper", "philcut-whisper"), ("voix", "philcut-piper")):
         for systeme in ("windows", "linux"):
             for f in os.listdir(dossier):
                 if f.startswith(f"{prefixe}-{systeme}") and f not in vus:
@@ -199,7 +225,7 @@ def assembler(dossier):
     for g, m in man["moteurs"].items():
         for s in ("windows", "linux"):
             if s not in m:
-                if os.environ.get("PARTIEL") or g == "vision_gpu":       # la version carte graphique reste facultative
+                if os.environ.get("PARTIEL") or g in ("vision_gpu", "voix"):     # facultatifs : leur absence ne bloque pas
                     print(f"::warning::moteur {g} {s} absent")
                     continue
                 print(f"::error::moteur {g} {s} absent")

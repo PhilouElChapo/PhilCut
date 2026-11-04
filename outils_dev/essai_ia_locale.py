@@ -63,7 +63,20 @@ def main():
         brut = wav + ".brut.wav"
         phrase = "Bonjour, ceci est un essai de sous-titres pour PhilCut."
         espeak = shutil.which("espeak-ng") or shutil.which("espeak")
-        if espeak and shutil.which("ffmpeg"):
+        piper = False
+        if P.moteur_info("voix") and "voix_fr_femme" in P.modeles():      # voix de synthèse portable (Piper)
+            try:
+                t0 = time.time()
+                P.installer("voix_fr_femme")
+                P.synthese(phrase, brut, "voix_fr_femme", params)
+                note("Voix de synthèse", f"Piper : {os.path.getsize(brut) // 1024} Ko en {time.time() - t0:.1f} s (installation comprise)")
+                piper = True
+            except Exception as e:      # noqa: BLE001
+                print(f"::warning title=Voix de synthèse::{e}")
+        if piper and shutil.which("ffmpeg"):
+            subprocess.run(["ffmpeg", "-y", "-i", brut, "-ac", "1", "-ar", "16000", wav], check=True, capture_output=True)
+            espeak = "piper"
+        elif espeak and shutil.which("ffmpeg"):
             subprocess.run([espeak, "-v", "fr", "-s", "140", "-w", brut, phrase], check=True)
             subprocess.run(["ffmpeg", "-y", "-i", brut, "-ac", "1", "-ar", "16000", wav], check=True, capture_output=True)
         else:   # pas de synthèse vocale sur ce poste : un son simple, pour vérifier que le moteur tourne
@@ -78,6 +91,8 @@ def main():
         segs = P.transcrire(wav, "whisper_test", "fr", params)
         texte = " ".join(s[2] for s in segs)
         note("Voix transcrite", f"{texte[:150]!r} ({len(segs)} segment(s), {time.time() - t0:.1f} s)")
+        mots = P.transcrire(wav, "whisper_test", "fr", params, mots=True)
+        note("Mots datés (karaoké)", " ".join(f"{w}@{d:.1f}" for seg in mots for d, _f, w in seg[3])[:200])
         if espeak and "essai" not in texte.lower():
             print("::warning title=Voix::le mot « essai » n'a pas été reconnu (modèle d'essai minuscule)")
     except Exception as e:      # noqa: BLE001

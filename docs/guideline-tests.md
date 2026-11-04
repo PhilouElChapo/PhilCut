@@ -128,6 +128,18 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 7. **Connecter une IA** : Assistant › Connecter une IA : pour chaque onglet, le bouton ouvre la bonne page, « Tester (gratuit) » valide ou refuse la clef. Coût estimé affiché avant l'envoi en IA cloud (case dans Préférences pour le masquer).
 8. **Plan vidéo par IA** : Fabrique › Plan généré par IA › Générateur IA payant : Omni Flash 360p, prix annoncé, confirmation, clip importé. Avec une clef fal.ai : Kling 3.0 Pro ou Seedance 2.0 (prix plus élevé, annoncé avant).
 
+## T14 — Nouveautés 0.2.2 (logo, publication, musique, voix)
+
+1. **Atelier de logo** : Fabrique › Atelier de logo. Partir d'un gabarit, changer texte, police, couleurs, formes ; « Proposer avec l'IA » (Claude ou Gemini, coût affiché) donne trois pistes modifiables. Enregistrer : le logo est dans Mes images et s'accroche comme un goodie.
+2. **Double export** : Exporter, cocher « Exporter aussi en » vertical (ou horizontal) : deux fichiers en une fois, le suivi de personne est gardé, sinon fond flou.
+3. **Bibliothèque musicale** : Outils › Bibliothèque musicale : chercher « aventure », écouter, « Utiliser » : le morceau se pose sur la piste Musique, un fichier .credit.txt est écrit à côté.
+4. **Publier** : après un export, « Publier… ». YouTube : relier le compte une fois (avertissement « application non validée » normal : Paramètres avancés › Accéder à PhilCut), titre, description avec le crédit musical, envoi. **Attendu** : la vidéo arrive en **privée** tant que Google n'a pas validé PhilCut. Instagram / TikTok : légende copiée et page ouverte.
+5. **Voix off au micro** : curseur à 5 s, bouton Voix › « Enregistrer une voix off au micro… », casque sur les oreilles, « Faire défiler la vidéo » coché, parler 10 s, Arrêter. **Attendu** : un plan sur la piste **Voix** à 5 s ; à l'export la musique baisse pendant que vous parlez.
+6. **Retouches de voix** : sélectionner ce plan, Voix : essayer Voix harmonieuse, Adoucir les « s », Moins nasale, Plus chaude, Plus claire, Timbre plus grave ou plus aigu, Effet radio. Rendu rapide pour écouter ; le fichier d'origine n'est jamais modifié.
+7. **Voix de synthèse** : Préférences › IA locale › Voix de synthèse : cocher « Voix française, femme » (environ 60 Mo). Voix › « Voix off lue par une voix de synthèse… », taper deux phrases, Lire : le plan arrive sur la piste Voix, gratuit et hors ligne. Avec la clef Gemini : choisir une voix Gemini, le prix (quelques millièmes de $) est annoncé avant.
+8. **Sous-titres karaoké** : un plan où l'on parle, Sous-titres › « Sous-titres karaoké » : chaque mot se colore en jaune au moment où il est dit (rendu rapide ou export).
+9. **Doublage** : cocher aussi « English voice » et un modèle de vision (ou avoir une clef Claude/Gemini). Voix › « Doubler la vidéo dans une autre langue… », Anglais. **Attendu** : la voix d'origine baisse, la voix anglaise arrive sur la piste Voix, phrase par phrase au bon moment, sous-titres anglais ajoutés.
+
 ## T10 — Le JUGE (validation à l'aveugle)
 
 1. Nouveau projet, importer uniquement la vidéo **JUGE**, aucune indication, niveau Recettes sans IA → Analyser. Appliquer, exporter.
@@ -139,8 +151,8 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 
 - Flatpak Linux (archive tar.gz seulement), version Android.
 - Correction du suivi à la main, plusieurs suivis dans un même plan, effet (halo, feu d'artifice) qui suit la personne : prévus dans une prochaine 0.2.x.
-- Changement de fond après détourage (section 15) : prochaine étape.
-- Vrai autotune de chant (une approximation est posée), bibliothèque musicale libre en ligne (lien vers Free Music Archive en attendant), catalogue d'effets en ligne (le mécanisme est là, le fichier est vide).
+- Vrai autotune de chant (une approximation est posée), catalogue d'effets en ligne (le mécanisme est là, le fichier est vide).
+- Doublage avec la voix de la personne elle-même (clonage de voix) : pas encore, la voix de synthèse est une voix toute faite.
 - Packs de Goodies autres qu'Aviation et Maison : les genres existent, le dessin détaillé viendra.
 
 ## Comment remonter un KO utile

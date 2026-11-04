@@ -14,8 +14,10 @@ from .config import dossier_donnees
 from .langue import _
 
 MANIFESTE_URL = "https://github.com/PhilouElChapo/PhilCut/releases/download/moteurs-ia/moteurs-ia.json"
-GENRES = {"vision": _("Vision (idées de montage)"), "whisper": _("Voix (sous-titres automatiques)"), "detourage": _("Détourage de personne")}
-DEFAUT = {"vision": "vision_leger", "whisper": "whisper_leger", "detourage": "detourage_leger"}
+GENRES = {"vision": _("Vision (idées de montage)"), "whisper": _("Voix (sous-titres automatiques)"), "detourage": _("Détourage de personne"),
+          "voix": _("Voix de synthèse (voix off, doublage)")}
+DEFAUT = {"vision": "vision_leger", "whisper": "whisper_leger", "detourage": "detourage_leger", "voix": "voix_fr_femme"}
+MOTEURS_GENRE = ("vision", "whisper", "voix")          # genres qui ont un programme à télécharger
 UA = {"User-Agent": "PhilCut"}
 
 
@@ -43,7 +45,8 @@ def dossier_moteur(genre):
 
 
 def executable(genre):
-    return os.path.join(dossier_moteur(genre), _exe({"vision": "llama-server", "vision_gpu": "llama-server", "whisper": "whisper-cli"}[genre]))
+    return os.path.join(dossier_moteur(genre), _exe({"vision": "llama-server", "vision_gpu": "llama-server", "whisper": "whisper-cli",
+                                                     "voix": "piper"}[genre]))
 
 
 # ------------------------------------------------------------------ carte graphique (Vulkan)
@@ -230,7 +233,7 @@ def a_telecharger(cle):
     m = modeles(avec_essai=True).get(cle) or {}
     total = 0 if installe(cle) else m.get("taille", 0)
     g = m.get("genre")
-    if g in ("vision", "whisper") and not moteur_installe(g):
+    if g in MOTEURS_GENRE and not moteur_installe(g):
         total += (moteur_info(g) or {}).get("taille", 0)
     if g == "vision" and gpu_voulu() and not moteur_installe("vision_gpu"):
         total += (moteur_info("vision_gpu") or {}).get("taille", 0)
@@ -374,7 +377,7 @@ def installer(cle, progression=None, arret=lambda: False):
         def p(f):
             progression and progression(min(0.99, (fait[0] + f * taille) / total), texte)
         return p
-    if g in ("vision", "whisper") and not moteur_installe(g):
+    if g in MOTEURS_GENRE and not moteur_installe(g):
         t = (moteur_info(g) or {}).get("taille", 0)
         installer_moteur(g, prog_part(t, _("moteur {g}", g=g)), arret)
         fait[0] += t
@@ -407,7 +410,7 @@ def supprimer(cle):
     shutil.rmtree(dossier_modele(cle), ignore_errors=True)
     _noter(cle, None)
     g = e.get("genre")
-    if g in ("vision", "whisper") and not installes(g):
+    if g in MOTEURS_GENRE and not installes(g):
         for m in ((g, "vision_gpu") if g == "vision" else (g,)):
             shutil.rmtree(dossier_moteur(m), ignore_errors=True)
             _noter(f"moteur_{m}", None)
@@ -564,8 +567,9 @@ def generer_vision(consigne, images=(), systeme="", json_attendu=False, params=N
 
 
 # ------------------------------------------------------------------ voix (whisper-cli)
-def transcrire(wav, cle=None, langue="fr", params=None, progression=None, arret=lambda: False):
-    """Transcription d'un WAV 16 kHz mono : [(debut_s, fin_s, texte)]."""
+def transcrire(wav, cle=None, langue="fr", params=None, progression=None, arret=lambda: False, mots=False):
+    """Transcription d'un WAV 16 kHz mono : [(debut_s, fin_s, texte)] ; avec mots=True :
+    [(debut_s, fin_s, texte, [(debut_s, fin_s, mot), ...])] (karaoké, doublage)."""
     cle = cle or modele_actif("whisper", params)
     if not cle or not installe(cle):
         raise ErreurIA(_("Aucun modèle de voix installé sur ce poste (Préférences › IA locale)."))
@@ -576,7 +580,7 @@ def transcrire(wav, cle=None, langue="fr", params=None, progression=None, arret=
     os.makedirs(racine_tmp, exist_ok=True)
     tmp = tempfile.mkdtemp(dir=racine_tmp)
     base = os.path.join(tmp, "transcription")
-    cmd = [executable("whisper"), "-m", modele, "-f", wav, "-l", langue or "auto", "-t", str(coeurs(params)), "-oj", "-of", base, "-pp"]
+    cmd = [executable("whisper"), "-m", modele, "-f", wav, "-l", langue or "auto", "-t", str(coeurs(params)), "-ojf" if mots else "-oj", "-of", base, "-pp"]
     proc = subprocess.Popen(cmd, cwd=dossier_moteur("whisper"), env=_env("whisper"), stdout=subprocess.DEVNULL, stderr=subprocess.PIPE,
                             stdin=subprocess.DEVNULL, text=True, errors="replace", **_options_processus())
     fin = []
@@ -608,7 +612,8 @@ def transcrire(wav, cle=None, langue="fr", params=None, progression=None, arret=
             o = s.get("offsets") or {}
             texte = (s.get("text") or "").strip()
             if texte and not (texte.startswith("[") and texte.endswith("]")):
-                out.append((o.get("from", 0) / 1000.0, o.get("to", 0) / 1000.0, texte))
+                seg = (o.get("from", 0) / 1000.0, o.get("to", 0) / 1000.0, texte)
+                out.append(seg + (mots_segment(s.get("tokens") or [], seg),) if mots else seg)
         return out
     finally:
         try:
@@ -616,6 +621,46 @@ def transcrire(wav, cle=None, langue="fr", params=None, progression=None, arret=
         except Exception:       # noqa: BLE001
             pass
         shutil.rmtree(tmp, ignore_errors=True)
+
+
+def mots_segment(jetons, seg):
+    """Regroupe les jetons de whisper.cpp (morceaux de mots, l'espace en tête marque un nouveau mot) en mots datés."""
+    out = []
+    for j in jetons:
+        t = j.get("text") or ""
+        if not t.strip() or (t.strip().startswith("[_") and t.strip().endswith("]")) or t.strip().startswith("<|"):
+            continue
+        o = j.get("offsets") or {}
+        a, b = o.get("from", 0) / 1000.0, o.get("to", 0) / 1000.0
+        if out and not t.startswith(" "):           # suite du mot précédent (ou ponctuation collée)
+            out[-1] = (out[-1][0], max(out[-1][1], b), out[-1][2] + t)
+        else:
+            out.append((a, b, t.strip()))
+    if not out:     # pas de jetons : mots répartis à parts égales
+        m = seg[2].split()
+        pas = (seg[1] - seg[0]) / max(1, len(m))
+        out = [(seg[0] + i * pas, seg[0] + (i + 1) * pas, w) for i, w in enumerate(m)]
+    return out
+
+
+# ------------------------------------------------------------------ voix de synthèse (Piper)
+def synthese(texte, sortie_wav, cle=None, params=None, vitesse=1.0):
+    """Lit le texte avec une voix locale (Piper) ; écrit un WAV. vitesse > 1 : plus rapide."""
+    cle = cle or modele_actif("voix", params)
+    if not cle or not installe(cle):
+        raise ErreurIA(_("Aucune voix de synthèse installée sur ce poste (Préférences › IA locale)."))
+    if not moteur_installe("voix"):
+        raise ErreurIA(_("Moteur de voix absent : décochez puis recochez la voix dans Préférences › IA locale."))
+    roles = etat()[cle]["roles"]
+    modele = os.path.join(dossier_modele(cle), roles["modele"])
+    cmd = [executable("voix"), "--model", modele, "--output_file", sortie_wav, "--length_scale", f"{1.0 / max(0.5, min(2.0, vitesse)):.3f}"]
+    if roles.get("config"):
+        cmd += ["--config", os.path.join(dossier_modele(cle), roles["config"])]
+    r = subprocess.run(cmd, input=texte.encode("utf-8"), cwd=dossier_moteur("voix"), env=_env("voix"), capture_output=True, timeout=600,
+                       **{k: v for k, v in _options_processus().items() if k != "preexec_fn"})
+    if r.returncode != 0 or not os.path.exists(sortie_wav):
+        raise ErreurIA(_("La voix de synthèse a échoué : {t}", t=r.stderr.decode("utf-8", "replace")[-300:]))
+    return sortie_wav
 
 
 # ------------------------------------------------------------------ détourage (onnxruntime)

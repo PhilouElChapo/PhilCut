@@ -63,6 +63,21 @@ def version():
         return ""
 
 
+_filtres = None
+
+
+def filtre_disponible(nom):
+    """Le FFmpeg utilisé connaît-il ce filtre (rubberband, deesser…) ?"""
+    global _filtres
+    if _filtres is None:
+        try:
+            _filtres = set(l.split()[1] for l in sortie(["-hide_banner", "-filters"], delai=30).decode("utf-8", "replace").splitlines()
+                           if len(l.split()) > 2 and l.startswith(" "))
+        except Exception:       # noqa: BLE001
+            _filtres = set()
+    return nom in _filtres
+
+
 def version_majeure():
     """7 pour « 7.1 », 8 pour une build « N-128293-g… » (master BtbN = la plus recente), 0 si inconnue."""
     v = version()

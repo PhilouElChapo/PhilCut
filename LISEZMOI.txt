@@ -34,6 +34,12 @@ rien ne demarre avec le systeme : le moteur se lance pendant une analyse puis
 s'arrete. Mode "poste leger" : moitie des coeurs, priorite basse. Decocher libere
 la place ; supprimer le dossier de PhilCut efface tout.
 
+Voix : bouton Voix. Enregistrer une voix off au micro (a partir du curseur, la
+video peut defiler pendant que vous parlez), retouches (voix harmonieuse, "s"
+adoucis, moins nasale, plus chaude, radio...), voix de synthese sur ce poste
+(Piper, gratuit) ou Gemini en option, doublage dans une autre langue. Sous-titres
+automatiques et karaoke (chaque mot s'allume quand il est dit) : sur ce poste.
+
 Mises a jour
 ------------
 Verifiees au demarrage (une fois par jour) et PROPOSEES sur l'Accueil : rien n'est

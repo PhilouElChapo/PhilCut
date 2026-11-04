@@ -17,6 +17,7 @@ MIME_MEDIA = "application/x-philcut-media"
 H_REGLE = 26
 H_VIDEO = 74
 H_AUDIO = 48
+H_VOIX = 40                     # voix off, doublage : sous la musique, qui baisse quand la voix parle
 H_CALQUE = 22
 MARGE_G = 86                    # colonne des noms de pistes
 BORD = 7                        # largeur de la zone de rognage aux bords d'un plan
@@ -56,7 +57,7 @@ class ItemClip(QGraphicsRectItem):
         r = self.rect()
         p.setRenderHint(QPainter.Antialiasing)
         piste = self.clip["piste"]
-        base = QColor("#4b3a8a") if piste == "video" else QColor("#1f6a6e")
+        base = QColor("#4b3a8a") if piste == "video" else QColor("#8a5a1f") if piste == "voix" else QColor("#1f6a6e")
         if self.media and self.media.get("genre") == "image":
             base = QColor("#7a4a1f")
         p.setPen(Qt.NoPen)
@@ -73,7 +74,7 @@ class ItemClip(QGraphicsRectItem):
             src = QRectF(x0, 0, max(1, x1 - x0), self.vignette.height())
             p.drawPixmap(QRectF(r.x() + 1, r.y() + 16, r.width() - 2, vh), self.vignette, src)
             p.restore()
-        elif piste == "audio" and self.media and self.media.get("onde"):
+        elif piste in ("audio", "voix") and self.media and self.media.get("onde"):
             onde = self.media["onde"]
             p.setPen(QPen(QColor(120, 230, 230, 200), 1))
             n = len(onde)
@@ -278,7 +279,7 @@ class Timeline(QGraphicsView):
         self.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         self.setAcceptDrops(True)
         self.setMouseTracking(True)
-        self.setMinimumHeight(H_REGLE + H_VIDEO + H_AUDIO + H_CALQUE * 2 + 14)
+        self.setMinimumHeight(H_REGLE + H_VIDEO + H_AUDIO + H_VOIX + H_CALQUE * 2 + 14)
         self.setFrameShape(QFrame.NoFrame)
         self.setBackgroundBrush(_c("fond"))
         self._glisse_curseur = False
@@ -292,13 +293,15 @@ class Timeline(QGraphicsView):
         y += H_VIDEO
         out["audio"] = (y, H_AUDIO)
         y += H_AUDIO
+        out["voix"] = (y, H_VOIX)
+        y += H_VOIX
         out["titre"] = (y, H_CALQUE)
         y += H_CALQUE
         out["goodie"] = (y, H_CALQUE)
         return out
 
     def hauteur_totale(self):
-        return H_REGLE + H_VIDEO + H_AUDIO + H_CALQUE * 2
+        return H_REGLE + H_VIDEO + H_AUDIO + H_VOIX + H_CALQUE * 2
 
     def reconstruire(self):
         sel = {it.clip["id"] for it in self._scene.items() if isinstance(it, ItemClip) and it.isSelected()}
@@ -308,7 +311,7 @@ class Timeline(QGraphicsView):
         if self.projet:
             pistes = self._pistes()
             for c in self.projet.clips:
-                y, h = pistes["video" if c["piste"] == "video" else "audio"]
+                y, h = pistes[c["piste"] if c["piste"] in ("video", "audio", "voix") else "audio"]
                 it = ItemClip(self, c, y, h)
                 self._scene.addItem(it)
                 self.items_clips[c["id"]] = it
@@ -367,7 +370,7 @@ class Timeline(QGraphicsView):
         p.setFont(f)
         p.setPen(_c("texte2"))
         for nom, (y, h) in self._pistes().items():
-            lib = {"video": _("Vidéo"), "audio": _("Son"), "titre": _("Titres"), "goodie": _("Goodies")}[nom]
+            lib = {"video": _("Vidéo"), "audio": _("Musique"), "voix": _("Voix"), "titre": _("Titres"), "goodie": _("Goodies")}[nom]
             p.drawText(QRectF(x0 + 8, y, MARGE_G - 12, h), Qt.AlignLeft | Qt.AlignVCenter, lib)
         # curseur de lecture
         x = MARGE_G + self.position * self.pps
@@ -494,7 +497,7 @@ class Timeline(QGraphicsView):
         self.projet.marquer()
         fait = False
         sel = self.selection()
-        for piste in ("video", "audio"):
+        for piste in ("video", "audio", "voix"):
             for c in self.projet.clips_piste(piste):
                 if (not sel or c["id"] in sel) and c["debut"] < self.position < fin_clip(c):
                     if self.projet.couper(c["id"], self.position):
@@ -587,7 +590,7 @@ class Timeline(QGraphicsView):
         sp = self.mapToScene(e.position().toPoint())
         t = max(0.0, self.aimanter((sp.x() - MARGE_G) / self.pps))
         pistes = self._pistes()
-        piste = "audio" if pistes["audio"][0] <= sp.y() < pistes["audio"][0] + pistes["audio"][1] else "video"
+        piste = next((n for n in ("audio", "voix") if pistes[n][0] <= sp.y() < pistes[n][0] + pistes[n][1]), "video")
         if e.mimeData().hasFormat(MIME_MEDIA):
             for ident in bytes(e.mimeData().data(MIME_MEDIA)).decode("utf-8").split(";"):
                 if ident:

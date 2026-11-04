@@ -49,9 +49,30 @@ def ass(projet_titres, largeur, hauteur, cadence=30, sous_titres=()):
               "", "[Events]", "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"]
     for t in projet_titres:
         lignes.extend(_evenements(t, largeur, hauteur, cadence))
-    for i, (d, f, texte) in enumerate(sous_titres):
-        lignes.append(f"Dialogue: 0,{_t(d)},{_t(f)},SousTitre,,0,0,0,,{{\\fad(120,120)}}{_echapper(texte)}")
+    for st in sous_titres:
+        d, f, texte = st[0], st[1], st[2]
+        mots = st[3] if len(st) > 3 else None
+        if mots:            # karaoké : chaque mot se colore quand il est prononcé
+            lignes.append(f"Dialogue: 0,{_t(d)},{_t(f)},SousTitre,,0,0,0,,{{\\fad(80,80)\\1c{KARAOKE_CHANTE}\\2c{KARAOKE_A_VENIR}}}{karaoke(d, mots)}")
+        else:
+            lignes.append(f"Dialogue: 0,{_t(d)},{_t(f)},SousTitre,,0,0,0,,{{\\fad(120,120)}}{_echapper(texte)}")
     return "\n".join(lignes) + "\n"
+
+
+KARAOKE_CHANTE = "&H0000D7FF&"     # jaune doré : mot déjà prononcé
+KARAOKE_A_VENIR = "&H00FFFFFF&"    # blanc : mot à venir
+
+
+def karaoke(debut, mots):
+    """Balises ASS \\kf (remplissage progressif) à partir de [(debut_s, fin_s, mot)] ; les silences entre mots sont
+    comptés dans le mot suivant pour rester calé sur la voix."""
+    out, t = [], debut
+    for md, mf, mot in mots:
+        if md > t + 0.01:
+            out.append(f"{{\\k{int(round((md - t) * 100))}}}")
+        out.append(f"{{\\kf{max(1, int(round((mf - max(md, t)) * 100)))}}}{_echapper(mot)} ")
+        t = max(t, mf)
+    return "".join(out).rstrip()
 
 
 EFFETS_TEXTE = [("aucun", "Simple"), ("contour", "Contour épais"), ("ombre", "Ombre portée"), ("contour_ombre", "Contour et ombre"),
@@ -153,7 +174,8 @@ def filtre_ass(chemin_ass):
 def srt(sous_titres):
     """Fichier SRT a partir de [(debut, fin, texte)] : pour YouTube ou pour relecture."""
     out = []
-    for i, (d, f, texte) in enumerate(sous_titres, 1):
+    for i, st in enumerate(sous_titres, 1):
+        d, f, texte = st[0], st[1], st[2]
         out.append(f"{i}\n{_srt_t(d)} --> {_srt_t(f)}\n{texte}\n")
     return "\n".join(out)
 
