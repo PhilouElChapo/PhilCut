@@ -368,7 +368,8 @@ class Exportateur:
             if g["fin"] <= g["debut"] or g.get("genre") == "zone":
                 continue
             dossier = tempfile.mkdtemp(prefix="goodie-", dir=self.tmp)
-            motif, n, x, y = GO.rendre(dossier, g, self.L, self.H, self.cad, texte_extra=self.p.d.get("chaine"))
+            ips = min(self.cad, GO.IPS_GOODIES)
+            motif, n, x, y = GO.rendre(dossier, g, self.L, self.H, ips, texte_extra=self.p.d.get("chaine"))
             if (g.get("suivi") or {}).get("positions"):          # Goodie accroché à une personne
                 from . import suivi
                 cote = max(48, int(self.H * float(g.get("taille", 0.22))))
@@ -378,7 +379,7 @@ class Exportateur:
                 cote = max(48, int(self.H * float(g.get("taille", 0.22))))
                 x = f"'({K.expr(g, 'x')})*{self.L}-{cote}/2'"
                 y = f"'({K.expr(g, 'y')})*{self.H}-{cote}/2'"
-            self.calques.append((g["debut"], g["fin"], motif, x, y, "over"))
+            self.calques.append((g["debut"], g["fin"], motif, x, y, "over", ips))
 
     def _incrustations(self, base):
         """Plans des pistes vidéo 2, 3… posés par-dessus la base : plein cadre (B-roll) ou réduits et placés
@@ -436,8 +437,10 @@ class Exportateur:
     def _superposer(self, base):
         base = self._incrustations(base)
         base = self._zones(base)
-        for (d, f, motif, x, y, mode) in sorted(self.calques, key=lambda z: z[0]):
-            k = self._entree("-framerate", str(self.cad), "-i", motif)
+        for calque in sorted(self.calques, key=lambda z: z[0]):
+            d, f, motif, x, y, mode = calque[:6]
+            ips = calque[6] if len(calque) > 6 else self.cad
+            k = self._entree("-framerate", str(ips), "-i", motif)
             ov, out = self._nom("ov"), self._nom("vo")
             self.filtres.append(f"[{k}:v]format=rgba,setpts=PTS-STARTPTS+{d:.3f}/TB[{ov}]")
             if mode == "screen":
@@ -448,11 +451,12 @@ class Exportateur:
         return base
 
     def _titres(self, base, sous_titres):
-        if not self.p.titres and not sous_titres:
+        radio = [tuple(x[:3]) for x in (self.p.d.get("sous_titres_radio") or [])]
+        if not self.p.titres and not sous_titres and not radio:
             return base
         chemin = os.path.join(self.tmp, "titres.ass")
         with open(chemin, "w", encoding="utf-8") as f:
-            f.write(T.ass(self.p.titres, self.L, self.H, self.cad, sous_titres))
+            f.write(T.ass(self.p.titres, self.L, self.H, self.cad, sous_titres, radio))
         out = self._nom("vt")
         self.filtres.append(f"[{base}]{T.filtre_ass(chemin)}[{out}]")
         return out
@@ -659,6 +663,12 @@ def extrait(projet, debut, fin):
                 c["src_fin"] = c["src_debut"] + (fin - c["debut"]) * c.get("vitesse", 1.0)
             c["debut"] -= debut
     from .projet import decaler_suivi
+    for g in p.goodies:                      # Goodies : leurs valeurs et leur déroulé suivent le décalage du temps
+        o = (g.get("options") or {}).get("_origine") or (g["debut"], g["fin"])
+        g.setdefault("options", {})["_origine"] = (o[0] - debut, o[1] - debut)
+        g["valeurs"] = [(round(t - debut, 3), v) for t, v in (g.get("valeurs") or [])]
+        if g["options"].get("roulis_valeurs"):
+            g["options"]["roulis_valeurs"] = [(round(t - debut, 3), v) for t, v in g["options"]["roulis_valeurs"]]
     for x in p.titres + p.goodies:
         if x.get("cles") and x["debut"] < debut < x["fin"]:
             from . import cles as K
@@ -668,6 +678,8 @@ def extrait(projet, debut, fin):
     p.d["titres"] = [t for t in p.titres if t["fin"] > 0.05]
     p.d["goodies"] = [g for g in p.goodies if g["fin"] > 0.05]
     p.d["sous_titres"] = []
+    p.d["sous_titres_radio"] = [(max(0.0, a - debut), min(fin, b) - debut, t) for a, b, t, *_r in (p.d.get("sous_titres_radio") or [])
+                                if b > debut and a < fin]
     return p
 
 

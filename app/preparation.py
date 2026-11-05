@@ -41,7 +41,7 @@ def a_preparer(projet, a, b):
     for c in projet.incrustations():
         if fin_clip(c) > a and c["debut"] < b and not projet.piste_masquee(c["piste"]):
             return True
-    return any(x[1] > a and x[0] < b for x in (projet.d.get("sous_titres") or []))
+    return any(x[1] > a and x[0] < b for x in (projet.d.get("sous_titres") or []) + (projet.d.get("sous_titres_radio") or []))
 
 
 def empreinte(projet, a, b):
@@ -53,6 +53,7 @@ def empreinte(projet, a, b):
     d["medias"] = sorted({c["media"] for c in p.clips})
     d["chemins"] = [((p.media(m) or {}).get("chemin"), ((p.media(m) or {}).get("fiche") or {}).get("duree")) for m in d["medias"]]
     d["st"] = [list(x) for x in (projet.d.get("sous_titres") or []) if x[1] > a and x[0] < b]
+    d["radio"] = [list(x) for x in (projet.d.get("sous_titres_radio") or []) if x[1] > a and x[0] < b]
     d["ab"] = (round(a, 3), round(b, 3))
     return hashlib.sha1(json.dumps(d, sort_keys=True, default=str).encode("utf-8")).hexdigest()[:20]
 

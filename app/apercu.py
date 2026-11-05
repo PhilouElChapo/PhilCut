@@ -186,7 +186,7 @@ class Apercu(QGraphicsView):
             return True
         if any(x["debut"] <= t < fin_clip(x) for x in p.incrustations()):
             return True
-        return any(x[0] <= t < x[1] for x in (p.d.get("sous_titres") or []))
+        return any(x[0] <= t < x[1] for x in (p.d.get("sous_titres") or []) + (p.d.get("sous_titres_radio") or []))
 
     def _etat_projet(self):
         return (len(getattr(self.projet, "_pile", [])), len(getattr(self.projet, "_refaire", [])))
@@ -781,6 +781,16 @@ class Apercu(QGraphicsView):
                 it.setZValue(6)
                 self.calques.append(it)
                 return
+        # le Goodie dessiné comme à l'export (cadran, carte, manche à air…), à l'instant affiché
+        try:
+            img = GO.image(g, self.t, int(taille), self.projet.d.get("chaine"))
+            it = self._scene.addPixmap(QPixmap.fromImage(img))
+            it.setPos(x, y)
+            it.setZValue(6)
+            self.calques.append(it)
+            return
+        except Exception:       # noqa: BLE001 : dessin impossible, simple badge
+            pass
         cadre = QGraphicsRectItem(0, 0, taille, taille)
         cadre.setBrush(QColor(10, 10, 14, 170))
         cadre.setPen(QPen(QColor(255, 255, 255, 140), 2))

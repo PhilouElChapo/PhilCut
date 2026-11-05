@@ -157,6 +157,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T21 — 0.4.0 : lot Aviation (tout réglé par vous)
+
+1. **Tableau de bord** : Montage › Aviation › « Tableau de bord de vol » (aussi clic droit sur l'image › Aviation). Cochez les instruments, réglez le profil : altitudes (terrain, croisière, arrivée), vitesse, régime, durées du roulage, de la montée, de la descente, caps. **Attendu** : les courbes (altitude, vitesse, cap) se redessinent à chaque réglage. « Poser le tableau de bord » : les instruments s'alignent en bas de l'image, l'aiguille de l'altimètre monte pendant la montée, le variomètre indique la vitesse de montée, l'horizon se cabre et s'incline dans les virages, le compte-tours suit le régime. Sur la piste Goodies, chaque instrument a sa ligne (elles s'empilent).
+2. **Modifier** : clic sur un instrument (image ou piste Goodies) › Inspecteur : « Profil de vol… » rouvre la fenêtre et met à jour tous les instruments ; « Valeurs dans le temps » : tableau instant / valeur à corriger, « + Point à la tête de lecture », « Retirer la ligne ». Glisser et coins dans l'image comme tout Goodie.
+3. **Trajet** : Aviation › « Carte animée du trajet et mini-carte ». Ajoutez les étapes (liste d'aérodromes : tapez « LFMD » ou « Cannes », Ajouter ; ou un point avec ses coordonnées), l'ordre se change par ↑ ↓ ou en glissant. L'aperçu de la carte se met à jour ; « 3 étapes · 139 NM ». Fond sombre ou papier, immobile au départ (roulage). **Attendu** : à la lecture, le trait jaune se dessine et l'avion avance sur la carte, orienté selon sa route ; la mini-carte ronde suit l'avion de près. Si une carte existe, le tableau de bord propose « le cap suit le trajet ».
+4. **Manche à air** : direction du vent, force, rafales, côté où elle flotte. L'aperçu bouge dans la fenêtre ; dans la vidéo, elle se gonfle selon la force (pleine à 15 kt) et oscille avec les rafales ; « 250° / 12 kt » sous la manche (option).
+5. **Radio** : Aviation › « Sous-titres des échanges radio » (modèle « Voix » de l'IA locale nécessaire). Le son des plans est écouté dans la bande de la radio ; les phrases qui ressemblent à des échanges (phraséologie, alphabet, immatriculation, fréquence) sont cochées, les autres listées décochées ; le texte se corrige. « Poser les phrases cochées » : en haut à gauche de l'image, « RADIO › … » en jaune sur fond sombre.
+
 ## T20 — 0.3.4 : la timeline complète (changer de piste, copier les effets, effet sur une partie, images clefs)
 
 1. **Changer de piste** : ajoutez une piste Vidéo 2 (clic droit sur les noms de pistes). Glissez un plan de Vidéo 1 vers le haut : pendant le glissement, il saute sur Vidéo 2 et l'étiquette « → Vidéo 2 » s'affiche ; lâchez : c'est une incrustation (rubrique Incrustation de l'Inspecteur). Même chose entre Musique 1 et Musique 2. Une piste verrouillée ou d'un autre genre (vidéo vers son) refuse le plan. Aussi par clic droit sur le plan › « Déplacer vers la piste ».
@@ -219,6 +227,7 @@ Parcours à faire dans l'ordre, avec un rush de quelques secondes posé deux foi
 - Catalogue d'effets en ligne (le mécanisme est là, le fichier est vide).
 - Doublage avec la voix de la personne elle-même (clonage de voix) : pas encore, la voix de synthèse est une voix toute faite.
 - Packs de Goodies autres qu'Aviation et Maison : les genres existent, le dessin détaillé viendra.
+- Télémétrie lue dans les fichiers GoPro : remplacée par le profil de vol réglable (T21) ; multicaméra calée par le son : plus tard.
 
 ## Comment remonter un KO utile
 

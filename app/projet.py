@@ -313,10 +313,10 @@ class Projet:
             out = []
             for e in self.d.get(cle) or []:
                 d, f = e["debut"], e["fin"]
-                if garder:
-                    decaler_suivi(e, lambda t: t - a)
-                else:
-                    decaler_suivi(e, lambda t: t if t < a else (a if t < b else t - largeur))
+                fdec = (lambda t: t - a) if garder else (lambda t: t if t < a else (a if t < b else t - largeur))
+                decaler_suivi(e, fdec)
+                if e.get("valeurs"):            # instruments : leurs valeurs suivent le montage
+                    e["valeurs"] = [(round(fdec(t), 3), v) for t, v in e["valeurs"]]
                 if garder:
                     d, f = max(d, a) - a, min(f, b) - a
                 else:

@@ -36,7 +36,7 @@ def _echapper(texte):
     return texte.replace("\\", "\\\\").replace("{", "\\{").replace("}", "\\}").replace("\n", "\\N")
 
 
-def ass(projet_titres, largeur, hauteur, cadence=30, sous_titres=()):
+def ass(projet_titres, largeur, hauteur, cadence=30, sous_titres=(), radio=()):
     """Fichier ASS complet (texte) pour tous les titres du projet + sous-titres optionnels [(debut, fin, texte)]."""
     base = int(hauteur * 0.055)
     lignes = ["[Script Info]", "ScriptType: v4.00+", f"PlayResX: {largeur}", f"PlayResY: {hauteur}", "WrapStyle: 2",
@@ -45,6 +45,7 @@ def ass(projet_titres, largeur, hauteur, cadence=30, sous_titres=()):
               "Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding",
               f"Style: Titre,{POLICE_DEFAUT},{base},&H00FFFFFF,&H000000FF,&H00000000,&H80000000,1,0,0,0,100,100,0,0,1,{max(2, base // 18)},{max(1, base // 24)},5,20,20,20,1",
               f"Style: SousTitre,{POLICE_DEFAUT},{int(base * 0.8)},&H00FFFFFF,&H0000FFFF,&H00000000,&H90000000,0,0,0,0,100,100,0,0,1,{max(2, base // 20)},0,2,40,40,{int(hauteur * 0.06)},1",
+              f"Style: Radio,{POLICE_DEFAUT},{int(base * 0.62)},&H004AD2FF,&H000000FF,&H00000000,&H50101010,1,0,0,0,100,100,0,0,3,{max(3, base // 9)},0,7,{int(largeur * 0.04)},20,{int(hauteur * 0.05)},1",
               f"Style: Etiquette,{POLICE_DEFAUT},{int(base * 0.7)},&H00FFFFFF,&H000000FF,&H00000000,&HA0000000,1,0,0,0,100,100,0,0,3,{max(3, base // 10)},0,5,10,10,10,1",
               "", "[Events]", "Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text"]
     for t in projet_titres:
@@ -56,6 +57,8 @@ def ass(projet_titres, largeur, hauteur, cadence=30, sous_titres=()):
             lignes.append(f"Dialogue: 0,{_t(d)},{_t(f)},SousTitre,,0,0,0,,{{\\fad(80,80)\\1c{KARAOKE_CHANTE}\\2c{KARAOKE_A_VENIR}}}{karaoke(d, mots)}")
         else:
             lignes.append(f"Dialogue: 0,{_t(d)},{_t(f)},SousTitre,,0,0,0,,{{\\fad(120,120)}}{_echapper(texte)}")
+    for d, f, texte in radio:              # échanges radio : en haut à gauche, jaune sur fond sombre
+        lignes.append(f"Dialogue: 2,{_t(d)},{_t(f)},Radio,,0,0,0,,{{\\fad(60,120)}}RADIO › {_echapper(texte)}")
     return "\n".join(lignes) + "\n"
 
 

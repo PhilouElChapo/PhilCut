@@ -119,6 +119,62 @@ class Inspecteur(QWidget):
         if reconstruire:
             self.ed.timeline.reconstruire()
 
+    # ------------------------------------------------------------ valeurs d'un instrument
+    def _table_valeurs(self, g):
+        """Les points (instant depuis le début du Goodie, valeur) de l'instrument : modifiables, ajoutables, supprimables."""
+        from PySide6.QtWidgets import QTableWidget, QTableWidgetItem, QHeaderView
+        from . import goodies as GO
+        unite = GO.GENRES[g["genre"]][1]
+        gr = QGroupBox(_("Valeurs dans le temps ({u})", u=unite))
+        v = QVBoxLayout(gr)
+        pts = sorted(g.get("valeurs") or [])
+        tb = QTableWidget(len(pts), 2)
+        tb.setHorizontalHeaderLabels([_("Instant (s)"), _("Valeur")])
+        tb.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        tb.verticalHeader().setVisible(False)
+        tb.setMaximumHeight(170)
+        for i, (t, val) in enumerate(pts):
+            tb.setItem(i, 0, QTableWidgetItem(f"{t - g['debut']:.1f}"))
+            tb.setItem(i, 1, QTableWidgetItem(f"{val:g}"))
+
+        def relire(*_a):
+            out = []
+            for i in range(tb.rowCount()):
+                try:
+                    out.append((round(g["debut"] + float(tb.item(i, 0).text().replace(",", ".")), 2), float(tb.item(i, 1).text().replace(",", "."))))
+                except (AttributeError, ValueError):
+                    continue
+            self._changer(lambda: g.__setitem__("valeurs", sorted(out)), reconstruire=False)
+        tb.itemChanged.connect(relire)
+        v.addWidget(tb)
+        h = QHBoxLayout()
+        ba = QPushButton(_("+ Point à la tête de lecture"))
+
+        def ajouter():
+            from . import goodies as GO_
+            t = self.ed.timeline.position
+            val = GO_.valeur(g, t) if g.get("valeurs") else 0.0
+            self._changer(lambda: g.__setitem__("valeurs", sorted((g.get("valeurs") or []) + [(round(t, 2), round(val, 1))])), reconstruire=False)
+            self.montrer_goodie(g)
+        ba.clicked.connect(ajouter)
+        h.addWidget(ba)
+        bs = QPushButton(_("Retirer la ligne"))
+
+        def retirer():
+            r = tb.currentRow()
+            if r >= 0:
+                tb.removeRow(r)
+                relire()
+                self.montrer_goodie(g)
+        bs.clicked.connect(retirer)
+        h.addWidget(bs)
+        h.addStretch(1)
+        v.addLayout(h)
+        aide = QLabel(f"<span style='color:{theme.COULEURS['texte2']}'>" + _("Entre deux points, l'aiguille passe en douceur. Vide : décor animé.") + "</span>")
+        aide.setWordWrap(True)
+        v.addWidget(aide)
+        return gr
+
     # ------------------------------------------------------------ images clefs
     def _valeur(self, elem, cle, defaut):
         """Valeur affichée d'un réglage : celle de la tête de lecture si l'élément est animé."""
@@ -655,7 +711,7 @@ class Inspecteur(QWidget):
 
     # ------------------------------------------------------------ goodie
     def montrer_goodie(self, g):
-        from . import goodies as GO
+        from . import goodies as GO  # noqa: F811
         self._cible = ("goodie", g["id"])
         lay = self._nouveau()
         nom = GO.GENRES.get(g.get("genre"), (g.get("genre"),))[0]
@@ -685,6 +741,21 @@ class Inspecteur(QWidget):
             f.addRow(lib, sp)
         lay.addWidget(gr)
         lay.addWidget(self._groupe_cles(g, lambda: self.montrer_goodie(g)))
+        opts = g.get("options") or {}
+        if opts.get("groupe"):
+            ba = QPushButton(icone("goodies", theme.COULEURS["texte"]), _("Profil de vol… (tous les instruments)"))
+            ba.clicked.connect(lambda: self.ed.tableau_de_bord(opts["groupe"]))
+            lay.addWidget(ba)
+        if g.get("genre") in ("carte_trajet", "mini_carte"):
+            ba = QPushButton(_("Etapes du trajet… ({n})", n=len(opts.get("etapes") or [])))
+            ba.clicked.connect(lambda: self.ed.trajet(g))
+            lay.addWidget(ba)
+        if g.get("genre") == "manche_air":
+            ba = QPushButton(_("Vent… ({d:.0f}° / {f:.0f} kt)", d=float(opts.get("vent_dir", 270)), f=float(opts.get("vent_kt", 10))))
+            ba.clicked.connect(lambda: self.ed.manche_air(g))
+            lay.addWidget(ba)
+        if g.get("genre") in GO.GENRES and GO.GENRES[g["genre"]][1] and g.get("genre") not in ("manche_air",):
+            lay.addWidget(self._table_valeurs(g))
         lay.addWidget(QLabel(_("{n} valeur(s) saisies ou issues d'une trace GPS.", n=len(g.get("valeurs") or []))))
         bm = QPushButton(_("Tous les réglages (valeurs, trace GPS, genre)…"))
         bm.clicked.connect(lambda: self.demande_edition.emit(g["id"]))

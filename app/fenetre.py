@@ -138,6 +138,11 @@ class Fenetre(QMainWindow):
         for oid in ("vitesse", "recadrer", "stabiliser", "texte", "effets", "goodies", "zone", "sous_titres", "musique", "voix"):
             o = O.outil(oid)
             mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
+        av = mo.addMenu(icone("goodies"), _("Aviation"))
+        av.addAction(_("Tableau de bord de vol (profil réglable)…"), lambda: self._ed(lambda ed: ed.tableau_de_bord()))
+        av.addAction(_("Carte animée du trajet et mini-carte…"), lambda: self._ed(lambda ed: ed.trajet()))
+        av.addAction(_("Manche à air…"), lambda: self._ed(lambda ed: ed.manche_air()))
+        av.addAction(_("Sous-titres des échanges radio…"), lambda: self._ed(lambda ed: ed.radio()))
         mo.addSeparator()
         mo.addAction(_("Ajouter une piste vidéo au-dessus (incrustation, image dans l'image)"), lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("video")))
         mo.addAction(_("Ajouter une piste de musique ou de sons"), lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("audio")))

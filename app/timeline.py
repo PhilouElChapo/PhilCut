@@ -455,18 +455,24 @@ class ItemClip(QGraphicsRectItem):
             self.tl.menu_clip(self.clip, e.screenPos(), max(0.0, (e.scenePos().x() - MARGE_G) / self.tl.pps))
 
 
+def nb_lignes_multiples(item):
+    return item.h < H_CALQUE - 4
+
+
 class ItemCalque(QGraphicsRectItem):
     """Titre ou Goodie : une barre fine deplacable."""
 
-    def __init__(self, timeline, elem, genre, y):
+    def __init__(self, timeline, elem, genre, y, rang=0, nb=1):
         super().__init__()
         self.tl, self.elem, self.genre = timeline, elem, genre
-        self.y0 = y
+        hp = timeline._h_calque("titres" if genre == "titre" else "goodies")
+        self.h = max(5.0, (hp - 4) / max(1, nb))              # éléments qui se chevauchent : rangés sur des sous-lignes
+        self.y0 = y + rang * self.h
         self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
         self.placer()
 
     def placer(self):
-        self.setRect(0, 0, max(6.0, (self.elem["fin"] - self.elem["debut"]) * self.tl.pps), H_CALQUE - 4)
+        self.setRect(0, 0, max(6.0, (self.elem["fin"] - self.elem["debut"]) * self.tl.pps), self.h - (1 if nb_lignes_multiples(self) else 0))
         self.setPos(MARGE_G + self.elem["debut"] * self.tl.pps, self.y0 + 2)
 
     def paint(self, p, opt, w=None):
@@ -483,8 +489,14 @@ class ItemCalque(QGraphicsRectItem):
         if zone:
             from . import zones as Z
             texte = Z.libelle(self.elem)
+        elif self.genre == "titre":
+            texte = self.elem.get("texte")
         else:
-            texte = self.elem.get("texte") if self.genre == "titre" else self.elem.get("genre", "")
+            from . import goodies as GO
+            texte = GO.GENRES.get(self.elem.get("genre"), (self.elem.get("genre", ""),))[0]
+        if r.height() < 11:
+            f.setPointSizeF(6.5)
+            p.setFont(f)
         p.drawText(r.adjusted(5, 0, -4, 0), Qt.AlignLeft | Qt.AlignVCenter, QFontMetrics(f).elidedText(texte or "", Qt.ElideRight, int(r.width() - 9)))
         self.losanges = _losanges(p, self.elem, r.x(), r.center().y(), self.tl.pps, 8) if self.elem.get("cles") else []
 
@@ -587,6 +599,20 @@ class Timeline(QGraphicsView):
         self.reconstruire()
 
     # ---- disposition des pistes
+    def _rangs_calques(self, cle):
+        """Nombre de sous-lignes nécessaires pour que les textes (ou Goodies) qui se chevauchent restent tous visibles."""
+        fins = []
+        for e in sorted((self.projet.d.get(cle) or []) if self.projet else [], key=lambda x: x["debut"]):
+            k = next((i for i, f in enumerate(fins) if f <= e["debut"] + 1e-3), None)
+            if k is None:
+                fins.append(e["fin"])
+            else:
+                fins[k] = e["fin"]
+        return max(1, len(fins))
+
+    def _h_calque(self, cle):
+        return int(min(6 * 13 + 4, max(H_CALQUE, self._rangs_calques(cle) * 13 + 4)))
+
     def _pistes(self):
         """Disposition : pistes vidéo (la 3 au-dessus de la 2, au-dessus de la base), puis musiques, voix, titres, Goodies.
         Les pistes ajoutées sont plus basses que la base, et tout se tasse quand il y en a beaucoup."""
@@ -613,9 +639,10 @@ class Timeline(QGraphicsView):
         h = H_REPLIE if rep("voix") else H_VOIX
         out["voix"] = (y, h)
         y += h
-        out["titre"] = (y, H_CALQUE)
-        y += H_CALQUE
-        out["goodie"] = (y, H_CALQUE)
+        ht, hg = self._h_calque("titres"), self._h_calque("goodies")
+        out["titre"] = (y, ht)
+        y += ht
+        out["goodie"] = (y, hg)
         return out
 
     def hauteur_totale(self):
@@ -663,10 +690,19 @@ class Timeline(QGraphicsView):
                 self.items_clips[c["id"]] = it
                 if c["id"] in sel:
                     it.setSelected(True)
-            for t in self.projet.titres:
-                self._scene.addItem(ItemCalque(self, t, "titre", pistes["titre"][0]))
-            for g in self.projet.goodies:
-                self._scene.addItem(ItemCalque(self, g, "goodie", pistes["goodie"][0]))
+            for liste, genre in ((self.projet.titres, "titre"), (self.projet.goodies, "goodie")):
+                rangs, fins = {}, []
+                for e in sorted(liste, key=lambda x: x["debut"]):       # rangement en sous-lignes sans chevauchement
+                    k = next((i for i, f in enumerate(fins) if f <= e["debut"] + 1e-3), None)
+                    if k is None:
+                        fins.append(e["fin"])
+                        k = len(fins) - 1
+                    else:
+                        fins[k] = e["fin"]
+                    rangs[e["id"]] = k
+                nb = min(6, max(1, len(fins)))
+                for e in liste:
+                    self._scene.addItem(ItemCalque(self, e, genre, pistes[genre][0], min(rangs[e["id"]], nb - 1), nb))
         duree = max(60.0, (self.projet.duree() if self.projet else 0) + 30.0)
         self._scene.setSceneRect(0, 0, MARGE_G + duree * self.pps + 40, self.hauteur_totale())
         self._scene.blockSignals(False)

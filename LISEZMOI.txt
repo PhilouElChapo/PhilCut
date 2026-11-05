@@ -65,6 +65,12 @@ copier / coller les effets ; un effet peut ne couvrir qu'une partie du plan (ban
 bleue, bords a tirer) ; images clefs : une incrustation, un texte ou un Goodie qui
 bouge, grossit ou s'efface (Inspecteur > Animation, losanges sur la timeline).
 
+Aviation (0.4.0, menu Montage > Aviation) : tableau de bord de vol (altimetre,
+anemometre, cap, variometre, horizon, compte-tours) tire d'un profil de vol que vous
+reglez ; carte animee du trajet et mini-carte (etapes choisies dans une liste
+d'aerodromes ou par coordonnees) ; manche a air (vent saisi) ; sous-titres des
+echanges radio trouves dans le son.
+
 Mises a jour
 ------------
 Verifiees au demarrage (une fois par jour) et PROPOSEES sur l'Accueil : rien n'est

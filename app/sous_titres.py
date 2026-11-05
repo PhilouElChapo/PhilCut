@@ -50,7 +50,7 @@ def _dossier_tmp():
     return d
 
 
-def transcrire_projet(projet, params=None, progression=None, modele="small", karaoke=False, langue=None, pistes=("video",), decouper=True):
+def transcrire_projet(projet, params=None, progression=None, modele="small", karaoke=False, langue=None, pistes=("video",), decouper=True, filtre=None):
     """Transcrit chaque plan vidéo (avec son) et replace les sous-titres sur la timeline du montage.
     karaoke=True : chaque sous-titre garde ses mots datés (ils se colorent quand ils sont prononcés)."""
     out = []
@@ -61,7 +61,8 @@ def transcrire_projet(projet, params=None, progression=None, modele="small", kar
             continue
         tmp = os.path.join(_dossier_tmp(), f"philcut_voix_{c['id']}.wav")
         try:
-            moteur.lancer(["-ss", f"{c['src_debut']:.3f}", "-t", f"{c['src_fin'] - c['src_debut']:.3f}", "-i", m["chemin"], "-vn", "-ac", "1", "-ar", "16000", tmp])
+            moteur.lancer(["-ss", f"{c['src_debut']:.3f}", "-t", f"{c['src_fin'] - c['src_debut']:.3f}", "-i", m["chemin"], "-vn"]
+                          + (["-af", filtre] if filtre else []) + ["-ac", "1", "-ar", "16000", tmp])
             segs = transcrire_fichier(tmp, langue=langue, modele=modele, params=params, mots=karaoke,
                                       progression=lambda f: progression and progression((i + f) / len(clips), m["nom"]))
         finally:

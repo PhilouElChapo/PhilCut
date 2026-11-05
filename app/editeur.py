@@ -680,6 +680,11 @@ class Editeur(QWidget):
         m.addAction(_("Aperçu rendu (avec les effets)"), self.apercu_rendu)
         m.addSeparator()
         m.addAction(icone("recadrer", theme.COULEURS["texte"]), _("Tracer une zone à flouter, pixelliser ou cacher…"), self.tracer_zone)
+        av = m.addMenu(icone("goodies", theme.COULEURS["texte"]), _("Aviation"))
+        av.addAction(_("Tableau de bord de vol…"), self.tableau_de_bord)
+        av.addAction(_("Carte animée du trajet et mini-carte…"), self.trajet)
+        av.addAction(_("Manche à air…"), self.manche_air)
+        av.addAction(_("Sous-titres des échanges radio…"), self.radio)
         m.exec(self.apercu.viewport().mapToGlobal(pos))
 
     def extraire_image(self):
@@ -1559,6 +1564,113 @@ class Editeur(QWidget):
         self.projet.ajouter_goodie(**{k: v for k, v in g.items() if k != "id"})
         self.rafraichir()
 
+    # ---------------------------------------------------------------- aviation (tout réglé par l'utilisateur)
+    def _etapes_projet(self):
+        for g in self.projet.goodies:
+            if g.get("genre") in ("carte_trajet", "mini_carte") and (g.get("options") or {}).get("etapes"):
+                return g["options"]["etapes"]
+        return []
+
+    def tableau_de_bord(self, groupe=None):
+        """Tableau de bord de vol : instruments et profil de vol (nouveau, ou celui d'un groupe déjà posé)."""
+        from .dialogues_aviation import DialogueTableau
+        from . import aviation as A
+        anciens = [g for g in self.projet.goodies if groupe and (g.get("options") or {}).get("groupe") == groupe]
+        debut = anciens[0]["debut"] if anciens else 0.0
+        fin = anciens[0]["fin"] if anciens else max(10.0, self.projet.duree())
+        reg = (anciens[0].get("options") or {}).get("profil") if anciens else None
+        d = DialogueTableau(self, debut, fin, reg, [g["genre"] for g in anciens] or None, self._etapes_projet())
+        if d.exec() != d.Accepted or not d.instruments():
+            return
+        self.projet.marquer()
+        gs = A.poser_tableau(self.projet, d.debut.value(), max(d.debut.value() + 1, d.fin.value()), d.instruments(), d.reglages(),
+                             d.etapes_suivies(), taille=d.taille.value(), groupe=groupe)
+        self.rafraichir()
+        self._ouvrir_volet(1)
+        self.inspecteur.montrer_selection([gs[0]["id"]])
+        self.encart.message(_("Tableau de bord posé : {n} instruments. Glissez-les dans l'image ; « Profil de vol… » dans l'Inspecteur pour "
+                              "changer les chiffres.", n=len(gs)))
+
+    def trajet(self, goodie=None):
+        """Carte animée du trajet et mini-carte (mêmes étapes)."""
+        from .dialogues_aviation import DialogueTrajet
+        cartes = [g for g in self.projet.goodies if g.get("genre") in ("carte_trajet", "mini_carte")]
+        ref = goodie or (cartes[0] if cartes else None)
+        debut = ref["debut"] if ref else 0.0
+        fin = ref["fin"] if ref else max(10.0, self.projet.duree())
+        d = DialogueTrajet(self, debut, fin, (ref or {}).get("options"), avec_mini=not cartes or any(g["genre"] == "mini_carte" for g in cartes))
+        if cartes:
+            d.c_carte.setChecked(any(g["genre"] == "carte_trajet" for g in cartes))
+        if d.exec() != d.Accepted:
+            return
+        self.projet.marquer()
+        opts = d.options()
+        voulus = {"carte_trajet": d.c_carte.isChecked(), "mini_carte": d.c_mini.isChecked()}
+        for genre, oui in voulus.items():
+            g = next((x for x in cartes if x["genre"] == genre), None)
+            if oui and g is None:
+                g = self.projet.ajouter_goodie(genre, d.debut.value(), d.fin.value(), **(
+                    {"taille": 0.42, "x": 0.77, "y": 0.3} if genre == "carte_trajet" else {"taille": 0.2, "x": 0.11, "y": 0.17}))
+            if not oui and g is not None:
+                self.projet.retirer_element(g["id"])
+                continue
+            if g is not None:
+                g["debut"], g["fin"] = d.debut.value(), max(d.debut.value() + 1, d.fin.value())
+                g.setdefault("options", {}).update(opts)
+        self.rafraichir()
+        self.encart.message(_("Trajet : {n} étapes. La carte se dessine pendant la vidéo ; glissez-la ou tirez ses coins dans l'image.",
+                              n=len(opts["etapes"])))
+
+    def manche_air(self, goodie=None):
+        from .dialogues_aviation import DialogueManche
+        d = DialogueManche(self, goodie["debut"] if goodie else 0.0, goodie["fin"] if goodie else max(10.0, self.projet.duree()),
+                           (goodie or {}).get("options"))
+        if d.exec() != d.Accepted:
+            return
+        self.projet.marquer()
+        if goodie is None:
+            goodie = self.projet.ajouter_goodie("manche_air", d.debut.value(), d.fin.value(), taille=0.2, x=0.9, y=0.2)
+        goodie["debut"], goodie["fin"] = d.debut.value(), max(d.debut.value() + 1, d.fin.value())
+        goodie.setdefault("options", {}).update(d.options())
+        self.rafraichir()
+        self._ouvrir_volet(1)
+        self.inspecteur.montrer_selection([goodie["id"]])
+
+    def radio(self):
+        """Ecoute du son des plans dans la bande radio ; les échanges trouvés sont proposés en sous-titres « radio »."""
+        from . import aviation as A, sous_titres as ST
+        if not ST.disponible():
+            QMessageBox.information(self, _("Echanges radio"), _("L'écoute se fait sur ce poste avec le modèle « Voix » : cochez-le dans "
+                                                                  "Edition › Préférences › IA locale (il se télécharge une fois), puis recommencez."))
+            return
+        projet = self.projet
+
+        def travail(tache):
+            return A.detecter_radio(projet, self.params, progression=lambda f, *_a: tache.avancer(f))
+        t = Tache(travail, _("Ecoute des échanges radio"))
+        self.taches.append(t)
+        self.encart.suivre(t, _("Ecoute des échanges radio dans le son des plans"))
+
+        def fini(r, err):
+            if t in self.taches:
+                self.taches.remove(t)
+            if err:
+                self.encart.message(_("Ecoute impossible : {e}", e=str(err)))
+                return
+            if not r:
+                self.encart.message(_("Aucune parole trouvée dans le son des plans."))
+                return
+            from .dialogues_aviation import DialogueRadio
+            d = DialogueRadio(self, r)
+            if d.exec() == d.Accepted:
+                self.projet.marquer()
+                self.projet.d["sous_titres_radio"] = d.resultat()
+                self.rafraichir()
+                self.encart.message(_("{n} sous-titre(s) radio posés (en haut de l'image, style radio). Montage › Aviation › Sous-titres radio "
+                                      "pour les revoir.", n=len(d.resultat())))
+        t.fini.connect(fini)
+        t.start()
+
     def editer_element(self, ident):
         if self._zone(ident):
             self._ouvrir_volet(1)
@@ -1579,6 +1691,15 @@ class Editeur(QWidget):
                     self.rafraichir()
                 return
         for g in self.projet.goodies:
+            if g["id"] == ident and (g.get("options") or {}).get("groupe"):
+                self.tableau_de_bord(g["options"]["groupe"])
+                return
+            if g["id"] == ident and g.get("genre") in ("carte_trajet", "mini_carte"):
+                self.trajet(g)
+                return
+            if g["id"] == ident and g.get("genre") == "manche_air":
+                self.manche_air(g)
+                return
             if g["id"] == ident:
                 d = DialogueGoodie(self, g, params=self.params)
                 if d.exec() == d.Accepted:

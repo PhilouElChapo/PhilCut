@@ -11,7 +11,7 @@ from .langue import _
 
 PACKS = {
     "aviation": {"nom": _("Aviation"), "description": _("Altimètre, anémomètre, cap, horizon, variomètre, compte-tours, chrono, immatriculation, mini-carte."),
-                 "goodies": ["altimetre", "anemometre", "compas", "horizon", "variometre", "compte_tours", "chrono", "immatriculation", "mini_carte", "manche_air"]},
+                 "goodies": ["altimetre", "anemometre", "compas", "horizon", "variometre", "compte_tours", "chrono", "immatriculation", "carte_trajet", "mini_carte", "manche_air"]},
     "balade": {"nom": _("Balade et randonnée"), "description": _("Altitude, distance, boussole, météo, dénivelé."),
                "goodies": ["altitude", "distance", "boussole", "meteo", "denivele"]},
     "route": {"nom": _("Route"), "description": _("Compteur de vitesse, carte, kilométrage."), "goodies": ["compteur", "mini_carte", "distance"]},
@@ -28,6 +28,7 @@ GENRES = {
     "variometre": (_("Variomètre"), "ft/min", (-2000, 2000)), "compte_tours": (_("Compte-tours"), "tr/min", (0, 3000)),
     "chrono": (_("Chrono de vol"), "s", (0, 36000)), "immatriculation": (_("Immatriculation"), "", (0, 0)),
     "mini_carte": (_("Mini-carte"), "", (0, 0)), "manche_air": (_("Manche à air"), "kt", (0, 40)),
+    "carte_trajet": (_("Carte animée du trajet"), "", (0, 0)),
     "altitude": (_("Altitude"), "m", (0, 4000)), "distance": (_("Distance"), "km", (0, 1000)), "boussole": (_("Boussole"), "°", (0, 360)),
     "meteo": (_("Météo"), "°C", (-20, 45)), "denivele": (_("Dénivelé"), "m", (0, 3000)), "compteur": (_("Compteur"), "km/h", (0, 240)),
     "croix": (_("Croix de pharmacie"), "", (0, 0)), "horaires": (_("Horaires"), "", (0, 0)), "pastille": (_("Pastille d'annonce"), "", (0, 0)),
@@ -37,18 +38,29 @@ GENRES = {
 }
 
 
+def bornes(g):
+    """Début et fin « réels » du Goodie : un extrait (aperçu, préparation) le raccourcit mais garde son déroulé d'origine."""
+    o = (g.get("options") or {}).get("_origine")
+    return (float(o[0]), float(o[1])) if o else (float(g["debut"]), float(g["fin"]))
+
+
 def valeur(g, t):
     """Valeur interpolee a l'instant t (lineaire entre les points saisis ; constante avant/apres)."""
     pts = sorted(g.get("valeurs") or [])
     if not pts:
         mini, maxi = GENRES.get(g["genre"], ("", "", (0, 100)))[2]
-        d, f = g["debut"], max(g["fin"], g["debut"] + 0.01)
+        d, f = bornes(g)
+        f = max(f, d + 0.01)
         return mini + (maxi - mini) * (0.3 + 0.2 * math.sin((t - d) / (f - d) * 6.28))      # decor anime
     if t <= pts[0][0]:
         return pts[0][1]
+    doux = (g.get("options") or {}).get("lisse", True)        # montée et descente progressives (pas d'à-coups)
     for (t0, v0), (t1, v1) in zip(pts, pts[1:]):
         if t0 <= t <= t1:
-            return v0 + (v1 - v0) * (t - t0) / max(1e-6, t1 - t0)
+            u = (t - t0) / max(1e-6, t1 - t0)
+            if doux:
+                u = u * u * (3 - 2 * u)
+            return v0 + (v1 - v0) * u
     return pts[-1][1]
 
 
@@ -99,20 +111,39 @@ def _haversine(la1, lo1, la2, lo2):
 
 
 # ------------------------------------------------------------------ rendu
+IPS_GOODIES = 15                # images par seconde des Goodies à l'export (aiguilles fluides, rendu trois fois plus court)
+
+
+def cote(g, H):
+    return max(48, int(H * float(g.get("taille", 0.22))))
+
+
 def rendre(dossier, g, L, H, cadence, texte_extra=None):
     """Ecrit les images PNG du Goodie entre debut et fin ; renvoie (motif, nb_images, x, y en pixels du coin)."""
+    taille = cote(g, H)
+    n = int((g["fin"] - g["debut"]) * cadence)
+    cache = {}
+    for i in range(max(1, n)):
+        t = g["debut"] + i / cadence
+        image(g, t, taille, texte_extra, cache).save(os.path.join(dossier, f"{i:05d}.png"))
+    x = int(float(g.get("x", 0.88)) * L - taille / 2)
+    y = int(float(g.get("y", 0.85)) * H - taille / 2)
+    return os.path.join(dossier, "%05d.png"), max(1, n), x, y
+
+
+def image(g, t, taille, texte_extra=None, cache=None):
+    """L'image (QImage carrée, transparente) du Goodie à l'instant t du montage : export et aperçu dessinent pareil."""
     from PySide6.QtCore import Qt, QRectF, QPointF
     from PySide6.QtGui import QImage, QPainter, QColor, QPen, QFont, QBrush, QPainterPath
-    taille = int(H * float(g.get("taille", 0.22)))
-    taille = max(48, taille)
-    n = int((g["fin"] - g["debut"]) * cadence)
+    cache = {} if cache is None else cache
     genre, style = g["genre"], g.get("style", "cadran")
     nom, unite, (mini, maxi) = GENRES.get(genre, (genre, "", (0, 100)))
     opts = g.get("options") or {}
     police = QFont("Nunito")
-    img_source = QImage(opts.get("chemin") or "") if genre == "image" else None
-    for i in range(max(1, n)):
-        t = g["debut"] + i / cadence
+    if genre == "image" and "source" not in cache:
+        cache["source"] = QImage(opts.get("chemin") or "")
+    img_source = cache.get("source")
+    if True:
         v = valeur(g, t)
         img = QImage(taille, taille, QImage.Format_ARGB32_Premultiplied)
         img.fill(Qt.transparent)
@@ -121,7 +152,10 @@ def rendre(dossier, g, L, H, cadence, texte_extra=None):
         p.setRenderHint(QPainter.TextAntialiasing)
         c = taille / 2
         r = taille * 0.46
-        if genre == "image":
+        if genre in ("carte_trajet", "mini_carte", "manche_air"):
+            from . import aviation
+            aviation.dessiner(p, g, t, taille, cache)
+        elif genre == "image":
             if not img_source.isNull():
                 s = img_source.size().scaled(taille, taille, Qt.KeepAspectRatio)
                 p.drawImage(QRectF((taille - s.width()) / 2, (taille - s.height()) / 2, s.width(), s.height()), img_source)
@@ -146,11 +180,12 @@ def rendre(dossier, g, L, H, cadence, texte_extra=None):
                     a = math.radians(ang - v)
                     p.drawText(QRectF(c + r * 0.7 * math.cos(a) - taille * 0.08, c + r * 0.7 * math.sin(a) - taille * 0.06, taille * 0.16, taille * 0.12), Qt.AlignCenter, lettre)
                 self_ang = -90
+                p.drawText(QRectF(0, c + r * 0.2, taille, taille * 0.18), Qt.AlignCenter, f"{v % 360:03.0f}°")
             elif genre == "horloge":
                 import datetime
                 h0 = opts.get("heure")
                 base = datetime.datetime.fromisoformat(h0) if h0 else datetime.datetime(2000, 1, 1, 21, 0)
-                now = base + datetime.timedelta(seconds=(t - g["debut"]) * float(opts.get("accelere", 1)))
+                now = base + datetime.timedelta(seconds=(t - bornes(g)[0]) * float(opts.get("accelere", 1)))
                 self_ang = -90 + (now.hour % 12 + now.minute / 60) * 30
                 am = math.radians(-90 + now.minute * 6)
                 p.setPen(QPen(QColor(240, 240, 240), taille * 0.014, Qt.SolidLine, Qt.RoundCap))
@@ -162,7 +197,8 @@ def rendre(dossier, g, L, H, cadence, texte_extra=None):
             police.setPointSizeF(max(5.0, taille * 0.05))
             p.setFont(police)
             p.setPen(QColor(180, 180, 190))
-            p.drawText(QRectF(0, c - r * 0.55, taille, taille * 0.15), Qt.AlignCenter, nom.upper())
+            if genre not in ("compas", "boussole"):           # sur le compas, les lettres tournent : pas de titre par-dessus
+                p.drawText(QRectF(0, c - r * 0.55, taille, taille * 0.15), Qt.AlignCenter, nom.upper())
             # aiguille
             a = math.radians(self_ang)
             p.setPen(QPen(QColor(255, 120, 60), taille * 0.02, Qt.SolidLine, Qt.RoundCap))
@@ -175,6 +211,8 @@ def rendre(dossier, g, L, H, cadence, texte_extra=None):
             path.addEllipse(QPointF(c, c), r, r)
             p.setClipPath(path)
             roulis = float(opts.get("roulis", 0.0))
+            if opts.get("roulis_valeurs"):                    # inclinaison en virage (profil de vol)
+                roulis = valeur({"genre": "horizon", "valeurs": opts["roulis_valeurs"], "debut": g["debut"], "fin": g["fin"]}, t)
             tangage = v
             p.translate(c, c)
             p.rotate(-roulis)
@@ -203,7 +241,7 @@ def rendre(dossier, g, L, H, cadence, texte_extra=None):
             if genre in ("immatriculation", "date", "bandeau", "horaires", "prix", "pastille"):
                 texte = str(opts.get("texte") or texte_extra or nom)
             elif genre in ("chrono", "compte_a_rebours"):
-                s = int(v if genre == "chrono" else max(0, float(opts.get("depuis", 10)) - (t - g["debut"])))
+                s = int(v if genre == "chrono" else max(0, float(opts.get("depuis", 10)) - (t - bornes(g)[0])))
                 texte = f"{s // 60:02d}:{s % 60:02d}"
             else:
                 texte = f"{v:,.0f} {unite}".replace(",", " ")
@@ -214,7 +252,4 @@ def rendre(dossier, g, L, H, cadence, texte_extra=None):
             p.setPen(QColor(200, 200, 210))
             p.drawText(QRectF(0, taille * 0.16, taille, taille * 0.14), Qt.AlignCenter, nom.upper())
         p.end()
-        img.save(os.path.join(dossier, f"{i:05d}.png"))
-    x = int(float(g.get("x", 0.88)) * L - taille / 2)
-    y = int(float(g.get("y", 0.85)) * H - taille / 2)
-    return os.path.join(dossier, "%05d.png"), max(1, n), x, y
+        return img
