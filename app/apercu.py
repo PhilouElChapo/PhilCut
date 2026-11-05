@@ -98,6 +98,7 @@ class Apercu(QGraphicsView):
         self._minut_rendu.setInterval(450)
         self._minut_rendu.timeout.connect(self._lancer_rendu)
         self._tache_rendu = None
+        self.segment = None                 # (debut, fin, fichier) : passage rendu avec effets, lu à la place des rushes
         self.taches_hote = None             # liste de tâches de l'éditeur : la fenêtre les attend avant de se fermer
         self._rendu_pour = None             # (t, numéro d'état du projet) de l'image affichée
         self._t_depart = None
@@ -155,6 +156,8 @@ class Apercu(QGraphicsView):
     def _lancer_rendu(self):
         if not self.fidele or self.en_lecture or not self.projet or self.projet.duree() <= 0 or self.t > self.projet.duree():
             return
+        if self.segment and self.segment[0] - 0.02 <= self.t < self.segment[1] - 0.02:
+            return                          # le passage rendu est déjà l'image fidèle
         if self._rendu_pour == (round(self.t, 3), self._etat_projet()) and not self.item_rendu.isVisible():
             self.item_rendu.show()
             self.badge_rendu.show()
@@ -205,10 +208,39 @@ class Apercu(QGraphicsView):
         chemin = m.get("proxy") or m["chemin"]
         return QUrl.fromLocalFile(chemin)
 
+    def jouer_segment(self, debut, fin, chemin):
+        """Lecture avec effets : le passage [debut, fin] a été rendu dans un fichier, on le joue à la place des rushes."""
+        self.pause()
+        self.segment = (float(debut), float(fin), chemin)
+        self.clip = None
+        self._source = None
+        self.aller_a(debut, forcer=True)
+        self.lire()
+
+    def _source_video(self):
+        """(plan, média) à montrer à l'instant t : le passage rendu s'il couvre t, sinon le plan de la piste vidéo."""
+        seg = self.segment
+        if seg:
+            if seg[0] - 0.02 <= self.t < seg[1] - 0.02:
+                L, H = self.projet.taille
+                c = {"id": "__rendu__", "media": "__rendu__", "debut": seg[0], "src_debut": 0.0, "src_fin": seg[1] - seg[0],
+                     "vitesse": 1.0, "ajustement": "remplir", "volume": 1.0}
+                m = {"id": "__rendu__", "chemin": seg[2], "genre": "video", "fiche": {"video": {"largeur": L, "hauteur": H}}}
+                return c, m
+            self.segment = None             # on en sort : retour aux rushes
+            self._source = None
+        c = self.projet.clip_a(self.t, "video")
+        return c, (self.projet.media(c["media"]) if c else None)
+
+    def _media_de(self, c):
+        if c and c.get("id") == "__rendu__" and self.segment:
+            return {"genre": "video", "chemin": self.segment[2]}
+        return self.projet.media(c["media"]) if c else None
+
     def _placer_video(self, forcer=False):
         if not self.projet:
             return
-        c = self.projet.clip_a(self.t, "video")
+        c, m = self._source_video()
         if c is None:
             self.clip = None
             if self.lecteur:
@@ -217,7 +249,6 @@ class Apercu(QGraphicsView):
                     self.video.setVisible(False)
             self.image_fixe.setVisible(False)
             return
-        m = self.projet.media(c["media"])
         if m is None:
             return
         if m.get("genre") == "image":
@@ -303,6 +334,10 @@ class Apercu(QGraphicsView):
     def _placer_audio(self):
         if not self.projet or not self.sons:
             return
+        if self.segment and self.clip and self.clip.get("id") == "__rendu__":
+            for sp in self.sons.values():
+                sp["lecteur"].pause()
+            return
         for piste, sp in self.sons.items():
             lp, so = sp["lecteur"], sp["sortie"]
             c = self.projet.clip_a(self.t, piste)
@@ -350,6 +385,14 @@ class Apercu(QGraphicsView):
         self.en_lecture = True
         self._minut_rendu.stop()
         self._cacher_rendu()
+        if self.segment:
+            H = self.projet.taille[1]
+            f = self.badge_rendu.font()
+            f.setPixelSize(max(14, int(H * 0.028)))
+            self.badge_rendu.setFont(f)
+            self.badge_rendu.setText(_("✦ lecture avec effets"))
+            self.badge_rendu.setPos(H * 0.015, H * 0.012)
+            self.badge_rendu.show()
         import time
         self._t_depart = (time.monotonic(), self.t)
         self._placer_video(forcer=True)
@@ -385,7 +428,7 @@ class Apercu(QGraphicsView):
         import time
         if not self.projet:
             return
-        if self.clip and self.lecteur and not self.sans_video and self.lecteur.playbackState() == QMediaPlayer.PlayingState and self.projet.media(self.clip["media"]).get("genre") != "image":
+        if self.clip and self.lecteur and not self.sans_video and self.lecteur.playbackState() == QMediaPlayer.PlayingState and (self._media_de(self.clip) or {}).get("genre") != "image":
             pos = self.lecteur.position() / 1000.0
             t = self.clip["debut"] + (pos - self.clip["src_debut"]) / self.clip.get("vitesse", 1.0)
             # le lecteur peut trainer au demarrage : on garde l'horloge comme garde-fou
@@ -407,7 +450,7 @@ class Apercu(QGraphicsView):
                 self._dessiner_calques()
                 self.position_changee.emit(self.t)
                 return
-        c = self.projet.clip_a(self.t, "video")
+        c, _m = self._source_video()
         if (c is None) != (self.clip is None) or (c and self.clip and c["id"] != self.clip["id"]):
             self._t_depart = (time.monotonic(), self.t)
             self._placer_video(forcer=True)
@@ -471,6 +514,8 @@ class Apercu(QGraphicsView):
         self.calques = []
         self.poignees = []
         if not self.projet:
+            return
+        if self.segment and self.clip and self.clip.get("id") == "__rendu__":
             return
         L, H = self.projet.taille
         for t in self.projet.titres:

@@ -191,6 +191,27 @@ class TestInterface030(unittest.TestCase):
         self.assertLess(t["y"], 0.85)
         self.assertEqual(len(ed.projet._pile), avant + 1)
 
+    def test_lecture_avec_effets(self):
+        """▶✦ : le passage à venir est rendu puis lu à la place des rushes ; en sortant du passage, retour aux rushes."""
+        ed = self.ed
+        ed.apercu.regler_fidele(False)
+        ed.timeline.aller_a(1.0)
+        ed.lire_rendu(duree_max=3.0)
+        fin = time.time() + 40
+        while time.time() < fin and ed.apercu.segment is None:
+            app.processEvents()
+            time.sleep(0.05)
+        self.assertIsNotNone(ed.apercu.segment)
+        self.assertTrue(os.path.exists(ed.apercu.segment[2]))
+        self.assertTrue(ed.apercu.en_lecture)
+        c, m = ed.apercu._source_video()
+        self.assertEqual(c["id"], "__rendu__")
+        ed.apercu.pause()
+        ed.timeline.aller_a(5.5)                     # hors du passage rendu
+        c, m = ed.apercu._source_video()
+        self.assertNotEqual(c["id"], "__rendu__")
+        self.assertIsNone(ed.apercu.segment)
+
     def test_image_rendue(self):
         from app import export
         p = self.ed.projet

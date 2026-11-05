@@ -567,6 +567,14 @@ class Editeur(QWidget):
         self.b_lecture = self._petit("lecture", _("Lecture / pause (Espace)"), self.apercu.basculer)
         self.b_lecture.setIconSize(QSize(30, 30))
         h.addWidget(self.b_lecture)
+        self.b_lire_rendu = QToolButton()
+        self.b_lire_rendu.setText("▶✦")
+        self.b_lire_rendu.setAutoRaise(True)
+        self.b_lire_rendu.setStyleSheet("QToolButton{font-weight:700;color:%s}" % theme.COULEURS["accent"])
+        self.b_lire_rendu.setToolTip(_("Lire avec les effets : PhilCut prépare les 15 secondes à partir du curseur (effets, transitions, "
+                                       "incrustations, textes, son mélangé) puis les lit ici même."))
+        self.b_lire_rendu.clicked.connect(self.lire_rendu)
+        h.addWidget(self.b_lire_rendu)
         for ic, aide, f in (("image_suiv", _("Image suivante (→)"), lambda: self.aller_a(self.timeline.position + 1 / self.projet.cadence)), ("fin", _("Fin"), lambda: self.aller_a(self.projet.duree()))):
             h.addWidget(self._petit(ic, aide, f))
         b_boucle = self._petit("boucle", _("Lire en boucle"), lambda: None)
@@ -1366,6 +1374,39 @@ class Editeur(QWidget):
         t.start()
 
     # ---------------------------------------------------------------- apercu rendu
+    def lire_rendu(self, duree_max=15.0):
+        """Lecture avec effets : le passage à venir est rendu en arrière-plan (720p) puis joué dans l'aperçu."""
+        from . import export
+        import copy, tempfile
+        debut = self.timeline.position
+        fin = min(self.projet.duree(), debut + duree_max)
+        if fin - debut < 0.2:
+            self.encart.message(_("Placez le curseur avant la fin du montage."))
+            return
+        self._n_segment = getattr(self, "_n_segment", 0) + 1
+        sortie = os.path.join(tempfile.gettempdir(), f"philcut_lecture_{os.getpid()}_{self._n_segment % 4}.mp4")
+        projet = copy.deepcopy(self.projet)
+        st = list(self.projet.d.get("sous_titres") or [])
+
+        def travail(tache):
+            p = export.extrait(projet, debut, fin)
+            ex = export.Exportateur(p, sortie, "whatsapp", qualite="allegee", encodeur="libx264", params=self.params)
+            try:
+                return ex.lancer(progression=lambda f: tache.avancer(f), arret=lambda: tache.arret,
+                                 sous_titres=[(a - debut, b - debut) + tuple(x[2:]) for x in st for a, b in [(x[0], x[1])] if b > debut and a < fin])
+            finally:
+                ex.nettoyer()
+        t = Tache(travail, _("Lecture avec effets"))
+        self.taches.append(t)
+        self.encart.suivre(t, _("Préparation de la lecture avec effets ({a} → {b})", a=_tc(debut), b=_tc(fin)))
+
+        def fini(r, e):
+            if e or not r:
+                return
+            self.apercu.jouer_segment(debut, fin, r)
+        t.fini.connect(fini)
+        t.start()
+
     def apercu_rendu(self):
         from . import export
         import copy, tempfile
