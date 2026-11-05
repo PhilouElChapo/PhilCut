@@ -424,6 +424,7 @@ class Editeur(QWidget):
         self.apercu.taches_hote = self.taches
         self.apercu.calque_deplace.connect(self._calque_deplace)
         self.apercu.calque_taille.connect(self._calque_taille)
+        self.apercu.segment_fini.connect(self._segment_fini)
         self.apercu.calque_clique.connect(lambda ident: (self._ouvrir_volet(1), self.inspecteur.montrer_selection([ident])))
         self.apercu.pas_image.connect(lambda n: self.aller_a(self.timeline.position + n / self.projet.cadence))
         self.apercu.viewport().setContextMenuPolicy(Qt.CustomContextMenu)
@@ -1400,21 +1401,34 @@ class Editeur(QWidget):
 
     # ---------------------------------------------------------------- apercu rendu
     def lire_rendu(self, duree_max=15.0):
-        """Lecture avec effets : le passage à venir est rendu en arrière-plan (720p) puis joué dans l'aperçu."""
+        """Lecture avec effets : le passage à venir est rendu en arrière-plan (720p) puis joué dans l'aperçu ; pendant
+        qu'il se joue, le passage suivant se prépare, pour enchaîner sans arrêt."""
+        debut = self.timeline.position
+        if self.projet.duree() - debut < 0.2:
+            self.encart.message(_("Placez le curseur avant la fin du montage."))
+            return
+        self._preparer_segment(debut, duree_max, jouer=True)
+
+    def _preparer_segment(self, debut, duree_max=15.0, jouer=False):
         from . import export
         import copy, tempfile
-        debut = self.timeline.position
         fin = min(self.projet.duree(), debut + duree_max)
         if fin - debut < 0.2:
-            self.encart.message(_("Placez le curseur avant la fin du montage."))
             return
         cle = (round(debut, 2), round(fin, 2), self.apercu._etat_projet())
         cache = getattr(self, "_segments_rendus", {})
-        if cle in cache and os.path.exists(cache[cle]):          # déjà préparé pour cet état du montage : lecture immédiate
-            self.apercu.jouer_segment(debut, fin, cache[cle])
+        if cle in cache and os.path.exists(cache[cle]):          # déjà prêt pour cet état du montage
+            if jouer:
+                self.apercu.jouer_segment(debut, fin, cache[cle])
+                self._preparer_segment(fin, duree_max)
             return
+        en_cours = getattr(self, "_segments_en_cours", set())
+        if cle in en_cours:
+            return
+        en_cours.add(cle)
+        self._segments_en_cours = en_cours
         self._n_segment = getattr(self, "_n_segment", 0) + 1
-        sortie = os.path.join(tempfile.gettempdir(), f"philcut_lecture_{os.getpid()}_{self._n_segment % 4}.mp4")
+        sortie = os.path.join(tempfile.gettempdir(), f"philcut_lecture_{os.getpid()}_{self._n_segment % 6}.mp4")
         projet = copy.deepcopy(self.projet)
         st = list(self.projet.d.get("sous_titres") or [])
 
@@ -1428,16 +1442,31 @@ class Editeur(QWidget):
                 ex.nettoyer()
         t = Tache(travail, _("Lecture avec effets"))
         self.taches.append(t)
-        self.encart.suivre(t, _("Préparation de la lecture avec effets ({a} → {b})", a=_tc(debut), b=_tc(fin)))
+        self.encart.suivre(t, _("Préparation de la lecture avec effets ({a} → {b})", a=_tc(debut), b=_tc(fin)) if jouer else
+                           _("Préparation du passage suivant ({a} → {b})", a=_tc(debut), b=_tc(fin)))
 
         def fini(r, e):
+            self._segments_en_cours.discard(cle)
             if e or not r:
                 return
-            self._segments_rendus = {k: v for k, v in getattr(self, "_segments_rendus", {}).items() if v != r}
-            self._segments_rendus[cle] = r
-            self.apercu.jouer_segment(debut, fin, r)
+            cache = {k: v for k, v in getattr(self, "_segments_rendus", {}).items() if v != r}
+            cache[cle] = r
+            self._segments_rendus = cache
+            if jouer:
+                self.apercu.jouer_segment(debut, fin, r)
+                self._preparer_segment(fin, duree_max)
         t.fini.connect(fini)
         t.start()
+
+    def _segment_fini(self, fin):
+        """Le passage rendu est fini : si le suivant est prêt pour cet état du montage, on enchaîne."""
+        for (d, f, etat), chemin in getattr(self, "_segments_rendus", {}).items():
+            if abs(d - fin) < 0.05 and etat == self.apercu._etat_projet() and os.path.exists(chemin):
+                self.apercu.segment = (d, f, chemin)
+                self.apercu.clip = None
+                self.apercu._source = None
+                self._preparer_segment(f)
+                return
 
     def apercu_rendu(self):
         from . import export

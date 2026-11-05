@@ -32,6 +32,7 @@ class Apercu(QGraphicsView):
     calque_deplace = Signal(str, float, float)      # id d'un texte ou Goodie déplacé à la souris dans l'image : x, y (0..1)
     calque_clique = Signal(str)                     # id : ouvrir dans l'Inspecteur
     calque_taille = Signal(str, float)              # id, facteur : molette sur l'élément dans l'image
+    segment_fini = Signal(float)                    # la lecture avec effets arrive au bout du passage rendu (instant)
     pas_image = Signal(int)                         # molette sur l'image : ±1 image
 
     def __init__(self, projet=None, params=None, parent=None):
@@ -228,8 +229,13 @@ class Apercu(QGraphicsView):
                      "vitesse": 1.0, "ajustement": "remplir", "volume": 1.0}
                 m = {"id": "__rendu__", "chemin": seg[2], "genre": "video", "fiche": {"video": {"largeur": L, "hauteur": H}}}
                 return c, m
-            self.segment = None             # on en sort : retour aux rushes
+            fin = seg[1]
+            self.segment = None             # on en sort : retour aux rushes, sauf si la suite est déjà prête
             self._source = None
+            if self.en_lecture:
+                self.segment_fini.emit(fin)
+                if self.segment:            # l'éditeur vient d'enchaîner sur le passage suivant
+                    return self._source_video()
         c = self.projet.clip_a(self.t, "video")
         return c, (self.projet.media(c["media"]) if c else None)
 

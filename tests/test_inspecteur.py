@@ -221,8 +221,18 @@ class TestInterface030(unittest.TestCase):
         self.assertTrue(ed.apercu.en_lecture)
         c, m = ed.apercu._source_video()
         self.assertEqual(c["id"], "__rendu__")
+        premier = ed.apercu.segment
+        # pendant la lecture, le passage suivant se prépare et l'enchaînement se fait sans arrêt
+        fin = time.time() + 40
+        while time.time() < fin and (ed.apercu.segment is None or ed.apercu.segment == premier):
+            app.processEvents()
+            time.sleep(0.05)
+        self.assertIsNotNone(ed.apercu.segment)
+        self.assertNotEqual(ed.apercu.segment, premier)
+        self.assertAlmostEqual(ed.apercu.segment[0], premier[1], delta=0.05)
+        self.assertTrue(ed.apercu.en_lecture)
         ed.apercu.pause()
-        ed.timeline.aller_a(5.5)                     # hors du passage rendu
+        ed.timeline.aller_a(11.8)                    # hors des passages rendus
         c, m = ed.apercu._source_video()
         self.assertNotEqual(c["id"], "__rendu__")
         self.assertIsNone(ed.apercu.segment)
