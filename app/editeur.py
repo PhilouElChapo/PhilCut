@@ -404,6 +404,13 @@ class Editeur(QWidget):
         self.timeline.selection_changee.connect(self._selection)
         self.timeline.demande_menu.connect(self._demande_menu)
         self.timeline.zone_changee.connect(self._zone_changee)
+        self.timeline.balayage.connect(lambda on: self.apercu.regler_balayage(on))
+        # préparation automatique des passages avec effets (0.3.1)
+        from .preparation import Preparation
+        self.preparation = Preparation(self)
+        self.apercu.fournisseur = self.preparation.tranche_prete
+        self.timeline.etats_preparation = self.preparation.etats
+        self.preparation.change.connect(self._preparation_change)
         self.timeline.element_clique.connect(self._element_clique)
         self.timeline.element_change.connect(lambda cid: self.inspecteur.rafraichir(cid))
         self.split_v.addWidget(self.timeline)
@@ -623,6 +630,16 @@ class Editeur(QWidget):
                                    "transitions, textes et Goodies (moins d'une seconde). Décochez sur un poste lent."))
         self.b_fidele.toggled.connect(self.apercu.regler_fidele)
         h.addWidget(self.b_fidele)
+        self.b_prepa = QToolButton()
+        self.b_prepa.setIcon(icone("synchro", theme.COULEURS["texte"]))
+        self.b_prepa.setIconSize(QSize(22, 22))
+        self.b_prepa.setAutoRaise(True)
+        self.b_prepa.setCheckable(True)
+        self.b_prepa.setChecked(bool(self.params.get("preparation_auto", True)))
+        self.b_prepa.setToolTip(_("Préparation automatique de la lecture (barre rouge / verte au-dessus de la timeline) : les passages avec "
+                                  "effets sont rendus en arrière-plan et la lecture les montre. Décochez sur un poste lent."))
+        self.b_prepa.toggled.connect(lambda on: self.preparation.regler(on))
+        h.addWidget(self.b_prepa)
         h.addWidget(self._petit("image", _("Enregistrer l'image affichée (PNG, pleine définition)"), self.extraire_image))
         h.addStretch(1)
         self.lbl_duree = QLabel("")
@@ -709,12 +726,23 @@ class Editeur(QWidget):
 
     # ---------------------------------------------------------------- etat
     def rafraichir(self):
+        if hasattr(self, "preparation"):
+            self.preparation.revoir()
         self.timeline.reconstruire()
         self.apercu.aller_a(self.timeline.position, forcer=True)
         self.lbl_duree.setText(_("Durée : {d} · {f}", d=moteur.duree_texte(self.projet.duree()), f=self.projet.format))
         self.titre_change.emit()
 
+    def _preparation_change(self):
+        self.timeline.viewport().update()
+        prets, n = self.preparation.resume()
+        if hasattr(self, "b_prepa"):
+            self.b_prepa.setToolTip(_("Préparation automatique de la lecture : {p} passage(s) prêt(s) sur {n}. Barre au-dessus de la "
+                                      "timeline : rouge = à préparer, orange = en cours, vert = prêt (la lecture montre les effets).", p=prets, n=n))
+
     def _modifie(self):
+        if hasattr(self, "preparation"):
+            self.preparation.revoir()
         self.projet.modifie = True
         self.lbl_duree.setText(_("Durée : {d} · {f}", d=moteur.duree_texte(self.projet.duree()), f=self.projet.format))
         self.apercu.aller_a(self.timeline.position, forcer=True)

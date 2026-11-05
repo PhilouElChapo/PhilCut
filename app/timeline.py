@@ -399,7 +399,8 @@ class Timeline(QGraphicsView):
     modifie = Signal()
     zone_changee = Signal()                 # partie sélectionnée (I / O) modifiée
     element_clique = Signal(str, str, int)  # clip_id, "effet" | "effet_audio" | "transition", index : ouvrir dans l'Inspecteur
-    element_change = Signal(str)            # clip_id : un réglage a changé depuis la timeline (durée de transition…)
+    element_change = Signal(str)
+    balayage = Signal(bool)                 # le curseur est tiré à la souris (aperçu : images de la pellicule)            # clip_id : un réglage a changé depuis la timeline (durée de transition…)
     proprietes = Signal(str)                # double clic : identifiant
     media_depose = Signal(str, str, float)  # media_id, piste, instant
     demande_menu = Signal(str, object)      # (clip_id, position ecran) pour la fenetre (effets, etc.)
@@ -537,6 +538,11 @@ class Timeline(QGraphicsView):
             t += pas
 
     def drawForeground(self, p, r):
+        # barre de préparation : rouge = à préparer, orange = en cours, vert = prêt (lecture avec effets)
+        etats = self.etats_preparation() if callable(getattr(self, "etats_preparation", None)) else []
+        for a0, b0, etat in etats:
+            couleur = {"pret": QColor("#4cd964"), "en_cours": QColor("#ffb347"), "a_preparer": QColor("#e05a5a")}[etat]
+            p.fillRect(QRectF(MARGE_G + a0 * self.pps, H_REGLE - 5, max(2.0, (b0 - a0) * self.pps - 1), 4), couleur)
         a, b = self.zone
         if a is not None or b is not None:          # partie sélectionnée : bande jaune sur la règle, voile sur les pistes
             xa = MARGE_G + (a if a is not None else b) * self.pps
@@ -655,6 +661,7 @@ class Timeline(QGraphicsView):
                 return
         if e.button() == Qt.LeftButton and (sp.y() < H_REGLE or self.itemAt(e.pos()) is None) and sp.x() >= MARGE_G:
             self._glisse_curseur = True
+            self.balayage.emit(True)
             # glisser sur la règle des temps choisit une partie (en jaune) ; un simple clic place le curseur
             self._depart_regle = (e.pos().x(), (sp.x() - MARGE_G) / self.pps) if sp.y() < H_REGLE else None
             self.aller_a((sp.x() - MARGE_G) / self.pps)
@@ -679,7 +686,9 @@ class Timeline(QGraphicsView):
         if self._glisse_curseur and getattr(self, "_depart_regle", None) and self.zone_valide():
             self.zone_changee.emit()
         self._depart_regle = None
-        self._glisse_curseur = False
+        if self._glisse_curseur:
+            self._glisse_curseur = False
+            self.balayage.emit(False)
         super().mouseReleaseEvent(e)
 
     def contextMenuEvent(self, e):

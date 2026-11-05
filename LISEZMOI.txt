@@ -41,7 +41,9 @@ transition est un bloc sur la jonction (bord a tirer pour la duree) ;
 l'Inspecteur (volet de droite) regle tout en direct. Pistes video et musique
 supplementaires (clic droit sur les noms de pistes) : incrustation, image dans
 l'image. La barre du bas dit ce
-qui se passe ; un clic ouvre le Centre d'activite.
+qui se passe ; un clic ouvre le Centre d'activite. Les passages avec effets se
+preparent tout seuls en arriere-plan (barre rouge puis verte au-dessus de la
+timeline) : la lecture simple les montre.
 
 Voix : bouton Voix. Enregistrer une voix off au micro (a partir du curseur, la
 video peut defiler pendant que vous parlez), retouches (voix harmonieuse, "s"

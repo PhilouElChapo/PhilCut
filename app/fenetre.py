@@ -334,6 +334,7 @@ class Fenetre(QMainWindow):
                 if not self.enregistrer():
                     return
         w.apercu.arreter()
+        w.preparation.fermer()
         self.onglets.removeTab(i)
         w.deleteLater()
         self.ecrire_session()
@@ -360,6 +361,7 @@ class Fenetre(QMainWindow):
             t.stopper()
         for ed in self.editeurs():
             ed.apercu.arreter()
+            ed.preparation.fermer()
         self.ecrire_session()
         self.params.enregistrer()
         self.attendre_taches(8000)

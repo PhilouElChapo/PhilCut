@@ -101,6 +101,10 @@ class Apercu(QGraphicsView):
         self._minut_rendu.timeout.connect(self._lancer_rendu)
         self._tache_rendu = None
         self.segment = None                 # (debut, fin, fichier) : passage rendu avec effets, lu à la place des rushes
+        self.fournisseur = None             # t -> (debut, fin, fichier) | None : tranches préparées automatiquement (0.3.1)
+        self.balayage = False               # le curseur est tiré à la souris : images de la pellicule
+        from .preparation import Pellicules
+        self.pellicules = Pellicules()
         self.taches_hote = None             # liste de tâches de l'éditeur : la fenêtre les attend avant de se fermer
         self._rendu_pour = None             # (t, numéro d'état du projet) de l'image affichée
         self._t_depart = None
@@ -141,6 +145,21 @@ class Apercu(QGraphicsView):
         self.position_changee.emit(self.t)
 
     # ---- image fidèle à l'arrêt
+    def _badge(self, texte):
+        H = self.projet.taille[1] if self.projet else 1080
+        f = self.badge_rendu.font()
+        f.setPixelSize(max(14, int(H * 0.028)))
+        self.badge_rendu.setFont(f)
+        self.badge_rendu.setText(texte)
+        self.badge_rendu.setPos(H * 0.015, H * 0.012)
+        self.badge_rendu.show()
+
+    def regler_balayage(self, on):
+        """Pendant qu'on tire le curseur : images de la pellicule (instantanées) ; au lâcher : l'image exacte."""
+        self.balayage = bool(on)
+        if not on:
+            self.aller_a(self.t, forcer=True)
+
     def _cacher_rendu(self):
         self.item_rendu.hide()
         self.badge_rendu.hide()
@@ -253,6 +272,15 @@ class Apercu(QGraphicsView):
                 self.segment_fini.emit(fin)
                 if self.segment:            # l'éditeur vient d'enchaîner sur le passage suivant
                     return self._source_video()
+            self.badge_rendu.hide()
+            QTimer.singleShot(0, self._placer_audio)
+        if self.en_lecture and self.fournisseur is not None:
+            tr = self.fournisseur(self.t)
+            if tr:                          # tranche préparée : on la lit à la place des rushes
+                self.segment = tr
+                self._source = None
+                self._badge(_("✦ lecture avec effets"))
+                return self._source_video()
         c = self.projet.clip_a(self.t, "video")
         return c, (self.projet.media(c["media"]) if c else None)
 
@@ -282,6 +310,18 @@ class Apercu(QGraphicsView):
             self._montrer_image(m)
             self.clip = c
             return
+        if self.balayage and not self.en_lecture and c.get("id") != "__rendu__":
+            t_src = c["src_debut"] + (self.t - c["debut"]) * c.get("vitesse", 1.0)
+            jpg = self.pellicules.image(m, t_src)
+            if jpg is not None:
+                px = QPixmap()
+                px.loadFromData(jpg)
+                if not px.isNull():
+                    if self.video:
+                        self.video.setVisible(False)
+                    self.clip = c
+                    self._afficher_px(c, px, t_src)
+                    return
         if self.sans_video or not self.lecteur:
             self.clip = c
             if self.lecteur:
@@ -361,6 +401,7 @@ class Apercu(QGraphicsView):
         if self.segment and self.clip and self.clip.get("id") == "__rendu__":
             for sp in self.sons.values():
                 sp["lecteur"].pause()
+                sp["clip"] = None           # au retour aux rushes, chaque piste se replace
             return
         for piste, sp in self.sons.items():
             lp, so = sp["lecteur"], sp["sortie"]
@@ -410,13 +451,7 @@ class Apercu(QGraphicsView):
         self._minut_rendu.stop()
         self._cacher_rendu()
         if self.segment:
-            H = self.projet.taille[1]
-            f = self.badge_rendu.font()
-            f.setPixelSize(max(14, int(H * 0.028)))
-            self.badge_rendu.setFont(f)
-            self.badge_rendu.setText(_("✦ lecture avec effets"))
-            self.badge_rendu.setPos(H * 0.015, H * 0.012)
-            self.badge_rendu.show()
+            self._badge(_("✦ lecture avec effets"))
         import time
         self._t_depart = (time.monotonic(), self.t)
         self._placer_video(forcer=True)
@@ -520,6 +555,9 @@ class Apercu(QGraphicsView):
             self._cache_images[cle] = px
         if px.isNull():
             return
+        self._afficher_px(c, px, t_src)
+
+    def _afficher_px(self, c, px, t_src):
         L, H = self.projet.taille
         mode = c.get("ajustement", "remplir")
         if mode == "suivi" and (c.get("suivi_cadre") or {}).get("positions"):

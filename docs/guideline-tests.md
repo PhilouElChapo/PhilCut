@@ -157,6 +157,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T17 — 0.3.1 : la lecture montre les effets
+
+1. **Barre rouge / verte** : posez un effet sur un plan. **Attendu** : au-dessus de la timeline, juste sous la règle, une barre **rouge** apparaît sur les secondes concernées, passe à l'**orange** pendant la préparation, puis au **vert**. La barre du bas dit « Préparation de la lecture (0:08 → 0:12) ».
+2. **Lecture simple** : placez le curseur avant la zone verte et appuyez sur ▶ (pas ▶✦). **Attendu** : en entrant dans le vert, l'image montre l'effet (bandeau « ✦ lecture avec effets »), puis redevient brute à la sortie ; le son suit sans coupure notable.
+3. **Modifier** : changez un réglage de l'effet dans l'Inspecteur : seule la partie touchée redevient rouge puis verte. Annuler : elle redevient verte tout de suite (déjà préparée).
+4. **Balayage** : tirez le curseur rouge à la souris sur un plan : les images suivent instantanément (petites images préparées une fois par rush) ; au lâcher, l'image exacte s'affiche.
+5. **Poste lent** : le bouton ⟳ sous la vidéo coupe la préparation automatique (et ✦ l'image fidèle).
+
 ## T16 — 0.3.0 : tout ce qui est posé se voit et se reprend
 
 Parcours à faire dans l'ordre, avec un rush de quelques secondes posé deux fois dans la timeline.
