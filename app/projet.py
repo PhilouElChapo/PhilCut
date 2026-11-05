@@ -108,14 +108,41 @@ class Projet:
         return [c for p in self.pistes_video()[1:] for c in self.clips_piste(p)]
 
     def piste_muette(self, piste):
-        return piste in (self.d.get("pistes_muettes") or [])
+        """Son coupé : explicitement (M), ou parce qu'une autre piste est en solo (S)."""
+        if piste in (self.d.get("pistes_muettes") or []):
+            return True
+        solo = self.d.get("pistes_solo") or []
+        return bool(solo) and piste not in solo
+
+    def piste_solo(self, piste):
+        return piste in (self.d.get("pistes_solo") or [])
+
+    def piste_verrouillee(self, piste):
+        return piste in (self.d.get("pistes_verrou") or [])
+
+    def piste_repliee(self, piste):
+        return piste in (self.d.get("pistes_repliees") or [])
+
+    def nom_piste(self, piste):
+        return (self.d.get("noms_pistes") or {}).get(piste) or ""
+
+    def renommer_piste(self, piste, nom):
+        noms = dict(self.d.get("noms_pistes") or {})
+        if nom.strip():
+            noms[piste] = nom.strip()[:24]
+        else:
+            noms.pop(piste, None)
+        self.d["noms_pistes"] = noms
+        self.modifie = True
 
     def piste_masquee(self, piste):
         return piste in (self.d.get("pistes_masquees") or [])
 
     def basculer_piste(self, piste, quoi):
-        """quoi : « muette » (son coupé à l'écoute et à l'export) ou « masquee » (image non montrée, pistes vidéo 2+)."""
-        cle = "pistes_muettes" if quoi == "muette" else "pistes_masquees"
+        """quoi : muette (son coupé à l'écoute et à l'export), masquee (image non montrée, pistes vidéo 2+), solo (on
+        n'entend que les pistes en solo), verrou (plans protégés : ni déplacés, ni rognés, ni supprimés), repliee."""
+        cle = {"muette": "pistes_muettes", "masquee": "pistes_masquees", "solo": "pistes_solo", "verrou": "pistes_verrou",
+               "repliee": "pistes_repliees"}[quoi]
         l = list(self.d.get(cle) or [])
         if piste in l:
             l.remove(piste)

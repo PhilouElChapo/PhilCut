@@ -82,7 +82,38 @@ class TestPistes(unittest.TestCase):
         app.processEvents()
         tl.grab()
         self.assertIn("video", tl._boutons_piste)
-        self.assertEqual([q for _r, q, _a, _x in tl._boutons_piste["video2"]], ["muette", "masquee"])
+        self.assertEqual([q for _r, q, _a, _x in tl._boutons_piste["video2"]], ["repliee", "muette", "solo", "masquee", "verrou"])
+
+    def test_solo_verrou_nom_repli(self):
+        d = tempfile.mkdtemp()
+        p, c = projet_deux_pistes(d)
+        p.basculer_piste("video2", "solo")
+        self.assertTrue(p.piste_muette("video"))           # une autre piste en solo : la base se tait
+        self.assertFalse(p.piste_muette("video2"))
+        p.basculer_piste("video2", "solo")
+        self.assertFalse(p.piste_muette("video"))
+        p.renommer_piste("video2", "Avion")
+        from app.timeline import Timeline
+        tl = Timeline(p)
+        self.assertEqual(tl.libelle_piste("video2"), "Avion")
+        h_avant = tl._pistes()["video"][1]
+        p.basculer_piste("video", "repliee")
+        self.assertLess(tl._pistes()["video"][1], h_avant)
+        # verrou : ni coupe ni suppression sur la piste
+        p.basculer_piste("video", "verrou")
+        base = p.clips_piste("video")[0]
+        tl.reconstruire()
+        tl.aller_a(2.0)
+        tl.couper_au_curseur()
+        self.assertEqual(len(p.clips_piste("video")), 1)
+        tl.selectionner(base["id"])
+        tl.supprimer_selection(True)
+        self.assertEqual(len(p.clips_piste("video")), 1)
+        self.assertTrue(tl.items_clips[base["id"]].verrou)
+        p.basculer_piste("video", "verrou")
+        tl.reconstruire()
+        tl.couper_au_curseur()
+        self.assertEqual(len(p.clips_piste("video")), 2)
 
     def test_piste_vide_retiree_seulement(self):
         d = tempfile.mkdtemp()

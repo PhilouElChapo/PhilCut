@@ -34,7 +34,11 @@ class ItemClip(QGraphicsRectItem):
         self.clip = clip
         self.piste_y = piste_y
         self.h = hauteur
-        self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsGeometryChanges)
+        self.verrou = bool(timeline.projet and timeline.projet.piste_verrouillee(clip["piste"]))
+        drapeaux = QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemSendsGeometryChanges
+        if not self.verrou:
+            drapeaux |= QGraphicsItem.ItemIsMovable
+        self.setFlags(drapeaux)
         self.setAcceptHoverEvents(True)
         self.mode = None            # "deplacer" | "gauche" | "droite" | "transition_bord"
         self.chips = []             # [(QRectF, genre, index)] : étiquettes d'effets cliquables, calculées au dessin
@@ -70,7 +74,7 @@ class ItemClip(QGraphicsRectItem):
             self.setOpacity(0.45)
         else:
             self.setOpacity(1.0)
-        if piste.startswith("video") and self.vignette:
+        if piste.startswith("video") and self.vignette and r.height() > 30:
             p.save()
             p.setClipRect(r.adjusted(1, 1, -1, -1))
             vh = r.height() - 18
@@ -127,8 +131,11 @@ class ItemClip(QGraphicsRectItem):
             p.setPen(QPen(QColor(255, 255, 255, 60), 1))
         p.setBrush(Qt.NoBrush)
         p.drawRoundedRect(r.adjusted(0.5, 0.5, -0.5, -0.5), 5, 5)
+        if self.verrou:
+            p.setPen(QColor(255, 255, 255, 200))
+            p.drawText(QRectF(r.right() - 20, r.y() + 1, 16, 15), Qt.AlignCenter, "🔒")
         # poignees de rognage
-        if self.isSelected() or self.isUnderMouse():
+        if (self.isSelected() or self.isUnderMouse()) and not self.verrou:
             p.setBrush(QColor(255, 255, 255, 90))
             p.setPen(Qt.NoPen)
             p.drawRect(QRectF(r.x(), r.y() + 4, BORD - 2, r.height() - 8))
@@ -230,8 +237,12 @@ class ItemClip(QGraphicsRectItem):
             self.setCursor(Qt.PointingHandCursor)
             self.setToolTip(_("Clic : régler · clic droit : désactiver, supprimer") if isinstance(z, tuple) else
                             _("Transition : clic pour régler, tirez le bord droit pour la durée, clic droit pour changer ou supprimer"))
+        elif self.verrou:
+            self.setToolTip(_("Piste verrouillée : déverrouillez-la (🔒 sous le nom de la piste) pour modifier ce plan"))
+            self.setCursor(Qt.ForbiddenCursor)
         else:
-            self.setToolTip("")
+            self.setToolTip(_("Tirez un bord pour rogner · glissez pour déplacer · double-clic : effets") if z == "deplacer" else
+                            _("Tirez pour rogner (raccourcir ou rallonger) le plan"))
             self.setCursor(Qt.SizeHorCursor if z != "deplacer" else Qt.OpenHandCursor)
         self.update()
         super().hoverMoveEvent(e)
@@ -251,6 +262,12 @@ class ItemClip(QGraphicsRectItem):
                 self.tl.element_clique.emit(self.clip["id"], z[0], z[1])
             else:
                 self.tl.element_clique.emit(self.clip["id"], "transition", 0)
+            return
+        if self.verrou and z in ("gauche", "droite", "transition_bord", "deplacer"):
+            self.tl._scene.clearSelection()
+            self.setSelected(True)
+            self.mode = None
+            e.accept()
             return
         self.mode = z
         self.tl.projet.marquer()
@@ -288,6 +305,11 @@ class ItemClip(QGraphicsRectItem):
                 self.clip["src_fin"] = max(self.clip["src_debut"] + 0.1, self.clip["src_debut"] + (fin_t - self.clip["debut"]) * v)
             self.placer()
             self.tl.apercu_rognage(self.clip, self.mode)
+            bord = self.clip["debut"] if self.mode == "gauche" else fin_clip(self.clip)
+            src = self.clip["src_debut"] if self.mode == "gauche" else self.clip["src_fin"]
+            self.tl._info_rognage = (bord, _("{q} dans le rush : {t} · durée {d:.1f} s", q=_("Début") if self.mode == "gauche" else _("Fin"),
+                                                 t=_tc(src), d=duree_clip(self.clip)))
+            self.tl.viewport().update()
             return
         super().mouseMoveEvent(e)
         # deplacement : rester sur sa piste, instant aimante
@@ -296,6 +318,8 @@ class ItemClip(QGraphicsRectItem):
         self.setPos(MARGE_G + t * self.tl.pps, self.piste_y + 3)
 
     def mouseReleaseEvent(self, e):
+        self.tl._info_rognage = None
+        self.tl._trait_aimant = None
         if self.mode == "transition_bord":
             self.mode = None
             self.tl.modifie.emit()
@@ -438,17 +462,22 @@ class Timeline(QGraphicsView):
         n_sup = len(pv) + len(pa) - 2
         tasse = 1.0 if n_sup <= 1 else max(0.6, 1.0 - 0.12 * (n_sup - 1))
         h_sup = int(max(36, min(self.h_video, 56) * tasse))
+        rep = (lambda p_: self.projet.piste_repliee(p_)) if self.projet else (lambda p_: False)
+        H_REPLIE = 18
         for p_ in reversed(pv[1:]):
-            out[p_] = (y, h_sup)
-            y += h_sup
-        out["video"] = (y, self.h_video)
-        y += self.h_video
-        for i, p_ in enumerate(pa):
-            h = H_AUDIO if i == 0 else int(max(32, H_AUDIO * tasse))
+            h = H_REPLIE if rep(p_) else h_sup
             out[p_] = (y, h)
             y += h
-        out["voix"] = (y, H_VOIX)
-        y += H_VOIX
+        h = H_REPLIE if rep("video") else self.h_video
+        out["video"] = (y, h)
+        y += h
+        for i, p_ in enumerate(pa):
+            h = H_REPLIE if rep(p_) else (H_AUDIO if i == 0 else int(max(32, H_AUDIO * tasse)))
+            out[p_] = (y, h)
+            y += h
+        h = H_REPLIE if rep("voix") else H_VOIX
+        out["voix"] = (y, h)
+        y += h
         out["titre"] = (y, H_CALQUE)
         y += H_CALQUE
         out["goodie"] = (y, H_CALQUE)
@@ -467,6 +496,9 @@ class Timeline(QGraphicsView):
         return None
 
     def libelle_piste(self, nom):
+        perso = self.projet.nom_piste(nom) if self.projet else ""
+        if perso:
+            return perso
         if nom == "video":
             return _("Vidéo") if not self.projet or len(self.projet.pistes_video()) == 1 else _("Vidéo 1")
         if nom.startswith("video"):
@@ -543,6 +575,27 @@ class Timeline(QGraphicsView):
         for a0, b0, etat in etats:
             couleur = {"pret": QColor("#4cd964"), "en_cours": QColor("#ffb347"), "a_preparer": QColor("#e05a5a")}[etat]
             p.fillRect(QRectF(MARGE_G + a0 * self.pps, H_REGLE - 5, max(2.0, (b0 - a0) * self.pps - 1), 4), couleur)
+        # aimantation et rognage visibles pendant le glissement
+        ta = getattr(self, "_trait_aimant", None)
+        if ta is not None and QApplication.mouseButtons() & Qt.LeftButton:
+            p.setPen(QPen(QColor("#5ad1ff"), 1.5, Qt.DashLine))
+            x = MARGE_G + ta * self.pps
+            p.drawLine(QLineF(x, H_REGLE, x, self.hauteur_totale()))
+        info = getattr(self, "_info_rognage", None)
+        if info:
+            x = MARGE_G + info[0] * self.pps
+            f = QFont()
+            f.setPointSizeF(8)
+            p.setFont(f)
+            w = QFontMetrics(f).horizontalAdvance(info[1]) + 12
+            rc = QRectF(x + 6, H_REGLE + 2, w, 16)
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(20, 20, 26, 230))
+            p.drawRoundedRect(rc, 4, 4)
+            p.setPen(QColor("#ffd24a"))
+            p.drawText(rc, Qt.AlignCenter, info[1])
+            p.setPen(QPen(QColor("#ffd24a"), 1))
+            p.drawLine(QLineF(x, H_REGLE, x, self.hauteur_totale()))
         a, b = self.zone
         if a is not None or b is not None:          # partie sélectionnée : bande jaune sur la règle, voile sur les pistes
             xa = MARGE_G + (a if a is not None else b) * self.pps
@@ -567,12 +620,21 @@ class Timeline(QGraphicsView):
             p.setPen(_c("texte2"))
             p.setFont(f)
             p.drawText(QRectF(x0 + 8, y + 2, MARGE_G - 12, min(h, 22)), Qt.AlignLeft | Qt.AlignVCenter, self.libelle_piste(nom))
-            if nom in ("titre", "goodie") or h < 34 or not self.projet:
+            if nom in ("titre", "goodie") or not self.projet:
                 continue
-            # petits boutons : M = son coupé (toutes les pistes à son), V = image masquée (pistes vidéo 2 et plus)
-            boutons = [("muette", "M", self.projet.piste_muette(nom), _("Son de la piste coupé (écoute et export)"))]
+            # flèche pour replier / déplier la piste
+            rf = QRectF(x0 + MARGE_G - 16, y + 3, 12, 12)
+            p.setPen(_c("texte2"))
+            p.drawText(rf, Qt.AlignCenter, "▸" if self.projet.piste_repliee(nom) else "▾")
+            self._boutons_piste.setdefault(nom, []).append((rf, "repliee", _("Replier / déplier la piste"), self.projet.piste_repliee(nom)))
+            if h < 34:
+                continue
+            # petits boutons : M = son coupé, S = solo, V = image masquée (vidéo 2+), 🔒 = verrou
+            boutons = [("muette", "M", nom in (self.projet.d.get("pistes_muettes") or []), _("Son de la piste coupé (écoute et export)")),
+                       ("solo", "S", self.projet.piste_solo(nom), _("Solo : on n'entend que cette piste (et les autres en solo)"))]
             if nom.startswith("video") and nom != "video":
                 boutons.append(("masquee", "V", self.projet.piste_masquee(nom), _("Image de la piste masquée (écoute et export)")))
+            boutons.append(("verrou", "🔒", self.projet.piste_verrouillee(nom), _("Piste verrouillée : ses plans ne bougent plus (ni déplacés, ni rognés, ni supprimés)")))
             bx = x0 + 8
             by = y + h - 20
             fb = QFont()
@@ -582,12 +644,13 @@ class Timeline(QGraphicsView):
             for quoi, lettre, actif, aide in boutons:
                 rc = QRectF(bx, by, 16, 14)
                 p.setPen(Qt.NoPen)
-                p.setBrush(QColor("#e05a5a") if actif else QColor(255, 255, 255, 28))
+                p.setBrush({"muette": QColor("#e05a5a"), "solo": QColor("#e0b84a"), "masquee": QColor("#e05a5a"),
+                            "verrou": QColor("#5a8ae0")}.get(quoi, QColor("#e05a5a")) if actif else QColor(255, 255, 255, 28))
                 p.drawRoundedRect(rc, 3, 3)
                 p.setPen(QColor("#ffffff") if actif else _c("texte2"))
                 p.drawText(rc, Qt.AlignCenter, lettre)
                 self._boutons_piste.setdefault(nom, []).append((rc, quoi, aide, actif))
-                bx += 20
+                bx += 18
         # curseur de lecture
         x = MARGE_G + self.position * self.pps
         p.setPen(QPen(QColor("#ff5c5c"), 2))
@@ -623,7 +686,9 @@ class Timeline(QGraphicsView):
                 cibles += [c["debut"], fin_clip(c)]
         for x in cibles:
             if abs(x - t) <= tol:
+                self._trait_aimant = x          # montré par un trait pendant le glissement
                 return x
+        self._trait_aimant = None
         return t
 
     def apercu_rognage(self, clip, mode):
@@ -648,6 +713,25 @@ class Timeline(QGraphicsView):
                 QToolTip.showText(e.globalPos(), b[2] + (_(" — actif") if b[3] else _(" — clic pour activer")), self)
                 return True
         return super().event(e)
+
+    def mouseDoubleClickEvent(self, e):
+        sp = self.mapToScene(e.pos())
+        if sp.x() < MARGE_G and self.projet:
+            piste = self.piste_a(sp.y())
+            if piste in self.projet.toutes_pistes():
+                self._renommer_piste(piste)
+                return
+        super().mouseDoubleClickEvent(e)
+
+    def _renommer_piste(self, piste):
+        from PySide6.QtWidgets import QInputDialog
+        nom, ok = QInputDialog.getText(self, _("Nom de la piste"), _("Nom affiché pour « {p} » (vide = nom d'origine) :", p=self.libelle_piste(piste)),
+                                       text=self.projet.nom_piste(piste))
+        if ok:
+            self.projet.marquer()
+            self.projet.renommer_piste(piste, nom)
+            self.modifie.emit()
+            self.viewport().update()
 
     def mousePressEvent(self, e):
         sp = self.mapToScene(e.pos())
@@ -719,6 +803,15 @@ class Timeline(QGraphicsView):
             return
         m.addSeparator()
         sm = m.addMenu(_("Pistes"))
+        if piste and piste in self.projet.toutes_pistes():
+            sm.addAction(_("Renommer « {p} »…", p=self.libelle_piste(piste)), lambda: self._renommer_piste(piste))
+            for quoi, lib in (("muette", _("Son coupé")), ("solo", _("Solo")), ("verrou", _("Verrouillée")), ("repliee", _("Repliée"))):
+                etat = {"muette": nom_in(self.projet, "pistes_muettes", piste), "solo": self.projet.piste_solo(piste),
+                        "verrou": self.projet.piste_verrouillee(piste), "repliee": self.projet.piste_repliee(piste)}[quoi]
+                a = sm.addAction(lib, lambda quoi=quoi: self._basculer(piste, quoi))
+                a.setCheckable(True)
+                a.setChecked(etat)
+            sm.addSeparator()
         if len(self.projet.pistes_video()) < 4:
             sm.addAction(_("Ajouter une piste vidéo au-dessus (incrustation, image dans l'image)"), lambda: self._ajouter_piste("video"))
         if len(self.projet.pistes_audio()) < 4:
@@ -726,6 +819,12 @@ class Timeline(QGraphicsView):
         if piste and piste in self.projet.toutes_pistes() and piste not in ("video", "audio", "voix"):
             a = sm.addAction(_("Retirer la piste « {p} » (vide seulement)", p=self.libelle_piste(piste)), lambda: self._retirer_piste(piste))
             a.setEnabled(not self.projet.clips_piste(piste))
+
+    def _basculer(self, piste, quoi):
+        self.projet.marquer()
+        self.projet.basculer_piste(piste, quoi)
+        self.modifie.emit()
+        self.reconstruire()
 
     def _ajouter_piste(self, genre):
         self.projet.marquer()
@@ -855,6 +954,8 @@ class Timeline(QGraphicsView):
         fait = False
         sel = self.selection()
         for piste in self.projet.toutes_pistes():
+            if self.projet.piste_verrouillee(piste):
+                continue
             for c in self.projet.clips_piste(piste):
                 if (not sel or c["id"] in sel) and c["debut"] < self.position < fin_clip(c):
                     if self.projet.couper(c["id"], self.position):
@@ -869,6 +970,9 @@ class Timeline(QGraphicsView):
         if not self.projet:
             return
         ids, calques = self.selection(), self.selection_calques()
+        if not ids and not calques:
+            return
+        ids = [i for i in ids if not self.projet.piste_verrouillee((self.projet.clip(i) or {}).get("piste", ""))]
         if not ids and not calques:
             return
         self.projet.marquer()
@@ -1085,3 +1189,7 @@ def _tc(t):
     if t < 10 and t != int(t):
         return f"{m}:{s:04.1f}"
     return f"{m}:{int(s):02d}"
+
+
+def nom_in(projet, cle, piste):
+    return piste in (projet.d.get(cle) or [])

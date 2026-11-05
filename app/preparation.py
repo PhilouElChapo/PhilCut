@@ -108,6 +108,8 @@ class Preparation(QObject):
 
     def etats(self):
         """[(a, b, 'pret' | 'a_preparer' | 'en_cours')] pour la barre de la timeline (tranches à préparer seulement)."""
+        if not self.actif:
+            return []
         out = []
         for a, b, e in self.tranches:
             if e is None:

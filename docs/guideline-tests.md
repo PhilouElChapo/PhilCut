@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T18 — 0.3.2 : en-têtes de piste, rognage et aimantation visibles
+
+1. **En-têtes** : sous le nom de chaque piste, **M** (son coupé), **S** (solo : on n'entend que les pistes en solo), **V** (image masquée, pistes vidéo 2 et plus), **🔒** (verrou). La flèche ▾ à droite du nom replie la piste (▸ la déplie). Survol : bulle d'aide. Clic droit sur le nom › Pistes : les mêmes, plus « Renommer ». Double-clic sur le nom : renommer.
+2. **Verrou** : piste verrouillée : ses plans portent 🔒, le curseur devient « interdit », on ne peut ni les déplacer, ni les rogner, ni les couper, ni les supprimer ; on peut encore les sélectionner et voir leurs réglages.
+3. **Rognage visible** : tirez le bord d'un plan : un trait jaune suit le bord et une étiquette indique « Début dans le rush : 0:01.5 · durée 3,0 s ».
+4. **Aimantation visible** : en glissant un plan ou un bord près d'un autre plan ou du curseur, un trait bleu pointillé montre où il se colle (bouton Aimant de la barre pour l'arrêter).
+
 ## T17 — 0.3.1 : la lecture montre les effets
 
 1. **Barre rouge / verte** : posez un effet sur un plan. **Attendu** : au-dessus de la timeline, juste sous la règle, une barre **rouge** apparaît sur les secondes concernées, passe à l'**orange** pendant la préparation, puis au **vert**. La barre du bas dit « Préparation de la lecture (0:08 → 0:12) ».
