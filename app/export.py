@@ -361,7 +361,33 @@ class Exportateur:
                 x, y = suivi.position_pixels(g, self.L, self.H, cote, cote)
             self.calques.append((g["debut"], g["fin"], motif, x, y, "over"))
 
+    def _incrustations(self, base):
+        """Plans des pistes vidéo 2, 3… posés par-dessus la base : plein cadre (B-roll) ou réduits et placés
+        (image dans l'image), avec leur opacité, entre leur début et leur fin."""
+        for c in self.p.incrustations():
+            m = self.p.media(c["media"])
+            if not m:
+                continue
+            src = self._clip_video(c, None, 0.0)
+            inc = c.get("incrust") or {}
+            e = max(0.05, min(1.0, float(inc.get("echelle", 1.0))))
+            op = max(0.0, min(1.0, float(inc.get("opacite", 1.0))))
+            d, f = c["debut"], fin_clip(c)
+            ov, out = self._nom("inc"), self._nom("vi")
+            chaine = [f"[{src}]setpts=PTS+{d:.3f}/TB"]
+            if e < 0.999:
+                chaine.append(f"scale=trunc(iw*{e:.3f}/2)*2:trunc(ih*{e:.3f}/2)*2")
+            if op < 0.999:
+                chaine.append(f"format=rgba,colorchannelmixer=aa={op:.3f}")
+            self.filtres.append(",".join(chaine) + f"[{ov}]")
+            x = f"(W-w)*{float(inc.get('x', 0.5)):.3f}"
+            y = f"(H-h)*{float(inc.get('y', 0.5)):.3f}"
+            self.filtres.append(f"[{base}][{ov}]overlay={x}:{y}:eof_action=pass:format=auto:enable='between(t,{d:.3f},{f:.3f})'[{out}]")
+            base = out
+        return base
+
     def _superposer(self, base):
+        base = self._incrustations(base)
         for (d, f, motif, x, y, mode) in sorted(self.calques, key=lambda z: z[0]):
             k = self._entree("-framerate", str(self.cad), "-i", motif)
             ov, out = self._nom("ov"), self._nom("vo")
@@ -388,7 +414,8 @@ class Exportateur:
         def a_du_son(c):
             m = self.p.media(c["media"]) or {}
             return m.get("genre") != "image" and (m.get("fiche") or {}).get("audio") and not c.get("muet")
-        if not any(a_du_son(c) for c in self.p.clips_piste("video")) and not self.p.clips_piste("audio") and not self.p.clips_piste("voix"):
+        if not any(a_du_son(c) for p_ in self.p.pistes_video() for c in self.p.clips_piste(p_)) and \
+                not any(self.p.clips_piste(p_) for p_ in self.p.pistes_audio()) and not self.p.clips_piste("voix"):
             return self._silence(self.duree)     # rien à normaliser : loudnorm sur un silence pur donnerait des NaN
         pistes = []
         # son des plans video, bout a bout
@@ -410,7 +437,7 @@ class Exportateur:
                 pistes.append(nom)
         # voix off et doublage (piste « voix ») : mélangées au son des plans, elles font baisser la musique
         voix = []
-        for c in self.p.clips_piste("voix"):
+        for c in self.p.clips_piste("voix") + [x for x in self.p.incrustations() if a_du_son(x)]:
             m = self.p.media(c["media"])
             k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
             nom = self._nom("vo")
@@ -424,7 +451,7 @@ class Exportateur:
             self.filtres.append("".join(f"[{x}]" for x in base + voix) + f"amix=inputs={len(base + voix)}:duration=longest:normalize=0[{nom}]")
             pistes = [nom]
         # musiques : piste audio, decalees a leur position
-        for c in self.p.clips_piste("audio"):
+        for c in [x for p_ in self.p.pistes_audio() for x in self.p.clips_piste(p_)]:
             m = self.p.media(c["media"])
             d = duree_clip(c)
             k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
@@ -564,7 +591,7 @@ def extrait(projet, debut, fin):
     """Copie du projet réduite au passage [debut, fin], ramené à 0 (aperçu rendu, aperçu d'un effet)."""
     import copy
     p = copy.deepcopy(projet)
-    for piste in ("video", "audio", "voix"):
+    for piste in p.toutes_pistes():
         for c in list(p.clips_piste(piste)):
             if fin_clip(c) <= debut or c["debut"] >= fin:
                 p.d["clips"].remove(c)

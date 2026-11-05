@@ -59,13 +59,14 @@ class ItemClip(QGraphicsRectItem):
         r = self.rect()
         p.setRenderHint(QPainter.Antialiasing)
         piste = self.clip["piste"]
-        base = QColor("#4b3a8a") if piste == "video" else QColor("#8a5a1f") if piste == "voix" else QColor("#1f6a6e")
+        base = (QColor("#4b3a8a") if piste == "video" else QColor("#6a4fb3") if piste.startswith("video") else
+                QColor("#8a5a1f") if piste == "voix" else QColor("#1f6a6e"))
         if self.media and self.media.get("genre") == "image":
             base = QColor("#7a4a1f")
         p.setPen(Qt.NoPen)
         p.setBrush(base)
         p.drawRoundedRect(r, 5, 5)
-        if piste == "video" and self.vignette:
+        if piste.startswith("video") and self.vignette:
             p.save()
             p.setClipRect(r.adjusted(1, 1, -1, -1))
             vh = r.height() - 18
@@ -83,7 +84,7 @@ class ItemClip(QGraphicsRectItem):
                 p.drawPixmap(QRectF(r.x() + 1 + x, r.y() + 16, case, vh), self.vignette, QRectF(i * tw, 0, tw, th))
                 x += case
             p.restore()
-        elif piste in ("audio", "voix") and self.media and self.media.get("onde"):
+        elif not piste.startswith("video") and self.media and self.media.get("onde"):
             onde = self.media["onde"]
             p.setPen(QPen(QColor(120, 230, 230, 200), 1))
             n = len(onde)
@@ -176,7 +177,7 @@ class ItemClip(QGraphicsRectItem):
         elements = [("effet", i, (E.fiche(e["id"]) or {"nom": e["id"]})["nom"], E.actif(e)) for i, e in enumerate(self.clip.get("effets") or [])]
         noms_voix = dict(VOIX)
         elements += [("effet_audio", i, _(noms_voix.get(eid, eid)), True) for i, eid in enumerate(self.clip.get("effets_audio") or [])]
-        if not elements or r.height() < 34:
+        if not elements or r.height() < 28:
             return
         f = QFont()
         f.setPointSizeF(7.5)
@@ -423,11 +424,24 @@ class Timeline(QGraphicsView):
 
     # ---- disposition des pistes
     def _pistes(self):
+        """Disposition : pistes vidéo (la 3 au-dessus de la 2, au-dessus de la base), puis musiques, voix, titres, Goodies.
+        Les pistes ajoutées sont plus basses que la base, et tout se tasse quand il y en a beaucoup."""
         y = H_REGLE
-        out = {"video": (y, self.h_video)}
+        out = {}
+        pv = self.projet.pistes_video() if self.projet else ["video"]
+        pa = self.projet.pistes_audio() if self.projet else ["audio"]
+        n_sup = len(pv) + len(pa) - 2
+        tasse = 1.0 if n_sup <= 1 else max(0.6, 1.0 - 0.12 * (n_sup - 1))
+        h_sup = int(max(36, min(self.h_video, 56) * tasse))
+        for p_ in reversed(pv[1:]):
+            out[p_] = (y, h_sup)
+            y += h_sup
+        out["video"] = (y, self.h_video)
         y += self.h_video
-        out["audio"] = (y, H_AUDIO)
-        y += H_AUDIO
+        for i, p_ in enumerate(pa):
+            h = H_AUDIO if i == 0 else int(max(32, H_AUDIO * tasse))
+            out[p_] = (y, h)
+            y += h
         out["voix"] = (y, H_VOIX)
         y += H_VOIX
         out["titre"] = (y, H_CALQUE)
@@ -436,7 +450,27 @@ class Timeline(QGraphicsView):
         return out
 
     def hauteur_totale(self):
-        return H_REGLE + self.h_video + H_AUDIO + H_VOIX + H_CALQUE * 2
+        p = self._pistes()
+        y, h = p["goodie"]
+        return y + h
+
+    def piste_a(self, y):
+        """Piste sous l'ordonnée y de la scène (None sur la règle ou en dessous)."""
+        for nom, (y0, h) in self._pistes().items():
+            if y0 <= y < y0 + h:
+                return nom
+        return None
+
+    def libelle_piste(self, nom):
+        if nom == "video":
+            return _("Vidéo") if not self.projet or len(self.projet.pistes_video()) == 1 else _("Vidéo 1")
+        if nom.startswith("video"):
+            return _("Vidéo {n}", n=nom[5:])
+        if nom == "audio":
+            return _("Musique") if not self.projet or len(self.projet.pistes_audio()) == 1 else _("Musique 1")
+        if nom.startswith("audio"):
+            return _("Musique {n}", n=nom[5:])
+        return {"voix": _("Voix"), "titre": _("Titres"), "goodie": _("Goodies")}.get(nom, nom)
 
     def hauteur_images(self, facteur):
         """Agrandit ou réduit les images de la piste vidéo (de 50 à 220 pixels de haut)."""
@@ -451,7 +485,7 @@ class Timeline(QGraphicsView):
         if self.projet:
             pistes = self._pistes()
             for c in self.projet.clips:
-                y, h = pistes[c["piste"] if c["piste"] in ("video", "audio", "voix") else "audio"]
+                y, h = pistes.get(c["piste"], pistes["audio"])
                 it = ItemClip(self, c, y, h)
                 self._scene.addItem(it)
                 self.items_clips[c["id"]] = it
@@ -477,7 +511,7 @@ class Timeline(QGraphicsView):
         pistes = self._pistes()
         fond2 = _c("surface")
         for nom, (y, h) in pistes.items():
-            p.fillRect(QRectF(r.left(), y, r.width(), h), fond2 if nom in ("video", "titre") else _c("fond"))
+            p.fillRect(QRectF(r.left(), y, r.width(), h), fond2 if nom.startswith("video") or nom == "titre" else _c("fond"))
             p.setPen(QPen(_c("bord_leger"), 1))
             p.drawLine(QLineF(r.left(), y + h - 0.5, r.right(), y + h - 0.5))
         # regle
@@ -519,8 +553,7 @@ class Timeline(QGraphicsView):
         p.setFont(f)
         p.setPen(_c("texte2"))
         for nom, (y, h) in self._pistes().items():
-            lib = {"video": _("Vidéo"), "audio": _("Musique"), "voix": _("Voix"), "titre": _("Titres"), "goodie": _("Goodies")}[nom]
-            p.drawText(QRectF(x0 + 8, y, MARGE_G - 12, h), Qt.AlignLeft | Qt.AlignVCenter, lib)
+            p.drawText(QRectF(x0 + 8, y, MARGE_G - 12, h), Qt.AlignLeft | Qt.AlignVCenter, self.libelle_piste(nom))
         # curseur de lecture
         x = MARGE_G + self.position * self.pps
         p.setPen(QPen(QColor("#ff5c5c"), 2))
@@ -602,15 +635,48 @@ class Timeline(QGraphicsView):
             super().contextMenuEvent(e)
             return
         sp = self.mapToScene(e.pos())
+        piste = self.piste_a(sp.y())
         if sp.x() < MARGE_G:
+            m = QMenu()
+            self._menu_pistes(m, piste)
+            m.exec(e.globalPos())
             return
         t = max(0.0, (sp.x() - MARGE_G) / self.pps)
         m = QMenu()
         m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
+        self._menu_pistes(m, piste)
         m.addAction(_("Enregistrer l'image à cet endroit…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "image")))
         self._menu_partie(m, t)
         self._menu_zoom(m)
         m.exec(e.globalPos())
+
+    def _menu_pistes(self, m, piste):
+        """Ajouter ou retirer des pistes : une vidéo au-dessus (B-roll, image dans l'image), une musique de plus."""
+        if not self.projet:
+            return
+        m.addSeparator()
+        sm = m.addMenu(_("Pistes"))
+        if len(self.projet.pistes_video()) < 4:
+            sm.addAction(_("Ajouter une piste vidéo au-dessus (incrustation, image dans l'image)"), lambda: self._ajouter_piste("video"))
+        if len(self.projet.pistes_audio()) < 4:
+            sm.addAction(_("Ajouter une piste de musique ou de sons"), lambda: self._ajouter_piste("audio"))
+        if piste and piste in self.projet.toutes_pistes() and piste not in ("video", "audio", "voix"):
+            a = sm.addAction(_("Retirer la piste « {p} » (vide seulement)", p=self.libelle_piste(piste)), lambda: self._retirer_piste(piste))
+            a.setEnabled(not self.projet.clips_piste(piste))
+
+    def _ajouter_piste(self, genre):
+        self.projet.marquer()
+        self.projet.ajouter_piste(genre)
+        self.modifie.emit()
+        self.reconstruire()
+
+    def _retirer_piste(self, piste):
+        self.projet.marquer()
+        if self.projet.retirer_piste(piste):
+            self.modifie.emit()
+            self.reconstruire()
+        else:
+            self.projet.annuler()
 
     def _menu_zoom(self, m):
         m.addSeparator()
@@ -725,7 +791,7 @@ class Timeline(QGraphicsView):
         self.projet.marquer()
         fait = False
         sel = self.selection()
-        for piste in ("video", "audio", "voix"):
+        for piste in self.projet.toutes_pistes():
             for c in self.projet.clips_piste(piste):
                 if (not sel or c["id"] in sel) and c["debut"] < self.position < fin_clip(c):
                     if self.projet.couper(c["id"], self.position):
@@ -931,8 +997,9 @@ class Timeline(QGraphicsView):
     def dropEvent(self, e):
         sp = self.mapToScene(e.position().toPoint())
         t = max(0.0, self.aimanter((sp.x() - MARGE_G) / self.pps))
-        pistes = self._pistes()
-        piste = next((n for n in ("audio", "voix") if pistes[n][0] <= sp.y() < pistes[n][0] + pistes[n][1]), "video")
+        piste = self.piste_a(sp.y())
+        if piste not in (self.projet.toutes_pistes() if self.projet else ["video", "audio", "voix"]):
+            piste = "video"
         if e.mimeData().hasFormat(MIME_MEDIA):
             for ident in bytes(e.mimeData().data(MIME_MEDIA)).decode("utf-8").split(";"):
                 if ident:

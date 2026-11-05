@@ -98,6 +98,7 @@ class Apercu(QGraphicsView):
         self._minut_rendu.setInterval(450)
         self._minut_rendu.timeout.connect(self._lancer_rendu)
         self._tache_rendu = None
+        self.taches_hote = None             # liste de tâches de l'éditeur : la fenêtre les attend avant de se fermer
         self._rendu_pour = None             # (t, numéro d'état du projet) de l'image affichée
         self._t_depart = None
         self.changer_projet(projet)
@@ -169,8 +170,12 @@ class Apercu(QGraphicsView):
         st = list(self.projet.d.get("sous_titres") or [])
         tache = Tache(lambda tc: export.image_rendue(projet, t, sortie, self.params, 1280, st), _("Image fidèle"))
         self._tache_rendu = tache
+        if self.taches_hote is not None:
+            self.taches_hote.append(tache)
 
         def fini(r, e, tache=tache):
+            if self.taches_hote is not None and tache in self.taches_hote:
+                self.taches_hote.remove(tache)
             if tache is not self._tache_rendu or e or self.en_lecture or abs(self.t - t) > 1e-3:
                 return
             px = QPixmap(sortie)

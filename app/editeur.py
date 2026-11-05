@@ -413,6 +413,7 @@ class Editeur(QWidget):
         v.addWidget(self.encart)
         self.apercu.position_changee.connect(lambda t: self.timeline.aller_a(t, emettre=False) if self.apercu.en_lecture else None)
         self.apercu.position_changee.connect(self._temps)
+        self.apercu.taches_hote = self.taches
         self.apercu.calque_deplace.connect(self._calque_deplace)
         self.apercu.calque_clique.connect(lambda ident: (self._ouvrir_volet(1), self.inspecteur.montrer_selection([ident])))
         self.apercu.pas_image.connect(lambda n: self.aller_a(self.timeline.position + n / self.projet.cadence))

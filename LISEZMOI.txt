@@ -38,7 +38,9 @@ Tout ce qui est pose se voit et se reprend (0.3) : a l'arret, l'apercu montre
 l'image avec effets, transitions, textes et Goodies ; chaque effet est une
 etiquette sur le plan (clic : regler ; clic droit : actif, supprimer) ; la
 transition est un bloc sur la jonction (bord a tirer pour la duree) ;
-l'Inspecteur (volet de droite) regle tout en direct. La barre du bas dit ce
+l'Inspecteur (volet de droite) regle tout en direct. Pistes video et musique
+supplementaires (clic droit sur les noms de pistes) : incrustation, image dans
+l'image. La barre du bas dit ce
 qui se passe ; un clic ouvre le Centre d'activite.
 
 Voix : bouton Voix. Enregistrer une voix off au micro (a partir du curseur, la

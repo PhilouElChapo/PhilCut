@@ -80,6 +80,40 @@ class Projet:
     def clips_piste(self, piste):
         return sorted((c for c in self.clips if c["piste"] == piste), key=lambda c: c["debut"])
 
+    # ---------------------------------------------------------------- pistes
+    # « video » est la piste de base ; « video2 », « video3 » s'incrustent par-dessus (B-roll, image dans l'image).
+    # « audio » = Musique ; « audio2 »… d'autres musiques ou sons ; « voix » = voix off et doublage.
+    def pistes_video(self):
+        n = max(1, int(self.d.get("nb_video") or 1))
+        return ["video"] + [f"video{i}" for i in range(2, n + 1)]
+
+    def pistes_audio(self):
+        n = max(1, int(self.d.get("nb_audio") or 1))
+        return ["audio"] + [f"audio{i}" for i in range(2, n + 1)]
+
+    def toutes_pistes(self):
+        return self.pistes_video() + self.pistes_audio() + ["voix"]
+
+    def incrustations(self):
+        """Plans des pistes vidéo au-dessus de la base, dans l'ordre d'empilement (video2 sous video3)."""
+        return [c for p in self.pistes_video()[1:] for c in self.clips_piste(p)]
+
+    def ajouter_piste(self, genre):
+        cle = "nb_video" if genre == "video" else "nb_audio"
+        self.d[cle] = min(4, max(1, int(self.d.get(cle) or 1)) + 1)
+        self.modifie = True
+        return (self.pistes_video() if genre == "video" else self.pistes_audio())[-1]
+
+    def retirer_piste(self, piste):
+        """Retire la dernière piste vidéo ou audio ajoutée, si elle est vide. Renvoie True si fait."""
+        for genre, cle in (("video", "nb_video"), ("audio", "nb_audio")):
+            pistes = self.pistes_video() if genre == "video" else self.pistes_audio()
+            if piste == pistes[-1] and len(pistes) > 1 and not self.clips_piste(piste):
+                self.d[cle] = len(pistes) - 1
+                self.modifie = True
+                return True
+        return False
+
     def duree(self):
         fins = [fin_clip(c) for c in self.clips] + [t.get("fin", 0) for t in self.titres] + [g.get("fin", 0) for g in self.goodies]
         return max(fins) if fins else 0.0
@@ -192,7 +226,7 @@ class Projet:
         a, b = sorted((max(0.0, a), max(0.0, b)))
         if b - a < 0.04:
             return False
-        for piste in ("video", "audio", "voix"):
+        for piste in self.toutes_pistes():
             for t in (a, b):
                 for c in list(self.clips_piste(piste)):
                     if c["debut"] + 0.04 < t < fin_clip(c) - 0.04:

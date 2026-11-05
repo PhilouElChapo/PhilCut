@@ -106,7 +106,7 @@ def credit(morceau):
 def credits_projet(projet):
     """Crédits des musiques du projet (fichiers .credit.txt à côté des musiques utilisées)."""
     out = []
-    for c in projet.clips_piste("audio"):
+    for c in [x for p in projet.pistes_audio() for x in projet.clips_piste(p)]:
         m = projet.media(c["media"]) or {}
         f = os.path.splitext(m.get("chemin", ""))[0] + ".credit.txt"
         if os.path.exists(f):
