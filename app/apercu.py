@@ -152,6 +152,20 @@ class Apercu(QGraphicsView):
         else:
             self._cacher_rendu()
 
+    def _a_rendre(self, t):
+        """Y a-t-il à l'instant t quelque chose que la lecture brute ne montre pas (effet, transition, incrustation,
+        texte, Goodie, sous-titre) ?"""
+        from . import effets as E
+        p = self.projet
+        c = p.clip_a(t, "video")
+        if c and (E.actifs(c) or (E.transition_active(c) and t < c["debut"] + float((c["transition"].get("params") or {}).get("duree", 0.8) or 0.8) + 0.05)):
+            return True
+        if any(x["debut"] <= t <= x["fin"] for x in p.titres + p.goodies):
+            return True
+        if any(x["debut"] <= t < fin_clip(x) for x in p.incrustations()):
+            return True
+        return any(x[0] <= t < x[1] for x in (p.d.get("sous_titres") or []))
+
     def _etat_projet(self):
         return (len(getattr(self.projet, "_pile", [])), len(getattr(self.projet, "_refaire", [])))
 
@@ -160,6 +174,8 @@ class Apercu(QGraphicsView):
             return
         if self.segment and self.segment[0] - 0.02 <= self.t < self.segment[1] - 0.02:
             return                          # le passage rendu est déjà l'image fidèle
+        if not self._a_rendre(self.t):
+            return                          # rien à rendre ici : l'image brute est déjà la bonne
         if self._rendu_pour == (round(self.t, 3), self._etat_projet()) and not self.item_rendu.isVisible():
             self.item_rendu.show()
             self.badge_rendu.show()
