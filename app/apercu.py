@@ -312,6 +312,28 @@ class Apercu(QGraphicsView):
             self._montrer_image(m)
             self.clip = c
             return
+        if getattr(self, "_balaye_rendu", False):
+            self.badge_rendu.hide()
+        self._balaye_rendu = False
+        if self.balayage and not self.en_lecture and self.fournisseur is not None:
+            tr = self.fournisseur(self.t)              # passage préparé (barre verte) : on balaie les images AVEC effets
+            if tr:
+                jpg = self.pellicules.image(media_tranche(tr), self.t - tr[0])
+                if jpg is not None:
+                    px = QPixmap()
+                    px.loadFromData(jpg)
+                    if not px.isNull():
+                        if self.video:
+                            self.video.setVisible(False)
+                        L, H = self.projet.taille
+                        px2 = px.scaled(L, H, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                        self.image_fixe.setPixmap(px2)
+                        self.image_fixe.setPos((L - px2.width()) / 2, (H - px2.height()) / 2)
+                        self.image_fixe.setVisible(True)
+                        self.clip = c
+                        self._balaye_rendu = True
+                        self._badge(_("✦ balayage avec effets"))
+                        return
         if self.balayage and not self.en_lecture and c.get("id") != "__rendu__":
             t_src = c["src_debut"] + (self.t - c["debut"]) * c.get("vitesse", 1.0)
             jpg = self.pellicules.image(m, t_src)
@@ -582,6 +604,8 @@ class Apercu(QGraphicsView):
             return
         if self.segment and self.clip and self.clip.get("id") == "__rendu__":
             return
+        if getattr(self, "_balaye_rendu", False):      # l'image balayée contient déjà textes et Goodies
+            return
         L, H = self.projet.taille
         for t in self.projet.titres:
             if t["debut"] <= self.t <= t["fin"]:
@@ -821,6 +845,11 @@ class Apercu(QGraphicsView):
             with open(m["chemin"], "rb") as f:
                 return f.read()
         return moteur.image(m.get("proxy") or m["chemin"], c["src_debut"] + (self.t - c["debut"]) * c.get("vitesse", 1.0), largeur)
+
+
+def media_tranche(tr):
+    """Un passage préparé (debut, fin, fichier) vu comme un petit média, pour la pellicule de balayage."""
+    return {"id": "tranche:" + tr[2], "genre": "video", "chemin": tr[2], "fiche": {"duree": tr[1] - tr[0]}}
 
 
 class Poignee(QGraphicsRectItem):

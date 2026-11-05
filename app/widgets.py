@@ -1,7 +1,7 @@
 """Petits composants communs (repris de PhilCut) : disposition en flux, liste ordonnable, boutons en francais,
 icone oeil des mots de passe, saisie d'un secret."""
-from PySide6.QtCore import Qt, QRect, QSize, QPoint, QObject, QEvent, Signal
-from PySide6.QtGui import QIcon, QAction
+from PySide6.QtCore import Qt, QRect, QSize, QPoint, QObject, QEvent, QTimer, Signal
+from PySide6.QtGui import QIcon, QAction, QColor, QPainter
 from PySide6.QtWidgets import (QLayout, QWidget, QListWidget, QListWidgetItem, QDialog, QDialogButtonBox, QVBoxLayout,
                                QHBoxLayout, QLabel, QLineEdit, QPushButton, QToolButton, QAbstractItemView, QWidgetItem)
 from .icones import icone

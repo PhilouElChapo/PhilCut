@@ -1,0 +1,142 @@
+"""Fenêtre « Dites-le en clair » : la phrase, ce que PhilCut a compris (cochable), puis « Faire » (annulable)."""
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel, QLineEdit, QPushButton,
+                               QScrollArea, QVBoxLayout, QWidget)
+
+from . import commande_ia as C
+from .langue import _
+from .taches import Tache
+from .widgets import boutons_fr
+
+EXEMPLES = [_("mets une musique calme et coupe-la à la fin de la vidéo"), _("titre « Vol vers Calvi » au début"),
+            _("effet vintage sur tous les plans"), _("ralenti sur le plan 2"), _("une flèche rouge courbe à 5 s"),
+            _("fondu de la musique 2 s et 4 s"), _("baisse la musique")]
+
+
+class DialogueCommande(QDialog):
+    def __init__(self, ed, phrase=""):
+        super().__init__(ed)
+        self.ed = ed
+        self.setWindowTitle(_("Dites-le en clair"))
+        self.resize(640, 520)
+        self.actions = []
+        self.tache = None
+        v = QVBoxLayout(self)
+        aide = QLabel(_("Ecrivez ce que vous voulez, comme à quelqu'un : PhilCut le traduit en actions de montage, vous les montre, "
+                        "et ne fait rien avant votre clic sur « Faire ». Tout se défait d'un coup (Edition › Annuler)."))
+        aide.setWordWrap(True)
+        v.addWidget(aide)
+        self.phrase = QLineEdit(phrase)
+        self.phrase.setPlaceholderText(EXEMPLES[0])
+        self.phrase.returnPressed.connect(self.comprendre)
+        v.addWidget(self.phrase)
+        ex = QLabel(_("<small>Exemples : {e}</small>", e=" · ".join(f"« {x} »" for x in EXEMPLES[1:])))
+        ex.setWordWrap(True)
+        v.addWidget(ex)
+        h = QHBoxLayout()
+        self.niveau = QComboBox()
+        for k, lib in (("recettes", _("Sans IA (gratuit, instantané)")), ("locale", _("IA locale (sur ce poste)")),
+                       ("cloud", _("IA cloud (Claude / Gemini, payant, confirmé)"))):
+            self.niveau.addItem(lib, k)
+        self.niveau.setCurrentIndex(max(0, self.niveau.findData(ed.params.get("commande_niveau") or "recettes")))
+        h.addWidget(QLabel(_("Comprendre avec")))
+        h.addWidget(self.niveau, 1)
+        self.b_comprendre = QPushButton(_("Comprendre"))
+        self.b_comprendre.clicked.connect(self.comprendre)
+        h.addWidget(self.b_comprendre)
+        v.addLayout(h)
+        self.etat = QLabel("")
+        self.etat.setWordWrap(True)
+        v.addWidget(self.etat)
+        self.zone = QScrollArea()
+        self.zone.setWidgetResizable(True)
+        self.zone.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.corps = QWidget()
+        self.vc = QVBoxLayout(self.corps)
+        self.vc.setAlignment(Qt.AlignTop)
+        self.zone.setWidget(self.corps)
+        v.addWidget(self.zone, 1)
+        bb = boutons_fr(QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel))
+        self.b_faire = bb.button(QDialogButtonBox.Ok)
+        self.b_faire.setText(_("Faire"))
+        self.b_faire.setEnabled(False)
+        bb.accepted.connect(self.faire)
+        bb.rejected.connect(self.reject)
+        v.addWidget(bb)
+        self.cases = []
+        if phrase:
+            self.comprendre()
+
+    def comprendre(self):
+        phrase = self.phrase.text().strip()
+        if not phrase:
+            self.etat.setText(_("Ecrivez d'abord ce que vous voulez."))
+            return
+        niv = self.niveau.currentData()
+        self.ed.params["commande_niveau"] = niv
+        if niv == "cloud":
+            from . import ia
+            if not ia.confirmer_cout(self, self.ed.params, 1200, 0, _("Comprendre la phrase « {p} »", p=phrase[:80])):
+                return
+        self.etat.setText(_("Je lis votre demande…"))
+        self.b_comprendre.setEnabled(False)
+        projet, params = self.ed.projet, self.ed.params
+        self.tache = Tache(lambda t: C.comprendre(phrase, projet, params, niv), _("Dites-le en clair"))
+        self.tache.fini.connect(self._compris)
+        self.tache.start()
+
+    def _compris(self, r, err):
+        self.b_comprendre.setEnabled(True)
+        while self.vc.count():
+            it = self.vc.takeAt(0)
+            if it.widget():
+                it.widget().deleteLater()
+        self.cases = []
+        if err:
+            self.etat.setText(_("✕ {e}", e=err))
+            return
+        self.actions = r.get("actions") or []
+        src = {"regles": _("compris sans IA")}.get(r.get("source"), r.get("source", ""))
+        if not self.actions:
+            self.etat.setText(_("Je n'ai pas compris d'action dans cette phrase. Essayez avec des mots comme musique, titre, effet, "
+                                "flèche, ralenti, couper… ou choisissez l'IA locale ou cloud.") +
+                              (f"<br><span style='color:#ff8c5c'>{r['avertissement']}</span>" if r.get("avertissement") else ""))
+            self.b_faire.setEnabled(False)
+            return
+        self.etat.setText(_("Voici ce que je vais faire ({s}) ; décochez ce que vous ne voulez pas :", s=src) +
+                          (f"<br><span style='color:#ff8c5c'>{r['avertissement']}</span>" if r.get("avertissement") else ""))
+        for a in self.actions:
+            w = QWidget()
+            hl = QHBoxLayout(w)
+            hl.setContentsMargins(4, 2, 4, 2)
+            c = QCheckBox()
+            c.setChecked(True)
+            hl.addWidget(c, 0, Qt.AlignTop)
+            lb = QLabel(C.decrire(a))
+            lb.setWordWrap(True)                 # les longues lignes passent à la ligne : jamais de défilement horizontal
+            lb.mousePressEvent = lambda _e, c=c: c.toggle()
+            hl.addWidget(lb, 1)
+            self.vc.addWidget(w)
+            self.cases.append(c)
+        self.b_faire.setEnabled(True)
+
+    def choisies(self):
+        return [a for a, c in zip(self.actions, self.cases) if c.isChecked()]
+
+    def faire(self):
+        acts = self.choisies()
+        if not acts:
+            self.reject()
+            return
+        n = C.appliquer(acts, self.ed)
+        self.ed.rafraichir()
+        self.ed.encart.message(_("{n} action(s) faite(s). Edition › Annuler défait tout d'un coup.", n=n), 8000)
+        self.accept()
+
+    def done(self, r):
+        if self.tache is not None and self.tache.isRunning():
+            self.tache.wait(500)
+            if self.tache.isRunning():
+                from . import dialogues_musiques as DM
+                DM._EN_ROUTE.append(self.tache)
+        super().done(r)

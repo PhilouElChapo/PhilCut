@@ -9,6 +9,8 @@ from .langue import _
 from .taches import Tache
 from .widgets import boutons_fr
 
+_EN_ROUTE = []
+
 
 class DialogueMusiques(QDialog):
     def __init__(self, parent, params, ambiance=None):
@@ -38,16 +40,37 @@ class DialogueMusiques(QDialog):
         self.longueur = QComboBox()
         for k, lib in ((None, _("Toutes durées")), ("short", _("Courte (< 30 s)")), ("medium", _("Moyenne (30 s à 2 min)")), ("long", _("Longue (> 2 min)"))):
             self.longueur.addItem(lib, k)
-        b = QPushButton(_("Chercher"))
-        b.clicked.connect(self.chercher)
+        self.b_chercher = QPushButton(_("Chercher"))
+        self.b_chercher.clicked.connect(self.chercher)
+        self.b_arret = QPushButton(_("■ Arrêter la recherche"))
+        self.b_arret.clicked.connect(self.arreter_recherche)
+        self.b_arret.hide()
         h.addWidget(self.texte, 1)
         h.addWidget(self.ambiance)
         h.addWidget(self.longueur)
-        h.addWidget(b)
+        h.addWidget(self.b_chercher)
+        h.addWidget(self.b_arret)
         v.addLayout(h)
+        hd = QHBoxLayout()
+        self.lbl_dossier = QLabel("")
+        self.lbl_dossier.setWordWrap(True)
+        hd.addWidget(self.lbl_dossier, 1)
+        b_d = QPushButton(_("Changer de dossier…"))
+        b_d.setToolTip(_("Où ranger les musiques téléchargées (retenu pour la prochaine fois)."))
+        b_d.clicked.connect(self.changer_dossier)
+        hd.addWidget(b_d)
+        b_o = QPushButton(_("Ouvrir le dossier"))
+        b_o.clicked.connect(lambda: __import__("PySide6.QtGui", fromlist=["QDesktopServices"]).QDesktopServices.openUrl(QUrl.fromLocalFile(MU.dossier(self.params))))
+        hd.addWidget(b_o)
+        v.addLayout(hd)
+        self._montrer_dossier()
         self.liste = QTreeWidget()
         self.liste.setHeaderLabels([_("Titre"), _("Auteur"), _("Durée"), _("Licence"), _("Source")])
-        self.liste.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        hdr = self.liste.header()
+        hdr.setSectionResizeMode(QHeaderView.Interactive)
+        hdr.setStretchLastSection(True)
+        for i, w in enumerate((330, 170, 60, 90, 110)):
+            self.liste.setColumnWidth(i, w)
         self.liste.setRootIsDecorated(False)
         self.liste.itemDoubleClicked.connect(lambda *_a: self.ecouter())
         v.addWidget(self.liste, 1)
@@ -70,15 +93,42 @@ class DialogueMusiques(QDialog):
         hb.addWidget(bb)
         v.addLayout(hb)
 
+    def _montrer_dossier(self):
+        self.lbl_dossier.setText(_("Dossier de téléchargement : {d}", d=MU.dossier(self.params)))
+
+    def changer_dossier(self):
+        from PySide6.QtWidgets import QFileDialog
+        d = QFileDialog.getExistingDirectory(self, _("Dossier des musiques téléchargées"), MU.dossier(self.params))
+        if d:
+            self.params["musiques_telechargement"] = d
+            try:
+                self.params.enregistrer()
+            except AttributeError:
+                pass
+            self._montrer_dossier()
+
     def chercher(self):
-        self.etat.setText(_("Recherche…"))
+        self.etat.setText(_("Recherche… (« Arrêter la recherche » pour l'abandonner)"))
         texte, amb, lg = self.texte.text(), self.ambiance.currentData(), self.longueur.currentData()
+        self._numero = getattr(self, "_numero", 0) + 1
+        n = self._numero
         t = Tache(lambda tache: MU.chercher(texte, amb, lg), _("Musique"))
         self.taches.append(t)
-        t.fini.connect(self._resultats)
+        t.fini.connect(lambda r, e, n=n: self._resultats(r, e) if n == self._numero else None)
+        self.b_chercher.hide()
+        self.b_arret.show()
         t.start()
 
+    def arreter_recherche(self):
+        """La réponse en route sera ignorée ; on peut relancer une autre recherche tout de suite."""
+        self._numero = getattr(self, "_numero", 0) + 1
+        self.b_arret.hide()
+        self.b_chercher.show()
+        self.etat.setText(_("Recherche arrêtée."))
+
     def _resultats(self, res, err):
+        self.b_arret.hide()
+        self.b_chercher.show()
         self.liste.clear()
         if err:
             self.etat.setText(_("✕ {e}", e=err))
@@ -139,6 +189,9 @@ class DialogueMusiques(QDialog):
 
     def done(self, r):
         self._stop()
+        self._numero = getattr(self, "_numero", 0) + 1
         for t in self.taches:
-            t.wait(20000)
+            if not t.wait(1500):
+                _EN_ROUTE.append(t)          # une recherche abandonnée finit seule, sans bloquer la fenêtre
+                t.fini.connect(lambda *_a, t=t: _EN_ROUTE.remove(t) if t in _EN_ROUTE else None)
         super().done(r)

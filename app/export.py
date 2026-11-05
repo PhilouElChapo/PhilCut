@@ -39,9 +39,10 @@ FILTRES_AUDIO = {
     "a_aigu": "rubberband=pitch=1.1:formant=preserved",
 }
 TIMBRE_SECOURS = {"a_grave": "asetrate=48000*0.9,aresample=48000,atempo=1.111", "a_aigu": "asetrate=48000*1.1,aresample=48000,atempo=0.909"}
-NARRATION = [("", "Aucune (voix brute)"), ("a_narration", "Narration claire (conseillé)"), ("a_narration_chaude", "Narration chaude (radio)"),
+NARRATION = [("", "Aucune (voix brute)"), ("a_studio", "Voix studio, façon Insta (conseillé)"), ("a_narration", "Narration claire"), ("a_narration_chaude", "Narration chaude (radio)"),
              ("a_narration_bruit", "Pièce bruyante (débruitage fort)")]
-VOIX = [("a_narration", "Narration claire (traitement complet)"), ("a_narration_chaude", "Narration chaude (radio)"),
+VOIX = [("a_studio", "Voix studio, façon Insta (débruitage IA locale)"), ("a_studio_doux", "Voix studio, plus naturelle"),
+        ("a_narration", "Narration claire (traitement complet)"), ("a_narration_chaude", "Narration chaude (radio)"),
         ("a_narration_bruit", "Narration, pièce bruyante"),
         ("a_harmonieuse", "Voix harmonieuse (tout en un)"), ("a_voix", "Voix embellie (narration)"), ("a_debruit", "Débruiter (vent, moteur)"),
         ("a_desser", "Adoucir les « s » qui sifflent"), ("a_anti_nasal", "Moins nasale"), ("a_chaude", "Plus chaude"), ("a_claire", "Plus claire"),
@@ -49,8 +50,37 @@ VOIX = [("a_narration", "Narration claire (traitement complet)"), ("a_narration_
         ("a_autotune", "Effet chorus (chant)"), ("a_reverb", "Réverbération"), ("a_echo", "Echo")]
 
 
+def modele_rnnoise(genre="parole"):
+    """Chemin du modèle RNNoise livré avec PhilCut (catalogue/voix), écrit pour un filtre FFmpeg ; None s'il manque."""
+    import sys
+    base = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    p = os.path.join(base, "catalogue", "voix", f"{genre}.rnnn")
+    if not os.path.exists(p) or not moteur.filtre_disponible("arnndn"):
+        return None
+    return "'" + p.replace("\\", "/").replace(":", "\\:").replace("'", "") + "'"
+
+
+def chaine_studio(force=1.0, genre="parole"):
+    """Voix « studio », façon amélioration de voix d'Instagram : débruitage par réseau de neurones (RNNoise, sur ce
+    poste), sifflements adoucis, moins de boue et de nasalité, chaleur, présence et air, compression en deux temps,
+    niveau de parole régulier, limiteur. Sans écho ajouté : la voix est proche et nette."""
+    m = modele_rnnoise(genre)
+    debruit = f"arnndn=m={m}:mix={min(1.0, 0.75 + 0.25 * force):.2f}" if m else f"afftdn=nr={int(12 + 10 * force)}:nf=-35:tn=1"
+    return ("highpass=f=75:p=2," + debruit + ",agate=threshold=0.01:ratio=1.6:range=0.4:attack=4:release=200,"
+            f"deesser=i={0.35 + 0.2 * force:.2f}:m=0.5:f=0.5,"
+            "equalizer=f=120:t=q:w=0.9:g=2.5,equalizer=f=300:t=q:w=1.1:g=-3.5,equalizer=f=1100:t=q:w=1.6:g=-2,"
+            f"equalizer=f=3400:t=q:w=1.0:g={2 + 1.5 * force:.1f},highshelf=f=9500:g={2.5 + 1.5 * force:.1f},"
+            "acompressor=threshold=-26dB:ratio=2.5:attack=12:release=180:makeup=3:knee=6,"
+            "acompressor=threshold=-14dB:ratio=5:attack=2:release=60:makeup=2,"
+            "speechnorm=e=8:r=0.00005:l=1:p=0.9,alimiter=limit=0.93:level=disabled")
+
+
 def filtre_audio(eid):
     """Filtre d'un préréglage de voix ; le changement de timbre se replie sur asetrate si rubberband manque."""
+    if eid == "a_studio":
+        return chaine_studio(1.0)
+    if eid == "a_studio_doux":
+        return chaine_studio(0.5, "voix")
     f = FILTRES_AUDIO.get(eid)
     if eid in TIMBRE_SECOURS and not moteur.filtre_disponible("rubberband"):
         return TIMBRE_SECOURS[eid]
@@ -533,7 +563,8 @@ class Exportateur:
             k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
             nom = self._nom("vo")
             fx = "".join("," + f for f in (filtre_audio(e) for e in (c.get("effets_audio") or [])) if f)
-            self.filtres.append(f"[{k}:a]asetpts=PTS-STARTPTS{self._atempo(c)}{fx},volume={0.0 if c.get('muet') else c.get('volume', 1.0):.3f},"
+            fv = fondus_audio(c, duree_clip(c), 0.0, 0.0) if c["piste"] == "voix" else ""
+            self.filtres.append(f"[{k}:a]asetpts=PTS-STARTPTS{self._atempo(c)}{fx},volume={0.0 if c.get('muet') else c.get('volume', 1.0):.3f}{fv},"
                                 f"aresample=48000,aformat=channel_layouts=stereo,adelay={int(c['debut'] * 1000)}|{int(c['debut'] * 1000)}[{nom}]")
             voix.append(nom)
         if voix:
@@ -547,7 +578,7 @@ class Exportateur:
             d = duree_clip(c)
             k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
             nom = self._nom("mus")
-            fondu = f",afade=t=in:st=0:d=0.8,afade=t=out:st={max(0, d - 1.2):.3f}:d=1.2" if c.get("fondus", True) else ""
+            fondu = fondus_audio(c, d)
             self.filtres.append(f"[{k}:a]asetpts=PTS-STARTPTS{self._atempo(c)},volume={0.0 if c.get('muet') else c.get('volume', 1.0):.3f}"
                                 f"{fondu},aresample=48000,aformat=channel_layouts=stereo,adelay={int(c['debut'] * 1000)}|{int(c['debut'] * 1000)}[{nom}]")
             pistes.append(nom)
@@ -747,6 +778,20 @@ def image_rendue(projet, t, sortie_png, params=None, largeur=960, sous_titres=()
         return sortie_png
     finally:
         ex.nettoyer()
+
+
+def fondus_audio(c, d, entree=0.8, sortie=1.2):
+    """Fondus d'entrée et de sortie d'un plan de son (réglables dans l'Inspecteur ; 0 = aucun)."""
+    if not c.get("fondus", True) and "fondu_entree" not in c and "fondu_sortie" not in c:
+        return ""
+    fe = max(0.0, min(d / 2, float(c.get("fondu_entree", entree))))
+    fs = max(0.0, min(d / 2, float(c.get("fondu_sortie", sortie))))
+    out = ""
+    if fe > 0.01:
+        out += f",afade=t=in:st=0:d={fe:.3f}"
+    if fs > 0.01:
+        out += f",afade=t=out:st={max(0.0, d - fs):.3f}:d={fs:.3f}"
+    return out
 
 
 def apercu_effet(projet, clip_id, effets, transition, t, sortie, params=None, arret=lambda: False):

@@ -172,6 +172,12 @@ class GalerieGoodies(QDialog):
                 g = {"genre": gid, "debut": 0, "fin": 10, "x": 0.5, "y": 0.5, "taille": 0.3, "style": "cadran", "valeurs": [],
                      "options": {"etapes": [{"nom": "LFMD", "code": "LFMD", "lat": 43.548, "lon": 6.954}, {"nom": "LFTZ", "code": "LFTZ", "lat": 43.205, "lon": 6.482}],
                                  "texte": GO.GENRES.get(gid, (gid,))[0], "angle": 30}}
+                if gid == "fleche":
+                    g["options"].update(style="courbe", angle=10)
+                elif gid == "bandeau_tendance":
+                    g["options"].update(texte="WAHOU !", angle=-4)
+                elif gid == "surligne":
+                    g["options"].update(texte="Top", angle=-2)
                 try:
                     img = GO.image(g, 5.0, 96)
                     icone_ = self._QIcon(self._QPixmap.fromImage(img))

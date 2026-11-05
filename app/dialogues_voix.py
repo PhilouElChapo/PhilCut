@@ -8,7 +8,8 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox, 
 from . import voix as V
 from .langue import _
 
-RETOUCHES = [("a_harmonieuse", _("Voix harmonieuse (conseillé)"), True), ("a_debruit", _("Enlever le souffle"), False),
+RETOUCHES = [("a_studio", _("Voix studio, façon Insta (conseillé) : débruitage par IA locale, présence, niveau régulier"), True),
+             ("a_harmonieuse", _("Voix harmonieuse (avec un léger espace)"), False), ("a_debruit", _("Enlever le souffle"), False),
              ("a_desser", _("Adoucir les « s »"), False), ("a_chaude", _("Voix chaude"), False),
              ("a_claire", _("Voix claire"), False), ("a_radio", _("Voix radio"), False)]
 

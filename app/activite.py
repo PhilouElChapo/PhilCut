@@ -13,7 +13,8 @@ from PySide6.QtWidgets import (QDialog, QDialogButtonBox, QHBoxLayout, QHeaderVi
 from .langue import _
 
 EN_COURS, FINI, ERREUR, ARRETE, ATTENTE = "en_cours", "fini", "erreur", "arrete", "attente"
-ETATS = {ATTENTE: _("En attente"), EN_COURS: _("En cours"), FINI: _("Terminé"), ERREUR: _("Erreur"), ARRETE: _("Arrêté")}
+ETATS = {ATTENTE: _("En attente"), EN_COURS: _("En cours"), FINI: _("Terminé"), ERREUR: _("Erreur"), ARRETE: _("Arrêté"),
+         "pause": _("En pause")}
 _centre = None
 
 
@@ -93,6 +94,9 @@ class Centre(QObject):
             attente += len([t for t in tl if t["etat"] == "attente"])
             actives = actives + [{"titre": _("Téléchargement : {n}", n=t["nom"]), "fraction": t["fraction"], "texte": ""} for t in tl if t["etat"] == "en_cours"]
         if not actives:
+            pz = [t for t in (self.telechargements.travaux if self.telechargements is not None else []) if t["etat"] == "pause"]
+            if pz:
+                return _("Prêt · {n} téléchargement(s) en pause", n=len(pz)), False
             return _("Prêt"), False
         a = actives[0]
         txt = a["titre"] + (f" — {int(a['fraction'] * 100)} %" if a["fraction"] > 0 else "…")
@@ -111,7 +115,7 @@ class FenetreActivite(QDialog):
         super().__init__(parent)
         self.setWindowTitle(_("Centre d'activité"))
         self.setModal(False)
-        self.resize(860, 380)
+        self.resize(1060, 400)
         self.c = centre
         v = QVBoxLayout(self)
         intro = QLabel(_("Tout ce que PhilCut fait en arrière-plan : imports, exports, aperçus, IA, téléchargements de l'IA locale. "
@@ -123,13 +127,8 @@ class FenetreActivite(QDialog):
         self.table.verticalHeader().hide()
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionMode(QTableWidget.NoSelection)
-        h = self.table.horizontalHeader()
-        h.setSectionResizeMode(0, QHeaderView.Stretch)
-        h.setSectionResizeMode(3, QHeaderView.Stretch)
-        h.setSectionResizeMode(5, QHeaderView.ResizeToContents)
-        for i, w in ((1, 160), (2, 90), (4, 150)):
-            h.setSectionResizeMode(i, QHeaderView.Fixed)
-            self.table.setColumnWidth(i, w)
+        from .telechargements import colonnes_reglables
+        colonnes_reglables(self.table, getattr(centre.telechargements, "params", None), "colonnes_activite", [300, 140, 100, 170, 110, 200])
         v.addWidget(self.table, 1)
         self.resume = QLabel("")
         v.addWidget(self.resume)
@@ -157,6 +156,9 @@ class FenetreActivite(QDialog):
                 if t["etat"] == "en_cours" and t.get("vitesse"):
                     detail = f"{packs_ia.taille_texte(t['vitesse'])}/s"
                 reste = duree_texte(t.get("reste")) if t["etat"] == "en_cours" else ""
+                if t["etat"] == "pause":
+                    detail = _("{f} sur {t} déjà là", f=packs_ia.taille_texte(int(t["fraction"] * (t["taille"] or 0))),
+                               t=packs_ia.taille_texte(t["taille"]) if t["taille"] else "?")
                 out.append({"titre": _("Téléchargement : {n} ({t})", n=t["nom"], t=packs_ia.taille_texte(t["taille"]) if t["taille"] else "?"),
                             "texte": detail, "fraction": t["fraction"], "etat": t["etat"], "erreur": t.get("erreur"), "genre": "telech",
                             "cle": t["cle"], "reste": reste, "debut": t.get("debut"), "fin": None})
@@ -174,15 +176,15 @@ class FenetreActivite(QDialog):
             self._barres.append(b)
             for col in (2, 3, 4):
                 self.table.setItem(i, col, QTableWidgetItem(""))
-            if l["etat"] in (EN_COURS, ATTENTE):
+            if l["genre"] == "telech" and l["etat"] in (EN_COURS, ATTENTE, "pause"):
+                from .telechargements import boutons_ligne
+                self.table.setCellWidget(i, 5, boutons_ligne(self.c.telechargements, l))
+            elif l["etat"] in (EN_COURS, ATTENTE):
                 w = QWidget()
                 hl = QHBoxLayout(w)
                 hl.setContentsMargins(2, 0, 2, 0)
                 bs = QPushButton(_("Arrêter"))
-                if l["genre"] == "telech":
-                    bs.clicked.connect(lambda _c=False, k=l["cle"]: self.c.telechargements.arreter(k))
-                else:
-                    bs.clicked.connect(lambda _c=False, l=l: self.c.arreter(l))
+                bs.clicked.connect(lambda _c=False, l=l: self.c.arreter(l))
                 hl.addWidget(bs)
                 self.table.setCellWidget(i, 5, w)
             else:

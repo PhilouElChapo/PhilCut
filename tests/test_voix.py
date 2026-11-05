@@ -145,7 +145,7 @@ class TestFenetresVoix(unittest.TestCase):
         with mock.patch.object(DV, "micros", return_value=([], None)):      # pas de micro (ni de son) sur le serveur de test
             e = DV.DialogueEnregistrement(None, {}, 12.5)
         self.assertFalse(e.b_rec.isEnabled())
-        self.assertEqual(e.amelioration.currentData(), "a_narration")          # vraie chaîne de narration par défaut
+        self.assertEqual(e.amelioration.currentData(), "a_studio")             # voix studio (RNNoise) par défaut
         self.assertTrue(e.blancs.isChecked())
         s = DV.DialogueSynthese(None, {"clef_gemini": "x"})
         self.assertTrue(any(s.choix.itemData(i)[0] == "gemini" for i in range(s.choix.count())))

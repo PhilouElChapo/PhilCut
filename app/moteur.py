@@ -138,9 +138,22 @@ def lancer(args, entree=None, delai=None, progression=None, duree=None, arret=la
     p.wait(timeout=delai)
     t.join(timeout=5)
     if p.returncode != 0:
-        texte = "".join(err[-12:]).strip()
-        raise ErreurMoteur(texte or f"FFmpeg a échoué (code {p.returncode})")
+        raise ErreurMoteur(message_erreur(err, p.returncode))
     return "".join(err)
+
+
+_STATS = re.compile(r"^\[(libx264|libx265|h264_nvenc|aac|mp3)[^\]]*\]\s+(mb |frame |consecutive|8x8|coded|i16|i8|i4|Weighted|ref |kb/s|SSIM|PSNR)")
+_ERREUR = re.compile(r"(error|invalid|failed|no such|not found|cannot|unable|permission|denied|unknown|mismatch|impossible|unsupported)", re.I)
+
+
+def message_erreur(lignes, code=None):
+    """Les lignes utiles d'un échec de FFmpeg (pas les statistiques de l'encodeur, qui arrivent en dernier)."""
+    lignes = [l.rstrip() for l in lignes if l.strip()]
+    utiles = [l for l in lignes if _ERREUR.search(l) and not _STATS.search(l)]
+    if utiles:
+        return "\n".join(dict.fromkeys(utiles[-6:]))
+    autres = [l for l in lignes if not _STATS.search(l)]
+    return "\n".join(autres[-6:]) or f"FFmpeg a échoué (code {code})"
 
 
 def sortie(args, delai=120):

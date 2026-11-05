@@ -83,6 +83,12 @@ IA sur les rushes (0.4.3), sur ce poste uniquement : clic droit sur un media >
 Analyser avec l'IA locale : description, lieux, textes lus (immatriculations) ;
 recherche des medias par contenu. Bullet time et personne en code (Matrix).
 
+0.4.4 : musique retravaillee (debut dans le morceau, fondus, couper a la fin de la
+video) ; telechargements en pause, repris a la session suivante ; Mes musiques classees
+par dossier, album ou artiste ; « Dites-le en clair » (une phrase devient des actions) ;
+fleches courbes et titres bandeau qui bougent et tournent ; voix studio (debruitage
+par reseau de neurones, sur ce poste).
+
 Mises a jour
 ------------
 Verifiees au demarrage (une fois par jour) et PROPOSEES sur l'Accueil : rien n'est

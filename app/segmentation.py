@@ -42,7 +42,11 @@ def _rembg():
 
 
 def _cascade():
-    return cv2.CascadeClassifier(os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml"))
+    """Détecteur de visages d'OpenCV, ou None si cette version d'OpenCV n'en a pas (le masque reste alors vide)."""
+    try:
+        return cv2.CascadeClassifier(os.path.join(cv2.data.haarcascades, "haarcascade_frontalface_default.xml"))
+    except AttributeError:
+        return None
 
 
 def masque_image(img_bgr):
@@ -59,7 +63,8 @@ def masque_image(img_bgr):
         m = np.asarray(rgba)
         return m if m.ndim == 2 else m[..., 0]
     gris = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-    visages = _cascade().detectMultiScale(gris, 1.2, 4, minSize=(max(24, H // 20),) * 2)
+    cas = _cascade()
+    visages = cas.detectMultiScale(gris, 1.2, 4, minSize=(max(24, H // 20),) * 2) if cas is not None else []
     m = np.zeros((H, L), dtype=np.uint8)
     for (x, y, w, h) in visages:
         # tete + buste approches : une ellipse pour la tete, un rectangle arrondi pour les epaules

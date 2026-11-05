@@ -19,6 +19,10 @@ PACKS = {
     "fete": {"nom": _("Fête"), "description": _("Compte à rebours, confettis, date, bandeau."), "goodies": ["compte_a_rebours", "confettis", "date", "bandeau"]},
     "autocollants": {"nom": _("Autocollants"), "description": _("Polaroïd avec votre photo, post-it, flèche qui se trace : à poser ou à accrocher à une personne."),
                      "goodies": ["polaroid", "post_it", "fleche"]},
+    "tendance": {"nom": _("Titres et flèches tendance"), "description": _("Le style des miniatures YouTube : flèches courbes à contour blanc, "
+                                                                         "titres en majuscules sur boîte inclinée, mot surligné. Ils se "
+                                                                         "déplacent et tournent avec les images clefs."),
+                 "goodies": ["bandeau_tendance", "fleche", "surligne"]},
     "perso": {"nom": _("Mes images"), "description": _("Logo, autocollant, photo en PNG transparent : à poser, ou à accrocher à une personne qui bouge."),
               "goodies": ["image"]},
     "maison": {"nom": _("Maison et jardin"), "description": _("Horloge, lune, température, altitude du lieu."), "goodies": ["horloge", "lune", "temperature", "altitude"]},
@@ -32,6 +36,7 @@ GENRES = {
     "mini_carte": (_("Mini-carte"), "", (0, 0)), "manche_air": (_("Manche à air"), "kt", (0, 40)),
     "carte_trajet": (_("Carte animée du trajet"), "", (0, 0)),
     "polaroid": (_("Polaroïd"), "", (0, 0)), "post_it": (_("Post-it"), "", (0, 0)), "fleche": (_("Flèche"), "", (0, 0)),
+    "bandeau_tendance": (_("Titre bandeau (style YouTube)"), "", (0, 0)), "surligne": (_("Mot surligné"), "", (0, 0)),
     "altitude": (_("Altitude"), "m", (0, 4000)), "distance": (_("Distance"), "km", (0, 1000)), "boussole": (_("Boussole"), "°", (0, 360)),
     "meteo": (_("Météo"), "°C", (-20, 45)), "denivele": (_("Dénivelé"), "m", (0, 3000)), "compteur": (_("Compteur"), "km/h", (0, 240)),
     "croix": (_("Croix de pharmacie"), "", (0, 0)), "horaires": (_("Horaires"), "", (0, 0)), "pastille": (_("Pastille d'annonce"), "", (0, 0)),
@@ -198,7 +203,7 @@ def image(g, t, taille, texte_extra=None, cache=None):
             p.setBrush(QColor(15, 18, 30, 235))
             dx = r * 0.8 * 2 * (0.5 - abs(phase - 0.5)) * 2
             p.drawEllipse(QPointF(c - dx if phase < 0.5 else c + dx, c), r * 0.8, r * 0.8)
-        elif genre in ("polaroid", "post_it", "fleche"):
+        elif genre in ("polaroid", "post_it", "fleche", "bandeau_tendance", "surligne"):
             from . import autocollants
             autocollants.dessiner(p, g, t, taille, cache)
         elif genre == "image":

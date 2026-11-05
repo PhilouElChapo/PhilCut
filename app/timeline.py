@@ -120,6 +120,22 @@ class ItemClip(QGraphicsRectItem):
                 i = i0 + int((i1 - i0) * k / max(1, r.width()))
                 v = onde[min(n - 1, i)] * amp
                 p.drawLine(QPointF(r.x() + k, cy - v), QPointF(r.x() + k, cy + v))
+        if not piste.startswith("video") and r.width() > 12:
+            # fondus d'entrée et de sortie dessinés : une rampe blanche à chaque bout (réglables dans l'Inspecteur)
+            dft = (0.8, 1.2) if piste != "voix" else (0.0, 0.0)
+            if not self.clip.get("fondus", True):
+                dft = (0.0, 0.0)
+            fe = float(self.clip.get("fondu_entree", dft[0])) * self.tl.pps
+            fs = float(self.clip.get("fondu_sortie", dft[1])) * self.tl.pps
+            p.setPen(QPen(QColor(255, 255, 255, 210), 1.5))
+            p.setBrush(QColor(0, 0, 0, 70))
+            haut, bas = r.y() + 15, r.bottom() - 1
+            if fe >= 3:
+                fe = min(fe, r.width() / 2)
+                p.drawPolygon(QPolygonF([QPointF(r.x(), bas), QPointF(r.x(), haut), QPointF(r.x() + fe, haut)]))
+            if fs >= 3:
+                fs = min(fs, r.width() / 2)
+                p.drawPolygon(QPolygonF([QPointF(r.right(), bas), QPointF(r.right(), haut), QPointF(r.right() - fs, haut)]))
         # bandeau du nom
         p.setPen(QColor(255, 255, 255, 230))
         f = QFont()
@@ -823,6 +839,18 @@ class Timeline(QGraphicsView):
             p.setPen(QPen(QColor("#ffd24a"), 1.5))
             for x in (xa, xb):
                 p.drawLine(QLineF(x, 0, x, self.hauteur_totale()))
+            # × pour enlever la sélection (aussi : simple clic sur la règle, Echap, clic droit)
+            rc = QRectF(xb + 3, 2, H_REGLE - 4, H_REGLE - 4)
+            self._croix_zone = rc
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(40, 40, 46, 230))
+            p.drawRoundedRect(rc, 4, 4)
+            p.setPen(QPen(QColor("#ffd24a"), 1.6))
+            m = rc.width() * 0.3
+            p.drawLine(QLineF(rc.left() + m, rc.top() + m, rc.right() - m, rc.bottom() - m))
+            p.drawLine(QLineF(rc.right() - m, rc.top() + m, rc.left() + m, rc.bottom() - m))
+        else:
+            self._croix_zone = None
         # colonne des noms de pistes (fixe a gauche de la vue)
         x0 = self.mapToScene(0, 0).x()
         p.fillRect(QRectF(x0, 0, MARGE_G, self.hauteur_totale()), _c("fond"))
@@ -970,11 +998,18 @@ class Timeline(QGraphicsView):
                 self.modifie.emit()
                 self.reconstruire()
                 return
+        cz = getattr(self, "_croix_zone", None)
+        if e.button() == Qt.LeftButton and cz is not None and cz.adjusted(-2, -2, 2, 2).contains(sp):
+            self.effacer_zone()
+            return
         if e.button() == Qt.LeftButton and (sp.y() < H_REGLE or self.itemAt(e.pos()) is None) and sp.x() >= MARGE_G:
             self._glisse_curseur = True
             self.balayage.emit(True)
-            # glisser sur la règle des temps choisit une partie (en jaune) ; un simple clic place le curseur
-            self._depart_regle = (e.pos().x(), (sp.x() - MARGE_G) / self.pps) if sp.y() < H_REGLE else None
+            # sur la règle : tirer la tête de lecture rouge la déplace ; tirer ailleurs choisit une partie (en jaune) ;
+            # un simple clic place la tête de lecture et enlève la partie choisie
+            pres_tete = abs(sp.x() - (MARGE_G + self.position * self.pps)) <= 9
+            self._depart_regle = (e.pos().x(), (sp.x() - MARGE_G) / self.pps) if sp.y() < H_REGLE and not pres_tete else None
+            self._zone_avant = list(self.zone)
             self.aller_a((sp.x() - MARGE_G) / self.pps)
             if self.itemAt(e.pos()) is None:
                 self._scene.clearSelection()
@@ -994,7 +1029,10 @@ class Timeline(QGraphicsView):
         super().mouseMoveEvent(e)
 
     def mouseReleaseEvent(self, e):
-        if self._glisse_curseur and getattr(self, "_depart_regle", None) and self.zone_valide():
+        dep = getattr(self, "_depart_regle", None)
+        if self._glisse_curseur and dep and abs(e.pos().x() - dep[0]) <= 6 and getattr(self, "_zone_avant", [None, None]) != [None, None]:
+            self.effacer_zone()                       # simple clic sur la règle : la partie jaune s'en va
+        elif self._glisse_curseur and dep and self.zone_valide():
             self.zone_changee.emit()
         self._depart_regle = None
         if self._glisse_curseur:
@@ -1020,8 +1058,6 @@ class Timeline(QGraphicsView):
         m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
         self._menu_pistes(m, piste)
         m.addAction(_("Enregistrer l'image à cet endroit…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "image")))
-        if clip["piste"] == "video":
-            m.addAction(_("Figer l'image à cet endroit (cadre photo, légende)…"), lambda: (self.aller_a(t), self.demande_menu.emit(clip["id"], "figer")))
         self._menu_partie(m, t)
         self._menu_zoom(m)
         m.exec(e.globalPos())
@@ -1082,6 +1118,8 @@ class Timeline(QGraphicsView):
     def _menu_partie(self, m, t):
         """Choisir une partie de la vidéo à la souris : début ici, fin ici, puis effets, suppression ou garder."""
         m.addSeparator()
+        if self.zone != [None, None]:
+            m.addAction(_("Enlever la partie jaune (sélection)"), self.effacer_zone)
         sm = m.addMenu(_("Partie de la vidéo (pour un effet, supprimer, garder)"))
         sm.addAction(_("La partie commence ici"), lambda: (self.aller_a(t), self.marquer_zone(0)))
         sm.addAction(_("La partie finit ici"), lambda: (self.aller_a(t), self.marquer_zone(1)))
@@ -1133,9 +1171,7 @@ class Timeline(QGraphicsView):
         elif k == Qt.Key_O and not e.modifiers():
             self.marquer_zone(1)
         elif k == Qt.Key_Escape:
-            self.zone = [None, None]
-            self.zone_changee.emit()
-            self.viewport().update()
+            self.effacer_zone()
         elif k == Qt.Key_Home:
             self.aller_a(0)
         elif k == Qt.Key_End:
@@ -1146,6 +1182,12 @@ class Timeline(QGraphicsView):
             self.aller_a(self.position + (1.0 if e.modifiers() & Qt.ShiftModifier else 1.0 / (self.projet.cadence if self.projet else 30)))
         else:
             super().keyPressEvent(e)
+
+    def effacer_zone(self):
+        self.zone = [None, None]
+        self._croix_zone = None
+        self.zone_changee.emit()
+        self.viewport().update()
 
     # ---- partie sélectionnée (entrée / sortie)
     def marquer_zone(self, i):
@@ -1259,6 +1301,8 @@ class Timeline(QGraphicsView):
         m.addAction(_("Enregistrer l'image à cet endroit…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "image")))
         if clip["piste"] == "video":
             m.addAction(_("Figer l'image à cet endroit (cadre photo, légende)…"), lambda: (self.aller_a(t), self.demande_menu.emit(clip["id"], "figer")))
+        else:
+            m.addAction(_("Couper ce son à la fin de la vidéo"), lambda: self.demande_menu.emit(clip["id"], "son_fin"))
         self._menu_partie(m, t)
         self._menu_zoom(m)
         m.addSeparator()

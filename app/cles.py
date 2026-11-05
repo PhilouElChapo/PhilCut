@@ -12,7 +12,7 @@ from .projet import fin_clip
 PROPRIETES = {
     "incrustation": [("echelle", 1.0), ("x", 0.5), ("y", 0.5), ("opacite", 1.0)],
     "texte": [("x", 0.5), ("y", 0.85), ("taille", 1.0), ("opacite", 1.0)],
-    "goodie": [("x", 0.88), ("y", 0.85)],
+    "goodie": [("x", 0.88), ("y", 0.85), ("angle", 0.0)],
 }
 TOLERANCE = 0.04            # deux images clefs plus proches que cela sont la même
 
@@ -38,7 +38,11 @@ def fixes(elem):
     """Les réglages fixes de l'élément (sans images clefs)."""
     g = genre(elem)
     src = (elem.get("incrust") or {}) if g == "incrustation" else elem
-    return {k: float(src.get(k, d) if src.get(k) is not None else d) for k, d in PROPRIETES[g]}
+    v = {k: float(src.get(k, d) if src.get(k) is not None else d) for k, d in PROPRIETES[g] if k != "angle"}
+    if g == "goodie":          # l'angle d'un Goodie (flèche, bandeau, post-it…) est rangé dans ses options
+        o = elem.get("options") or {}
+        v["angle"] = float(o.get("angle", 0.0) or 0.0)
+    return v
 
 
 def liste(elem):
@@ -104,6 +108,9 @@ def regler(elem, t_montage, **changes):
         return True
     if genre(elem) == "incrustation":
         elem.setdefault("incrust", {}).update({k: round(float(v), 4) for k, v in changes.items()})
+    elif genre(elem) == "goodie" and "angle" in changes:
+        elem.setdefault("options", {})["angle"] = round(float(changes.pop("angle")), 2)
+        elem.update({k: round(float(v), 4) for k, v in changes.items()})
     else:
         elem.update({k: round(float(v), 4) for k, v in changes.items()})
     return False
@@ -170,3 +177,10 @@ def commandes_echelle_opacite(elem, iw, ih, nom_scale, nom_mix, cadence=25):
             cmd.append(f"[enter] {nom_mix} aa {a:.3f}")
         lignes.append(f"{d0 + tr:.3f} " + ", ".join(cmd) + ";")
     return lignes
+
+
+def angle_goodie(g, t_montage):
+    """Angle (°) d'un Goodie à cet instant : animé par les images clefs s'il en a, sinon celui de ses options."""
+    if g.get("cles") and any("angle" in c for c in g["cles"]):
+        return float(valeurs_a(g, t_montage)["angle"])
+    return float((g.get("options") or {}).get("angle", 0.0) or 0.0)

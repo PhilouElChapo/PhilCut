@@ -13,8 +13,10 @@ from PySide6.QtWidgets import (QDialog, QDialogButtonBox, QHBoxLayout, QHeaderVi
 from .langue import _
 from .taches import Tache
 
-ATTENTE, EN_COURS, FINI, ERREUR, ARRETE = "attente", "en_cours", "fini", "erreur", "arrete"
-ETATS = {ATTENTE: _("En attente"), EN_COURS: _("En cours"), FINI: _("Terminé"), ERREUR: _("Erreur"), ARRETE: _("Arrêté")}
+ATTENTE, EN_COURS, FINI, ERREUR, ARRETE, PAUSE = "attente", "en_cours", "fini", "erreur", "arrete", "pause"
+ETATS = {ATTENTE: _("En attente"), EN_COURS: _("En cours"), FINI: _("Terminé"), ERREUR: _("Erreur"), ARRETE: _("Arrêté"),
+         PAUSE: _("En pause")}
+NON_FINIS = (ATTENTE, EN_COURS, PAUSE)
 
 
 def duree_texte(s):
@@ -37,16 +39,61 @@ class GestionTelechargements(QObject):
         self.params = params
         self.travaux = []                # dicts : cle, nom, taille, etat, fraction, vitesse, reste, texte, erreur
         self.tache = None
+        self._restaurer()
+
+    # ---- d'une session à l'autre : ce qui n'était pas fini revient « en pause », prêt à reprendre où il s'était arrêté
+    def _restaurer(self):
+        from . import packs_ia
+        try:
+            cat = packs_ia.modeles(avec_essai=True)
+        except Exception:        # noqa: BLE001
+            return
+        for k in list(self.params.get("telechargements_non_finis") or []):
+            if k not in cat or any(t["cle"] == k for t in self.travaux):
+                continue
+            try:
+                taille = packs_ia.a_telecharger(k)
+            except Exception:    # noqa: BLE001
+                taille = 0
+            if not taille:
+                continue
+            self.travaux.append({"cle": k, "nom": cat[k].get("nom", k), "taille": taille, "etat": PAUSE, "fraction": self._deja(k, taille),
+                                 "vitesse": 0.0, "reste": None, "texte": _("Commencé lors d'une session précédente"), "erreur": None})
+
+    def _deja(self, cle, taille):
+        """Part déjà téléchargée (fichiers .part laissés par l'arrêt), pour montrer où l'on reprendra."""
+        from . import packs_ia
+        try:
+            n = packs_ia.octets_partiels(cle)
+        except Exception:        # noqa: BLE001
+            n = 0
+        return max(0.0, min(0.99, n / taille)) if taille else 0.0
+
+    def _sauver(self):
+        cles = [t["cle"] for t in self.travaux if t["etat"] in NON_FINIS]
+        if list(self.params.get("telechargements_non_finis") or []) != cles:
+            self.params["telechargements_non_finis"] = cles
+            try:
+                self.params.enregistrer()
+            except Exception:    # noqa: BLE001
+                pass
+
+    def non_finis(self):
+        return [t for t in self.travaux if t["etat"] == PAUSE]
 
     # ---- file d'attente
     def ajouter(self, cles):
         from . import packs_ia
         cat = packs_ia.modeles(avec_essai=True)
         for k in cles:
-            if any(t["cle"] == k and t["etat"] in (ATTENTE, EN_COURS) for t in self.travaux):
+            ex = next((t for t in self.travaux if t["cle"] == k and t["etat"] in NON_FINIS), None)
+            if ex is not None:
+                if ex["etat"] == PAUSE:
+                    ex["etat"] = ATTENTE
                 continue
             self.travaux.append({"cle": k, "nom": (cat.get(k) or {}).get("nom", k), "taille": packs_ia.a_telecharger(k),
                                  "etat": ATTENTE, "fraction": 0.0, "vitesse": 0.0, "reste": None, "texte": "", "erreur": None})
+        self._sauver()
         self.change.emit()
         self._suivant()
 
@@ -61,12 +108,35 @@ class GestionTelechargements(QObject):
             if t["cle"] == cle:
                 if t["etat"] == ATTENTE:
                     t["etat"] = ARRETE
+                elif t["etat"] == PAUSE:
+                    t["etat"] = ARRETE
                 elif t["etat"] == EN_COURS and self.tache is not None:
                     self.tache.stopper()
+        self._sauver()
         self.change.emit()
 
+    def pause(self, cle):
+        """Mettre en pause : ce qui est téléchargé est gardé ; « Reprendre » repart de là, même après avoir fermé PhilCut."""
+        for t in self.travaux:
+            if t["cle"] == cle:
+                if t["etat"] == ATTENTE:
+                    t["etat"] = PAUSE
+                elif t["etat"] == EN_COURS and self.tache is not None:
+                    t["pause_demandee"] = True
+                    self.tache.stopper()
+        self._sauver()
+        self.change.emit()
+
+    def reprendre(self, cle=None):
+        for t in self.travaux:
+            if t["etat"] == PAUSE and (cle is None or t["cle"] == cle):
+                t["etat"], t["texte"] = ATTENTE, ""
+        self._sauver()
+        self.change.emit()
+        self._suivant()
+
     def nettoyer(self):
-        self.travaux = [t for t in self.travaux if t["etat"] in (ATTENTE, EN_COURS)]
+        self.travaux = [t for t in self.travaux if t["etat"] in NON_FINIS]
         self.change.emit()
 
     # ---- exécution, un à la fois
@@ -112,10 +182,11 @@ class GestionTelechargements(QObject):
                 self.params["ia_locale_modeles"] = choix
                 self.params.enregistrer()
         elif isinstance(erreur, InterruptedError):
-            t["etat"] = ARRETE
+            t["etat"] = PAUSE if t.pop("pause_demandee", False) else ARRETE
         else:
             t["etat"], t["erreur"] = ERREUR, str(erreur)
         self.termine.emit(t["cle"], None if erreur is None else erreur)
+        self._sauver()
         self.change.emit()
         self._suivant()
 
@@ -131,7 +202,7 @@ class FenetreTelechargements(QDialog):
         super().__init__(parent)
         self.setWindowTitle(_("Téléchargements"))
         self.setModal(False)
-        self.resize(820, 320)
+        self.resize(1000, 340)
         self.g = gestion
         v = QVBoxLayout(self)
         intro = QLabel(_("Modèles et moteurs de l'IA locale, rangés dans le dossier de PhilCut. Un à la fois ; vous pouvez fermer "
@@ -143,16 +214,13 @@ class FenetreTelechargements(QDialog):
         self.table.verticalHeader().hide()
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionMode(QTableWidget.NoSelection)
-        h = self.table.horizontalHeader()
-        h.setSectionResizeMode(0, QHeaderView.Stretch)
-        for i in (1, 3, 4, 5, 6):
-            h.setSectionResizeMode(i, QHeaderView.ResizeToContents)
-        h.setSectionResizeMode(2, QHeaderView.Fixed)
-        self.table.setColumnWidth(2, 180)
+        colonnes_reglables(self.table, gestion.params, "colonnes_telechargements", [210, 80, 140, 125, 85, 80, 200])
         v.addWidget(self.table, 1)
         self.resume = QLabel("")
         v.addWidget(self.resume)
         bb = QDialogButtonBox()
+        b_rep = bb.addButton(_("Tout reprendre"), QDialogButtonBox.ActionRole)
+        b_rep.clicked.connect(lambda: self.g.reprendre())
         b_net = bb.addButton(_("Retirer les terminés"), QDialogButtonBox.ActionRole)
         b_net.clicked.connect(self.g.nettoyer)
         bb.addButton(_("Fermer"), QDialogButtonBox.RejectRole).clicked.connect(self.close)
@@ -176,14 +244,8 @@ class FenetreTelechargements(QDialog):
             self._barres.append(b)
             for c in (3, 4, 5):
                 self.table.setItem(i, c, QTableWidgetItem(""))
-            if t["etat"] in (ATTENTE, EN_COURS):
-                w = QWidget()
-                hl = QHBoxLayout(w)
-                hl.setContentsMargins(2, 0, 2, 0)
-                bs = QPushButton(_("Arrêter"))
-                bs.clicked.connect(lambda _c=False, k=t["cle"]: self.g.arreter(k))
-                hl.addWidget(bs)
-                self.table.setCellWidget(i, 6, w)
+            if t["etat"] in NON_FINIS:
+                self.table.setCellWidget(i, 6, boutons_ligne(self.g, t))
             else:
                 self.table.setCellWidget(i, 6, None)
                 self.table.setItem(i, 6, QTableWidgetItem(""))
@@ -200,6 +262,9 @@ class FenetreTelechargements(QDialog):
             if t["etat"] == EN_COURS:
                 etat = f"{int(t['fraction'] * 100)} %"
                 b.setToolTip(t["texte"] or "")
+            elif t["etat"] == PAUSE:
+                etat = _("En pause ({p} %)", p=int(t["fraction"] * 100))
+                b.setToolTip(t["texte"] or "")
             elif t["etat"] == ERREUR:
                 b.setToolTip(t["erreur"] or "")
                 self.table.item(i, 3).setToolTip(t["erreur"] or "")
@@ -212,5 +277,47 @@ class FenetreTelechargements(QDialog):
             vit = next((t["vitesse"] for t in actifs if t["etat"] == EN_COURS and t["vitesse"]), 0)
             self.resume.setText(_("{n} en cours ou en attente · reste {r} à télécharger{e}", n=len(actifs), r=packs_ia.taille_texte(reste),
                                   e=_(" · environ {d}", d=duree_texte(reste / vit)) if vit else ""))
+        elif self.g.non_finis():
+            self.resume.setText(_("{n} en pause : « Reprendre » repart de là où il s'était arrêté.", n=len(self.g.non_finis())))
         else:
             self.resume.setText(_("Rien en cours."))
+
+
+def boutons_ligne(g, t):
+    """Pause / Reprendre et Arrêter, pour une ligne de téléchargement non terminée."""
+    w = QWidget()
+    hl = QHBoxLayout(w)
+    hl.setContentsMargins(2, 0, 2, 0)
+    hl.setSpacing(4)
+    if t["etat"] == PAUSE:
+        bp = QPushButton(_("▶ Reprendre"))
+        bp.setToolTip(_("Repart de là où il s'était arrêté."))
+        bp.clicked.connect(lambda _c=False, k=t["cle"]: g.reprendre(k))
+    else:
+        bp = QPushButton(_("⏸ Pause"))
+        bp.setToolTip(_("Ce qui est déjà téléchargé est gardé, même si vous fermez PhilCut."))
+        bp.clicked.connect(lambda _c=False, k=t["cle"]: g.pause(k))
+    hl.addWidget(bp)
+    bs = QPushButton(_("Arrêter"))
+    bs.clicked.connect(lambda _c=False, k=t["cle"]: g.arreter(k))
+    hl.addWidget(bs)
+    hl.addStretch(1)
+    return w
+
+
+def colonnes_reglables(table, params, cle, largeurs):
+    """Colonnes que l'on élargit à la souris ; les largeurs choisies sont retenues pour la prochaine fois."""
+    h = table.horizontalHeader()
+    h.setSectionResizeMode(QHeaderView.Interactive)
+    h.setStretchLastSection(True)
+    h.setMinimumSectionSize(40)
+    gardees = list((params.get(cle) if params is not None else None) or [])
+    for i, l in enumerate(largeurs):
+        table.setColumnWidth(i, int(gardees[i]) if i < len(gardees) and gardees[i] else l)
+    table.setWordWrap(True)
+    h.setToolTip(_("Tirez le bord d'une colonne pour l'élargir ou la rétrécir."))
+
+    def retenir(*_a):
+        if params is not None:
+            params[cle] = [table.columnWidth(i) for i in range(table.columnCount())]
+    h.sectionResized.connect(retenir)

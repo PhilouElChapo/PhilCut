@@ -1,0 +1,5 @@
+Modeles RNNoise (filtre arnndn de FFmpeg) pour le debruitage de la voix par reseau de neurones, sur ce poste.
+Source : https://github.com/GregorR/rnnoise-models (rnnoise-nu, Gregor Richards).
+parole.rnnn = somnolent-hogwash-2018-09-01 (parole, bruit d'enregistrement : ventilateur, clim, ordinateur).
+voix.rnnn = beguiling-drafter-2018-08-30 (voix avec rires, bruit d'enregistrement).
+Selon leur auteur, ces modeles ne sont pas des oeuvres creatives et ne relevent pas du droit d'auteur.

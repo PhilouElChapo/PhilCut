@@ -186,6 +186,11 @@ class Preparation(QObject):
             if not err and r:
                 self.prets[e] = r
                 self._nettoyer_cache()
+                try:                                    # ses images de balayage se préparent tout de suite
+                    from .apercu import media_tranche
+                    self.ed.apercu.pellicules._lancer(media_tranche((a, b, r)))
+                except Exception:       # noqa: BLE001
+                    pass
             self.change.emit()
             if not self._ferme:
                 QTimer.singleShot(50, self._suivante)

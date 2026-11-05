@@ -240,6 +240,20 @@ def a_telecharger(cle):
     return total
 
 
+def octets_partiels(cle):
+    """Octets déjà téléchargés (fichiers .part) pour ce modèle et son moteur : la reprise repartira de là."""
+    g = (modeles(avec_essai=True).get(cle) or {}).get("genre")
+    total = 0
+    for base, _d, fichiers in os.walk(dossier_modele(cle)):
+        total += sum(os.path.getsize(os.path.join(base, f)) for f in fichiers if f.endswith(".part"))
+    if g in MOTEURS_GENRE and not moteur_installe(g):
+        info = moteur_info(g) or {}
+        p = os.path.join(dossier(), "tmp", (info.get("fichier") or "?") + ".part")
+        if os.path.exists(p):
+            total += os.path.getsize(p)
+    return total
+
+
 # ------------------------------------------------------------------ téléchargement
 def _telecharger(url, cible, taille=0, sha256="", progression=None, arret=lambda: False):
     """Téléchargement avec reprise (.part), contrôle de taille et d'empreinte."""

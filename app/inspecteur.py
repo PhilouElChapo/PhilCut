@@ -141,11 +141,19 @@ class Inspecteur(QWidget):
         f.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         opts = g.setdefault("options", {})
         genre = g["genre"]
+        from . import autocollants as AC
         if genre != "fleche" and genre != "image":
             te = QLineEdit(str(opts.get("texte") or ""))
-            te.setPlaceholderText(_("Texte"))
+            te.setPlaceholderText(_("Texte") if genre != "bandeau_tendance" else _("Texte ; « | » pour passer à la ligne"))
             te.textChanged.connect(lambda v: self._changer(lambda: opts.__setitem__("texte", v), reconstruire=False))
             f.addRow(_("Texte"), te)
+        if genre in ("fleche", "bandeau_tendance"):
+            cs = QComboBox()
+            for k, lib in (AC.STYLES_FLECHE if genre == "fleche" else AC.STYLES_BANDEAU):
+                cs.addItem(lib, k)
+            cs.setCurrentIndex(max(0, cs.findData(opts.get("style") or ("droite" if genre == "fleche" else "incline"))))
+            cs.currentIndexChanged.connect(lambda _i: self._changer(lambda: opts.__setitem__("style", cs.currentData()), reconstruire=False))
+            f.addRow(_("Style"), cs)
         if genre in ("polaroid", "image"):
             bi = QPushButton(os.path.basename(opts.get("chemin") or "") or _("Choisir une photo…"))
             bi.setStyleSheet("text-align:left;padding:3px 8px")
@@ -160,23 +168,57 @@ class Inspecteur(QWidget):
                     self.montrer_goodie(g)
             bi.clicked.connect(photo)
             f.addRow(_("Photo"), bi)
-        if genre in ("post_it", "fleche"):
-            defaut = "#ffe066" if genre == "post_it" else "#ff3b30"
-            bc = QPushButton(opts.get("couleur") or defaut)
-            bc.setStyleSheet(f"background:{opts.get('couleur') or defaut};color:#000")
 
-            def couleur():
-                c = QColorDialog.getColor(QColor(opts.get("couleur") or defaut), self, _("Couleur"))
+        def bouton_couleur(cle, defaut, titre):
+            bc = QPushButton(opts.get(cle) or defaut)
+            bc.setStyleSheet(f"background:{opts.get(cle) or defaut};color:{'#000' if QColor(opts.get(cle) or defaut).lightness() > 128 else '#fff'};"
+                             "text-align:left;padding:3px 8px")
+
+            def choisir():
+                c = QColorDialog.getColor(QColor(opts.get(cle) or defaut), self, titre)
                 if c.isValid():
-                    self._changer(lambda: opts.__setitem__("couleur", c.name()), reconstruire=False)
+                    self._changer(lambda: opts.__setitem__(cle, c.name()), reconstruire=False)
                     self.montrer_goodie(g)
-            bc.clicked.connect(couleur)
-            f.addRow(_("Couleur"), bc)
-        if genre in ("polaroid", "post_it", "fleche"):
+            bc.clicked.connect(choisir)
+            # nuancier rapide : les couleurs à la mode en un clic
+            w = QWidget()
+            hl = QHBoxLayout(w)
+            hl.setContentsMargins(0, 0, 0, 0)
+            hl.setSpacing(3)
+            hl.addWidget(bc, 1)
+            for coul in AC.COULEURS_TENDANCE[:6]:
+                pb = QToolButton()
+                pb.setFixedSize(18, 18)
+                pb.setStyleSheet(f"background:{coul};border:1px solid #777;border-radius:3px")
+                pb.setToolTip(coul)
+                pb.clicked.connect(lambda _c=False, coul=coul: (self._changer(lambda: opts.__setitem__(cle, coul), reconstruire=False),
+                                                                self.montrer_goodie(g)))
+                hl.addWidget(pb)
+            f.addRow(titre, w)
+        if genre in ("post_it", "fleche", "bandeau_tendance", "surligne"):
+            bouton_couleur("couleur", {"post_it": "#ffe066", "fleche": "#ff3b30", "bandeau_tendance": "#ff8c1a", "surligne": "#ffe14d"}[genre],
+                           _("Couleur") if genre != "bandeau_tendance" else _("Couleur de la boîte"))
+        if genre == "fleche":
+            bouton_couleur("contour", "#ffffff", _("Contour"))
+            ep = QSlider(Qt.Horizontal)
+            ep.setRange(2, 12)
+            ep.setValue(int(float(opts.get("epaisseur", 0.055)) * 100))
+            ep.valueChanged.connect(lambda v: self._changer(lambda: opts.__setitem__("epaisseur", v / 100), reconstruire=False))
+            f.addRow(_("Epaisseur"), ep)
+            mi = QCheckBox(_("Courbée de l'autre côté"))
+            mi.setChecked(bool(opts.get("miroir")))
+            mi.toggled.connect(lambda v: self._changer(lambda: opts.__setitem__("miroir", v), reconstruire=False))
+            f.addRow(mi)
+        if genre == "bandeau_tendance":
+            bouton_couleur("couleur2", "#ffd21f", _("2e couleur"))
+            bouton_couleur("couleur_texte", "#ffffff", _("Couleur du texte"))
+        if genre in ("polaroid", "post_it", "fleche", "bandeau_tendance", "surligne"):
             sl = QSlider(Qt.Horizontal)
             sl.setRange(-180, 180) if genre == "fleche" else sl.setRange(-30, 30)
-            sl.setValue(int(float(opts.get("angle", 0 if genre == "fleche" else (-6 if genre == "polaroid" else 4)))))
-            sl.valueChanged.connect(lambda v: self._changer(lambda: opts.__setitem__("angle", v), reconstruire=False))
+            defaut = {"fleche": 0, "polaroid": -6, "post_it": 4, "bandeau_tendance": -4, "surligne": -2}[genre]
+            sl.setValue(int(self._valeur(g, "angle", float(opts.get("angle", defaut)))))
+            sl.setToolTip(_("Avec des images clefs, la flèche tourne d'une image clef à l'autre."))
+            sl.valueChanged.connect(lambda v: self._regler(g, "angle", float(v)))
             f.addRow(_("Direction (°)") if genre == "fleche" else _("Inclinaison (°)"), sl)
         return gr
 
@@ -251,6 +293,8 @@ class Inspecteur(QWidget):
             self._changer(lambda: K.regler(elem, self.ed.timeline.position, **{cle: v}))
         elif K.genre(elem) == "incrustation":
             self._changer(lambda: elem.setdefault("incrust", {}).__setitem__(cle, v), reconstruire=False)
+        elif K.genre(elem) == "goodie" and cle == "angle":
+            self._changer(lambda: elem.setdefault("options", {}).__setitem__("angle", v), reconstruire=False)
         else:
             self._changer(lambda: elem.__setitem__(cle, v), reconstruire=False)
 
@@ -269,7 +313,7 @@ class Inspecteur(QWidget):
             if ici:
                 txt += " " + _("La tête de lecture est sur une image clef.")
         else:
-            txt = _("Pour qu'il bouge, grossisse ou s'efface : placez la tête de lecture au début du mouvement, « ◆ Image clef ici », "
+            txt = _("Pour qu'il bouge, tourne, grossisse ou s'efface : placez la tête de lecture au début du mouvement, « ◆ Image clef ici », "
                     "puis à la fin, réglez-le (curseurs ou souris dans l'image) : une seconde image clef se pose toute seule.")
         l = QLabel(txt)
         l.setWordWrap(True)
@@ -442,6 +486,47 @@ class Inspecteur(QWidget):
             mu.toggled.connect(lambda on: self._changer(lambda: c.__setitem__("muet", on)))
             f.addRow("", mu)
         lay.addWidget(g)
+        # ---- musique, sons, voix : où commencer dans le morceau, fondus, couper
+        if not c["piste"].startswith("video"):
+            gm = QGroupBox(_("Son : début, fondus, longueur"))
+            fm = QFormLayout(gm)
+            fm.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+            dmax = float((m.get("fiche") or {}).get("duree") or c["src_fin"])
+            sd = QDoubleSpinBox()
+            sd.setRange(0.0, max(0.0, dmax - 0.5))
+            sd.setDecimals(1)
+            sd.setSuffix(" s")
+            sd.setValue(float(c["src_debut"]))
+            sd.setToolTip(_("Le morceau commence plus loin (ex. 32 s : on saute l'introduction) ; le plan garde sa place et sa durée."))
+
+            def debut_morceau(v):
+                def f_():
+                    d = c["src_fin"] - c["src_debut"]
+                    c["src_debut"] = round(v, 2)
+                    c["src_fin"] = round(min(dmax, v + d), 2)
+                self._changer(f_)
+            sd.valueChanged.connect(debut_morceau)
+            fm.addRow(_("Commencer le morceau à"), sd)
+            for cle, lib, defaut in (("fondu_entree", _("Fondu d'entrée"), 0.8), ("fondu_sortie", _("Fondu de sortie"), 1.2)):
+                fs = QDoubleSpinBox()
+                fs.setRange(0.0, 20.0)
+                fs.setDecimals(1)
+                fs.setSingleStep(0.5)
+                fs.setSuffix(" s")
+                fs.setValue(float(c.get(cle, defaut if c.get("fondus", True) else 0.0)))
+                fs.valueChanged.connect(lambda v, cle=cle: self._changer(lambda: c.__setitem__(cle, round(v, 2))))
+                fm.addRow(lib, fs)
+            h = QHBoxLayout()
+            b1 = QPushButton(_("Couper à la fin de la vidéo"))
+            b1.setToolTip(_("Le son s'arrête avec le dernier plan vidéo (fondu de sortie compris)."))
+            b1.clicked.connect(lambda: (self.ed.couper_son_fin(c["id"]), self.montrer_clip(c["id"])))
+            b2 = QPushButton(_("Couper à la tête de lecture"))
+            b2.clicked.connect(lambda: (self.ed.couper_son_a(c["id"], self.ed.timeline.position), self.montrer_clip(c["id"])))
+            for b_ in (b1, b2):
+                b_.setStyleSheet("text-align:left;padding:4px 8px")
+            fm.addRow(b1)
+            fm.addRow(b2)
+            lay.addWidget(gm)
         # ---- incrustation (pistes vidéo au-dessus de la base)
         if c["piste"].startswith("video") and c["piste"] != "video":
             gi = QGroupBox(_("Incrustation (par-dessus la vidéo 1)"))
@@ -786,7 +871,12 @@ class Inspecteur(QWidget):
             if k == g.get("style", "cadran"):
                 st.setCurrentIndex(st.count() - 1)
         st.currentIndexChanged.connect(lambda _i: self._changer(lambda: g.__setitem__("style", st.currentData()), reconstruire=False))
-        f.addRow(_("Style"), st)
+        contenu = g.get("genre") in ("polaroid", "post_it", "fleche", "image", "immatriculation", "bandeau", "pastille", "prix", "horaires",
+                                     "date", "bandeau_tendance", "surligne")
+        if g.get("genre") in GO.GENRES and GO.GENRES[g["genre"]][1]:      # instruments : cadran ou HUD
+            f.addRow(_("Style d'instrument"), st)
+        else:
+            st.deleteLater()
         for cle, lib, mini, maxi in (("taille", _("Taille"), 5, 60), ("x", _("Position horizontale"), 0, 100), ("y", _("Position verticale"), 0, 100)):
             sl = QSlider(Qt.Horizontal)
             sl.setRange(mini, maxi)
@@ -801,6 +891,8 @@ class Inspecteur(QWidget):
             sp.valueChanged.connect(lambda v, cle=cle: self._changer(lambda: g.__setitem__(cle, v)))
             f.addRow(lib, sp)
         lay.addWidget(gr)
+        if contenu:                     # style, couleur, direction : juste sous les réglages, avant l'animation
+            lay.addWidget(self._options_autocollant(g))
         lay.addWidget(self._groupe_cles(g, lambda: self.montrer_goodie(g)))
         opts = g.get("options") or {}
         if opts.get("groupe"):
@@ -815,8 +907,6 @@ class Inspecteur(QWidget):
             ba = QPushButton(_("Vent… ({d:.0f}° / {f:.0f} kt)", d=float(opts.get("vent_dir", 270)), f=float(opts.get("vent_kt", 10))))
             ba.clicked.connect(lambda: self.ed.manche_air(g))
             lay.addWidget(ba)
-        if g.get("genre") in ("polaroid", "post_it", "fleche", "image", "immatriculation", "bandeau", "pastille", "prix", "horaires", "date"):
-            lay.addWidget(self._options_autocollant(g))
         if g.get("genre") in GO.GENRES and GO.GENRES[g["genre"]][1] and g.get("genre") not in ("manche_air",):
             lay.addWidget(self._table_valeurs(g))
         lay.addWidget(QLabel(_("{n} valeur(s) saisies ou issues d'une trace GPS.", n=len(g.get("valeurs") or []))))

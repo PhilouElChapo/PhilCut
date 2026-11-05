@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QTimer, Signal, QMimeData, QSize, QByteArray
 from PySide6.QtGui import QPixmap, QIcon, QDrag, QAction, QColor
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QListWidget, QListWidgetItem, QLabel, QPushButton, QToolButton,
                                QFrame, QProgressBar, QTabWidget, QScrollArea, QCheckBox, QComboBox, QLineEdit, QSpinBox, QMenu, QMessageBox,
-                               QFileDialog, QSizePolicy, QFormLayout, QPlainTextEdit, QAbstractItemView, QInputDialog, QDialog)
+                               QFileDialog, QSizePolicy, QFormLayout, QPlainTextEdit, QAbstractItemView, QInputDialog, QDialog, QGroupBox)
 
 from . import moteur, outils as O, recettes, assistant as A, suivi, theme
 from .apercu import Apercu
@@ -194,6 +194,11 @@ class Bibliotheque(QListWidget):
         m.exec(self.mapToGlobal(pos))
 
 
+def MARGE_G_TL():
+    from .timeline import MARGE_G
+    return MARGE_G
+
+
 def E_defauts(eid):
     from . import effets as E
     return E.defauts(eid)
@@ -204,6 +209,7 @@ class VoletProposition(QWidget):
     analyser = Signal()
     appliquer = Signal(dict, bool)      # recette filtree, remplacer
     autre_idee = Signal(str)
+    commande = Signal(str)              # « Dites-le en clair »
 
     def __init__(self, params, parent=None):
         super().__init__(parent)
@@ -211,6 +217,21 @@ class VoletProposition(QWidget):
         self.recette = None
         v = QVBoxLayout(self)
         v.setContentsMargins(8, 8, 8, 8)
+        gd = QGroupBox(_("Dites-le en clair"))
+        vd = QVBoxLayout(gd)
+        self.phrase = QLineEdit()
+        self.phrase.setPlaceholderText(_("« mets une musique calme et coupe-la à la fin »"))
+        self.phrase.setToolTip(_("Une phrase devient des actions de montage, montrées avant d'être faites (annulables)."))
+        self.phrase.returnPressed.connect(lambda: self.commande.emit(self.phrase.text()))
+        vd.addWidget(self.phrase)
+        bd = QPushButton(icone("assistant", theme.COULEURS["texte2"]), _("Faire ce que je demande…"))
+        bd.setStyleSheet("text-align:left;padding:4px 8px")
+        bd.clicked.connect(lambda: self.commande.emit(self.phrase.text()))
+        hd = QHBoxLayout()
+        hd.addWidget(bd)
+        hd.addStretch(1)
+        vd.addLayout(hd)
+        v.addWidget(gd)
         f = QFormLayout()
         self.indices = QLineEdit()
         self.indices.setPlaceholderText(_("Indications : « vol au-dessus de Cannes », « pour Insta »…"))
@@ -296,7 +317,7 @@ class VoletProposition(QWidget):
             ligne("logo", _("Logo d'ouverture"), _("« {t} », animation {m}, {d} s", t=lg.get("texte", ""), m=lg.get("modele", ""), d=lg.get("duree", 2.5)), lg.get("pourquoi", ""))
         mu = recette.get("musique") or {}
         if mu:
-            ligne("musique", _("Musique"), _("ambiance {a}, ≈ {b} BPM", a=mu.get("ambiance", ""), b=mu.get("bpm", "?")) + ("" if mu.get("media") else _(" — aucune musique importée : ajoutez-en une dans la bibliothèque")), mu.get("pourquoi", ""))
+            ligne("musique", _("Musique"), _("ambiance {a}, ≈ {b} BPM", a=mu.get("ambiance", ""), b=mu.get("bpm", "?")) + ("" if mu.get("media") else _(" — prise dans vos dossiers de musiques, sinon une musique libre est téléchargée")), mu.get("pourquoi", ""))
         if recette.get("look"):
             ligne("look", _("Look"), recette["look"])
         for i, p in enumerate(recette.get("plans") or []):
@@ -427,6 +448,7 @@ class Editeur(QWidget):
         self.proposition.analyser.connect(self.analyser)
         self.proposition.appliquer.connect(self.appliquer_recette)
         self.proposition.autre_idee.connect(self.autre_idee)
+        self.proposition.commande.connect(self.dites_le)
         self.volet.addTab(self.proposition, icone("assistant", theme.COULEURS["texte2"]), _("Proposition"))
         from .inspecteur import Inspecteur
         self.inspecteur = Inspecteur(self)
@@ -491,7 +513,37 @@ class Editeur(QWidget):
         self.preparation.change.connect(self._preparation_change)
         self.timeline.element_clique.connect(self._element_clique)
         self.timeline.element_change.connect(lambda cid: self.inspecteur.rafraichir(cid))
-        self.split_v.addWidget(self.timeline)
+        # petite barre au-dessus de la timeline : aller au début / à la fin, zoom, tout voir (tout à la souris)
+        bas = QWidget()
+        vb = QVBoxLayout(bas)
+        vb.setContentsMargins(0, 0, 0, 0)
+        vb.setSpacing(0)
+        barre_tl = QHBoxLayout()
+        barre_tl.setContentsMargins(6, 2, 6, 2)
+        barre_tl.setSpacing(2)
+        for texte, aide, f in (("⇤", _("Aller au début du montage"), lambda: self.timeline.aller_a(0.0)),
+                               ("⇥", _("Aller à la fin du montage (et la montrer)"), self._aller_fin),
+                               ("−", _("Réduire : voir plus de durée à la fois"), lambda: self.timeline.zoomer(1 / 1.6)),
+                               ("+", _("Agrandir : voir plus de détail"), lambda: self.timeline.zoomer(1.6)),
+                               (_("Tout voir"), _("Tout le montage dans la largeur"), self.timeline.ajuster),
+                               ("↕", _("Images de la timeline plus grandes / plus petites (clic droit pour réduire)"), lambda: self.timeline.hauteur_images(1.3))):
+            b = QToolButton()
+            b.setText(texte)
+            b.setToolTip(aide)
+            b.setAutoRaise(True)
+            b.setMinimumWidth(26)
+            b.clicked.connect(f)
+            if texte == "↕":
+                b.setContextMenuPolicy(Qt.CustomContextMenu)
+                b.customContextMenuRequested.connect(lambda _p: self.timeline.hauteur_images(1 / 1.3))
+            barre_tl.addWidget(b)
+        self.info_tl = QLabel("")
+        self.info_tl.setStyleSheet(f"color:{theme.COULEURS['texte2']}")
+        barre_tl.addSpacing(10)
+        barre_tl.addWidget(self.info_tl, 1)
+        vb.addLayout(barre_tl)
+        vb.addWidget(self.timeline, 1)
+        self.split_v.addWidget(bas)
         self.split_v.setSizes([620, 260])
         # la part lecteur / timeline et les largeurs des volets sont mémorisées sur ce poste
         tailles = self.params.get("tailles_vue") or {}
@@ -622,6 +674,33 @@ class Editeur(QWidget):
         self.params[cle] = val
         self.params.enregistrer()
         self.fenetre.reconstruire_barres()
+
+    def couper_son_fin(self, cid):
+        """Le plan de son s'arrête avec la vidéo (fin du dernier plan vidéo)."""
+        c = self.projet.clip(cid)
+        fin_v = max([fin_clip(x) for x in self.projet.clips_piste("video")] or [0.0])
+        if not c or fin_v <= c["debut"] or fin_clip(c) <= fin_v + 0.01:
+            self.encart.message(_("Ce son s'arrête déjà avant la fin de la vidéo."))
+            return
+        self.couper_son_a(cid, fin_v)
+
+    def couper_son_a(self, cid, t):
+        c = self.projet.clip(cid)
+        if not c or not (c["debut"] + 0.1 < t < fin_clip(c)):
+            self.encart.message(_("Placez la tête de lecture sur le plan de son, à l'endroit où il doit s'arrêter."))
+            return
+        self.projet.marquer()
+        v = float(c.get("vitesse", 1.0) or 1.0)
+        c["src_fin"] = round(c["src_debut"] + (t - c["debut"]) * v, 3)
+        c.setdefault("fondu_sortie", 1.5)
+        self.rafraichir()
+        self.encart.message(_("Son coupé à {t}, avec un fondu de sortie (réglable dans l'Inspecteur).", t=_tc(t)))
+
+    def _aller_fin(self):
+        fin = self.projet.duree()
+        self.timeline.aller_a(fin)
+        x = int(MARGE_G_TL() + fin * self.timeline.pps - self.timeline.viewport().width() * 0.8)
+        self.timeline.horizontalScrollBar().setValue(max(0, x))
 
     def replier_gauche(self, replie=None):
         """Colonne des médias : complète, ou repliée en une colonne d'icônes (place gagnée pour l'image) ; mémorisé."""
@@ -1173,8 +1252,12 @@ class Editeur(QWidget):
             if depot:                     # fichier déposé ou posé sur une piste précise (musique, voix off…)
                 c = self.ajouter_a_la_timeline(m["id"], depot[0], depot[1])
                 if c and len(depot) > 2:          # réglages du plan posé (retouches de voix…)
-                    c.update(depot[2])
+                    reg = dict(depot[2])
+                    couper = reg.pop("_couper_fin", False)
+                    c.update(reg)
                     self.rafraichir()
+                    if couper:
+                        self.couper_son_fin(c["id"])
             elif not self.projet.clips and m["genre"] in ("video", "image") and self.params.get("ajout_auto", True):
                 self.ajouter_a_la_timeline(m["id"])
             self._modifie()
@@ -1192,7 +1275,56 @@ class Editeur(QWidget):
         self.rafraichir()
         self.timeline.selectionner(c["id"])
         self._zoom_auto()
+        if c["piste"] not in ("voix",) and not c["piste"].startswith("video"):
+            fin_v = max([fin_clip(x) for x in self.projet.clips_piste("video")] or [0.0])
+            if fin_v > c["debut"] + 1 and fin_clip(c) > fin_v + 2:
+                self.encart.suivre_message(_("« {n} » dure plus longtemps que la vidéo ({d} de trop).", n=m["nom"], d=_tc(fin_clip(c) - fin_v)),
+                                           (_("Couper à la fin de la vidéo"), lambda cid=c["id"]: self.couper_son_fin(cid)), 30000)
         return c
+
+    def musique_auto(self, ambiance=None):
+        """La musique demandée par la proposition : d'abord un morceau de mes dossiers qui colle à l'ambiance, sinon un
+        morceau libre (Openverse, gratuit) téléchargé ; posé sous la vidéo et coupé à sa fin, avec un fondu."""
+        from . import musiques as MU
+        duree = max([fin_clip(x) for x in self.projet.clips_piste("video")] or [self.projet.duree()])
+        mots = {"energique": "energ upbeat rock electro dance", "douce": "doux douce calm piano soft", "cinema": "cinema epic film orchestr",
+                "chaleureuse": "acoust guitar warm folk", "mysterieuse": "myst dark ambient", "legere": "happy joy pop ukulele",
+                "calme": "calm ambient piano", "joyeuse": "happy joy pop", "aventure": "adventure epic inspir"}.get(ambiance or "", "")
+        liste = MU.morceaux([self.params.get("musiques_dossier") or "", MU.dossier(self.params)])
+
+        def note(x):
+            texte = " ".join(str(x.get(k) or "") for k in ("titre", "album", "artiste", "dossier", "chemin")).lower()
+            return (sum(1 for w in mots.split() if w in texte) * 10) + (5 if (x.get("duree") or 0) >= duree else 0)
+        if liste:
+            x = max(liste, key=note)
+            self._piste_depot = ("audio", 0.0, {"volume": 0.8, "_couper_fin": True})
+            self.importer([x["chemin"]])
+            self.encart.message(_("Musique : « {t} » de vos dossiers, ambiance {a}.", t=x.get("titre", ""), a=ambiance or "?"))
+            return
+        corresp = {"chaleureuse": "acoustique", "douce": "calme", "legere": "joyeuse", "mysterieuse": "calme"}
+        amb = corresp.get(ambiance, ambiance)
+
+        def travail(tache):
+            tache.avancer(0.1, _("recherche d'une musique libre"))
+            res = MU.chercher("", amb if amb in dict((k, 1) for k, _l, _m in MU.AMBIANCES) else None, "long" if duree > 120 else None)
+            if not res:
+                raise MU.ErreurMusique(_("Aucune musique libre trouvée pour cette ambiance."))
+            assez = [r for r in res if r["duree"] >= duree] or sorted(res, key=lambda r: -r["duree"])
+            tache.avancer(0.3, _("téléchargement de « {t} »", t=assez[0]["titre"]))
+            return MU.telecharger(assez[0], self.params, progression=lambda f: tache.avancer(0.3 + 0.7 * f))
+        t = Tache(travail, _("Musique"))
+        self.taches.append(t)
+        self.encart.suivre(t, _("Musique libre pour l'ambiance « {a} »", a=ambiance or "?"))
+
+        def fini(chemin, err):
+            if err or not chemin:
+                self.encart.suivre_message(_("Pas de musique posée : {e}", e=str(err or "")[:120]),
+                                           (_("Choisir une musique…"), lambda: self.fenetre.musique()), 30000)
+                return
+            self._piste_depot = ("audio", 0.0, {"volume": 0.8, "_couper_fin": True})
+            self.importer([chemin])
+        t.fini.connect(fini)
+        t.start()
 
     def _memoriser_tailles(self):
         self.params["tailles_vue"] = {"v": self.split_v.sizes(), "h": self.split_h.sizes()}
@@ -1333,6 +1465,8 @@ class Editeur(QWidget):
                 self.projet.marquer()
                 el["suivi"] = None
                 self.rafraichir()
+        elif quoi == "son_fin":
+            self.couper_son_fin(ident)
         elif quoi == "whoosh":
             c = self.projet.clip(ident)
             if c:
@@ -1676,8 +1810,15 @@ class Editeur(QWidget):
         t = self.timeline.position
         self.projet.marquer()
         g = self.projet.ajouter_goodie(gid, t, min(max(t + 5.0, self.projet.duree()), t + 8.0))
-        if gid in ("polaroid", "post_it", "fleche"):
-            g["taille"], g["x"], g["y"] = (0.32, 0.5, 0.45) if gid != "fleche" else (0.22, 0.5, 0.5)
+        if gid in ("polaroid", "post_it", "fleche", "bandeau_tendance", "surligne"):
+            g["taille"], g["x"], g["y"] = {"fleche": (0.26, 0.5, 0.5), "bandeau_tendance": (0.5, 0.3, 0.22),
+                                           "surligne": (0.42, 0.5, 0.75)}.get(gid, (0.32, 0.5, 0.45))
+        if gid == "fleche":
+            g["options"].update(style="courbe", couleur="#ff3b30", contour="#ffffff", dessin=True)
+        elif gid == "bandeau_tendance":
+            g["options"].update(texte=_("GRANDE HORLOGE"), style="incline", couleur="#ff8c1a", angle=-4)
+        elif gid == "surligne":
+            g["options"].update(texte=_("Incroyable"), couleur="#ffe14d")
         self.rafraichir()
         self._ouvrir_volet(1)
         self.inspecteur.montrer_selection([g["id"]])
@@ -2017,6 +2158,9 @@ class Editeur(QWidget):
         if remplacer and self.projet.clips and QMessageBox.question(self, _("Appliquer la recette"), _("Remplacer la timeline actuelle par la proposition ? (Annuler possible)")) != QMessageBox.Yes:
             return
         recettes.appliquer(r, self.projet, self.params, choix, remplacer=remplacer)
+        mu = r.get("musique") or {}
+        if mu and choix.get("musique", True) and not (mu.get("media") and self.projet.media(mu["media"])) and not self.projet.clips_piste("audio"):
+            self.musique_auto(mu.get("ambiance"))       # aucune musique importée : on en trouve une (mes dossiers, sinon libre)
         for t in self.projet.titres:
             if t.get("suivi") and len(t["suivi"].get("positions") or []) <= 2:
                 self._suivre(t)
@@ -2037,6 +2181,11 @@ class Editeur(QWidget):
             apprentissage.ecrire(self.params, "recettes.json", d)
         except Exception:
             pass
+
+    def dites_le(self, phrase=""):
+        """« Dites-le en clair » : une phrase → des actions montrées, cochables, faites d'un coup (annulables)."""
+        from .dialogues_commande import DialogueCommande
+        DialogueCommande(self, (phrase or "").strip()).exec()
 
     def autre_idee(self, cle):
         if not self.proposition.recette:

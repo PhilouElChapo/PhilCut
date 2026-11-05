@@ -381,7 +381,15 @@ class DialogueEffets(QDialog):
         if self._tache_apercu is not None:
             self._tache_apercu.stopper()
         self._n_apercu = getattr(self, "_n_apercu", 0) + 1
-        sortie = os.path.join(tempfile.gettempdir(), f"philcut_effet_{os.getpid()}_{self._n_apercu % 3}.mp4")
+        # nom unique : sous Windows, le lecteur garde ouvert le fichier de l'aperçu précédent
+        dossier_ap = os.path.join(tempfile.gettempdir(), f"philcut_apercus_{os.getpid()}")
+        os.makedirs(dossier_ap, exist_ok=True)
+        for vieux in sorted(os.listdir(dossier_ap))[:-4]:
+            try:
+                os.remove(os.path.join(dossier_ap, vieux))
+            except OSError:
+                pass
+        sortie = os.path.join(dossier_ap, f"effet_{self._n_apercu:05d}.mp4")
         t = getattr(getattr(ed, "timeline", None), "position", self.clip["debut"])
         nom = (fi or {}).get("nom") or _("vos effets")
         self.etat_apercu.setText(_("Fabrication de l'aperçu : {n}…", n=nom))
@@ -399,7 +407,8 @@ class DialogueEffets(QDialog):
             self._tache_apercu = None
             try:
                 if e:
-                    self.etat_apercu.setText(_("Aperçu impossible : {e}", e=str(e)[:160]))
+                    self.etat_apercu.setText(_("Aperçu impossible : {e}", e=str(e)[:400]))
+                    self.etat_apercu.setWordWrap(True)
                     return
                 pose = fi is None or any(x["id"] == k for x in self.effets) or (self.transition or {}).get("id") == k
                 self.etat_apercu.setText(_("Aperçu : {n} (en boucle).", n=nom) + ("" if pose else _(" Pas encore posé : « Poser sur ce plan ».")))

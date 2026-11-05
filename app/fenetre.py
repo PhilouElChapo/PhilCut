@@ -71,6 +71,11 @@ class Fenetre(QMainWindow):
         self._menus()
         self.statusBar().showMessage(_("PhilCut {v}", v=VERSION) + (_(" · version portable") if est_portable() else "") +
                                      (_(" · FFmpeg {f}", f=moteur.version()) if moteur.disponible() else _(" · FFmpeg INTROUVABLE : import et export impossibles")))
+        if self.telechargements.non_finis():
+            n = len(self.telechargements.non_finis())
+            self.encart_global.suivre_message(_("⏸ {n} téléchargement(s) non terminé(s) la dernière fois ; ils reprendront où ils "
+                                                "s'étaient arrêtés.", n=n), (_("▶ Reprendre"), lambda: (self.telechargements.reprendre(),
+                                                                                                   self.voir_telechargements())), 30000)
         for f in fichiers:
             self.ouvrir(f)
         if not moteur.disponible():
@@ -140,6 +145,7 @@ class Fenetre(QMainWindow):
             o = O.outil(oid)
             mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
         mo.addAction(_("Figer l'image à la tête de lecture (cadre photo, légende)…"), lambda: self._ed(lambda ed: ed.figer_image()))
+        mo.addAction(icone("assistant"), _("Dites-le en clair (une phrase devient des actions)…"), lambda: self._ed(lambda ed: ed.dites_le()))
         mo.addAction(icone("musique"), _("Bruitages (whoosh, impact, déclic, bip…)…"), lambda: self._ed(lambda ed: ed.bruitage()))
         av = mo.addMenu(icone("goodies"), _("Aviation"))
         av.addAction(_("Tableau de bord de vol (profil réglable)…"), lambda: self._ed(lambda ed: ed.tableau_de_bord()))
@@ -599,14 +605,44 @@ class Fenetre(QMainWindow):
         ed = self._editeur_ou_nouveau()
         m = QMenu(self)
         m.addAction(_("Importer une musique…"), lambda: ed.importer())
-        d = self.params.get("musiques_dossier")
-        if d and os.path.isdir(d):
-            sm = m.addMenu(_("Mon dossier de musiques"))
-            for f in sorted(os.listdir(d))[:40]:
-                if est_audio(f):
-                    sm.addAction(f, lambda f=f: self._poser_musique(ed, os.path.join(d, f)))
+        self._menu_mes_musiques(m.addMenu(icone("musique"), _("Mes musiques")), ed)
         m.addAction(_("Bibliothèque musicale libre (chercher, écouter, télécharger)…"), lambda: self.bibliotheque_musicale(ed))
         m.exec(self.cursor().pos())
+
+    def _menu_mes_musiques(self, sm, ed):
+        """Mon dossier de musiques et les musiques libres téléchargées, classés par dossier, album ou artiste (au choix, retenu)."""
+        from . import musiques as MU
+        mode = self.params.get("musiques_classement", "dossier")
+        sc = sm.addMenu(_("Classer : {m}", m=dict(MU.CLASSEMENTS).get(mode, "")))
+        for k, lib in MU.CLASSEMENTS:
+            a = sc.addAction(lib, lambda k=k: (self.params.__setitem__("musiques_classement", k), self.params.enregistrer(),
+                                                self.statusBar().showMessage(_("Musiques classées : {m}. Rouvrez le menu Musique.", m=dict(MU.CLASSEMENTS)[k]), 6000)))
+            a.setCheckable(True)
+            a.setChecked(k == mode)
+        perso = self.params.get("musiques_dossier") or ""
+        sm.addAction(_("Choisir mon dossier de musiques…") if not perso else _("Changer de dossier de musiques ({d})…", d=os.path.basename(perso.rstrip("/\\")) or perso),
+                     self._choisir_dossier_musiques)
+        sm.addSeparator()
+        liste = MU.morceaux([perso, MU.dossier(self.params)])
+        if not liste:
+            a = sm.addAction(_("(aucun morceau : choisissez votre dossier, ou téléchargez des musiques libres)"))
+            a.setEnabled(False)
+            return
+        groupes = MU.classer(liste, mode)
+        for g, ms in groupes:
+            cible = sm if not g or len(groupes) == 1 else sm.addMenu(f"{g} ({len(ms)})")
+            for x in ms[:150]:
+                act = cible.addAction(MU.libelle(x), lambda p=x["chemin"]: self._poser_musique(ed, p))
+                act.setToolTip(x["chemin"])
+            cible.setToolTipsVisible(True)
+
+    def _choisir_dossier_musiques(self):
+        from .session import dossier_systeme
+        d = QFileDialog.getExistingDirectory(self, _("Mon dossier de musiques"), self.params.get("musiques_dossier") or dossier_systeme("musique"))
+        if d:
+            self.params["musiques_dossier"] = d
+            self.params.enregistrer()
+            self.statusBar().showMessage(_("Dossier de musiques : {d}", d=d), 6000)
 
     def bibliotheque_musicale(self, ed=None, ambiance=None):
         ed = ed or self._editeur_ou_nouveau()
