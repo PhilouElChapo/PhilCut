@@ -977,6 +977,8 @@ class Timeline(QGraphicsView):
         m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
         self._menu_pistes(m, piste)
         m.addAction(_("Enregistrer l'image à cet endroit…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "image")))
+        if clip["piste"] == "video":
+            m.addAction(_("Figer l'image à cet endroit (cadre photo, légende)…"), lambda: (self.aller_a(t), self.demande_menu.emit(clip["id"], "figer")))
         self._menu_partie(m, t)
         self._menu_zoom(m)
         m.exec(e.globalPos())
@@ -1212,6 +1214,8 @@ class Timeline(QGraphicsView):
         if self.zone_valide():
             m.addAction(_("Effets sur la partie en jaune seulement…"), lambda: self.demande_menu.emit(clip["id"], "effets_partie"))
         m.addAction(_("Enregistrer l'image à cet endroit…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "image")))
+        if clip["piste"] == "video":
+            m.addAction(_("Figer l'image à cet endroit (cadre photo, légende)…"), lambda: (self.aller_a(t), self.demande_menu.emit(clip["id"], "figer")))
         self._menu_partie(m, t)
         self._menu_zoom(m)
         m.addSeparator()
@@ -1381,6 +1385,8 @@ class Timeline(QGraphicsView):
         a.setChecked(E.actif(t))
         m.addSeparator()
         m.addAction(_("Supprimer la transition"), lambda: self._supprimer_transition(clip))
+        m.addSeparator()
+        m.addAction(_("Ajouter un bruitage « whoosh » sur le raccord"), lambda: self.demande_menu.emit(clip["id"], "whoosh"))
         m.exec(pos)
 
     def _duree_transition(self, clip, d):

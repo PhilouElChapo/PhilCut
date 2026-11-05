@@ -172,6 +172,11 @@ class Bibliotheque(QListWidget):
         m.exec(self.mapToGlobal(pos))
 
 
+def E_defauts(eid):
+    from . import effets as E
+    return E.defauts(eid)
+
+
 class VoletProposition(QWidget):
     """Le volet de l'assistant : analyser, proposer, cocher, autre idee, appliquer."""
     analyser = Signal()
@@ -680,6 +685,8 @@ class Editeur(QWidget):
         m.addAction(_("Aperçu rendu (avec les effets)"), self.apercu_rendu)
         m.addSeparator()
         m.addAction(icone("recadrer", theme.COULEURS["texte"]), _("Tracer une zone à flouter, pixelliser ou cacher…"), self.tracer_zone)
+        m.addAction(_("Figer l'image ici (cadre photo, légende)…"), self.figer_image)
+        m.addAction(_("Bruitage ici…"), self.bruitage)
         av = m.addMenu(icone("goodies", theme.COULEURS["texte"]), _("Aviation"))
         av.addAction(_("Tableau de bord de vol…"), self.tableau_de_bord)
         av.addAction(_("Carte animée du trajet et mini-carte…"), self.trajet)
@@ -846,7 +853,7 @@ class Editeur(QWidget):
         if not m.get("chemin"):
             return
         d = DialogueAutotune(self, m["chemin"], self.params, c["src_debut"], c["src_fin"] - c["src_debut"])
-        if d.exec() != d.Accepted or not d.resultat:
+        if d.exec() != QDialog.Accepted or not d.resultat:
             return
         from . import moteur
         fiche = moteur.sonder(d.resultat)
@@ -1196,7 +1203,7 @@ class Editeur(QWidget):
         if not c:
             return
         d = DialogueVitesse(self, c)
-        if d.exec() != d.Accepted:
+        if d.exec() != QDialog.Accepted:
             return
         self.projet.marquer()
         if d.ramp.isChecked():
@@ -1234,6 +1241,12 @@ class Editeur(QWidget):
                 self.projet.marquer()
                 el["suivi"] = None
                 self.rafraichir()
+        elif quoi == "whoosh":
+            c = self.projet.clip(ident)
+            if c:
+                self.bruitage("whoosh", max(0.0, c["debut"] - 0.35))
+        elif quoi == "figer":
+            self.figer_image()
         elif quoi in ("zone_suivre", "zone_retracer", "zone_figer"):
             z = self._zone(ident)
             if z:
@@ -1258,7 +1271,7 @@ class Editeur(QWidget):
             self.encart.message(_("Le recadrage par suivi s'applique à une vidéo."))
             return
         d = DialogueSuivi(self, m, clip["src_debut"], recadrage=True, cadre=clip.get("suivi_cadre"))
-        if d.exec() != d.Accepted:
+        if d.exec() != QDialog.Accepted:
             return
         boite, zoom, lissage = d.resultat()
         self.projet.marquer()
@@ -1322,7 +1335,7 @@ class Editeur(QWidget):
         t_src = clip["src_debut"] + (t - clip["debut"]) * clip.get("vitesse", 1.0)
         d = DialogueSuivi(self, m, t_src, recadrage=False)
         d.setWindowTitle(_("Corriger le suivi à {t}", t=moteur.duree_texte(t)))
-        if d.exec() != d.Accepted:
+        if d.exec() != QDialog.Accepted:
             return
         boite, _z, _l = d.resultat()
         self.projet.marquer()
@@ -1346,7 +1359,7 @@ class Editeur(QWidget):
             return
         t_src = clip["src_debut"] + (element["debut"] - clip["debut"]) * clip.get("vitesse", 1.0)
         d = DialogueSuivi(self, m, t_src, recadrage=False)
-        if d.exec() != d.Accepted:
+        if d.exec() != QDialog.Accepted:
             return
         boite, _zoom, lissage = d.resultat()
         self.projet.marquer()
@@ -1504,7 +1517,7 @@ class Editeur(QWidget):
             return
         avant = [dict(e) for e in c.get("effets") or []]
         d = DialogueEffets(self, c, self.params, self.projet.medias)
-        if d.exec() == d.Accepted:
+        if d.exec() == QDialog.Accepted:
             self.projet.marquer()
             c["effets"], c["transition"] = d.resultat()
             if partie:
@@ -1529,7 +1542,7 @@ class Editeur(QWidget):
 
     def nouveau_texte(self):
         d = DialogueTitre(self, None, self.timeline.position, max(10.0, self.projet.duree()), self._medias_visages())
-        if d.exec() != d.Accepted:
+        if d.exec() != QDialog.Accepted:
             return
         t = d.resultat()
         if not t["texte"]:
@@ -1557,12 +1570,93 @@ class Editeur(QWidget):
 
     def nouveau_goodie(self):
         d = DialogueGoodie(self, None, self.timeline.position, max(10.0, self.projet.duree()), self.params)
-        if d.exec() != d.Accepted:
+        if d.exec() != QDialog.Accepted:
             return
         self.projet.marquer()
         g = d.resultat()
         self.projet.ajouter_goodie(**{k: v for k, v in g.items() if k != "id"})
         self.rafraichir()
+
+    # ---------------------------------------------------------------- image figée, bruitages
+    def figer_image(self, t=None):
+        """Image figée à la tête de lecture : le plan s'arrête sur cette image pendant quelques secondes (cadre photo,
+        légende, flash, déclic au choix), puis reprend. La suite du montage est décalée d'autant."""
+        from .dialogues_effets_plus import DialogueFiger
+        from . import bruitages as B
+        t = self.timeline.position if t is None else t
+        c = self.projet.clip_a(t, "video")
+        m = self.projet.media(c["media"]) if c else None
+        if not m or m.get("genre") != "video":
+            self.encart.message(_("Placez la tête de lecture sur un plan vidéo, à l'image à figer."))
+            return
+        d = DialogueFiger(self)
+        if d.exec() != QDialog.Accepted:
+            return
+        o = d.options()
+        src = c["src_debut"] + (t - c["debut"]) * c.get("vitesse", 1.0)
+        from .config import dossier_donnees
+        dossier = os.path.join(dossier_donnees(), "images_figees")
+        os.makedirs(dossier, exist_ok=True)
+        png = os.path.join(dossier, f"{os.path.splitext(m['nom'])[0]}_{src:.2f}s.png".replace(" ", "_"))
+        try:
+            largeur = int(((m.get("fiche") or {}).get("video") or {}).get("largeur") or 1920)
+            with open(png, "wb") as f:
+                f.write(moteur.image(m["chemin"], src, min(3840, largeur)))
+        except Exception as e:      # noqa: BLE001
+            QMessageBox.warning(self, _("Image figée"), str(e))
+            return
+        self.projet.marquer()
+        if c["debut"] + 0.04 < t < fin_clip(c) - 0.04:
+            self.projet.couper(c["id"], t)
+        n = o["duree"]
+        for x in self.projet.clips:                 # la suite du montage est décalée de la durée de l'image figée
+            if x["debut"] >= t - 1e-3:
+                x["debut"] += n
+        for x in self.projet.titres + self.projet.goodies:
+            if x["debut"] >= t - 1e-3:
+                x["debut"] += n
+                x["fin"] += n
+        mi = self.projet.ajouter_media(png, moteur.sonder(png))
+        mi["nom"] = _("Image figée {t}", t=_tc(t))
+        ci = self.projet.ajouter_clip(mi["id"], "video", t, 0.0, n)
+        ci["nom"] = mi["nom"]
+        if o["style"] == "cadre":
+            ci["effets"].append({"id": "cadre_photo", "params": dict(E_defauts("cadre_photo"))})
+        if o["zoom"]:
+            ci["effets"].insert(0, {"id": "zoom_lent", "params": {"force": 0.12, "sens": "avant"}})
+        if o["flash"]:
+            ci["transition"] = {"id": "t_fondu_blanc", "params": {"duree": 0.3}}
+        if o["legende"]:
+            self.projet.ajouter_titre(o["legende"], t + 0.2, t + n - 0.1, style="etiquette", y=0.95, animation="fondu")
+        if o["declic"]:
+            B.poser(self.projet, "declic", t)
+        self.rafraichir()
+        self.timeline.selectionner(ci["id"])
+        self._ouvrir_volet(1)
+        self.inspecteur.montrer_clip(ci["id"])
+        self.encart.message(_("Image figée de {n:.1f} s posée à {t} : c'est un plan comme un autre (rognez-le pour changer sa durée, "
+                              "Supprimer pour l'enlever).", n=n, t=_tc(t)))
+
+    def bruitage(self, ident=None, t=None):
+        """Pose un bruitage au curseur (ou à t) ; sans ident, la fenêtre des bruitages s'ouvre pour choisir et écouter."""
+        from . import bruitages as B
+        if ident is None:
+            from .dialogues_effets_plus import DialogueBruitages
+            d = DialogueBruitages(self)
+            if d.exec() != QDialog.Accepted or not d.choix():
+                return
+            ident = d.choix()
+        t = self.timeline.position if t is None else t
+        self.projet.marquer()
+        try:
+            c = B.poser(self.projet, ident, t)
+        except Exception as e:      # noqa: BLE001
+            QMessageBox.warning(self, _("Bruitage"), str(e))
+            return
+        self.rafraichir()
+        self.timeline.selectionner(c["id"])
+        self.encart.message(_("Bruitage « {n} » posé à {t} sur la piste {p} : réglez son volume dans l'Inspecteur.",
+                              n=B.SONS[ident][0], t=_tc(t), p=self.timeline.libelle_piste(c["piste"])))
 
     # ---------------------------------------------------------------- aviation (tout réglé par l'utilisateur)
     def _etapes_projet(self):
@@ -1580,7 +1674,7 @@ class Editeur(QWidget):
         fin = anciens[0]["fin"] if anciens else max(10.0, self.projet.duree())
         reg = (anciens[0].get("options") or {}).get("profil") if anciens else None
         d = DialogueTableau(self, debut, fin, reg, [g["genre"] for g in anciens] or None, self._etapes_projet())
-        if d.exec() != d.Accepted or not d.instruments():
+        if d.exec() != QDialog.Accepted or not d.instruments():
             return
         self.projet.marquer()
         gs = A.poser_tableau(self.projet, d.debut.value(), max(d.debut.value() + 1, d.fin.value()), d.instruments(), d.reglages(),
@@ -1601,7 +1695,7 @@ class Editeur(QWidget):
         d = DialogueTrajet(self, debut, fin, (ref or {}).get("options"), avec_mini=not cartes or any(g["genre"] == "mini_carte" for g in cartes))
         if cartes:
             d.c_carte.setChecked(any(g["genre"] == "carte_trajet" for g in cartes))
-        if d.exec() != d.Accepted:
+        if d.exec() != QDialog.Accepted:
             return
         self.projet.marquer()
         opts = d.options()
@@ -1625,7 +1719,7 @@ class Editeur(QWidget):
         from .dialogues_aviation import DialogueManche
         d = DialogueManche(self, goodie["debut"] if goodie else 0.0, goodie["fin"] if goodie else max(10.0, self.projet.duree()),
                            (goodie or {}).get("options"))
-        if d.exec() != d.Accepted:
+        if d.exec() != QDialog.Accepted:
             return
         self.projet.marquer()
         if goodie is None:
@@ -1662,7 +1756,7 @@ class Editeur(QWidget):
                 return
             from .dialogues_aviation import DialogueRadio
             d = DialogueRadio(self, r)
-            if d.exec() == d.Accepted:
+            if d.exec() == QDialog.Accepted:
                 self.projet.marquer()
                 self.projet.d["sous_titres_radio"] = d.resultat()
                 self.rafraichir()
@@ -1683,7 +1777,7 @@ class Editeur(QWidget):
         for t in self.projet.titres:
             if t["id"] == ident:
                 d = DialogueTitre(self, t, medias_visages=self._medias_visages())
-                if d.exec() == d.Accepted:
+                if d.exec() == QDialog.Accepted:
                     self.projet.marquer()
                     t.update(d.resultat())
                     if t.get("suivi") and not t["suivi"].get("positions"):
@@ -1702,7 +1796,7 @@ class Editeur(QWidget):
                 return
             if g["id"] == ident:
                 d = DialogueGoodie(self, g, params=self.params)
-                if d.exec() == d.Accepted:
+                if d.exec() == QDialog.Accepted:
                     self.projet.marquer()
                     g.update(d.resultat())
                     self.rafraichir()

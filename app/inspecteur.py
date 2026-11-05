@@ -133,6 +133,53 @@ class Inspecteur(QWidget):
         if reconstruire:
             self.ed.timeline.reconstruire()
 
+    # ------------------------------------------------------------ autocollants et badges : texte, couleur, angle, photo
+    def _options_autocollant(self, g):
+        import os
+        gr = QGroupBox(_("Contenu"))
+        f = QFormLayout(gr)
+        f.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        opts = g.setdefault("options", {})
+        genre = g["genre"]
+        if genre != "fleche" and genre != "image":
+            te = QLineEdit(str(opts.get("texte") or ""))
+            te.setPlaceholderText(_("Texte"))
+            te.textChanged.connect(lambda v: self._changer(lambda: opts.__setitem__("texte", v), reconstruire=False))
+            f.addRow(_("Texte"), te)
+        if genre in ("polaroid", "image"):
+            bi = QPushButton(os.path.basename(opts.get("chemin") or "") or _("Choisir une photo…"))
+            bi.setStyleSheet("text-align:left;padding:3px 8px")
+
+            def photo():
+                from PySide6.QtWidgets import QFileDialog
+                from .session import dossier_systeme
+                ch, _f = QFileDialog.getOpenFileName(self, _("Photo"), self.ed.params.get("dossier_images") or dossier_systeme("images"),
+                                                     "Images (*.png *.jpg *.jpeg *.webp)")
+                if ch:
+                    self._changer(lambda: opts.__setitem__("chemin", ch), reconstruire=False)
+                    self.montrer_goodie(g)
+            bi.clicked.connect(photo)
+            f.addRow(_("Photo"), bi)
+        if genre in ("post_it", "fleche"):
+            defaut = "#ffe066" if genre == "post_it" else "#ff3b30"
+            bc = QPushButton(opts.get("couleur") or defaut)
+            bc.setStyleSheet(f"background:{opts.get('couleur') or defaut};color:#000")
+
+            def couleur():
+                c = QColorDialog.getColor(QColor(opts.get("couleur") or defaut), self, _("Couleur"))
+                if c.isValid():
+                    self._changer(lambda: opts.__setitem__("couleur", c.name()), reconstruire=False)
+                    self.montrer_goodie(g)
+            bc.clicked.connect(couleur)
+            f.addRow(_("Couleur"), bc)
+        if genre in ("polaroid", "post_it", "fleche"):
+            sl = QSlider(Qt.Horizontal)
+            sl.setRange(-180, 180) if genre == "fleche" else sl.setRange(-30, 30)
+            sl.setValue(int(float(opts.get("angle", 0 if genre == "fleche" else (-6 if genre == "polaroid" else 4)))))
+            sl.valueChanged.connect(lambda v: self._changer(lambda: opts.__setitem__("angle", v), reconstruire=False))
+            f.addRow(_("Direction (°)") if genre == "fleche" else _("Inclinaison (°)"), sl)
+        return gr
+
     # ------------------------------------------------------------ valeurs d'un instrument
     def _table_valeurs(self, g):
         """Les points (instant depuis le début du Goodie, valeur) de l'instrument : modifiables, ajoutables, supprimables."""
@@ -768,6 +815,8 @@ class Inspecteur(QWidget):
             ba = QPushButton(_("Vent… ({d:.0f}° / {f:.0f} kt)", d=float(opts.get("vent_dir", 270)), f=float(opts.get("vent_kt", 10))))
             ba.clicked.connect(lambda: self.ed.manche_air(g))
             lay.addWidget(ba)
+        if g.get("genre") in ("polaroid", "post_it", "fleche", "image", "immatriculation", "bandeau", "pastille", "prix", "horaires", "date"):
+            lay.addWidget(self._options_autocollant(g))
         if g.get("genre") in GO.GENRES and GO.GENRES[g["genre"]][1] and g.get("genre") not in ("manche_air",):
             lay.addWidget(self._table_valeurs(g))
         lay.addWidget(QLabel(_("{n} valeur(s) saisies ou issues d'une trace GPS.", n=len(g.get("valeurs") or []))))

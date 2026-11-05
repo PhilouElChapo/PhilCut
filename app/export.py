@@ -209,7 +209,7 @@ class Exportateur:
         if suivant and E.transition_active(suivant):
             fs = E.filtre_sortie_transition(suivant["transition"])
             if fs:
-                chaine.append(fs.replace("{fin}", f"{d:.3f}"))
+                chaine.append(fs.replace("{st}", f"{max(0.0, d - float((suivant['transition'].get('params') or {}).get('duree', E.defauts(suivant['transition']['id']).get('duree', 0.5)))):.3f}"))
         if E.transition_active(c) and not E.fusion(c["transition"]):
             f = E.filtre(c["transition"], ctx)
             if f:

@@ -138,6 +138,8 @@ class Fenetre(QMainWindow):
         for oid in ("vitesse", "recadrer", "stabiliser", "texte", "effets", "goodies", "zone", "sous_titres", "musique", "voix"):
             o = O.outil(oid)
             mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
+        mo.addAction(_("Figer l'image à la tête de lecture (cadre photo, légende)…"), lambda: self._ed(lambda ed: ed.figer_image()))
+        mo.addAction(icone("musique"), _("Bruitages (whoosh, impact, déclic, bip…)…"), lambda: self._ed(lambda ed: ed.bruitage()))
         av = mo.addMenu(icone("goodies"), _("Aviation"))
         av.addAction(_("Tableau de bord de vol (profil réglable)…"), lambda: self._ed(lambda ed: ed.tableau_de_bord()))
         av.addAction(_("Carte animée du trajet et mini-carte…"), lambda: self._ed(lambda ed: ed.trajet()))

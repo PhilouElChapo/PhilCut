@@ -71,6 +71,11 @@ reglez ; carte animee du trajet et mini-carte (etapes choisies dans une liste
 d'aerodromes ou par coordonnees) ; manche a air (vent saisi) ; sous-titres des
 echanges radio trouves dans le son.
 
+Effets (0.4.1) : tremblement, zoom lent, cadre photo, look LUT (.cube), avant /
+apres ; transitions choc, rotation, file ; image figee (clic droit sur l'image) ;
+bruitages fabriques sur ce poste (whoosh, impact, declic...) ; autocollants
+(polaroid, post-it, fleche).
+
 Mises a jour
 ------------
 Verifiees au demarrage (une fois par jour) et PROPOSEES sur l'Accueil : rien n'est

@@ -157,6 +157,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T22 — 0.4.1 : effets manquants
+
+1. **Nouveaux effets** (catalogue de l'onglet Effets, ou fenêtre Effets) : « Tremblement » (secousse réglable, peut s'amortir comme un choc), « Zoom lent (Ken Burns) », « Cadre photo » (bord blanc incliné sur fond flou), « Mon look (fichier LUT) » (bouton « Choisir un fichier… » : un .cube ou .3dl, force réglable), « Avant / après » (choisir l'image ou la vidéo « avant » : rideau qui glisse, ou moitié / moitié, libellés AVANT / APRES). Chacun se voit à l'arrêt et à la lecture (barre verte).
+2. **Nouvelles transitions** : « Choc » (flash et secousse), « Rotation » (le plan arrive en tournant), « Filé (whip pan) » (panoramique flou très rapide). A poser sur un raccord.
+3. **Fondu au noir et flash blanc** : ils empêchaient l'aperçu fidèle et l'export (erreur du moteur) ; vérifier qu'un montage avec un fondu au noir s'exporte.
+4. **Image figée** : tête de lecture sur l'image voulue, clic droit sur l'image (ou sur le plan, ou Montage) › « Figer l'image ici ». Durée, cadre photo ou image simple, zoom lent, légende, flash, déclic. **Attendu** : le plan s'arrête sur cette image (un plan « Image figée » orange dans la timeline), la suite est décalée d'autant, la légende est posée sur la piste Titres, le déclic sur une piste de son. Tout se reprend : rogner, effets, supprimer, Annuler.
+5. **Bruitages** : Montage › « Bruitages… » (ou clic droit sur l'image › « Bruitage ici »). Whoosh, impact, déclic, bip, ding, pop, radio, moteur : « ▶ Ecouter », puis « Poser à la tête de lecture » : le son arrive sur une piste de son libre (une piste est ajoutée si toutes sont occupées). Clic droit sur une transition › « Ajouter un bruitage « whoosh » sur le raccord ».
+6. **Autocollants** : bouton Goodies › pack « Autocollants » : Polaroïd (choisir la photo et la légende dans l'Inspecteur, rubrique Contenu), Post-it (texte, couleur), Flèche (direction, couleur). Ils arrivent animés (le polaroïd tombe, la flèche se trace), se déplacent et se redimensionnent dans l'image, peuvent suivre une personne.
+7. **Toutes les fenêtres « OK »** : avec la dernière version de Qt, certaines fenêtres (Effets, Texte, Goodie, Vitesse…) ne faisaient rien après OK. Vérifier : Effets › poser un effet › OK : l'étiquette apparaît sur le plan.
+
 ## T21 — 0.4.0 : lot Aviation (tout réglé par vous)
 
 1. **Tableau de bord** : Montage › Aviation › « Tableau de bord de vol » (aussi clic droit sur l'image › Aviation). Cochez les instruments, réglez le profil : altitudes (terrain, croisière, arrivée), vitesse, régime, durées du roulage, de la montée, de la descente, caps. **Attendu** : les courbes (altitude, vitesse, cap) se redessinent à chaque réglage. « Poser le tableau de bord » : les instruments s'alignent en bas de l'image, l'aiguille de l'altimètre monte pendant la montée, le variomètre indique la vitesse de montée, l'horizon se cabre et s'incline dans les virages, le compte-tours suit le régime. Sur la piste Goodies, chaque instrument a sa ligne (elles s'empilent).

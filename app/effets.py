@@ -70,6 +70,8 @@ CATALOGUE = {
                    [("force", _("Lissage"), "int", 10, 2, 30)], None),
     "hyperlapse": ("mouvement", _("Hyperlapse"), _("Accélération forte et stabilisée d'une phase longue."),
                    [("facteur", _("Facteur"), "int", 8, 2, 32)], None),
+    "zoom_lent": ("mouvement", _("Zoom lent (Ken Burns)"), _("L'image avance doucement vers le centre pendant tout le plan : photo, image figée, paysage."),
+                  [("force", _("Grossissement"), "float", 0.15, 0.03, 0.6), ("sens", _("Sens"), "choix", "avant", [("avant", _("Vers l'avant")), ("arriere", _("Vers l'arrière"))], 0)], None),
     "tremblement": ("mouvement", _("Tremblement (secousse)"), _("La caméra tremble : choc, turbulence, explosion, moteur qui démarre. Peut s'amortir."),
                     [("force", _("Force"), "float", 1.0, 0.2, 3.0), ("vitesse", _("Vitesse"), "float", 1.0, 0.3, 3.0),
                      ("amorti", _("S'amortit (choc)"), "bool", False, 0, 1)], None),
@@ -278,6 +280,13 @@ def filtre(effet, ctx=None):
         return (f"zoompan=z='if(lt(on,{n}),1.4-0.4*on/{n},1)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={L}x{H}:fps={cad}")
     if i == "bullet_time":
         return "tmix=frames=6,eq=contrast=1.15:saturation=0.85"
+    if i == "zoom_lent":
+        L, H = int(ctx.get("largeur") or 1920), int(ctx.get("hauteur") or 1080)
+        cad = int(ctx.get("cadence") or 30)
+        n = max(1, int(float(ctx.get("duree") or 5) * cad))
+        k = f("force")
+        z = f"1+{k:.3f}*on/{n}" if _p(effet, "sens") != "arriere" else f"{1 + k:.3f}-{k:.3f}*on/{n}"
+        return f"scale={L * 2}:{H * 2},zoompan=z='{z}':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={L}x{H}:fps={cad}"
     if i == "tremblement":
         k = 0.012 + 0.02 * f("force")                   # part de l'image qui sert de marge à la secousse
         v = f("vitesse")
@@ -347,10 +356,10 @@ def filtre_sortie_transition(effet):
     """Pour le clip PRECEDENT : la sortie au noir / au blanc qui precede l'entree."""
     i = effet["id"]
     d = float(_p(effet, "duree"))
-    if i == "t_fondu_noir":
-        return f"fade=t=out:st=max(0\\,{{fin}}-{d:.2f}):d={d:.2f}"
+    if i == "t_fondu_noir":                 # {st} : instant (nombre) où commence la sortie, calculé par l'export
+        return f"fade=t=out:st={{st}}:d={d:.2f}"
     if i == "t_fondu_blanc":
-        return f"fade=t=out:st=max(0\\,{{fin}}-{d:.2f}):d={d:.2f}:c=white"
+        return f"fade=t=out:st={{st}}:d={d:.2f}:c=white"
     return None
 
 

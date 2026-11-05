@@ -17,6 +17,8 @@ PACKS = {
     "route": {"nom": _("Route"), "description": _("Compteur de vitesse, carte, kilométrage."), "goodies": ["compteur", "mini_carte", "distance"]},
     "pharmacie": {"nom": _("Pharmacie"), "description": _("Croix verte, horaires, pastille d'annonce, prix."), "goodies": ["croix", "horaires", "pastille", "prix"]},
     "fete": {"nom": _("Fête"), "description": _("Compte à rebours, confettis, date, bandeau."), "goodies": ["compte_a_rebours", "confettis", "date", "bandeau"]},
+    "autocollants": {"nom": _("Autocollants"), "description": _("Polaroïd avec votre photo, post-it, flèche qui se trace : à poser ou à accrocher à une personne."),
+                     "goodies": ["polaroid", "post_it", "fleche"]},
     "perso": {"nom": _("Mes images"), "description": _("Logo, autocollant, photo en PNG transparent : à poser, ou à accrocher à une personne qui bouge."),
               "goodies": ["image"]},
     "maison": {"nom": _("Maison et jardin"), "description": _("Horloge, lune, température, altitude du lieu."), "goodies": ["horloge", "lune", "temperature", "altitude"]},
@@ -29,6 +31,7 @@ GENRES = {
     "chrono": (_("Chrono de vol"), "s", (0, 36000)), "immatriculation": (_("Immatriculation"), "", (0, 0)),
     "mini_carte": (_("Mini-carte"), "", (0, 0)), "manche_air": (_("Manche à air"), "kt", (0, 40)),
     "carte_trajet": (_("Carte animée du trajet"), "", (0, 0)),
+    "polaroid": (_("Polaroïd"), "", (0, 0)), "post_it": (_("Post-it"), "", (0, 0)), "fleche": (_("Flèche"), "", (0, 0)),
     "altitude": (_("Altitude"), "m", (0, 4000)), "distance": (_("Distance"), "km", (0, 1000)), "boussole": (_("Boussole"), "°", (0, 360)),
     "meteo": (_("Météo"), "°C", (-20, 45)), "denivele": (_("Dénivelé"), "m", (0, 3000)), "compteur": (_("Compteur"), "km/h", (0, 240)),
     "croix": (_("Croix de pharmacie"), "", (0, 0)), "horaires": (_("Horaires"), "", (0, 0)), "pastille": (_("Pastille d'annonce"), "", (0, 0)),
@@ -155,6 +158,9 @@ def image(g, t, taille, texte_extra=None, cache=None):
         if genre in ("carte_trajet", "mini_carte", "manche_air"):
             from . import aviation
             aviation.dessiner(p, g, t, taille, cache)
+        elif genre in ("polaroid", "post_it", "fleche"):
+            from . import autocollants
+            autocollants.dessiner(p, g, t, taille, cache)
         elif genre == "image":
             if not img_source.isNull():
                 s = img_source.size().scaled(taille, taille, Qt.KeepAspectRatio)
