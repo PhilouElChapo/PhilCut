@@ -144,7 +144,7 @@ def image(g, t, taille, texte_extra=None, cache=None):
     opts = g.get("options") or {}
     police = QFont("Nunito")
     if genre == "image" and "source" not in cache:
-        cache["source"] = QImage(opts.get("chemin") or "")
+        cache["source"] = QImage(opts["chemin"]) if opts.get("chemin") else QImage()
     img_source = cache.get("source")
     if True:
         v = valeur(g, t)
@@ -158,11 +158,59 @@ def image(g, t, taille, texte_extra=None, cache=None):
         if genre in ("carte_trajet", "mini_carte", "manche_air"):
             from . import aviation
             aviation.dessiner(p, g, t, taille, cache)
+        elif genre == "croix":                              # croix de pharmacie verte, lumineuse, qui pulse
+            from PySide6.QtGui import QRadialGradient
+            vert = QColor(opts.get("couleur") or "#19c24a")
+            pulse = 0.75 + 0.25 * (0.5 + 0.5 * math.sin(t * 3.2))
+            halo = QRadialGradient(QPointF(c, c), r)
+            halo.setColorAt(0, QColor(vert.red(), vert.green(), vert.blue(), int(120 * pulse)))
+            halo.setColorAt(1, QColor(vert.red(), vert.green(), vert.blue(), 0))
+            p.setPen(Qt.NoPen)
+            p.setBrush(halo)
+            p.drawEllipse(QPointF(c, c), r, r)
+            b = taille * 0.17
+            p.setBrush(QColor(int(vert.red() * pulse + 255 * (1 - pulse) * 0.2), int(vert.green() * pulse + 60), int(vert.blue() * pulse + 40)))
+            p.drawRoundedRect(QRectF(c - b / 2, c - b * 1.6, b, b * 3.2), b * 0.15, b * 0.15)
+            p.drawRoundedRect(QRectF(c - b * 1.6, c - b / 2, b * 3.2, b), b * 0.15, b * 0.15)
+        elif genre == "confettis":
+            import random
+            rnd = random.Random(int(opts.get("graine", 7)))
+            couleurs = [QColor("#ff5c8a"), QColor("#ffd24a"), QColor("#5ad1ff"), QColor("#7cff8a"), QColor("#c78bff")]
+            for k in range(40):
+                x0, v0, ph = rnd.random() * taille, 0.15 + rnd.random() * 0.35, rnd.random() * 6.28
+                y = ((t * v0 * taille + rnd.random() * taille) % (taille * 1.1)) - taille * 0.05
+                x = x0 + math.sin(t * 2 + ph) * taille * 0.04
+                p.save()
+                p.translate(x, y)
+                p.rotate((t * 180 + k * 37) % 360)
+                p.setPen(Qt.NoPen)
+                p.setBrush(couleurs[k % len(couleurs)])
+                p.drawRect(QRectF(-taille * 0.015, -taille * 0.008, taille * 0.03, taille * 0.016))
+                p.restore()
+        elif genre == "lune":
+            phase = float(opts.get("phase", 0.35))                 # 0 = nouvelle lune, 0.5 = pleine
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(245, 240, 215))
+            p.drawEllipse(QPointF(c, c), r * 0.8, r * 0.8)
+            ombre = QPainterPath()
+            ombre.addEllipse(QPointF(c, c), r * 0.8, r * 0.8)
+            p.setClipPath(ombre)                                   # l'ombre ne déborde pas du disque
+            p.setBrush(QColor(15, 18, 30, 235))
+            dx = r * 0.8 * 2 * (0.5 - abs(phase - 0.5)) * 2
+            p.drawEllipse(QPointF(c - dx if phase < 0.5 else c + dx, c), r * 0.8, r * 0.8)
         elif genre in ("polaroid", "post_it", "fleche"):
             from . import autocollants
             autocollants.dessiner(p, g, t, taille, cache)
         elif genre == "image":
-            if not img_source.isNull():
+            if img_source is None or img_source.isNull():          # pas encore d'image choisie : on le dit
+                p.setPen(QPen(QColor(255, 255, 255, 140), max(1.0, taille * 0.012), Qt.DashLine))
+                p.setBrush(QColor(10, 10, 14, 120))
+                p.drawRoundedRect(QRectF(taille * 0.08, taille * 0.08, taille * 0.84, taille * 0.84), taille * 0.06, taille * 0.06)
+                police.setPointSizeF(max(5.0, taille * 0.07))
+                p.setFont(police)
+                p.setPen(QColor(230, 230, 235))
+                p.drawText(QRectF(0, 0, taille, taille), Qt.AlignCenter | Qt.TextWordWrap, _("Votre image\nou logo"))
+            elif not img_source.isNull():
                 s = img_source.size().scaled(taille, taille, Qt.KeepAspectRatio)
                 p.drawImage(QRectF((taille - s.width()) / 2, (taille - s.height()) / 2, s.width(), s.height()), img_source)
         elif style == "cadran" and genre in ("altimetre", "anemometre", "compas", "variometre", "compte_tours", "boussole", "compteur", "horloge"):
@@ -251,6 +299,10 @@ def image(g, t, taille, texte_extra=None, cache=None):
                 texte = f"{s // 60:02d}:{s % 60:02d}"
             else:
                 texte = f"{v:,.0f} {unite}".replace(",", " ")
+            from PySide6.QtGui import QFontMetricsF
+            while police.pointSizeF() > 5 and QFontMetricsF(police).horizontalAdvance(texte) > taille * 0.86:     # le texte tient
+                police.setPointSizeF(police.pointSizeF() * 0.9)
+                p.setFont(police)
             p.drawText(QRectF(0, taille * 0.3, taille, taille * 0.4), Qt.AlignCenter, texte)
             police.setPointSizeF(max(5.0, taille * 0.055))
             police.setBold(False)

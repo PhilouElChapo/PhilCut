@@ -157,6 +157,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T23 — 0.4.2 : confort de l'interface
+
+1. **Petit écran** (portable 1366 × 768) : toutes les pistes de la timeline sont visibles sans défiler, jusqu'aux Titres et Goodies ; quand il y en a beaucoup, elles se tassent et les noms deviennent courts (V1, V2, M1…) avec les boutons M et S sur la ligne du nom (le verrou et V restent dans le clic droit › Pistes). Si vous agrandissez les images (Alt + molette), la timeline défile à nouveau.
+2. **Colonne des médias repliable** : bouton ◂ à droite de « Médias du projet » (ou Affichage › Colonne des médias, F3) : elle devient une colonne d'icônes « Médias » et « Importer » ; l'image gagne la place. Retenu à la prochaine ouverture.
+3. **Onglets du volet** : « Proposition », « Inspecteur », « Effets » s'affichent en entier, même volet étroit.
+4. **Goodies** : le bouton Goodies ouvre une galerie de vignettes dessinées, par famille ; double-clic : le Goodie arrive à la tête de lecture, l'Inspecteur s'ouvre dessus. Croix de pharmacie verte qui pulse, confettis, lune, image ou logo (cadre « Votre image ou logo » tant qu'aucune n'est choisie). Les textes des badges se réduisent pour tenir.
+5. **Accueil** : sans projet récent, la liste dit comment commencer au lieu d'un cadre vide.
+
 ## T22 — 0.4.1 : effets manquants
 
 1. **Nouveaux effets** (catalogue de l'onglet Effets, ou fenêtre Effets) : « Tremblement » (secousse réglable, peut s'amortir comme un choc), « Zoom lent (Ken Burns) », « Cadre photo » (bord blanc incliné sur fond flou), « Mon look (fichier LUT) » (bouton « Choisir un fichier… » : un .cube ou .3dl, force réglable), « Avant / après » (choisir l'image ou la vidéo « avant » : rideau qui glisse, ou moitié / moitié, libellés AVANT / APRES). Chacun se voit à l'arrêt et à la lecture (barre verte).

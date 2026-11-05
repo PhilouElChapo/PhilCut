@@ -132,6 +132,7 @@ class Fenetre(QMainWindow):
         a.addAction(_("Images de la timeline plus grandes (Alt + molette)"), lambda: self._ed(lambda ed: ed.timeline.hauteur_images(1.3)), "Alt++")
         a.addAction(_("Images de la timeline plus petites"), lambda: self._ed(lambda ed: ed.timeline.hauteur_images(1 / 1.3)), "Alt+-")
         a.addSeparator()
+        a.addAction(_("Colonne des médias : complète / repliée"), lambda: self._ed(lambda ed: ed.replier_gauche()), "F3")
         a.addAction(_("Volet de droite : complet / icônes / masqué"), lambda: self._ed(lambda ed: ed.basculer_volet()), "F4")
         a.addAction(_("Personnaliser la barre d'outils…"), self.personnaliser_barre)
         mo = mb.addMenu(_("&Montage"))

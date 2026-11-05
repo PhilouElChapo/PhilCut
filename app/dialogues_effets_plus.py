@@ -105,3 +105,84 @@ class DialogueBruitages(QDialog):
             self.lecteur.setAudioOutput(self.sortie)
         self.lecteur.setSource(QUrl.fromLocalFile(B.chemin(k)))
         self.lecteur.play()
+
+
+class GalerieGoodies(QDialog):
+    """Choisir un Goodie en le voyant : vignettes dessinées par famille ; un double-clic le pose à la tête de lecture."""
+
+    def __init__(self, parent=None, params=None):
+        super().__init__(parent)
+        from PySide6.QtCore import QSize
+        from PySide6.QtGui import QIcon, QPixmap
+        from PySide6.QtWidgets import QListView
+        from . import goodies as GO
+        self.setWindowTitle(_("Goodies"))
+        self.resize(760, 560)
+        v = QVBoxLayout(self)
+        aide = QLabel(_("Cliquez un Goodie puis « Poser », ou double-cliquez : il arrive à la tête de lecture ; vous le placez et le "
+                        "redimensionnez ensuite dans l'image, ses réglages sont dans l'Inspecteur."))
+        aide.setWordWrap(True)
+        v.addWidget(aide)
+        self.famille = QComboBox()
+        self.famille.addItem(_("Toutes les familles"), "")
+        for k, pk in GO.PACKS.items():
+            self.famille.addItem(pk["nom"], k)
+        i = self.famille.findData((params or {}).get("goodies_famille", ""))
+        self.famille.setCurrentIndex(max(0, i))
+        h = QHBoxLayout()
+        h.addWidget(self.famille, 1)
+        v.addLayout(h)
+        self.liste = QListWidget()
+        self.liste.setViewMode(QListView.IconMode)
+        self.liste.setIconSize(QSize(96, 96))
+        self.liste.setGridSize(QSize(120, 132))
+        self.liste.setResizeMode(QListView.Adjust)
+        self.liste.setMovement(QListView.Static)
+        self.liste.setWordWrap(True)
+        self.liste.itemDoubleClicked.connect(lambda _it: self.accept())
+        v.addWidget(self.liste, 1)
+        self.desc = QLabel("")
+        self.desc.setWordWrap(True)
+        v.addWidget(self.desc)
+        bb = boutons_fr(QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel))
+        bb.button(QDialogButtonBox.Ok).setText(_("Poser à la tête de lecture"))
+        bb.accepted.connect(self.accept)
+        bb.rejected.connect(self.reject)
+        v.addWidget(bb)
+        self.params = params if params is not None else {}
+        self._GO, self._QIcon, self._QPixmap = GO, QIcon, QPixmap
+        self.famille.currentIndexChanged.connect(self._remplir)
+        self.liste.currentItemChanged.connect(lambda it, _p: it and self.desc.setText(it.toolTip()))
+        self._remplir()
+
+    def _remplir(self):
+        GO = self._GO
+        fam = self.famille.currentData() or ""
+        self.params["goodies_famille"] = fam
+        self.liste.clear()
+        vus = set()
+        for k, pk in GO.PACKS.items():
+            if fam and k != fam:
+                continue
+            for gid in pk["goodies"]:
+                if gid in vus:
+                    continue
+                vus.add(gid)
+                g = {"genre": gid, "debut": 0, "fin": 10, "x": 0.5, "y": 0.5, "taille": 0.3, "style": "cadran", "valeurs": [],
+                     "options": {"etapes": [{"nom": "LFMD", "code": "LFMD", "lat": 43.548, "lon": 6.954}, {"nom": "LFTZ", "code": "LFTZ", "lat": 43.205, "lon": 6.482}],
+                                 "texte": GO.GENRES.get(gid, (gid,))[0], "angle": 30}}
+                try:
+                    img = GO.image(g, 5.0, 96)
+                    icone_ = self._QIcon(self._QPixmap.fromImage(img))
+                except Exception:       # noqa: BLE001
+                    icone_ = self._QIcon()
+                it = QListWidgetItem(icone_, GO.GENRES.get(gid, (gid,))[0])
+                it.setData(Qt.UserRole, gid)
+                it.setToolTip(f"{pk['nom']} — {pk['description']}")
+                it.setTextAlignment(Qt.AlignHCenter | Qt.AlignTop)
+                self.liste.addItem(it)
+        self.liste.setCurrentRow(0)
+
+    def choix(self):
+        it = self.liste.currentItem()
+        return it.data(Qt.UserRole) if it else None

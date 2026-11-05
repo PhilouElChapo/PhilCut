@@ -76,6 +76,9 @@ apres ; transitions choc, rotation, file ; image figee (clic droit sur l'image) 
 bruitages fabriques sur ce poste (whoosh, impact, declic...) ; autocollants
 (polaroid, post-it, fleche).
 
+Confort (0.4.2) : la timeline tient dans la hauteur de l'ecran, colonne des medias
+repliable (F3), galerie des Goodies en vignettes, croix de pharmacie animee.
+
 Mises a jour
 ------------
 Verifiees au demarrage (une fois par jour) et PROPOSEES sur l'Accueil : rien n'est

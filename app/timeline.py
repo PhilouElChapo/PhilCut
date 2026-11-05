@@ -599,6 +599,28 @@ class Timeline(QGraphicsView):
         self.reconstruire()
 
     # ---- disposition des pistes
+    def resizeEvent(self, e):
+        super().resizeEvent(e)
+        if not hasattr(self, "_minut_taille"):
+            from PySide6.QtCore import QTimer
+            self._minut_taille = QTimer(self)
+            self._minut_taille.setSingleShot(True)
+            self._minut_taille.setInterval(120)
+            self._minut_taille.timeout.connect(self._apres_redimension)
+        if e.oldSize().height() != e.size().height():
+            self._minut_taille.start()
+
+    def _apres_redimension(self):
+        """Hauteur visible changée : on ne reconstruit que si la disposition des pistes change, et jamais pendant un
+        glissement (un élément ne doit pas disparaître sous la souris)."""
+        if QApplication.mouseButtons() != Qt.NoButton:
+            self._minut_taille.start()
+            return
+        sig = tuple(self._pistes().items())
+        if sig != getattr(self, "_sig_pistes", None):
+            self._sig_pistes = sig
+            self.reconstruire()
+
     def _rangs_calques(self, cle):
         """Nombre de sous-lignes nécessaires pour que les textes (ou Goodies) qui se chevauchent restent tous visibles."""
         fins = []
@@ -643,6 +665,17 @@ class Timeline(QGraphicsView):
         out["titre"] = (y, ht)
         y += ht
         out["goodie"] = (y, hg)
+        # tout doit tenir dans la hauteur visible (petit écran) : les pistes se tassent jusqu'à 60 % ; au-delà, défilement
+        dispo = self.viewport().height() - 8 if self.isVisible() else 0
+        total = y + hg - H_REGLE
+        if dispo > 0 and H_REGLE + total > dispo and self.h_video <= H_VIDEO:      # images agrandies à la main : on défile
+            k = max(0.6, (dispo - H_REGLE) / max(1, total))
+            y2, out2 = H_REGLE, {}
+            for nom, (y0, h) in out.items():
+                h2 = h if h <= 18 else max(14, int(h * k))
+                out2[nom] = (y2, h2)
+                y2 += h2
+            out = out2
         return out
 
     def hauteur_totale(self):
@@ -677,6 +710,7 @@ class Timeline(QGraphicsView):
         self.reconstruire()
 
     def reconstruire(self):
+        self._sig_pistes = tuple(self._pistes().items())
         sel = {it.clip["id"] for it in self._scene.items() if isinstance(it, ItemClip) and it.isSelected()}
         self._scene.blockSignals(True)
         self._scene.clear()
@@ -803,7 +837,14 @@ class Timeline(QGraphicsView):
         for nom, (y, h) in self._pistes().items():
             p.setPen(_c("texte2"))
             p.setFont(f)
-            p.drawText(QRectF(x0 + 8, y + 2, MARGE_G - 12, min(h, 22)), Qt.AlignLeft | Qt.AlignVCenter, self.libelle_piste(nom))
+            compacte = h < 34 and nom not in ("titre", "goodie")        # piste tassée : boutons sur la ligne du nom
+            larg_nom = MARGE_G - 12 if not compacte else 32
+            lib = self.libelle_piste(nom)
+            if compacte and not (self.projet and (self.projet.d.get("noms_pistes") or {}).get(nom)):
+                lib = {"video": "V1", "voix": _("Voix")}.get(nom) or ("V" + nom[5:] if nom.startswith("video") else
+                                                                     "M" + (nom[5:] or "1") if nom.startswith("audio") else lib)
+            p.drawText(QRectF(x0 + 8, y + 2, larg_nom, min(h, 22)), Qt.AlignLeft | Qt.AlignVCenter,
+                       QFontMetrics(f).elidedText(lib, Qt.ElideRight, int(larg_nom)))
             if nom in ("titre", "goodie") or not self.projet:
                 continue
             # flèche pour replier / déplier la piste
@@ -811,7 +852,7 @@ class Timeline(QGraphicsView):
             p.setPen(_c("texte2"))
             p.drawText(rf, Qt.AlignCenter, "▸" if self.projet.piste_repliee(nom) else "▾")
             self._boutons_piste.setdefault(nom, []).append((rf, "repliee", _("Replier / déplier la piste"), self.projet.piste_repliee(nom)))
-            if h < 34:
+            if h < 16:
                 continue
             # petits boutons : M = son coupé, S = solo, V = image masquée (vidéo 2+), 🔒 = verrou
             boutons = [("muette", "M", nom in (self.projet.d.get("pistes_muettes") or []), _("Son de la piste coupé (écoute et export)")),
@@ -819,14 +860,16 @@ class Timeline(QGraphicsView):
             if nom.startswith("video") and nom != "video":
                 boutons.append(("masquee", "V", self.projet.piste_masquee(nom), _("Image de la piste masquée (écoute et export)")))
             boutons.append(("verrou", "🔒", self.projet.piste_verrouillee(nom), _("Piste verrouillée : ses plans ne bougent plus (ni déplacés, ni rognés, ni supprimés)")))
-            bx = x0 + 8
-            by = y + h - 20
+            if compacte:                                       # place pour M et S ; le reste par clic droit › Pistes
+                boutons = boutons[:2]
+            bx = x0 + 8 if not compacte else x0 + 42
+            by = y + h - 20 if not compacte else y + max(1.0, (min(h, 22) - 14) / 2 + 1)
             fb = QFont()
             fb.setPointSizeF(7.5)
             fb.setBold(True)
             p.setFont(fb)
             for quoi, lettre, actif, aide in boutons:
-                rc = QRectF(bx, by, 16, 14)
+                rc = QRectF(bx, by, 16 if not compacte else 12, 14)
                 p.setPen(Qt.NoPen)
                 p.setBrush({"muette": QColor("#e05a5a"), "solo": QColor("#e0b84a"), "masquee": QColor("#e05a5a"),
                             "verrou": QColor("#5a8ae0")}.get(quoi, QColor("#e05a5a")) if actif else QColor(255, 255, 255, 28))
@@ -834,7 +877,7 @@ class Timeline(QGraphicsView):
                 p.setPen(QColor("#ffffff") if actif else _c("texte2"))
                 p.drawText(rc, Qt.AlignCenter, lettre)
                 self._boutons_piste.setdefault(nom, []).append((rc, quoi, aide, actif))
-                bx += 18
+                bx += 18 if not compacte else 13
         # curseur de lecture
         x = MARGE_G + self.position * self.pps
         p.setPen(QPen(QColor("#ff5c5c"), 2))

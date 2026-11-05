@@ -106,6 +106,13 @@ class PageAccueil(QWidget):
                 it.setForeground(Qt.gray)
             it.setText(it.text() + (f"   —   {_date(d)}" if d else "") + f"\n{os.path.dirname(p)}")
             self.liste.addItem(it)
+        if not self.liste.count():                 # aucun projet encore : dire quoi faire plutôt qu'un cadre vide
+            it = QListWidgetItem(_("Aucun projet pour l'instant. Pour commencer : « Nouveau projet 16:9 » (YouTube) ou « 9:16 » "
+                                   "(Insta, écran LED), ou glissez vos vidéos sur cette fenêtre."))
+            it.setFlags(Qt.NoItemFlags)
+            it.setIcon(icone("info", theme.COULEURS["texte2"], 32))
+            self.liste.addItem(it)
+        self.liste.setWordWrap(True)
         if autres:
             self.lbl_autres.setText(_("Sur vos autres postes : ") + " · ".join(_("{m} ({n} projets, {d})", m=m, n=n, d=_date(dte)) for m, dte, n in autres))
         else:

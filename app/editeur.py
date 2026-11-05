@@ -334,6 +334,12 @@ class Editeur(QWidget):
         b_imp.setToolTip(_("Importer des rushes, musiques ou images"))
         b_imp.clicked.connect(self.importer)
         hg.addWidget(b_imp)
+        b_rep = QToolButton()
+        b_rep.setText("◂")
+        b_rep.setToolTip(_("Replier la colonne des médias (elle devient une colonne d'icônes)"))
+        b_rep.setAutoRaise(True)
+        b_rep.clicked.connect(lambda: self.replier_gauche(True))
+        hg.addWidget(b_rep)
         vg.addLayout(hg)
         aide = QLabel(_("Vos rushes, musiques et images. Glissez-les sur la timeline."))
         aide.setWordWrap(True)
@@ -345,7 +351,34 @@ class Editeur(QWidget):
         self.biblio.retirer.connect(self.retirer_media)
         self.biblio.importer.connect(self.importer)
         vg.addWidget(self.biblio, 1)
-        self.split_h.addWidget(g)
+        # colonne repliée : deux icônes nommées
+        self.gauche_icones = QFrame()
+        self.gauche_icones.setStyleSheet("QFrame{background:%s;border-right:1px solid %s}" % (theme.COULEURS["surface"], theme.COULEURS["bord_leger"]))
+        vi_g = QVBoxLayout(self.gauche_icones)
+        vi_g.setContentsMargins(4, 8, 4, 8)
+        vi_g.setSpacing(6)
+        for ic, lib, aide, f in (("dossier", _("Médias"), _("Rouvrir la colonne des médias du projet"), lambda: self.replier_gauche(False)),
+                                 ("importer", _("Importer"), _("Importer des rushes, musiques ou images"), self.importer)):
+            bi = QToolButton()
+            bi.setIcon(icone(ic, theme.COULEURS["texte"]))
+            bi.setIconSize(QSize(22, 22))
+            bi.setText(lib)
+            bi.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+            bi.setToolTip(aide)
+            bi.setAutoRaise(True)
+            bi.setStyleSheet("QToolButton{font-size:10px}")
+            bi.clicked.connect(f)
+            vi_g.addWidget(bi)
+        vi_g.addStretch(1)
+        self.gauche_complet = g
+        conteneur = QWidget()
+        hc = QHBoxLayout(conteneur)
+        hc.setContentsMargins(0, 0, 0, 0)
+        hc.setSpacing(0)
+        hc.addWidget(g)
+        hc.addWidget(self.gauche_icones)
+        self.gauche = conteneur
+        self.split_h.addWidget(conteneur)
         # ---- centre : apercu + transport
         c = QWidget()
         vc = QVBoxLayout(c)
@@ -359,7 +392,7 @@ class Editeur(QWidget):
         self.volet = QTabWidget()
         self.volet.setUsesScrollButtons(False)          # trois onglets toujours visibles : les noms s'abrègent si le volet est étroit
         self.volet.setElideMode(Qt.ElideRight)
-        self.volet.tabBar().setStyleSheet("QTabBar::tab:selected{font-weight:normal}")    # le gras décalait le nom abrégé
+        self.volet.tabBar().setStyleSheet("QTabBar::tab{padding:7px 7px}QTabBar::tab:selected{font-weight:normal}")   # noms entiers même étroit
         self.proposition = VoletProposition(params)
         self.proposition.analyser.connect(self.analyser)
         self.proposition.appliquer.connect(self.appliquer_recette)
@@ -436,6 +469,7 @@ class Editeur(QWidget):
             self.split_v.setSizes(tailles["v"])
         if tailles.get("h") and len(tailles["h"]) == 4:
             self.split_h.setSizes(tailles["h"])
+        self._appliquer_gauche()
         self.split_v.splitterMoved.connect(lambda *_a: self._memoriser_tailles())
         self.split_h.splitterMoved.connect(lambda *_a: self._memoriser_tailles())
         v.addWidget(self.split_v, 1)
@@ -558,6 +592,34 @@ class Editeur(QWidget):
         self.params[cle] = val
         self.params.enregistrer()
         self.fenetre.reconstruire_barres()
+
+    def replier_gauche(self, replie=None):
+        """Colonne des médias : complète, ou repliée en une colonne d'icônes (place gagnée pour l'image) ; mémorisé."""
+        if replie is None:
+            replie = self.params.get("colonne_gauche", "complet") != "icones"
+        self.params["colonne_gauche"] = "icones" if replie else "complet"
+        self.params.enregistrer()
+        self._appliquer_gauche()
+
+    def _appliquer_gauche(self):
+        replie = self.params.get("colonne_gauche", "complet") == "icones"
+        self.gauche_complet.setVisible(not replie)
+        self.gauche_icones.setVisible(replie)
+        tailles = self.split_h.sizes()
+        if replie:
+            self.gauche.setMaximumWidth(72)
+            self.gauche.setMinimumWidth(72)
+            if tailles and tailles[0] > 72:
+                tailles[1] += tailles[0] - 72
+                tailles[0] = 72
+        else:
+            self.gauche.setMinimumWidth(150)
+            self.gauche.setMaximumWidth(16777215)
+            if tailles and tailles[0] < 150:
+                tailles[1] -= 240 - tailles[0]
+                tailles[0] = 240
+        if tailles:
+            self.split_h.setSizes(tailles)
 
     def basculer_volet(self):
         mode = self.params.get("volet", "complet")
@@ -1569,13 +1631,28 @@ class Editeur(QWidget):
         t.start()
 
     def nouveau_goodie(self):
-        d = DialogueGoodie(self, None, self.timeline.position, max(10.0, self.projet.duree()), self.params)
-        if d.exec() != QDialog.Accepted:
+        """Galerie des Goodies (vignettes) ; les instruments d'aviation, la carte et la manche ouvrent leur fenêtre dédiée."""
+        from .dialogues_effets_plus import GalerieGoodies
+        d = GalerieGoodies(self, self.params)
+        if d.exec() != QDialog.Accepted or not d.choix():
             return
+        gid = d.choix()
+        if gid in ("carte_trajet", "mini_carte"):
+            self.trajet()
+            return
+        if gid == "manche_air":
+            self.manche_air()
+            return
+        t = self.timeline.position
         self.projet.marquer()
-        g = d.resultat()
-        self.projet.ajouter_goodie(**{k: v for k, v in g.items() if k != "id"})
+        g = self.projet.ajouter_goodie(gid, t, min(max(t + 5.0, self.projet.duree()), t + 8.0))
+        if gid in ("polaroid", "post_it", "fleche"):
+            g["taille"], g["x"], g["y"] = (0.32, 0.5, 0.45) if gid != "fleche" else (0.22, 0.5, 0.5)
         self.rafraichir()
+        self._ouvrir_volet(1)
+        self.inspecteur.montrer_selection([g["id"]])
+        self.encart.message(_("Goodie posé de {a} à {b} : glissez-le et tirez ses coins dans l'image ; réglages dans l'Inspecteur.",
+                              a=_tc(g["debut"]), b=_tc(g["fin"])))
 
     # ---------------------------------------------------------------- image figée, bruitages
     def figer_image(self, t=None):
