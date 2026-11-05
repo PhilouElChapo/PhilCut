@@ -31,6 +31,7 @@ class Apercu(QGraphicsView):
     etat_lecture = Signal(bool)
     calque_deplace = Signal(str, float, float)      # id d'un texte ou Goodie déplacé à la souris dans l'image : x, y (0..1)
     calque_clique = Signal(str)                     # id : ouvrir dans l'Inspecteur
+    calque_taille = Signal(str, float)              # id, facteur : molette sur l'élément dans l'image
     pas_image = Signal(int)                         # molette sur l'image : ±1 image
 
     def __init__(self, projet=None, params=None, parent=None):
@@ -659,7 +660,7 @@ class Poignee(QGraphicsRectItem):
         self.setPen(QPen(QColor(255, 210, 74, 0), 2, Qt.DashLine))
         self.setBrush(Qt.NoBrush)
         self.setCursor(Qt.OpenHandCursor)
-        self.setToolTip(_("Glissez pour déplacer · double-clic : réglages"))
+        self.setToolTip(_("Glissez pour déplacer · molette : plus grand ou plus petit · double-clic : réglages"))
 
     def hoverEnterEvent(self, e):
         self.setPen(QPen(QColor(255, 210, 74, 220), 2, Qt.DashLine))
@@ -683,3 +684,9 @@ class Poignee(QGraphicsRectItem):
 
     def mouseDoubleClickEvent(self, e):
         self.apercu.calque_clique.emit(self.ident)
+
+    def wheelEvent(self, e):
+        d = e.delta()
+        if d:
+            self.apercu.calque_taille.emit(self.ident, 1.1 if d > 0 else 1 / 1.1)
+        e.accept()

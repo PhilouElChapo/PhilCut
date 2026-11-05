@@ -423,6 +423,7 @@ class Editeur(QWidget):
         self.apercu.position_changee.connect(self._temps)
         self.apercu.taches_hote = self.taches
         self.apercu.calque_deplace.connect(self._calque_deplace)
+        self.apercu.calque_taille.connect(self._calque_taille)
         self.apercu.calque_clique.connect(lambda ident: (self._ouvrir_volet(1), self.inspecteur.montrer_selection([ident])))
         self.apercu.pas_image.connect(lambda n: self.aller_a(self.timeline.position + n / self.projet.cadence))
         self.apercu.viewport().setContextMenuPolicy(Qt.CustomContextMenu)
@@ -765,6 +766,18 @@ class Editeur(QWidget):
             if e["id"] == ident:
                 self.projet.marquer()
                 e["x"], e["y"] = round(x, 4), round(y, 4)
+                self._modifie()
+                if self.inspecteur._cible and self.inspecteur._cible[1] == ident:
+                    self.inspecteur.montrer_selection([ident])
+                return
+
+    def _calque_taille(self, ident, facteur):
+        """Molette sur un texte ou un Goodie dans l'image : plus grand ou plus petit."""
+        for e in self.projet.titres + self.projet.goodies:
+            if e["id"] == ident:
+                self.inspecteur._marquer(("taille", ident))
+                defaut = 1.0 if e in self.projet.titres else 0.22
+                e["taille"] = round(min(4.0 if e in self.projet.titres else 0.9, max(0.2 if e in self.projet.titres else 0.05, float(e.get("taille", defaut)) * facteur)), 3)
                 self._modifie()
                 if self.inspecteur._cible and self.inspecteur._cible[1] == ident:
                     self.inspecteur.montrer_selection([ident])
@@ -1395,6 +1408,11 @@ class Editeur(QWidget):
         if fin - debut < 0.2:
             self.encart.message(_("Placez le curseur avant la fin du montage."))
             return
+        cle = (round(debut, 2), round(fin, 2), self.apercu._etat_projet())
+        cache = getattr(self, "_segments_rendus", {})
+        if cle in cache and os.path.exists(cache[cle]):          # déjà préparé pour cet état du montage : lecture immédiate
+            self.apercu.jouer_segment(debut, fin, cache[cle])
+            return
         self._n_segment = getattr(self, "_n_segment", 0) + 1
         sortie = os.path.join(tempfile.gettempdir(), f"philcut_lecture_{os.getpid()}_{self._n_segment % 4}.mp4")
         projet = copy.deepcopy(self.projet)
@@ -1415,6 +1433,8 @@ class Editeur(QWidget):
         def fini(r, e):
             if e or not r:
                 return
+            self._segments_rendus = {k: v for k, v in getattr(self, "_segments_rendus", {}).items() if v != r}
+            self._segments_rendus[cle] = r
             self.apercu.jouer_segment(debut, fin, r)
         t.fini.connect(fini)
         t.start()
