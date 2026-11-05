@@ -34,6 +34,8 @@ OUTILS = [
      _("Pose un effet ou une transition sur le plan sélectionné : aperçu avant de poser, puis étiquette sur le plan et réglages dans l'Inspecteur. Clic droit sur l'étiquette : actif, supprimer."), True),
     ("goodies", "habiller", "goodies", _('Goodies'), _('Instruments, badges, horloge'),
      _("Incrustations à thème : altimètre, vitesse, cap, horloge, immatriculation, boussole, compte à rebours… Valeurs tirées d'une trace GPS ou saisies."), True),
+    ("zone", "habiller", "oeil_barre", _('Zone'), _('Flouter, pixelliser, cacher'),
+     _("Tracez à la souris, dans l'image, une zone à flouter, pixelliser ou cacher (visage, plaque, écran, logo). Elle peut suivre ce qu'elle couvre : PhilCut analyse le rush image par image. Elle se déplace et se redimensionne dans l'image, se règle dans l'Inspecteur."), True),
     ("sous_titres", "habiller", "sous_titres", _('Sous-titres'), _('Automatiques (local) ou importés'),
      _("Transcrit la voix sur ce poste (modèle « Voix » à cocher dans Préférences › IA locale) ou importe un fichier SRT ; style karaoké : chaque mot s'allume quand il est dit."), True),
     ("musique", "son", "musique", _('Musique'), _('Bibliothèque libre, votre dossier'),
@@ -52,7 +54,7 @@ OUTILS = [
 ELEMENTS_BARRE = [("|", _("Séparateur")), ("annuler", _("Annuler|action")), ("retablir", _("Rétablir")), ("lecture", _("Lecture")),
                   ("zoom", _("Zoom de la timeline")), ("aimant", _("Aimant (coller aux bords)")), ("volet", _("Volet de droite"))]
 BARRE_DEFAUT = ["importer", "|", "annuler", "retablir", "|", "couper", "supprimer", "vitesse", "recadrer", "|", "assistant", "|",
-                "texte", "effets", "goodies", "musique", "|", "fabrique", "|", "exporter", "zoom", "aimant", "volet"]
+                "texte", "effets", "goodies", "zone", "musique", "|", "fabrique", "|", "exporter", "zoom", "aimant", "volet"]
 
 
 def famille(fid):

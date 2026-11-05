@@ -14,6 +14,7 @@ from .langue import _
 from .projet import duree_clip, fin_clip
 
 MIME_MEDIA = "application/x-philcut-media"
+MIME_EFFET = "application/x-philcut-effet"     # effet ou transition glissé depuis le catalogue
 H_REGLE = 26
 H_VIDEO = 74
 H_AUDIO = 48
@@ -375,13 +376,18 @@ class ItemCalque(QGraphicsRectItem):
         r = self.rect()
         p.setRenderHint(QPainter.Antialiasing)
         p.setPen(QPen(QColor("#ffd36b"), 2) if self.isSelected() else Qt.NoPen)
-        p.setBrush(QColor("#b0186b") if self.genre == "titre" else QColor("#a35c00"))
+        zone = self.elem.get("genre") == "zone"
+        p.setBrush(QColor("#b0186b") if self.genre == "titre" else QColor("#1f6f99") if zone else QColor("#a35c00"))
         p.drawRoundedRect(r, 4, 4)
         p.setPen(QColor("#fff"))
         f = QFont()
         f.setPointSizeF(8)
         p.setFont(f)
-        texte = self.elem.get("texte") if self.genre == "titre" else self.elem.get("genre", "")
+        if zone:
+            from . import zones as Z
+            texte = Z.libelle(self.elem)
+        else:
+            texte = self.elem.get("texte") if self.genre == "titre" else self.elem.get("genre", "")
         p.drawText(r.adjusted(5, 0, -4, 0), Qt.AlignLeft | Qt.AlignVCenter, QFontMetrics(f).elidedText(texte or "", Qt.ElideRight, int(r.width() - 9)))
 
     def mousePressEvent(self, e):
@@ -408,6 +414,17 @@ class ItemCalque(QGraphicsRectItem):
         self.setSelected(True)
         m = QMenu()
         m.addAction(_("Régler dans l'Inspecteur"), lambda: self.tl.element_clique.emit(self.elem["id"], "calque", 0))
+        if self.elem.get("genre") == "zone":
+            suivie = bool((self.elem.get("suivi") or {}).get("positions"))
+            m.addAction(_("Refaire le suivi depuis le début") if suivie else _("Suivre ce qu'elle couvre (analyse de l'image)"),
+                        lambda: self.tl.demande_menu.emit(self.elem["id"], "zone_suivre"))
+            if suivie:
+                m.addAction(_("Corriger à la tête de lecture (retracer ici)"), lambda: self.tl.demande_menu.emit(self.elem["id"], "zone_retracer"))
+                m.addAction(_("Figer (ne plus suivre)"), lambda: self.tl.demande_menu.emit(self.elem["id"], "zone_figer"))
+            m.addSeparator()
+            m.addAction(_("Supprimer"), lambda: self.tl.supprimer_element(self.elem["id"]))
+            m.exec(e.screenPos())
+            return
         m.addAction(_("Tous les réglages (fenêtre)…"), lambda: self.tl.proprietes.emit(self.elem["id"]))
         m.addAction(_("Accrocher à une personne (suit ses mouvements)…"), lambda: self.tl.demande_menu.emit(self.elem["id"], "accrocher"))
         if self.elem.get("suivi"):
@@ -427,6 +444,7 @@ class Timeline(QGraphicsView):
     balayage = Signal(bool)                 # le curseur est tiré à la souris (aperçu : images de la pellicule)            # clip_id : un réglage a changé depuis la timeline (durée de transition…)
     proprietes = Signal(str)                # double clic : identifiant
     media_depose = Signal(str, str, float)  # media_id, piste, instant
+    effet_depose = Signal(str, str)         # clip_id, id de l'effet ou de la transition glissé depuis le catalogue
     demande_menu = Signal(str, object)      # (clip_id, position ecran) pour la fenetre (effets, etc.)
 
     def __init__(self, projet=None, parent=None):
@@ -570,6 +588,19 @@ class Timeline(QGraphicsView):
             t += pas
 
     def drawForeground(self, p, r):
+        dep = getattr(self, "_depot", None)
+        if dep and self.projet:
+            c = self.projet.clip(dep[0])
+            it = self.items_clips.get(dep[0])
+            if c and it:
+                rc = it.sceneBoundingRect()
+                if dep[1]:          # transition : le raccord s'allume
+                    x = MARGE_G + c["debut"] * self.pps
+                    p.fillRect(QRectF(x - 7, rc.top(), 14, rc.height()), QColor(255, 210, 74, 170))
+                else:
+                    p.setPen(QPen(QColor("#ffd24a"), 3))
+                    p.setBrush(QColor(255, 210, 74, 50))
+                    p.drawRoundedRect(rc.adjusted(1, 1, -1, -1), 5, 5)
         # barre de préparation : rouge = à préparer, orange = en cours, vert = prêt (lecture avec effets)
         etats = self.etats_preparation() if callable(getattr(self, "etats_preparation", None)) else []
         for a0, b0, etat in etats:
@@ -1150,12 +1181,67 @@ class Timeline(QGraphicsView):
         self.modifie.emit()
         self.reconstruire()
 
+    # ---- depot d'un effet ou d'une transition du catalogue
+    def cible_effet(self, sp, eid):
+        """Plan qui recevra l'effet (ou la transition) lâché au point sp de la scène, ou (None, raison)."""
+        from . import effets as E
+        if not self.projet:
+            return None, ""
+        fi = E.fiche(eid) or {}
+        piste = self.piste_a(sp.y())
+        if not (piste or "").startswith("video"):
+            return None, _("Lâchez l'effet sur un plan d'une piste vidéo.")
+        t = (sp.x() - MARGE_G) / self.pps
+        clips = sorted(self.projet.clips_piste(piste), key=lambda c: c["debut"])
+        if fi.get("famille") == "transition":
+            # la transition va au plan qui ARRIVE : le raccord le plus proche du point lâché
+            tol = max(0.4, 18 / self.pps)
+            proches = [c for c in clips[1:] if abs(c["debut"] - t) <= tol]
+            if proches:
+                return min(proches, key=lambda c: abs(c["debut"] - t)), ""
+            c = next((c for c in clips if c["debut"] <= t < fin_clip(c)), None)
+            if c is None:
+                return None, _("Lâchez la transition sur un raccord entre deux plans.")
+            if c is clips[0]:
+                return None, _("C'est le premier plan : une transition se pose sur un raccord, entre deux plans.")
+            return c, ""
+        c = next((c for c in clips if c["debut"] <= t < fin_clip(c)), None)
+        return (c, "") if c else (None, _("Lâchez l'effet sur un plan."))
+
+    def _effet_glisse(self, e):
+        try:
+            return bytes(e.mimeData().data(MIME_EFFET)).decode("utf-8")
+        except Exception:       # noqa: BLE001
+            return ""
+
+    def dragLeaveEvent(self, e):
+        self._depot = None
+        self.viewport().update()
+        super().dragLeaveEvent(e)
+
     # ---- depot depuis la bibliotheque
     def dragEnterEvent(self, e):
+        if e.mimeData().hasFormat(MIME_EFFET):
+            e.acceptProposedAction()
+            return
         if e.mimeData().hasFormat(MIME_MEDIA) or e.mimeData().hasUrls():
             e.acceptProposedAction()
 
     def dragMoveEvent(self, e):
+        if e.mimeData().hasFormat(MIME_EFFET):
+            sp = self.mapToScene(e.position().toPoint())
+            eid = self._effet_glisse(e)
+            c, raison = self.cible_effet(sp, eid)
+            from . import effets as E
+            trans = (E.fiche(eid) or {}).get("famille") == "transition"
+            self._depot = (c["id"], trans) if c else None
+            self._depot_raison = raison
+            self.viewport().update()
+            if c:
+                e.acceptProposedAction()
+            else:
+                e.ignore()
+            return
         if e.mimeData().hasFormat(MIME_MEDIA) or e.mimeData().hasUrls():
             sp = self.mapToScene(e.position().toPoint())
             self.aller_a(max(0.0, self.aimanter((sp.x() - MARGE_G) / self.pps)), emettre=False)
@@ -1163,6 +1249,15 @@ class Timeline(QGraphicsView):
 
     def dropEvent(self, e):
         sp = self.mapToScene(e.position().toPoint())
+        if e.mimeData().hasFormat(MIME_EFFET):
+            eid = self._effet_glisse(e)
+            c, _r = self.cible_effet(sp, eid)
+            self._depot = None
+            self.viewport().update()
+            if c:
+                self.effet_depose.emit(c["id"], eid)
+                e.acceptProposedAction()
+            return
         t = max(0.0, self.aimanter((sp.x() - MARGE_G) / self.pps))
         piste = self.piste_a(sp.y())
         if piste not in (self.projet.toutes_pistes() if self.projet else ["video", "audio", "voix"]):

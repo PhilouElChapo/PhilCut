@@ -364,7 +364,7 @@ class Exportateur:
 
     def _goodies(self):
         for g in self.p.goodies:
-            if g["fin"] <= g["debut"]:
+            if g["fin"] <= g["debut"] or g.get("genre") == "zone":
                 continue
             dossier = tempfile.mkdtemp(prefix="goodie-", dir=self.tmp)
             motif, n, x, y = GO.rendre(dossier, g, self.L, self.H, self.cad, texte_extra=self.p.d.get("chaine"))
@@ -399,8 +399,19 @@ class Exportateur:
             base = out
         return base
 
+    def _zones(self, base):
+        """Zones tracées (flou, mosaïque, cache…), fixes ou suivies, sous les textes et les Goodies."""
+        from . import zones as Z
+        for z in self.p.goodies:
+            if z.get("genre") != "zone" or z["fin"] <= z["debut"]:
+                continue
+            lignes, base = Z.filtres(z, base, self.L, self.H, self._nom)
+            self.filtres += lignes
+        return base
+
     def _superposer(self, base):
         base = self._incrustations(base)
+        base = self._zones(base)
         for (d, f, motif, x, y, mode) in sorted(self.calques, key=lambda z: z[0]):
             k = self._entree("-framerate", str(self.cad), "-i", motif)
             ov, out = self._nom("ov"), self._nom("vo")
@@ -617,8 +628,10 @@ def extrait(projet, debut, fin):
             if fin_clip(c) > fin:
                 c["src_fin"] = c["src_debut"] + (fin - c["debut"]) * c.get("vitesse", 1.0)
             c["debut"] -= debut
+    from .projet import decaler_suivi
     for x in p.titres + p.goodies:
         x["debut"], x["fin"] = max(0.0, x["debut"] - debut), max(0.0, min(fin, x["fin"]) - debut)
+        decaler_suivi(x, lambda t: t - debut)
     p.d["titres"] = [t for t in p.titres if t["fin"] > 0.05]
     p.d["goodies"] = [g for g in p.goodies if g["fin"] > 0.05]
     p.d["sous_titres"] = []

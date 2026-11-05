@@ -50,6 +50,15 @@ video peut defiler pendant que vous parlez), retouches (voix harmonieuse, "s"
 adoucis, moins nasale, plus chaude, radio...), voix de synthese sur ce poste
 (Piper, gratuit) ou Gemini en option, doublage dans une autre langue. Sous-titres
 automatiques et karaoke (chaque mot s'allume quand il est dit) : sur ce poste.
+Narration : vrai filtre d'amelioration (narration claire, chaude, piece
+bruyante), blancs retires, ecoute AVANT / APRES avant de poser la prise.
+Autotune : la justesse du chant est corrigee note par note (tonalite, force).
+
+Zones (0.3.3) : bouton Zone, tracez a la souris un visage, une plaque, un ecran :
+flou, mosaique, cache de couleur... La zone peut suivre ce qu'elle couvre
+(analyse de l'image), se deplace et se redimensionne dans l'image par ses coins.
+Onglet Effets du volet de droite : vignettes animees sur votre plan, a glisser
+sur un plan de la timeline (une transition : sur le raccord entre deux plans).
 
 Mises a jour
 ------------

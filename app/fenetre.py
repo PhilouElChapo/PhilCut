@@ -135,7 +135,7 @@ class Fenetre(QMainWindow):
         a.addAction(_("Volet de droite : complet / icônes / masqué"), lambda: self._ed(lambda ed: ed.basculer_volet()), "F4")
         a.addAction(_("Personnaliser la barre d'outils…"), self.personnaliser_barre)
         mo = mb.addMenu(_("&Montage"))
-        for oid in ("vitesse", "recadrer", "stabiliser", "texte", "effets", "goodies", "sous_titres", "musique", "voix"):
+        for oid in ("vitesse", "recadrer", "stabiliser", "texte", "effets", "goodies", "zone", "sous_titres", "musique", "voix"):
             o = O.outil(oid)
             mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
         mo.addSeparator()
@@ -335,6 +335,7 @@ class Fenetre(QMainWindow):
                     return
         w.apercu.arreter()
         w.preparation.fermer()
+        w.catalogue.fermer()
         self.onglets.removeTab(i)
         w.deleteLater()
         self.ecrire_session()
@@ -362,6 +363,7 @@ class Fenetre(QMainWindow):
         for ed in self.editeurs():
             ed.apercu.arreter()
             ed.preparation.fermer()
+            ed.catalogue.fermer()
         self.ecrire_session()
         self.params.enregistrer()
         self.attendre_taches(8000)
@@ -564,9 +566,11 @@ class Fenetre(QMainWindow):
                     d = float((m.get("fiche") or {}).get("duree") or 2.5)
                     for c in ed.projet.clips_piste("video"):
                         c["debut"] += d
+                    from .projet import decaler_suivi
                     for x in ed.projet.titres + ed.projet.goodies:
                         x["debut"] += d
                         x["fin"] += d
+                        decaler_suivi(x, lambda t: t + d)
                     ed.projet.ajouter_clip(m["id"], "video", 0.0)
                 else:
                     ed.projet.ajouter_clip(m["id"], "video")

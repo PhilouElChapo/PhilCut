@@ -352,6 +352,8 @@ class Editeur(QWidget):
         self.split_h.addWidget(c)
         # ---- droite : volet
         self.volet = QTabWidget()
+        self.volet.setUsesScrollButtons(False)          # trois onglets toujours visibles : les noms s'abrègent si le volet est étroit
+        self.volet.setElideMode(Qt.ElideRight)
         self.proposition = VoletProposition(params)
         self.proposition.analyser.connect(self.analyser)
         self.proposition.appliquer.connect(self.appliquer_recette)
@@ -362,6 +364,10 @@ class Editeur(QWidget):
         self.inspecteur.demande_effets.connect(self.effets_du_clip)
         self.inspecteur.demande_edition.connect(self.editer_element)
         self.volet.addTab(self.inspecteur, icone("liste_fichiers", theme.COULEURS["texte2"]), _("Inspecteur"))
+        from .catalogue_effets import CatalogueEffets
+        self.catalogue = CatalogueEffets(self)
+        self.volet.addTab(self.catalogue, icone("effets", theme.COULEURS["texte2"]), _("Effets"))
+        self.volet.setTabToolTip(2, _("Catalogue des effets et transitions : vignettes animées, à glisser sur la timeline"))
         # bouton « agrandir » : le volet s'ouvre dans une fenêtre à part quand il devient trop petit
         self.b_agrandir = QToolButton()
         self.b_agrandir.setIcon(icone("plein_ecran", theme.COULEURS["texte2"]))
@@ -377,7 +383,8 @@ class Editeur(QWidget):
         vi.setContentsMargins(4, 8, 4, 8)
         vi.setSpacing(6)
         for i, (ic, lib, aide) in enumerate(((("assistant"), _("Proposition"), _("Ouvrir la proposition de l'assistant de montage")),
-                                             ("liste_fichiers", _("Inspecteur"), _("Ouvrir l'Inspecteur : réglages du plan, de l'effet, du texte ou du Goodie sélectionné")))):
+                                             ("liste_fichiers", _("Inspecteur"), _("Ouvrir l'Inspecteur : réglages du plan, de l'effet, du texte ou du Goodie sélectionné")),
+                                             ("effets", _("Effets"), _("Catalogue des effets et transitions : vignettes animées, à glisser sur la timeline")))):
             b = QToolButton()
             b.setIcon(icone(ic, theme.COULEURS["texte"]))
             b.setIconSize(QSize(22, 22))
@@ -398,6 +405,7 @@ class Editeur(QWidget):
         # ---- bas : timeline
         self.timeline = Timeline(projet)
         self.timeline.position_changee.connect(self._curseur)
+        self.timeline.effet_depose.connect(self.poser_effet)
         self.timeline.modifie.connect(self._modifie)
         self.timeline.proprietes.connect(self.editer_element)
         self.timeline.media_depose.connect(self._depose)
@@ -431,6 +439,8 @@ class Editeur(QWidget):
         self.apercu.taches_hote = self.taches
         self.apercu.calque_deplace.connect(self._calque_deplace)
         self.apercu.calque_taille.connect(self._calque_taille)
+        self.apercu.calque_cadre.connect(self._calque_cadre)
+        self.apercu.zone_tracee.connect(self._zone_tracee)
         self.apercu.segment_fini.connect(self._segment_fini)
         self.apercu.calque_clique.connect(lambda ident: (self._ouvrir_volet(1), self.inspecteur.montrer_selection([ident])))
         self.apercu.pas_image.connect(lambda n: self.aller_a(self.timeline.position + n / self.projet.cadence))
@@ -666,6 +676,8 @@ class Editeur(QWidget):
         m.addAction(icone("image", theme.COULEURS["texte"]), _("Enregistrer cette image (PNG, pleine définition)…"), self.extraire_image)
         m.addAction(_("Lecture / pause"), self.apercu.basculer)
         m.addAction(_("Aperçu rendu (avec les effets)"), self.apercu_rendu)
+        m.addSeparator()
+        m.addAction(icone("recadrer", theme.COULEURS["texte"]), _("Tracer une zone à flouter, pixelliser ou cacher…"), self.tracer_zone)
         m.exec(self.apercu.viewport().mapToGlobal(pos))
 
     def extraire_image(self):
@@ -719,6 +731,10 @@ class Editeur(QWidget):
         if not self.apercu.en_lecture:
             self.apercu.aller_a(t)
         self._temps(t)
+        if self.catalogue.isVisible():
+            c = self.projet.clip_a(t, "video")
+            if c and (c["media"], round(c["src_debut"], 1), round(c["src_fin"], 1)) != self.catalogue.fabrique.cle:
+                self.catalogue.actualiser()
 
     def aller_a(self, t):
         self.apercu.pause()
@@ -794,7 +810,11 @@ class Editeur(QWidget):
         for e in self.projet.titres + self.projet.goodies:
             if e["id"] == ident:
                 self.projet.marquer()
-                e["x"], e["y"] = round(x, 4), round(y, 4)
+                if e.get("genre") == "zone":
+                    from . import zones as Z
+                    Z.deplacer(e, x, y, self.timeline.position)
+                else:
+                    e["x"], e["y"] = round(x, 4), round(y, 4)
                 self._modifie()
                 if self.inspecteur._cible and self.inspecteur._cible[1] == ident:
                     self.inspecteur.montrer_selection([ident])
@@ -834,6 +854,14 @@ class Editeur(QWidget):
     def _calque_taille(self, ident, facteur):
         """Molette sur un texte ou un Goodie dans l'image : plus grand ou plus petit."""
         for e in self.projet.titres + self.projet.goodies:
+            if e["id"] == ident and e.get("genre") == "zone":
+                from . import zones as Z
+                x, y, l, h = Z.rect_a(e, self.timeline.position)
+                self.inspecteur._marquer(("taille", ident))
+                Z.redimensionner(e, x, y, min(1.0, l * facteur), min(1.0, h * facteur), self.timeline.position)
+                self._modifie()
+                self.inspecteur.montrer_selection([ident])
+                return
             if e["id"] == ident:
                 self.inspecteur._marquer(("taille", ident))
                 defaut = 1.0 if e in self.projet.titres else 0.22
@@ -842,6 +870,111 @@ class Editeur(QWidget):
                 if self.inspecteur._cible and self.inspecteur._cible[1] == ident:
                     self.inspecteur.montrer_selection([ident])
                 return
+
+    # ---------------------------------------------------------------- zones tracées (flou, mosaïque, cache…)
+    def _zone(self, ident):
+        return next((g for g in self.projet.goodies if g["id"] == ident and g.get("genre") == "zone"), None)
+
+    def _calque_cadre(self, ident, x, y, l, h):
+        """Une zone redimensionnée à la souris par un de ses coins."""
+        z = self._zone(ident)
+        if z:
+            from . import zones as Z
+            self.projet.marquer()
+            Z.redimensionner(z, x, y, l, h, self.timeline.position)
+            self._modifie()
+            self._ouvrir_volet(1)
+            self.inspecteur.montrer_selection([ident])
+
+    def tracer_zone(self):
+        """Tracer à la souris, dans l'image, une zone à flouter, pixelliser, cacher…"""
+        if not self.projet.clip_a(self.timeline.position, "video"):
+            self.encart.message(_("Placez la tête de lecture sur un plan vidéo, puis tracez la zone dans l'image."))
+            return
+        if self.apercu.en_lecture:
+            self.apercu.pause()
+        self._zone_a_corriger = None
+        self.apercu.tracer_zone(True)
+        self.encart.message(_("Tracez la zone dans l'image : cliquez à un coin et tirez jusqu'au coin opposé (Echap : abandonner)."))
+
+    def retracer_zone(self, z):
+        t = self.timeline.position
+        if not (z["debut"] <= t < z["fin"]):
+            self.encart.message(_("Placez la tête de lecture pendant la zone, au moment où le suivi se trompe, puis retracez-la."))
+            return
+        if self.apercu.en_lecture:
+            self.apercu.pause()
+        self._zone_a_corriger = z["id"]
+        self.apercu.tracer_zone(True)
+        self.encart.message(_("Retracez la zone à sa bonne place : le suivi sera refait à partir d'ici (Echap : abandonner)."))
+
+    def _zone_tracee(self, x, y, l, h):
+        from . import zones as Z
+        corr = getattr(self, "_zone_a_corriger", None)
+        self._zone_a_corriger = None
+        if l <= 0:
+            self.encart.message(_("Tracé abandonné."))
+            return
+        t = self.timeline.position
+        if corr:
+            z = self._zone(corr)
+            if z:
+                self.suivre_zone(z, depuis=t, depart=(x, y, l, h))
+            return
+        c = self.projet.clip_a(t, "video")
+        fin = fin_clip(c) if c else t + 5.0
+        self.projet.marquer()
+        z = Z.nouvelle(t, max(t + 0.5, fin), x, y, l, h)
+        self.projet.goodies.append(z)
+        self.timeline.reconstruire()
+        self._modifie()
+        self._ouvrir_volet(1)
+        self.inspecteur.montrer_selection([z["id"]])
+        self.encart.message(_("Zone posée de {a} à {b} (floutée). Changez l'effet dans l'Inspecteur ; « Suivre ce qu'elle couvre » "
+                              "la fait bouger avec le visage ou l'objet.", a=_tc(z["debut"]), b=_tc(z["fin"])))
+
+    def suivre_zone(self, z, depuis=None, depart=None):
+        """Analyse de l'image : la zone suit ce qu'elle couvre (en arrière-plan, suivi dans le Centre d'activité)."""
+        from . import zones as Z
+        self.projet.marquer()
+        if depart is not None:          # correction : position retracée à l'instant `depuis`
+            pos = (z.get("suivi") or {}).get("positions") or []
+            gardes = [p for p in pos if p[0] < depuis - 0.02]
+            z["suivi"] = {"media": (z.get("suivi") or {}).get("media"), "positions": gardes + [(round(depuis, 3),) + tuple(round(v, 4) for v in depart)]}
+            if not gardes:
+                z["suivi"] = None
+                z["x"], z["y"], z["l"], z["h"] = (round(v, 4) for v in depart)
+        projet = self.projet
+
+        def travail(tache):
+            return Z.suivre_zone(projet, z, depuis, progression=lambda f: tache.avancer(f), arret=lambda: tache.arret)
+        t = Tache(travail, _("Suivi de la zone"))
+        self.taches.append(t)
+        self.encart.suivre(t, _("Analyse de l'image : la zone suit ce qu'elle couvre"))
+
+        def fini(r, err, t=t):
+            if t in self.taches:
+                self.taches.remove(t)
+            if err:
+                self.encart.message(_("Suivi impossible : {e}", e=str(err)))
+            else:
+                n = len((z.get("suivi") or {}).get("positions") or [])
+                self.encart.message(_("Zone suivie : {n} positions. Lisez le passage pour vérifier ; si elle décroche, « Corriger à la tête "
+                                      "de lecture ».", n=n))
+            self.timeline.reconstruire()
+            self._modifie()
+            if self.inspecteur._cible == ("zone", z["id"]):
+                self.inspecteur.montrer_selection([z["id"]])
+        t.fini.connect(fini)
+        t.start()
+
+    def figer_zone(self, z):
+        from . import zones as Z
+        self.projet.marquer()
+        Z.figer(z, self.timeline.position)
+        self.timeline.reconstruire()
+        self._modifie()
+        self.inspecteur.montrer_selection([z["id"]])
 
     def _element_clique(self, clip_id, genre, i):
         """Clic sur une étiquette d'effet ou une transition dans la timeline : l'Inspecteur s'ouvre dessus."""
@@ -1019,6 +1152,8 @@ class Editeur(QWidget):
                 self.encart.message(_("Cliquez d'abord sur un plan dans la timeline, puis sur Effets."))
         elif oid == "goodies":
             self.nouveau_goodie()
+        elif oid == "zone":
+            self.tracer_zone()
         elif oid in ("sous_titres", "musique", "voix", "fabrique", "exporter", "partager"):
             self.demande_outil.emit(oid)
 
@@ -1072,6 +1207,10 @@ class Editeur(QWidget):
                 self.projet.marquer()
                 el["suivi"] = None
                 self.rafraichir()
+        elif quoi in ("zone_suivre", "zone_retracer", "zone_figer"):
+            z = self._zone(ident)
+            if z:
+                {"zone_suivre": self.suivre_zone, "zone_retracer": self.retracer_zone, "zone_figer": self.figer_zone}[quoi](z)
         elif quoi == "image":
             self.extraire_image()
         elif quoi in ("partie_supprimer", "partie_garder"):
@@ -1293,6 +1432,38 @@ class Editeur(QWidget):
         self.rafraichir()
         self.encart.message(_("Effet « {e} » posé sur « {n} » (visible à l'export et dans l'aperçu rendu).", e=eid, n=c.get("nom", "")))
 
+    def poser_effet(self, cid, eid):
+        """Effet ou transition du catalogue posé sur un plan (glissé sur la timeline, double-clic, clic droit).
+        cid None : le plan sélectionné, sinon celui sous la tête de lecture."""
+        from . import effets as E
+        c = self.projet.clip(cid) if cid else self._clip_selectionne()
+        fi = E.fiche(eid)
+        if not c or not fi:
+            self.encart.message(_("Cliquez d'abord sur un plan dans la timeline (ou glissez la vignette directement sur le plan)."))
+            return
+        if fi["pack"] and not E.pack_pret(fi["pack"], self.params):
+            self.encart.message(_("« {n} » demande le pack « {p} » : cochez-le dans Edition › Préférences.", n=fi["nom"],
+                                  p=E.PACKS.get(fi["pack"], {}).get("nom", fi["pack"])))
+            return
+        transition = fi["famille"] == "transition"
+        if transition and not any(x["debut"] < c["debut"] - 0.01 for x in self.projet.clips_piste(c.get("piste", "video"))):
+            self.encart.message(_("Une transition se pose sur le raccord entre deux plans : glissez-la sur le début du plan qui arrive."))
+            return
+        self.projet.marquer()
+        if transition:
+            c["transition"] = {"id": eid, "params": dict(E.defauts(eid))}
+            genre, i = "transition", 0
+        else:
+            c.setdefault("effets", [])
+            c["effets"].append({"id": eid, "params": dict(E.defauts(eid))})
+            genre, i = "effet", len(c["effets"]) - 1
+        rec = [k for k in (self.params.get("effets_recents") or []) if k != eid]
+        self.params["effets_recents"] = [eid] + rec[:19]
+        self.rafraichir()
+        self.timeline.selectionner(c["id"])
+        self.inspecteur.montrer_element(c["id"], genre, i)
+        self.encart.message(_("« {n} » posé sur « {p} » : étiquette sur le plan, réglages dans l'onglet Inspecteur ; Annuler le retire.", n=fi["nom"], p=c.get("nom", "")))
+
     def effets_du_clip(self, cid):
         c = self.projet.clip(cid)
         if not c:
@@ -1352,6 +1523,10 @@ class Editeur(QWidget):
         self.rafraichir()
 
     def editer_element(self, ident):
+        if self._zone(ident):
+            self._ouvrir_volet(1)
+            self.inspecteur.montrer_selection([ident])
+            return
         c = self.projet.clip(ident)
         if c:
             self.effets_du_clip(ident)

@@ -157,6 +157,17 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T19 — 0.3.3 : zones floutées et suivies, poignées dans l'image, catalogue animé, voix
+
+1. **Tracer une zone** : curseur sur un plan où l'on voit un visage (ou une plaque, un écran). Bouton **Zone** de la barre d'outils (ou clic droit sur l'image › « Tracer une zone… », ou Montage › Zone). La barre du bas dit « Tracez la zone dans l'image… » et le curseur devient une croix : cliquez à un coin du visage et tirez jusqu'au coin opposé. **Attendu** : la zone apparaît (contour bleu pointillé, étiquette « Zone : Flou »), une barre bleue « Zone : Flou » sur la piste Goodies du début du plan à sa fin, l'Inspecteur ouvert dessus ; à l'arrêt, une seconde plus tard, l'image fidèle montre le vrai flou. Echap pendant le tracé : abandon.
+2. **Régler** : dans l'Inspecteur, Effet : Flou, Mosaïque (gros pixels), Cache de couleur unie (bouton Couleur), Assombrir, Eclaircir, Noir et blanc ; Force ; Forme : Rectangle ou Ovale ; Début, Fin. Chaque réglage se voit à l'arrêt. Dans l'image : glisser la zone la déplace, tirer un de ses quatre coins carrés la redimensionne (librement), la molette la grossit ou la réduit. Annuler reprend chaque geste.
+3. **Suivre** : Inspecteur › « Suivre ce qu'elle couvre » (ou clic droit sur la barre bleue). **Attendu** : barre du bas « Analyse de l'image : la zone suit ce qu'elle couvre » avec le pourcentage, puis « Zone suivie : N positions ». Avancez image par image (molette sur l'image) : la zone reste sur le visage. Barre bleue : « Zone : Flou · suivie ». Lecture ▶ : la barre rouge/verte prépare le passage et la lecture montre le flou qui suit.
+4. **Corriger** : si la zone décroche (visage caché, demi-tour), mettez la tête de lecture à cet instant, « Corriger à la tête de lecture (retracer ici) », retracez la zone : le suivi est gardé avant, refait après. « Figer » : la zone ne bouge plus. Supprimer : bouton rouge de l'Inspecteur, ou clic droit › Supprimer.
+5. **Poignées des textes et Goodies** : survolez un texte dans l'image : cadre jaune pointillé avec quatre coins carrés. Tirez un coin : le texte grandit ou rétrécit en gardant ses proportions (même effet que la molette) ; glissez au milieu : il se déplace.
+6. **Catalogue animé** : volet de droite, onglet **Effets**. **Attendu** : une grille de vignettes ; en quelques secondes chacune se met à bouger et montre l'effet sur VOTRE plan (celui sous la tête de lecture) ; « Vignettes prêtes : 14 sur 42 ». Famille en haut (Toutes, ★ Favoris, Look…), recherche. Survol : description. **Glisser-déposer** : tirez une vignette d'effet sur un plan de la timeline : le plan s'entoure de jaune pendant le survol ; lâchez : l'étiquette ✦ apparaît, l'Inspecteur a ses réglages. Tirez une **transition** près du raccord entre deux plans : le raccord s'allume en jaune ; sur le premier plan, le dépôt est refusé. Double-clic sur une vignette : sur le plan sélectionné. Clic droit : favoris, fenêtre Effets.
+7. **Voix de narration** : Voix › Enregistrer. « Amélioration de la voix » : Narration claire (conseillé), Narration chaude (radio), Pièce bruyante, ou Aucune ; « Retirer les blancs du début et de la fin ». Enregistrez, puis **▶ Avant (brut)** et **▶ Après (amélioré)** : on compare avant de poser. « Poser sur la piste Voix » pose la prise retouchée (le filtre reste modifiable dans l'Inspecteur). Dans l'Inspecteur d'un plan de voix : « ▶ Ecouter avec ces retouches » (15 s rendues avec les retouches cochées).
+8. **Autotune** : clic sur un plan de voix chantée › Inspecteur › « Autotune… » (ou menu Voix). Tonalité (toutes les notes, ou Do majeur, La mineur…), Force (Naturel, Net, Robot). **▶ Avant** / **▶ Après (10 s corrigées)**, puis « Appliquer au plan » : le plan passe sur un nouveau fichier corrigé ; « Revenir à l'enregistrement d'origine » le rend tel quel.
+
 ## T18 — 0.3.2 : en-têtes de piste, rognage et aimantation visibles
 
 1. **En-têtes** : sous le nom de chaque piste, **M** (son coupé), **S** (solo : on n'entend que les pistes en solo), **V** (image masquée, pistes vidéo 2 et plus), **🔒** (verrou). La flèche ▾ à droite du nom replie la piste (▸ la déplie). Survol : bulle d'aide. Clic droit sur le nom › Pistes : les mêmes, plus « Renommer ». Double-clic sur le nom : renommer.
@@ -198,7 +209,7 @@ Parcours à faire dans l'ordre, avec un rush de quelques secondes posé deux foi
 
 - Flatpak Linux (archive tar.gz seulement), version Android.
 - Correction du suivi à la main, plusieurs suivis dans un même plan, effet (halo, feu d'artifice) qui suit la personne : prévus dans une prochaine 0.2.x.
-- Vrai autotune de chant (une approximation est posée), catalogue d'effets en ligne (le mécanisme est là, le fichier est vide).
+- Catalogue d'effets en ligne (le mécanisme est là, le fichier est vide).
 - Doublage avec la voix de la personne elle-même (clonage de voix) : pas encore, la voix de synthèse est une voix toute faite.
 - Packs de Goodies autres qu'Aviation et Maison : les genres existent, le dessin détaillé viendra.
 

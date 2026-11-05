@@ -165,7 +165,10 @@ class Inspecteur(QWidget):
                 return
         for g in self.projet.goodies:
             if g["id"] == ident:
-                self.montrer_goodie(g)
+                if g.get("genre") == "zone":
+                    self.montrer_zone(g)
+                else:
+                    self.montrer_goodie(g)
                 return
         self.vide()
 
@@ -577,6 +580,84 @@ class Inspecteur(QWidget):
         lay.addWidget(self._bouton_supprimer(_("Supprimer ce Goodie"), lambda: (self._changer(lambda: self.projet.retirer_element(g["id"])), self.vide())))
         lay.addStretch(1)
         self._poser()
+
+    # ------------------------------------------------------------ zone tracée
+    def montrer_zone(self, z):
+        from . import zones as Z
+        self._cible = ("zone", z["id"])
+        defil = self.zone.verticalScrollBar().value()
+        lay = self._nouveau()
+        self._titre(lay, "recadrer", Z.libelle(z), _("{a} → {b}", a=_tc(z["debut"]), b=_tc(z["fin"])))
+        aide = QLabel(_("Dans l'image : glissez la zone pour la déplacer, tirez un coin pour la redimensionner."))
+        aide.setWordWrap(True)
+        lay.addWidget(aide)
+        gr = QGroupBox(_("Traitement"))
+        f = QFormLayout(gr)
+        f.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        tr = QComboBox()
+        for k, lib in Z.TRAITEMENTS:
+            tr.addItem(_(lib), k)
+            if k == z.get("traitement", "flou"):
+                tr.setCurrentIndex(tr.count() - 1)
+        tr.currentIndexChanged.connect(lambda _i: (self._changer(lambda: z.__setitem__("traitement", tr.currentData())), self.montrer_zone(z)))
+        f.addRow(_("Effet"), tr)
+        if z.get("traitement") not in ("cache", "noir_blanc"):
+            sl = QSlider(Qt.Horizontal)
+            sl.setRange(5, 100)
+            sl.setValue(int(float(z.get("force", 0.6)) * 100))
+            sl.valueChanged.connect(lambda v: self._changer(lambda: z.__setitem__("force", v / 100), reconstruire=False))
+            f.addRow(_("Force"), sl)
+        if z.get("traitement") == "cache":
+            bc = QPushButton(z.get("couleur") or "#000000")
+            bc.setStyleSheet(f"QPushButton{{background:{z.get('couleur') or '#000000'};color:#fff}}")
+
+            def couleur():
+                c = QColorDialog.getColor(QColor(z.get("couleur") or "#000000"), self, _("Couleur du cache"))
+                if c.isValid():
+                    self._changer(lambda: z.__setitem__("couleur", c.name()), reconstruire=False)
+                    self.montrer_zone(z)
+            bc.clicked.connect(couleur)
+            f.addRow(_("Couleur"), bc)
+        fo = QComboBox()
+        for k, lib in Z.FORMES:
+            fo.addItem(_(lib), k)
+            if k == z.get("forme", "rect"):
+                fo.setCurrentIndex(fo.count() - 1)
+        fo.currentIndexChanged.connect(lambda _i: self._changer(lambda: z.__setitem__("forme", fo.currentData()), reconstruire=False))
+        f.addRow(_("Forme"), fo)
+        for cle, lib in (("debut", _("Début (s)")), ("fin", _("Fin (s)"))):
+            sp = QDoubleSpinBox()
+            sp.setRange(0.0, 36000.0)
+            sp.setDecimals(2)
+            sp.setValue(float(z[cle]))
+            sp.valueChanged.connect(lambda v, cle=cle: self._changer(lambda: z.__setitem__(cle, v)))
+            f.addRow(lib, sp)
+        lay.addWidget(gr)
+        gs = QGroupBox(_("Suivre ce qu'elle couvre"))
+        v = QVBoxLayout(gs)
+        pos = (z.get("suivi") or {}).get("positions") or []
+        etat = QLabel(_("La zone suit l'objet : {n} positions trouvées par analyse de l'image.", n=len(pos)) if pos else
+                      _("La zone est fixe. PhilCut peut analyser le rush image par image pour qu'elle suive le visage, la plaque "
+                        "ou l'objet qu'elle couvre."))
+        etat.setWordWrap(True)
+        v.addWidget(etat)
+        b1 = QPushButton(icone("synchro", theme.COULEURS["texte"]), _("Refaire le suivi depuis le début") if pos else _("Suivre ce qu'elle couvre"))
+        b1.clicked.connect(lambda: self.ed.suivre_zone(z))
+        v.addWidget(b1)
+        if pos:
+            b2 = QPushButton(_("Corriger à la tête de lecture (retracer ici)"))
+            b2.setToolTip(_("Le suivi s'est trompé ? Placez la tête de lecture à cet instant, retracez la zone : la suite est refaite."))
+            b2.clicked.connect(lambda: self.ed.retracer_zone(z))
+            v.addWidget(b2)
+            b3 = QPushButton(_("Figer (ne plus suivre)"))
+            b3.clicked.connect(lambda: self.ed.figer_zone(z))
+            v.addWidget(b3)
+        for b in gs.findChildren(QPushButton):
+            b.setStyleSheet("text-align:left;padding:4px 8px")
+        lay.addWidget(gs)
+        lay.addWidget(self._bouton_supprimer(_("Supprimer cette zone"), lambda: (self._changer(lambda: self.projet.retirer_element(z["id"])), self.vide())))
+        lay.addStretch(1)
+        self._poser(defil)
 
 
 def _tc(t):

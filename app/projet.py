@@ -308,6 +308,10 @@ class Projet:
             for e in self.d.get(cle) or []:
                 d, f = e["debut"], e["fin"]
                 if garder:
+                    decaler_suivi(e, lambda t: t - a)
+                else:
+                    decaler_suivi(e, lambda t: t if t < a else (a if t < b else t - largeur))
+                if garder:
                     d, f = max(d, a) - a, min(f, b) - a
                 else:
                     if d >= a and f <= b:
@@ -442,6 +446,13 @@ def duree_clip(c):
     return max(0.0, (c["src_fin"] - c["src_debut"]) / (c.get("vitesse") or 1.0))
 
 
+def decaler_suivi(x, f):
+    """Les instants d'une trajectoire (texte, Goodie ou zone qui suit) passent par f : le montage a bougé dessous."""
+    pos = (x.get("suivi") or {}).get("positions") if isinstance(x.get("suivi"), dict) else None
+    if pos:
+        x["suivi"]["positions"] = [(round(f(p[0]), 3),) + tuple(p[1:]) for p in pos]
+
+
 def fin_clip(c):
     return c["debut"] + duree_clip(c)
 
@@ -463,6 +474,9 @@ def _empreinte(chemin):
 
 
 def _nom(x):
+    if x.get("genre") == "zone":
+        from .langue import _
+        return _("zone ({t})", t=x.get("traitement", "flou"))
     return x.get("nom") or x.get("texte", "")[:30] or x.get("genre") or "?"
 
 

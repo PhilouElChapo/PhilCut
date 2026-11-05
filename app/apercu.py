@@ -32,6 +32,8 @@ class Apercu(QGraphicsView):
     calque_deplace = Signal(str, float, float)      # id d'un texte ou Goodie déplacé à la souris dans l'image : x, y (0..1)
     calque_clique = Signal(str)                     # id : ouvrir dans l'Inspecteur
     calque_taille = Signal(str, float)              # id, facteur : molette sur l'élément dans l'image
+    calque_cadre = Signal(str, float, float, float, float)   # id d'une zone redimensionnée : centre x, y, largeur, hauteur (0..1)
+    zone_tracee = Signal(float, float, float, float)         # rectangle tracé à la souris (mode « tracer une zone ») : x, y, l, h
     segment_fini = Signal(float)                    # la lecture avec effets arrive au bout du passage rendu (instant)
     pas_image = Signal(int)                         # molette sur l'image : ±1 image
 
@@ -590,18 +592,22 @@ class Apercu(QGraphicsView):
         for g in self.projet.goodies:
             if g["debut"] <= self.t <= g["fin"]:
                 avant = len(self.calques)
+                if g.get("genre") == "zone":
+                    self._zone(g, L, H)
+                    self._poignee(g, self.calques[avant:avant + 1], L, H, zone=True)
+                    continue
                 self._goodie(g, L, H)
                 if not (g.get("suivi") or {}).get("positions"):
                     self._poignee(g, self.calques[avant:], L, H)
 
-    def _poignee(self, elem, items, L, H):
-        """Cadre invisible par-dessus un texte ou un Goodie : on le déplace à la souris directement dans l'image."""
+    def _poignee(self, elem, items, L, H, zone=False):
+        """Cadre par-dessus un texte, un Goodie ou une zone : on le déplace et le redimensionne directement dans l'image."""
         if not items:
             return
         r = items[0].sceneBoundingRect()
         for it in items[1:]:
             r = r.united(it.sceneBoundingRect())
-        pg = Poignee(self, elem["id"], r.adjusted(-6, -6, 6, 6), L, H)
+        pg = Poignee(self, elem["id"], r if zone else r.adjusted(-6, -6, 6, 6), L, H, zone=zone)
         self._scene.addItem(pg)
         self.poignees.append(pg)
 
@@ -662,6 +668,89 @@ class Apercu(QGraphicsView):
         self._scene.addItem(it)
         self.calques.append(it)
 
+    def _zone(self, g, L, H):
+        """Zone tracée (flou, mosaïque, cache…) : son contour et un aperçu de son traitement. A l'arrêt, l'image fidèle
+        (rendue par le moteur d'export) la montre exactement, par-dessus."""
+        from . import zones as Z
+        x, y, l, h = Z.rect_a(g, self.t)
+        r = QRectF((x - l / 2) * L, (y - h / 2) * H, l * L, h * H)
+        tr = g.get("traitement", "flou")
+        if g.get("forme") == "ovale":
+            from PySide6.QtWidgets import QGraphicsEllipseItem
+            it = QGraphicsEllipseItem(r)
+        else:
+            it = QGraphicsRectItem(r)
+        if tr == "cache":
+            it.setBrush(QColor(g.get("couleur") or "#000000"))
+        else:
+            c = {"flou": QColor(200, 200, 210, 120), "mosaique": QColor(160, 160, 170, 140), "eclaircir": QColor(255, 255, 255, 70),
+                 "assombrir": QColor(0, 0, 0, 110), "noir_blanc": QColor(128, 128, 128, 120)}.get(tr, QColor(200, 200, 210, 110))
+            it.setBrush(QBrush(c, Qt.Dense4Pattern if tr == "mosaique" else Qt.SolidPattern))
+        it.setPen(QPen(QColor("#5ad1ff"), 2, Qt.DashLine))
+        it.setZValue(7)
+        self._scene.addItem(it)
+        lib = QGraphicsSimpleTextItem(Z.libelle(g))
+        f = QFont()
+        f.setPixelSize(max(12, int(H * 0.022)))
+        f.setBold(True)
+        lib.setFont(f)
+        lib.setBrush(QColor("#5ad1ff"))
+        lib.setPos(r.left() + 4, max(0.0, r.top() - f.pixelSize() * 1.4))
+        lib.setZValue(7)
+        self._scene.addItem(lib)
+        self.calques += [it, lib]
+
+    # ---------------------------------------------------------------- tracer une zone à la souris
+    def tracer_zone(self, on=True):
+        """Mode « tracer » : le prochain glisser dans l'image dessine un rectangle (signal zone_tracee)."""
+        self._mode_trace = bool(on)
+        self._trace = None
+        self.viewport().setCursor(Qt.CrossCursor if on else Qt.ArrowCursor)
+
+    def keyPressEvent(self, e):
+        if getattr(self, "_mode_trace", False) and e.key() == Qt.Key_Escape:
+            if getattr(self, "_trace", None):
+                self._scene.removeItem(self._trace[1])
+            self.tracer_zone(False)
+            self.zone_tracee.emit(-1.0, -1.0, 0.0, 0.0)
+            return
+        super().keyPressEvent(e)
+
+    def mousePressEvent(self, e):
+        if getattr(self, "_mode_trace", False) and e.button() == Qt.LeftButton:
+            p = self.mapToScene(e.position().toPoint())
+            self._trace = (p, QGraphicsRectItem(QRectF(p, p)))
+            self._trace[1].setPen(QPen(QColor("#5ad1ff"), 2, Qt.DashLine))
+            self._trace[1].setBrush(QColor(90, 209, 255, 50))
+            self._trace[1].setZValue(70)
+            self._scene.addItem(self._trace[1])
+            e.accept()
+            return
+        super().mousePressEvent(e)
+
+    def mouseMoveEvent(self, e):
+        if getattr(self, "_trace", None):
+            p = self.mapToScene(e.position().toPoint())
+            self._trace[1].setRect(QRectF(self._trace[0], p).normalized())
+            e.accept()
+            return
+        super().mouseMoveEvent(e)
+
+    def mouseReleaseEvent(self, e):
+        if getattr(self, "_trace", None):
+            r = self._trace[1].rect().intersected(self._scene.sceneRect())
+            self._scene.removeItem(self._trace[1])
+            self._trace = None
+            self.tracer_zone(False)
+            L, H = self.projet.taille if self.projet else (1920, 1080)
+            if r.width() > 6 and r.height() > 6:
+                self.zone_tracee.emit(r.center().x() / L, r.center().y() / H, r.width() / L, r.height() / H)
+            else:
+                self.zone_tracee.emit(-1.0, -1.0, 0.0, 0.0)          # simple clic : tracé abandonné
+            e.accept()
+            return
+        super().mouseReleaseEvent(e)
+
     def _goodie(self, g, L, H):
         taille = max(48, int(H * float(g.get("taille", 0.22))))
         nom = GO.GENRES.get(g["genre"], (g["genre"], "", (0, 0)))
@@ -715,38 +804,141 @@ class Apercu(QGraphicsView):
 
 
 class Poignee(QGraphicsRectItem):
-    """Cadre déplaçable posé sur un texte ou un Goodie dans l'aperçu : glisser le déplace, double-clic ouvre l'Inspecteur."""
+    """Cadre posé sur un texte, un Goodie ou une zone dans l'aperçu : glisser le déplace, les quatre coins carrés
+    l'agrandissent ou le rétrécissent, la molette aussi, double-clic ouvre l'Inspecteur."""
 
-    def __init__(self, apercu, ident, rect, L, H):
+    COIN = 9            # demi-côté des coins, en pixels d'écran
+
+    def __init__(self, apercu, ident, rect, L, H, zone=False):
         super().__init__(rect)
-        self.apercu, self.ident, self.L, self.H = apercu, ident, L, H
+        self.apercu, self.ident, self.L, self.H, self.zone = apercu, ident, L, H, zone
         self.setZValue(60)
         self.setAcceptHoverEvents(True)
-        self.setFlags(QGraphicsRectItem.ItemIsMovable | QGraphicsRectItem.ItemIsSelectable)
-        self.setPen(QPen(QColor(255, 210, 74, 0), 2, Qt.DashLine))
+        self.setFlags(QGraphicsRectItem.ItemIsSelectable)
         self.setBrush(Qt.NoBrush)
         self.setCursor(Qt.OpenHandCursor)
-        self.setToolTip(_("Glissez pour déplacer · molette : plus grand ou plus petit · double-clic : réglages"))
+        self._survol = zone
+        self._prise = None          # (genre, point de départ, rect de départ) pendant un glissement
+        self._maj_stylo()
+        self.setToolTip(_("Glissez pour déplacer · tirez un coin pour agrandir ou rétrécir · molette : taille · double-clic : réglages"))
+
+    def _maj_stylo(self):
+        a = 230 if self._survol or self._prise else 0
+        self.setPen(QPen(QColor(90, 209, 255, a) if self.zone else QColor(255, 210, 74, a), 2, Qt.DashLine))
+
+    def _ech(self):
+        m = self.apercu.transform().m11() or 1.0
+        return self.COIN / m
+
+    def _coins(self):
+        r = self.rect()
+        return {"hg": r.topLeft(), "hd": r.topRight(), "bg": r.bottomLeft(), "bd": r.bottomRight()}
+
+    def _coin_sous(self, pos):
+        k = self._ech() * 1.6
+        for nom, c in self._coins().items():
+            if abs(pos.x() - c.x()) <= k and abs(pos.y() - c.y()) <= k:
+                return nom
+        return None
+
+    def boundingRect(self):
+        k = self._ech() + 2
+        return self.rect().adjusted(-k, -k, k, k)
+
+    def shape(self):
+        from PySide6.QtGui import QPainterPath
+        pp = QPainterPath()
+        pp.addRect(self.boundingRect())
+        return pp
+
+    def paint(self, p, opt, w=None):
+        p.setPen(self.pen())
+        p.setBrush(Qt.NoBrush)
+        p.drawRect(self.rect())
+        if self._survol or self._prise:
+            k = self._ech()
+            p.setPen(QPen(QColor(20, 20, 26), 1))
+            p.setBrush(QColor("#5ad1ff") if self.zone else QColor("#ffd24a"))
+            for c in self._coins().values():
+                p.drawRect(QRectF(c.x() - k, c.y() - k, 2 * k, 2 * k))
 
     def hoverEnterEvent(self, e):
-        self.setPen(QPen(QColor(255, 210, 74, 220), 2, Qt.DashLine))
+        self._survol = True
+        self._maj_stylo()
+        self.update()
         super().hoverEnterEvent(e)
 
+    def hoverMoveEvent(self, e):
+        coin = self._coin_sous(e.pos())
+        self.setCursor(Qt.SizeFDiagCursor if coin in ("hg", "bd") else Qt.SizeBDiagCursor if coin else Qt.OpenHandCursor)
+        super().hoverMoveEvent(e)
+
     def hoverLeaveEvent(self, e):
-        self.setPen(QPen(QColor(255, 210, 74, 0), 2, Qt.DashLine))
+        self._survol = self.zone
+        self._maj_stylo()
+        self.update()
         super().hoverLeaveEvent(e)
 
     def mousePressEvent(self, e):
-        self.setCursor(Qt.ClosedHandCursor)
-        super().mousePressEvent(e)
+        if e.button() != Qt.LeftButton:
+            e.ignore()
+            return
+        coin = self._coin_sous(e.pos())
+        self._prise = (coin or "deplacer", e.scenePos(), QRectF(self.sceneBoundingRect().adjusted(0, 0, 0, 0)), QRectF(self.rect()))
+        if not coin:
+            self.setCursor(Qt.ClosedHandCursor)
+        e.accept()
+
+    def mouseMoveEvent(self, e):
+        if not self._prise:
+            return
+        genre, p0, _sb, r0 = self._prise
+        d = e.scenePos() - p0
+        self.prepareGeometryChange()
+        if genre == "deplacer":
+            self.setRect(r0.translated(d))
+        else:
+            r = QRectF(r0)
+            if self.zone:                       # une zone se déforme librement
+                if "g" in genre:
+                    r.setLeft(min(r0.right() - 8, r0.left() + d.x()))
+                if "d" in genre:
+                    r.setRight(max(r0.left() + 8, r0.right() + d.x()))
+                if "h" in genre:
+                    r.setTop(min(r0.bottom() - 8, r0.top() + d.y()))
+                if "b" in genre:
+                    r.setBottom(max(r0.top() + 8, r0.bottom() + d.y()))
+            else:                               # un texte ou un Goodie garde ses proportions, centre fixe
+                c = r0.center()
+                coin = {"hg": r0.topLeft(), "hd": r0.topRight(), "bg": r0.bottomLeft(), "bd": r0.bottomRight()}[genre]
+                v0 = coin - c
+                v1 = coin + d - c
+                n0 = max(1.0, (v0.x() ** 2 + v0.y() ** 2) ** 0.5)
+                f = max(0.15, min(8.0, (v1.x() ** 2 + v1.y() ** 2) ** 0.5 / n0))
+                r = QRectF(c.x() - r0.width() * f / 2, c.y() - r0.height() * f / 2, r0.width() * f, r0.height() * f)
+            self.setRect(r)
+        self.update()
+        e.accept()
 
     def mouseReleaseEvent(self, e):
-        super().mouseReleaseEvent(e)
+        if not self._prise:
+            return
+        genre, _p0, _sb, r0 = self._prise
+        self._prise = None
         self.setCursor(Qt.OpenHandCursor)
-        c = self.sceneBoundingRect().center()
-        x = min(1.0, max(0.0, c.x() / self.L))
-        y = min(1.0, max(0.0, c.y() / self.H))
-        self.apercu.calque_deplace.emit(self.ident, x, y)
+        self._maj_stylo()
+        r = self.rect()
+        if genre == "deplacer":
+            c = r.center()
+            if (c - r0.center()).manhattanLength() < 1:
+                return
+            self.apercu.calque_deplace.emit(self.ident, min(1.0, max(0.0, c.x() / self.L)), min(1.0, max(0.0, c.y() / self.H)))
+        elif self.zone:
+            self.apercu.calque_cadre.emit(self.ident, r.center().x() / self.L, r.center().y() / self.H, r.width() / self.L, r.height() / self.H)
+        else:
+            f = r.width() / max(1.0, r0.width())
+            if abs(f - 1) > 0.01:
+                self.apercu.calque_taille.emit(self.ident, f)
 
     def mouseDoubleClickEvent(self, e):
         self.apercu.calque_clique.emit(self.ident)
