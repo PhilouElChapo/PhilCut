@@ -72,6 +72,8 @@ CATALOGUE = {
                    [("facteur", _("Facteur"), "int", 8, 2, 32)], None),
     "zoom_lent": ("mouvement", _("Zoom lent (Ken Burns)"), _("L'image avance doucement vers le centre pendant tout le plan : photo, image figée, paysage."),
                   [("force", _("Grossissement"), "float", 0.15, 0.03, 0.6), ("sens", _("Sens"), "choix", "avant", [("avant", _("Vers l'avant")), ("arriere", _("Vers l'arrière"))], 0)], None),
+    "orbite": ("mouvement", _("Orbite (bullet time)"), _("La caméra semble tourner autour de la scène : à poser sur une image figée pour un bullet time."),
+               [("amplitude", _("Amplitude"), "float", 1.0, 0.2, 2.0), ("vitesse", _("Vitesse"), "float", 1.0, 0.3, 3.0)], None),
     "tremblement": ("mouvement", _("Tremblement (secousse)"), _("La caméra tremble : choc, turbulence, explosion, moteur qui démarre. Peut s'amortir."),
                     [("force", _("Force"), "float", 1.0, 0.2, 3.0), ("vitesse", _("Vitesse"), "float", 1.0, 0.3, 3.0),
                      ("amorti", _("S'amortit (choc)"), "bool", False, 0, 1)], None),
@@ -287,6 +289,16 @@ def filtre(effet, ctx=None):
         k = f("force")
         z = f"1+{k:.3f}*on/{n}" if _p(effet, "sens") != "arriere" else f"{1 + k:.3f}-{k:.3f}*on/{n}"
         return f"scale={L * 2}:{H * 2},zoompan=z='{z}':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={L}x{H}:fps={cad}"
+    if i == "orbite":
+        L, H = int(ctx.get("largeur") or 1920), int(ctx.get("hauteur") or 1080)
+        cad = int(ctx.get("cadence") or 30)
+        a = 0.09 * f("amplitude")
+        w = 1.1 * f("vitesse") / cad
+        s_ = f"sin(on*{w:.5f})"
+        hg = f"H*{a:.3f}*max(0,{s_})"                    # côté gauche qui recule
+        hd = f"H*{a:.3f}*max(0,-{s_})"                   # côté droit qui recule
+        return (f"scale={int(L * 1.14) // 2 * 2}:{int(H * 1.14) // 2 * 2},crop={L}:{H},"
+                f"perspective=x0=0:y0='{hg}':x1=W:y1='{hd}':x2=0:y2='H-{hg}':x3=W:y3='H-{hd}':eval=frame:sense=destination")
     if i == "tremblement":
         k = 0.012 + 0.02 * f("force")                   # part de l'image qui sert de marge à la secousse
         v = f("vitesse")

@@ -28,6 +28,7 @@ class DialogueFiger(QDialog):
         self.style = QComboBox()
         self.style.addItem(_("Cadre photo sur fond flou"), "cadre")
         self.style.addItem(_("Image simple, plein cadre"), "simple")
+        self.style.addItem(_("Bullet time (la caméra tourne autour, whoosh)"), "bullet")
         f.addRow(_("Présentation"), self.style)
         self.zoom = QCheckBox(_("Zoom lent vers l'avant"))
         self.zoom.setChecked(True)

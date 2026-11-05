@@ -133,18 +133,32 @@ class Bibliotheque(QListWidget):
         self.itemDoubleClicked.connect(lambda it: self.ajouter.emit(it.data(Qt.UserRole)))
         self.projet = None
 
+    analyser = Signal(object)              # liste d'ids à analyser avec l'IA locale (vide = tous)
+    etiquette = Signal(str, str)           # media_id, texte lu : poser une étiquette
+
+    def filtrer(self, texte):
+        self._filtre = texte or ""
+        if self.projet:
+            self.remplir(self.projet)
+
     def remplir(self, projet):
+        from . import analyse_locale as AL
         self.projet = projet
         self.clear()
         for m in projet.medias:
-            it = QListWidgetItem(m["nom"])
+            if getattr(self, "_filtre", "") and not AL.correspond(m, self._filtre):
+                continue
+            a = m.get("ia_locale") or {}
+            it = QListWidgetItem(m["nom"] + (f"\n{a['nom']}" if a.get("nom") else ""))
             it.setData(Qt.UserRole, m["id"])
             px = QPixmap(m["vignettes"]) if m.get("vignettes") and os.path.exists(m["vignettes"]) else QPixmap()
             if not px.isNull():
                 it.setIcon(QIcon(px.copy(0, 0, min(px.width(), int(px.height() * 16 / 9) if px.height() else px.width()), px.height())))
             else:
                 it.setIcon(icone({"audio": "musique", "image": "image"}.get(m.get("genre"), "camera"), theme.COULEURS["texte2"], 64))
-            res = (m.get("analyse") or {}).get("resume") or moteur.resume_fiche(m.get("fiche"))
+            res = a.get("resume") or (m.get("analyse") or {}).get("resume") or moteur.resume_fiche(m.get("fiche"))
+            if a.get("textes"):
+                res += "\n" + _("Textes lus : {t}", t=", ".join(a["textes"]))
             it.setToolTip(f"{m['chemin']}\n{res}" + ("" if os.path.exists(m["chemin"]) else "\n" + _("INTROUVABLE")))
             if not os.path.exists(m["chemin"]):
                 it.setForeground(QColor("#ff5c5c"))
@@ -168,7 +182,15 @@ class Bibliotheque(QListWidget):
             ident = it.data(Qt.UserRole)
             m.addAction(icone("plus"), _("Ajouter à la fin de la timeline"), lambda: self.ajouter.emit(ident))
             m.addAction(icone("info"), _("Fiche vidéo"), lambda: self.fiche.emit(ident))
+            m.addSeparator()
+            ids = [x.data(Qt.UserRole) for x in self.selectedItems()] or [ident]
+            m.addAction(icone("ia"), _("Analyser avec l'IA locale ({n})", n=len(ids)), lambda: self.analyser.emit(ids))
+            med = self.projet.media(ident) if self.projet else None
+            for t in ((med or {}).get("ia_locale") or {}).get("textes") or []:
+                m.addAction(_("Etiquette « {t} » (texte lu)", t=t), lambda t=t: self.etiquette.emit(ident, t))
+            m.addSeparator()
             m.addAction(icone("supprimer"), _("Retirer du projet"), lambda: self.retirer.emit(ident))
+        m.addAction(icone("ia"), _("Analyser tous les rushes avec l'IA locale"), lambda: self.analyser.emit([]))
         m.exec(self.mapToGlobal(pos))
 
 
@@ -345,7 +367,15 @@ class Editeur(QWidget):
         aide.setWordWrap(True)
         aide.setStyleSheet("color:%s;font-size:11px" % theme.COULEURS["texte2"])
         vg.addWidget(aide)
+        self.recherche_medias = QLineEdit()
+        self.recherche_medias.setPlaceholderText(_("Rechercher : nom, lieu, objet, texte lu…"))
+        self.recherche_medias.setClearButtonEnabled(True)
+        self.recherche_medias.setToolTip(_("Cherche dans les noms et dans ce que l'IA locale a vu dans chaque rush (clic droit › Analyser)."))
+        vg.addWidget(self.recherche_medias)
         self.biblio = Bibliotheque()
+        self.recherche_medias.textChanged.connect(self.biblio.filtrer)
+        self.biblio.analyser.connect(self.analyser_rushes)
+        self.biblio.etiquette.connect(self._etiquette_texte_lu)
         self.biblio.ajouter.connect(lambda i: self.ajouter_a_la_timeline(i))
         self.biblio.fiche.connect(self.montrer_fiche)
         self.biblio.retirer.connect(self.retirer_media)
@@ -1654,6 +1684,60 @@ class Editeur(QWidget):
         self.encart.message(_("Goodie posé de {a} à {b} : glissez-le et tirez ses coins dans l'image ; réglages dans l'Inspecteur.",
                               a=_tc(g["debut"]), b=_tc(g["fin"])))
 
+    # ---------------------------------------------------------------- IA locale sur les rushes
+    def analyser_rushes(self, ids):
+        """Analyse des rushes par le modèle de vision local, en arrière-plan, un par un (rien n'est envoyé)."""
+        from . import analyse_locale as AL
+        if not AL.disponible(self.params):
+            QMessageBox.information(self, _("IA locale"), _("L'analyse se fait sur ce poste, sans rien envoyer ni payer, avec un modèle de "
+                                                            "vision : cochez-en un dans Edition › Préférences › IA locale (il se télécharge une fois)."))
+            return
+        medias = [m for m in self.projet.medias if (not ids or m["id"] in ids) and m.get("genre") in ("video", "image")]
+        if not medias:
+            return
+        params = self.params
+
+        def travail(tache):
+            faits = 0
+            for k, m in enumerate(medias):
+                if tache.arret:
+                    break
+                tache.avancer(k / len(medias), m["nom"])
+                try:
+                    AL.analyser(m, params, progression=lambda f, k=k: tache.avancer((k + f) / len(medias), m["nom"]))
+                    faits += 1
+                except AL.ErreurAnalyse:
+                    raise
+                except Exception:       # noqa: BLE001 : un rush illisible n'arrête pas les autres
+                    continue
+            return faits
+        t = Tache(travail, _("Analyse des rushes (IA locale)"))
+        self.taches.append(t)
+        self.encart.suivre(t, _("Analyse de {n} rush(es) par l'IA locale, sur ce poste", n=len(medias)))
+
+        def fini(r, err):
+            if t in self.taches:
+                self.taches.remove(t)
+            if err:
+                self.encart.message(_("Analyse impossible : {e}", e=str(err)))
+                return
+            self.projet.modifie = True
+            self.biblio.remplir(self.projet)
+            self.encart.message(_("{n} rush(es) analysés : survolez un média pour lire ce que l'IA locale y a vu ; la recherche au-dessus "
+                                  "des médias porte aussi dessus.", n=r or 0))
+        t.fini.connect(fini)
+        t.start()
+
+    def _etiquette_texte_lu(self, ident, texte):
+        """Un texte lu dans un rush (immatriculation, panneau) devient une étiquette posée sur le premier plan de ce rush."""
+        c = next((x for x in self.projet.clips if x["media"] == ident), None)
+        t0 = c["debut"] if c else self.timeline.position
+        self.projet.marquer()
+        t = self.projet.ajouter_titre(texte, t0, t0 + 4.0, style="etiquette", y=0.12)
+        self.rafraichir()
+        self._ouvrir_volet(1)
+        self.inspecteur.montrer_selection([t["id"]])
+
     # ---------------------------------------------------------------- image figée, bruitages
     def figer_image(self, t=None):
         """Image figée à la tête de lecture : le plan s'arrête sur cette image pendant quelques secondes (cadre photo,
@@ -1701,6 +1785,11 @@ class Editeur(QWidget):
             ci["effets"].append({"id": "cadre_photo", "params": dict(E_defauts("cadre_photo"))})
         if o["zoom"]:
             ci["effets"].insert(0, {"id": "zoom_lent", "params": {"force": 0.12, "sens": "avant"}})
+        if o["style"] == "bullet":
+            ci["effets"].append({"id": "orbite", "params": {"amplitude": 1.0, "vitesse": 1.0}})
+            ci["effets"].append({"id": "matrix_vert", "params": {}})
+            o["declic"] = False
+            B.poser(self.projet, "whoosh", t)
         if o["flash"]:
             ci["transition"] = {"id": "t_fondu_blanc", "params": {"duree": 0.3}}
         if o["legende"]:

@@ -897,6 +897,15 @@ class DialogueFiche(QDialog):
         a = media.get("analyse") or {}
         f = media.get("fiche") or {}
         lignes = [f"<h3>{media['nom']}</h3>", f"<p>{a.get('resume') or moteur.resume_fiche(f)}</p>"]
+        il = media.get("ia_locale") or {}
+        if il:
+            lignes.append("<p><b>" + _("Vu par l'IA locale") + f"</b> ({il.get('date', '')}) : {il.get('nom', '')} — {il.get('resume', '')}</p>")
+            if il.get("lieux_objets"):
+                lignes.append("<p>" + _("Lieux et objets : {l}", l=", ".join(il["lieux_objets"])) + "</p>")
+            if il.get("textes"):
+                lignes.append("<p>" + _("Textes lus : {t}", t=", ".join(il["textes"])) + "</p>")
+        else:
+            lignes.append("<p><i>" + _("Clic droit sur le média › « Analyser avec l'IA locale » : description, lieux, textes lus (sur ce poste).") + "</i></p>")
         vid = f.get("video") or {}
         if vid:
             lignes.append("<ul>" + "".join(f"<li>{k} : {val}</li>" for k, val in (

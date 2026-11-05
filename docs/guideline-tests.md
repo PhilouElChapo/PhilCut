@@ -157,6 +157,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T24 — 0.4.3 : IA sur les rushes (sur ce poste) et derniers effets
+
+1. **Analyser les rushes** : un modèle de vision doit être coché dans Préférences › IA locale. Clic droit sur un média (ou plusieurs sélectionnés) › « Analyser avec l'IA locale », ou « Analyser tous les rushes ». **Attendu** : barre du bas « Analyse de 3 rush(es) par l'IA locale, sur ce poste » avec le pourcentage ; rien n'est envoyé sur Internet. Ensuite, sous le nom du média, un nom court (« Décollage de Cannes ») ; au survol : la description et les « Textes lus » (immatriculations, panneaux). La fiche vidéo affiche « Vu par l'IA locale ».
+2. **Rechercher** : champ « Rechercher : nom, lieu, objet, texte lu… » au-dessus des médias : « mer », « F-GHIJ », « decollage » (accents ignorés) ne laissent que les rushes concernés.
+3. **Texte lu → étiquette** : clic droit sur un média analysé › « Etiquette « F-GHIJ » (texte lu) » : une étiquette est posée sur le premier plan de ce rush, réglable dans l'Inspecteur.
+4. **Bullet time** : clic droit sur l'image › Figer l'image › Présentation « Bullet time » : la caméra semble tourner autour de l'image figée, teinte Matrix, whoosh. Effet « Orbite » aussi seul dans le catalogue.
+5. **Personne en code** (pack Détourage) : effet « Personne en code » sur un plan avec une personne : la silhouette se remplit de caractères verts puis redevient réelle.
+
 ## T23 — 0.4.2 : confort de l'interface
 
 1. **Petit écran** (portable 1366 × 768) : toutes les pistes de la timeline sont visibles sans défiler, jusqu'aux Titres et Goodies ; quand il y en a beaucoup, elles se tassent et les noms deviennent courts (V1, V2, M1…) avec les boutons M et S sur la ligne du nom (le verrou et V restent dans le clic droit › Pistes). Si vous agrandissez les images (Alt + molette), la timeline défile à nouveau.

@@ -336,6 +336,9 @@ class Exportateur:
         elif i == "halo":
             masques = self._masques(c)
             motif, n = G.halo(dossier, L, H, cad, d, masques, p.get("couleur", "#ffd36b"), float(p.get("force", 1.0)))
+        elif i == "code_personne":
+            d = min(d, float(p.get("duree", 2.0)) + 0.01) if p.get("duree") else d
+            motif, n = G.code_personne(dossier, L, H, cad, d, self._masques(c))
         elif i == "bullet_time":
             return      # traite comme filtre de vitesse dans la chaine (voir effets.filtre) : rien a superposer
         else:

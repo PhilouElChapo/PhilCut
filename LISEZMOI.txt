@@ -79,6 +79,10 @@ bruitages fabriques sur ce poste (whoosh, impact, declic...) ; autocollants
 Confort (0.4.2) : la timeline tient dans la hauteur de l'ecran, colonne des medias
 repliable (F3), galerie des Goodies en vignettes, croix de pharmacie animee.
 
+IA sur les rushes (0.4.3), sur ce poste uniquement : clic droit sur un media >
+Analyser avec l'IA locale : description, lieux, textes lus (immatriculations) ;
+recherche des medias par contenu. Bullet time et personne en code (Matrix).
+
 Mises a jour
 ------------
 Verifiees au demarrage (une fois par jour) et PROPOSEES sur l'Accueil : rien n'est

@@ -291,6 +291,35 @@ def halo(dossier, L, H, cadence, duree, masques, couleur="#ffd36b", force=1.0):
     return os.path.join(dossier, "%05d.png"), n
 
 
+def code_personne(dossier, L, H, cadence, duree, masques, graine=11):
+    """La silhouette se remplit de caractères verts qui défilent (fond vert sombre dans la silhouette), puis redevient
+    réelle : montée sur le premier tiers, plein au milieu, retour sur le dernier tiers. masques(i) -> 0..255 ou None."""
+    import tempfile, shutil
+    tmp = tempfile.mkdtemp(prefix="code-")
+    try:
+        motif, n = pluie_code(tmp, L, H, cadence, duree, densite=3.0, opacite=1.0, graine=graine)
+        for i in range(n):
+            img = _vide(L, H)
+            m = masques(i)
+            t = i / max(1, n - 1)
+            env = min(1.0, t / 0.3, (1 - t) / 0.3) if 0 < t < 1 else 0.0
+            if m is not None and env > 0:
+                code = cv2.imread(os.path.join(tmp, f"{i:05d}.png"), cv2.IMREAD_UNCHANGED)
+                mk = (m.astype(np.float32) / 255.0)[..., None]
+                fond = np.zeros((H, L, 4), np.float32)
+                fond[..., 0], fond[..., 1], fond[..., 2], fond[..., 3] = 20, 60, 10, 200 * env
+                if code is not None:
+                    a = code[..., 3:4].astype(np.float32) / 255.0
+                    fond[..., :3] = code[..., :3].astype(np.float32) * a + fond[..., :3] * (1 - a)
+                    fond[..., 3:4] = np.maximum(fond[..., 3:4], code[..., 3:4].astype(np.float32) * env)
+                fond[..., 3:4] *= mk
+                img = np.clip(fond, 0, 255).astype(np.uint8)
+            _ecrire(dossier, i, img)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return os.path.join(dossier, "%05d.png"), n
+
+
 def _ease(t):
     t = min(1.0, max(0.0, t))
     return 1 - (1 - t) ** 3
