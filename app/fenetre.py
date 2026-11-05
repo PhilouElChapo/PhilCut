@@ -49,16 +49,25 @@ class Fenetre(QMainWindow):
         self.encart_global = Encart(self)          # progression visible même sans projet ouvert (téléchargements…)
         self.statusBar().addPermanentWidget(self.encart_global, 1)
         from .telechargements import GestionTelechargements
+        from . import activite
         self.telechargements = GestionTelechargements(self.params, self)
         self.fenetre_telech = None
-        self.b_telech = QPushButton("")
-        self.b_telech.setFlat(True)
-        self.b_telech.setToolTip(_("Voir ce qui se télécharge : progression, vitesse, temps restant, file d'attente"))
-        self.b_telech.clicked.connect(self.voir_telechargements)
-        self.b_telech.hide()
-        self.statusBar().addPermanentWidget(self.b_telech)
-        self.telechargements.change.connect(self._etat_telech)
+        self.centre = activite.centre()
+        self.centre.telechargements = self.telechargements
+        # barre d'information : toujours là, dit ce qui se passe ; un clic ouvre le Centre d'activité
+        self.b_activite = QPushButton(_("Prêt"))
+        self.b_activite.setFlat(True)
+        self.b_activite.setCursor(Qt.PointingHandCursor)
+        self.b_activite.setToolTip(_("Ce que PhilCut fait en ce moment (imports, exports, IA, téléchargements). Clic : le détail."))
+        self.b_activite.clicked.connect(self.voir_activite)
+        self.statusBar().addPermanentWidget(self.b_activite)
+        self.fenetre_activite = None
+        self.centre.change.connect(self._etat_activite)
+        self.telechargements.change.connect(self._etat_activite)
         self.telechargements.termine.connect(self._telech_termine)
+        self._minut_activite = QTimer(self)
+        self._minut_activite.timeout.connect(self._etat_activite)
+        self._minut_activite.start(1000)
         self._menus()
         self.statusBar().showMessage(_("PhilCut {v}", v=VERSION) + (_(" · version portable") if est_portable() else "") +
                                      (_(" · FFmpeg {f}", f=moteur.version()) if moteur.disponible() else _(" · FFmpeg INTROUVABLE : import et export impossibles")))
@@ -143,7 +152,7 @@ class Fenetre(QMainWindow):
         ou.addAction(_("Publier (YouTube, Instagram, TikTok…)…"), self.publier)
         ou.addAction(icone("nuage"), _("Déposer l'export sur le Drive / NAS…"), self.partager)
         ou.addAction(_("Synchroniser maintenant"), self.ecrire_session)
-        ou.addAction(_("Téléchargements (IA locale)…"), self.voir_telechargements)
+        ou.addAction(_("Centre d'activité (tâches en cours, téléchargements)…"), self.voir_activite)
         ou.addAction(_("Journal des échanges (Drives, IA)…"), self.journal_echanges)
         ou.addAction(_("Ouvrir le dossier des données"), lambda: self.ouvrir_externe(dossier_donnees()))
         ai = mb.addMenu(_("&Aide"))
@@ -868,32 +877,23 @@ class Fenetre(QMainWindow):
     def suivre_tache(self, t, texte, action=None):
         """Progression d'une tâche : dans l'encart du projet ouvert, sinon dans la barre du bas de la fenêtre."""
         ed = self.editeur_courant()
-        (ed.encart if ed else self.encart_global).suivre(t, texte, action)
+        (ed.encart if ed else self.encart_global).suivre(t, texte, action)      # l'encart inscrit aussi la tâche au Centre d'activité
 
     def voir_telechargements(self):
-        from .telechargements import FenetreTelechargements
-        if self.fenetre_telech is None:
-            self.fenetre_telech = FenetreTelechargements(self, self.telechargements)
-        self.fenetre_telech.show()
-        self.fenetre_telech.raise_()
-        self.fenetre_telech.activateWindow()
+        self.voir_activite()
 
-    def _etat_telech(self):
-        actifs = self.telechargements.actifs()
-        if actifs:
-            enc = next((t for t in actifs if t["etat"] == "en_cours"), actifs[0])
-            self.b_telech.setText(_("⬇ Téléchargements : {n} — {p} %", n=len(actifs), p=int(enc["fraction"] * 100)))
-            self.b_telech.show()
-            if not getattr(self, "_minut_telech", None):
-                self._minut_telech = QTimer(self)
-                self._minut_telech.timeout.connect(self._etat_telech)
-            self._minut_telech.start(1000)
-        else:
-            if getattr(self, "_minut_telech", None):
-                self._minut_telech.stop()
-            fini = [t for t in self.telechargements.travaux if t["etat"] == "fini"]
-            self.b_telech.setText(_("⬇ Téléchargements terminés ({n})", n=len(fini)) if fini else "")
-            self.b_telech.setVisible(bool(self.telechargements.travaux))
+    def voir_activite(self):
+        from .activite import FenetreActivite
+        if self.fenetre_activite is None:
+            self.fenetre_activite = FenetreActivite(self, self.centre)
+        self.fenetre_activite.show()
+        self.fenetre_activite.raise_()
+        self.fenetre_activite.activateWindow()
+
+    def _etat_activite(self):
+        txt, actif = self.centre.resume()
+        self.b_activite.setText(("● " if actif else "✓ ") + txt)
+        self.b_activite.setStyleSheet("QPushButton{color:%s;font-weight:600}" % theme.COULEURS["accent"] if actif else "")
 
     def _telech_termine(self, cle, erreur):
         if erreur is not None and not isinstance(erreur, InterruptedError):

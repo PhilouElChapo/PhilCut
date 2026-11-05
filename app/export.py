@@ -107,10 +107,10 @@ class Exportateur:
                 fusions.append(None)
                 ext_prec = 0.0
             suivant = clips[i + 1] if i + 1 < len(clips) else None
-            fs = E.fusion(suivant.get("transition")) if suivant and abs(suivant["debut"] - fin_clip(c)) < 0.05 else None
+            fs = E.fusion(E.transition_active(suivant)) if suivant and abs(suivant["debut"] - fin_clip(c)) < 0.05 else None
             ext = min(fs[1], duree_clip(suivant) * 0.9) if fs else 0.0
             # fusion avec le précédent : il a été prolongé de ext_prec (seulement s'il touche ce plan)
-            fe = E.fusion(c.get("transition"))
+            fe = E.fusion(E.transition_active(c))
             fusions.append((fe[0], ext_prec) if fe and ext_prec > 0 else None)
             segs.append(self._clip_video(c, suivant, ext))
             longueurs.append(duree_clip(c) + ext)
@@ -171,7 +171,7 @@ class Exportateur:
         chaine.append(self._cadrage(c, m))
         chaine.append("format=yuv420p")
         ctx = {"cadence": self.cad, "largeur": self.L, "hauteur": self.H, "duree": d, "debut": c["debut"]}
-        for e in c.get("effets") or []:
+        for e in E.actifs(c):
             f = E.filtre(e, ctx) or E.filtre_en_ligne(e["id"])
             if f:
                 chaine.append(f)
@@ -182,11 +182,11 @@ class Exportateur:
             elif e["id"] in ("double_exposition", "chroma_key"):
                 chaine = self._avec_second_media(chaine, e, c, d)
         # transition du clip suivant : sortie de celui-ci
-        if suivant and suivant.get("transition"):
+        if suivant and E.transition_active(suivant):
             fs = E.filtre_sortie_transition(suivant["transition"])
             if fs:
                 chaine.append(fs.replace("{fin}", f"{d:.3f}"))
-        if c.get("transition") and not E.fusion(c["transition"]):
+        if E.transition_active(c) and not E.fusion(c["transition"]):
             f = E.filtre(c["transition"], ctx)
             if f:
                 chaine.append(f)

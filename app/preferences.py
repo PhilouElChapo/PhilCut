@@ -314,6 +314,8 @@ class DialoguePreferences(QDialog):
         self.b_test.setEnabled(False)
         t = Tache(lambda tache: ia_locale.tester(self.params), _("Test IA locale"))
         self._tache_test = t
+        from . import activite
+        activite.centre().suivre(t, _("Test de l'IA locale sur ce poste"))
         if hasattr(self.fenetre, "taches"):
             self.fenetre.taches.append(t)
 

@@ -300,6 +300,8 @@ class DialogueEffets(QDialog):
         self._tache_apercu = tache
         if hasattr(ed, "taches"):
             ed.taches.append(tache)
+        from . import activite
+        activite.centre().suivre(tache, _("Aperçu de l'effet « {n} »", n=nom))
 
         def fini(r, e, tache=tache):
             if tache is not self._tache_apercu:

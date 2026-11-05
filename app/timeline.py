@@ -36,7 +36,9 @@ class ItemClip(QGraphicsRectItem):
         self.h = hauteur
         self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable | QGraphicsItem.ItemSendsGeometryChanges)
         self.setAcceptHoverEvents(True)
-        self.mode = None            # "deplacer" | "gauche" | "droite"
+        self.mode = None            # "deplacer" | "gauche" | "droite" | "transition_bord"
+        self.chips = []             # [(QRectF, genre, index)] : étiquettes d'effets cliquables, calculées au dessin
+        self.rect_transition = None
         self.vignette = None
         m = timeline.projet.media(clip["media"]) if timeline.projet else None
         self.media = m
@@ -104,15 +106,15 @@ class ItemClip(QGraphicsRectItem):
         extra = []
         if abs(self.clip.get("vitesse", 1.0) - 1.0) > 1e-3:
             extra.append(f"×{self.clip['vitesse']:g}")
-        if self.clip.get("effets"):
-            extra.append("✦" * min(3, len(self.clip["effets"])))
-        if self.clip.get("transition"):
-            extra.append("⇥")
         if self.clip.get("muet"):
             extra.append("🔇")
         texte = nom + ("  " + " ".join(extra) if extra else "")
-        p.drawText(QRectF(r.x() + 6, r.y() + 1, r.width() - 10, 15), Qt.AlignLeft | Qt.AlignVCenter,
-                   QFontMetrics(f).elidedText(texte, Qt.ElideRight, int(r.width() - 12)))
+        decal = self._dessiner_transition(p, r)
+        p.setPen(QColor(255, 255, 255, 230))
+        p.setFont(f)
+        p.drawText(QRectF(r.x() + 6 + decal, r.y() + 1, r.width() - 10 - decal, 15), Qt.AlignLeft | Qt.AlignVCenter,
+                   QFontMetrics(f).elidedText(texte, Qt.ElideRight, int(r.width() - 12 - decal)))
+        self._dessiner_chips(p, r)
         # contour (selection)
         if self.isSelected():
             p.setPen(QPen(QColor("#ffd36b"), 2))
@@ -127,9 +129,90 @@ class ItemClip(QGraphicsRectItem):
             p.drawRect(QRectF(r.x(), r.y() + 4, BORD - 2, r.height() - 8))
             p.drawRect(QRectF(r.right() - BORD + 2, r.y() + 4, BORD - 2, r.height() - 8))
 
+    def _dessiner_transition(self, p, r):
+        """La transition d'entrée du plan : un bloc hachuré sur la jonction, large comme sa durée, avec son nom.
+        Renvoie la largeur occupée (le nom du plan se décale)."""
+        from . import effets as E
+        t = self.clip.get("transition")
+        self.rect_transition = None
+        if not t:
+            return 0
+        fi = E.fiche(t["id"]) or {"nom": t["id"]}
+        d = float((t.get("params") or {}).get("duree", 0.8) or 0.8)
+        w = max(14.0, min(r.width(), d * self.tl.pps))
+        actif = E.actif(t)
+        rt = QRectF(r.x(), r.y(), w, r.height())
+        self.rect_transition = rt
+        p.save()
+        p.setClipRect(rt)
+        p.setPen(Qt.NoPen)
+        p.setBrush(QColor(255, 210, 74, 70 if actif else 30))
+        p.drawRect(rt)
+        p.setPen(QPen(QColor(255, 210, 74, 150 if actif else 60), 1))
+        k = -r.height()
+        while k < w:                        # hachures
+            p.drawLine(QPointF(r.x() + k, r.bottom()), QPointF(r.x() + k + r.height(), r.y()))
+            k += 9
+        p.restore()
+        p.setPen(QPen(QColor("#ffd24a") if actif else QColor(255, 210, 74, 120), 2))
+        p.drawLine(QPointF(rt.right(), r.y()), QPointF(rt.right(), r.bottom()))      # bord tirable : durée
+        p.setPen(QPen(QColor("#ffd24a"), 2))
+        p.drawLine(QPointF(r.x() + 1, r.y()), QPointF(r.x() + 1, r.bottom()))        # jonction
+        f = QFont()
+        f.setPointSizeF(7.5)
+        f.setBold(True)
+        p.setFont(f)
+        p.setPen(QColor("#1a1a1a") if actif else QColor(60, 60, 60))
+        lib = ("⇆ " if actif else "⇆ (off) ") + fi["nom"] + f" {d:g} s"
+        p.fillRect(QRectF(r.x() + 3, r.y() + 2, min(w - 6, QFontMetrics(f).horizontalAdvance(lib) + 8), 13), QColor(255, 210, 74, 230 if actif else 120))
+        p.drawText(QRectF(r.x() + 7, r.y() + 2, w - 10, 13), Qt.AlignLeft | Qt.AlignVCenter, QFontMetrics(f).elidedText(lib, Qt.ElideRight, int(w - 12)))
+        return min(w + 4, r.width() * 0.5)
+
+    def _dessiner_chips(self, p, r):
+        """Une étiquette par effet posé, en bas du plan : clic = régler, clic droit = désactiver / supprimer."""
+        from . import effets as E
+        from .export import VOIX
+        self.chips = []
+        elements = [("effet", i, (E.fiche(e["id"]) or {"nom": e["id"]})["nom"], E.actif(e)) for i, e in enumerate(self.clip.get("effets") or [])]
+        noms_voix = dict(VOIX)
+        elements += [("effet_audio", i, _(noms_voix.get(eid, eid)), True) for i, eid in enumerate(self.clip.get("effets_audio") or [])]
+        if not elements or r.height() < 34:
+            return
+        f = QFont()
+        f.setPointSizeF(7.5)
+        p.setFont(f)
+        fm = QFontMetrics(f)
+        h = 14
+        x = r.x() + 4
+        y = r.bottom() - h - 3
+        for genre, i, nom, actif in elements:
+            lib = ("✦ " if genre == "effet" else "♪ ") + nom
+            w = min(fm.horizontalAdvance(lib) + 12, max(30.0, r.right() - 4 - x))
+            if w < 24:
+                break
+            rc = QRectF(x, y, w, h)
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(20, 20, 26, 215) if actif else QColor(20, 20, 26, 120))
+            p.drawRoundedRect(rc, 6, 6)
+            p.setPen(QColor("#f2e6ff") if actif else QColor(170, 170, 170))
+            p.drawText(rc.adjusted(6, 0, -4, 0), Qt.AlignLeft | Qt.AlignVCenter, fm.elidedText(lib if actif else lib + _(" (off)"), Qt.ElideRight, int(w - 8)))
+            self.chips.append((rc, genre, i))
+            x += w + 3
+            if x > r.right() - 30:
+                break
+
     # ---- souris
     def _zone(self, pos):
         r = self.rect()
+        for rc, genre, i in self.chips:
+            if rc.contains(pos):
+                return (genre, i)
+        rt = self.rect_transition
+        if rt is not None and rt.contains(pos):
+            if abs(pos.x() - rt.right()) <= 4:
+                return "transition_bord"
+            if pos.x() > r.x() + BORD:
+                return "transition"
         if pos.x() <= r.x() + BORD:
             return "gauche"
         if pos.x() >= r.right() - BORD:
@@ -138,7 +221,13 @@ class ItemClip(QGraphicsRectItem):
 
     def hoverMoveEvent(self, e):
         z = self._zone(e.pos())
-        self.setCursor(Qt.SizeHorCursor if z != "deplacer" else Qt.OpenHandCursor)
+        if isinstance(z, tuple) or z == "transition":
+            self.setCursor(Qt.PointingHandCursor)
+            self.setToolTip(_("Clic : régler · clic droit : désactiver, supprimer") if isinstance(z, tuple) else
+                            _("Transition : clic pour régler, tirez le bord droit pour la durée, clic droit pour changer ou supprimer"))
+        else:
+            self.setToolTip("")
+            self.setCursor(Qt.SizeHorCursor if z != "deplacer" else Qt.OpenHandCursor)
         self.update()
         super().hoverMoveEvent(e)
 
@@ -147,9 +236,21 @@ class ItemClip(QGraphicsRectItem):
         super().hoverLeaveEvent(e)
 
     def mousePressEvent(self, e):
-        self.mode = self._zone(e.pos())
+        z = self._zone(e.pos())
+        if e.button() == Qt.LeftButton and (isinstance(z, tuple) or z == "transition"):
+            self.tl._scene.clearSelection()
+            self.setSelected(True)
+            e.accept()
+            self.mode = None
+            if isinstance(z, tuple):
+                self.tl.element_clique.emit(self.clip["id"], z[0], z[1])
+            else:
+                self.tl.element_clique.emit(self.clip["id"], "transition", 0)
+            return
+        self.mode = z
         self.tl.projet.marquer()
-        self._origine = (e.scenePos().x(), self.clip["debut"], self.clip["src_debut"], self.clip["src_fin"])
+        self._origine = (e.scenePos().x(), self.clip["debut"], self.clip["src_debut"], self.clip["src_fin"],
+                         float(((self.clip.get("transition") or {}).get("params") or {}).get("duree", 0.8) or 0.8))
         if self.mode != "deplacer":
             e.accept()
             self.setSelected(True)
@@ -157,6 +258,13 @@ class ItemClip(QGraphicsRectItem):
         super().mousePressEvent(e)
 
     def mouseMoveEvent(self, e):
+        if self.mode == "transition_bord":
+            dx = (e.scenePos().x() - self._origine[0]) / self.tl.pps
+            d = max(0.2, min(5.0, duree_clip(self.clip) * 0.9, self._origine[4] + dx))
+            self.clip["transition"].setdefault("params", {})["duree"] = round(d, 2)
+            self.update()
+            self.tl.element_change.emit(self.clip["id"])
+            return
         if self.mode in ("gauche", "droite"):
             dx = (e.scenePos().x() - self._origine[0]) / self.tl.pps
             v = self.clip.get("vitesse", 1.0)
@@ -183,6 +291,11 @@ class ItemClip(QGraphicsRectItem):
         self.setPos(MARGE_G + t * self.tl.pps, self.piste_y + 3)
 
     def mouseReleaseEvent(self, e):
+        if self.mode == "transition_bord":
+            self.mode = None
+            self.tl.modifie.emit()
+            self.tl.element_change.emit(self.clip["id"])
+            return
         if self.mode in ("gauche", "droite"):
             self.mode = None
             self.tl.projet.ranger(self.clip["piste"])
@@ -199,11 +312,20 @@ class ItemClip(QGraphicsRectItem):
         self.tl.reconstruire()
 
     def mouseDoubleClickEvent(self, e):
+        z = self._zone(e.pos())
+        if isinstance(z, tuple) or z == "transition":
+            return
         self.tl.proprietes.emit(self.clip["id"])
 
     def contextMenuEvent(self, e):
         self.setSelected(True)
-        self.tl.menu_clip(self.clip, e.screenPos(), max(0.0, (e.scenePos().x() - MARGE_G) / self.tl.pps))
+        z = self._zone(e.pos())
+        if isinstance(z, tuple):
+            self.tl.menu_effet(self.clip, z[0], z[1], e.screenPos())
+        elif z in ("transition", "transition_bord"):
+            self.tl.menu_transition(self.clip, e.screenPos())
+        else:
+            self.tl.menu_clip(self.clip, e.screenPos(), max(0.0, (e.scenePos().x() - MARGE_G) / self.tl.pps))
 
 
 class ItemCalque(QGraphicsRectItem):
@@ -256,7 +378,8 @@ class ItemCalque(QGraphicsRectItem):
     def contextMenuEvent(self, e):
         self.setSelected(True)
         m = QMenu()
-        m.addAction(_("Modifier…"), lambda: self.tl.proprietes.emit(self.elem["id"]))
+        m.addAction(_("Régler dans l'Inspecteur"), lambda: self.tl.element_clique.emit(self.elem["id"], "calque", 0))
+        m.addAction(_("Tous les réglages (fenêtre)…"), lambda: self.tl.proprietes.emit(self.elem["id"]))
         m.addAction(_("Accrocher à une personne (suit ses mouvements)…"), lambda: self.tl.demande_menu.emit(self.elem["id"], "accrocher"))
         if self.elem.get("suivi"):
             m.addAction(_("Corriger le suivi à la tête de lecture…"), lambda: self.tl.demande_menu.emit(self.elem["id"], "corriger"))
@@ -270,6 +393,8 @@ class Timeline(QGraphicsView):
     selection_changee = Signal(list)        # identifiants selectionnes
     modifie = Signal()
     zone_changee = Signal()                 # partie sélectionnée (I / O) modifiée
+    element_clique = Signal(str, str, int)  # clip_id, "effet" | "effet_audio" | "transition", index : ouvrir dans l'Inspecteur
+    element_change = Signal(str)            # clip_id : un réglage a changé depuis la timeline (durée de transition…)
     proprietes = Signal(str)                # double clic : identifiant
     media_depose = Signal(str, str, float)  # media_id, piste, instant
     demande_menu = Signal(str, object)      # (clip_id, position ecran) pour la fenetre (effets, etc.)
@@ -664,8 +789,115 @@ class Timeline(QGraphicsView):
         self._menu_partie(m, t)
         self._menu_zoom(m)
         m.addSeparator()
-        m.addAction(_("Propriétés…"), lambda: self.proprietes.emit(clip["id"]))
+        m.addAction(_("Tous les effets et transitions (fenêtre)…"), lambda: self.proprietes.emit(clip["id"]))
         m.exec(pos)
+
+    def menu_effet(self, clip, genre, i, pos):
+        from . import effets as E
+        from .export import VOIX
+        if genre == "effet":
+            e = (clip.get("effets") or [])[i]
+            nom = (E.fiche(e["id"]) or {"nom": e["id"]})["nom"]
+        else:
+            e = None
+            nom = _(dict(VOIX).get(clip["effets_audio"][i], clip["effets_audio"][i]))
+        m = QMenu()
+        m.addAction(_("Régler « {n} »…", n=nom), lambda: self.element_clique.emit(clip["id"], genre, i))
+        if e is not None:
+            a = m.addAction(_("Actif"), lambda: self._basculer_effet(clip, i))
+            a.setCheckable(True)
+            a.setChecked(E.actif(e))
+            if i > 0:
+                m.addAction(_("Appliquer avant le précédent"), lambda: self._bouger_effet(clip, i, -1))
+            if i < len(clip["effets"]) - 1:
+                m.addAction(_("Appliquer après le suivant"), lambda: self._bouger_effet(clip, i, 1))
+        m.addSeparator()
+        m.addAction(_("Supprimer « {n} »", n=nom), lambda: self._supprimer_effet(clip, genre, i))
+        m.exec(pos)
+
+    def _basculer_effet(self, clip, i):
+        self.projet.marquer()
+        e = clip["effets"][i]
+        e["actif"] = not e.get("actif", True)
+        self.modifie.emit()
+        self.reconstruire()
+        self.element_change.emit(clip["id"])
+
+    def _bouger_effet(self, clip, i, sens):
+        j = i + sens
+        if 0 <= j < len(clip["effets"]):
+            self.projet.marquer()
+            clip["effets"][i], clip["effets"][j] = clip["effets"][j], clip["effets"][i]
+            self.modifie.emit()
+            self.reconstruire()
+            self.element_change.emit(clip["id"])
+
+    def _supprimer_effet(self, clip, genre, i):
+        self.projet.marquer()
+        if genre == "effet":
+            del clip["effets"][i]
+        else:
+            del clip["effets_audio"][i]
+        self.modifie.emit()
+        self.reconstruire()
+        self.element_change.emit(clip["id"])
+
+    def menu_transition(self, clip, pos):
+        from . import effets as E
+        t = clip.get("transition") or {}
+        fi = E.fiche(t.get("id", "")) or {"nom": t.get("id", "")}
+        m = QMenu()
+        m.addAction(_("Régler la transition « {n} »…", n=fi["nom"]), lambda: self.element_clique.emit(clip["id"], "transition", 0))
+        sm = m.addMenu(_("Durée"))
+        for d in (0.3, 0.5, 0.8, 1.0, 1.5, 2.0):
+            a = sm.addAction(_("{d:g} s", d=d), lambda d=d: self._duree_transition(clip, d))
+            a.setCheckable(True)
+            a.setChecked(abs(float((t.get("params") or {}).get("duree", 0.8)) - d) < 0.01)
+        sm2 = m.addMenu(_("Changer pour…"))
+        for k in E.par_famille().get("transition", []):
+            a = sm2.addAction(E.fiche(k)["nom"], lambda k=k: self._changer_transition(clip, k))
+            a.setCheckable(True)
+            a.setChecked(k == t.get("id"))
+        a = m.addAction(_("Active"), lambda: self._basculer_transition(clip))
+        a.setCheckable(True)
+        a.setChecked(E.actif(t))
+        m.addSeparator()
+        m.addAction(_("Supprimer la transition"), lambda: self._supprimer_transition(clip))
+        m.exec(pos)
+
+    def _duree_transition(self, clip, d):
+        self.projet.marquer()
+        clip["transition"].setdefault("params", {})["duree"] = d
+        self.modifie.emit()
+        self.reconstruire()
+        self.element_change.emit(clip["id"])
+
+    def _changer_transition(self, clip, k):
+        from . import effets as E
+        self.projet.marquer()
+        d = float(((clip.get("transition") or {}).get("params") or {}).get("duree", 0.8))
+        params = dict(E.defauts(k))
+        if "duree" in params:
+            params["duree"] = d
+        clip["transition"] = {"id": k, "params": params}
+        self.modifie.emit()
+        self.reconstruire()
+        self.element_change.emit(clip["id"])
+
+    def _basculer_transition(self, clip):
+        self.projet.marquer()
+        t = clip["transition"]
+        t["actif"] = not t.get("actif", True)
+        self.modifie.emit()
+        self.reconstruire()
+        self.element_change.emit(clip["id"])
+
+    def _supprimer_transition(self, clip):
+        self.projet.marquer()
+        clip["transition"] = None
+        self.modifie.emit()
+        self.reconstruire()
+        self.element_change.emit(clip["id"])
 
     def _vitesse(self, clip, v):
         self.projet.marquer()

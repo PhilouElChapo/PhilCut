@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt, QTimer, Signal, QMimeData, QSize, QByteArray
 from PySide6.QtGui import QPixmap, QIcon, QDrag, QAction, QColor
 from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QListWidget, QListWidgetItem, QLabel, QPushButton, QToolButton,
                                QFrame, QProgressBar, QTabWidget, QScrollArea, QCheckBox, QComboBox, QLineEdit, QSpinBox, QMenu, QMessageBox,
-                               QFileDialog, QSizePolicy, QFormLayout, QPlainTextEdit, QAbstractItemView, QInputDialog)
+                               QFileDialog, QSizePolicy, QFormLayout, QPlainTextEdit, QAbstractItemView, QInputDialog, QDialog)
 
 from . import moteur, outils as O, recettes, assistant as A, suivi, theme
 from .apercu import Apercu
@@ -46,7 +46,9 @@ class Encart(QFrame):
         self.tache = None
 
     def suivre(self, tache, texte, action=None):
-        """action : (libelle, fonction) proposee a la fin."""
+        """action : (libelle, fonction) proposee a la fin. La tâche est aussi inscrite au Centre d'activité."""
+        from . import activite
+        activite.centre().suivre(tache, texte)
         self.tache = tache
         self.lbl.setText(texte)
         self.barre.setValue(0)
@@ -355,11 +357,18 @@ class Editeur(QWidget):
         self.proposition.appliquer.connect(self.appliquer_recette)
         self.proposition.autre_idee.connect(self.autre_idee)
         self.volet.addTab(self.proposition, icone("assistant", theme.COULEURS["texte2"]), _("Proposition"))
-        self.proprietes = QLabel(_("Sélectionnez un plan, un texte ou un Goodie."))
-        self.proprietes.setWordWrap(True)
-        self.proprietes.setAlignment(Qt.AlignTop)
-        self.proprietes.setContentsMargins(8, 8, 8, 8)
-        self.volet.addTab(self.proprietes, icone("liste_fichiers", theme.COULEURS["texte2"]), _("Propriétés"))
+        from .inspecteur import Inspecteur
+        self.inspecteur = Inspecteur(self)
+        self.inspecteur.demande_effets.connect(self.effets_du_clip)
+        self.inspecteur.demande_edition.connect(self.editer_element)
+        self.volet.addTab(self.inspecteur, icone("liste_fichiers", theme.COULEURS["texte2"]), _("Inspecteur"))
+        # bouton « agrandir » : le volet s'ouvre dans une fenêtre à part quand il devient trop petit
+        self.b_agrandir = QToolButton()
+        self.b_agrandir.setIcon(icone("plein_ecran", theme.COULEURS["texte2"]))
+        self.b_agrandir.setAutoRaise(True)
+        self.b_agrandir.setToolTip(_("Ouvrir ce volet dans une fenêtre plus grande"))
+        self.b_agrandir.clicked.connect(self.agrandir_volet)
+        self.volet.setCornerWidget(self.b_agrandir)
         self.split_h.addWidget(self.volet)
         # volet réduit : une colonne d'icônes nommées ; un clic rouvre le volet sur l'onglet choisi
         self.volet_icones = QFrame()
@@ -368,7 +377,7 @@ class Editeur(QWidget):
         vi.setContentsMargins(4, 8, 4, 8)
         vi.setSpacing(6)
         for i, (ic, lib, aide) in enumerate(((("assistant"), _("Proposition"), _("Ouvrir la proposition de l'assistant de montage")),
-                                             ("liste_fichiers", _("Propriétés"), _("Ouvrir les propriétés du plan, du texte ou du Goodie sélectionné")))):
+                                             ("liste_fichiers", _("Inspecteur"), _("Ouvrir l'Inspecteur : réglages du plan, de l'effet, du texte ou du Goodie sélectionné")))):
             b = QToolButton()
             b.setIcon(icone(ic, theme.COULEURS["texte"]))
             b.setIconSize(QSize(22, 22))
@@ -395,6 +404,8 @@ class Editeur(QWidget):
         self.timeline.selection_changee.connect(self._selection)
         self.timeline.demande_menu.connect(self._demande_menu)
         self.timeline.zone_changee.connect(self._zone_changee)
+        self.timeline.element_clique.connect(self._element_clique)
+        self.timeline.element_change.connect(lambda cid: self.inspecteur.rafraichir(cid))
         self.split_v.addWidget(self.timeline)
         self.split_v.setSizes([620, 260])
         v.addWidget(self.split_v, 1)
@@ -716,25 +727,38 @@ class Editeur(QWidget):
             self.encart.message(_("Rétabli : {a}", a=a), 3000)
 
     def _selection(self, ids):
-        if not ids:
-            self.proprietes.setText(_("Sélectionnez un plan, un texte ou un Goodie."))
+        self.inspecteur.montrer_selection(ids)
+
+    def _element_clique(self, clip_id, genre, i):
+        """Clic sur une étiquette d'effet ou une transition dans la timeline : l'Inspecteur s'ouvre dessus."""
+        self._ouvrir_volet(1)
+        if genre == "calque":
+            self.inspecteur.montrer_selection([clip_id])
+        else:
+            self.inspecteur.montrer_element(clip_id, genre, i)
+
+    def agrandir_volet(self):
+        """Le volet de droite dans une fenêtre à part, redimensionnable ; il revient à sa place à la fermeture."""
+        w = self.volet.currentWidget()
+        if w is None:
             return
-        c = self.projet.clip(ids[0])
-        if c:
-            m = self.projet.media(c["media"]) or {}
-            self.proprietes.setText(_("<b>{n}</b><br>Piste : {p}<br>Position : {d:.2f} s → {f:.2f} s (durée {du:.2f} s)<br>Dans le rush : {a:.2f} → {b:.2f} s<br>Vitesse ×{v}<br>"
-                                      "Cadrage : {c}<br>Effets : {e}<br>Transition : {t}<br><br><span style='color:#999'>{r}</span><br><br>Double-clic sur le plan : effets et transition.",
-                                      n=c.get("nom", ""), p=c["piste"], d=c["debut"], f=fin_clip(c), du=duree_clip(c), a=c["src_debut"], b=c["src_fin"], v=c.get("vitesse", 1),
-                                      c=c.get("ajustement", "remplir"), e=", ".join(e["id"] for e in c.get("effets") or []) or "—", t=(c.get("transition") or {}).get("id") or "—",
-                                      r=(m.get("analyse") or {}).get("resume") or moteur.resume_fiche(m.get("fiche"))))
-            return
-        for t in self.projet.titres:
-            if t["id"] == ids[0]:
-                self.proprietes.setText(_("<b>Texte</b> « {t} »<br>{a:.2f} → {b:.2f} s · {an}{s}", t=t["texte"], a=t["debut"], b=t["fin"], an=t.get("animation", ""),
-                                          s=_(" · accroché à une personne") if t.get("suivi") else ""))
-        for g in self.projet.goodies:
-            if g["id"] == ids[0]:
-                self.proprietes.setText(_("<b>Goodie</b> {g}<br>{a:.2f} → {b:.2f} s · {n} valeurs", g=g["genre"], a=g["debut"], b=g["fin"], n=len(g.get("valeurs") or [])))
+        i = self.volet.currentIndex()
+        titre, ic = self.volet.tabText(i), self.volet.tabIcon(i)
+        d = QDialog(self)
+        d.setWindowTitle(titre)
+        d.setModal(False)
+        d.resize(760, 640)
+        lay = QVBoxLayout(d)
+        lay.setContentsMargins(6, 6, 6, 6)
+        self.volet.removeTab(i)
+        lay.addWidget(w)
+
+        def retour(*_a):
+            w.setParent(None)
+            self.volet.insertTab(i, w, ic, titre)
+            self.volet.setCurrentIndex(i)
+        d.finished.connect(retour)
+        d.show()
 
     # ---------------------------------------------------------------- medias
     def importer(self, chemins=None):
@@ -1160,6 +1184,9 @@ class Editeur(QWidget):
             self.projet.marquer()
             c["effets"], c["transition"] = d.resultat()
             self.rafraichir()
+            self.timeline.selectionner(cid)
+            self.inspecteur.montrer_clip(cid)
+            self._ouvrir_volet(1)
             n = len(c["effets"]) + (1 if c.get("transition") else 0)
             if n:
                 def voir():

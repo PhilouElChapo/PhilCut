@@ -129,6 +129,21 @@ def pack_pret(cle, params=None):
     return cle in set((params or {}).get("effets_coches") or [])
 
 
+def actif(effet):
+    """Un effet ou une transition désactivé (case décochée dans l'Inspecteur) reste posé mais ne s'applique pas."""
+    return bool(effet) and effet.get("actif", True)
+
+
+def actifs(clip):
+    """Effets vidéo actifs d'un plan, dans l'ordre."""
+    return [e for e in (clip.get("effets") or []) if actif(e)]
+
+
+def transition_active(clip):
+    t = clip.get("transition")
+    return t if actif(t) else None
+
+
 def fiche(ident):
     e = CATALOGUE.get(ident)
     if not e:
