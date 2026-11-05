@@ -14,6 +14,7 @@ from . import mise_a_jour, moteur, outils as O, theme, fabrique as FAB
 from .accueil import PageAccueil
 from .config import Parametres, VERSION, est_portable, EXTENSION_PROJET, est_video, est_audio, est_image, dossier_donnees
 from .editeur import Editeur, Encart
+from .widgets import question_fr
 from .icones import icone, logo
 from .langue import _
 from .projet import Projet
@@ -294,7 +295,7 @@ class Fenetre(QMainWindow):
         if not isinstance(w, Editeur):
             return
         if w.projet.modifie:
-            r = QMessageBox.question(self, _("Fermer"), _("Enregistrer les modifications de « {n} » ?", n=w.projet.nom),
+            r = question_fr(self, _("Fermer"), _("Enregistrer les modifications de « {n} » ?", n=w.projet.nom),
                                      QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
             if r == QMessageBox.Cancel:
                 return
@@ -311,7 +312,7 @@ class Fenetre(QMainWindow):
         for ed in self.editeurs():
             if ed.projet.modifie:
                 self.onglets.setCurrentWidget(ed)
-                r = QMessageBox.question(self, _("Quitter"), _("Enregistrer les modifications de « {n} » ?", n=ed.projet.nom),
+                r = question_fr(self, _("Quitter"), _("Enregistrer les modifications de « {n} » ?", n=ed.projet.nom),
                                          QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
                 if r == QMessageBox.Cancel:
                     e.ignore()

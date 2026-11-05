@@ -89,6 +89,12 @@ def main():
     app.setFont(police)
     theme.proteger_bulles()
     app.setStyleSheet(theme.feuille(dossier_donnees(), params.get("theme", "sombre")))
+    try:                                    # Oui, Non, Annuler, Copier… de Qt dans la langue de PhilCut
+        from app.langue import LANGUE
+        from app.widgets import installer_traduction_qt
+        installer_traduction_qt(app, LANGUE)
+    except Exception:
+        pass
     try:
         ecran.installer(app)
     except Exception:

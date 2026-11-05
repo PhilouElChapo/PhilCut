@@ -20,6 +20,38 @@ def boutons_fr(bb):
     return bb
 
 
+def question_fr(parent, titre, texte, boutons, defaut=None):
+    """QMessageBox.question avec des boutons toujours en français (même si la traduction de Qt manque)."""
+    from PySide6.QtWidgets import QMessageBox
+    m = QMessageBox(QMessageBox.Question, titre, texte, boutons, parent)
+    noms = {QMessageBox.Save: _("Enregistrer"), QMessageBox.Discard: _("Ne pas enregistrer"), QMessageBox.Cancel: _("Annuler"),
+            QMessageBox.Yes: _("Oui"), QMessageBox.No: _("Non"), QMessageBox.Ok: "OK", QMessageBox.Close: _("Fermer")}
+    for k, v in noms.items():
+        b = m.button(k)
+        if b:
+            b.setText(v)
+    if defaut is not None:
+        m.setDefaultButton(defaut)
+    return m.exec()
+
+
+def installer_traduction_qt(app, langue):
+    """Textes propres à Qt (Oui, Non, Annuler, Copier, Coller, boîtes de fichiers…) dans la langue de PhilCut."""
+    import os, sys
+    from PySide6.QtCore import QTranslator, QLibraryInfo
+    dossiers = [QLibraryInfo.path(QLibraryInfo.TranslationsPath)]
+    base = getattr(sys, "_MEIPASS", None)
+    if base:
+        dossiers += [os.path.join(base, "PySide6", "Qt", "translations"), os.path.join(base, "PySide6", "translations")]
+    tr = QTranslator(app)
+    for d in dossiers:
+        if d and tr.load(f"qtbase_{langue}", d):
+            app.installTranslator(tr)
+            app._traduction_qt = tr          # garder une référence
+            return True
+    return False
+
+
 # ------------------------------------------------------------------ choix d'une zone
 
 class FluxLayout(QLayout):
