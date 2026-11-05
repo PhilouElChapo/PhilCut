@@ -652,6 +652,10 @@ class Fenetre(QMainWindow):
         m.addAction(_("Enregistrer une voix off au micro…"), self.enregistrer_voix)
         m.addAction(_("Voix off lue par une voix de synthèse…"), self.voix_synthese)
         m.addAction(_("Doubler la vidéo dans une autre langue…"), self.doubler)
+        if c:
+            m.addAction(_("Autotune : corriger la justesse du chant de ce plan…"), lambda: ed.autotune(c))
+            m.addAction(_("▶ Ecouter ce plan avec ses retouches"), lambda: (ed._ouvrir_volet(1), ed.timeline.selectionner(c["id"]),
+                                                                          ed.inspecteur.montrer_clip(c["id"])))
         if not c:
             m.addSeparator()
             m.addAction(_("(choisissez un plan pour retoucher sa voix)")).setEnabled(False)

@@ -91,6 +91,52 @@ class TestDoublage(unittest.TestCase):
                 V.lire("Bonjour", os.path.join(tempfile.mkdtemp(), "x.wav"), {})
 
 
+class TestNarrationEtAutotune(unittest.TestCase):
+    def test_chaines_narration(self):
+        from app.export import FILTRES_AUDIO, NARRATION
+        d = tempfile.mkdtemp()
+        src = _bip(os.path.join(d, "v.wav"), 2.0, 220)
+        for eid, _lib in NARRATION[1:]:
+            out = V.rendu_ecoute(src, [eid], os.path.join(d, eid + ".wav"))
+            self.assertGreater(V.duree_wav(out), 1.5, eid)
+
+    def test_couper_blancs(self):
+        d = tempfile.mkdtemp()
+        brut = os.path.join(d, "b.wav")
+        moteur.lancer(["-f", "lavfi", "-i", "anullsrc=r=22050:cl=mono:d=1", "-f", "lavfi", "-i", "sine=frequency=300:duration=1.5",
+                       "-f", "lavfi", "-i", "anullsrc=r=22050:cl=mono:d=1", "-filter_complex", "[0][1][2]concat=n=3:v=0:a=1", "-ar", "22050", brut])
+        net = V.couper_blancs(brut, os.path.join(d, "n.wav"))
+        self.assertAlmostEqual(V.duree_wav(net), 1.5, delta=0.45)
+        self.assertLess(V.duree_wav(net), V.duree_wav(brut) - 1.0)
+
+    def test_autotune(self):
+        import numpy as np
+        from app import autotune as A
+        if not moteur.filtre_disponible("rubberband"):
+            self.skipTest("rubberband absent")
+        d = tempfile.mkdtemp()
+        taux = 22050
+        t = np.arange(int(taux * 2)) / taux
+        f = np.where(t < 1, 225.0, 305.0)                          # chanté un peu faux
+        ph = 2 * np.pi * np.cumsum(f) / taux
+        x = 0.5 * np.sin(ph) + 0.25 * np.sin(2 * ph) + 0.12 * np.sin(3 * ph)
+        src = os.path.join(d, "v.wav")
+        with wave.open(src, "wb") as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(taux)
+            w.writeframes((x * 20000).astype("<i2").tobytes())
+        tm, f0 = A.hauteurs(A.lire_mono(src))
+        self.assertAlmostEqual(float(np.median(f0[(tm > 0.2) & (tm < 0.8)])), 225.0, delta=1.0)
+        A.corriger(src, os.path.join(d, "o.wav"), force="robot")
+        tm2, f2 = A.hauteurs(A.lire_mono(os.path.join(d, "o.wav")))
+        self.assertAlmostEqual(float(np.median(f2[(tm2 > 0.3) & (tm2 < 0.8)])), 220.0, delta=2.0)        # La juste
+        self.assertAlmostEqual(float(np.median(f2[(tm2 > 1.3) & (tm2 < 1.8)])), 311.1, delta=3.0)        # Ré# juste
+        A.corriger(src, os.path.join(d, "maj.wav"), tonique=0, gamme="majeure", force="robot")
+        tm3, f3 = A.hauteurs(A.lire_mono(os.path.join(d, "maj.wav")))
+        self.assertAlmostEqual(float(np.median(f3[(tm3 > 1.3) & (tm3 < 1.8)])), 293.7, delta=3.0)        # Ré : Ré# n'est pas en Do majeur
+
+
 class TestFenetresVoix(unittest.TestCase):
     def test_fenetres(self):
         from PySide6.QtWidgets import QApplication
@@ -99,7 +145,8 @@ class TestFenetresVoix(unittest.TestCase):
         with mock.patch.object(DV, "micros", return_value=([], None)):      # pas de micro (ni de son) sur le serveur de test
             e = DV.DialogueEnregistrement(None, {}, 12.5)
         self.assertFalse(e.b_rec.isEnabled())
-        self.assertTrue(any(c.eid == "a_harmonieuse" and c.isChecked() for c in e.cases))
+        self.assertEqual(e.amelioration.currentData(), "a_narration")          # vraie chaîne de narration par défaut
+        self.assertTrue(e.blancs.isChecked())
         s = DV.DialogueSynthese(None, {"clef_gemini": "x"})
         self.assertTrue(any(s.choix.itemData(i)[0] == "gemini" for i in range(s.choix.count())))
         s.texte.setPlainText("Bonjour")

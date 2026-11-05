@@ -334,6 +334,20 @@ class Inspecteur(QWidget):
             gv = QGroupBox(_("Voix et son"))
             vv = QVBoxLayout(gv)
             poses = list(c.get("effets_audio") or [])
+            hb = QHBoxLayout()
+            be = QPushButton(_("▶ Ecouter avec ces retouches"))
+            be.setToolTip(_("Ecoute les 15 premières secondes du plan avec les retouches cochées, comme dans la vidéo exportée"))
+            be.clicked.connect(lambda: self._ecouter(c, be))
+            hb.addWidget(be)
+            ba = QPushButton(_("Autotune…"))
+            ba.setToolTip(_("Vraie correction de justesse d'un chant (tonalité, force), écoute avant / après, nouveau fichier"))
+            ba.clicked.connect(lambda: self.ed.autotune(c))
+            hb.addWidget(ba)
+            vv.addLayout(hb)
+            if c.get("media_origine"):
+                bo = QPushButton(_("Revenir à l'enregistrement d'origine (sans autotune)"))
+                bo.clicked.connect(lambda: self.ed.annuler_autotune(c))
+                vv.addWidget(bo)
             for eid, lib in VOIX:
                 cv = QCheckBox(_(lib))
                 cv.setChecked(eid in poses)
@@ -360,6 +374,43 @@ class Inspecteur(QWidget):
                 except RuntimeError:        # contenu déjà remplacé
                     pass
             QTimer.singleShot(0, voir)
+
+    def _ecouter(self, c, bouton):
+        """Rend 15 s du plan avec ses retouches audio et les joue ; second clic : arrêt."""
+        from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+        from PySide6.QtCore import QUrl
+        import tempfile, os
+        from . import voix as V
+        from .taches import Tache
+        if getattr(self, "_lecteur", None) is None:
+            self._lecteur = QMediaPlayer(self)
+            self._sortie = QAudioOutput(self)
+            self._lecteur.setAudioOutput(self._sortie)
+        if self._lecteur.playbackState() == QMediaPlayer.PlayingState:
+            self._lecteur.stop()
+            return
+        m = self.projet.media(c["media"]) or {}
+        if not m.get("chemin"):
+            return
+        sortie = os.path.join(tempfile.gettempdir(), f"philcut_ecoute_{os.getpid()}.wav")
+        effets, vol = list(c.get("effets_audio") or []), float(c.get("volume", 1.0))
+        debut, duree = c["src_debut"], min(15.0, c["src_fin"] - c["src_debut"])
+        bouton.setText(_("Préparation…"))
+        t = Tache(lambda tc: V.rendu_ecoute(m["chemin"], effets, sortie, debut, duree, vol), _("Ecoute"))
+        self._tache_ecoute = t
+
+        def fini(r, e):
+            try:
+                bouton.setText(_("▶ Ecouter avec ces retouches"))
+            except RuntimeError:
+                pass
+            if e or not r:
+                return
+            self._lecteur.setSource(QUrl())
+            self._lecteur.setSource(QUrl.fromLocalFile(r))
+            self._lecteur.play()
+        t.fini.connect(fini)
+        t.start()
 
     def _effet_audio(self, c, eid, on):
         l = [x for x in (c.get("effets_audio") or []) if x != eid]

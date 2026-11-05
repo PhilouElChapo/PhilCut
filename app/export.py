@@ -10,10 +10,19 @@ from . import effets as E, generateurs as G, goodies as GO, moteur, titres as T
 from .projet import duree_clip, fin_clip
 
 # effets audio d'un plan (menu Voix et son)
+_NARRATION_FIN = ("deesser=i=0.45,equalizer=f=280:t=q:w=1.2:g=-3,equalizer=f=3200:t=q:w=1:g=2.5,treble=g=2:f=9000,"
+                  "acompressor=threshold=-24dB:ratio=3.5:attack=5:release=120:makeup=5,speechnorm=e=6:r=0.0001:l=1,alimiter=limit=0.92")
 FILTRES_AUDIO = {
+    # narration : vraie chaîne de traitement de la voix parlée (coupe-bas, débruitage, porte de bruit entre les phrases,
+    # « s » adoucis, moins de boue, présence, air, compression, niveau de parole régulier, limiteur)
+    "a_narration": "highpass=f=80,afftdn=nr=14:nf=-38:tn=1,agate=threshold=0.015:ratio=2:range=0.25:attack=5:release=180," + _NARRATION_FIN,
+    "a_narration_chaude": "highpass=f=70,afftdn=nr=12:nf=-38:tn=1,agate=threshold=0.015:ratio=2:range=0.3:attack=5:release=200,deesser=i=0.5,"
+                          "equalizer=f=140:t=q:w=1:g=3,equalizer=f=400:t=q:w=1.2:g=-2,equalizer=f=2800:t=q:w=1:g=1.5,"
+                          "acompressor=threshold=-26dB:ratio=4:attack=8:release=160:makeup=6,speechnorm=e=6:r=0.0001:l=1,alimiter=limit=0.92",
+    "a_narration_bruit": "highpass=f=100,afftdn=nr=24:nf=-30:tn=1,anlmdn=s=6,agate=threshold=0.025:ratio=3:range=0.15:attack=5:release=150," + _NARRATION_FIN,
     "a_debruit": "afftdn=nf=-25:tn=1,highpass=f=80",
     "a_voix": "highpass=f=90,lowpass=f=12000,equalizer=f=180:t=q:w=1:g=2,equalizer=f=3000:t=q:w=1:g=2,acompressor=threshold=-18dB:ratio=3:attack=10:release=120:makeup=4,alimiter=limit=0.95",
-    "a_autotune": "acompressor=threshold=-16dB:ratio=4,chorus=0.6:0.9:50|60:0.4|0.32:0.25|0.4:2|1.3",      # approximation en attendant un vrai correcteur de justesse
+    "a_autotune": "acompressor=threshold=-16dB:ratio=4,chorus=0.6:0.9:50|60:0.4|0.32:0.25|0.4:2|1.3",      # effet chorus ; la vraie correction de justesse : app/autotune.py
     "a_reverb": "aecho=0.8:0.9:40|60|90:0.35|0.25|0.15",
     "a_echo": "aecho=0.8:0.88:320:0.4",
     # voix « harmonieuse » : coupe des graves sourds, débruitage, sifflements adoucis, moins nasale, chaleur et présence,
@@ -30,10 +39,14 @@ FILTRES_AUDIO = {
     "a_aigu": "rubberband=pitch=1.1:formant=preserved",
 }
 TIMBRE_SECOURS = {"a_grave": "asetrate=48000*0.9,aresample=48000,atempo=1.111", "a_aigu": "asetrate=48000*1.1,aresample=48000,atempo=0.909"}
-VOIX = [("a_harmonieuse", "Voix harmonieuse (tout en un)"), ("a_voix", "Voix embellie (narration)"), ("a_debruit", "Débruiter (vent, moteur)"),
+NARRATION = [("", "Aucune (voix brute)"), ("a_narration", "Narration claire (conseillé)"), ("a_narration_chaude", "Narration chaude (radio)"),
+             ("a_narration_bruit", "Pièce bruyante (débruitage fort)")]
+VOIX = [("a_narration", "Narration claire (traitement complet)"), ("a_narration_chaude", "Narration chaude (radio)"),
+        ("a_narration_bruit", "Narration, pièce bruyante"),
+        ("a_harmonieuse", "Voix harmonieuse (tout en un)"), ("a_voix", "Voix embellie (narration)"), ("a_debruit", "Débruiter (vent, moteur)"),
         ("a_desser", "Adoucir les « s » qui sifflent"), ("a_anti_nasal", "Moins nasale"), ("a_chaude", "Plus chaude"), ("a_claire", "Plus claire"),
         ("a_grave", "Timbre plus grave"), ("a_aigu", "Timbre plus aigu"), ("a_radio", "Effet radio (ATC)"),
-        ("a_autotune", "Autotune (chant)"), ("a_reverb", "Réverbération"), ("a_echo", "Echo")]
+        ("a_autotune", "Effet chorus (chant)"), ("a_reverb", "Réverbération"), ("a_echo", "Echo")]
 
 
 def filtre_audio(eid):

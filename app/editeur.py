@@ -800,6 +800,37 @@ class Editeur(QWidget):
                     self.inspecteur.montrer_selection([ident])
                 return
 
+    def autotune(self, c):
+        """Vraie correction de justesse : le plan passe sur un nouveau fichier corrigé ; l'original est gardé."""
+        from .dialogues_voix import DialogueAutotune
+        m = self.projet.media(c["media"]) or {}
+        if not m.get("chemin"):
+            return
+        d = DialogueAutotune(self, m["chemin"], self.params, c["src_debut"], c["src_fin"] - c["src_debut"])
+        if d.exec() != d.Accepted or not d.resultat:
+            return
+        from . import moteur
+        fiche = moteur.sonder(d.resultat)
+        self.projet.marquer()
+        nm = self.projet.ajouter_media(d.resultat, fiche)
+        nm["onde"] = m.get("onde") or []
+        c.setdefault("media_origine", c["media"])
+        c["media"] = nm["id"]
+        c["nom"] = nm["nom"]
+        self.biblio.remplir(self.projet)
+        self.rafraichir()
+        self.inspecteur.montrer_clip(c["id"])
+        self.encart.message(_("Autotune appliqué : le plan utilise la version corrigée (l'original reste dans les médias)."), 6000)
+
+    def annuler_autotune(self, c):
+        if not c.get("media_origine"):
+            return
+        self.projet.marquer()
+        c["media"] = c.pop("media_origine")
+        c["nom"] = (self.projet.media(c["media"]) or {}).get("nom", c.get("nom"))
+        self.rafraichir()
+        self.inspecteur.montrer_clip(c["id"])
+
     def _calque_taille(self, ident, facteur):
         """Molette sur un texte ou un Goodie dans l'image : plus grand ou plus petit."""
         for e in self.projet.titres + self.projet.goodies:

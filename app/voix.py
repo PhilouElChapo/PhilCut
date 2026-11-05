@@ -222,3 +222,26 @@ def baisser_originaux(projet, niveau=0.15):
     """Garde un fond de la voix d'origine (ambiance), comme un doublage de documentaire."""
     for c in projet.clips_piste("video"):
         c["volume"] = min(c.get("volume", 1.0), niveau)
+
+
+# ------------------------------------------------------------------ écouter avant de poser
+def rendu_ecoute(entree, effets, sortie, debut=0.0, duree=None, volume=1.0):
+    """Fichier WAV pour écouter une voix avec ses retouches (les mêmes filtres qu'à l'export), sans rien modifier."""
+    from .export import filtre_audio
+    chaine = [f for f in (filtre_audio(e) for e in (effets or [])) if f]
+    chaine.append(f"volume={float(volume):.3f}")
+    args = ["-ss", f"{max(0.0, debut):.3f}"] + (["-t", f"{duree:.3f}"] if duree else []) + ["-i", entree, "-af", ",".join(chaine),
+                                                                                             "-ar", "48000", "-ac", "2", "-c:a", "pcm_s16le", sortie]
+    moteur.lancer(args)
+    return sortie
+
+
+def couper_blancs(entree, sortie, seuil_db=-45):
+    """Copie sans les blancs du début et de la fin (le temps de lancer et d'arrêter l'enregistrement)."""
+    f = (f"silenceremove=start_periods=1:start_threshold={seuil_db}dB:start_silence=0.15,areverse,"
+         f"silenceremove=start_periods=1:start_threshold={seuil_db}dB:start_silence=0.25,areverse")
+    moteur.lancer(["-i", entree, "-af", f, "-c:a", "pcm_s16le", sortie])
+    if duree_wav(sortie) < 0.3:              # tout était silence : on garde l'original
+        import shutil
+        shutil.copyfile(entree, sortie)
+    return sortie
