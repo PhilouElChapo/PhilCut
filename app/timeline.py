@@ -832,7 +832,7 @@ class Timeline(QGraphicsView):
         for lib, v in ((_("Vitesse ×0,25"), 0.25), (_("Vitesse ×0,5"), 0.5), (_("Vitesse normale"), 1.0), (_("Vitesse ×2"), 2.0), (_("Vitesse ×4"), 4.0), (_("Vitesse ×8"), 8.0)):
             m.addAction(lib, lambda v=v: self._vitesse(clip, v))
         m.addSeparator()
-        if clip["piste"] == "video":
+        if clip["piste"].startswith("video"):
             sm = m.addMenu(_("Cadrage"))
             for lib, mode in ((_("Remplir (recadrer)"), "remplir"), (_("Contenir, bandes noires"), "contenir_noir"), (_("Contenir, fond flou"), "contenir_flou")):
                 a = sm.addAction(lib, lambda mode=mode: self._cadrage(clip, mode))

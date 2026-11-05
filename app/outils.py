@@ -31,7 +31,7 @@ OUTILS = [
     ("texte", "habiller", "texte", _('Texte'), _('Titres animés, étiquettes'),
      _("Ajoute un titre, un sous-titre ou une étiquette : fondu, zoom, néon, feu, machine à écrire, tournoyant, mots au rythme. Une étiquette peut suivre une personne."), True),
     ("effets", "habiller", "effets", _('Effets'), _('Glow, glitch, puzzle, Matrix…'),
-     _("Pose un effet ou une transition sur le plan sélectionné. Les effets qui demandent un téléchargement se cochent dans les Préférences."), True),
+     _("Pose un effet ou une transition sur le plan sélectionné : aperçu avant de poser, puis étiquette sur le plan et réglages dans l'Inspecteur. Clic droit sur l'étiquette : actif, supprimer."), True),
     ("goodies", "habiller", "goodies", _('Goodies'), _('Instruments, badges, horloge'),
      _("Incrustations à thème : altimètre, vitesse, cap, horloge, immatriculation, boussole, compte à rebours… Valeurs tirées d'une trace GPS ou saisies."), True),
     ("sous_titres", "habiller", "sous_titres", _('Sous-titres'), _('Automatiques (local) ou importés'),

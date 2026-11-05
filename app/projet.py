@@ -28,6 +28,15 @@ class Projet:
         self._refaire = []
         self.modifie = False
 
+    def __deepcopy__(self, memo):
+        """Une copie pour un export ou un rendu n'emporte pas la pile d'Annuler (jusqu'à 50 états du projet)."""
+        q = Projet.__new__(Projet)
+        q.chemin = self.chemin
+        q.d = copy.deepcopy(self.d, memo)
+        q._pile, q._refaire = [], []
+        q.modifie = self.modifie
+        return q
+
     # ---------------------------------------------------------------- acces
     @property
     def nom(self):

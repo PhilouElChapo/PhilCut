@@ -212,7 +212,7 @@ class Inspecteur(QWidget):
                 b.clicked.connect(lambda _x=False, val=val, sv=sv: sv.setValue(val))
                 hv.addWidget(b)
             f.addRow(_("Vitesse"), hv)
-        if c["piste"] == "video":
+        if c["piste"].startswith("video"):
             cb = QComboBox()
             for lib, mode in ((_("Remplir (recadrer)"), "remplir"), (_("Contenir, bandes noires"), "contenir_noir"),
                               (_("Contenir, fond flou"), "contenir_flou"), (_("Suivre la personne"), "suivi")):
