@@ -80,6 +80,22 @@ class Apercu(QGraphicsView):
         self.horloge = QTimer(self)
         self.horloge.setInterval(33)
         self.horloge.timeout.connect(self._tic)
+        # image fidèle à l'arrêt : le montage rendu avec effets, transitions, textes et Goodies (0.3.0)
+        self.item_rendu = QGraphicsPixmapItem()
+        self.item_rendu.setZValue(50)
+        self.item_rendu.hide()
+        self._scene.addItem(self.item_rendu)
+        self.badge_rendu = self._scene.addSimpleText("")
+        self.badge_rendu.setZValue(51)
+        self.badge_rendu.setBrush(QColor("#ffd24a"))
+        self.badge_rendu.hide()
+        self.fidele = bool(self.params.get("apercu_fidele", True))
+        self._minut_rendu = QTimer(self)
+        self._minut_rendu.setSingleShot(True)
+        self._minut_rendu.setInterval(450)
+        self._minut_rendu.timeout.connect(self._lancer_rendu)
+        self._tache_rendu = None
+        self._rendu_pour = None             # (t, numéro d'état du projet) de l'image affichée
         self._t_depart = None
         self.changer_projet(projet)
 
@@ -111,7 +127,71 @@ class Apercu(QGraphicsView):
         self._placer_video(forcer)
         self._placer_audio()
         self._dessiner_calques()
+        self._cacher_rendu()
+        if not self.en_lecture:
+            self._minut_rendu.start()
         self.position_changee.emit(self.t)
+
+    # ---- image fidèle à l'arrêt
+    def _cacher_rendu(self):
+        self.item_rendu.hide()
+        self.badge_rendu.hide()
+
+    def regler_fidele(self, on):
+        self.fidele = bool(on)
+        self.params["apercu_fidele"] = self.fidele
+        if on:
+            self._minut_rendu.start()
+        else:
+            self._cacher_rendu()
+
+    def _etat_projet(self):
+        return (len(getattr(self.projet, "_pile", [])), len(getattr(self.projet, "_refaire", [])))
+
+    def _lancer_rendu(self):
+        if not self.fidele or self.en_lecture or not self.projet or self.projet.duree() <= 0 or self.t > self.projet.duree():
+            return
+        if self._rendu_pour == (round(self.t, 3), self._etat_projet()) and not self.item_rendu.isVisible():
+            self.item_rendu.show()
+            self.badge_rendu.show()
+            return
+        if self._tache_rendu is not None and self._tache_rendu.isRunning():
+            self._tache_rendu.stopper()
+        import copy, tempfile
+        from . import export
+        from .taches import Tache
+        projet = copy.deepcopy(self.projet)
+        t, etat = self.t, self._etat_projet()
+        sortie = _os.path.join(tempfile.gettempdir(), f"philcut_rendu_{_os.getpid()}_{id(self) % 1000}.png")
+        st = list(self.projet.d.get("sous_titres") or [])
+        tache = Tache(lambda tc: export.image_rendue(projet, t, sortie, self.params, 1280, st), _("Image fidèle"))
+        self._tache_rendu = tache
+
+        def fini(r, e, tache=tache):
+            if tache is not self._tache_rendu or e or self.en_lecture or abs(self.t - t) > 1e-3:
+                return
+            px = QPixmap(sortie)
+            if px.isNull():
+                return
+            L, H = self.projet.taille
+            self.item_rendu.setPixmap(px)
+            self.item_rendu.setScale(L / max(1, px.width()))
+            self.item_rendu.setPos(0, 0)
+            self.item_rendu.show()
+            f = self.badge_rendu.font()
+            f.setPixelSize(max(14, int(H * 0.028)))
+            self.badge_rendu.setFont(f)
+            self.badge_rendu.setText(_("✦ image avec effets"))
+            self.badge_rendu.setPos(H * 0.015, H * 0.012)
+            self.badge_rendu.show()
+            for it in self.calques:             # les calques approchés laissent la place au vrai rendu
+                try:
+                    it.hide()
+                except RuntimeError:
+                    pass
+            self._rendu_pour = (round(t, 3), etat)
+        tache.fini.connect(fini)
+        tache.start()
 
     def _url(self, m):
         chemin = m.get("proxy") or m["chemin"]
@@ -260,6 +340,8 @@ class Apercu(QGraphicsView):
         if self.t >= self.projet.duree() - 0.02:
             self.t = 0.0
         self.en_lecture = True
+        self._minut_rendu.stop()
+        self._cacher_rendu()
         import time
         self._t_depart = (time.monotonic(), self.t)
         self._placer_video(forcer=True)
@@ -270,6 +352,7 @@ class Apercu(QGraphicsView):
     def pause(self):
         self.en_lecture = False
         self.horloge.stop()
+        self._minut_rendu.start()
         if self.lecteur:
             self.lecteur.pause()
         for sp in self.sons.values():
@@ -278,6 +361,11 @@ class Apercu(QGraphicsView):
 
     def arreter(self):
         self.pause()
+        self._minut_rendu.stop()
+        t = self._tache_rendu
+        if t is not None and t.isRunning():
+            t.stopper()
+            t.wait(4000)
 
     def basculer(self):
         if self.en_lecture:

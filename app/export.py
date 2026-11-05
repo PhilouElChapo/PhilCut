@@ -67,6 +67,7 @@ class Exportateur:
         self.filtres = []
         self._n = 0
         self.journal = []
+        self.sans_son = False       # image seule (aperçu fidèle) : pas de piste audio dans le graphe
 
     # ---------------------------------------------------------------- utilitaires
     def _entree(self, *args):
@@ -499,14 +500,14 @@ class Exportateur:
         self._goodies()
         v = self._superposer(v)
         v = self._titres(v, sous_titres)
-        a = self._son()
+        a = None if self.sans_son else self._son()
         script = os.path.join(self.tmp, "filtres.txt")
         with open(script, "w", encoding="utf-8") as f:
             f.write(";\n".join(self.filtres))
         args = []
         for e in self.entrees:
             args += e
-        args += moteur.args_script_filtres(script) + ["-map", f"[{v}]", "-map", f"[{a}]"]
+        args += moteur.args_script_filtres(script) + ["-map", f"[{v}]"] + (["-map", f"[{a}]"] if a else ["-an"])
         args += moteur.args_encodeur(self.enc, self.qualite)
         args += ["-r", str(self.cad), "-c:a", "aac", "-b:a", self.debit_audio, "-ar", "48000", "-movflags", "+faststart",
                  "-t", f"{self.duree:.3f}", self.sortie]
@@ -581,6 +582,33 @@ def extrait(projet, debut, fin):
     p.d["goodies"] = [g for g in p.goodies if g["fin"] > 0.05]
     p.d["sous_titres"] = []
     return p
+
+
+def image_rendue(projet, t, sortie_png, params=None, largeur=960, sous_titres=()):
+    """L'image du montage à l'instant t, avec tout : cadrage, effets, transitions, textes, Goodies, sous-titres.
+    C'est ce que montre l'aperçu à l'arrêt (0.3.0) : on voit ce qu'on crée sans passer par un export."""
+    from . import effets as E
+    pas = 1.0 / max(1.0, float(projet.cadence or 30))
+    # on part un peu avant t : les fondus des textes et la transition en cours ont ainsi vraiment commencé
+    marge = 3.0
+    c = projet.clip_a(t, "video")
+    tr = E.transition_active(c) if c else None
+    if tr:
+        marge = max(marge, float((tr.get("params") or {}).get("duree", 0.8) or 0.8) + 0.5)
+    t0 = max(0.0, t - marge)
+    p = extrait(projet, t0, t + 3 * pas)
+    st = [(a - t0, b - t0) + tuple(x[2:]) for x in sous_titres for a, b in [(x[0], x[1])] if a <= t + pas and b >= t0]
+    ex = Exportateur(p, sortie_png, "whatsapp", qualite="allegee", encodeur="libx264", params=params)     # 720p : deux fois plus vite
+    ex.sans_son = True
+    try:
+        args = ex.commande(st)
+        i = args.index("-c:v")
+        args = args[:i] + ["-ss", f"{t - t0:.3f}", "-frames:v", "1", "-s", f"{int(largeur)}x{int(round(largeur * ex.H / ex.L / 2) * 2)}",
+                           "-f", "image2", "-vcodec", "png", "-update", "1", sortie_png]
+        moteur.lancer(args)
+        return sortie_png
+    finally:
+        ex.nettoyer()
 
 
 def apercu_effet(projet, clip_id, effets, transition, t, sortie, params=None, arret=lambda: False):

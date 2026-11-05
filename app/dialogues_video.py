@@ -3,7 +3,7 @@ import os
 
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QLineEdit, QComboBox, QDoubleSpinBox, QSpinBox,
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QLineEdit, QComboBox, QDoubleSpinBox, QSpinBox, QTreeWidget, QTreeWidgetItem, QMenu,
                                QCheckBox, QPushButton, QDialogButtonBox, QListWidget, QListWidgetItem, QColorDialog, QSlider, QGroupBox,
                                QPlainTextEdit, QFileDialog, QTabWidget, QWidget, QMessageBox, QProgressBar, QTextBrowser, QRadioButton)
 
@@ -163,21 +163,18 @@ class DialogueEffets(QDialog):
         mode.setWordWrap(True)
         v.addWidget(mode)
         gauche.addWidget(QLabel(_("<b>Catalogue</b>")))
-        self.cat = QListWidget()
-        coches = set(params.get("effets_coches") or [])
-        for fam, nom in E.FAMILLES:
-            it = QListWidgetItem(nom.upper())
-            it.setFlags(Qt.NoItemFlags)
-            self.cat.addItem(it)
-            for k in E.par_famille().get(fam, []):
-                fi = E.fiche(k)
-                lib = "   " + fi["nom"]
-                if fi["pack"] and not E.pack_pret(fi["pack"], params):
-                    lib += _("  (pack « {p} » à télécharger)", p=E.PACKS.get(fi["pack"], {}).get("nom", fi["pack"]))
-                it = QListWidgetItem(lib)
-                it.setData(Qt.UserRole, k)
-                it.setToolTip(fi["description"])
-                self.cat.addItem(it)
+        self.recherche = QLineEdit()
+        self.recherche.setPlaceholderText(_("Rechercher un effet…"))
+        self.recherche.setClearButtonEnabled(True)
+        gauche.addWidget(self.recherche)
+        self.cat = QTreeWidget()
+        self.cat.setHeaderHidden(True)
+        self.cat.setIndentation(14)
+        self.cat.setAnimated(True)
+        self.cat.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.cat.customContextMenuRequested.connect(self._menu_catalogue)
+        self._remplir_catalogue()
+        self.recherche.textChanged.connect(self._filtrer_catalogue)
         self.cat.itemDoubleClicked.connect(self._poser)
         self.cat.currentItemChanged.connect(lambda it, _p: self._choisi(it))
         gauche.addWidget(self.cat, 1)
@@ -259,8 +256,101 @@ class DialogueEffets(QDialog):
         v.addWidget(bb)
         self._remplir()
 
+    # ---- catalogue : familles dépliables, favoris, récents, recherche
+    COULEURS_FAMILLES = {"look": "#d9a441", "wahou": "#b36cf2", "mouvement": "#5bb3ff", "transition": "#ffd24a", "personne": "#ff7ab3",
+                         "matrix": "#43d17a", "correction": "#8fd3d8"}
+
+    def _remplir_catalogue(self, filtre=""):
+        from PySide6.QtGui import QBrush, QFont
+        self.cat.clear()
+        favoris = list(self.params.get("effets_favoris") or [])
+        recents = list(self.params.get("effets_recents") or [])
+        filtre = (filtre or "").strip().lower()
+
+        def feuille(parent, k):
+            fi = E.fiche(k)
+            if not fi:
+                return None
+            lib = fi["nom"]
+            if fi["pack"] and not E.pack_pret(fi["pack"], self.params):
+                lib += _("  (pack « {p} » à télécharger)", p=E.PACKS.get(fi["pack"], {}).get("nom", fi["pack"]))
+            if filtre and filtre not in lib.lower() and filtre not in fi["description"].lower():
+                return None
+            it = QTreeWidgetItem(parent, [("★ " if k in favoris else "") + lib])
+            it.setData(0, Qt.UserRole, k)
+            it.setToolTip(0, fi["description"])
+            it.setIcon(0, icone("etoile" if k in favoris else {"transition": "fractionner", "look": "lumiere", "personne": "oeil"}.get(fi["famille"], "effets"),
+                                self.COULEURS_FAMILLES.get(fi["famille"], "#ccc")))
+            return it
+
+        def famille(nom, cles, couleur, ouvert):
+            if not cles:
+                return
+            racine = QTreeWidgetItem(self.cat, [nom])
+            racine.setFlags(Qt.ItemIsEnabled)
+            f = QFont()
+            f.setBold(True)
+            racine.setFont(0, f)
+            racine.setForeground(0, QBrush(QColor(couleur)))
+            n = 0
+            for k in cles:
+                if feuille(racine, k) is not None:
+                    n += 1
+            if n == 0:
+                self.cat.invisibleRootItem().removeChild(racine)
+                return
+            racine.setText(0, f"{nom}  ({n})")
+            racine.setExpanded(ouvert or bool(filtre))
+        famille(_("★ Favoris"), favoris, "#ffd24a", True)
+        famille(_("Récents"), [k for k in recents if k not in favoris][:8], "#aaa", True)
+        deplies = set(self.params.get("effets_familles_ouvertes") or ["wahou", "transition"])
+        for fam, nom in E.FAMILLES:
+            famille(nom, E.par_famille().get(fam, []), self.COULEURS_FAMILLES.get(fam, "#ccc"), fam in deplies)
+        self.cat.itemExpanded.connect(self._memoriser_familles)
+        self.cat.itemCollapsed.connect(self._memoriser_familles)
+
+    def _memoriser_familles(self, _it=None):
+        noms = {nom: fam for fam, nom in E.FAMILLES}
+        ouvertes = []
+        for i in range(self.cat.topLevelItemCount()):
+            r = self.cat.topLevelItem(i)
+            base = r.text(0).rsplit("  (", 1)[0]
+            if base in noms and r.isExpanded():
+                ouvertes.append(noms[base])
+        self.params["effets_familles_ouvertes"] = ouvertes
+
+    def _filtrer_catalogue(self, texte):
+        self._remplir_catalogue(texte)
+
+    def _menu_catalogue(self, pos):
+        it = self.cat.itemAt(pos)
+        k = it.data(0, Qt.UserRole) if it else None
+        if not k:
+            return
+        favoris = list(self.params.get("effets_favoris") or [])
+        m = QMenu(self)
+        m.addAction(_("Poser sur ce plan"), lambda: self._poser(it))
+        m.addAction(_("Retirer des favoris") if k in favoris else _("★ Ajouter aux favoris"), lambda: self._favori(k))
+        m.exec(self.cat.viewport().mapToGlobal(pos))
+
+    def _favori(self, k):
+        favoris = list(self.params.get("effets_favoris") or [])
+        if k in favoris:
+            favoris.remove(k)
+        else:
+            favoris.insert(0, k)
+        self.params["effets_favoris"] = favoris
+        self.params.enregistrer()
+        self._remplir_catalogue(self.recherche.text())
+
+    def _noter_recent(self, k):
+        recents = [x for x in (self.params.get("effets_recents") or []) if x != k]
+        recents.insert(0, k)
+        self.params["effets_recents"] = recents[:12]
+        self.params.enregistrer()
+
     def _choisi(self, it):
-        k = it.data(Qt.UserRole) if it else None
+        k = it.data(0, Qt.UserRole) if it else None
         self.b_poser.setEnabled(bool(k))
         if not k:
             return
@@ -348,9 +438,10 @@ class DialogueEffets(QDialog):
             self.poses.addItem(it)
 
     def _poser(self, it):
-        k = it.data(Qt.UserRole)
+        k = it.data(0, Qt.UserRole) if it is not None else None
         if not k:
             return
+        self._noter_recent(k)
         fi = E.fiche(k)
         if fi["pack"] and not E.pack_pret(fi["pack"], self.params):
             ou = _("Edition › Préférences › IA locale") if (E.PACKS.get(fi["pack"]) or {}).get("ia") else _("Edition › Préférences › Effets")

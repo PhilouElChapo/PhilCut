@@ -157,6 +157,19 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T16 — 0.3.0 : tout ce qui est posé se voit et se reprend
+
+Parcours à faire dans l'ordre, avec un rush de quelques secondes posé deux fois dans la timeline.
+
+1. **Image fidèle** : cliquez sur un plan, Effets, posez « Noir et blanc », OK. **Attendu** : moins d'une seconde après, l'aperçu montre le plan en noir et blanc avec le bandeau « ✦ image avec effets » en haut à gauche ; à la lecture, l'image redevient brute (c'est normal en 0.3.0) et le rendu revient dès la pause. Déplacez le curseur : l'image se recalcule à chaque arrêt. Le bouton ✦ sous la vidéo désactive ce rendu sur un poste lent.
+2. **Etiquettes d'effets** : sur le plan, une étiquette « ✦ Noir et blanc » apparaît en bas. Clic dessus : l'Inspecteur (volet de droite) s'ouvre avec ses réglages dépliés. Clic droit sur l'étiquette : Régler, Actif (décocher = l'effet reste posé mais ne s'applique plus, l'étiquette passe en gris « (off) » et l'aperçu le montre), Supprimer.
+3. **Transition** : sur le **2e plan**, Effets › Transitions › Fondu enchaîné, Poser, OK. **Attendu** : un bloc jaune hachuré sur la jonction, large comme sa durée, avec « ⇆ Fondu enchaîné 0,8 s ». Tirez son bord droit : la durée change (et l'Inspecteur suit). Clic droit : Durée, Changer pour…, Active, Supprimer. Curseur dans le bloc : l'aperçu montre le mélange des deux plans.
+4. **Inspecteur** : cliquez sur un plan : vitesse, cadrage, volume, muet, transition d'entrée, liste des effets (case Actif, ↑ ↓, poubelle, réglages dépliables), voix et son, « Supprimer ce plan ». Chaque réglage se voit tout de suite dans l'aperçu à l'arrêt. Une rafale de changements (un curseur qu'on tire) = un seul Annuler.
+5. **Texte et Goodie dans l'Inspecteur** : cliquez sur le texte (piste Titres) : texte, animation, effet, taille, couleur, début, fin, position ; « Supprimer ce texte ». Même chose pour un Goodie.
+6. **Volet agrandi** : bouton ⤢ en haut à droite du volet : l'Inspecteur (ou la Proposition) s'ouvre dans une fenêtre redimensionnable ; à sa fermeture il revient à sa place.
+7. **Barre d'information** : en bas à droite, « ✓ Prêt » au repos ; pendant un export, un aperçu, un téléchargement : « ● Export … — 43 % · 1 autre(s) ». Clic : le **Centre d'activité** (toutes les tâches, état, détail, durée, reste, Arrêter ; Outils › Centre d'activité).
+8. **Catalogue des effets** : familles dépliables (l'état est mémorisé), recherche en haut, clic droit sur un effet › « ★ Ajouter aux favoris » : il passe dans la famille « ★ Favoris » en tête ; « Récents » liste les derniers posés.
+
 ## T10 — Le JUGE (validation à l'aveugle)
 
 1. Nouveau projet, importer uniquement la vidéo **JUGE**, aucune indication, niveau Recettes sans IA → Analyser. Appliquer, exporter.

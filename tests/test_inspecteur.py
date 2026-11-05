@@ -152,6 +152,28 @@ class TestInterface030(unittest.TestCase):
         app.processEvents()
         self.assertEqual(ed.volet.count(), n)
 
+    def test_image_fidele(self):
+        """A l'arrêt, l'aperçu montre l'image rendue avec les effets (et la cache dès qu'on bouge)."""
+        ed = self.ed
+        ed.apercu.regler_fidele(True)
+        ed.timeline.aller_a(2.0)
+        fin = time.time() + 8
+        while time.time() < fin and not ed.apercu.item_rendu.isVisible():
+            app.processEvents()
+            time.sleep(0.05)
+        self.assertTrue(ed.apercu.item_rendu.isVisible())
+        self.assertEqual(ed.apercu._rendu_pour[0], 2.0)
+        ed.timeline.aller_a(2.5)
+        self.assertFalse(ed.apercu.item_rendu.isVisible())
+        ed.apercu.regler_fidele(False)
+        ed.apercu._minut_rendu.stop()
+
+    def test_image_rendue(self):
+        from app import export
+        p = self.ed.projet
+        out = export.image_rendue(p, 6.3, os.path.join(self.d, "f.png"), {}, 320, [(6.0, 7.0, "sous-titre")])
+        self.assertTrue(os.path.getsize(out) > 1000)
+
     def test_centre_activite(self):
         from app.taches import Tache
         from app import activite
