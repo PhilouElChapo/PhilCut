@@ -61,6 +61,23 @@ class TestEffetSurUnePartie(unittest.TestCase):
         ed.timeline.marquer_zone(0)
         ed.timeline.aller_a(5.0)
         ed.timeline.marquer_zone(1)
+        # à la souris : glisser sur la règle des temps choisit une partie
+        from PySide6.QtTest import QTest
+        from PySide6.QtCore import Qt, QPoint
+        from app.timeline import MARGE_G
+        tl = ed.timeline
+        f.show()
+        app.processEvents()
+        x = lambda t: tl.mapFromScene(MARGE_G + t * tl.pps, 5).x()
+        QTest.mousePress(tl.viewport(), Qt.LeftButton, Qt.NoModifier, QPoint(x(3.0), 5))
+        QTest.mouseMove(tl.viewport(), QPoint(x(4.0), 5))
+        QTest.mouseMove(tl.viewport(), QPoint(x(5.0), 5))
+        QTest.mouseRelease(tl.viewport(), Qt.LeftButton, Qt.NoModifier, QPoint(x(5.0), 5))
+        z = tl.zone_valide()
+        self.assertIsNotNone(z)
+        self.assertAlmostEqual(z[0], 3.0, delta=0.15)
+        self.assertAlmostEqual(z[1], 5.0, delta=0.15)
+        tl.zone = [3.0, 5.0]
         c = ed.morceau_de_partie(*ed.timeline.zone_valide())
         self.assertAlmostEqual(c["debut"], 3.0)
         self.assertAlmostEqual(fin_clip(c), 5.0)

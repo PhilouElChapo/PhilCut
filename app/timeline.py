@@ -203,7 +203,7 @@ class ItemClip(QGraphicsRectItem):
 
     def contextMenuEvent(self, e):
         self.setSelected(True)
-        self.tl.menu_clip(self.clip, e.screenPos())
+        self.tl.menu_clip(self.clip, e.screenPos(), max(0.0, (e.scenePos().x() - MARGE_G) / self.tl.pps))
 
 
 class ItemCalque(QGraphicsRectItem):
@@ -443,6 +443,8 @@ class Timeline(QGraphicsView):
         sp = self.mapToScene(e.pos())
         if e.button() == Qt.LeftButton and (sp.y() < H_REGLE or self.itemAt(e.pos()) is None) and sp.x() >= MARGE_G:
             self._glisse_curseur = True
+            # glisser sur la règle des temps choisit une partie (en jaune) ; un simple clic place le curseur
+            self._depart_regle = (e.pos().x(), (sp.x() - MARGE_G) / self.pps) if sp.y() < H_REGLE else None
             self.aller_a((sp.x() - MARGE_G) / self.pps)
             if self.itemAt(e.pos()) is None:
                 self._scene.clearSelection()
@@ -452,13 +454,54 @@ class Timeline(QGraphicsView):
     def mouseMoveEvent(self, e):
         if self._glisse_curseur:
             sp = self.mapToScene(e.pos())
-            self.aller_a(max(0.0, (sp.x() - MARGE_G) / self.pps))
+            t = max(0.0, (sp.x() - MARGE_G) / self.pps)
+            dep = getattr(self, "_depart_regle", None)
+            if dep and abs(e.pos().x() - dep[0]) > 6:
+                self.zone = sorted([dep[1], t])
+                self.viewport().update()
+            self.aller_a(t)
             return
         super().mouseMoveEvent(e)
 
     def mouseReleaseEvent(self, e):
+        if self._glisse_curseur and getattr(self, "_depart_regle", None) and self.zone_valide():
+            self.zone_changee.emit()
+        self._depart_regle = None
         self._glisse_curseur = False
         super().mouseReleaseEvent(e)
+
+    def contextMenuEvent(self, e):
+        """Clic droit : sur un plan, son menu ; ailleurs (règle, piste vide), couper et choisir une partie à cet endroit."""
+        it = self.itemAt(e.pos())
+        if it is not None and isinstance(it, (ItemClip, ItemCalque)):
+            super().contextMenuEvent(e)
+            return
+        sp = self.mapToScene(e.pos())
+        if sp.x() < MARGE_G:
+            return
+        t = max(0.0, (sp.x() - MARGE_G) / self.pps)
+        m = QMenu()
+        m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
+        self._menu_partie(m, t)
+        m.exec(e.globalPos())
+
+    def _menu_partie(self, m, t):
+        """Choisir une partie de la vidéo à la souris : début ici, fin ici, puis effets, suppression ou garder."""
+        m.addSeparator()
+        sm = m.addMenu(_("Partie de la vidéo (pour un effet, supprimer, garder)"))
+        sm.addAction(_("La partie commence ici"), lambda: (self.aller_a(t), self.marquer_zone(0)))
+        sm.addAction(_("La partie finit ici"), lambda: (self.aller_a(t), self.marquer_zone(1)))
+        z = self.zone_valide()
+        if z:
+            sm.addSeparator()
+            sm.addAction(_("Effets sur cette partie seulement…"), lambda: self.demande_menu.emit("", "effets_partie"))
+            sm.addAction(_("Supprimer cette partie (la suite se recolle)"), lambda: self.demande_menu.emit("", "partie_supprimer"))
+            sm.addAction(_("Garder seulement cette partie"), lambda: self.demande_menu.emit("", "partie_garder"))
+            sm.addAction(_("Annuler la sélection"), lambda: (self.zone.__setitem__(0, None), self.zone.__setitem__(1, None),
+                                                            self.zone_changee.emit(), self.viewport().update()))
+        sm.addSeparator()
+        a = sm.addAction(_("Astuce : glissez sur la règle des temps pour choisir une partie"))
+        a.setEnabled(False)
 
     def wheelEvent(self, e):
         if e.modifiers() & Qt.AltModifier:
@@ -576,11 +619,12 @@ class Timeline(QGraphicsView):
         self.modifie.emit()
         self.reconstruire()
 
-    def menu_clip(self, clip, pos):
+    def menu_clip(self, clip, pos, t=None):
         m = QMenu()
-        m.addAction(_("Couper ici (C)"), self.couper_au_curseur)
-        m.addAction(_("Supprimer et refermer (Suppr)"), lambda: self.supprimer_selection(True))
-        m.addAction(_("Supprimer en laissant un trou (Maj+Suppr)"), lambda: self.supprimer_selection(False))
+        t = self.position if t is None else t
+        m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
+        m.addAction(_("Supprimer ce plan (la suite se recolle)"), lambda: self.supprimer_selection(True))
+        m.addAction(_("Supprimer ce plan en laissant un trou"), lambda: self.supprimer_selection(False))
         m.addSeparator()
         for lib, v in ((_("Vitesse ×0,25"), 0.25), (_("Vitesse ×0,5"), 0.5), (_("Vitesse normale"), 1.0), (_("Vitesse ×2"), 2.0), (_("Vitesse ×4"), 4.0), (_("Vitesse ×8"), 8.0)):
             m.addAction(lib, lambda v=v: self._vitesse(clip, v))
@@ -601,9 +645,11 @@ class Timeline(QGraphicsView):
         a.setCheckable(True)
         a.setChecked(bool(clip.get("muet")))
         m.addSeparator()
-        m.addAction(_("Effets et transition…"), lambda: self.demande_menu.emit(clip["id"], "effets"))
+        m.addAction(_("Effets et transition sur tout le plan…"), lambda: self.demande_menu.emit(clip["id"], "effets"))
         if self.zone_valide():
-            m.addAction(_("Effets sur la partie sélectionnée seulement (en jaune)…"), lambda: self.demande_menu.emit(clip["id"], "effets_partie"))
+            m.addAction(_("Effets sur la partie en jaune seulement…"), lambda: self.demande_menu.emit(clip["id"], "effets_partie"))
+        self._menu_partie(m, t)
+        m.addSeparator()
         m.addAction(_("Propriétés…"), lambda: self.proprietes.emit(clip["id"]))
         m.exec(pos)
 

@@ -913,6 +913,8 @@ class Editeur(QWidget):
                 self.projet.marquer()
                 el["suivi"] = None
                 self.rafraichir()
+        elif quoi in ("partie_supprimer", "partie_garder"):
+            self.partie(quoi == "partie_garder")
         elif quoi == "effets_partie":
             z = self.timeline.zone_valide()
             c = self.morceau_de_partie(*z) if z else None
@@ -1048,12 +1050,11 @@ class Editeur(QWidget):
         z = self.timeline.zone_valide()
         a, b = self.timeline.zone
         if z:
-            self.encart.message(_("Partie sélectionnée : {a} → {b} ({d:.1f} s). Montage › « Supprimer la partie sélectionnée » ou "
-                                  "« Garder seulement la partie sélectionnée », ou Effets pour n'habiller que cette partie. Echap pour annuler la sélection.",
-                                  a=_tc(z[0]), b=_tc(z[1]), d=z[1] - z[0]), 12000)
+            self.encart.message(_("Partie en jaune : {a} → {b} ({d:.1f} s). Clic droit dessus : effets sur cette partie, la supprimer "
+                                  "ou ne garder qu'elle.", a=_tc(z[0]), b=_tc(z[1]), d=z[1] - z[0]), 12000)
         elif a is not None or b is not None:
-            self.encart.message(_("Début de la partie marqué. Placez le curseur à la fin et appuyez sur O.") if a is not None else
-                                _("Fin de la partie marquée. Placez le curseur au début et appuyez sur I."), 8000)
+            self.encart.message(_("Début de la partie marqué. Clic droit à la fin voulue › Partie de la vidéo › « La partie finit ici ».") if a is not None else
+                                _("Fin de la partie marquée. Clic droit au début voulu › Partie de la vidéo › « La partie commence ici »."), 8000)
 
     def morceau_de_partie(self, a, b):
         """Coupe le plan vidéo aux bornes de la partie choisie (I / O) et renvoie le morceau du milieu : un effet posé
@@ -1078,9 +1079,10 @@ class Editeur(QWidget):
         z = self.timeline.zone_valide()
         if not z:
             QMessageBox.information(self, _("Partie de la vidéo"), _(
-                "Pour choisir une partie de la vidéo :\n\n1. placez le curseur rouge au début voulu et appuyez sur I (ou Montage › Début de la partie) ;\n"
-                "2. placez-le à la fin et appuyez sur O (Montage › Fin de la partie).\n\nLa partie apparaît en jaune ; vous pouvez alors la supprimer "
-                "ou ne garder qu'elle. Pour couper simplement un plan en deux : C (Couper)."))
+                "Pour choisir une partie de la vidéo, le plus simple : glissez avec la souris sur la règle des temps (au-dessus des pistes) "
+                "du début à la fin voulus. La partie apparaît en jaune.\n\nOu bien : clic droit dans la timeline à l'endroit voulu › "
+                "Partie de la vidéo › « La partie commence ici », puis de même « La partie finit ici ».\n\nEnsuite, clic droit sur la partie : "
+                "effets sur cette partie, la supprimer, ou ne garder qu'elle."))
             return
         self.projet.marquer()
         if self.projet.partie(z[0], z[1], garder):
