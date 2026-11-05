@@ -5,7 +5,7 @@ rogner, couper au curseur (C), supprimer (Suppr), zoomer (molette + Ctrl). Un ai
 et au curseur. La timeline lit et ecrit directement le projet (app/projet.py) et previent la fenetre par signaux.
 """
 from PySide6.QtCore import Qt, QRectF, QPointF, Signal, QMimeData, QLineF
-from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPixmap, QLinearGradient, QCursor, QFontMetrics
+from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPixmap, QLinearGradient, QCursor, QFontMetrics, QPolygonF
 from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsItem, QGraphicsRectItem, QGraphicsLineItem, QMenu,
                                QApplication, QStyleOptionGraphicsItem, QFrame)
 
@@ -26,6 +26,20 @@ BORD = 7                        # largeur de la zone de rognage aux bords d'un p
 
 def _c(nom):
     return QColor(theme.COULEURS.get(nom, "#888"))
+
+
+def _losanges(p, elem, x0, y, pps, h=9):
+    """Images clefs ◆ d'un élément ; renvoie [(QRectF, t_rel)] pour les clics."""
+    out = []
+    for c in elem.get("cles") or []:
+        x = x0 + c["t"] * pps
+        rc = QRectF(x - h / 2, y - h / 2, h, h)
+        poly = QPolygonF([QPointF(x, y - h / 2), QPointF(x + h / 2, y), QPointF(x, y + h / 2), QPointF(x - h / 2, y)])
+        p.setPen(QPen(QColor(20, 20, 26), 1))
+        p.setBrush(QColor("#ffd24a"))
+        p.drawPolygon(poly)
+        out.append((rc, c["t"]))
+    return out
 
 
 class ItemClip(QGraphicsRectItem):
@@ -125,6 +139,7 @@ class ItemClip(QGraphicsRectItem):
         p.drawText(QRectF(r.x() + 6 + decal, r.y() + 1, r.width() - 10 - decal, 15), Qt.AlignLeft | Qt.AlignVCenter,
                    QFontMetrics(f).elidedText(texte, Qt.ElideRight, int(r.width() - 12 - decal)))
         self._dessiner_chips(p, r)
+        self.losanges = _losanges(p, self.clip, r.x(), r.y() + 22, self.tl.pps) if self.clip.get("cles") else []
         # contour (selection)
         if self.isSelected():
             p.setPen(QPen(QColor("#ffd36b"), 2))
@@ -198,6 +213,28 @@ class ItemClip(QGraphicsRectItem):
         h = 14
         x = r.x() + 4
         y = r.bottom() - h - 3
+        # effets posés sur une partie du plan : une bande à leur place, bords tirables
+        from .projet import partiel
+        partiels = [(g, i, n, a) for g, i, n, a in elements if g == "effet" and partiel(self.clip["effets"][i])]
+        elements = [x_ for x_ in elements if x_ not in partiels]
+        yp = y - h - 3 if elements and r.height() >= 50 else y
+        for genre, i, nom, actif in partiels:
+            de, a = partiel(self.clip["effets"][i])
+            a = min(a, duree_clip(self.clip))
+            rc = QRectF(r.x() + de * self.tl.pps, yp, max(10.0, (a - de) * self.tl.pps), h)
+            p.setPen(QPen(QColor("#5ad1ff") if actif else QColor(90, 209, 255, 110), 1.5))
+            p.setBrush(QColor(20, 40, 60, 225) if actif else QColor(20, 40, 60, 120))
+            p.drawRoundedRect(rc, 4, 4)
+            p.setBrush(QColor("#5ad1ff"))
+            p.setPen(Qt.NoPen)
+            p.drawRect(QRectF(rc.left(), rc.top(), 3, h))
+            p.drawRect(QRectF(rc.right() - 3, rc.top(), 3, h))
+            p.setPen(QColor("#e6f7ff") if actif else QColor(170, 170, 170))
+            lib = "✦ " + nom + ("" if actif else _(" (off)"))
+            p.drawText(rc.adjusted(6, 0, -5, 0), Qt.AlignLeft | Qt.AlignVCenter, fm.elidedText(lib, Qt.ElideRight, int(max(0, rc.width() - 11))))
+            self.chips.append((rc, "effet_partiel", i))
+        if yp == y and partiels:
+            return
         for genre, i, nom, actif in elements:
             lib = ("✦ " if genre == "effet" else "♪ ") + nom
             w = min(fm.horizontalAdvance(lib) + 12, max(30.0, r.right() - 4 - x))
@@ -217,7 +254,16 @@ class ItemClip(QGraphicsRectItem):
     # ---- souris
     def _zone(self, pos):
         r = self.rect()
+        for rc, t_rel in getattr(self, "losanges", []):
+            if rc.adjusted(-3, -3, 3, 3).contains(pos):
+                return ("cle", t_rel)
         for rc, genre, i in self.chips:
+            if genre == "effet_partiel" and rc.adjusted(-3, 0, 3, 0).contains(pos):
+                if abs(pos.x() - rc.left()) <= 5:
+                    return ("bord_de", i)
+                if abs(pos.x() - rc.right()) <= 5:
+                    return ("bord_a", i)
+                return ("effet", i)
             if rc.contains(pos):
                 return (genre, i)
         rt = self.rect_transition
@@ -234,7 +280,13 @@ class ItemClip(QGraphicsRectItem):
 
     def hoverMoveEvent(self, e):
         z = self._zone(e.pos())
-        if isinstance(z, tuple) or z == "transition":
+        if isinstance(z, tuple) and z[0] == "cle":
+            self.setCursor(Qt.PointingHandCursor)
+            self.setToolTip(_("Image clef : clic pour y aller, clic droit pour la supprimer"))
+        elif isinstance(z, tuple) and z[0] in ("bord_de", "bord_a"):
+            self.setCursor(Qt.SizeHorCursor)
+            self.setToolTip(_("Tirez pour changer où l'effet commence ou finit"))
+        elif isinstance(z, tuple) or z == "transition":
             self.setCursor(Qt.PointingHandCursor)
             self.setToolTip(_("Clic : régler · clic droit : désactiver, supprimer") if isinstance(z, tuple) else
                             _("Transition : clic pour régler, tirez le bord droit pour la durée, clic droit pour changer ou supprimer"))
@@ -254,6 +306,20 @@ class ItemClip(QGraphicsRectItem):
 
     def mousePressEvent(self, e):
         z = self._zone(e.pos())
+        if isinstance(z, tuple) and z[0] == "cle":
+            if e.button() == Qt.LeftButton:
+                self.tl.aller_a(self.clip["debut"] + z[1])
+                self.tl.element_clique.emit(self.clip["id"], "clip", 0)
+            e.accept()
+            self.mode = None
+            return
+        if e.button() == Qt.LeftButton and isinstance(z, tuple) and z[0] in ("bord_de", "bord_a") and not self.verrou:
+            self.tl.projet.marquer()
+            self.mode = z
+            self.tl._scene.clearSelection()
+            self.setSelected(True)
+            e.accept()
+            return
         if e.button() == Qt.LeftButton and (isinstance(z, tuple) or z == "transition"):
             self.tl._scene.clearSelection()
             self.setSelected(True)
@@ -281,6 +347,18 @@ class ItemClip(QGraphicsRectItem):
         super().mousePressEvent(e)
 
     def mouseMoveEvent(self, e):
+        if isinstance(self.mode, tuple):           # bord d'un effet posé sur une partie du plan
+            ef = self.clip["effets"][self.mode[1]]
+            t = max(0.0, min(duree_clip(self.clip), (e.scenePos().x() - self.scenePos().x()) / self.tl.pps))
+            if self.mode[0] == "bord_de":
+                ef["de"] = round(min(t, float(ef.get("a") or duree_clip(self.clip)) - 0.1), 2)
+            else:
+                ef["a"] = round(max(t, float(ef.get("de") or 0.0) + 0.1), 2)
+            self.tl._info_rognage = (self.clip["debut"] + t, _("Effet de {a} à {b}", a=_tc(self.clip["debut"] + float(ef.get("de") or 0)),
+                                                                  b=_tc(self.clip["debut"] + float(ef.get("a") or duree_clip(self.clip)))))
+            self.update()
+            self.tl.viewport().update()
+            return
         if self.mode == "transition_bord":
             dx = (e.scenePos().x() - self._origine[0]) / self.tl.pps
             d = max(0.2, min(5.0, duree_clip(self.clip) * 0.9, self._origine[4] + dx))
@@ -313,14 +391,23 @@ class ItemClip(QGraphicsRectItem):
             self.tl.viewport().update()
             return
         super().mouseMoveEvent(e)
-        # deplacement : rester sur sa piste, instant aimante
+        # deplacement : instant aimante ; vers le haut ou le bas, le plan change de piste (même genre : vidéo ou son)
         t = max(0.0, (self.pos().x() - MARGE_G) / self.tl.pps)
         t = self.tl.aimanter(t, self.clip)
-        self.setPos(MARGE_G + t * self.tl.pps, self.piste_y + 3)
+        self._piste_cible = self.tl.piste_compatible(self.clip, e.scenePos().y())
+        y = self.tl._pistes()[self._piste_cible][0] if self._piste_cible else self.piste_y
+        self.setPos(MARGE_G + t * self.tl.pps, y + 3)
+        self.tl._info_rognage = (t, _("→ {p}", p=self.tl.libelle_piste(self._piste_cible))) if self._piste_cible else None
 
     def mouseReleaseEvent(self, e):
         self.tl._info_rognage = None
         self.tl._trait_aimant = None
+        if isinstance(self.mode, tuple):
+            self.mode = None
+            self.tl.modifie.emit()
+            self.tl.element_change.emit(self.clip["id"])
+            self.tl.reconstruire()
+            return
         if self.mode == "transition_bord":
             self.mode = None
             self.tl.modifie.emit()
@@ -335,7 +422,12 @@ class ItemClip(QGraphicsRectItem):
         super().mouseReleaseEvent(e)
         self.mode = None
         t = max(0.0, (self.pos().x() - MARGE_G) / self.tl.pps)
-        if abs(t - self.clip["debut"]) > 1e-3:
+        cible = getattr(self, "_piste_cible", None)
+        self._piste_cible = None
+        if cible:
+            self.clip["debut"] = t
+            self.tl.changer_piste(self.clip, cible)
+        elif abs(t - self.clip["debut"]) > 1e-3:
             self.clip["debut"] = t
             self.tl.projet.ranger(self.clip["piste"])
             self.tl.modifie.emit()
@@ -350,6 +442,11 @@ class ItemClip(QGraphicsRectItem):
     def contextMenuEvent(self, e):
         self.setSelected(True)
         z = self._zone(e.pos())
+        if isinstance(z, tuple) and z[0] == "cle":
+            self.tl.menu_cle(self.clip, z[1], e.screenPos())
+            return
+        if isinstance(z, tuple) and z[0] in ("bord_de", "bord_a"):
+            z = ("effet", z[1])
         if isinstance(z, tuple):
             self.tl.menu_effet(self.clip, z[0], z[1], e.screenPos())
         elif z in ("transition", "transition_bord"):
@@ -389,8 +486,20 @@ class ItemCalque(QGraphicsRectItem):
         else:
             texte = self.elem.get("texte") if self.genre == "titre" else self.elem.get("genre", "")
         p.drawText(r.adjusted(5, 0, -4, 0), Qt.AlignLeft | Qt.AlignVCenter, QFontMetrics(f).elidedText(texte or "", Qt.ElideRight, int(r.width() - 9)))
+        self.losanges = _losanges(p, self.elem, r.x(), r.center().y(), self.tl.pps, 8) if self.elem.get("cles") else []
+
+    def _losange(self, pos):
+        return next((t for rc, t in getattr(self, "losanges", []) if rc.adjusted(-3, -3, 3, 3).contains(pos)), None)
 
     def mousePressEvent(self, e):
+        t = self._losange(e.pos())
+        if t is not None and e.button() == Qt.LeftButton:
+            self.tl.aller_a(self.elem["debut"] + t)
+            self.tl.element_clique.emit(self.elem["id"], "calque", 0)
+            e.accept()
+            self._sur_cle = True
+            return
+        self._sur_cle = False
         self.tl.projet.marquer()
         super().mousePressEvent(e)
 
@@ -400,6 +509,9 @@ class ItemCalque(QGraphicsRectItem):
         self.setPos(MARGE_G + t * self.tl.pps, self.y0 + 2)
 
     def mouseReleaseEvent(self, e):
+        if getattr(self, "_sur_cle", False):
+            self._sur_cle = False
+            return
         super().mouseReleaseEvent(e)
         t = max(0.0, (self.pos().x() - MARGE_G) / self.tl.pps)
         d = self.elem["fin"] - self.elem["debut"]
@@ -412,6 +524,10 @@ class ItemCalque(QGraphicsRectItem):
 
     def contextMenuEvent(self, e):
         self.setSelected(True)
+        t = self._losange(e.pos())
+        if t is not None:
+            self.tl.menu_cle(self.elem, t, e.screenPos())
+            return
         m = QMenu()
         m.addAction(_("Régler dans l'Inspecteur"), lambda: self.tl.element_clique.emit(self.elem["id"], "calque", 0))
         if self.elem.get("genre") == "zone":
@@ -445,6 +561,7 @@ class Timeline(QGraphicsView):
     proprietes = Signal(str)                # double clic : identifiant
     media_depose = Signal(str, str, float)  # media_id, piste, instant
     effet_depose = Signal(str, str)         # clip_id, id de l'effet ou de la transition glissé depuis le catalogue
+    message = Signal(str)                   # texte pour la barre d'information
     demande_menu = Signal(str, object)      # (clip_id, position ecran) pour la fenetre (effets, etc.)
 
     def __init__(self, projet=None, parent=None):
@@ -1047,6 +1164,15 @@ class Timeline(QGraphicsView):
         a.setChecked(bool(clip.get("muet")))
         m.addSeparator()
         m.addAction(_("Effets et transition sur tout le plan…"), lambda: self.demande_menu.emit(clip["id"], "effets"))
+        if clip.get("effets"):
+            m.addAction(_("Copier les effets de ce plan ({n})", n=len(clip["effets"])), lambda: self.copier_effets(clip))
+        if getattr(self, "presse_effets", None):
+            m.addAction(_("Coller les effets ({n})", n=len(self.presse_effets)), lambda: self.coller_effets(clip))
+        soeurs = self._pistes_soeurs(clip)
+        if soeurs:
+            sp = m.addMenu(_("Déplacer vers la piste"))
+            for p in soeurs:
+                sp.addAction(self.libelle_piste(p), lambda p=p: (self.projet.marquer(), self.changer_piste(clip, p)))
         if self.zone_valide():
             m.addAction(_("Effets sur la partie en jaune seulement…"), lambda: self.demande_menu.emit(clip["id"], "effets_partie"))
         m.addAction(_("Enregistrer l'image à cet endroit…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "image")))
@@ -1055,6 +1181,73 @@ class Timeline(QGraphicsView):
         m.addSeparator()
         m.addAction(_("Tous les effets et transitions (fenêtre)…"), lambda: self.proprietes.emit(clip["id"]))
         m.exec(pos)
+
+    # ---- images clefs
+    def menu_cle(self, elem, t_rel, pos):
+        from . import cles as K
+        m = QMenu()
+        m.addAction(_("Aller à cette image clef ({t})", t=_tc(K.base(elem) + t_rel)), lambda: self.aller_a(K.base(elem) + t_rel))
+
+        def suppr():
+            self.projet.marquer()
+            K.retirer(elem, t_rel)
+            self.modifie.emit()
+            self.reconstruire()
+            self.element_change.emit(elem["id"])
+        m.addAction(_("Supprimer cette image clef"), suppr)
+        m.exec(pos)
+
+    # ---- changer de piste
+    @staticmethod
+    def _famille_piste(nom):
+        return "video" if (nom or "").startswith("video") else "son"
+
+    def piste_compatible(self, clip, y):
+        """Piste (autre que la sienne) où le plan peut aller s'il est lâché à la hauteur y, ou None."""
+        if not self.projet:
+            return None
+        p = self.piste_a(y)
+        if not p or p == clip["piste"] or p not in self.projet.toutes_pistes():
+            return None
+        if self._famille_piste(p) != self._famille_piste(clip["piste"]) or self.projet.piste_verrouillee(p):
+            return None
+        return p
+
+    def changer_piste(self, clip, cible):
+        """Le plan passe sur la piste `cible` (même genre), à son instant actuel ; une piste vidéo 2+ en fait une incrustation."""
+        ancienne = clip["piste"]
+        clip["piste"] = cible
+        if cible.startswith("video") and cible != "video":
+            clip.setdefault("incrust", {"echelle": 1.0, "x": 0.5, "y": 0.5, "opacite": 1.0})
+        self.projet.ranger(cible)
+        self.projet.ranger(ancienne)
+        self.modifie.emit()
+        self.reconstruire()
+
+    def _pistes_soeurs(self, clip):
+        return [p for p in self.projet.toutes_pistes() if p != clip["piste"] and self._famille_piste(p) == self._famille_piste(clip["piste"])
+                and not self.projet.piste_verrouillee(p)]
+
+    # ---- copier / coller des effets
+    def copier_effets(self, clip, i=None):
+        import copy as _copie
+        effets = clip.get("effets") or []
+        self.presse_effets = [_copie.deepcopy(effets[i])] if i is not None else _copie.deepcopy(effets)
+        from . import effets as E
+        noms = ", ".join((E.fiche(e["id"]) or {"nom": e["id"]})["nom"] for e in self.presse_effets)
+        self.message.emit(_("Copié : {n}. Clic droit sur un autre plan › « Coller les effets ».", n=noms))
+
+    def coller_effets(self, clip):
+        import copy as _copie
+        if not getattr(self, "presse_effets", None):
+            return
+        self.projet.marquer()
+        clip.setdefault("effets", [])
+        for e in self.presse_effets:
+            clip["effets"].append(_copie.deepcopy(e))
+        self.modifie.emit()
+        self.reconstruire()
+        self.element_change.emit(clip["id"])
 
     def menu_effet(self, clip, genre, i, pos):
         from . import effets as E
@@ -1075,9 +1268,34 @@ class Timeline(QGraphicsView):
                 m.addAction(_("Appliquer avant le précédent"), lambda: self._bouger_effet(clip, i, -1))
             if i < len(clip["effets"]) - 1:
                 m.addAction(_("Appliquer après le suivant"), lambda: self._bouger_effet(clip, i, 1))
+            m.addAction(_("Copier cet effet"), lambda: self.copier_effets(clip, i))
+            from .projet import partiel
+            if partiel(e):
+                m.addAction(_("Sur tout le plan"), lambda: self._partie_effet(clip, i, None))
+            else:
+                m.addAction(_("Sur une partie du plan (repères à tirer)"), lambda: self._partie_effet(clip, i, "milieu"))
+            z = self.zone_valide()
+            if z and z[1] > clip["debut"] and z[0] < fin_clip(clip):
+                m.addAction(_("Seulement sur la partie en jaune"), lambda: self._partie_effet(clip, i, z))
         m.addSeparator()
         m.addAction(_("Supprimer « {n} »", n=nom), lambda: self._supprimer_effet(clip, genre, i))
         m.exec(pos)
+
+    def _partie_effet(self, clip, i, partie):
+        """partie : None = tout le plan ; "milieu" = le tiers du milieu ; (a, b) en temps du montage."""
+        self.projet.marquer()
+        e = clip["effets"][i]
+        d = duree_clip(clip)
+        if partie is None:
+            e.pop("de", None)
+            e.pop("a", None)
+        elif partie == "milieu":
+            e["de"], e["a"] = round(d / 3, 2), round(2 * d / 3, 2)
+        else:
+            e["de"], e["a"] = round(max(0.0, partie[0] - clip["debut"]), 2), round(min(d, partie[1] - clip["debut"]), 2)
+        self.modifie.emit()
+        self.reconstruire()
+        self.element_change.emit(clip["id"])
 
     def _basculer_effet(self, clip, i):
         self.projet.marquer()

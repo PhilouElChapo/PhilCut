@@ -354,6 +354,7 @@ class Editeur(QWidget):
         self.volet = QTabWidget()
         self.volet.setUsesScrollButtons(False)          # trois onglets toujours visibles : les noms s'abrègent si le volet est étroit
         self.volet.setElideMode(Qt.ElideRight)
+        self.volet.tabBar().setStyleSheet("QTabBar::tab:selected{font-weight:normal}")    # le gras décalait le nom abrégé
         self.proposition = VoletProposition(params)
         self.proposition.analyser.connect(self.analyser)
         self.proposition.appliquer.connect(self.appliquer_recette)
@@ -406,6 +407,7 @@ class Editeur(QWidget):
         self.timeline = Timeline(projet)
         self.timeline.position_changee.connect(self._curseur)
         self.timeline.effet_depose.connect(self.poser_effet)
+        self.timeline.message.connect(lambda t: self.encart.message(t))
         self.timeline.modifie.connect(self._modifie)
         self.timeline.proprietes.connect(self.editer_element)
         self.timeline.media_depose.connect(self._depose)
@@ -731,6 +733,16 @@ class Editeur(QWidget):
         if not self.apercu.en_lecture:
             self.apercu.aller_a(t)
         self._temps(t)
+        cib = self.inspecteur._cible
+        if cib and not self.apercu.en_lecture:          # élément animé : les curseurs suivent la tête de lecture
+            el = self.projet.clip(cib[1]) if cib[0] == "clip" else next((x for x in self.projet.titres + self.projet.goodies if x["id"] == cib[1]), None)
+            if el is not None and el.get("cles"):
+                if not hasattr(self, "_minut_insp"):
+                    self._minut_insp = QTimer(self)
+                    self._minut_insp.setSingleShot(True)
+                    self._minut_insp.setInterval(150)
+                    self._minut_insp.timeout.connect(lambda: self.inspecteur.montrer_selection([self.inspecteur._cible[1]]) if self.inspecteur._cible else None)
+                self._minut_insp.start()
         if self.catalogue.isVisible():
             c = self.projet.clip_a(t, "video")
             if c and (c["media"], round(c["src_debut"], 1), round(c["src_fin"], 1)) != self.catalogue.fabrique.cle:
@@ -814,7 +826,9 @@ class Editeur(QWidget):
                     from . import zones as Z
                     Z.deplacer(e, x, y, self.timeline.position)
                 else:
-                    e["x"], e["y"] = round(x, 4), round(y, 4)
+                    from . import cles as K
+                    K.regler(e, self.timeline.position, x=x, y=y)        # animé : image clef à la tête de lecture
+                    self.timeline.reconstruire()
                 self._modifie()
                 if self.inspecteur._cible and self.inspecteur._cible[1] == ident:
                     self.inspecteur.montrer_selection([ident])
@@ -865,7 +879,13 @@ class Editeur(QWidget):
             if e["id"] == ident:
                 self.inspecteur._marquer(("taille", ident))
                 defaut = 1.0 if e in self.projet.titres else 0.22
-                e["taille"] = round(min(4.0 if e in self.projet.titres else 0.9, max(0.2 if e in self.projet.titres else 0.05, float(e.get("taille", defaut)) * facteur)), 3)
+                if e in self.projet.titres and e.get("cles"):           # texte animé : image clef à la tête de lecture
+                    from . import cles as K
+                    v = K.valeurs_a(e, self.timeline.position)["taille"]
+                    K.regler(e, self.timeline.position, taille=round(min(4.0, max(0.2, v * facteur)), 3))
+                    self.timeline.reconstruire()
+                else:
+                    e["taille"] = round(min(4.0 if e in self.projet.titres else 0.9, max(0.2 if e in self.projet.titres else 0.05, float(e.get("taille", defaut)) * facteur)), 3)
                 self._modifie()
                 if self.inspecteur._cible and self.inspecteur._cible[1] == ident:
                     self.inspecteur.montrer_selection([ident])
@@ -1141,9 +1161,11 @@ class Editeur(QWidget):
         elif oid == "effets":
             z = self.timeline.zone_valide()
             if z:                                  # partie choisie (I / O) : on isole ce morceau du plan, puis ses effets
-                c = self.morceau_de_partie(*z)
+                c = self.projet.clip_a((z[0] + z[1]) / 2, "video")
                 if c:
-                    self.effets_du_clip(c["id"])
+                    self.effets_du_clip(c["id"], partie=z)
+                else:
+                    self.encart.message(_("Pas de plan vidéo dans la partie choisie."))
                 return
             c = self._clip_selectionne()          # le plan cliqué, sinon celui sous le curseur
             if c:
@@ -1217,9 +1239,9 @@ class Editeur(QWidget):
             self.partie(quoi == "partie_garder")
         elif quoi == "effets_partie":
             z = self.timeline.zone_valide()
-            c = self.morceau_de_partie(*z) if z else None
+            c = self.projet.clip_a((z[0] + z[1]) / 2, "video") if z else None
             if c:
-                self.effets_du_clip(c["id"])
+                self.effets_du_clip(c["id"], partie=z)
         else:
             self.effets_du_clip(ident)
 
@@ -1455,7 +1477,12 @@ class Editeur(QWidget):
             genre, i = "transition", 0
         else:
             c.setdefault("effets", [])
-            c["effets"].append({"id": eid, "params": dict(E.defauts(eid))})
+            ef = {"id": eid, "params": dict(E.defauts(eid))}
+            z = self.timeline.zone_valide()
+            if z and z[1] > c["debut"] + 0.05 and z[0] < fin_clip(c) - 0.05:      # partie en jaune sur ce plan : l'effet s'y limite
+                ef["de"] = round(max(0.0, z[0] - c["debut"]), 2)
+                ef["a"] = round(min(duree_clip(c), z[1] - c["debut"]), 2)
+            c["effets"].append(ef)
             genre, i = "effet", len(c["effets"]) - 1
         rec = [k for k in (self.params.get("effets_recents") or []) if k != eid]
         self.params["effets_recents"] = [eid] + rec[:19]
@@ -1464,14 +1491,24 @@ class Editeur(QWidget):
         self.inspecteur.montrer_element(c["id"], genre, i)
         self.encart.message(_("« {n} » posé sur « {p} » : étiquette sur le plan, réglages dans l'onglet Inspecteur ; Annuler le retire.", n=fi["nom"], p=c.get("nom", "")))
 
-    def effets_du_clip(self, cid):
+    def effets_du_clip(self, cid, partie=None):
+        """Fenêtre des effets d'un plan. partie (a, b) en temps du montage : les effets AJOUTES ne couvrent que ces
+        secondes-là (bande bleue sur le plan, bords tirables) ; le plan n'est pas coupé."""
         c = self.projet.clip(cid)
         if not c:
             return
+        avant = [dict(e) for e in c.get("effets") or []]
         d = DialogueEffets(self, c, self.params, self.projet.medias)
         if d.exec() == d.Accepted:
             self.projet.marquer()
             c["effets"], c["transition"] = d.resultat()
+            if partie:
+                de = round(max(0.0, partie[0] - c["debut"]), 2)
+                a = round(min(duree_clip(c), partie[1] - c["debut"]), 2)
+                for e in c["effets"]:
+                    if e not in avant and a - de > 0.05:
+                        e["de"], e["a"] = de, a
+                self.timeline.zone = [None, None]
             self.rafraichir()
             self.timeline.selectionner(cid)
             self.inspecteur.montrer_clip(cid)
@@ -1689,6 +1726,13 @@ class Editeur(QWidget):
             if jouer:
                 self.apercu.jouer_segment(debut, fin, r)
                 self._preparer_segment(fin, duree_max)
+            elif self.apercu.en_lecture and self.apercu.segment is None and debut - 0.05 <= self.apercu.t < fin - 0.3:
+                # la suite arrive en retard (poste lent) : la lecture, repartie sur les rushes, la rejoint sans revenir en arrière
+                self.apercu.segment = (debut, fin, r)
+                self.apercu.clip = None
+                self.apercu._source = None
+                self.apercu.aller_a(self.apercu.t, forcer=True)
+                self._preparer_segment(fin, duree_max)
         t.fini.connect(fini)
         t.start()
 
@@ -1699,7 +1743,7 @@ class Editeur(QWidget):
                 self.apercu.segment = (d, f, chemin)
                 self.apercu.clip = None
                 self.apercu._source = None
-                self._preparer_segment(f)
+                self._preparer_segment(f, f - d)
                 return
 
     def apercu_rendu(self):

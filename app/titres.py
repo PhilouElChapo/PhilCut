@@ -113,6 +113,26 @@ def _evenements(t, L, H, cadence):
     fx = tags_effet(t, fs, duree_ms)
     base = f"\\fn{police}\\fs{fs}\\c{coul}\\pos({x},{y})" + fx
     out = []
+    if t.get("cles"):
+        # images clefs : un événement par intervalle entre deux clefs, déplacement (\move), taille (\t\fscx) et
+        # opacité (\t\alpha) interpolés ; fondu à l'entrée et à la sortie
+        from . import cles as K
+        ts = sorted({0.0, f - d} | {min(f - d, max(0.0, c["t"])) for c in K.liste(t)})
+        for i, (a, b) in enumerate(zip(ts, ts[1:])):
+            if b - a < 0.02:
+                continue
+            va, vb = K.valeurs(t, a), K.valeurs(t, b)
+            xa, ya, xb, yb = int(va["x"] * L), int(va["y"] * H), int(vb["x"] * L), int(vb["y"] * H)
+            sa, sb = int(100 * va["taille"] / max(0.05, taille)), int(100 * vb["taille"] / max(0.05, taille))
+            aa = f"&H{int(255 * (1 - max(0.0, min(1.0, va['opacite'])))):02X}&"
+            ab = f"&H{int(255 * (1 - max(0.0, min(1.0, vb['opacite'])))):02X}&"
+            ms = int((b - a) * 1000)
+            fad = ("\\fad(250,0)" if i == 0 else "") + ("\\fad(0,250)" if b >= f - d - 0.02 else "")
+            if i == 0 and b >= f - d - 0.02:
+                fad = "\\fad(250,250)"
+            out.append(f"Dialogue: 1,{_t(d + a)},{_t(d + b)},{style_nom},,0,0,0,,{{\\fn{police}\\fs{fs}\\c{coul}"
+                       f"\\move({xa},{ya},{xb},{yb},0,{ms})\\fscx{sa}\\fscy{sa}\\alpha{aa}\\t(0,{ms},\\fscx{sb}\\fscy{sb}\\alpha{ab}){fx}{fad}}}{texte}")
+        return out
     if t.get("suivi") and t["suivi"].get("positions"):
         # une position par pas de temps : plusieurs petits evenements consecutifs
         pos = t["suivi"]["positions"]

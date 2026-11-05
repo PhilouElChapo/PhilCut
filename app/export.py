@@ -61,7 +61,8 @@ LUFS = {"youtube": -14, "youtube4k": -14, "insta": -14, "insta_carre": -14, "wha
 
 class Exportateur:
     def __init__(self, projet, sortie, destination="youtube", qualite=None, encodeur=None, params=None, dossier_tmp=None):
-        self.p = projet
+        from .projet import decouper_effets_partiels
+        self.p = decouper_effets_partiels(projet)      # effet sur une partie du plan : le plan est coupé à ses bornes
         self.sortie = sortie
         self.dest = destination
         self.params = params or {}
@@ -372,6 +373,11 @@ class Exportateur:
                 from . import suivi
                 cote = max(48, int(self.H * float(g.get("taille", 0.22))))
                 x, y = suivi.position_pixels(g, self.L, self.H, cote, cote)
+            elif g.get("cles"):                                   # images clefs : il se déplace
+                from . import cles as K
+                cote = max(48, int(self.H * float(g.get("taille", 0.22))))
+                x = f"'({K.expr(g, 'x')})*{self.L}-{cote}/2'"
+                y = f"'({K.expr(g, 'y')})*{self.H}-{cote}/2'"
             self.calques.append((g["debut"], g["fin"], motif, x, y, "over"))
 
     def _incrustations(self, base):
@@ -388,6 +394,24 @@ class Exportateur:
             d, f = c["debut"], fin_clip(c)
             ov, out = self._nom("inc"), self._nom("vi")
             chaine = [f"[{src}]setpts=PTS+{d:.3f}/TB"]
+            if c.get("cles"):               # images clefs : taille et opacité pilotées par sendcmd, position par expression
+                from . import cles as K
+                n_s, n_m = self._nom("ks"), self._nom("km")
+                lignes = K.commandes_echelle_opacite(c, self.L, self.H, f"scale@{n_s}", f"colorchannelmixer@{n_m}", self.cad)
+                fichier = os.path.join(self.tmp, f"cles_{n_s}.txt")
+                with open(fichier, "w", encoding="utf-8") as fc:
+                    fc.write("\n".join(lignes) + "\n")
+                v0 = K.valeurs(c, 0.0)
+                w0, h0 = max(2, int(self.L * v0["echelle"]) // 2 * 2), max(2, int(self.H * v0["echelle"]) // 2 * 2)
+                chemin = fichier.replace("\\", "/").replace(":", "\\:")
+                chaine += ["format=rgba", f"sendcmd=f='{chemin}'", f"scale@{n_s}=w={w0}:h={h0}",
+                           f"colorchannelmixer@{n_m}=aa={max(0.0, min(1.0, v0['opacite'])):.3f}"]
+                self.filtres.append(",".join(chaine) + f"[{ov}]")
+                x = f"'(W-w)*({K.expr(c, 'x')})'"
+                y = f"'(H-h)*({K.expr(c, 'y')})'"
+                self.filtres.append(f"[{base}][{ov}]overlay=x={x}:y={y}:eval=frame:eof_action=pass:format=auto:enable='between(t,{d:.3f},{f:.3f})'[{out}]")
+                base = out
+                continue
             if e < 0.999:
                 chaine.append(f"scale=trunc(iw*{e:.3f}/2)*2:trunc(ih*{e:.3f}/2)*2")
             if op < 0.999:
@@ -616,20 +640,29 @@ def extrait(projet, debut, fin):
     """Copie du projet réduite au passage [debut, fin], ramené à 0 (aperçu rendu, aperçu d'un effet)."""
     import copy
     p = copy.deepcopy(projet)
-    for piste in p.toutes_pistes():
+    for piste in sorted(set(p.toutes_pistes()) | {c["piste"] for c in p.clips}):
         for c in list(p.clips_piste(piste)):
             if fin_clip(c) <= debut or c["debut"] >= fin:
                 p.d["clips"].remove(c)
                 continue
             if c["debut"] < debut:
-                c["src_debut"] += (debut - c["debut"]) * c.get("vitesse", 1.0)
+                from .projet import decaler_effets
+                delta = debut - c["debut"]
+                c["src_debut"] += delta * c.get("vitesse", 1.0)
                 c["debut"] = debut
                 c["transition"] = None
+                decaler_effets(c, delta, duree_clip(c))
+                if c.get("cles"):
+                    from . import cles as K
+                    K.decaler(c, delta, duree_clip(c))
             if fin_clip(c) > fin:
                 c["src_fin"] = c["src_debut"] + (fin - c["debut"]) * c.get("vitesse", 1.0)
             c["debut"] -= debut
     from .projet import decaler_suivi
     for x in p.titres + p.goodies:
+        if x.get("cles") and x["debut"] < debut < x["fin"]:
+            from . import cles as K
+            K.decaler(x, debut - x["debut"], x["fin"] - debut)
         x["debut"], x["fin"] = max(0.0, x["debut"] - debut), max(0.0, min(fin, x["fin"]) - debut)
         decaler_suivi(x, lambda t: t - debut)
     p.d["titres"] = [t for t in p.titres if t["fin"] > 0.05]

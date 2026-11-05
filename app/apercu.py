@@ -180,7 +180,7 @@ class Apercu(QGraphicsView):
         from . import effets as E
         p = self.projet
         c = p.clip_a(t, "video")
-        if c and (E.actifs(c) or (E.transition_active(c) and t < c["debut"] + float((c["transition"].get("params") or {}).get("duree", 0.8) or 0.8) + 0.05)):
+        if c and (E.actifs_entre(c, t - 0.01, t + 0.01) or (E.transition_active(c) and t < c["debut"] + float((c["transition"].get("params") or {}).get("duree", 0.8) or 0.8) + 0.05)):
             return True
         if any(x["debut"] <= t <= x["fin"] for x in p.titres + p.goodies):
             return True
@@ -622,6 +622,10 @@ class Apercu(QGraphicsView):
         e.accept()
 
     def _titre(self, t, L, H):
+        if t.get("cles"):                       # images clefs : valeurs de cet instant
+            from . import cles as K
+            v = K.valeurs_a(t, self.t)
+            t = dict(t, x=v["x"], y=v["y"], taille=v["taille"], _opacite=v["opacite"])
         taille = H * 0.055 * float(t.get("taille") or 1.0)
         f = QFont(t.get("police") or "Nunito")
         f.setPixelSize(int(taille))
@@ -665,6 +669,8 @@ class Apercu(QGraphicsView):
         it.setZValue(6)
         if anim in ("fondu", "zoom", "glisse") and age < 0.3:
             it.setOpacity(max(0.0, age / 0.3))
+        if t.get("_opacite") is not None:
+            it.setOpacity(max(0.0, min(1.0, float(t["_opacite"]))))
         self._scene.addItem(it)
         self.calques.append(it)
 
@@ -752,6 +758,10 @@ class Apercu(QGraphicsView):
         super().mouseReleaseEvent(e)
 
     def _goodie(self, g, L, H):
+        if g.get("cles"):
+            from . import cles as K
+            v = K.valeurs_a(g, self.t)
+            g = dict(g, x=v["x"], y=v["y"])
         taille = max(48, int(H * float(g.get("taille", 0.22))))
         nom = GO.GENRES.get(g["genre"], (g["genre"], "", (0, 0)))
         v = GO.valeur(g, self.t)

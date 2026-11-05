@@ -101,6 +101,7 @@ class Inspecteur(QWidget):
         self.contenu = self._en_cours
         self.contenu.adjustSize()
         self.zone.verticalScrollBar().setValue(defil)
+        self.zone.horizontalScrollBar().setValue(0)         # jamais de décalage horizontal (contenu plus large qu'attendu)
 
     def _marquer(self, cle=None):
         """Un seul « Annuler » pour une rafale de changements du même réglage (curseur qu'on tire) ; un autre réglage
@@ -117,6 +118,81 @@ class Inspecteur(QWidget):
         self.ed._modifie()
         if reconstruire:
             self.ed.timeline.reconstruire()
+
+    # ------------------------------------------------------------ images clefs
+    def _valeur(self, elem, cle, defaut):
+        """Valeur affichée d'un réglage : celle de la tête de lecture si l'élément est animé."""
+        from . import cles as K
+        if elem.get("cles") and cle in dict(K.PROPRIETES[K.genre(elem)]):
+            return float(K.valeurs_a(elem, self.ed.timeline.position)[cle])
+        return defaut
+
+    def _regler(self, elem, cle, v):
+        """Un réglage : image clef à la tête de lecture si l'élément est animé (et que ce réglage s'anime), sinon fixe."""
+        from . import cles as K
+        if elem.get("cles") and cle in dict(K.PROPRIETES[K.genre(elem)]):
+            self._changer(lambda: K.regler(elem, self.ed.timeline.position, **{cle: v}))
+        elif K.genre(elem) == "incrustation":
+            self._changer(lambda: elem.setdefault("incrust", {}).__setitem__(cle, v), reconstruire=False)
+        else:
+            self._changer(lambda: elem.__setitem__(cle, v), reconstruire=False)
+
+    def _groupe_cles(self, elem, rafraichir):
+        """Rubrique « Animation (images clefs) » : poser, aller à la précédente / suivante, supprimer."""
+        from . import cles as K
+        gr = QGroupBox(_("Animation (images clefs)"))
+        v = QVBoxLayout(gr)
+        t_rel = self.ed.timeline.position - K.base(elem)
+        cl = K.liste(elem)
+        dedans = -0.01 <= t_rel <= K.duree(elem) + 0.01
+        if cl:
+            ici = K.a_cle(elem, t_rel)
+            txt = _("{n} image(s) clef(s) ◆ (losanges sur la timeline). A la tête de lecture, chaque réglage (curseurs ci-dessus, "
+                    "glisser dans l'image) pose ou modifie l'image clef de cet instant ; entre deux, le mouvement est progressif.", n=len(cl))
+            if ici:
+                txt += " " + _("La tête de lecture est sur une image clef.")
+        else:
+            txt = _("Pour qu'il bouge, grossisse ou s'efface : placez la tête de lecture au début du mouvement, « ◆ Image clef ici », "
+                    "puis à la fin, réglez-le (curseurs ou souris dans l'image) : une seconde image clef se pose toute seule.")
+        l = QLabel(txt)
+        l.setWordWrap(True)
+        v.addWidget(l)
+        h = QHBoxLayout()
+        b = QPushButton(_("◆ Image clef ici"))
+        b.setEnabled(dedans)
+        b.setToolTip(_("Fige les réglages actuels à la tête de lecture"))
+        b.clicked.connect(lambda: (self._changer(lambda: K.poser(elem, t_rel)), rafraichir()))
+        h.addWidget(b)
+        for lib, sens in (("◀", -1), ("▶", 1)):
+            bb = QToolButton()
+            bb.setText(lib)
+            bb.setToolTip(_("Aller à l'image clef précédente") if sens < 0 else _("Aller à l'image clef suivante"))
+            cible = K.voisine(elem, t_rel, sens)
+            bb.setEnabled(cible is not None)
+            bb.clicked.connect(lambda _x=False, cible=cible: (self.ed.aller_a(K.base(elem) + cible), rafraichir()))
+            h.addWidget(bb)
+        h.addStretch(1)
+        v.addLayout(h)
+        if cl:
+            h2 = QHBoxLayout()
+            if K.a_cle(elem, t_rel):
+                bs = QPushButton(_("Supprimer celle-ci"))
+                bs.clicked.connect(lambda: (self._changer(lambda: K.retirer(elem, t_rel)), rafraichir()))
+                h2.addWidget(bs)
+            bt = QPushButton(_("Tout effacer (réglages fixes)"))
+
+            def effacer():
+                vals = K.valeurs(elem, t_rel)
+                def f():
+                    elem.pop("cles", None)
+                    K.regler(elem, 0, **vals)
+                self._changer(f)
+                rafraichir()
+            bt.clicked.connect(effacer)
+            h2.addWidget(bt)
+            h2.addStretch(1)
+            v.addLayout(h2)
+        return gr
 
     def _titre(self, lay, ic, texte, sous=""):
         h = QHBoxLayout()
@@ -260,23 +336,26 @@ class Inspecteur(QWidget):
                 hs = QHBoxLayout()
                 sl = QSlider(Qt.Horizontal)
                 sl.setRange(mini, maxi)
-                sl.setValue(int(float(inc.get(cle, defaut / 100)) * 100))
+                sl.setValue(int(self._valeur(c, cle, float(inc.get(cle, defaut / 100))) * 100))
                 lv = QLabel(f"{sl.value()} %")
                 lv.setMinimumWidth(42)
-                sl.valueChanged.connect(lambda v, cle=cle, lv=lv: (lv.setText(f"{v} %"), self._changer(lambda: inc.__setitem__(cle, v / 100), reconstruire=False)))
+                sl.valueChanged.connect(lambda v, cle=cle, lv=lv: (lv.setText(f"{v} %"), self._regler(c, cle, v / 100)))
                 hs.addWidget(sl, 1)
                 hs.addWidget(lv)
                 fi_.addRow(lib, hs)
-            hb = QHBoxLayout()
+            from .widgets import FluxLayout
+            zb = QWidget()
+            hb = FluxLayout(zb, marge=0, espace=4)          # les boutons passent à la ligne si le volet est étroit
             for lib, vals in ((_("Plein cadre"), (1.0, 0.5, 0.5)), (_("Petit, en bas à droite"), (0.3, 0.96, 0.95)), (_("Petit, en haut à gauche"), (0.3, 0.04, 0.05))):
                 b = QPushButton(lib)
-                b.clicked.connect(lambda _x=False, vals=vals: (self._changer(lambda: inc.update(echelle=vals[0], x=vals[1], y=vals[2]), reconstruire=False), self.montrer_clip(ident)))
+                b.clicked.connect(lambda _x=False, vals=vals: (self._changer(lambda: K_regler(c, self.ed.timeline.position, echelle=vals[0], x=vals[1], y=vals[2])), self.montrer_clip(ident)))
                 hb.addWidget(b)
-            fi_.addRow(hb)
+            fi_.addRow(zb)
             n = QLabel(f"<span style='color:{theme.COULEURS['texte2']}'>" + _("Le résultat se voit dans l'aperçu à l'arrêt et à l'export.") + "</span>")
             n.setWordWrap(True)
             fi_.addRow(n)
             lay.addWidget(gi)
+            lay.addWidget(self._groupe_cles(c, lambda: self.montrer_clip(ident)))
         # ---- transition
         t = c.get("transition")
         gt = QGroupBox(_("Transition d'entrée"))
@@ -374,6 +453,7 @@ class Inspecteur(QWidget):
                 try:
                     if cible.parent() is not None and self.contenu is cible.window() or self.contenu.isAncestorOf(cible):
                         self.zone.ensureWidgetVisible(cible, 0, 40)
+                        self.zone.horizontalScrollBar().setValue(0)
                 except RuntimeError:        # contenu déjà remplacé
                     pass
             QTimer.singleShot(0, voir)
@@ -438,11 +518,9 @@ class Inspecteur(QWidget):
         ca.setToolTip(_("Actif : décochez pour garder l'effet sans l'appliquer"))
         ca.toggled.connect(lambda on: self._changer(lambda: e.__setitem__("actif", on)))
         h.addWidget(ca)
-        bn = QToolButton()
-        bn.setText(("▾ " if ouvert else "▸ ") + fi["nom"] + ("" if E.actif(e) else _(" (off)")))
-        bn.setToolButtonStyle(Qt.ToolButtonTextOnly)
-        bn.setAutoRaise(True)
-        bn.setStyleSheet("QToolButton{font-weight:600;text-align:left;border:none}")
+        bn = QPushButton(("▾ " if ouvert else "▸ ") + fi["nom"] + ("" if E.actif(e) else _(" (off)")))
+        bn.setFlat(True)
+        bn.setStyleSheet("QPushButton{font-weight:600;text-align:left;border:none;padding:2px 4px}")      # nom calé à gauche
         bn.setToolTip(fi["description"])
         bn.clicked.connect(lambda: self._deplier(c["id"], i, not ouvert))
         h.addWidget(bn, 1)
@@ -473,6 +551,38 @@ class Inspecteur(QWidget):
                 v.addLayout(f)
             else:
                 v.addWidget(QLabel(f"<span style='color:{theme.COULEURS['texte2']}'>" + _("Cet effet n'a pas de réglage.") + "</span>"))
+            # étendue : tout le plan, ou une partie (de … à …, en secondes depuis le début du plan)
+            from .projet import partiel
+            pa = partiel(e)
+            fp = QFormLayout()
+            fp.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+            ct = QComboBox()
+            ct.addItem(_("Tout le plan"), False)
+            ct.addItem(_("Une partie du plan"), True)
+            ct.setCurrentIndex(1 if pa else 0)
+            dc = duree_clip(c)
+
+            def etendue(_i):
+                if ct.currentData():
+                    self._changer(lambda: e.update(de=round(dc / 3, 2), a=round(2 * dc / 3, 2)))
+                else:
+                    self._changer(lambda: (e.pop("de", None), e.pop("a", None)))
+                self.montrer_clip(c["id"])
+            ct.currentIndexChanged.connect(etendue)
+            fp.addRow(_("S'applique à"), ct)
+            if pa:
+                for cle, lib, val in (("de", _("De (s)"), pa[0]), ("a", _("A (s)"), min(pa[1], dc))):
+                    sp = QDoubleSpinBox()
+                    sp.setRange(0.0, dc)
+                    sp.setDecimals(2)
+                    sp.setSingleStep(0.1)
+                    sp.setValue(val)
+                    sp.valueChanged.connect(lambda v_, cle=cle: self._changer(lambda: e.__setitem__(cle, round(v_, 2))))
+                    fp.addRow(lib, sp)
+                aide = QLabel(f"<span style='color:{theme.COULEURS['texte2']}'>" + _("Secondes comptées depuis le début du plan. Sur la timeline : bande bleue, bords à tirer.") + "</span>")
+                aide.setWordWrap(True)
+                fp.addRow(aide)
+            v.addLayout(fp)
             d = QLabel(f"<span style='color:{theme.COULEURS['texte2']}'>{fi['description']}</span>")
             d.setWordWrap(True)
             v.addWidget(d)
@@ -513,8 +623,8 @@ class Inspecteur(QWidget):
         ta = QDoubleSpinBox()
         ta.setRange(0.3, 4.0)
         ta.setSingleStep(0.1)
-        ta.setValue(float(t.get("taille", 1.0)))
-        ta.valueChanged.connect(lambda v: self._changer(lambda: t.__setitem__("taille", v), reconstruire=False))
+        ta.setValue(self._valeur(t, "taille", float(t.get("taille", 1.0))))
+        ta.valueChanged.connect(lambda v: self._regler(t, "taille", v))
         f.addRow(_("Taille"), ta)
         bc = widget_parametre(("couleur", _("Couleur"), "couleur", "#ffffff", 0, 0), t.get("couleur", "#ffffff"),
                               lambda v: self._changer(lambda: t.__setitem__("couleur", v), reconstruire=False))
@@ -529,10 +639,11 @@ class Inspecteur(QWidget):
         for cle, lib in (("x", _("Position horizontale")), ("y", _("Position verticale"))):
             sl = QSlider(Qt.Horizontal)
             sl.setRange(0, 100)
-            sl.setValue(int(float(t.get(cle, 0.5)) * 100))
-            sl.valueChanged.connect(lambda v, cle=cle: self._changer(lambda: t.__setitem__(cle, v / 100), reconstruire=False))
+            sl.setValue(int(self._valeur(t, cle, float(t.get(cle, 0.5))) * 100))
+            sl.valueChanged.connect(lambda v, cle=cle: self._regler(t, cle, v / 100))
             f.addRow(lib, sl)
         lay.addWidget(g)
+        lay.addWidget(self._groupe_cles(t, lambda: self.montrer_texte(t)))
         if t.get("suivi"):
             lay.addWidget(QLabel(_("Accroché à une personne : clic droit sur le texte dans la timeline pour corriger ou décrocher.")))
         bm = QPushButton(_("Tous les réglages (police, accrocher à une personne)…"))
@@ -562,8 +673,8 @@ class Inspecteur(QWidget):
         for cle, lib, mini, maxi in (("taille", _("Taille"), 5, 60), ("x", _("Position horizontale"), 0, 100), ("y", _("Position verticale"), 0, 100)):
             sl = QSlider(Qt.Horizontal)
             sl.setRange(mini, maxi)
-            sl.setValue(int(float(g.get(cle, 0.5)) * 100))
-            sl.valueChanged.connect(lambda v, cle=cle: self._changer(lambda: g.__setitem__(cle, v / 100), reconstruire=False))
+            sl.setValue(int(self._valeur(g, cle, float(g.get(cle, 0.5))) * 100))
+            sl.valueChanged.connect(lambda v, cle=cle: self._regler(g, cle, v / 100))
             f.addRow(lib, sl)
         for cle, lib in (("debut", _("Début (s)")), ("fin", _("Fin (s)"))):
             sp = QDoubleSpinBox()
@@ -573,6 +684,7 @@ class Inspecteur(QWidget):
             sp.valueChanged.connect(lambda v, cle=cle: self._changer(lambda: g.__setitem__(cle, v)))
             f.addRow(lib, sp)
         lay.addWidget(gr)
+        lay.addWidget(self._groupe_cles(g, lambda: self.montrer_goodie(g)))
         lay.addWidget(QLabel(_("{n} valeur(s) saisies ou issues d'une trace GPS.", n=len(g.get("valeurs") or []))))
         bm = QPushButton(_("Tous les réglages (valeurs, trace GPS, genre)…"))
         bm.clicked.connect(lambda: self.demande_edition.emit(g["id"]))
@@ -658,6 +770,11 @@ class Inspecteur(QWidget):
         lay.addWidget(self._bouton_supprimer(_("Supprimer cette zone"), lambda: (self._changer(lambda: self.projet.retirer_element(z["id"])), self.vide())))
         lay.addStretch(1)
         self._poser(defil)
+
+
+def K_regler(elem, t, **v):
+    from . import cles as K
+    return K.regler(elem, t, **v)
 
 
 def _tc(t):

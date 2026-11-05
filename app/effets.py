@@ -139,6 +139,20 @@ def actifs(clip):
     return [e for e in (clip.get("effets") or []) if actif(e)]
 
 
+def actifs_entre(clip, a, b):
+    """Effets actifs du plan qui touchent l'intervalle [a, b] du montage (un effet peut ne couvrir qu'une partie du plan)."""
+    out = []
+    for e in actifs(clip):
+        if e.get("de") is None and e.get("a") is None:
+            out.append(e)
+            continue
+        d0 = clip["debut"] + float(e.get("de") or 0.0)
+        d1 = clip["debut"] + float(e.get("a") if e.get("a") is not None else 1e9)
+        if d1 > a and d0 < b:
+            out.append(e)
+    return out
+
+
 def transition_active(clip):
     t = clip.get("transition")
     return t if actif(t) else None

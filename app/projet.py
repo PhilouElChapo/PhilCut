@@ -263,6 +263,12 @@ class Projet:
         droite["src_debut"] = dans_src
         droite["transition"] = None
         c["src_fin"] = dans_src
+        decaler_effets(droite, t - c["debut"], duree_clip(droite))
+        decaler_effets(c, 0.0, duree_clip(c))
+        if c.get("cles"):
+            from . import cles as K
+            K.decaler(droite, t - c["debut"], duree_clip(droite))
+            K.decaler(c, 0.0, duree_clip(c))
         i = self.clips.index(c)
         self.clips.insert(i + 1, droite)
         return droite
@@ -444,6 +450,63 @@ class Projet:
 # ------------------------------------------------------------------ fonctions sur les clips
 def duree_clip(c):
     return max(0.0, (c["src_fin"] - c["src_debut"]) / (c.get("vitesse") or 1.0))
+
+
+def partiel(e):
+    """(de, a) en secondes depuis le début du plan si l'effet ne couvre qu'une partie du plan, sinon None."""
+    if e.get("de") is None and e.get("a") is None:
+        return None
+    return float(e.get("de") or 0.0), float(e.get("a") if e.get("a") is not None else 1e9)
+
+
+def decaler_effets(c, delta, duree):
+    """Le début du plan a avancé de `delta` secondes (coupe, extrait) et il dure `duree` : les effets posés sur une
+    partie suivent ; un effet dont la partie sort du plan disparaît ; un effet qui couvre tout redevient « tout le plan »."""
+    out = []
+    for e in c.get("effets") or []:
+        pa = partiel(e)
+        if pa is None:
+            out.append(e)
+            continue
+        de, a = max(0.0, pa[0] - delta), min(duree, pa[1] - delta)
+        if a - de < 0.05:
+            continue
+        if de <= 0.02 and a >= duree - 0.02:
+            e.pop("de", None)
+            e.pop("a", None)
+        else:
+            e["de"], e["a"] = round(de, 3), round(a, 3)
+        out.append(e)
+    c["effets"] = out
+
+
+def decouper_effets_partiels(projet):
+    """Copie du projet où chaque plan portant un effet sur une partie est coupé aux bornes de ces parties : chaque
+    morceau ne porte que les effets qui le couvrent (rendu identique pour tous les genres d'effets)."""
+    if not any(partiel(e) for c in projet.clips for e in c.get("effets") or []):
+        return projet
+    p = copy.deepcopy(projet)
+    for c in list(p.clips):
+        bornes = sorted({b for e in c.get("effets") or [] if partiel(e) for b in partiel(e) if 0.04 < b < duree_clip(c) - 0.04})
+        effets = copy.deepcopy(c.get("effets") or [])
+        morceaux = [c]
+        debut0 = c["debut"]
+        for b in reversed(bornes):
+            d = p.couper(morceaux[0]["id"], debut0 + b)
+            if d:
+                morceaux.insert(1, d)
+        for m in morceaux:
+            a0, a1 = m["debut"] - debut0, m["debut"] - debut0 + duree_clip(m)
+            garde = []
+            for e in effets:
+                pa = partiel(e)
+                if pa is None or (pa[0] <= a0 + 0.02 and pa[1] >= a1 - 0.02):
+                    e2 = dict(e)
+                    e2.pop("de", None)
+                    e2.pop("a", None)
+                    garde.append(e2)
+            m["effets"] = garde
+    return p
 
 
 def decaler_suivi(x, f):

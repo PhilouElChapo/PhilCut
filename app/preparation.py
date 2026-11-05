@@ -28,7 +28,7 @@ def a_preparer(projet, a, b):
     for c in projet.clips_piste("video"):
         if fin_clip(c) <= a or c["debut"] >= b:
             continue
-        if E.actifs(c):
+        if E.actifs_entre(c, a, b):
             return True
         t = E.transition_active(c)
         if t and c["debut"] < b and c["debut"] + float((t.get("params") or {}).get("duree", 0.8) or 0.8) > a:

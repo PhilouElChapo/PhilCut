@@ -60,6 +60,11 @@ flou, mosaique, cache de couleur... La zone peut suivre ce qu'elle couvre
 Onglet Effets du volet de droite : vignettes animees sur votre plan, a glisser
 sur un plan de la timeline (une transition : sur le raccord entre deux plans).
 
+Timeline (0.3.4) : un plan se glisse d'une piste a l'autre ; clic droit pour
+copier / coller les effets ; un effet peut ne couvrir qu'une partie du plan (bande
+bleue, bords a tirer) ; images clefs : une incrustation, un texte ou un Goodie qui
+bouge, grossit ou s'efface (Inspecteur > Animation, losanges sur la timeline).
+
 Mises a jour
 ------------
 Verifiees au demarrage (une fois par jour) et PROPOSEES sur l'Accueil : rien n'est
