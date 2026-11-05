@@ -66,6 +66,10 @@ class ItemClip(QGraphicsRectItem):
         p.setPen(Qt.NoPen)
         p.setBrush(base)
         p.drawRoundedRect(r, 5, 5)
+        if self.tl.projet and (self.tl.projet.piste_masquee(piste) or (self.tl.projet.piste_muette(piste) and not piste.startswith("video"))):
+            self.setOpacity(0.45)
+        else:
+            self.setOpacity(1.0)
         if piste.startswith("video") and self.vignette:
             p.save()
             p.setClipRect(r.adjusted(1, 1, -1, -1))
@@ -552,8 +556,32 @@ class Timeline(QGraphicsView):
         f.setBold(True)
         p.setFont(f)
         p.setPen(_c("texte2"))
+        self._boutons_piste = {}
         for nom, (y, h) in self._pistes().items():
-            p.drawText(QRectF(x0 + 8, y, MARGE_G - 12, h), Qt.AlignLeft | Qt.AlignVCenter, self.libelle_piste(nom))
+            p.setPen(_c("texte2"))
+            p.setFont(f)
+            p.drawText(QRectF(x0 + 8, y + 2, MARGE_G - 12, min(h, 22)), Qt.AlignLeft | Qt.AlignVCenter, self.libelle_piste(nom))
+            if nom in ("titre", "goodie") or h < 34 or not self.projet:
+                continue
+            # petits boutons : M = son coupé (toutes les pistes à son), V = image masquée (pistes vidéo 2 et plus)
+            boutons = [("muette", "M", self.projet.piste_muette(nom), _("Son de la piste coupé (écoute et export)"))]
+            if nom.startswith("video") and nom != "video":
+                boutons.append(("masquee", "V", self.projet.piste_masquee(nom), _("Image de la piste masquée (écoute et export)")))
+            bx = x0 + 8
+            by = y + h - 20
+            fb = QFont()
+            fb.setPointSizeF(7.5)
+            fb.setBold(True)
+            p.setFont(fb)
+            for quoi, lettre, actif, aide in boutons:
+                rc = QRectF(bx, by, 16, 14)
+                p.setPen(Qt.NoPen)
+                p.setBrush(QColor("#e05a5a") if actif else QColor(255, 255, 255, 28))
+                p.drawRoundedRect(rc, 3, 3)
+                p.setPen(QColor("#ffffff") if actif else _c("texte2"))
+                p.drawText(rc, Qt.AlignCenter, lettre)
+                self._boutons_piste.setdefault(nom, []).append((rc, quoi, aide, actif))
+                bx += 20
         # curseur de lecture
         x = MARGE_G + self.position * self.pps
         p.setPen(QPen(QColor("#ff5c5c"), 2))
@@ -597,8 +625,34 @@ class Timeline(QGraphicsView):
         self.aller_a(clip["debut"] if mode == "gauche" else fin_clip(clip) - 0.001)
 
     # ---- souris et clavier
+    def _bouton_piste_a(self, sp):
+        x0 = self.mapToScene(0, 0).x()
+        for nom, boutons in getattr(self, "_boutons_piste", {}).items():
+            for rc, quoi, aide, actif in boutons:
+                if rc.contains(sp):
+                    return nom, quoi, aide, actif
+        return None
+
+    def event(self, e):
+        from PySide6.QtCore import QEvent
+        if e.type() == QEvent.ToolTip:
+            b = self._bouton_piste_a(self.mapToScene(e.pos()))
+            from PySide6.QtWidgets import QToolTip
+            if b:
+                QToolTip.showText(e.globalPos(), b[2] + (_(" — actif") if b[3] else _(" — clic pour activer")), self)
+                return True
+        return super().event(e)
+
     def mousePressEvent(self, e):
         sp = self.mapToScene(e.pos())
+        if e.button() == Qt.LeftButton and sp.x() < MARGE_G and self.projet:
+            b = self._bouton_piste_a(sp)
+            if b:
+                self.projet.marquer()
+                self.projet.basculer_piste(b[0], b[1])
+                self.modifie.emit()
+                self.reconstruire()
+                return
         if e.button() == Qt.LeftButton and (sp.y() < H_REGLE or self.itemAt(e.pos()) is None) and sp.x() >= MARGE_G:
             self._glisse_curseur = True
             # glisser sur la règle des temps choisit une partie (en jaune) ; un simple clic place le curseur

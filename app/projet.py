@@ -107,6 +107,24 @@ class Projet:
         """Plans des pistes vidéo au-dessus de la base, dans l'ordre d'empilement (video2 sous video3)."""
         return [c for p in self.pistes_video()[1:] for c in self.clips_piste(p)]
 
+    def piste_muette(self, piste):
+        return piste in (self.d.get("pistes_muettes") or [])
+
+    def piste_masquee(self, piste):
+        return piste in (self.d.get("pistes_masquees") or [])
+
+    def basculer_piste(self, piste, quoi):
+        """quoi : « muette » (son coupé à l'écoute et à l'export) ou « masquee » (image non montrée, pistes vidéo 2+)."""
+        cle = "pistes_muettes" if quoi == "muette" else "pistes_masquees"
+        l = list(self.d.get(cle) or [])
+        if piste in l:
+            l.remove(piste)
+        else:
+            l.append(piste)
+        self.d[cle] = l
+        self.modifie = True
+        return piste in l
+
     def ajouter_piste(self, genre):
         cle = "nb_video" if genre == "video" else "nb_audio"
         self.d[cle] = min(4, max(1, int(self.d.get(cle) or 1)) + 1)

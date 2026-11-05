@@ -366,7 +366,7 @@ class Exportateur:
         (image dans l'image), avec leur opacité, entre leur début et leur fin."""
         for c in self.p.incrustations():
             m = self.p.media(c["media"])
-            if not m:
+            if not m or self.p.piste_masquee(c["piste"]):
                 continue
             src = self._clip_video(c, None, 0.0)
             inc = c.get("incrust") or {}
@@ -413,9 +413,10 @@ class Exportateur:
     def _son(self):
         def a_du_son(c):
             m = self.p.media(c["media"]) or {}
-            return m.get("genre") != "image" and (m.get("fiche") or {}).get("audio") and not c.get("muet")
+            return m.get("genre") != "image" and (m.get("fiche") or {}).get("audio") and not c.get("muet") and not self.p.piste_muette(c["piste"])
         if not any(a_du_son(c) for p_ in self.p.pistes_video() for c in self.p.clips_piste(p_)) and \
-                not any(self.p.clips_piste(p_) for p_ in self.p.pistes_audio()) and not self.p.clips_piste("voix"):
+                not any(self.p.clips_piste(p_) for p_ in self.p.pistes_audio() if not self.p.piste_muette(p_)) and \
+                not (self.p.clips_piste("voix") and not self.p.piste_muette("voix")):
             return self._silence(self.duree)     # rien à normaliser : loudnorm sur un silence pur donnerait des NaN
         pistes = []
         # son des plans video, bout a bout
@@ -437,7 +438,7 @@ class Exportateur:
                 pistes.append(nom)
         # voix off et doublage (piste « voix ») : mélangées au son des plans, elles font baisser la musique
         voix = []
-        for c in self.p.clips_piste("voix") + [x for x in self.p.incrustations() if a_du_son(x)]:
+        for c in [x for x in self.p.clips_piste("voix") if not self.p.piste_muette("voix")] + [x for x in self.p.incrustations() if a_du_son(x)]:
             m = self.p.media(c["media"])
             k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
             nom = self._nom("vo")
@@ -451,7 +452,7 @@ class Exportateur:
             self.filtres.append("".join(f"[{x}]" for x in base + voix) + f"amix=inputs={len(base + voix)}:duration=longest:normalize=0[{nom}]")
             pistes = [nom]
         # musiques : piste audio, decalees a leur position
-        for c in [x for p_ in self.p.pistes_audio() for x in self.p.clips_piste(p_)]:
+        for c in [x for p_ in self.p.pistes_audio() if not self.p.piste_muette(p_) for x in self.p.clips_piste(p_)]:
             m = self.p.media(c["media"])
             d = duree_clip(c)
             k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
@@ -506,7 +507,7 @@ class Exportateur:
         m = self.p.media(c["media"])
         d = duree_clip(c)
         fiche = m.get("fiche") or {}
-        if m["genre"] == "image" or not fiche.get("audio") or c.get("muet"):
+        if m["genre"] == "image" or not fiche.get("audio") or c.get("muet") or self.p.piste_muette(c["piste"]):
             return self._silence(d)
         k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
         nom = self._nom("a")

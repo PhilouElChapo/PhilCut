@@ -298,7 +298,7 @@ class Apercu(QGraphicsView):
             self.clip = c
             self.lecteur.setPlaybackRate(float(c.get("vitesse", 1.0)))
             self._cadrer(c, m)
-        self.son.setVolume(0.0 if (c.get("muet") or self.muet_general or "video" in self.pistes_muettes) else float(c.get("volume", 1.0)))
+        self.son.setVolume(0.0 if (c.get("muet") or self.muet_general or "video" in self.pistes_muettes or self.projet.piste_muette("video")) else float(c.get("volume", 1.0)))
         if c.get("ajustement") == "suivi":           # le cadre bouge avec la personne
             self._cadrer(c, m)
         if abs(self.lecteur.position() - pos_ms) > 80 or not self.en_lecture:
@@ -377,7 +377,7 @@ class Apercu(QGraphicsView):
                     sp["source"] = src
                 sp["clip"] = c
                 lp.setPlaybackRate(float(c.get("vitesse", 1.0)))
-            coupe = c.get("muet") or self.muet_general or piste in self.pistes_muettes
+            coupe = c.get("muet") or self.muet_general or piste in self.pistes_muettes or self.projet.piste_muette(piste)
             so.setVolume(0.0 if coupe else min(1.0, float(c.get("volume", 1.0)) * (0.8 if piste == "audio" else 1.0)))
             if abs(lp.position() - pos_ms) > 120 or not self.en_lecture:
                 lp.setPosition(pos_ms)

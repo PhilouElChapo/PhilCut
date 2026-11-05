@@ -60,6 +60,30 @@ class TestPistes(unittest.TestCase):
         png = export.image_rendue(p, 2.0, os.path.join(d, "i.png"), {}, 320)
         self.assertGreater(os.path.getsize(png), 1000)
 
+    def test_muet_et_masque_par_piste(self):
+        d = tempfile.mkdtemp()
+        p, c = projet_deux_pistes(d)
+        p.basculer_piste("video2", "masquee")
+        ex = export.Exportateur(p, os.path.join(d, "o.mp4"), "whatsapp", qualite="allegee", encodeur="libx264", params={})
+        ex.commande()
+        self.assertNotIn("overlay=", "\n".join(ex.filtres))          # image masquée : pas d'incrustation
+        p.basculer_piste("video2", "masquee")
+        p.basculer_piste("video", "muette")
+        ex = export.Exportateur(p, os.path.join(d, "o.mp4"), "whatsapp", qualite="allegee", encodeur="libx264", params={})
+        ex.commande()
+        f = "\n".join(ex.filtres)
+        self.assertIn("overlay=", f)
+        self.assertIn("[sil", f)                                         # le son de la vidéo 1 est remplacé par du silence
+        self.assertTrue(p.piste_muette("video"))
+        from app.timeline import Timeline
+        tl = Timeline(p)
+        tl.resize(900, 400)
+        tl.show()
+        app.processEvents()
+        tl.grab()
+        self.assertIn("video", tl._boutons_piste)
+        self.assertEqual([q for _r, q, _a, _x in tl._boutons_piste["video2"]], ["muette", "masquee"])
+
     def test_piste_vide_retiree_seulement(self):
         d = tempfile.mkdtemp()
         p, c = projet_deux_pistes(d)
