@@ -193,6 +193,18 @@ class TestInterface030(unittest.TestCase):
         self.assertLess(t["x"], 0.5)
         self.assertLess(t["y"], 0.85)
         self.assertEqual(len(ed.projet._pile), avant + 1)
+        # molette sur le cadre : taille
+        from PySide6.QtGui import QWheelEvent
+        from PySide6.QtCore import QPointF, QEvent
+        ed.timeline.aller_a(2.0)
+        app.processEvents()
+        pg = next(p for p in ed.apercu.poignees if p.ident == t["id"])
+        c = ed.apercu.mapFromScene(pg.sceneBoundingRect().center())
+        taille = t.get("taille", 1.0)
+        ev = QWheelEvent(QPointF(c), QPointF(vp.mapToGlobal(c)), QPoint(0, 0), QPoint(0, 120), Qt.NoButton, Qt.NoModifier, Qt.ScrollUpdate, False)
+        app.sendEvent(vp, ev)
+        app.processEvents()
+        self.assertGreater(t["taille"], taille)
 
     def test_lecture_avec_effets(self):
         """▶✦ : le passage à venir est rendu puis lu à la place des rushes ; en sortant du passage, retour aux rushes."""

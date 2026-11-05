@@ -544,6 +544,10 @@ class Apercu(QGraphicsView):
         self.poignees.append(pg)
 
     def wheelEvent(self, e):
+        it = self.itemAt(e.position().toPoint())
+        if isinstance(it, Poignee):                 # molette sur un texte ou un Goodie : sa taille
+            super().wheelEvent(e)
+            return
         d = e.angleDelta().y()
         if d:
             self.pas_image.emit(-1 if d > 0 else 1)
