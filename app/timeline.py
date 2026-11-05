@@ -482,8 +482,20 @@ class Timeline(QGraphicsView):
         t = max(0.0, (sp.x() - MARGE_G) / self.pps)
         m = QMenu()
         m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
+        m.addAction(_("Enregistrer l'image à cet endroit…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "image")))
         self._menu_partie(m, t)
+        self._menu_zoom(m)
         m.exec(e.globalPos())
+
+    def _menu_zoom(self, m):
+        m.addSeparator()
+        sm = m.addMenu(_("Zoom de la timeline"))
+        sm.addAction(_("Tout voir (le montage remplit la largeur)"), self.ajuster)
+        sm.addAction(_("Agrandir (voir plus de détail)"), lambda: self.zoomer(1.6))
+        sm.addAction(_("Réduire"), lambda: self.zoomer(1 / 1.6))
+        sm.addSeparator()
+        sm.addAction(_("Images plus grandes"), lambda: self.hauteur_images(1.3))
+        sm.addAction(_("Images plus petites"), lambda: self.hauteur_images(1 / 1.3))
 
     def _menu_partie(self, m, t):
         """Choisir une partie de la vidéo à la souris : début ici, fin ici, puis effets, suppression ou garder."""
@@ -648,7 +660,9 @@ class Timeline(QGraphicsView):
         m.addAction(_("Effets et transition sur tout le plan…"), lambda: self.demande_menu.emit(clip["id"], "effets"))
         if self.zone_valide():
             m.addAction(_("Effets sur la partie en jaune seulement…"), lambda: self.demande_menu.emit(clip["id"], "effets_partie"))
+        m.addAction(_("Enregistrer l'image à cet endroit…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "image")))
         self._menu_partie(m, t)
+        self._menu_zoom(m)
         m.addSeparator()
         m.addAction(_("Propriétés…"), lambda: self.proprietes.emit(clip["id"]))
         m.exec(pos)

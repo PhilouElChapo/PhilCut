@@ -143,12 +143,12 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 ## T15 — Corrections 0.2.3 (retours du premier test)
 
 1. **Préférences** : Edition › Préférences : **aucune fenêtre noire de console** ne s'ouvre. Aucun onglet ne défile de côté ; les textes longs passent à la ligne ; les boutons (« Connecter une IA », « Vérifier maintenant »…) sont à leur taille, à gauche.
-2. **Téléchargement des packs** : sans projet ouvert, cocher une voix dans IA locale, OK : la progression s'affiche **en bas de la fenêtre**.
+2. **Téléchargements** : Préférences › IA locale, cocher deux modèles, OK : la fenêtre **Téléchargements** s'ouvre (taille, progression, état, vitesse, temps restant, file d'attente, bouton Arrêter). La fermer : les téléchargements continuent, le bouton « ⬇ Téléchargements : n — x % » en bas de la fenêtre (ou Outils › Téléchargements) la rouvre. Dans IA locale, un modèle en cours porte « ⬇ en cours de téléchargement ».
 3. **Dossiers** : Importer et Exporter proposent d'abord le dossier **Vidéos** du système, puis le dernier dossier choisi.
 4. **Volet** : le bouton Volet est à l'extrême droite de la barre ; 2e clic : une colonne d'icônes nommées (Proposition, Propriétés), un clic dessus rouvre le volet. Fiche vidéo a sa propre icône (i).
 5. **Médias du projet** (ex-Bibliothèque) : une ligne explique à quoi sert la colonne.
-6. **Timeline** : les images ne sont plus écrasées ; Alt + molette (ou Affichage › Images de la timeline plus grandes) les agrandit ; Ctrl + molette zoome dans le temps.
-7. **Image affichée** : bouton image sous la vidéo : enregistre l'image du curseur en PNG pleine définition (dossier Images par défaut).
+6. **Timeline** : un rush court posé dans une timeline vide remplit la largeur (zoom automatique) ; clic droit dans la timeline › Zoom de la timeline (tout voir, agrandir, images plus grandes) ; les images ne sont plus écrasées ; Alt + molette (ou Affichage › Images de la timeline plus grandes) les agrandit ; Ctrl + molette zoome dans le temps.
+7. **Image affichée** : clic droit sur la vidéo › « Enregistrer cette image », ou clic droit dans la timeline › « Enregistrer l'image à cet endroit », ou bouton image sous la vidéo : enregistre l'image du curseur en PNG pleine définition (dossier Images par défaut).
 8. **Annuler / Rétablir** : la petite flèche à côté montre la liste (« Effets de … », « Coupe de … ») ; cliquer une ligne annule jusque-là.
 9. **Partie de la vidéo, à la souris** : glisser sur la règle des temps (au-dessus des pistes) du début à la fin voulus : la partie est en jaune. Ou clic droit dans la timeline › Partie de la vidéo › « La partie commence ici », puis « La partie finit ici ». Clic droit sur la partie : effets sur cette partie, la supprimer, ou ne garder qu'elle. (Les touches I et O font la même chose, pour qui préfère le clavier.)
 10. **Son** : bouton haut-parleur sous la vidéo : clic = tout couper ; flèche = choisir les pistes écoutées, « Ecouter seulement la voix off ». **La voix off s'entend maintenant à la lecture.**

@@ -245,7 +245,10 @@ class DialoguePreferences(QDialog):
                 deja = packs_ia.installe(k)
                 taille = packs_ia.taille_texte(m.get("taille", 0))
                 lib = f"{m['nom']}  —  {taille}"
-                if deja:
+                gestion = getattr(self.fenetre, "telechargements", None)
+                if gestion is not None and gestion.en_file(k):
+                    lib += "  ⬇ " + _("en cours de téléchargement")
+                elif deja:
                     lib += "  ✓ " + _("sur ce poste")
                 elif k == conseil:
                     lib += "  ★ " + _("conseillé ici")
@@ -266,7 +269,11 @@ class DialoguePreferences(QDialog):
         self.lbl_place = QLabel(_("Place utilisée par l'IA locale : {t}", t=packs_ia.taille_texte(packs_ia.taille_dossier()) if packs_ia.installes() else "0"))
         bo = QPushButton(_("Ouvrir le dossier"))
         bo.clicked.connect(lambda: self._ouvrir(packs_ia.dossier()))
+        bt = QPushButton(_("Voir les téléchargements…"))
+        bt.setToolTip(_("Ce qui se télécharge : progression, vitesse, temps restant, file d'attente"))
+        bt.clicked.connect(lambda: hasattr(self.fenetre, "voir_telechargements") and self.fenetre.voir_telechargements())
         h.addWidget(self.lbl_place, 1)
+        h.addWidget(bt)
         h.addWidget(bo)
         f.addRow(h)
         g2 = QGroupBox(_("Test de ce poste"))
@@ -464,7 +471,9 @@ class DialoguePreferences(QDialog):
                 pass
         p["ia_poste_leger"] = self.poste_leger.isChecked()
         p["ia_gpu"] = self.ia_gpu.isChecked()
-        a_installer = [k for k, c in self.cases_ia.items() if c.isChecked() and not packs_ia.installe(k)]
+        gestion = getattr(self.fenetre, "telechargements", None)
+        a_installer = [k for k, c in self.cases_ia.items() if c.isChecked() and not packs_ia.installe(k)
+                       and not (gestion is not None and gestion.en_file(k))]
         a_retirer = [k for k, c in self.cases_ia.items() if not c.isChecked() and packs_ia.installe(k)]
         if a_installer or a_retirer:
             lignes = []

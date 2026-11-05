@@ -48,6 +48,17 @@ class Fenetre(QMainWindow):
         self.taches = []
         self.encart_global = Encart(self)          # progression visible même sans projet ouvert (téléchargements…)
         self.statusBar().addPermanentWidget(self.encart_global, 1)
+        from .telechargements import GestionTelechargements
+        self.telechargements = GestionTelechargements(self.params, self)
+        self.fenetre_telech = None
+        self.b_telech = QPushButton("")
+        self.b_telech.setFlat(True)
+        self.b_telech.setToolTip(_("Voir ce qui se télécharge : progression, vitesse, temps restant, file d'attente"))
+        self.b_telech.clicked.connect(self.voir_telechargements)
+        self.b_telech.hide()
+        self.statusBar().addPermanentWidget(self.b_telech)
+        self.telechargements.change.connect(self._etat_telech)
+        self.telechargements.termine.connect(self._telech_termine)
         self._menus()
         self.statusBar().showMessage(_("PhilCut {v}", v=VERSION) + (_(" · version portable") if est_portable() else "") +
                                      (_(" · FFmpeg {f}", f=moteur.version()) if moteur.disponible() else _(" · FFmpeg INTROUVABLE : import et export impossibles")))
@@ -132,6 +143,7 @@ class Fenetre(QMainWindow):
         ou.addAction(_("Publier (YouTube, Instagram, TikTok…)…"), self.publier)
         ou.addAction(icone("nuage"), _("Déposer l'export sur le Drive / NAS…"), self.partager)
         ou.addAction(_("Synchroniser maintenant"), self.ecrire_session)
+        ou.addAction(_("Téléchargements (IA locale)…"), self.voir_telechargements)
         ou.addAction(_("Journal des échanges (Drives, IA)…"), self.journal_echanges)
         ou.addAction(_("Ouvrir le dossier des données"), lambda: self.ouvrir_externe(dossier_donnees()))
         ai = mb.addMenu(_("&Aide"))
@@ -321,6 +333,8 @@ class Fenetre(QMainWindow):
                     e.ignore()
                     return
         en_cours = [t for t in self.taches + sum((ed.taches for ed in self.editeurs()), []) if t.isRunning()]
+        if self.telechargements.tache is not None:
+            en_cours.append(self.telechargements.tache)
         if en_cours and QMessageBox.question(self, _("Quitter"), _("{n} opération(s) en cours (export, import…). Quitter quand même ?", n=len(en_cours))) != QMessageBox.Yes:
             e.ignore()
             return
@@ -335,7 +349,8 @@ class Fenetre(QMainWindow):
 
     def attendre_taches(self, ms=30000):
         """Attend la fin des taches de fond (Qt refuse qu'un fil soit detruit en cours de route)."""
-        for t in list(self.taches) + sum((list(ed.taches) for ed in self.editeurs()), []):
+        autres = [self.telechargements.tache] if getattr(self, "telechargements", None) and self.telechargements.tache else []
+        for t in list(self.taches) + sum((list(ed.taches) for ed in self.editeurs()), []) + autres:
             try:
                 if t.isRunning():
                     t.stopper()
@@ -855,8 +870,41 @@ class Fenetre(QMainWindow):
         ed = self.editeur_courant()
         (ed.encart if ed else self.encart_global).suivre(t, texte, action)
 
+    def voir_telechargements(self):
+        from .telechargements import FenetreTelechargements
+        if self.fenetre_telech is None:
+            self.fenetre_telech = FenetreTelechargements(self, self.telechargements)
+        self.fenetre_telech.show()
+        self.fenetre_telech.raise_()
+        self.fenetre_telech.activateWindow()
+
+    def _etat_telech(self):
+        actifs = self.telechargements.actifs()
+        if actifs:
+            enc = next((t for t in actifs if t["etat"] == "en_cours"), actifs[0])
+            self.b_telech.setText(_("⬇ Téléchargements : {n} — {p} %", n=len(actifs), p=int(enc["fraction"] * 100)))
+            self.b_telech.show()
+            if not getattr(self, "_minut_telech", None):
+                self._minut_telech = QTimer(self)
+                self._minut_telech.timeout.connect(self._etat_telech)
+            self._minut_telech.start(1000)
+        else:
+            if getattr(self, "_minut_telech", None):
+                self._minut_telech.stop()
+            fini = [t for t in self.telechargements.travaux if t["etat"] == "fini"]
+            self.b_telech.setText(_("⬇ Téléchargements terminés ({n})", n=len(fini)) if fini else "")
+            self.b_telech.setVisible(bool(self.telechargements.travaux))
+
+    def _telech_termine(self, cle, erreur):
+        if erreur is not None and not isinstance(erreur, InterruptedError):
+            self.encart_global.message(_("✕ Téléchargement de {c} : {e}", c=cle, e=str(erreur)[:160]), 15000)
+
     def installer_ia(self, cles):
-        """Télécharge des modèles d'IA locale (et leur moteur) dans le dossier de PhilCut, en tâche de fond."""
+        """Télécharge des modèles d'IA locale (et leur moteur) dans le dossier de PhilCut : file d'attente visible."""
+        self.telechargements.ajouter(cles)
+        self.voir_telechargements()
+
+    def _installer_ia_ancien(self, cles):
         from . import packs_ia
         ed = self.editeur_courant()
 

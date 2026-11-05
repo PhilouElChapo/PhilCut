@@ -402,6 +402,8 @@ class Editeur(QWidget):
         v.addWidget(self.encart)
         self.apercu.position_changee.connect(lambda t: self.timeline.aller_a(t, emettre=False) if self.apercu.en_lecture else None)
         self.apercu.position_changee.connect(self._temps)
+        self.apercu.viewport().setContextMenuPolicy(Qt.CustomContextMenu)
+        self.apercu.viewport().customContextMenuRequested.connect(self._menu_apercu)
         self.apercu.etat_lecture.connect(self._etat_lecture)
         self.biblio.remplir(projet)
         self.rafraichir()
@@ -599,6 +601,13 @@ class Editeur(QWidget):
         if self.apercu.muet_general:
             self._son(False)
 
+    def _menu_apercu(self, pos):
+        m = QMenu(self)
+        m.addAction(icone("image", theme.COULEURS["texte"]), _("Enregistrer cette image (PNG, pleine définition)…"), self.extraire_image)
+        m.addAction(_("Lecture / pause"), self.apercu.basculer)
+        m.addAction(_("Aperçu rendu (avec les effets)"), self.apercu_rendu)
+        m.exec(self.apercu.viewport().mapToGlobal(pos))
+
     def extraire_image(self):
         """Enregistre l'image sous le curseur, depuis le rush d'origine (pleine définition)."""
         t = self.timeline.position
@@ -787,7 +796,15 @@ class Editeur(QWidget):
         self.projet.ranger(c["piste"])
         self.rafraichir()
         self.timeline.selectionner(c["id"])
+        self._zoom_auto()
         return c
+
+    def _zoom_auto(self):
+        """Un montage court dans une grande timeline : on zoome pour qu'il remplisse la largeur (images lisibles)."""
+        tl = self.timeline
+        largeur = tl.viewport().width()
+        if largeur > 200 and 0 < self.projet.duree() * tl.pps < 0.45 * largeur:
+            tl.ajuster()
 
     def _depose(self, ident, piste, t):
         if ident.startswith("fichier:"):
@@ -913,6 +930,8 @@ class Editeur(QWidget):
                 self.projet.marquer()
                 el["suivi"] = None
                 self.rafraichir()
+        elif quoi == "image":
+            self.extraire_image()
         elif quoi in ("partie_supprimer", "partie_garder"):
             self.partie(quoi == "partie_garder")
         elif quoi == "effets_partie":
