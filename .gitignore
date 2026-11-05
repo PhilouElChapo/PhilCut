@@ -12,3 +12,4 @@ donnees/
 verif.txt
 app/identifiants.py
 .flatpak-builder/
+.local_docs/
