@@ -126,7 +126,7 @@ class Exportateur:
             ext = min(fs[1], duree_clip(suivant) * 0.9) if fs else 0.0
             # fusion avec le précédent : il a été prolongé de ext_prec (seulement s'il touche ce plan)
             fe = E.fusion(E.transition_active(c))
-            fusions.append((fe[0], ext_prec) if fe and ext_prec > 0 else None)
+            fusions.append((fe[0], ext_prec, c["transition"]["id"]) if fe and ext_prec > 0 else None)
             segs.append(self._clip_video(c, suivant, ext))
             longueurs.append(duree_clip(c) + ext)
             ext_prec = ext
@@ -152,8 +152,12 @@ class Exportateur:
         for s, lg, fu in zip(segs[1:], longueurs[1:], fusions[1:]):
             nom = self._nom("vx")
             if fu:
-                genre, d = fu
-                self.filtres.append(f"[{cour}][{s}]xfade=transition={genre}:duration={d:.3f}:offset={long_cour - d:.3f}[{nom}]")
+                genre, d, eid = fu
+                flou = ""
+                if eid in E.FLOU_FUSION:            # filé : flou de mouvement horizontal pendant le passage
+                    k = max(2, int(self.L * E.FLOU_FUSION[eid]))
+                    flou = f",avgblur=sizeX={k}:sizeY=1:enable='between(t,{long_cour - d:.3f},{long_cour:.3f})'"
+                self.filtres.append(f"[{cour}][{s}]xfade=transition={genre}:duration={d:.3f}:offset={long_cour - d:.3f}{flou}[{nom}]")
                 long_cour = long_cour + lg - d
             else:
                 self.filtres.append(f"[{cour}][{s}]concat=n=2:v=1:a=0[{nom}]")
@@ -186,6 +190,9 @@ class Exportateur:
         chaine.append(self._cadrage(c, m))
         chaine.append("format=yuv420p")
         ctx = {"cadence": self.cad, "largeur": self.L, "hauteur": self.H, "duree": d, "debut": c["debut"]}
+        avance = float(c.get("_avance") or 0.0)     # extrait (aperçu) : les effets gardent l'horloge du plan entier
+        if avance > 0:
+            chaine.append(f"setpts=PTS+{avance:.3f}/TB")
         for e in E.actifs(c):
             f = E.filtre(e, ctx) or E.filtre_en_ligne(e["id"])
             if f:
@@ -194,8 +201,10 @@ class Exportateur:
                 self._calque_effet(e, c, ctx)
             if e["id"] == "detourage":
                 chaine = self._detourage(chaine, e, c, d)
-            elif e["id"] in ("double_exposition", "chroma_key"):
+            elif e["id"] in ("double_exposition", "chroma_key", "avant_apres"):
                 chaine = self._avec_second_media(chaine, e, c, d)
+        if avance > 0:
+            chaine.append("setpts=PTS-STARTPTS")
         # transition du clip suivant : sortie de celui-ci
         if suivant and E.transition_active(suivant):
             fs = E.filtre_sortie_transition(suivant["transition"])
@@ -251,17 +260,43 @@ class Exportateur:
         m2 = self.p.media(ident) if ident else None
         if not m2:
             return chaine
+        avance = float(c.get("_avance") or 0.0)
         if m2["genre"] == "image":
             k = self._entree("-loop", "1", "-framerate", str(self.cad), "-t", f"{d:.3f}", "-i", m2["chemin"])
         else:
-            k = self._entree("-stream_loop", "-1", "-t", f"{d:.3f}", "-i", m2["chemin"])
+            k = self._entree("-stream_loop", "-1", "-ss", f"{avance:.3f}", "-t", f"{d:.3f}", "-i", m2["chemin"])
         a, b = self._nom("prim"), self._nom("sec")
-        self.filtres.append(",".join(chaine) + f"[{a}]")
+        self.filtres.append(",".join(chaine + (["setpts=PTS-STARTPTS"] if avance > 0 else [])) + f"[{a}]")
         self.filtres.append(f"[{k}:v]fps={self.cad},scale={self.L}:{self.H}:force_original_aspect_ratio=increase,crop={self.L}:{self.H},format=yuv420p,trim=duration={d:.3f},setpts=PTS-STARTPTS[{b}]")
         out = self._nom("mix")
         if e["id"] == "double_exposition":
             op = float((e.get("params") or {}).get("opacite", 0.5))
             self.filtres.append(f"[{a}][{b}]blend=all_mode=screen:all_opacity={op:.2f}[{out}]")
+        elif e["id"] == "avant_apres":
+            pa = dict(E.defauts("avant_apres"))
+            pa.update(e.get("params") or {})
+            police = os.path.join(T.dossier_polices(), "Nunito-800.ttf").replace("\\", "/").replace(":", "\\:")
+            fs = max(18, int(self.H * 0.045))
+            boite = f":box=1:boxcolor=black@0.55:boxborderw={fs // 3}:fontcolor=white:fontsize={fs}:fontfile='{police}'"
+            if pa.get("mode") == "moitie":
+                g_, mz = self._nom("av"), self._nom("avm")
+                self.filtres.append(f"[{b}]crop=iw/2:ih:0:0[{g_}]")
+                self.filtres.append(f"[{a}][{g_}]overlay=0:0,drawbox=x=iw/2-2:y=0:w=4:h=ih:color=white@0.9:t=fill[{mz}]")
+                lib = (f",drawtext=text='AVANT':x=w*0.04:y=h*0.06{boite},drawtext=text='APRES':x=w*0.96-tw:y=h*0.06{boite}"
+                       if pa.get("libelles", True) else "")
+                self.filtres.append(f"[{mz}]null{lib}[{out}]")
+            else:
+                dep = float(pa.get("debut", 0.5)) - avance
+                du = float(pa.get("duree", 2.0))
+                if dep < 0:                     # extrait commencé pendant le rideau : il finit à la même heure
+                    du, dep = max(0.05, du + dep), 0.0
+                dep = max(0.0, min(d - 0.1, dep))
+                du = max(0.05, min(d - dep - 0.02, du))
+                mz = self._nom("avm")
+                self.filtres.append(f"[{b}][{a}]xfade=transition=wiperight:duration={du:.3f}:offset={dep:.3f}[{mz}]")
+                lib = (f",drawtext=text='AVANT':x=w*0.04:y=h*0.06{boite}:enable='lt(t,{dep + du:.3f})'"
+                       f",drawtext=text='APRES':x=w*0.96-tw:y=h*0.06{boite}:enable='gt(t,{dep:.3f})'" if pa.get("libelles", True) else "")
+                self.filtres.append(f"[{mz}]null{lib}[{out}]")
         elif e["id"] == "chroma_key":
             coul = (e.get("params") or {}).get("couleur", "#00ff00").lstrip("#")
             tol = float((e.get("params") or {}).get("tolerance", 0.3))
@@ -652,6 +687,7 @@ def extrait(projet, debut, fin):
             if c["debut"] < debut:
                 from .projet import decaler_effets
                 delta = debut - c["debut"]
+                c["_avance"] = float(c.get("_avance") or 0.0) + delta
                 c["src_debut"] += delta * c.get("vitesse", 1.0)
                 c["debut"] = debut
                 c["transition"] = None

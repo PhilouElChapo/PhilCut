@@ -106,4 +106,10 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    code = main()
+    try:                                # tout est enregistré à la fermeture de la fenêtre : on sort sans laisser Python
+        sys.stdout.flush()              # détruire les objets Qt dans le désordre (plantage possible à l'arrêt)
+        sys.stderr.flush()
+    except Exception:       # noqa: BLE001 : version sans console (Windows)
+        pass
+    os._exit(code or 0)

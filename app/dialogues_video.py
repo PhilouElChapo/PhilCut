@@ -507,41 +507,15 @@ class DialogueEffets(QDialog):
             return
         fi = E.fiche(e["id"])
         self.aide.setText(fi["description"] if fi else "")
-        for (cle, lib, genre, defaut, mini, maxi) in (fi["parametres"] if fi else []):
-            val = (e.get("params") or {}).get(cle, defaut)
-            if genre == "float":
-                w = QDoubleSpinBox()
-                w.setRange(float(mini), float(maxi))
-                w.setSingleStep((float(maxi) - float(mini)) / 20 or 0.1)
-                w.setValue(float(val))
-                w.valueChanged.connect(lambda v, c=cle, e=e: e.setdefault("params", {}).__setitem__(c, v))
-            elif genre == "int":
-                w = QSpinBox()
-                w.setRange(int(mini), int(maxi))
-                w.setValue(int(val))
-                w.valueChanged.connect(lambda v, c=cle, e=e: e.setdefault("params", {}).__setitem__(c, v))
-            elif genre == "bool":
-                w = QCheckBox()
-                w.setChecked(bool(val))
-                w.toggled.connect(lambda v, c=cle, e=e: e.setdefault("params", {}).__setitem__(c, v))
-            elif genre == "choix":       # mini = liste (valeur, libellé)
-                w = QComboBox()
-                for v, l in mini:
-                    w.addItem(l, v)
-                    if v == val:
-                        w.setCurrentIndex(w.count() - 1)
-                w.currentIndexChanged.connect(lambda _i, w=w, c=cle, e=e: e.setdefault("params", {}).__setitem__(c, w.currentData()))
-            elif genre == "media":
-                w = QComboBox()
-                w.addItem(_("(choisir)"), "")
-                for m in self.medias:
-                    w.addItem(m["nom"], m["id"])
-                    if m["id"] == val:
-                        w.setCurrentIndex(w.count() - 1)
-                w.currentIndexChanged.connect(lambda _i, w=w, c=cle, e=e: e.setdefault("params", {}).__setitem__(c, w.currentData()))
-            else:   # couleur
-                w = QLineEdit(str(val))
-                w.textChanged.connect(lambda v, c=cle, e=e: e.setdefault("params", {}).__setitem__(c, v))
+        from .inspecteur import widget_parametre
+        for spec in (fi["parametres"] if fi else []):
+            cle, lib = spec[0], spec[1]
+            val = (e.get("params") or {}).get(cle, spec[3])
+
+            def changer(v, c=cle, e=e):
+                e.setdefault("params", {})[c] = v
+                self._minuteur_apercu.start(600)          # l'aperçu se refait avec le nouveau réglage
+            w = widget_parametre(spec, val, changer, self.medias)
             self.form.addRow(lib, w)
 
     def resultat(self):

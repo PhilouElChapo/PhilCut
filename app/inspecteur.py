@@ -18,7 +18,7 @@ from .projet import duree_clip, fin_clip
 
 
 def widget_parametre(spec, val, on_change, medias=()):
-    """Un réglage d'effet (float, int, bool, choix, media, couleur) → widget relié à on_change(valeur)."""
+    """Un réglage d'effet (float, int, bool, choix, media, fichier, couleur) → widget relié à on_change(valeur)."""
     cle, lib, genre, defaut, mini, maxi = spec
     if genre == "float":
         w = QDoubleSpinBox()
@@ -51,6 +51,20 @@ def widget_parametre(spec, val, on_change, medias=()):
             if m["id"] == val:
                 w.setCurrentIndex(w.count() - 1)
         w.currentIndexChanged.connect(lambda _i, w=w: on_change(w.currentData()))
+    elif genre == "fichier":                # mini = filtre de la fenêtre d'ouverture (ex. « LUT (*.cube *.3dl) »)
+        import os
+        w = QPushButton(os.path.basename(str(val)) if val else _("Choisir un fichier…"))
+        w.setToolTip(str(val) or "")
+        w.setStyleSheet("text-align:left;padding:3px 8px")
+
+        def choisir_fichier():
+            from PySide6.QtWidgets import QFileDialog
+            ch, _f = QFileDialog.getOpenFileName(w, lib, os.path.dirname(str(val)) if val else "", str(mini or "*"))
+            if ch:
+                w.setText(os.path.basename(ch))
+                w.setToolTip(ch)
+                on_change(ch)
+        w.clicked.connect(choisir_fichier)
     else:                                   # couleur
         w = QPushButton(str(val))
         w.setStyleSheet(f"background:{val};color:#000" if str(val).startswith("#") else "")

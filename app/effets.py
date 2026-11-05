@@ -28,6 +28,11 @@ CATALOGUE = {
                     [("force", _("Force"), "float", 1.0, 0.0, 2.0)], None),
     "cinema": ("look", _("Cinéma"), _("Grain léger, bandes noires, contraste de film."),
                [("bandes", _("Bandes noires"), "bool", True, 0, 1), ("grain", _("Grain"), "float", 0.3, 0.0, 1.0)], None),
+    "lut": ("look", _("Mon look (fichier LUT)"), _("Applique un look tout fait d'un fichier .cube ou .3dl (étalonnage de cinéaste, preset de "
+                                                    "votre caméra, téléchargé sur Internet)."),
+            [("fichier", _("Fichier LUT"), "fichier", "", "LUT (*.cube *.3dl)", 0), ("force", _("Force"), "float", 1.0, 0.1, 1.0)], None),
+    "cadre_photo": ("look", _("Cadre photo"), _("Le plan devient une photo : bord blanc, légère inclinaison, posée sur l'image floutée (image figée, souvenir)."),
+                    [("inclinaison", _("Inclinaison (°)"), "float", -3.0, -15.0, 15.0), ("taille", _("Taille"), "float", 0.78, 0.4, 0.95)], None),
     "vintage": ("look", _("Vintage"), _("Couleurs passées, vignettage, un peu de grain."), [], None),
     "noir_blanc": ("look", _("Noir et blanc"), _("Noir et blanc contrasté."), [], None),
     "y2k": ("look", _("Y2K"), _("Saturé, lumineux, légère aberration colorée : le style des années 2000."), [], None),
@@ -38,6 +43,12 @@ CATALOGUE = {
              [("rayon", _("Rayon"), "float", 12.0, 2.0, 40.0), ("intensite", _("Intensité"), "float", 0.6, 0.1, 1.0)], None),
     "glitch": ("wahou", _("Glitch numérique"), _("Décalage des couleurs, bruit, scintillement : interférences."),
                [("force", _("Force"), "float", 1.0, 0.2, 3.0)], None),
+    "avant_apres": ("wahou", _("Avant / après"), _("Compare ce plan à une autre image ou vidéo du projet : un rideau glisse de l'« avant » à "
+                                                   "l'« après », ou l'image reste coupée en deux. Libellés AVANT / APRES."),
+                    [("media", _("Image ou vidéo « avant »"), "media", "", 0, 0),
+                     ("mode", _("Présentation"), "choix", "rideau", [("rideau", _("Rideau qui glisse")), ("moitie", _("Moitié / moitié"))], 0),
+                     ("debut", _("Le rideau part à (s)"), "float", 0.5, 0.0, 60.0), ("duree", _("Durée du rideau (s)"), "float", 2.0, 0.3, 10.0),
+                     ("libelles", _("Libellés AVANT / APRES"), "bool", True, 0, 1)], None),
     "double_exposition": ("wahou", _("Double exposition"), _("Superpose un autre plan ou une image en transparence."),
                           [("media", _("Image ou vidéo à superposer"), "media", "", 0, 0), ("opacite", _("Opacité"), "float", 0.5, 0.1, 0.9)], None),
     "chroma_key": ("wahou", _("Fond vert (chroma key)"), _("Détoure sur fond uni et pose le sujet sur un autre décor."),
@@ -59,6 +70,9 @@ CATALOGUE = {
                    [("force", _("Lissage"), "int", 10, 2, 30)], None),
     "hyperlapse": ("mouvement", _("Hyperlapse"), _("Accélération forte et stabilisée d'une phase longue."),
                    [("facteur", _("Facteur"), "int", 8, 2, 32)], None),
+    "tremblement": ("mouvement", _("Tremblement (secousse)"), _("La caméra tremble : choc, turbulence, explosion, moteur qui démarre. Peut s'amortir."),
+                    [("force", _("Force"), "float", 1.0, 0.2, 3.0), ("vitesse", _("Vitesse"), "float", 1.0, 0.3, 3.0),
+                     ("amorti", _("S'amortit (choc)"), "bool", False, 0, 1)], None),
     # ---- corrections
     "debruiter": ("correction", _("Débruiter"), _("Réduit le grain des vidéos sombres."), [("force", _("Force"), "float", 1.0, 0.2, 3.0)], None),
     "eclaircir": ("correction", _("Eclaircir"), _("Remonte les basses lumières sans brûler les hautes."), [("force", _("Force"), "float", 1.0, 0.2, 2.0)], None),
@@ -75,6 +89,9 @@ CATALOGUE = {
     "t_zoom": ("transition", _("Zoom"), _("Zoom rapide vers l'avant à la coupe."), [("duree", _("Durée (s)"), "float", 0.5, 0.2, 1.5)], None),
     "t_balayage": ("transition", _("Balayage"), _("Un volet traverse l'image."), [("duree", _("Durée (s)"), "float", 0.5, 0.2, 1.5)], None),
     "t_code": ("transition", _("Dissolution en code"), _("L'image se dissout en caractères verts (Matrix)."), [("duree", _("Durée (s)"), "float", 1.0, 0.4, 2.5)], None),
+    "t_choc": ("transition", _("Choc"), _("Coupe sèche avec flash et secousse de l'image : impact, atterrissage, saut."),
+               [("duree", _("Durée (s)"), "float", 0.5, 0.2, 1.5)], None),
+    "t_rotation": ("transition", _("Rotation"), _("Le plan arrive en tournant sur lui-même."), [("duree", _("Durée (s)"), "float", 0.6, 0.2, 2.0)], None),
     # ---- transitions « fusion » : les deux plans se mélangent (FFmpeg xfade) ; la fin du plan précédent se prolonge
     #      pendant la transition (images suivantes du rush, ou dernière image figée) : la durée du montage ne change pas
     "t_fondu_enchaine": ("transition", _("Fondu enchaîné"), _("Les deux plans se mélangent en douceur."), [("duree", _("Durée (s)"), "float", 0.8, 0.2, 3.0)], None),
@@ -83,6 +100,8 @@ CATALOGUE = {
     "t_cercle": ("transition", _("Cercle"), _("Le plan suivant s'ouvre en cercle depuis le centre."), [("duree", _("Durée (s)"), "float", 0.8, 0.2, 2.0)], None),
     "t_pixels": ("transition", _("Pixels"), _("L'image se pixellise puis se reforme sur le plan suivant."), [("duree", _("Durée (s)"), "float", 0.7, 0.2, 2.0)], None),
     "t_flou_fondu": ("transition", _("Fondu flou"), _("Passage flou et lumineux d'un plan à l'autre."), [("duree", _("Durée (s)"), "float", 0.7, 0.2, 2.0)], None),
+    "t_file": ("transition", _("Filé (whip pan)"), _("Panoramique très rapide et flou : la caméra « fouette » d'un plan à l'autre."),
+               [("duree", _("Durée (s)"), "float", 0.35, 0.15, 1.0)], None),
     "t_diagonale": ("transition", _("Diagonale"), _("Le plan suivant arrive en biais depuis un coin."), [("duree", _("Durée (s)"), "float", 0.6, 0.2, 2.0)], None),
     # ---- personne (IA)
     "halo": ("personne", _("Halo"), _("Aura lumineuse autour de la personne détourée."),
@@ -259,11 +278,62 @@ def filtre(effet, ctx=None):
         return (f"zoompan=z='if(lt(on,{n}),1.4-0.4*on/{n},1)':d=1:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s={L}x{H}:fps={cad}")
     if i == "bullet_time":
         return "tmix=frames=6,eq=contrast=1.15:saturation=0.85"
+    if i == "tremblement":
+        k = 0.012 + 0.02 * f("force")                   # part de l'image qui sert de marge à la secousse
+        v = f("vitesse")
+        amort = "*exp(-t*2.2)" if _p(effet, "amorti") else ""
+        L, H = int(ctx.get("largeur") or 1920), int(ctx.get("hauteur") or 1080)
+        return (f"crop=w=iw*{1 - 2 * k:.4f}:h=ih*{1 - 2 * k:.4f}:x='iw*{k:.4f}*(1+sin(t*{23 * v:.2f})*sin(t*{7.3 * v:.2f}+1)){amort}':"
+                f"y='ih*{k:.4f}*(1+cos(t*{19 * v:.2f})*sin(t*{5.1 * v:.2f}+2)){amort}',scale={L}:{H}")
+    if i == "lut":
+        chemin = str(_p(effet, "fichier") or "")
+        if not chemin:
+            return None
+        import os as _os
+        if not _os.path.exists(chemin):
+            return None
+        echappe = chemin.replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
+        force = f("force")
+        if force >= 0.99:
+            return f"lut3d=file='{echappe}'"
+        n = _etiquette()
+        return (f"split[{n}a][{n}b];[{n}b]lut3d=file='{echappe}'[{n}c];[{n}a][{n}c]blend=all_mode=normal:all_opacity={force:.2f}")
+    if i == "cadre_photo":
+        L, H = int(ctx.get("largeur") or 1920), int(ctx.get("hauteur") or 1080)
+        tl = max(0.3, min(0.97, f("taille")))
+        w, h = int(L * tl) // 2 * 2, int(H * tl) // 2 * 2
+        bord = max(6, int(min(L, H) * 0.025)) // 2 * 2
+        ang = f("inclinaison")
+        n = _etiquette()
+        return (f"split[{n}a][{n}b];[{n}b]gblur=sigma=25,eq=brightness=-0.12:saturation=0.7[{n}f];"
+                f"[{n}a]scale={w}:{h},pad={w + 2 * bord}:{h + 2 * bord + bord * 3}:{bord}:{bord}:color=white,format=rgba,"
+                f"rotate={ang}*PI/180:c=none:ow=rotw({ang}*PI/180):oh=roth({ang}*PI/180)[{n}p];"
+                f"[{n}f][{n}p]overlay=(W-w)/2:(H-h)/2:format=auto,format=yuv420p")
+    if i == "t_choc":
+        d = max(0.1, f("duree"))
+        L, H = int(ctx.get("largeur") or 1920), int(ctx.get("hauteur") or 1080)
+        return (f"fade=t=in:st=0:d={min(0.15, d / 2):.2f}:c=white,"
+                f"crop=w=iw*0.94:h=ih*0.94:x='iw*0.03*(1+if(lt(t,{d:.2f}),sin(t*95)*exp(-t*{6 / d:.2f}),0))':"
+                f"y='ih*0.03*(1+if(lt(t,{d:.2f}),cos(t*83)*exp(-t*{6 / d:.2f}),0))',scale={L}:{H}")
+    if i == "t_rotation":
+        d = max(0.1, f("duree"))
+        return (f"rotate='if(lt(t,{d:.2f}),PI*pow(1-t/{d:.2f},2),0)':c=black,"
+                f"fade=t=in:st=0:d={d / 2:.2f}")
     return None
 
 
+_N_ETIQ = [0]
+
+
+def _etiquette():
+    """Préfixe d'étiquettes unique pour les sous-graphes de filtres (plusieurs effets du même genre dans un export)."""
+    _N_ETIQ[0] += 1
+    return f"fx{_N_ETIQ[0]}_"
+
+
 XFADE = {"t_fondu_enchaine": "fade", "t_dissolution": "dissolve", "t_glisse": "slideleft", "t_cercle": "circleopen",
-         "t_pixels": "pixelize", "t_flou_fondu": "hblur", "t_diagonale": "diagbr"}
+         "t_pixels": "pixelize", "t_flou_fondu": "hblur", "t_diagonale": "diagbr", "t_file": "slideleft"}
+FLOU_FUSION = {"t_file": 0.06}          # transition fusion suivie d'un flou de mouvement horizontal (part de la largeur)
 
 
 def fusion(effet):

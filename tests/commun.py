@@ -19,7 +19,29 @@ def application():
     if _app is None:
         from PySide6.QtWidgets import QApplication
         _app = QApplication.instance() or QApplication([])
+        _sortie_propre()
     return _app
+
+
+def _sortie_propre():
+    """Fin du test : on sort tout de suite avec le bon code, sans laisser Python détruire les objets Qt dans le désordre
+    (la destruction en vrac des fenêtres à l'arrêt de l'interpréteur corrompt parfois la mémoire : « malloc… Aborted »)."""
+    import atexit
+    code = {"v": 0}
+    sortie = sys.exit
+
+    def noter(c=0):
+        code["v"] = c if isinstance(c, int) else (0 if c is None else 1)
+        sortie(c)
+    sys.exit = noter
+
+    def fin():
+        try:
+            sys.stdout.flush()
+            sys.stderr.flush()
+        finally:
+            os._exit(code["v"])
+    atexit.register(fin)
 
 
 def video_test(dossier, nom="a.mp4", duree=4, taille="640x360", cadence=30, son=True):

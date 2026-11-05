@@ -139,7 +139,7 @@ class TestMoteur(unittest.TestCase):
             f = effets.filtre(e, ctx)
             if k in effets.GENERES or k in effets.XFADE:
                 self.assertIsNone(f, k)
-            elif k not in ("double_exposition", "chroma_key", "detourage"):
+            elif k not in ("double_exposition", "chroma_key", "detourage", "avant_apres", "lut"):     # second média ou fichier à choisir
                 self.assertTrue(f, k)
 
     def test_ass(self):
