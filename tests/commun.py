@@ -2,6 +2,7 @@
 import os, sys, tempfile
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("PHILCUT_SANS_MULTIMEDIA", "1")
+os.environ.setdefault("PHILCUT_APERCU_FIDELE", "0")      # pas de rendu en arrière-plan pendant les tests (sauf demande explicite)
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, RACINE)
 # donnees dans un dossier jetable : les tests ne touchent jamais aux vrais reglages

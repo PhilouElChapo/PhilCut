@@ -94,7 +94,7 @@ class Apercu(QGraphicsView):
         self.badge_rendu.setZValue(51)
         self.badge_rendu.setBrush(QColor("#ffd24a"))
         self.badge_rendu.hide()
-        self.fidele = bool(self.params.get("apercu_fidele", True))
+        self.fidele = bool(self.params.get("apercu_fidele", True)) and _os.environ.get("PHILCUT_APERCU_FIDELE") != "0"
         self._minut_rendu = QTimer(self)
         self._minut_rendu.setSingleShot(True)
         self._minut_rendu.setInterval(450)
@@ -110,6 +110,7 @@ class Apercu(QGraphicsView):
     def changer_projet(self, projet):
         self.projet = projet
         self.arreter()
+        self._ferme = False
         L, H = projet.taille if projet else (1920, 1080)
         self.cadre.setRect(0, 0, L, H)
         if self.video:
@@ -170,7 +171,7 @@ class Apercu(QGraphicsView):
         return (len(getattr(self.projet, "_pile", [])), len(getattr(self.projet, "_refaire", [])))
 
     def _lancer_rendu(self):
-        if not self.fidele or self.en_lecture or not self.projet or self.projet.duree() <= 0 or self.t > self.projet.duree():
+        if getattr(self, "_ferme", False) or not self.fidele or self.en_lecture or not self.projet or self.projet.duree() <= 0 or self.t > self.projet.duree():
             return
         if self.segment and self.segment[0] - 0.02 <= self.t < self.segment[1] - 0.02:
             return                          # le passage rendu est déjà l'image fidèle
@@ -435,6 +436,7 @@ class Apercu(QGraphicsView):
 
     def arreter(self):
         self.pause()
+        self._ferme = True
         self._minut_rendu.stop()
         t = self._tache_rendu
         if t is not None and t.isRunning():

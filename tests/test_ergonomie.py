@@ -84,7 +84,9 @@ class TestEffetSurUnePartie(unittest.TestCase):
         self.assertEqual(len(ed.projet.clips), 3)
         self.assertEqual(ed.timeline.selection(), [c["id"]])
         ed.projet.modifie = False
+        f.attendre_taches()
         f.close()
+        app.processEvents()
 
 
 class TestHistorique(unittest.TestCase):
