@@ -168,6 +168,29 @@ class TestInterface030(unittest.TestCase):
         ed.apercu.regler_fidele(False)
         ed.apercu._minut_rendu.stop()
 
+    def test_deplacer_texte_dans_image(self):
+        """Glisser un texte dans l'aperçu change sa position (x, y) dans le projet, avec un Annuler."""
+        from PySide6.QtTest import QTest
+        from PySide6.QtCore import Qt, QPoint
+        ed = self.ed
+        ed.apercu.regler_fidele(False)
+        t = ed.projet.titres[0]
+        t["x"], t["y"] = 0.5, 0.85
+        ed.timeline.aller_a(2.0)
+        app.processEvents()
+        pg = next(p for p in ed.apercu.poignees if p.ident == t["id"])
+        vp = ed.apercu.viewport()
+        c = ed.apercu.mapFromScene(pg.sceneBoundingRect().center())
+        avant = len(ed.projet._pile)
+        QTest.mousePress(vp, Qt.LeftButton, Qt.NoModifier, c)
+        QTest.mouseMove(vp, c + QPoint(-40, -30))
+        QTest.mouseMove(vp, c + QPoint(-80, -60))
+        QTest.mouseRelease(vp, Qt.LeftButton, Qt.NoModifier, c + QPoint(-80, -60))
+        app.processEvents()
+        self.assertLess(t["x"], 0.5)
+        self.assertLess(t["y"], 0.85)
+        self.assertEqual(len(ed.projet._pile), avant + 1)
+
     def test_image_rendue(self):
         from app import export
         p = self.ed.projet

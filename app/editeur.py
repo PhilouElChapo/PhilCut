@@ -413,6 +413,9 @@ class Editeur(QWidget):
         v.addWidget(self.encart)
         self.apercu.position_changee.connect(lambda t: self.timeline.aller_a(t, emettre=False) if self.apercu.en_lecture else None)
         self.apercu.position_changee.connect(self._temps)
+        self.apercu.calque_deplace.connect(self._calque_deplace)
+        self.apercu.calque_clique.connect(lambda ident: (self._ouvrir_volet(1), self.inspecteur.montrer_selection([ident])))
+        self.apercu.pas_image.connect(lambda n: self.aller_a(self.timeline.position + n / self.projet.cadence))
         self.apercu.viewport().setContextMenuPolicy(Qt.CustomContextMenu)
         self.apercu.viewport().customContextMenuRequested.connect(self._menu_apercu)
         self.apercu.etat_lecture.connect(self._etat_lecture)
@@ -738,6 +741,17 @@ class Editeur(QWidget):
 
     def _selection(self, ids):
         self.inspecteur.montrer_selection(ids)
+
+    def _calque_deplace(self, ident, x, y):
+        """Un texte ou un Goodie déplacé à la souris dans l'image."""
+        for e in self.projet.titres + self.projet.goodies:
+            if e["id"] == ident:
+                self.projet.marquer()
+                e["x"], e["y"] = round(x, 4), round(y, 4)
+                self._modifie()
+                if self.inspecteur._cible and self.inspecteur._cible[1] == ident:
+                    self.inspecteur.montrer_selection([ident])
+                return
 
     def _element_clique(self, clip_id, genre, i):
         """Clic sur une étiquette d'effet ou une transition dans la timeline : l'Inspecteur s'ouvre dessus."""

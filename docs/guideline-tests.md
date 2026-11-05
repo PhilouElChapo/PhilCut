@@ -168,7 +168,8 @@ Parcours à faire dans l'ordre, avec un rush de quelques secondes posé deux foi
 5. **Texte et Goodie dans l'Inspecteur** : cliquez sur le texte (piste Titres) : texte, animation, effet, taille, couleur, début, fin, position ; « Supprimer ce texte ». Même chose pour un Goodie.
 6. **Volet agrandi** : bouton ⤢ en haut à droite du volet : l'Inspecteur (ou la Proposition) s'ouvre dans une fenêtre redimensionnable ; à sa fermeture il revient à sa place.
 7. **Barre d'information** : en bas à droite, « ✓ Prêt » au repos ; pendant un export, un aperçu, un téléchargement : « ● Export … — 43 % · 1 autre(s) ». Clic : le **Centre d'activité** (toutes les tâches, état, détail, durée, reste, Arrêter ; Outils › Centre d'activité).
-8. **Catalogue des effets** : familles dépliables (l'état est mémorisé), recherche en haut, clic droit sur un effet › « ★ Ajouter aux favoris » : il passe dans la famille « ★ Favoris » en tête ; « Récents » liste les derniers posés.
+8. **Déplacer dans l'image** : survolez un texte ou un Goodie dans l'aperçu : un cadre pointillé jaune apparaît ; glissez-le : il se déplace (l'Inspecteur suit, Annuler possible). Double-clic dessus : ses réglages. La molette sur l'image avance ou recule d'une image.
+9. **Catalogue des effets** : familles dépliables (l'état est mémorisé), recherche en haut, clic droit sur un effet › « ★ Ajouter aux favoris » : il passe dans la famille « ★ Favoris » en tête ; « Récents » liste les derniers posés.
 
 ## T10 — Le JUGE (validation à l'aveugle)
 

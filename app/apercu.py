@@ -29,6 +29,9 @@ PISTES_SON = ("audio", "voix")
 class Apercu(QGraphicsView):
     position_changee = Signal(float)
     etat_lecture = Signal(bool)
+    calque_deplace = Signal(str, float, float)      # id d'un texte ou Goodie déplacé à la souris dans l'image : x, y (0..1)
+    calque_clique = Signal(str)                     # id : ouvrir dans l'Inspecteur
+    pas_image = Signal(int)                         # molette sur l'image : ±1 image
 
     def __init__(self, projet=None, params=None, parent=None):
         super().__init__(parent)
@@ -458,18 +461,42 @@ class Apercu(QGraphicsView):
 
     # ---------------------------------------------------------------- calques : titres et goodies
     def _dessiner_calques(self):
-        for it in self.calques:
+        for it in self.calques + getattr(self, "poignees", []):
             self._scene.removeItem(it)
         self.calques = []
+        self.poignees = []
         if not self.projet:
             return
         L, H = self.projet.taille
         for t in self.projet.titres:
             if t["debut"] <= self.t <= t["fin"]:
+                avant = len(self.calques)
                 self._titre(t, L, H)
+                if not t.get("suivi"):
+                    self._poignee(t, self.calques[avant:], L, H)
         for g in self.projet.goodies:
             if g["debut"] <= self.t <= g["fin"]:
+                avant = len(self.calques)
                 self._goodie(g, L, H)
+                if not (g.get("suivi") or {}).get("positions"):
+                    self._poignee(g, self.calques[avant:], L, H)
+
+    def _poignee(self, elem, items, L, H):
+        """Cadre invisible par-dessus un texte ou un Goodie : on le déplace à la souris directement dans l'image."""
+        if not items:
+            return
+        r = items[0].sceneBoundingRect()
+        for it in items[1:]:
+            r = r.united(it.sceneBoundingRect())
+        pg = Poignee(self, elem["id"], r.adjusted(-6, -6, 6, 6), L, H)
+        self._scene.addItem(pg)
+        self.poignees.append(pg)
+
+    def wheelEvent(self, e):
+        d = e.angleDelta().y()
+        if d:
+            self.pas_image.emit(-1 if d > 0 else 1)
+        e.accept()
 
     def _titre(self, t, L, H):
         taille = H * 0.055 * float(t.get("taille") or 1.0)
@@ -568,3 +595,41 @@ class Apercu(QGraphicsView):
             with open(m["chemin"], "rb") as f:
                 return f.read()
         return moteur.image(m.get("proxy") or m["chemin"], c["src_debut"] + (self.t - c["debut"]) * c.get("vitesse", 1.0), largeur)
+
+
+class Poignee(QGraphicsRectItem):
+    """Cadre déplaçable posé sur un texte ou un Goodie dans l'aperçu : glisser le déplace, double-clic ouvre l'Inspecteur."""
+
+    def __init__(self, apercu, ident, rect, L, H):
+        super().__init__(rect)
+        self.apercu, self.ident, self.L, self.H = apercu, ident, L, H
+        self.setZValue(60)
+        self.setAcceptHoverEvents(True)
+        self.setFlags(QGraphicsRectItem.ItemIsMovable | QGraphicsRectItem.ItemIsSelectable)
+        self.setPen(QPen(QColor(255, 210, 74, 0), 2, Qt.DashLine))
+        self.setBrush(Qt.NoBrush)
+        self.setCursor(Qt.OpenHandCursor)
+        self.setToolTip(_("Glissez pour déplacer · double-clic : réglages"))
+
+    def hoverEnterEvent(self, e):
+        self.setPen(QPen(QColor(255, 210, 74, 220), 2, Qt.DashLine))
+        super().hoverEnterEvent(e)
+
+    def hoverLeaveEvent(self, e):
+        self.setPen(QPen(QColor(255, 210, 74, 0), 2, Qt.DashLine))
+        super().hoverLeaveEvent(e)
+
+    def mousePressEvent(self, e):
+        self.setCursor(Qt.ClosedHandCursor)
+        super().mousePressEvent(e)
+
+    def mouseReleaseEvent(self, e):
+        super().mouseReleaseEvent(e)
+        self.setCursor(Qt.OpenHandCursor)
+        c = self.sceneBoundingRect().center()
+        x = min(1.0, max(0.0, c.x() / self.L))
+        y = min(1.0, max(0.0, c.y() / self.H))
+        self.apercu.calque_deplace.emit(self.ident, x, y)
+
+    def mouseDoubleClickEvent(self, e):
+        self.apercu.calque_clique.emit(self.ident)
