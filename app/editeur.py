@@ -408,6 +408,14 @@ class Editeur(QWidget):
         self.timeline.element_change.connect(lambda cid: self.inspecteur.rafraichir(cid))
         self.split_v.addWidget(self.timeline)
         self.split_v.setSizes([620, 260])
+        # la part lecteur / timeline et les largeurs des volets sont mémorisées sur ce poste
+        tailles = self.params.get("tailles_vue") or {}
+        if tailles.get("v") and len(tailles["v"]) == 2:
+            self.split_v.setSizes(tailles["v"])
+        if tailles.get("h") and len(tailles["h"]) == 4:
+            self.split_h.setSizes(tailles["h"])
+        self.split_v.splitterMoved.connect(lambda *_a: self._memoriser_tailles())
+        self.split_h.splitterMoved.connect(lambda *_a: self._memoriser_tailles())
         v.addWidget(self.split_v, 1)
         self.encart = Encart(self)
         v.addWidget(self.encart)
@@ -855,6 +863,10 @@ class Editeur(QWidget):
         self.timeline.selectionner(c["id"])
         self._zoom_auto()
         return c
+
+    def _memoriser_tailles(self):
+        self.params["tailles_vue"] = {"v": self.split_v.sizes(), "h": self.split_h.sizes()}
+        self.params.enregistrer()
 
     def _zoom_auto(self):
         """Un montage court dans une grande timeline : on zoome pour qu'il remplisse la largeur (images lisibles)."""

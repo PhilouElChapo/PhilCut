@@ -102,15 +102,17 @@ class Inspecteur(QWidget):
         self.contenu.adjustSize()
         self.zone.verticalScrollBar().setValue(defil)
 
-    def _marquer(self):
-        """Un seul « Annuler » pour une rafale de changements (curseur qu'on tire)."""
+    def _marquer(self, cle=None):
+        """Un seul « Annuler » pour une rafale de changements du même réglage (curseur qu'on tire) ; un autre réglage
+        ou une pause de plus d'une seconde et demie ouvrent un nouvel « Annuler »."""
         t = time.monotonic()
-        if t - self._dernier_marquage > 1.5:
+        if t - self._dernier_marquage > 1.5 or cle != getattr(self, "_derniere_cle", None):
             self.projet.marquer()
         self._dernier_marquage = t
+        self._derniere_cle = cle
 
     def _changer(self, f, reconstruire=True):
-        self._marquer()
+        self._marquer(getattr(f, "__code__", None))
         f()
         self.ed._modifie()
         if reconstruire:

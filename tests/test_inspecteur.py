@@ -128,10 +128,13 @@ class TestInterface030(unittest.TestCase):
         ed.inspecteur.montrer_texte(t)
         app.processEvents()
         avant = len(ed.projet._pile)
-        ed.inspecteur._changer(lambda: t.__setitem__("taille", 1.2), reconstruire=False)
-        ed.inspecteur._changer(lambda: t.__setitem__("taille", 1.3), reconstruire=False)
+        regle = lambda v: (lambda: t.__setitem__("taille", v))        # même curseur = même code
+        ed.inspecteur._changer(regle(1.2), reconstruire=False)
+        ed.inspecteur._changer(regle(1.3), reconstruire=False)
         self.assertEqual(len(ed.projet._pile), avant + 1)       # une rafale = un seul Annuler
         self.assertEqual(t["taille"], 1.3)
+        ed.inspecteur._changer(lambda: t.__setitem__("couleur", "#ff0000"), reconstruire=False)
+        self.assertEqual(len(ed.projet._pile), avant + 2)       # un autre réglage = un nouvel Annuler
         g = ed.projet.goodies[0]
         ed.inspecteur.montrer_goodie(g)
         app.processEvents()
