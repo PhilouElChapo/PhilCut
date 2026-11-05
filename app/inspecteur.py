@@ -341,11 +341,11 @@ class Inspecteur(QWidget):
         """Une ligne par effet : case Actif, nom, monter / descendre, supprimer ; réglages dépliables dessous."""
         fi = E.fiche(e["id"]) or {"nom": e["id"], "parametres": [], "description": ""}
         w = QFrame()
-        w.setFrameShape(QFrame.StyledPanel)
+        w.setObjectName("ligne_effet")
         ouvert = self._ouvrir == ("effet", i)
         if ouvert:
             self._cadre_ouvert = w
-        w.setStyleSheet("QFrame{border:1px solid %s;border-radius:6px;background:%s}" % (theme.COULEURS["accent"] if ouvert else theme.COULEURS["bord_leger"], theme.COULEURS["surface"]))
+        w.setStyleSheet("QFrame#ligne_effet{border:1px solid %s;border-radius:6px;background:%s}" % (theme.COULEURS["accent"] if ouvert else theme.COULEURS["bord_leger"], theme.COULEURS["surface"]))
         v = QVBoxLayout(w)
         v.setContentsMargins(6, 4, 6, 4)
         h = QHBoxLayout()

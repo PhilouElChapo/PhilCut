@@ -1216,9 +1216,9 @@ class Editeur(QWidget):
                 def voir():
                     self.timeline.aller_a(c["debut"] + 5.0 - (1.0 if c.get("transition") else 0.0))
                     self.apercu_rendu()
-                self.encart.suivre_message(_("{n} effet(s) sur « {p} » (✦ sur le plan). La lecture normale ne les montre pas : "
-                                             "« Aperçu rendu » les montre ; pour les modifier, clic droit sur le plan › Effets.", n=n, p=c.get("nom", "")),
-                                           (_("Voir l'aperçu rendu"), voir))
+                self.encart.suivre_message(_("{n} effet(s) sur « {p} » : étiquettes sur le plan (clic pour régler), résultat visible dans l'aperçu "
+                                             "à l'arrêt ; en mouvement : « Aperçu rendu ».", n=n, p=c.get("nom", "")),
+                                           (_("Voir en mouvement"), voir))
 
     def nouveau_texte(self):
         d = DialogueTitre(self, None, self.timeline.position, max(10.0, self.projet.duree()), self._medias_visages())
