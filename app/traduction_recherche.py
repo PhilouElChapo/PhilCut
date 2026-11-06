@@ -41,6 +41,21 @@ DICO = {
     "surprise": "surprise", "überraschung": "surprise", "sorpresa": "surprise", "peur": "scared", "angst": "fear", "miedo": "fear", "paura": "fear",
     "bonjour": "hello", "hallo": "hello", "hola": "hello", "ciao": "hello", "au revoir": "goodbye", "merci": "thank you", "danke": "thank you",
     "gracias": "thank you", "grazie": "thank you", "oui": "yes", "non": "no", "nein": "no", "sí": "yes",
+    # petits mots et mots courants des phrases pour l'IA (images, musique), pour traduire un peu même sans réseau
+    "le": "the", "la": "the", "les": "the", "un": "a", "une": "a", "de": "of", "du": "of the", "des": "of", "et": "and",
+    "avec": "with", "dans": "in", "sur": "on", "pour": "for", "au": "at the", "aux": "at the", "en": "in", "très": "very",
+    "der": "the", "das": "the", "ein": "a", "eine": "a", "und": "and", "mit": "with", "im": "in the", "auf": "on", "für": "for",
+    "el": "the", "los": "the", "las": "the", "una": "a", "y": "and", "con": "with", "del": "of the", "para": "for", "muy": "very",
+    "il": "the", "gli": "the", "e": "and", "nel": "in the", "di": "of", "per": "for", "molto": "very",
+    "homme": "man", "mann": "man", "hombre": "man", "uomo": "man", "femme": "woman", "frau": "woman", "mujer": "woman", "donna": "woman",
+    "enfant": "child", "kind": "child", "niño": "child", "bambino": "child", "fond": "background", "hintergrund": "background",
+    "forêt": "forest", "wald": "forest", "bosque": "forest", "foresta": "forest", "fleurs": "flowers", "blumen": "flowers",
+    "rouge": "red", "rot": "red", "rojo": "red", "rosso": "red", "bleu": "blue", "blau": "blue", "azul": "blue", "blu": "blue",
+    "vert": "green", "grün": "green", "verde": "green", "jaune": "yellow", "gelb": "yellow", "amarillo": "yellow", "giallo": "yellow",
+    "noir": "black", "schwarz": "black", "negro": "black", "nero": "black", "blanc": "white", "weiß": "white", "blanco": "white", "bianco": "white",
+    "rapide": "fast", "schnell": "fast", "rápido": "fast", "veloce": "fast", "lent": "slow", "lente": "slow", "langsam": "slow", "lento": "slow",
+    "douce": "soft", "doux": "soft", "sanft": "soft", "suave": "soft", "dolce": "soft", "musique": "music", "musik": "music", "música": "music", "musica": "music",
+    "batterie": "drums", "violon": "violin", "geige": "violin", "violín": "violin", "violino": "violin", "voix": "voice", "stimme": "voice", "voz": "voice", "voce": "voice",
 }
 
 
@@ -121,6 +136,67 @@ def _meilleure(d, texte):
         return None
     candidats.sort(key=lambda c: (c[2], c[0]), reverse=True)
     return (candidats[0][1].strip(), "service", [])
+
+
+# petits mots qui trahissent la langue d'une phrase (prompts de l'Atelier IA)
+_MOTS_LANGUE = {
+    "en": {"the", "a", "an", "of", "with", "and", "in", "on", "at", "for", "to", "style", "by", "from", "very", "is", "into", "soft",
+           "background", "light", "lighting", "detailed", "portrait", "photo", "illustration", "music", "beat", "cinematic"},
+    "fr": {"le", "la", "les", "un", "une", "des", "du", "de", "et", "avec", "dans", "sur", "pour", "en", "au", "aux", "très", "qui",
+           "est", "sous", "fond", "musique", "joyeuse", "douce", "façon", "comme"},
+    "de": {"der", "die", "das", "ein", "eine", "und", "mit", "im", "auf", "für", "von", "sehr", "ist", "zu", "dem", "den", "musik"},
+    "es": {"el", "los", "las", "una", "y", "con", "en", "del", "para", "muy", "es", "por", "estilo", "música", "fondo"},
+    "it": {"il", "lo", "gli", "una", "e", "con", "nel", "della", "di", "per", "molto", "è", "stile", "musica", "sfondo"},
+}
+_ACCENTS = {"fr": "éèêàâçùûôîœ", "de": "äöüß", "es": "ñáíóú¿¡", "it": "àèìòù"}
+
+
+def langue_probable(texte, defaut=None):
+    """Langue la plus probable d'une phrase (en, fr, de, es, it), d'après ses petits mots et ses accents ; defaut si
+    rien ne la trahit."""
+    mots = re.findall(r"[\w'’]+", (texte or "").lower())
+    scores = {k: sum(1 for m in mots if m in v) for k, v in _MOTS_LANGUE.items()}
+    for k, lettres in _ACCENTS.items():
+        scores[k] += sum(2 for c in (texte or "").lower() if c in lettres)
+    meilleur = max(scores, key=lambda k: (scores[k], k == "en"))
+    return meilleur if scores[meilleur] > 0 else defaut
+
+
+def phrase_en_anglais(texte, langue=None, reseau=True):
+    """Phrase pour un moteur d'IA (images, musique), qui ne comprend bien que l'anglais. Une phrase déjà en anglais
+    est gardée telle quelle (rien n'est envoyé) ; sinon elle est traduite morceau par morceau (le service limite la
+    longueur). Renvoie (texte en anglais, comment, mots restés intraduisibles) comme en_anglais."""
+    from . import langue as L
+    texte = (texte or "").strip()
+    if not texte:
+        return texte, "deja", []
+    source = langue_probable(texte, None)
+    if source is None:                         # rien ne trahit la langue : le dictionnaire tranche, sinon la langue de PhilCut
+        t, manque = _dico(texte)
+        mots = re.findall(r"[\w'’-]+", texte.lower())
+        if not manque:
+            return (texte, "deja", []) if t.split() == mots else (t, "dictionnaire", [])
+        if t.split() == mots:                  # aucun mot reconnu d'une autre langue : sans doute de l'anglais (lofi, chill…)
+            return texte, "deja", []
+        source = L.LANGUE or "fr"
+    if source == "en":
+        return texte, "deja", []
+    morceaux, cour = [], ""
+    for bout in re.split(r"(?<=[.;,!?\n])\s*", texte):
+        if cour and len(cour) + len(bout) + 1 > 380:
+            morceaux.append(cour)
+            cour = ""
+        cour = (cour + " " + bout).strip()
+    if cour:
+        morceaux.append(cour)
+    sortie, comments, manque = [], set(), []
+    for m in morceaux:
+        t, comment, mq = en_anglais(m[:400], source, reseau)
+        sortie.append(t)
+        comments.add(comment)
+        manque += mq
+    comment = "" if "" in comments else ("service" if "service" in comments else "dictionnaire")
+    return " ".join(sortie).strip(), comment, manque
 
 
 def message(origine, resultat):

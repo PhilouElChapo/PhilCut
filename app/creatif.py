@@ -49,22 +49,54 @@ def _remplir(gabarit, valeurs):
     return out
 
 
-def _lancer(genre, args, progression=None, arret=lambda: False, delai=3600, journal="creatif", exe=None):
-    """Lance le programme du moteur ; suit « 3/20 » sur la sortie pour la progression."""
+def _avancer(progression, f, texte=""):
+    """Appelle la progression avec le texte d'étape si elle l'accepte (Tache.avancer), sinon la fraction seule."""
+    if not progression:
+        return
+    try:
+        progression(f, texte)
+    except TypeError:
+        progression(f)
+
+
+def _duree_txt(s):
+    s = int(s)
+    return f"{s // 60}:{s % 60:02d}"
+
+
+def _lancer(genre, args, progression=None, arret=lambda: False, delai=3600, journal="creatif", exe=None, etape=""):
+    """Lance le programme du moteur ; suit « 3/20 » sur la sortie pour la progression. Le texte d'étape (etape) est
+    envoyé avec le temps écoulé et, tant que le moteur ne donne pas de pourcentage, sa dernière ligne : on voit qu'il
+    travaille. En cas d'échec, l'erreur porte le chemin du journal complet (attribut journal)."""
     exe = exe or P.executable(genre)
     cmd = [exe] + args
+    etape = etape or _("Calcul de l'IA")
+    _avancer(progression, 0.0, _("{e} : démarrage du moteur…", e=etape))
     proc = subprocess.Popen(cmd, cwd=P.dossier_moteur(genre), env=P._env(genre), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                             text=True, errors="replace", **P._options_processus())
     lignes = []
     t0 = time.time()
+    frac, dernier = 0.0, 0.0
+    chemin_journal = os.path.join(P.dossier(), f"journal_{journal}.txt")
     try:
         for ligne in proc.stdout:
             lignes.append(ligne.rstrip())
             m = re.findall(r"(\d+)/(\d+)", ligne)
-            if m and progression:
+            nouveau = False
+            if m:
                 a, b = map(int, m[-1])
                 if 0 < b < 10000 and a <= b:
-                    progression(a / b)
+                    frac, nouveau = a / b, True
+            maintenant = time.time()
+            if progression and (nouveau or maintenant - dernier > 0.7):
+                dernier = maintenant
+                ecoule = _duree_txt(maintenant - t0)
+                if frac > 0:
+                    texte = _("{e} : {p} % ({t})", e=etape, p=int(frac * 100), t=ecoule)
+                else:
+                    brut = re.sub(r"\s+", " ", ligne).strip()[:70]
+                    texte = _("{e} ({t})", e=etape, t=ecoule) + (" · " + brut if brut else "")
+                _avancer(progression, frac, texte)
             if arret():
                 proc.kill()
                 raise InterruptedError()
@@ -74,13 +106,15 @@ def _lancer(genre, args, progression=None, arret=lambda: False, delai=3600, jour
         proc.wait()
     finally:
         try:
-            with open(os.path.join(P.dossier(), f"journal_{journal}.txt"), "w", encoding="utf-8") as f:
+            with open(chemin_journal, "w", encoding="utf-8") as f:
                 f.write(" ".join(cmd) + "\n\n" + "\n".join(lignes[-400:]))
         except OSError:
             pass
     if proc.returncode != 0:
         fin = "\n".join(l for l in lignes[-12:] if l.strip())
-        raise ErreurCreatif(_("Le moteur s'est arrêté (code {c}) : {f}", c=proc.returncode, f=fin[-600:]))
+        err = ErreurCreatif(_("Le moteur s'est arrêté (code {c}) : {f}", c=proc.returncode, f=fin[-600:]))
+        err.journal = chemin_journal
+        raise err
     return lignes
 
 
@@ -117,7 +151,7 @@ def image(prompt, sortie, params=None, negatif="", largeur=None, hauteur=None, i
     args = _remplir(m.get("args") or [], valeurs) + (_remplir(m.get("args_init") or [], valeurs) if init else [])
     if not args:
         raise ErreurCreatif(_("Catalogue sans ligne de commande pour ce modèle : mettez à jour l'IA locale."))
-    _lancer(genre, args, progression, arret, journal="image")
+    _lancer(genre, args, progression, arret, journal="image", etape=_("Dessin de l'image"))
     if not os.path.exists(sortie):
         raise ErreurCreatif(_("Le moteur n'a pas produit d'image."))
     return sortie
@@ -141,7 +175,7 @@ def video(prompt, sortie, params=None, init=None, secondes=2.0, largeur=480, hau
                "hauteur": int(hauteur) // 16 * 16, "images": images, "etapes": m.get("etapes", 20), "graine": random.randint(1, 2 ** 31 - 1),
                "coeurs": P.coeurs(params), "sortie": brut, "image": init_redim or ""}
     args = _remplir(m.get("args") or [], valeurs) + (_remplir(m.get("args_init") or [], valeurs) if init_redim else [])
-    _lancer(genre, args, progression, arret, delai=4 * 3600, journal="video")
+    _lancer(genre, args, progression, arret, delai=4 * 3600, journal="video", etape=_("Animation de l'image"))
     if not os.path.exists(brut):
         raise ErreurCreatif(_("Le moteur n'a pas produit de vidéo."))
     moteur.lancer(["-y", "-i", brut, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "24", sortie])
@@ -183,13 +217,14 @@ def musique(style, sortie, duree=60.0, params=None, instrumental=True, paroles="
     exe_lm = os.path.join(P.dossier_moteur(genre), P._exe("ace-lm"))
     if not os.path.exists(exe_lm):
         raise ErreurCreatif(_("Moteur de musique incomplet (ace-lm manquant)."))
-    p1 = (lambda f: progression(0.45 * f)) if progression else None
-    p2 = (lambda f: progression(0.45 + 0.55 * f)) if progression else None
-    _lancer(genre, ["--models", modeles_dir, "--request", chemin], p1, arret, journal="musique_lm", exe=exe_lm)
+    p1 = (lambda f, t="": _avancer(progression, 0.45 * f, t)) if progression else None
+    p2 = (lambda f, t="": _avancer(progression, 0.45 + 0.55 * f, t)) if progression else None
+    _lancer(genre, ["--models", modeles_dir, "--request", chemin], p1, arret, journal="musique_lm", exe=exe_lm,
+            etape=_("Étape 1/2 : composition (structure, rythme)"))
     suite = os.path.join(d, "demande0.json")
     if not os.path.exists(suite):
         raise ErreurCreatif(_("La première étape de la musique n'a rien produit."))
-    _lancer(genre, ["--models", modeles_dir, "--request", suite], p2, arret, journal="musique")
+    _lancer(genre, ["--models", modeles_dir, "--request", suite], p2, arret, journal="musique", etape=_("Étape 2/2 : fabrication du son"))
     sons = [f for f in os.listdir(d) if f.lower().endswith((".mp3", ".wav"))]
     if not sons:
         raise ErreurCreatif(_("Le moteur n'a pas produit de son."))
@@ -219,7 +254,7 @@ def agrandir(video, sortie, facteur=2, debut=0.0, duree=None, ips=30, params=Non
     os.makedirs(os.path.join(d, "out"))
     nom = "realesr-animevideov3" if anime else "realesrgan-x4plus"
     args = ["-i", os.path.join(d, "in"), "-o", os.path.join(d, "out"), "-n", nom, "-s", str(int(facteur) if anime else 4), "-f", "png"]
-    _lancer("upscale", args, progression, arret, journal="agrandissement")
+    _lancer("upscale", args, progression, arret, journal="agrandissement", etape=_("Agrandissement des images"))
     if not anime and facteur != 4:
         moteur.lancer(["-y", "-framerate", str(ips), "-i", os.path.join(d, "out", "%06d.png"), "-vf", f"scale=iw*{facteur}/4:ih*{facteur}/4:flags=lanczos",
                        "-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p", sortie])
@@ -238,7 +273,7 @@ def ralentir(video, sortie, facteur=4, debut=0.0, duree=None, ips=30, params=Non
     n = _images_video(video, os.path.join(d, "in"), debut, duree, ips)
     os.makedirs(os.path.join(d, "out"))
     _lancer("interpolation", ["-i", os.path.join(d, "in"), "-o", os.path.join(d, "out"), "-n", str(n * int(facteur)), "-m", "rife-v4.6", "-f", "%06d.png"],
-            progression, arret, journal="ralenti")
+            progression, arret, journal="ralenti", etape=_("Images intermédiaires du ralenti"))
     moteur.lancer(["-y", "-framerate", str(ips), "-i", os.path.join(d, "out", "%06d.png"), "-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p", sortie])
     shutil.rmtree(d, ignore_errors=True)
     return sortie

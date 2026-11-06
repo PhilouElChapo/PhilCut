@@ -211,6 +211,61 @@ class Test060(unittest.TestCase):
         ed.projet.modifie = False
         f.close()
 
+    def test_atelier_musique_traduit_et_montre_l_avancement(self):
+        """0.9.0 : la phrase tapée en français part en anglais au moteur, l'avancement se voit dans la fenêtre, une phrase
+        intraduisible (sans réseau) est refusée avec la demande d'écrire en anglais."""
+        from app.config import Parametres
+        pa = Parametres()
+        pa["bienvenue_vue"] = True
+        pa["maj_auto"] = False
+        pa["synchro"] = False
+        pa.enregistrer()
+        from app.fenetre import Fenetre
+        f = Fenetre()
+        f.show()
+        ed = f.nouveau_projet("16:9")
+        from app.dialogues_creatif import DialogueAtelierIA
+        dl = DialogueAtelierIA(ed, "musique")
+        dl.show()
+        dl.liste.setCurrentRow(0)
+        dl.duree.setValue(10)
+        dl.prompt.setPlainText("musique douce au piano")
+        dl.creer()
+        self.assertFalse(dl.barre.isHidden())
+        vus = []
+        dl.tache.progression.connect(lambda fr, t: vus.append(t))
+        t0 = time.time()
+        while dl.tache.isRunning() and time.time() - t0 < 120:
+            app.processEvents()
+            time.sleep(0.05)
+        for _i in range(20):
+            app.processEvents()
+        self.assertEqual(dl._ph["en"], "music soft at the piano")
+        self.assertIn("music soft at the piano", dl.envoye.text())
+        self.assertTrue(any("2/2" in t for t in vus), vus)                  # étapes nommées
+        self.assertTrue(dl.barre.isHidden())
+        self.assertIn(_txt("Musique créée"), dl.info.text())
+        # intraduisible sans réseau : rien n'est lancé, on demande l'anglais
+        dl.prompt.setPlainText("chanson rigolote pour mon anniversaire")
+        dl.creer()
+        while dl.tache.isRunning():
+            app.processEvents()
+            time.sleep(0.05)
+        for _i in range(20):
+            app.processEvents()
+        self.assertIn("anglais", dl.info.text())
+        self.assertIn("rigolote", dl.info.text())
+        self.assertGreaterEqual(dl.actions.count(), 1)                      # « Réessayer »
+        dl.reject()
+        ed.projet.modifie = False
+        f.hide()
+        f.deleteLater()
+
+
+
+def _txt(t):
+    return t
+
 
 if __name__ == "__main__":
     unittest.main()

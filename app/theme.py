@@ -198,7 +198,8 @@ QSlider::handle:horizontal {
 }
 QProgressBar { border: none; background: %(bord_leger)s; border-radius: 3px; height: 6px; text-align: center; color: transparent; }
 QProgressBar::chunk { background: %(accent)s; border-radius: 3px; }
-QSplitter::handle { background: transparent; }
+QSplitter::handle { background: %(bord_leger)s; }
+QSplitter::handle:vertical { height: 6px; }
 QSplitter::handle:hover { background: %(bord)s; }
 
 /* ---------- barres de defilement fines */

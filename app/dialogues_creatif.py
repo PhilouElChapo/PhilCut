@@ -5,12 +5,12 @@ côte à côte. Rien ne part sur Internet ; « Créer » lance le moteur du post
 """
 import os, time
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QListWidget,
-                               QListWidgetItem, QPlainTextEdit, QPushButton, QSlider, QSplitter, QVBoxLayout, QWidget)
+                               QListWidgetItem, QPlainTextEdit, QProgressBar, QPushButton, QSlider, QSplitter, QVBoxLayout, QWidget)
 
-from . import creatif as C, effets_ia as EI, moteur
+from . import creatif as C, effets_ia as EI, moteur, traduction_recherche as TR
 from .langue import _
 from .projet import fin_clip
 from .taches import Tache
@@ -31,8 +31,9 @@ class DialogueAtelierIA(QDialog):
         self.resize(1040, 680)
         self.tache, self.resultat, self.source = None, None, None
         v = QVBoxLayout(self)
-        aide = QLabel(_("Effets IA qui tournent sur votre ordinateur : gratuits, rien n'est envoyé. Choisissez un effet, modifiez sa phrase "
-                        "si vous voulez (vos changements sont gardés), puis « Créer ». Sans carte graphique, comptez plus longtemps."))
+        aide = QLabel(_("Effets IA qui tournent sur votre ordinateur : gratuits, rien n'est envoyé (sauf votre phrase au service de traduction "
+                        "gratuit MyMemory si elle n'est pas en anglais). Choisissez un effet, modifiez sa phrase si vous voulez (vos changements "
+                        "sont gardés), puis « Créer ». Sans carte graphique, comptez plus longtemps."))
         aide.setWordWrap(True)
         v.addWidget(aide)
         sp = QSplitter(Qt.Horizontal)
@@ -62,11 +63,18 @@ class DialogueAtelierIA(QDialog):
         self.etat_modele = QLabel("")
         self.etat_modele.setWordWrap(True)
         vd.addWidget(self.etat_modele)
-        self.lbl_prompt = QLabel(_("Phrase pour l'IA (en anglais, c'est mieux compris)"))
+        self.lbl_prompt = QLabel(_("Phrase pour l'IA : écrivez dans votre langue, PhilCut la traduit en anglais (la seule langue que les moteurs comprennent bien)"))
+        self.lbl_prompt.setWordWrap(True)
         vd.addWidget(self.lbl_prompt)
         self.prompt = QPlainTextEdit()
         self.prompt.setMaximumHeight(70)
         vd.addWidget(self.prompt)
+        self.envoye = QLabel("")
+        self.envoye.setWordWrap(True)
+        self.envoye.setStyleSheet("color:#9aa4b2")
+        self.envoye.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.envoye.hide()
+        vd.addWidget(self.envoye)
         hf = QHBoxLayout()
         self.lbl_force = QLabel(_("Force"))
         hf.addWidget(self.lbl_force)
@@ -110,7 +118,21 @@ class DialogueAtelierIA(QDialog):
         vd.addLayout(hi)
         self.info = QLabel("")
         self.info.setWordWrap(True)
+        self.info.setTextInteractionFlags(Qt.TextSelectableByMouse)
         vd.addWidget(self.info)
+        # avancement de l'IA, visible dans la fenêtre (en plus de la barre du bas et du Centre d'activité)
+        self.etape = QLabel("")
+        self.etape.setWordWrap(True)
+        self.etape.hide()
+        vd.addWidget(self.etape)
+        self.barre = QProgressBar()
+        self.barre.setRange(0, 1000)
+        self.barre.hide()
+        vd.addWidget(self.barre)
+        self._horloge = QTimer(self)
+        self._horloge.setInterval(1000)
+        self._horloge.timeout.connect(self._tic)
+        self._t0, self._fraction = 0.0, 0.0
         hb = QHBoxLayout()
         self.b_creer = QPushButton(_("Créer"))
         self.b_creer.setStyleSheet("font-weight:600;padding:6px 18px")
@@ -314,17 +336,19 @@ class DialogueAtelierIA(QDialog):
         horo = time.strftime("%Y%m%d_%H%M%S")
         projet = self.ed.projet
         m = e["moteur"]
+        ph = {"en": prompt, "comment": "deja"}
+        self._ph = ph
         if e["famille"] == "musique":
             sortie = os.path.join(_dossier_sorties(), f"musique_{horo}.mp3")
             duree, instr, paroles = self.duree.value(), self.instrumental.isChecked(), self.paroles.text()
-            travail = lambda t: C.musique(prompt, sortie, duree, params, instr, paroles, progression=t.avancer, arret=t.arret_demande)
+            travail = lambda t: C.musique(ph["en"], sortie, duree, params, instr, paroles, progression=t.avancer, arret=t.arret_demande)
         elif e["famille"] in ("image", "logo"):
             if not e.get("sans_source") and not self.source:
                 self.info.setText(_("Placez la tête de lecture sur une image du film."))
                 return
             sortie = os.path.join(_dossier_sorties(), f"{e['id']}_{horo}.png")
             init = None if e.get("sans_source") else self.source
-            travail = lambda t: C.image(prompt, sortie, params, init=init, force=force, progression=t.avancer, arret=t.arret_demande)
+            travail = lambda t: C.image(ph["en"], sortie, params, init=init, force=force, progression=t.avancer, arret=t.arret_demande)
         else:
             sortie = os.path.join(_dossier_sorties(), f"{e['id']}_{horo}.mp4")
             if m == "transition3d":
@@ -344,7 +368,7 @@ class DialogueAtelierIA(QDialog):
                     import cv2
                     travail = lambda t: C.photo_3d(cv2.imread(src), sortie, 3.0, projet.cadence, amplitude=force, params=params, progression=t.avancer)
                 else:
-                    travail = lambda t: C.video(prompt, sortie, params, init=src, secondes=force, progression=t.avancer, arret=t.arret_demande)
+                    travail = lambda t: C.video(ph["en"], sortie, params, init=src, secondes=force, progression=t.avancer, arret=t.arret_demande)
             else:
                 z = self._partie()
                 c = projet.clip_a(z[0] + 0.01, "video") if z else None
@@ -372,14 +396,53 @@ class DialogueAtelierIA(QDialog):
             self._pose = self._pose_tr
         else:
             self._pose = getattr(self, "_pose", None) if e["famille"] == "video" and m not in ("photo3d", "video") else self.ed.timeline.position
+        a_traduire = bool(prompt) and (e["famille"] in ("musique", "image", "logo") or m == "video")
+        base = travail
+
+        def travail(t, base=base):
+            if a_traduire:                       # les moteurs ne comprennent bien que l'anglais
+                t.avancer(0.0, _("Traduction de la phrase en anglais…"))
+                en, comment, manque = TR.phrase_en_anglais(prompt)
+                if manque and comment != "service":
+                    raise C.ErreurCreatif(_("Pas de traduction pour « {m} » (pas de réseau ?) : écrivez ces mots en anglais dans la phrase.",
+                                            m=", ".join(dict.fromkeys(manque))))
+                ph.update(en=en, comment=comment)
+                if comment != "deja":
+                    t.avancer(0.0, _("Phrase envoyée au moteur, en anglais : « {t} »", t=en[:160]))
+            return base(t)
+        self.envoye.hide()
+        self.info.setStyleSheet("")
         self.tache = Tache(travail, _("Atelier IA"))
         self.ed.taches.append(self.tache)
         self.ed.encart.suivre(self.tache, _("IA locale : {n}", n=e["nom"]))
-        self.tache.fini.connect(lambda r, err, e=e: self._fini(e, r, err))
+        self.tache.progression.connect(self._progression, Qt.QueuedConnection)
+        self.tache.fini.connect(lambda r, err, e=e: self._fini(e, r, err), Qt.QueuedConnection)
         self.b_creer.setEnabled(False)
         self.b_arreter.show()
-        self.info.setText(_("Création en cours sur ce poste… vous pouvez continuer à travailler ; la barre du bas suit l'avancement."))
+        self.info.setText(_("Création en cours sur ce poste… vous pouvez continuer à travailler ; la barre du bas suit aussi l'avancement."))
+        self._t0, self._fraction = time.monotonic(), 0.0
+        self.etape.setText(_("Préparation…"))
+        self.etape.show()
+        self.barre.setValue(0)
+        self.barre.show()
+        self._tic()
+        self._horloge.start()
         self.tache.start()
+
+    def _progression(self, f, texte):
+        self._fraction = f
+        self.barre.setValue(int(f * 1000))
+        if texte:
+            self.etape.setText(texte)
+        ph = getattr(self, "_ph", None)
+        if ph and ph.get("comment") not in (None, "deja"):
+            self.envoye.setText(_("Envoyé au moteur, en anglais : « {t} »", t=ph["en"]))
+            self.envoye.show()
+        self._tic()
+
+    def _tic(self):
+        ecoule = int(time.monotonic() - self._t0)
+        self.barre.setFormat(_("{p} % · temps écoulé {t}", p=int(self._fraction * 100), t=f"{ecoule // 60}:{ecoule % 60:02d}"))
 
     def arreter(self):
         if self.tache is not None:
@@ -399,16 +462,29 @@ class DialogueAtelierIA(QDialog):
     def _fini(self, e, r, err):
         self.b_creer.setEnabled(True)
         self.b_arreter.hide()
+        self._horloge.stop()
+        self.barre.hide()
+        self.etape.hide()
         self._vider_actions()
         if err:
-            self.info.setText(_("✕ {e}", e=str(err)[:500]))
+            if isinstance(err, InterruptedError) or getattr(self.tache, "arret", False):
+                self.info.setText(_("Création arrêtée."))
+                return
+            self.info.setText(_("✕ La création n'a pas abouti : {e}", e=str(err)[:700]))
+            self.info.setStyleSheet("color:#ff8a80")
+            journal = getattr(err, "journal", None)
+            if journal and os.path.exists(journal):
+                self._action(_("Voir le journal du moteur"), lambda: self._ouvrir(journal))
+            self._action(_("Réessayer"), self.creer)
             return
+        self.info.setStyleSheet("")
         self.resultat = r if isinstance(r, str) else (r[0] if isinstance(r, (tuple, list)) else r)
         if e["famille"] in ("image", "logo"):
             px = QPixmap(self.resultat)
             self.img_resultat.setPixmap(px.scaled(360, 203, Qt.KeepAspectRatio, Qt.SmoothTransformation))
             self.info.setText(_("Image créée. Choisissez ce que vous en faites :"))
-            self._action(_("Insérer à la tête de lecture (3 s)"), lambda: self.ed.inserer_image(self.resultat, self._pose, 3.0, e["nom"]))
+            self._action(_("Poser au-dessus du film (3 s)"), lambda: self.ed.poser_au_dessus(self.resultat, self._pose or 0.0, e["nom"], 3.0))
+            self._action(_("Insérer dans le film (3 s, décale la suite)"), lambda: self.ed.inserer_image(self.resultat, self._pose, 3.0, e["nom"]))
             self._action(_("Ajouter aux médias"), lambda: self.ed.importer([self.resultat]))
             self._action(_("Logo dans la Fabrique…"), lambda: self.ed.window().fabrique(image=self.resultat))
             self._action(_("Enregistrer en JPG (miniature)…"), self._enregistrer_jpg)
@@ -423,6 +499,10 @@ class DialogueAtelierIA(QDialog):
             self.img_resultat.setPixmap(px.scaled(360, 203, Qt.KeepAspectRatio, Qt.SmoothTransformation))
             self.ed.poser_au_dessus(self.resultat, self._pose or 0.0, e["nom"])
             self.info.setText(_("Clip créé et posé au-dessus, sur la piste Vidéo 2 : supprimez-le pour revenir à l'original."))
+
+    def _ouvrir(self, chemin):
+        import pathlib, webbrowser
+        webbrowser.open(pathlib.Path(chemin).resolve().as_uri())
 
     def _enregistrer_jpg(self):
         from .session import dossier_systeme

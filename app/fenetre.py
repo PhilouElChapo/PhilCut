@@ -675,42 +675,19 @@ class Fenetre(QMainWindow):
         ed = self._editeur_ou_nouveau()
         m = QMenu(self)
         m.addAction(_("Importer une musique…"), lambda: ed.importer())
-        sm = m.addMenu(icone("musique"), _("Mes musiques"))
-        sm.aboutToShow.connect(lambda: sm.isEmpty() and self._menu_mes_musiques(sm, ed))     # rempli seulement à l'ouverture
+        m.addAction(icone("musique"), _("Mes musiques (chercher, écouter, poser)…"), lambda: self.mes_musiques(ed))
         m.addAction(_("Bibliothèque musicale libre (chercher, écouter, télécharger)…"), lambda: self.bibliotheque_musicale(ed))
         m.addAction(_("Créer une musique par IA (sur ce poste)…"), lambda: ed.atelier_ia("musique"))
         m.exec(self.cursor().pos())
 
-    def _menu_mes_musiques(self, sm, ed):
-        """Mon dossier de musiques et les musiques libres téléchargées, classés par dossier, album ou artiste (au choix, retenu)."""
-        from . import musiques as MU
-        mode = self.params.get("musiques_classement", "dossier")
-        sc = sm.addMenu(_("Classer : {m}", m=dict(MU.CLASSEMENTS).get(mode, "")))
-        for k, lib in MU.CLASSEMENTS:
-            a = sc.addAction(lib, lambda k=k: (self.params.__setitem__("musiques_classement", k), self.params.enregistrer(),
-                                                self.statusBar().showMessage(_("Musiques classées : {m}. Rouvrez le menu Musique.", m=dict(MU.CLASSEMENTS)[k]), 6000)))
-            a.setCheckable(True)
-            a.setChecked(k == mode)
-        perso = self.params.get("musiques_dossier") or ""
-        sm.addAction(_("Choisir mon dossier de musiques…") if not perso else _("Changer de dossier de musiques ({d})…", d=os.path.basename(perso.rstrip("/\\")) or perso),
-                     self._choisir_dossier_musiques)
-        sm.addSeparator()
-        liste = MU.morceaux([perso, MU.dossier(self.params)], limite=1500, rapide=True, delai=3.0)
-        n = MU.lire_en_fond(liste)                 # titres, albums et artistes lus en arrière-plan, jamais de gel
-        if n:
-            self.statusBar().showMessage(_("Lecture des titres de {n} morceau(x) en arrière-plan : le classement par album et "
-                                           "artiste sera complet à la prochaine ouverture du menu.", n=n), 8000)
-        if not liste:
-            a = sm.addAction(_("(aucun morceau : choisissez votre dossier, ou téléchargez des musiques libres)"))
-            a.setEnabled(False)
-            return
-        groupes = MU.classer(liste, mode)
-        for g, ms in groupes:
-            cible = sm if not g or len(groupes) == 1 else sm.addMenu(f"{g} ({len(ms)})")
-            for x in ms[:150]:
-                act = cible.addAction(MU.libelle(x), lambda p=x["chemin"]: self._poser_musique(ed, p))
-                act.setToolTip(x["chemin"])
-            cible.setToolTipsVisible(True)
+    def mes_musiques(self, ed=None):
+        """Mon dossier de musiques et les musiques libres téléchargées, dans une fenêtre (recherche, classement, écoute)."""
+        ed = ed or self._editeur_ou_nouveau()
+        from .dialogues_mes_musiques import DialogueMesMusiques
+        d = DialogueMesMusiques(self, self.params)
+        if d.exec() == QDialog.Accepted and d.chemin:
+            self._poser_musique(ed, d.chemin)
+            self.statusBar().showMessage(_("Musique posée sur la piste Musique : {n}", n=os.path.basename(d.chemin)), 6000)
 
     def _choisir_dossier_musiques(self):
         from .session import dossier_systeme

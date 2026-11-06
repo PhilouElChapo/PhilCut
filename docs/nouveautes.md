@@ -4,7 +4,16 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.8.9 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.0
+- Musique > "Mes musiques" s'ouvre dans une fenetre : recherche (titre, artiste, album, dossier), classement par dossier, album, artiste ou titre, groupes repliables, ecoute, double-clic pour poser sous la video. Fini le menu geant.
+- Atelier IA : la phrase s'ecrit dans sa langue ; PhilCut la traduit en anglais avant de l'envoyer au moteur (images, video, musique) et montre le texte envoye. Sans traduction possible, il demande d'ecrire ces mots en anglais.
+- Atelier IA : l'avancement se voit dans la fenetre (etape en cours, pourcentage, temps ecoule) ; en cas d'echec, message clair, journal du moteur et bouton Reessayer.
+- Un clip plein cadre pose au-dessus du film (dessin anime IA, effet IA) se voit aussi en lecture normale, avec le son du passage, pas seulement a l'arret.
+- Image creee par l'Atelier IA : "Poser au-dessus du film" sur la piste Video 2 (le film n'est plus coupe) ; "Inserer dans le film" reste au choix.
+- Timeline plus grande : la barre entre l'apercu et la timeline est visible et descend bien plus haut (le volet de droite defile au lieu de bloquer la hauteur).
+- Volet ouvert dans une fenetre plus grande (bouton agrandir) : plus de fenetre noire, le contenu s'affiche.
 
 ### 0.8.9
 - Fenetre principale ouverte en plein ecran la premiere fois, puis a la taille et a la place de la derniere fois si elles tiennent dans l'ecran : la barre d'etat du bas (telechargements, taches) reste toujours visible.

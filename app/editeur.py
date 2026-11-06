@@ -449,7 +449,13 @@ class Editeur(QWidget):
         self.proposition.appliquer.connect(self.appliquer_recette)
         self.proposition.autre_idee.connect(self.autre_idee)
         self.proposition.commande.connect(self.dites_le)
-        self.volet.addTab(self.proposition, icone("assistant", theme.COULEURS["texte2"]), _("Proposition"))
+        # dans une zone qui défile : le volet ne bloque plus la hauteur, la timeline peut s'agrandir
+        zp = QScrollArea()
+        zp.setWidgetResizable(True)
+        zp.setFrameShape(QFrame.NoFrame)
+        zp.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        zp.setWidget(self.proposition)
+        self.volet.addTab(zp, icone("assistant", theme.COULEURS["texte2"]), _("Proposition"))
         from .inspecteur import Inspecteur
         self.inspecteur = Inspecteur(self)
         self.inspecteur.demande_effets.connect(self.effets_du_clip)
@@ -552,6 +558,10 @@ class Editeur(QWidget):
         if tailles.get("h") and len(tailles["h"]) == 4:
             self.split_h.setSizes(tailles["h"])
         self._appliquer_gauche()
+        self.split_v.setHandleWidth(6)
+        self.split_v.setChildrenCollapsible(False)
+        self.split_v.handle(1).setToolTip(_("Glissez cette barre pour agrandir la timeline ou l'aperçu"))
+        self.split_v.handle(1).setCursor(Qt.SplitVCursor)
         self.split_v.splitterMoved.connect(lambda *_a: self._memoriser_tailles())
         self.split_h.splitterMoved.connect(lambda *_a: self._memoriser_tailles())
         v.addWidget(self.split_v, 1)
@@ -1203,6 +1213,7 @@ class Editeur(QWidget):
         lay.setContentsMargins(6, 6, 6, 6)
         self.volet.removeTab(i)
         lay.addWidget(w)
+        w.show()                     # retiré d'un onglet, il restait caché : fenêtre noire
 
         def retour(*_a):
             w.setParent(None)
@@ -2311,11 +2322,12 @@ class Editeur(QWidget):
         from .dialogues_tampons import DialogueTampons
         DialogueTampons(self, onglet).exec()
 
-    def poser_au_dessus(self, video, t, nom=""):
-        """Pose un clip créé (effet IA) au-dessus du film, plein cadre, sur la première piste vidéo libre."""
+    def poser_au_dessus(self, video, t, nom="", duree=None):
+        """Pose un clip ou une image créés (effet IA) au-dessus du film, plein cadre, sur la première piste vidéo libre :
+        le film de la piste Vidéo 1 n'est ni coupé ni décalé."""
         from .projet import duree_clip
         f = moteur.sonder(video)
-        d = float(f.get("duree") or 1.0)
+        d = float(duree or (f.get("duree") if f.get("genre") != "image" else 0) or 3.0)
         self.projet.marquer()
         piste = None
         for p in self.projet.pistes_video()[1:]:

@@ -283,7 +283,7 @@ class Apercu(QGraphicsView):
                 self._source = None
                 self._badge(_("✦ lecture avec effets"))
                 return self._source_video()
-        c = self.projet.clip_a(self.t, "video")
+        c = self.projet.plan_visible(self.t)          # un clip plein cadre posé au-dessus (effet IA…) se voit à la lecture
         return c, (self.projet.media(c["media"]) if c else None)
 
     def _media_de(self, c):
@@ -363,7 +363,11 @@ class Apercu(QGraphicsView):
             self.clip = c
             self.lecteur.setPlaybackRate(float(c.get("vitesse", 1.0)))
             self._cadrer(c, m)
-        self.son.setVolume(0.0 if (c.get("muet") or self.muet_general or "video" in self.pistes_muettes or self.projet.piste_muette("video")) else float(c.get("volume", 1.0)))
+        cs = c
+        if c.get("piste", "video") != "video" and c.get("muet"):
+            # clip créé posé au-dessus (effet IA) : il garde le son du passage d'origine, qu'on entend comme celui du film
+            cs = self.projet.clip_a(self.t, "video") or c
+        self.son.setVolume(0.0 if (cs.get("muet") or self.muet_general or "video" in self.pistes_muettes or self.projet.piste_muette("video")) else float(cs.get("volume", 1.0)))
         if c.get("ajustement") == "suivi":           # le cadre bouge avec la personne
             self._cadrer(c, m)
         if abs(self.lecteur.position() - pos_ms) > 80 or not self.en_lecture:
@@ -837,7 +841,7 @@ class Apercu(QGraphicsView):
     def image_courante(self, largeur=640):
         """PNG de l'image a l'instant courant, rendu par FFmpeg (miniature, fiche, IA)."""
         from . import moteur
-        c = self.projet.clip_a(self.t, "video") if self.projet else None
+        c = self.projet.plan_visible(self.t) if self.projet else None
         if not c:
             return None
         m = self.projet.media(c["media"])

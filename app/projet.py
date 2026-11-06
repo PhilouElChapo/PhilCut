@@ -375,6 +375,19 @@ class Projet:
             c["vitesse"] = max(0.1, min(16.0, float(v)))
             self.ranger(c["piste"])
 
+    def plan_visible(self, t):
+        """Le plan qu'on voit vraiment à l'instant t pour la lecture brute : un plan d'une piste du dessus posé plein cadre
+        et opaque (effet IA, tampon, clip créé) cache celui de la piste Vidéo 1 ; la piste du dessus l'emporte."""
+        for c in reversed(self.incrustations()):
+            if self.piste_masquee(c["piste"]) or not (c["debut"] <= t < fin_clip(c)):
+                continue
+            inc = c.get("incrust") or {}
+            if float(inc.get("echelle", 1.0)) >= 0.999 and float(inc.get("opacite", 1.0)) >= 0.999 and \
+                    abs(float(inc.get("x", 0.5)) - 0.5) < 0.01 and abs(float(inc.get("y", 0.5)) - 0.5) < 0.01 and not inc.get("masque") \
+                    and not inc.get("fond_transparent") and not inc.get("cle") and not c.get("cles"):
+                return c
+        return self.clip_a(t, "video")
+
     def clip_a(self, t, piste="video"):
         for c in self.clips_piste(piste):
             if c["debut"] <= t < fin_clip(c):
