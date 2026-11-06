@@ -462,7 +462,9 @@ class DialogueTampons(QDialog):
                 if err or not r:
                     return
                 url, note = r
-                QDesktopServices.openUrl(QUrl(url))
+                import webbrowser                # navigateur par défaut du système (fiable depuis toute version de PhilCut)
+                if not webbrowser.open(url):
+                    QDesktopServices.openUrl(QUrl(url))
                 self.etat.setText(_("Recherche ouverte dans le navigateur.") + ("  " + note if note else ""))
             self._lancer(lambda t: self._traduire_extrait(site, texte), None, fin=ouvrir)
             return
@@ -581,7 +583,7 @@ class DialogueTampons(QDialog):
                 fin_entree(r)
             elif isinstance(r, dict) and self.onglets.currentIndex() != 1:
                 self.onglets.setCurrentIndex(0)
-        t.fini.connect(termine)
+        t.fini.connect(termine, Qt.QueuedConnection)        # toujours exécuté dans le fil de l'interface
         t.start()
 
     def reject(self):

@@ -198,6 +198,13 @@ class Test080(unittest.TestCase):
         self.assertEqual(TR.en_anglais("explosion crowd", "fr", reseau=False)[2], [])   # déjà de l'anglais : rien à signaler
         self.assertEqual(TR.en_anglais("anything", "en")[1], "deja")
         self.assertEqual(TR.en_anglais("Zeitlupe", "de", reseau=False)[0], "slow motion")
+        self.assertEqual(TR.en_anglais("incroyable", "fr", reseau=False)[0], "amazing")
+        # réponse du service : les souvenirs approximatifs (« Business ») sont écartés, la traduction automatique gardée
+        rep = {"responseStatus": 200, "responseData": {"translatedText": "Business", "match": 0.3},
+               "matches": [{"segment": "incroyable", "translation": "Business", "match": 0.3, "created-by": "x"},
+                           {"segment": "incroyable", "translation": "incredible", "match": 0.85, "created-by": "MT!"}]}
+        self.assertEqual(TR._meilleure(rep, "incroyable")[0], "incredible")
+        self.assertIsNone(TR._meilleure({"responseStatus": 200, "responseData": {"translatedText": "Business", "match": 0.3}}, "incroyable"))
 
     def test_extraits_de_films_dans_le_navigateur(self):
         from app import tampons as T

@@ -34,6 +34,10 @@ DICO = {
     "rembobinage": "rewind", "rembobiner": "rewind", "retour": "rewind", "zurückspulen": "rewind", "rebobinar": "rewind", "riavvolgere": "rewind",
     "ralenti": "slow motion", "zeitlupe": "slow motion", "cámara lenta": "slow motion", "rallentatore": "slow motion",
     "bravo": "bravo", "échec": "fail", "raté": "fail", "drôle": "funny", "lustig": "funny", "gracioso": "funny", "divertente": "funny",
+    "incroyable": "amazing", "unglaublich": "amazing", "increíble": "amazing", "incredibile": "amazing",
+    "génial": "awesome", "super": "awesome", "toll": "awesome", "genial": "awesome", "fantastico": "awesome",
+    "non merci": "no thanks", "c'est parti": "let's go", "allons-y": "let's go", "attention": "watch out", "au secours": "help",
+    "je t'aime": "i love you", "pourquoi": "why", "quoi": "what", "pas possible": "no way", "impossible": "impossible",
     "surprise": "surprise", "überraschung": "surprise", "sorpresa": "surprise", "peur": "scared", "angst": "fear", "miedo": "fear", "paura": "fear",
     "bonjour": "hello", "hallo": "hello", "hola": "hello", "ciao": "hello", "au revoir": "goodbye", "merci": "thank you", "danke": "thank you",
     "gracias": "thank you", "grazie": "thank you", "oui": "yes", "non": "no", "nein": "no", "sí": "yes",
@@ -80,14 +84,15 @@ def en_anglais(texte, langue=None, reseau=True):
         return _CACHE[cle]
     res = None
     import os
-    if reseau and not os.environ.get("PHILCUT_SANS_RESEAU"):
+    t_dico, manque_dico = _dico(texte)
+    if not manque_dico:                          # tous les mots sont connus du dictionnaire : sûr et instantané
+        res = (t_dico, "dictionnaire", [])
+    elif reseau and not os.environ.get("PHILCUT_SANS_RESEAU"):
         try:
-            url = API + "?" + urllib.parse.urlencode({"q": texte[:400], "langpair": f"{langue}|en"})
+            url = API + "?" + urllib.parse.urlencode({"q": texte[:400], "langpair": f"{langue[:2]}|en", "mt": "1"})
             with urllib.request.urlopen(urllib.request.Request(url, headers=_agent()), timeout=6) as r:
                 d = json.loads(r.read().decode("utf-8"))
-            t = ((d.get("responseData") or {}).get("translatedText") or "").strip()
-            if t and int(d.get("responseStatus") or 200) == 200 and "MYMEMORY WARNING" not in t.upper():
-                res = (t, "service", [])
+            res = _meilleure(d, texte)
         except Exception:    # noqa: BLE001 : sans réseau, le dictionnaire prend le relais
             res = None
     if res is None:
@@ -95,6 +100,27 @@ def en_anglais(texte, langue=None, reseau=True):
         res = (t, "dictionnaire" if len(manque) < len(t.split()) else "", manque)
     _CACHE[cle] = res
     return res
+
+
+def _meilleure(d, texte):
+    """Traduction fiable de la réponse MyMemory : la traduction automatique (« MT ») ou une correspondance très proche ;
+    les souvenirs approximatifs d'autres utilisateurs (ex. « incroyable » → « Business ») sont écartés."""
+    if int(d.get("responseStatus") or 200) != 200:
+        return None
+    candidats = []
+    rd = d.get("responseData") or {}
+    if rd.get("translatedText"):
+        candidats.append((float(rd.get("match") or 0), rd["translatedText"], False))
+    for m in d.get("matches") or []:
+        if m.get("translation"):
+            mt = "MT" in str(m.get("created-by") or "").upper() or str(m.get("created-by") or "") == "MT!"
+            proche = (m.get("segment") or "").strip().lower() == texte.strip().lower()
+            candidats.append((1.0 if mt else (float(m.get("match") or 0) if proche else 0.0), m["translation"], mt))
+    candidats = [c for c in candidats if c[0] >= 0.85 and "MYMEMORY WARNING" not in c[1].upper()]
+    if not candidats:
+        return None
+    candidats.sort(key=lambda c: (c[2], c[0]), reverse=True)
+    return (candidats[0][1].strip(), "service", [])
 
 
 def message(origine, resultat):

@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.8.6 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.8.7 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.8.7
+- Extraits de films : la recherche s'ouvre bien dans le navigateur par defaut.
+- Traduction des recherches fiabilisee : seules la traduction automatique et les correspondances exactes sont gardees (fini « incroyable » -> « Business ») ; dictionnaire enrichi (incroyable, genial, c'est parti...).
 
 ### 0.8.6
 - Bouton Musique : plus de gel avec un gros dossier de musiques (ou sur un NAS) ; le menu s'ouvre tout de suite, titres, albums et artistes sont lus en arriere-plan.
