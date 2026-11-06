@@ -23,7 +23,7 @@ COMMUNS = ["auteur", "langue", "outils_epingles", "barre_rapide", "volet", "ia_m
            "musiques_dossier", "chaine_nom", "fabrique_style", "veo_actif", "ia_confirmer_cout", "modeles_video_perso"]
 POSTE = ["secrets_refuses", "disposition_vue", "volet_largeur", "biblio_replies", "sessions_vues", "synchro_etat",
          "machine", "zoom", "racines", "nas", "dernier_dossier", "drive", "drive_compte", "association_video",
-         "recherche_racines", "proxys", "ia_locale", "ia_poste_leger", "ia_gpu", "ia_locale_modeles", "dossier_flow", "dossier_proxys", "encodeur", "apercu_images", "ajout_auto", "dernier_dossier_export", "barre_taille", "dossier_images", "tailles_vue", "apercu_fidele", "preparation_auto", "secrets_empreinte", "dossier_rushes"]
+         "recherche_racines", "proxys", "ia_locale", "ia_poste_leger", "ia_gpu", "ia_locale_modeles", "dossier_flow", "dossier_proxys", "encodeur", "apercu_images", "ajout_auto", "dernier_dossier_export", "barre_taille", "dossier_images", "tailles_vue", "apercu_fidele", "preparation_auto", "secrets_empreinte", "dossier_rushes", "fenetre_geometrie", "fenetre_maximisee"]
 CLEFS_IA = ["clef_claude", "clef_gemini", "clef_fal"]
 COFFRE_PARTAGES = {"pixabay_cle": "Pixabay", "pexels_cle": "Pexels"}      # clefs rangées directement dans le coffre
 FICHIER_DRIVE = "preferences.json"

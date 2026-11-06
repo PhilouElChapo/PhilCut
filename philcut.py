@@ -120,7 +120,7 @@ def main():
     lancement.etape(_("Préparation de la fenêtre de montage…"), 0.72)
     f = Fenetre([a for a in sys.argv[1:] if os.path.exists(a)])
     lancement.etape(_("Ouverture…"), 1.0)
-    f.show()
+    f.afficher()
     lancement.close()
     return app.exec()
 

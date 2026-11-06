@@ -356,6 +356,32 @@ class Test080(unittest.TestCase):
         self.assertEqual(g.travaux[0]["etat"], ATTENTE)
         self.assertIsNone(g.travaux[0]["erreur"])
 
+    def test_fenetre_dans_l_ecran_et_notes_de_mise_a_jour(self):
+        from app.fenetre import resume_notes
+        notes = ("PhilCut pour Windows, tout en un.\n## Nouveautes de 0.8.6\n\n### 0.8.6\n- Bouton Musique sans gel.\n- Aide des effets.\n\n"
+                 "### 0.8.5\n- Autre chose.")
+        r = resume_notes(notes)
+        self.assertIn("Bouton Musique", r)
+        self.assertNotIn("Autre chose", r)
+        self.assertNotIn("Windows", r)
+        from app.config import Parametres
+        from app.fenetre import Fenetre
+        pa = Parametres()
+        pa["fenetre_maximisee"] = True
+        pa["bienvenue_vue"] = True
+        pa["maj_auto"] = False
+        pa["synchro"] = False
+        pa.enregistrer()
+        f = Fenetre()
+        f.afficher()
+        app.processEvents()
+        ecr = f.screen().availableGeometry()
+        self.assertTrue(f.isMaximized() or ecr.contains(f.frameGeometry()))
+        f._retenir_geometrie()
+        f.hide()
+        f.deleteLater()
+        app.processEvents()
+
     def test_pixabay_sans_clef_explique(self):
         from app import tampons as T, coffre
         coffre.supprimer(T.CLEFS["pixabay"])

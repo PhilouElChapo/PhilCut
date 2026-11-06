@@ -22,6 +22,22 @@ from .taches import Tache
 from .widgets import boutons_fr
 
 
+def resume_notes(notes, n=4):
+    """Les quelques nouveautés de la dernière version (puces « - » du premier « ### ») au lieu des notes brutes."""
+    import html as H
+    lignes, dans = [], False
+    for l in (notes or "").splitlines():
+        l = l.strip()
+        if l.startswith("### "):
+            if dans:
+                break
+            dans = True
+            continue
+        if dans and l.startswith("- "):
+            lignes.append("• " + H.escape(l[2:]))
+    return "<br>".join(lignes[:n])
+
+
 def progression_maj(tache):
     """Progression du téléchargement de la mise à jour : mise_a_jour.recuperer donne (octets reçus, taille totale)."""
     def suivre(fait, total=0):
@@ -374,7 +390,35 @@ class Fenetre(QMainWindow):
         w.deleteLater()
         self.ecrire_session()
 
+    def afficher(self):
+        """Première ouverture : plein écran (maximisée), la barre d'état du bas toujours visible au-dessus de la barre des
+        tâches ; ensuite la taille et la place de la dernière fois, si elles tiennent dans l'écran actuel."""
+        from PySide6.QtCore import QByteArray, QRect
+        g = self.params.get("fenetre_geometrie")
+        ok = False
+        if g and not self.params.get("fenetre_maximisee", True):
+            try:
+                self.restoreGeometry(QByteArray.fromBase64(g.encode()))
+                ecr = self.screen() or QApplication.primaryScreen()
+                dispo = ecr.availableGeometry() if ecr else QRect()
+                ok = dispo.isNull() or dispo.contains(self.frameGeometry())
+            except Exception:    # noqa: BLE001
+                ok = False
+        if ok:
+            self.show()
+        else:
+            self.showMaximized()
+
+    def _retenir_geometrie(self):
+        try:
+            self.params["fenetre_maximisee"] = self.isMaximized()
+            if not self.isMaximized():
+                self.params["fenetre_geometrie"] = bytes(self.saveGeometry().toBase64()).decode()
+        except Exception:    # noqa: BLE001
+            pass
+
     def closeEvent(self, e):
+        self._retenir_geometrie()
         for ed in self.editeurs():
             if ed.projet.modifie:
                 self.onglets.setCurrentWidget(ed)
@@ -1149,7 +1193,8 @@ class Fenetre(QMainWindow):
                     QMessageBox.information(self, _("Mise à jour"), _("PhilCut {v} est à jour.", v=VERSION))
             return
         version, paquet, notes = res
-        texte = _("PhilCut {n} est disponible (vous avez {v}).", n=version, v=VERSION) + (f"<br><span style='color:#999'>{notes[:400]}</span>" if notes else "")
+        texte = _("PhilCut {n} est disponible (vous avez {v}).", n=version, v=VERSION) + \
+            (f"<br><span style='color:#999'>{resume_notes(notes)}</span>" if resume_notes(notes) else "")
         self.accueil.proposer(texte, _("Télécharger et installer"), lambda: self._installer_maj(paquet))
         self.onglets.setCurrentIndex(0) if not silencieux else None
 

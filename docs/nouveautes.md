@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.8.8 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.8.9 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.8.9
+- Fenetre principale ouverte en plein ecran la premiere fois, puis a la taille et a la place de la derniere fois si elles tiennent dans l'ecran : la barre d'etat du bas (telechargements, taches) reste toujours visible.
+- Proposition de mise a jour sur l'Accueil : les nouveautes de la version en quelques puces, au lieu des notes brutes.
 
 ### 0.8.8
 - Telechargements de l'IA locale : une coupure (reseau, serveur, fichier incomplet) reprend toute seule la suite la ou elle s'etait arretee, jusqu'a 8 fois.
