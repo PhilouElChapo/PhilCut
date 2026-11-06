@@ -22,6 +22,8 @@ MODELES = {
     "masque": ("clean", _("Lettres qui montent"), _("Les lettres sortent d'un masque une à une, un trait fin se dessine.")),
     "verre": ("clean", _("Carte en verre dépoli"), _("Une carte translucide glisse sur un fond qui respire, le texte apparaît dedans.")),
     "espacement": ("clean", _("Espacement qui se resserre"), _("Lettres espacées et floues qui se resserrent et deviennent nettes.")),
+    "tiers_clean": ("clean", _("Bas de l'écran, sobre"), _("Nom et sous-titre en bas à gauche : un trait se pose, le texte sort de derrière.")),
+    "tiers_punchy": ("punchy", _("Bas de l'écran, bloc couleur"), _("Bloc de couleur qui glisse, nom en majuscules grasses, sous-titre dessous.")),
     "cinema": ("cinema", _("Générique de cinéma"), _("Bandes noires, lettres très espacées, poussée lente, balayage de lumière.")),
     "horizon": ("cinema", _("Ligne d'horizon"), _("Un trait doré s'ouvre ; le titre monte au-dessus, le sous-titre descend dessous.")),
     "lumiere": ("cinema", _("Fuites de lumière"), _("Lumières chaudes qui passent, le titre sort du flou.")),
@@ -157,6 +159,8 @@ class Contexte:
                 v = rng.randint(0, 255)
                 self.grain.setPixelColor(x, y, QColor(v, v, v, 10))
         self.y_texte = H * (0.6 if self.logo is not None else 0.5)
+        if modele.startswith("tiers"):
+            self.y_texte = H * 0.8
 
 
 # ------------------------------------------------------------------ fonds
@@ -589,8 +593,62 @@ def _lumiere(p, ctx, sec):
     sous_titre(p, ctx, sec, 1.1, couleur=ctx.c["accent2"], poids=300, espacement=0.3, taille=0.034)
 
 
+def _tiers(p, ctx, sec, punchy):
+    from PySide6.QtCore import QRectF, Qt
+    L, H = ctx.L, ctx.H
+    x0 = L * 0.07
+    f = police("Poppins", H * (0.058 if punchy else 0.05), 800 if punchy else 600)
+    texte = ctx.texte.upper() if punchy else ctx.texte
+    ch, w, fm = chemin_texte(texte, f, 0.02 if punchy else 0.0)
+    ch = ch.translated(w / 2, 0)                    # aligné à gauche
+    y = ctx.y_texte
+    sortie = phase(sec, ctx.duree - 0.5, 0.45)
+    if punchy:
+        e = expo(phase(sec, 0.0, 0.55)) * (1 - expo(sortie))
+        marge = H * 0.018
+        bloc = QRectF(x0 - marge, y - fm.ascent() - marge * 0.6, (w + 2 * marge) * e, fm.ascent() + fm.descent() + marge * 1.2)
+        p.fillRect(bloc, ctx.c["accent"])
+        p.save()
+        p.setClipRect(bloc)
+        t = expo(phase(sec, 0.18, 0.6))
+        p.setPen(Qt.NoPen)
+        p.setBrush(ctx.c["texte"])
+        p.drawPath(ch.translated(x0 - (1 - t) * w * 0.4, y - fm.descent() * 0.2))
+        p.restore()
+        if ctx.sous:
+            f2 = police("Poppins", H * 0.032, 600)
+            ch2, w2, fm2 = chemin_texte(ctx.sous, f2, 0.04)
+            e2 = expo(phase(sec, 0.35, 0.55)) * (1 - expo(sortie))
+            b2 = QRectF(x0 - marge, bloc.bottom(), (w2 + 2 * marge) * e2, fm2.ascent() + fm2.descent() + marge)
+            p.fillRect(b2, ctx.c["fond"])
+            p.save()
+            p.setClipRect(b2)
+            p.setPen(Qt.NoPen)
+            p.setBrush(ctx.c["accent2"])
+            p.drawPath(ch2.translated(x0 + w2 / 2, b2.top() + marge * 0.5 + fm2.ascent()))
+            p.restore()
+    else:
+        e = expo(phase(sec, 0.0, 0.7)) * (1 - expo(sortie))
+        p.fillRect(QRectF(x0 - H * 0.02, y - fm.ascent(), max(1.5, H * 0.004), (fm.ascent() + H * 0.06) * e), ctx.c["accent"])
+        p.save()
+        p.setClipRect(QRectF(x0, 0, L, H))
+        t = expo(phase(sec, 0.2, 0.8)) - expo(sortie)
+        p.setPen(Qt.NoPen)
+        p.setBrush(ctx.c["texte"])
+        p.drawPath(ch.translated(x0 - (1 - t) * (w + H * 0.05), y))
+        if ctx.sous:
+            f2 = police("Poppins", H * 0.03, 300)
+            ch2, w2, fm2 = chemin_texte(ctx.sous, f2, 0.08)
+            t2 = expo(phase(sec, 0.4, 0.8)) - expo(sortie)
+            p.setBrush(ctx.c["texte"])
+            p.setOpacity(0.85)
+            p.drawPath(ch2.translated(x0 + w2 / 2 - (1 - t2) * (w2 + H * 0.05), y + H * 0.05))
+        p.restore()
+
+
 DESSINS = {"slam": _slam, "decoupe": _decoupe, "contour": _contour, "glitch_net": _glitch_net, "masque": _masque,
-           "espacement": _espacement, "cinema": _cinema, "horizon": _horizon, "lumiere": _lumiere}
+           "espacement": _espacement, "cinema": _cinema, "tiers_clean": lambda p, c, t: _tiers(p, c, t, False),
+           "tiers_punchy": lambda p, c, t: _tiers(p, c, t, True), "horizon": _horizon, "lumiere": _lumiere}
 
 
 def image(ctx, sec):

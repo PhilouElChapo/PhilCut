@@ -146,6 +146,7 @@ class Fenetre(QMainWindow):
             mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
         mo.addAction(_("Figer l'image à la tête de lecture (cadre photo, légende)…"), lambda: self._ed(lambda ed: ed.figer_image()))
         mo.addAction(icone("assistant"), _("Dites-le en clair (une phrase devient des actions)…"), lambda: self._ed(lambda ed: ed.dites_le()))
+        mo.addAction(icone("effets"), _("Transitions automatiques (selon les images et la musique)…"), lambda: self._ed(lambda ed: ed.transitions_auto()))
         mo.addAction(icone("musique"), _("Bruitages (whoosh, impact, déclic, bip…)…"), lambda: self._ed(lambda ed: ed.bruitage()))
         av = mo.addMenu(icone("goodies"), _("Aviation"))
         av.addAction(_("Tableau de bord de vol (profil réglable)…"), lambda: self._ed(lambda ed: ed.tableau_de_bord()))

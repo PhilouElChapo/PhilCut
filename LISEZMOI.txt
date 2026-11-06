@@ -93,6 +93,9 @@ par reseau de neurones, sur ce poste).
 votre texte ; titre d'ouverture pose sur le film ; vignette du fichier choisie dans le
 film ; polices Poppins, Bebas Neue, Anton.
 
+0.5.2 : textes animes modernes (dont bas de l'ecran), transitions modernes, gabarits de
+logo modernes ; transitions automatiques selon les images et la musique.
+
 Mises a jour
 ------------
 Verifiees au demarrage (une fois par jour) et PROPOSEES sur l'Accueil : rien n'est

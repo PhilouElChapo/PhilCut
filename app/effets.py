@@ -107,6 +107,22 @@ CATALOGUE = {
     "t_file": ("transition", _("Filé (whip pan)"), _("Panoramique très rapide et flou : la caméra « fouette » d'un plan à l'autre."),
                [("duree", _("Durée (s)"), "float", 0.35, 0.15, 1.0)], None),
     "t_diagonale": ("transition", _("Diagonale"), _("Le plan suivant arrive en biais depuis un coin."), [("duree", _("Durée (s)"), "float", 0.6, 0.2, 2.0)], None),
+    # ---- transitions modernes (0.5.1) : courtes, nettes, avec du mouvement
+    "t_zoom_avant": ("transition", _("Zoom avant (moderne)"), _("On plonge dans l'image et le plan suivant apparaît : très utilisé sur les réseaux."),
+                     [("duree", _("Durée (s)"), "float", 0.45, 0.2, 1.5)], None),
+    "t_lisse": ("transition", _("Poussée douce"), _("Le plan suivant glisse en douceur, sans à-coup : élégant et sobre."),
+                [("duree", _("Durée (s)"), "float", 0.6, 0.2, 2.0)], None),
+    "t_file_vertical": ("transition", _("Filé vertical"), _("La caméra « fouette » vers le haut, flou de mouvement vertical."),
+                        [("duree", _("Durée (s)"), "float", 0.35, 0.15, 1.0)], None),
+    "t_radial": ("transition", _("Balayage radial"), _("Le plan suivant apparaît comme l'aiguille d'une horloge."),
+                 [("duree", _("Durée (s)"), "float", 0.7, 0.2, 2.0)], None),
+    "t_vent": ("transition", _("Coup de vent"), _("Le plan s'envole en filaments vers la droite."), [("duree", _("Durée (s)"), "float", 0.6, 0.2, 2.0)], None),
+    "t_tranches": ("transition", _("Tranches"), _("Le plan suivant arrive par tranches décalées, effet graphique."),
+                   [("duree", _("Durée (s)"), "float", 0.6, 0.2, 2.0)], None),
+    "t_couverture": ("transition", _("Recouvrement"), _("Le plan suivant passe par-dessus le précédent, qui reste en place."),
+                     [("duree", _("Durée (s)"), "float", 0.5, 0.2, 2.0)], None),
+    "t_gris": ("transition", _("Passage par le gris"), _("Les couleurs s'éteignent puis reviennent sur le plan suivant : cinéma."),
+               [("duree", _("Durée (s)"), "float", 0.9, 0.3, 3.0)], None),
     # ---- personne (IA)
     "halo": ("personne", _("Halo"), _("Aura lumineuse autour de la personne détourée."),
              [("couleur", _("Couleur"), "couleur", "#ffd36b", 0, 0), ("force", _("Force"), "float", 1.0, 0.2, 2.0)], "segmentation"),
@@ -353,8 +369,10 @@ def _etiquette():
 
 
 XFADE = {"t_fondu_enchaine": "fade", "t_dissolution": "dissolve", "t_glisse": "slideleft", "t_cercle": "circleopen",
-         "t_pixels": "pixelize", "t_flou_fondu": "hblur", "t_diagonale": "diagbr", "t_file": "slideleft"}
-FLOU_FUSION = {"t_file": 0.06}          # transition fusion suivie d'un flou de mouvement horizontal (part de la largeur)
+         "t_pixels": "pixelize", "t_flou_fondu": "hblur", "t_diagonale": "diagbr", "t_file": "slideleft",
+         "t_zoom_avant": "zoomin", "t_lisse": "smoothleft", "t_file_vertical": "slideup", "t_radial": "radial", "t_vent": "hrwind",
+         "t_tranches": "hlslice", "t_couverture": "coverleft", "t_gris": "fadegrays"}
+FLOU_FUSION = {"t_file": 0.06, "t_file_vertical": -0.06, "t_zoom_avant": 0.012}   # < 0 : flou vertical          # transition fusion suivie d'un flou de mouvement horizontal (part de la largeur)
 
 
 def fusion(effet):

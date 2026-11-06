@@ -33,7 +33,8 @@ class Test050(unittest.TestCase):
                 self.assertFalse(a.isNull())
                 self.assertNotEqual(a, b, f"{m} / {fond} : l'image ne bouge pas")
                 # au milieu, le titre est là : des pixels clairs au centre
-                clairs = sum(1 for x in range(60, 260, 3) for y in range(60, 120, 3) if b.pixelColor(x, y).lightness() > 170)
+                zx, zy = (range(10, 220, 2), range(118, 160, 2)) if m.startswith("tiers") else (range(60, 260, 3), range(60, 120, 3))
+                clairs = sum(1 for x in zx for y in zy if b.pixelColor(x, y).lightness() > 170)
                 self.assertGreater(clairs, 3, f"{m} / {fond} : pas de titre visible")
 
     def test_fabriquer_clip(self):
@@ -95,6 +96,70 @@ class Test050(unittest.TestCase):
         d.famille.setCurrentIndex(d.famille.findData("anciens"))
         self.assertTrue(all(d.vignettes.item(i).data(0x0100) not in ("slam",) for i in range(d.vignettes.count())))
         d.reject()
+
+    def test_051_transitions_modernes(self):
+        from app import effets as E
+        for k in ("t_zoom_avant", "t_lisse", "t_file_vertical", "t_radial", "t_vent", "t_tranches", "t_couverture", "t_gris"):
+            self.assertIn(k, E.CATALOGUE)
+            self.assertIn(k, E.XFADE)
+        from app.projet import Projet
+        from app.export import Exportateur
+        p = Projet()
+        v = commun.video_test(self.d, "t.mp4", duree=2)
+        m = p.ajouter_media(v, moteur.sonder(v))
+        p.ajouter_clip(m["id"], "video", 0, 0, 2)
+        c2 = p.ajouter_clip(m["id"], "video", 2, 0, 2)
+        for k in ("t_file_vertical", "t_zoom_avant"):
+            c2["transition"] = {"id": k, "params": dict(E.defauts(k))}
+            sortie = os.path.join(self.d, f"{k}.mp4")
+            Exportateur(p, sortie, "whatsapp", qualite="allegee", encodeur="libx264", params={}).lancer()
+            self.assertTrue(os.path.getsize(sortie) > 1000)
+
+    def test_051_tiers_et_texte_moderne(self):
+        from app import intros as I
+        for m in ("tiers_clean", "tiers_punchy"):
+            ctx = I.contexte(m, "Prénom Nom", "Fonction", 320, 180, 3.0, "transparent")
+            self.assertGreater(ctx.y_texte, 180 * 0.7)
+            img = I.image(ctx, 1.5)
+            bas = sum(1 for x in range(0, 220, 2) for y in range(115, 170, 2) if img.pixelColor(x, y).alpha() > 150)
+            self.assertGreater(bas, 5)
+        from app.dialogues_video import DialogueTitre
+        d = DialogueTitre(None)
+        self.assertGreater(d.moderne.count(), 10)
+        d.reject()
+        from app import logo as LG
+        g = LG.gabarits("Mon Studio")
+        self.assertTrue(any(k.startswith("Moderne") for k in g))
+        self.assertFalse(LG.rendre(next(v for k, v in g.items() if k.startswith("Moderne")), 200).isNull())
+
+    def test_052_transitions_automatiques(self):
+        from app.projet import Projet
+        from app import transitions_auto as TA
+        d = self.d
+        pan = os.path.join(d, "pan.mp4")          # panoramique rapide vers la gauche
+        subprocess.run([moteur.ffmpeg(), "-v", "error", "-y", "-f", "lavfi", "-i", "testsrc2=s=1280x360:r=25:d=3",
+                        "-vf", "crop=480:360:x='min(800,t*400)':y=0", pan], check=True)
+        bleu = os.path.join(d, "bleu.mp4")
+        subprocess.run([moteur.ffmpeg(), "-v", "error", "-y", "-f", "lavfi", "-i", "color=c=0x2050ff:s=480x360:r=25:d=3", bleu], check=True)
+        fixe = os.path.join(d, "fixe.mp4")
+        subprocess.run([moteur.ffmpeg(), "-v", "error", "-y", "-f", "lavfi", "-i", "smptebars=s=480x360:r=25:d=3", fixe], check=True)
+        p = Projet()
+        mp, mb, mf = (p.ajouter_media(x, moteur.sonder(x)) for x in (pan, bleu, fixe))
+        p.ajouter_clip(mp["id"], "video", 0, 0, 2)
+        c2 = p.ajouter_clip(mb["id"], "video", 2, 0, 2)
+        c3 = p.ajouter_clip(mf["id"], "video", 4, 0, 2)
+        c4 = p.ajouter_clip(mf["id"], "video", 6, 0.5, 2.5)
+        props = {x["clip"]: x for x in TA.proposer(p, "clean")}
+        self.assertEqual(props[c2["id"]]["eid"], "t_file", props[c2["id"]])          # le panoramique appelle un filé
+        self.assertEqual(props[c3["id"]]["eid"], "t_fondu_enchaine")                  # autre scène : fondu
+        self.assertIsNone(props[c4["id"]]["eid"])                                     # même scène : coupe franche
+        n = TA.appliquer(p, list(props.values()))
+        self.assertEqual(n, 3)
+        self.assertEqual(p.clip(c2["id"])["transition"]["id"], "t_file")
+        p.annuler()
+        self.assertFalse(p.clip(c2["id"]).get("transition"))
+        cine = {x["clip"]: x for x in TA.proposer(p, "cinema")}
+        self.assertIn(cine[c3["id"]]["eid"], ("t_gris", "t_fondu_enchaine", "t_fondu_noir"))
 
     def test_exemples_neutres(self):
         """Logiciel distribué à la communauté : pas de lieux, commerces ou noms propres de l'auteur dans les textes."""

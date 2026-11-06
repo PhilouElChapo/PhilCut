@@ -37,6 +37,21 @@ class DialogueTitre(QDialog):
             self.anim.addItem(lib, k)
         self.anim.setCurrentIndex(max(0, [k for k, _l in ANIMATIONS].index(t.get("animation", "fondu")) if t.get("animation", "fondu") in [k for k, _l in ANIMATIONS] else 0))
         f.addRow(_("Animation"), self.anim)
+        # style moderne animé (0.5.1) : même moteur que les intros, polices et courbes actuelles
+        from . import intros as IN
+        self.moderne = QComboBox()
+        self.moderne.addItem(_("Aucun : texte classique (réglages ci-dessous)"), "")
+        for k, (fam, lib, _d) in IN.MODELES.items():
+            self.moderne.addItem(f"{IN.FAMILLES[fam]} — {lib}", k)
+        self.moderne.setToolTip(_("Un style moderne animé remplace l'animation, la police et l'effet classiques ; le texte se règle ensuite "
+                                  "dans l'Inspecteur (piste Goodies)."))
+        self.sous_moderne = QLineEdit("")
+        self.sous_moderne.setPlaceholderText(_("Sous-titre du style moderne (facultatif)"))
+        self.sous_moderne.setEnabled(False)
+        self.moderne.currentIndexChanged.connect(lambda _i: self.sous_moderne.setEnabled(bool(self.moderne.currentData())))
+        if titre is None:
+            f.addRow(_("Style moderne"), self.moderne)
+            f.addRow("", self.sous_moderne)
         h = QHBoxLayout()
         self.debut = QDoubleSpinBox()
         self.debut.setRange(0, 36000)

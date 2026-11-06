@@ -23,7 +23,7 @@ def nouveau(nom="Mon logo", largeur=1024, hauteur=1024):
 
 
 def texte(t, x=512, y=512, taille=150, couleur="#ffffff", **extra):
-    e = {"type": "texte", "texte": t, "police": "Nunito", "taille": taille, "gras": True, "italique": False, "couleur": couleur,
+    e = {"type": "texte", "texte": t, "police": "Poppins", "taille": taille, "gras": True, "italique": False, "couleur": couleur,
          "x": x, "y": y, "rotation": 0, "effet": "aucun", "couleur2": "#000000", "epaisseur": 8, "espacement": 0, "opacite": 1.0}
     e.update(extra)
     return e
@@ -39,7 +39,27 @@ def forme(f, x=512, y=512, l=600, h=600, couleur="#6d3fc6", **extra):
 def gabarits(nom="PhilCut"):
     """Points de départ prêts à modifier."""
     court = nom if len(nom) <= 14 else nom[:14]
+    initiales = "".join(m[0] for m in nom.split()[:2]).upper() or nom[:2].upper()
     return {
+        # ---- modernes (0.5.1) : typographie actuelle, peu de formes, beaucoup d'air
+        _("Moderne : mot en gras + point"): dict(nouveau(nom, 1600, 600), elements=[
+            texte(court.upper(), x=760, y=300, taille=(tm := 300 if len(court) < 9 else 220), couleur="#ffffff", police="Bebas Neue", gras=False,
+                  espacement=2),
+            forme("cercle", x=760 + len(court) * tm * 0.215 + 45, y=300 + tm * 0.3, l=tm * 0.16, h=tm * 0.16, couleur="#ff3b30")]),
+        _("Moderne : monogramme fin"): dict(nouveau(nom), elements=[
+            forme("cercle", l=880, h=880, couleur="#00000000", contour="#ffffff", epaisseur=10),
+            texte(initiales, y=470, taille=280, couleur="#ffffff", gras=False, police="Poppins", espacement=4),
+            texte(court.upper(), y=690, taille=48, couleur="#cfd8e3", gras=False, espacement=40)]),
+        _("Moderne : bloc incliné"): dict(nouveau(nom, 1600, 700), elements=[
+            forme("rectangle", x=800, y=350, l=1300, h=330, couleur="#ff8c1a", rotation=-4),
+            texte(court.upper(), x=800, y=350, taille=270 if len(court) < 9 else 190, couleur="#111111", police="Anton", gras=False, rotation=-4)]),
+        _("Moderne : ligne et lettres espacées"): dict(nouveau(nom, 1600, 600), elements=[
+            texte(court.upper(), x=800, y=270, taille=120, couleur="#ffffff", gras=False, espacement=45),
+            forme("rectangle", x=800, y=380, l=520, h=6, couleur="#e8c27a")]),
+        _("Moderne : pastille arrondie"): dict(nouveau(nom), elements=[
+            forme("arrondi", l=820, h=820, couleur="#7b2ff7"),
+            texte(initiales, y=530, taille=330, couleur="#ffffff", effet="ombre", couleur2="#2a0a5e")]),
+        # ---- classiques
         _("Badge rond"): dict(nouveau(nom), elements=[forme("cercle", couleur="#14213d", contour="#fca311", epaisseur=24, l=860, h=860),
                                                      texte(court, y=530, taille=150 if len(court) < 9 else 110, couleur="#ffffff")]),
         _("Aviation (ailes)"): dict(nouveau(nom), elements=[forme("ailes", y=380, l=900, h=260, couleur="#d9d9d9"),

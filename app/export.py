@@ -185,8 +185,10 @@ class Exportateur:
                 genre, d, eid = fu
                 flou = ""
                 if eid in E.FLOU_FUSION:            # filé : flou de mouvement horizontal pendant le passage
-                    k = max(2, int(self.L * E.FLOU_FUSION[eid]))
-                    flou = f",avgblur=sizeX={k}:sizeY=1:enable='between(t,{long_cour - d:.3f},{long_cour:.3f})'"
+                    part = E.FLOU_FUSION[eid]
+                    k = max(2, int((self.L if part > 0 else self.H) * abs(part)))
+                    sx, sy = (k, 1) if part > 0 else (1, k)
+                    flou = f",avgblur=sizeX={sx}:sizeY={sy}:enable='between(t,{long_cour - d:.3f},{long_cour:.3f})'"
                 self.filtres.append(f"[{cour}][{s}]xfade=transition={genre}:duration={d:.3f}:offset={long_cour - d:.3f}{flou}[{nom}]")
                 long_cour = long_cour + lg - d
             else:

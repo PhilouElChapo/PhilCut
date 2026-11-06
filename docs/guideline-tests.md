@@ -157,6 +157,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T27 — 0.5.1 et 0.5.2 : textes, transitions et logos modernes, transitions automatiques
+
+1. **Texte moderne** : outil Texte › « Style moderne » (par exemple « Clean minimal — Bas de l'écran, sobre ») et un sous-titre. **Attendu** : le texte animé arrive sur la piste Goodies ; l'Inspecteur change texte, sous-titre et animation. « Aucun » garde le texte classique.
+2. **Bas de l'écran** : les deux modèles « Bas de l'écran » (sobre, bloc couleur) pour présenter une personne ou un lieu.
+3. **Transitions modernes** : catalogue des effets, famille Transitions : Zoom avant, Poussée douce, Filé vertical, Balayage radial, Coup de vent, Tranches, Recouvrement, Passage par le gris ; vignettes animées sur votre plan.
+4. **Atelier de logo** : les gabarits « Moderne : … » (mot en gras + point, monogramme fin, bloc incliné, ligne et lettres espacées, pastille arrondie) en tête de liste.
+5. **Transitions automatiques** : Montage › Transitions automatiques. Choisir le style (Punchy, Clean minimal, Cinéma). **Attendu** : une ligne par raccord avec la transition proposée et sa raison (panoramique → filé, même scène → coupe franche, temps fort de la musique ♪…) ; chaque ligne se décoche ou se change ; « Poser » ; Edition › Annuler défait tout.
+
 ## T26 — 0.5.0 : intros modernes, titre d'ouverture sur le film, vignette du fichier
 
 1. **Fabrique › Logo et intro** : tapez un titre et un sous-titre. **Attendu** : dix vignettes animées, calculées avec VOTRE texte, rangées en trois styles (Punchy, Clean minimal, Cinéma) ; le modèle cliqué joue en grand à droite avec sa description. « Anciens modèles » dans la liste Style garde les modèles d'avant.

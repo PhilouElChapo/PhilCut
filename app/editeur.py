@@ -1785,6 +1785,14 @@ class Editeur(QWidget):
         if not t["texte"]:
             return
         self.projet.marquer()
+        modele = d.moderne.currentData()
+        if modele:                               # style moderne animé : rendu par le moteur des intros, sur la piste Goodies
+            L_, H_ = self.projet.taille
+            self.projet.ajouter_goodie("intro_titre", t["debut"], max(t["fin"], t["debut"] + 2.0), x=0.5, y=0.5, taille=L_ / max(1, H_),
+                                       options={"texte": t["texte"], "sous_texte": d.sous_moderne.text().strip(), "modele": modele})
+            self.rafraichir()
+            self.encart.message(_("Texte animé posé sur la piste Goodies : cliquez-le pour changer le texte ou le style."))
+            return
         self.projet.ajouter_titre(**{k: v for k, v in t.items() if k != "id"})
         if t.get("suivi"):
             self._suivre(self.projet.titres[-1])
@@ -2196,6 +2204,10 @@ class Editeur(QWidget):
             apprentissage.ecrire(self.params, "recettes.json", d)
         except Exception:
             pass
+
+    def transitions_auto(self):
+        from .dialogues_transitions import DialogueTransitionsAuto
+        DialogueTransitionsAuto(self).exec()
 
     def dites_le(self, phrase=""):
         """« Dites-le en clair » : une phrase → des actions montrées, cochables, faites d'un coup (annulables)."""
