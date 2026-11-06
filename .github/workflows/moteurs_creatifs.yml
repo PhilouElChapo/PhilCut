@@ -1,0 +1,189 @@
+# Moteurs créatifs de l'IA locale portable (0.6) : images et vidéo (stable-diffusion.cpp), musique (acestep.cpp),
+# agrandissement (Real-ESRGAN ncnn), ralenti (RIFE ncnn), modèles ONNX. Archives officielles reprises quand elles
+# existent, sinon compilées ici ; essai réel sur Linux avec le code de PhilCut ; publication dans la release « moteurs-ia »
+# avec le catalogue moteurs-creatifs.json (fusionné par PhilCut au catalogue principal).
+name: Moteurs creatifs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  catalogue:
+    runs-on: ubuntu-latest
+    outputs:
+      sd_tag: ${{ steps.v.outputs.sd_tag }}
+      sd_win: ${{ steps.v.outputs.sd_win }}
+      sd_win_vulkan: ${{ steps.v.outputs.sd_win_vulkan }}
+      esrgan_tag: ${{ steps.v.outputs.esrgan_tag }}
+      esrgan_win: ${{ steps.v.outputs.esrgan_win }}
+      esrgan_linux: ${{ steps.v.outputs.esrgan_linux }}
+      rife_tag: ${{ steps.v.outputs.rife_tag }}
+      rife_win: ${{ steps.v.outputs.rife_win }}
+      rife_linux: ${{ steps.v.outputs.rife_linux }}
+      ace_ref: ${{ steps.v.outputs.ace_ref }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Versions
+        id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python outils_dev/moteurs_creatifs.py versions versions-creatifs.json
+      - name: Modeles
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python outils_dev/moteurs_creatifs.py modeles modeles-creatifs.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: catalogue-creatif
+          path: |
+            versions-creatifs.json
+            modeles-creatifs.json
+
+  windows:
+    needs: catalogue
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Archives officielles (stable-diffusion.cpp, Real-ESRGAN, RIFE)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          New-Item -ItemType Directory -Force dist, brut | Out-Null
+          if ("${{ needs.catalogue.outputs.sd_win }}") {
+            gh release download "${{ needs.catalogue.outputs.sd_tag }}" -R leejet/stable-diffusion.cpp -p "${{ needs.catalogue.outputs.sd_win }}" -D brut
+            Copy-Item "brut\${{ needs.catalogue.outputs.sd_win }}" dist\philcut-sd-windows-x64.zip
+          }
+          if ("${{ needs.catalogue.outputs.sd_win_vulkan }}") {
+            gh release download "${{ needs.catalogue.outputs.sd_tag }}" -R leejet/stable-diffusion.cpp -p "${{ needs.catalogue.outputs.sd_win_vulkan }}" -D brut
+            Copy-Item "brut\${{ needs.catalogue.outputs.sd_win_vulkan }}" dist\philcut-sd-vulkan-windows-x64.zip
+          }
+          if ("${{ needs.catalogue.outputs.esrgan_win }}") {
+            gh release download "${{ needs.catalogue.outputs.esrgan_tag }}" -R xinntao/Real-ESRGAN-ncnn-vulkan -p "${{ needs.catalogue.outputs.esrgan_win }}" -D brut
+            Copy-Item "brut\${{ needs.catalogue.outputs.esrgan_win }}" dist\philcut-esrgan-windows-x64.zip
+          }
+          if ("${{ needs.catalogue.outputs.rife_win }}") {
+            gh release download "${{ needs.catalogue.outputs.rife_tag }}" -R nihui/rife-ncnn-vulkan -p "${{ needs.catalogue.outputs.rife_win }}" -D brut
+            Copy-Item "brut\${{ needs.catalogue.outputs.rife_win }}" dist\philcut-rife-windows-x64.zip
+          }
+          Get-ChildItem dist | Format-Table Name, Length
+      - name: acestep.cpp (processeur)
+        shell: cmd
+        run: |
+          git clone --recursive https://github.com/ServeurpersoCom/acestep.cpp src-ace
+          cd src-ace
+          git checkout ${{ needs.catalogue.outputs.ace_ref }} 2>nul
+          git submodule update --init --recursive
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          cmake -S . -B build-cpu -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DBUILD_SHARED_LIBS=OFF
+          cmake --build build-cpu --target ace-lm ace-synth -j %NUMBER_OF_PROCESSORS%
+          mkdir ..\pack-ace
+          for /r build-cpu %%f in (ace-lm.exe ace-synth.exe *.dll) do copy "%%f" ..\pack-ace\ >nul
+          copy LICENSE ..\pack-ace\LICENSE.txt
+          cd ..
+          dir pack-ace
+          powershell -Command "Compress-Archive pack-ace\* dist\philcut-ace-windows-x64.zip"
+      - name: Vulkan SDK
+        id: vksdk
+        continue-on-error: true
+        uses: humbletim/install-vulkan-sdk@v1.2
+        with:
+          version: 1.4.309.0
+          cache: true
+      - name: acestep.cpp (Vulkan, carte graphique)
+        if: steps.vksdk.outcome == 'success'
+        continue-on-error: true
+        shell: cmd
+        run: |
+          cd src-ace
+          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+          cmake -S . -B build-vk -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_VULKAN=ON -DBUILD_SHARED_LIBS=OFF
+          cmake --build build-vk --target ace-lm ace-synth -j %NUMBER_OF_PROCESSORS%
+          mkdir ..\pack-ace-vk
+          for /r build-vk %%f in (ace-lm.exe ace-synth.exe *.dll) do copy "%%f" ..\pack-ace-vk\ >nul
+          copy LICENSE ..\pack-ace-vk\LICENSE.txt
+          cd ..
+          powershell -Command "Compress-Archive pack-ace-vk\* dist\philcut-ace-vulkan-windows-x64.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: creatifs-windows
+          path: dist/philcut-*-windows-x64.zip
+
+  linux:
+    needs: catalogue
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: catalogue-creatif
+          path: dist
+      - name: Outils
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake build-essential ninja-build ffmpeg libvulkan1 mesa-vulkan-drivers zip unzip
+      - name: Compiler stable-diffusion.cpp et acestep.cpp (processeur)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          OPTS="-G Ninja -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DBUILD_SHARED_LIBS=OFF"
+          git clone --recursive --depth 1 --branch "${{ needs.catalogue.outputs.sd_tag }}" https://github.com/leejet/stable-diffusion.cpp src-sd
+          cmake -S src-sd -B b-sd $OPTS -DSD_BUILD_SHARED_LIBS=OFF
+          cmake --build b-sd --target sd-cli -j"$(nproc)"
+          mkdir -p pack/sd && cp "$(find b-sd -type f -name sd-cli | head -1)" pack/sd/ && cp src-sd/LICENSE pack/sd/LICENSE.txt
+          git clone --recursive https://github.com/ServeurpersoCom/acestep.cpp src-ace
+          (cd src-ace && git checkout "${{ needs.catalogue.outputs.ace_ref }}" 2>/dev/null; git submodule update --init --recursive)
+          cmake -S src-ace -B b-ace $OPTS
+          cmake --build b-ace --target ace-lm ace-synth -j"$(nproc)"
+          mkdir -p pack/ace && cp "$(find b-ace -type f -name ace-lm | head -1)" "$(find b-ace -type f -name ace-synth | head -1)" pack/ace/
+          cp src-ace/LICENSE pack/ace/LICENSE.txt
+          for d in sd ace; do echo "== $d"; ls -la pack/$d; for e in pack/$d/*; do [ -x "$e" ] && (ldd "$e" | grep "not found" || true); done; done
+          tar czf dist/philcut-sd-linux-x64.tar.gz -C pack sd
+          tar czf dist/philcut-ace-linux-x64.tar.gz -C pack ace
+          if [ -n "${{ needs.catalogue.outputs.esrgan_linux }}" ]; then
+            gh release download "${{ needs.catalogue.outputs.esrgan_tag }}" -R xinntao/Real-ESRGAN-ncnn-vulkan -p "${{ needs.catalogue.outputs.esrgan_linux }}" -D brut
+            cp "brut/${{ needs.catalogue.outputs.esrgan_linux }}" dist/philcut-esrgan-linux-x64.zip
+          fi
+          if [ -n "${{ needs.catalogue.outputs.rife_linux }}" ]; then
+            gh release download "${{ needs.catalogue.outputs.rife_tag }}" -R nihui/rife-ncnn-vulkan -p "${{ needs.catalogue.outputs.rife_linux }}" -D brut
+            cp "brut/${{ needs.catalogue.outputs.rife_linux }}" dist/philcut-rife-linux-x64.zip
+          fi
+          ls -la dist
+      - name: Essai reel (images, agrandissement, ralenti, profondeur, dessin anime, musique)
+        env:
+          PHILCUT_IA_MANIFESTE2: dist/moteurs-creatifs.json
+          PHILCUT_IA_ARCHIVES: dist
+          PHILCUT_IA_DOSSIER: essai_creatif
+          PHILCUT_SANS_MULTIMEDIA: "1"
+        run: |
+          pip install numpy opencv-python-headless onnxruntime PySide6
+          python outils_dev/moteurs_creatifs.py assembler dist
+          QT_QPA_PLATFORM=offscreen timeout 3000 python outils_dev/essai_creatif.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: creatifs-linux
+          path: dist/philcut-*-linux-x64.*
+
+  publier:
+    needs: [catalogue, windows, linux]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Catalogue moteurs-creatifs.json et publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python outils_dev/moteurs_creatifs.py assembler dist
+          fichiers=$(ls dist/philcut-sd* dist/philcut-ace* dist/philcut-esrgan* dist/philcut-rife* 2>/dev/null || true)
+          echo "$fichiers"
+          gh release upload moteurs-ia $fichiers dist/moteurs-creatifs.json --clobber
