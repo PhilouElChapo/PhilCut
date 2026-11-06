@@ -11,8 +11,6 @@ Guide de test : docs/guideline-tests.md
 - Fenetre Effets : la zone Reglages explique quoi faire tant qu'aucun effet n'est pose, et indique quand un effet n'a pas de reglage.
 
 ### 0.8.5
-
-### 0.8.5
 - Preferences > IA : clefs Pixabay et Pexels (avec bouton "Creer ma clef"), dans le coffre du systeme.
 - Tous les champs de mot de passe, phrase secrete ou clef ont un oeil pour afficher ce qui est tape ; l'indice de la phrase secrete passe au-dessus.
 - Importer des rushes et "Rushes -> projet" s'ouvrent dans le dossier Videos du systeme, puis le dernier dossier utilise.
