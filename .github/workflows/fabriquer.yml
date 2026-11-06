@@ -133,12 +133,7 @@ jobs:
           name: PhilCut ${{ env.VERSION }}
           target_commitish: ${{ github.sha }}
           make_latest: true
-          body: |
-            PhilCut ${{ env.VERSION }} pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
-            - PhilCut_portable.zip : a decompresser, aucune trace sur le PC (c'est la version de test).
-            - PhilCut_Setup.exe : installation sans droits administrateur.
-            Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
-            Guide de test : docs/guideline-tests.md
+          body_path: docs/nouveautes.md
           files: |
             PhilCut_portable.zip
             PhilCut_Setup.exe
