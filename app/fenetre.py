@@ -1185,6 +1185,9 @@ class Fenetre(QMainWindow):
             s.ecrire(ouverts)
             from . import reglages
             reglages.ecrire_drive(self.params)
+            n = reglages.synchro_secrets_auto(self.params)        # clefs et mots de passe (chiffrés) entre les postes
+            if n:
+                self.statusBar().showMessage(_("{n} mot(s) de passe ou clef(s) repris de vos autres postes.", n=n), 8000)
         except Exception as e:    # noqa: BLE001
             from .journal import ecrire
             ecrire("synchro", f"session non écrite : {e}")
@@ -1193,6 +1196,7 @@ class Fenetre(QMainWindow):
         try:
             from .session import session_de, date_fr, nb_fichiers
             s = session_de(self.params)
+            self._secrets_au_demarrage()
             autres = s.autres_machines()
             donnees = s.lire()
             self.accueil.rafraichir(autres, [(m, dte, donnees.get(m, {}).get("fichiers", [])) for m, dte, _n in autres])
@@ -1204,6 +1208,22 @@ class Fenetre(QMainWindow):
         except Exception as e:    # noqa: BLE001
             from .journal import ecrire
             ecrire("synchro", f"session non lue : {e}")
+
+    def _secrets_au_demarrage(self):
+        """Clefs partagées par les autres postes : reprises tout de suite si la phrase est connue ici, sinon proposées."""
+        from . import coffre, reglages
+        if not self.params.get("synchro_secrets"):
+            return
+        chemin = reglages.chemin_secrets(self.params)
+        if coffre.lire(reglages.PHRASE):
+            n = reglages.synchro_secrets_auto(self.params)
+            if n:
+                self.statusBar().showMessage(_("{n} mot(s) de passe ou clef(s) repris de vos autres postes.", n=n), 8000)
+        elif chemin and os.path.exists(chemin):
+            from .dialogues_phrase import demander_phrase
+            self.accueil.proposer(_("Vos autres postes partagent des mots de passe et clefs (IA, Pixabay, Pexels…). Donnez votre "
+                                    "phrase secrète une fois pour les reprendre ici."), _("Donner la phrase…"),
+                                  lambda: demander_phrase(self, self.params, nouvelle=False))
 
     def _reprendre(self, fichiers, machine=None):
         s = None

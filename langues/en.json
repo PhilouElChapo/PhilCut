@@ -4814,5 +4814,21 @@
  "IDÉE !": "IDEA!",
  "silence gêné": "awkward silence",
  "FIN": "THE END",
- "Insérer un tampon vidéo ici…": "Insert a video stinger here…"
+ "Insérer un tampon vidéo ici…": "Insert a video stinger here…",
+ "Phrase secrète de la synchronisation": "Sync passphrase",
+ "Vos mots de passe et clefs (IA, Pixabay, Pexels, comptes) vont être envoyés à vos autres postes, chiffrés par une phrase secrète. Choisissez-la : il faudra la redonner une fois sur chaque autre poste. Elle n'est jamais envoyée ; si vous la perdez, il suffit de recopier les clefs à la main.": "Your passwords and keys (AI, Pixabay, Pexels, accounts) will be sent to your other computers, encrypted with a passphrase. Choose it: you will need to enter it once on each other computer. It is never sent; if you lose it, just copy the keys by hand.",
+ "Vos autres postes ont partagé des mots de passe et clefs, chiffrés par votre phrase secrète. Donnez-la une fois : ils seront repris sur ce poste.": "Your other computers have shared passwords and keys, encrypted with your passphrase. Enter it once: they will be taken over on this computer.",
+ "Encore une fois": "Once more",
+ "Facultatif, visible sur vos autres postes": "Optional, visible on your other computers",
+ "Indice": "Hint",
+ "{n} mot(s) de passe ou clef(s) repris de vos autres postes.": "{n} password(s) or key(s) taken over from your other computers.",
+ "La phrase doit faire au moins 6 caractères.": "The passphrase must be at least 6 characters long.",
+ "Indice : {i}": "Hint: {i}",
+ "Les deux phrases sont différentes.": "The two passphrases are different.",
+ "Ce n'est pas la bonne phrase.": "That is not the right passphrase.",
+ "Clef enregistrée dans le coffre du système ; elle suivra sur vos autres postes.": "Key saved in the system keychain; it will follow you to your other computers.",
+ "Clef enregistrée dans le coffre du système. Pour la retrouver sur vos autres postes : Préférences › Comptes et synchro › « Synchroniser aussi les mots de passe et clefs ».": "Key saved in the system keychain. To find it on your other computers: Preferences › Accounts and sync › \"Also sync passwords and keys\".",
+ "Vos autres postes partagent des mots de passe et clefs (IA, Pixabay, Pexels…). Donnez votre phrase secrète une fois pour les reprendre ici.": "Your other computers share passwords and keys (AI, Pixabay, Pexels…). Enter your passphrase once to take them over here.",
+ "Donner la phrase…": "Enter the passphrase…",
+ "clef {x}": "{x} key"
 }

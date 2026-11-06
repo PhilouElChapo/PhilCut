@@ -156,6 +156,35 @@ class Test080(unittest.TestCase):
         self.assertEqual(res[0]["titre"], "Applause crowd")
         self.assertIn("CC BY-SA", T.credit(res[0]))
 
+    def test_clefs_pixabay_pexels_suivent_sur_les_autres_postes(self):
+        from app.config import Parametres
+        from app import coffre, reglages
+        pa = Parametres()
+        drive = tempfile.mkdtemp()
+        pa["drive"] = drive
+        pa["drive_compte"] = ""
+        pa["synchro_secrets"] = True
+        coffre.enregistrer(reglages.PHRASE, "une phrase de test")
+        coffre.enregistrer("pixabay_cle", "cle-pixabay-essai")
+        coffre.enregistrer("pexels_cle", "cle-pexels-essai")
+        reglages.synchro_secrets_auto(pa)
+        self.assertTrue(os.path.exists(reglages.chemin_secrets(pa)))
+        with open(reglages.chemin_secrets(pa), "rb") as f:
+            self.assertNotIn(b"cle-pixabay-essai", f.read())          # chiffré, jamais en clair sur le Drive
+        # « autre poste » : la clef n'y est pas encore, elle est reprise
+        coffre.supprimer("pixabay_cle")
+        coffre.supprimer("pexels_cle")
+        libelles = [x["libelle"] for x in reglages.secrets_nouveaux(pa, "une phrase de test")]
+        self.assertTrue(any("Pixabay" in l for l in libelles), libelles)
+        self.assertGreaterEqual(reglages.synchro_secrets_auto(pa), 2)
+        self.assertEqual(coffre.lire("pixabay_cle"), "cle-pixabay-essai")
+        self.assertEqual(coffre.lire("pexels_cle"), "cle-pexels-essai")
+        coffre.enregistrer(reglages.PHRASE, "mauvaise phrase")           # mauvaise phrase : rien, sans erreur
+        self.assertEqual(reglages.synchro_secrets_auto(pa), 0)
+        coffre.supprimer(reglages.PHRASE)
+        coffre.supprimer("pixabay_cle")
+        coffre.supprimer("pexels_cle")
+
     def test_pixabay_sans_clef_explique(self):
         from app import tampons as T, coffre
         coffre.supprimer(T.CLEFS["pixabay"])

@@ -4805,5 +4805,21 @@
  "IDÉE !": "IDEE!",
  "silence gêné": "peinliche Stille",
  "FIN": "ENDE",
- "Insérer un tampon vidéo ici…": "Video-Einspieler hier einfügen…"
+ "Insérer un tampon vidéo ici…": "Video-Einspieler hier einfügen…",
+ "Phrase secrète de la synchronisation": "Passphrase der Synchronisierung",
+ "Vos mots de passe et clefs (IA, Pixabay, Pexels, comptes) vont être envoyés à vos autres postes, chiffrés par une phrase secrète. Choisissez-la : il faudra la redonner une fois sur chaque autre poste. Elle n'est jamais envoyée ; si vous la perdez, il suffit de recopier les clefs à la main.": "Ihre Passwörter und Schlüssel (KI, Pixabay, Pexels, Konten) werden mit einer Passphrase verschlüsselt an Ihre anderen Rechner gesendet. Wählen Sie sie: Sie müssen sie auf jedem anderen Rechner einmal eingeben. Sie wird nie gesendet; geht sie verloren, kopieren Sie die Schlüssel einfach von Hand.",
+ "Vos autres postes ont partagé des mots de passe et clefs, chiffrés par votre phrase secrète. Donnez-la une fois : ils seront repris sur ce poste.": "Ihre anderen Rechner haben Passwörter und Schlüssel geteilt, verschlüsselt mit Ihrer Passphrase. Geben Sie sie einmal ein: sie werden auf diesen Rechner übernommen.",
+ "Encore une fois": "Noch einmal",
+ "Facultatif, visible sur vos autres postes": "Optional, auf Ihren anderen Rechnern sichtbar",
+ "Indice": "Hinweis",
+ "{n} mot(s) de passe ou clef(s) repris de vos autres postes.": "{n} Passwort/Passwörter oder Schlüssel von Ihren anderen Rechnern übernommen.",
+ "La phrase doit faire au moins 6 caractères.": "Die Passphrase muss mindestens 6 Zeichen lang sein.",
+ "Indice : {i}": "Hinweis: {i}",
+ "Les deux phrases sont différentes.": "Die beiden Passphrasen sind verschieden.",
+ "Ce n'est pas la bonne phrase.": "Das ist nicht die richtige Passphrase.",
+ "Clef enregistrée dans le coffre du système ; elle suivra sur vos autres postes.": "Schlüssel im Schlüsselbund des Systems gespeichert; er folgt Ihnen auf Ihre anderen Rechner.",
+ "Clef enregistrée dans le coffre du système. Pour la retrouver sur vos autres postes : Préférences › Comptes et synchro › « Synchroniser aussi les mots de passe et clefs ».": "Schlüssel im Schlüsselbund des Systems gespeichert. Um ihn auf Ihren anderen Rechnern zu haben: Einstellungen › Konten und Synchronisierung › „Auch Passwörter und Schlüssel synchronisieren“.",
+ "Vos autres postes partagent des mots de passe et clefs (IA, Pixabay, Pexels…). Donnez votre phrase secrète une fois pour les reprendre ici.": "Ihre anderen Rechner teilen Passwörter und Schlüssel (KI, Pixabay, Pexels…). Geben Sie Ihre Passphrase einmal ein, um sie hier zu übernehmen.",
+ "Donner la phrase…": "Passphrase eingeben…",
+ "clef {x}": "{x}-Schlüssel"
 }

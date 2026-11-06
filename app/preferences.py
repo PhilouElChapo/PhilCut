@@ -490,6 +490,14 @@ class DialoguePreferences(QDialog):
             for k in a_retirer:
                 packs_ia.supprimer(k)
         p.enregistrer()
+        if p.get("synchro_secrets"):                 # clefs et mots de passe vers les autres postes : phrase secrète une fois
+            from . import coffre, reglages
+            from .dialogues_phrase import demander_phrase
+            if not coffre.lire(reglages.PHRASE):
+                deja = reglages.chemin_secrets(p) and os.path.exists(reglages.chemin_secrets(p))
+                demander_phrase(self, p, nouvelle=not deja)
+            else:
+                reglages.synchro_secrets_auto(p)
         for k in apres - avant:
             self.fenetre.telecharger_pack(k)
         if a_installer:

@@ -4805,5 +4805,21 @@
  "IDÉE !": "IDEA!",
  "silence gêné": "silenzio imbarazzante",
  "FIN": "FINE",
- "Insérer un tampon vidéo ici…": "Inserisci uno stacchetto video qui…"
+ "Insérer un tampon vidéo ici…": "Inserisci uno stacchetto video qui…",
+ "Phrase secrète de la synchronisation": "Frase segreta della sincronizzazione",
+ "Vos mots de passe et clefs (IA, Pixabay, Pexels, comptes) vont être envoyés à vos autres postes, chiffrés par une phrase secrète. Choisissez-la : il faudra la redonner une fois sur chaque autre poste. Elle n'est jamais envoyée ; si vous la perdez, il suffit de recopier les clefs à la main.": "Le tue password e chiavi (IA, Pixabay, Pexels, account) saranno inviate agli altri computer, cifrate con una frase segreta. Sceglila: dovrai reinserirla una volta su ogni altro computer. Non viene mai inviata; se la perdi, basta ricopiare le chiavi a mano.",
+ "Vos autres postes ont partagé des mots de passe et clefs, chiffrés par votre phrase secrète. Donnez-la une fois : ils seront repris sur ce poste.": "Gli altri computer hanno condiviso password e chiavi, cifrate con la tua frase segreta. Inseriscila una volta: saranno riprese su questo computer.",
+ "Encore une fois": "Ancora una volta",
+ "Facultatif, visible sur vos autres postes": "Facoltativo, visibile sugli altri computer",
+ "Indice": "Indizio",
+ "{n} mot(s) de passe ou clef(s) repris de vos autres postes.": "{n} password o chiave/i riprese dagli altri computer.",
+ "La phrase doit faire au moins 6 caractères.": "La frase deve avere almeno 6 caratteri.",
+ "Indice : {i}": "Indizio: {i}",
+ "Les deux phrases sont différentes.": "Le due frasi sono diverse.",
+ "Ce n'est pas la bonne phrase.": "Non è la frase giusta.",
+ "Clef enregistrée dans le coffre du système ; elle suivra sur vos autres postes.": "Chiave salvata nel portachiavi di sistema; ti seguirà sugli altri computer.",
+ "Clef enregistrée dans le coffre du système. Pour la retrouver sur vos autres postes : Préférences › Comptes et synchro › « Synchroniser aussi les mots de passe et clefs ».": "Chiave salvata nel portachiavi di sistema. Per ritrovarla sugli altri computer: Preferenze › Account e sincronizzazione › «Sincronizza anche password e chiavi».",
+ "Vos autres postes partagent des mots de passe et clefs (IA, Pixabay, Pexels…). Donnez votre phrase secrète une fois pour les reprendre ici.": "Gli altri computer condividono password e chiavi (IA, Pixabay, Pexels…). Inserisci la frase segreta una volta per riprenderle qui.",
+ "Donner la phrase…": "Inserisci la frase…",
+ "clef {x}": "chiave {x}"
 }

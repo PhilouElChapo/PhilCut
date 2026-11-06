@@ -397,6 +397,16 @@ class DialogueTampons(QDialog):
         if d.exec() and champ.text().strip():
             coffre.enregistrer(T.CLEFS[s], champ.text().strip())
             self._source_changee()
+            try:                                        # vers les autres postes si la synchro des clefs est cochée
+                from . import reglages
+                reglages.synchro_secrets_auto(self.params)
+            except Exception:    # noqa: BLE001
+                pass
+            from . import reglages
+            self.etat.setText(_("Clef enregistrée dans le coffre du système ; elle suivra sur vos autres postes.")
+                              if self.params.get("synchro_secrets") else
+                              _("Clef enregistrée dans le coffre du système. Pour la retrouver sur vos autres postes : Préférences › "
+                                "Comptes et synchro › « Synchroniser aussi les mots de passe et clefs »."))
 
     def chercher(self):
         texte = self.question.text().strip()

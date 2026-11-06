@@ -23,8 +23,9 @@ COMMUNS = ["auteur", "langue", "outils_epingles", "barre_rapide", "volet", "ia_m
            "musiques_dossier", "chaine_nom", "fabrique_style", "veo_actif", "ia_confirmer_cout", "modeles_video_perso"]
 POSTE = ["secrets_refuses", "disposition_vue", "volet_largeur", "biblio_replies", "sessions_vues", "synchro_etat",
          "machine", "zoom", "racines", "nas", "dernier_dossier", "drive", "drive_compte", "association_video",
-         "recherche_racines", "proxys", "ia_locale", "ia_poste_leger", "ia_gpu", "ia_locale_modeles", "dossier_flow", "dossier_proxys", "encodeur", "apercu_images", "ajout_auto", "dernier_dossier_export", "barre_taille", "dossier_images", "tailles_vue", "apercu_fidele", "preparation_auto"]
+         "recherche_racines", "proxys", "ia_locale", "ia_poste_leger", "ia_gpu", "ia_locale_modeles", "dossier_flow", "dossier_proxys", "encodeur", "apercu_images", "ajout_auto", "dernier_dossier_export", "barre_taille", "dossier_images", "tailles_vue", "apercu_fidele", "preparation_auto", "secrets_empreinte"]
 CLEFS_IA = ["clef_claude", "clef_gemini", "clef_fal"]
+COFFRE_PARTAGES = {"pixabay_cle": "Pixabay", "pexels_cle": "Pexels"}      # clefs rangées directement dans le coffre
 FICHIER_DRIVE = "preferences.json"
 
 
@@ -43,6 +44,10 @@ def instantane(params, avec_secrets=False):
                 v = coffre.lire(c["id"] + suffixe)
                 if v:
                     s["coffre:" + c["id"] + suffixe] = v
+        for ident in COFFRE_PARTAGES:                      # clefs des banques de vidéos libres (tampons)
+            v = coffre.lire(ident)
+            if v:
+                s["coffre:" + ident] = v
         for c in params.get("comptes_mail", []):           # mots de passe des adresses d'envoi d'e-mails
             v = coffre.lire("mail_" + c["id"])
             if v:
@@ -244,6 +249,26 @@ def ecrire_secrets_drive(params, phrase=None):
                    "secrets": tous}, phrase)
     os.replace(tmp, p)
     return True
+
+
+def synchro_secrets_auto(params):
+    """Synchronisation automatique des clefs et mots de passe (case « Synchroniser aussi les mots de passe et clefs ») :
+    envoie ceux de ce poste quand ils ont changé, reprend ceux des autres postes absents ici. Renvoie le nombre repris ;
+    rien sans phrase secrète sur ce poste, ou si la phrase ne correspond pas."""
+    import hashlib
+    phrase = coffre.lire(PHRASE)
+    if not params.get("synchro_secrets") or not phrase or not chemin_secrets(params):
+        return 0
+    try:
+        n = reprendre_secrets_drive(params, phrase) if os.path.exists(chemin_secrets(params)) else 0
+        empreinte = hashlib.sha256(json.dumps(_secrets_partageables(params), sort_keys=True).encode()).hexdigest()[:24]
+        if empreinte != params.get("secrets_empreinte") or not os.path.exists(chemin_secrets(params)):
+            if ecrire_secrets_drive(params, phrase):
+                params["secrets_empreinte"] = empreinte
+                params.enregistrer()
+        return n
+    except (PhraseRequise, OSError, ValueError, KeyError):
+        return 0
 
 
 def reprendre_secrets_drive(params, phrase, ecraser=False):
@@ -533,7 +558,10 @@ def secrets_nouveaux(params, phrase, secrets=None):
     for k, v in (lire_secrets_drive(params, phrase) if secrets is None else secrets).items():
         if v and refuses.get(k) == hashlib.sha1(str(v).encode()).hexdigest()[:16]:
             continue                                 # deja refuse sur ce poste (meme valeur) : plus propose
-        if k.startswith("coffre:"):
+        if k.startswith("coffre:") and k[7:] in COFFRE_PARTAGES:
+            if v and not coffre.lire(k[7:]):
+                out.append({"cle": k, "libelle": _("clef {x}", x=COFFRE_PARTAGES[k[7:]])})
+        elif k.startswith("coffre:"):
             if v and not coffre.lire(k[7:]):
                 cid, _p, suffixe = k[7:].partition(".")
                 quoi = _("autorisation") if suffixe in ("jeton", "appareil") else _("mot de passe")

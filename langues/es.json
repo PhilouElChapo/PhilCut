@@ -4805,5 +4805,21 @@
  "IDÉE !": "¡IDEA!",
  "silence gêné": "silencio incómodo",
  "FIN": "FIN",
- "Insérer un tampon vidéo ici…": "Insertar una ráfaga de vídeo aquí…"
+ "Insérer un tampon vidéo ici…": "Insertar una ráfaga de vídeo aquí…",
+ "Phrase secrète de la synchronisation": "Frase secreta de la sincronización",
+ "Vos mots de passe et clefs (IA, Pixabay, Pexels, comptes) vont être envoyés à vos autres postes, chiffrés par une phrase secrète. Choisissez-la : il faudra la redonner une fois sur chaque autre poste. Elle n'est jamais envoyée ; si vous la perdez, il suffit de recopier les clefs à la main.": "Sus contraseñas y claves (IA, Pixabay, Pexels, cuentas) se enviarán a sus otros equipos, cifradas con una frase secreta. Elíjala: habrá que volver a darla una vez en cada equipo. Nunca se envía; si la pierde, basta con copiar las claves a mano.",
+ "Vos autres postes ont partagé des mots de passe et clefs, chiffrés par votre phrase secrète. Donnez-la une fois : ils seront repris sur ce poste.": "Sus otros equipos han compartido contraseñas y claves, cifradas con su frase secreta. Dela una vez: se recuperarán en este equipo.",
+ "Encore une fois": "Otra vez",
+ "Facultatif, visible sur vos autres postes": "Opcional, visible en sus otros equipos",
+ "Indice": "Pista",
+ "{n} mot(s) de passe ou clef(s) repris de vos autres postes.": "{n} contraseña(s) o clave(s) recuperada(s) de sus otros equipos.",
+ "La phrase doit faire au moins 6 caractères.": "La frase debe tener al menos 6 caracteres.",
+ "Indice : {i}": "Pista: {i}",
+ "Les deux phrases sont différentes.": "Las dos frases son distintas.",
+ "Ce n'est pas la bonne phrase.": "No es la frase correcta.",
+ "Clef enregistrée dans le coffre du système ; elle suivra sur vos autres postes.": "Clave guardada en el almacén del sistema; le seguirá a sus otros equipos.",
+ "Clef enregistrée dans le coffre du système. Pour la retrouver sur vos autres postes : Préférences › Comptes et synchro › « Synchroniser aussi les mots de passe et clefs ».": "Clave guardada en el almacén del sistema. Para tenerla en sus otros equipos: Preferencias › Cuentas y sincronización › «Sincronizar también contraseñas y claves».",
+ "Vos autres postes partagent des mots de passe et clefs (IA, Pixabay, Pexels…). Donnez votre phrase secrète une fois pour les reprendre ici.": "Sus otros equipos comparten contraseñas y claves (IA, Pixabay, Pexels…). Dé su frase secreta una vez para recuperarlas aquí.",
+ "Donner la phrase…": "Dar la frase…",
+ "clef {x}": "clave {x}"
 }
