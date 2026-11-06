@@ -128,9 +128,10 @@ class GestionTelechargements(QObject):
         self.change.emit()
 
     def reprendre(self, cle=None):
+        """Reprend un téléchargement en pause, en erreur ou arrêté : il repart de ce qui est déjà téléchargé."""
         for t in self.travaux:
-            if t["etat"] == PAUSE and (cle is None or t["cle"] == cle):
-                t["etat"], t["texte"] = ATTENTE, ""
+            if t["etat"] in (PAUSE, ERREUR, ARRETE) and (cle is None or t["cle"] == cle):
+                t["etat"], t["texte"], t["erreur"] = ATTENTE, "", None
         self._sauver()
         self.change.emit()
         self._suivant()
@@ -289,10 +290,14 @@ def boutons_ligne(g, t):
     hl = QHBoxLayout(w)
     hl.setContentsMargins(2, 0, 2, 0)
     hl.setSpacing(4)
-    if t["etat"] == PAUSE:
+    if t["etat"] in (PAUSE, ERREUR, ARRETE):
         bp = QPushButton(_("▶ Reprendre"))
-        bp.setToolTip(_("Repart de là où il s'était arrêté."))
+        bp.setToolTip(_("Repart de là où il s'était arrêté.") + (("\n" + t["erreur"]) if t.get("erreur") else ""))
         bp.clicked.connect(lambda _c=False, k=t["cle"]: g.reprendre(k))
+        if t["etat"] != PAUSE:                    # erreur ou arrêt : seulement « Reprendre »
+            hl.addWidget(bp)
+            hl.addStretch(1)
+            return w
     else:
         bp = QPushButton(_("⏸ Pause"))
         bp.setToolTip(_("Ce qui est déjà téléchargé est gardé, même si vous fermez PhilCut."))

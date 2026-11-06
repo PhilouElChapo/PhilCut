@@ -8,6 +8,7 @@
   arrêt à la fin du travail. Rien ne démarre avec le système, rien ne va dans le registre.
 - Supprimer le dossier de PhilCut (ou décocher) efface tout.
 """
+import http.client
 import base64, hashlib, json, os, shutil, socket, subprocess, sys, tarfile, tempfile, threading, time, urllib.error, urllib.request, zipfile
 
 from .config import dossier_donnees
@@ -320,8 +321,10 @@ def octets_partiels(cle):
 
 
 # ------------------------------------------------------------------ téléchargement
-def _telecharger(url, cible, taille=0, sha256="", progression=None, arret=lambda: False):
-    """Téléchargement avec reprise (.part), contrôle de taille et d'empreinte."""
+def _telecharger(url, cible, taille=0, sha256="", progression=None, arret=lambda: False, essais=8):
+    """Téléchargement avec reprise (.part), contrôle de taille et d'empreinte. Une coupure (réseau, serveur qui ferme
+    la connexion, fichier reçu incomplet) relance tout seul la suite là où elle s'était arrêtée, jusqu'à `essais` fois."""
+    import time
     os.makedirs(os.path.dirname(cible), exist_ok=True)
     part = cible + ".part"
     deja = os.path.getsize(part) if os.path.exists(part) else 0
@@ -331,27 +334,48 @@ def _telecharger(url, cible, taille=0, sha256="", progression=None, arret=lambda
     if url.startswith("file://") or os.path.exists(url):
         src = url[7:] if url.startswith("file://") else url
         shutil.copyfile(src, part)
-    elif not (taille and deja == taille):
-        entetes = dict(UA)
-        if deja:
-            entetes["Range"] = f"bytes={deja}-"
-        req = urllib.request.Request(url, headers=entetes)
-        with urllib.request.urlopen(req, timeout=60) as r:
-            if deja and r.status != 206:
-                deja = 0
-            total = taille or (deja + int(r.headers.get("Content-Length") or 0))
-            with open(part, "ab" if deja else "wb") as f:
-                fait = deja
-                while True:
-                    if arret():
-                        raise InterruptedError()
-                    bloc = r.read(1 << 20)
-                    if not bloc:
-                        break
-                    f.write(bloc)
-                    fait += len(bloc)
-                    if progression and total:
-                        progression(fait / total)
+    else:
+        for essai in range(essais):
+            deja = os.path.getsize(part) if os.path.exists(part) else 0
+            if taille and deja >= taille:
+                break
+            try:
+                entetes = dict(UA)
+                if deja:
+                    entetes["Range"] = f"bytes={deja}-"
+                req = urllib.request.Request(url, headers=entetes)
+                with urllib.request.urlopen(req, timeout=60) as r:
+                    if deja and r.status != 206:
+                        deja = 0
+                    total = taille or (deja + int(r.headers.get("Content-Length") or 0))
+                    with open(part, "ab" if deja else "wb") as f:
+                        fait = deja
+                        while True:
+                            if arret():
+                                raise InterruptedError()
+                            bloc = r.read(1 << 20)
+                            if not bloc:
+                                break
+                            f.write(bloc)
+                            fait += len(bloc)
+                            if progression and total:
+                                progression(fait / total)
+                if not taille or os.path.getsize(part) >= taille:
+                    break
+            except InterruptedError:
+                raise
+            except urllib.error.HTTPError as e:
+                if e.code == 416 and taille and os.path.getsize(part) == taille:
+                    break
+                if e.code in (401, 403, 404) or essai == essais - 1:
+                    raise
+            except (OSError, ValueError, http.client.HTTPException):
+                if essai == essais - 1:
+                    raise
+            for _s in range(min(30, 3 * (essai + 1))):      # petite attente avant de reprendre (réseau qui revient)
+                if arret():
+                    raise InterruptedError()
+                time.sleep(1)
     if taille and os.path.getsize(part) != taille:
         raise ErreurIA(_("Téléchargement incomplet ({a} sur {b}) : relancez, il reprendra où il s'est arrêté.",
                          a=taille_texte(os.path.getsize(part)), b=taille_texte(taille)))

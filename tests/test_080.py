@@ -305,6 +305,57 @@ class Test080(unittest.TestCase):
         MU._LECTURE["fil"].join(120)
         self.assertFalse(any(x.get("a_lire") for x in MU.morceaux([d], rapide=True)))
 
+    def test_telechargement_coupe_reprend_tout_seul(self):
+        """Le serveur coupe au milieu : la suite est redemandée (Range) et le fichier arrive entier, sans erreur."""
+        import http.server, threading, hashlib
+        from app import packs_ia
+        donnees = os.urandom(300_000)
+        appels = []
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *a):
+                pass
+
+            def do_GET(self):
+                debut = int((self.headers.get("Range") or "bytes=0-")[6:].split("-")[0] or 0)
+                appels.append(debut)
+                self.send_response(206 if debut else 200)
+                self.send_header("Content-Length", str(len(donnees) - debut))
+                self.end_headers()
+                fin = len(donnees) if len(appels) > 1 else 100_000          # 1er envoi : coupé à 100 Ko
+                self.wfile.write(donnees[debut:fin])
+                self.wfile.flush()
+                self.close_connection = True
+        srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            cible = os.path.join(tempfile.mkdtemp(), "modele.bin")
+            ancien = os.environ.pop("HTTP_PROXY", None), os.environ.pop("http_proxy", None)
+            os.environ["NO_PROXY"] = "127.0.0.1"
+            packs_ia._telecharger(f"http://127.0.0.1:{srv.server_address[1]}/m", cible, taille=len(donnees),
+                                  sha256=hashlib.sha256(donnees).hexdigest())
+            with open(cible, "rb") as f:
+                self.assertEqual(f.read(), donnees)
+            self.assertEqual(appels[:2], [0, 100_000])                       # reprise à partir de 100 Ko
+        finally:
+            srv.shutdown()
+
+    def test_reprendre_un_telechargement_en_erreur(self):
+        from app.telechargements import GestionTelechargements, ERREUR, ATTENTE, boutons_ligne
+        from app.config import Parametres
+        g = GestionTelechargements(Parametres())
+        g._suivant = lambda: None
+        g.travaux = [{"cle": "x", "nom": "X", "taille": 10, "etat": ERREUR, "fraction": 0.1, "vitesse": 0, "reste": None,
+                      "texte": "", "erreur": "Téléchargement incomplet"}]
+        w = boutons_ligne(g, g.travaux[0])
+        from PySide6.QtWidgets import QPushButton
+        b = [x for x in w.findChildren(QPushButton)]
+        self.assertEqual(len(b), 1)
+        self.assertIn("Reprendre", b[0].text())
+        b[0].click()
+        self.assertEqual(g.travaux[0]["etat"], ATTENTE)
+        self.assertIsNone(g.travaux[0]["erreur"])
+
     def test_pixabay_sans_clef_explique(self):
         from app import tampons as T, coffre
         coffre.supprimer(T.CLEFS["pixabay"])

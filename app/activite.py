@@ -176,7 +176,7 @@ class FenetreActivite(QDialog):
             self._barres.append(b)
             for col in (2, 3, 4):
                 self.table.setItem(i, col, QTableWidgetItem(""))
-            if l["genre"] == "telech" and l["etat"] in (EN_COURS, ATTENTE, "pause"):
+            if l["genre"] == "telech" and l["etat"] in (EN_COURS, ATTENTE, "pause", ERREUR, ARRETE):
                 from .telechargements import boutons_ligne
                 self.table.setCellWidget(i, 5, boutons_ligne(self.c.telechargements, l))
             elif l["etat"] in (EN_COURS, ATTENTE):
