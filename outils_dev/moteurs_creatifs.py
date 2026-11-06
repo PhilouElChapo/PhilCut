@@ -170,6 +170,9 @@ def assembler(dossier):
                 if f.startswith(f"{prefixe}-{systeme}") and f not in vus:
                     vus.add(f)
                     p = os.path.join(dossier, f)
+                    if os.path.getsize(p) < 100_000:          # archive vide (fabrication ratée) : non publiée
+                        print(f"::warning::{f} vide, ignorée")
+                        continue
                     man["moteurs"][genre][systeme] = {"fichier": f, "taille": os.path.getsize(p), "sha256": empreinte(p),
                                                       "url": f"https://github.com/PhilouElChapo/PhilCut/releases/download/moteurs-ia/{f}"}
     with open(os.path.join(dossier, "moteurs-creatifs.json"), "w", encoding="utf-8") as fo:
