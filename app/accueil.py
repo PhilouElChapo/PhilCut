@@ -70,7 +70,7 @@ class PageAccueil(QWidget):
         self.liste = QListWidget()
         self.liste.setIconSize(QSize(96, 54))
         self.liste.setStyleSheet("QListWidget::item{padding:6px}")
-        self.liste.itemActivated.connect(lambda it: self.ouvrir.emit(it.data(Qt.UserRole)))
+        self.liste.itemActivated.connect(self._activer)
         self.liste.setContextMenuPolicy(Qt.CustomContextMenu)
         self.liste.customContextMenuRequested.connect(self._menu)
         self.liste.setMinimumHeight(220)
@@ -88,7 +88,12 @@ class PageAccueil(QWidget):
         racine.addWidget(zone)
         self.rafraichir()
 
-    def rafraichir(self, autres=None):
+    def rafraichir(self, autres=None, ailleurs=None):
+        """autres = [(machine, date, nb)] ; ailleurs = [(machine, date, fichiers)] : les projets ouverts sur les autres
+        postes, ajoutés en gris à la liste (double-clic : PhilCut les cherche ici et les ouvre)."""
+        if autres is not None:
+            self._autres, self._ailleurs = autres, ailleurs or []
+        autres, ailleurs = getattr(self, "_autres", None), getattr(self, "_ailleurs", [])
         self.liste.clear()
         dates = self.params.get("recents_dates") or {}
         for p in self.params.get("recents") or []:
@@ -106,6 +111,22 @@ class PageAccueil(QWidget):
                 it.setForeground(Qt.gray)
             it.setText(it.text() + (f"   —   {_date(d)}" if d else "") + f"\n{os.path.dirname(p)}")
             self.liste.addItem(it)
+        deja = {os.path.normcase(os.path.abspath(p)) for p in self.params.get("recents") or []}
+        for machine, dte, fichiers in ailleurs:
+            for f in fichiers:
+                p = f.get("chemin") or ""
+                if not p.lower().endswith(".philcut") or os.path.normcase(os.path.abspath(p)) in deja:
+                    continue
+                deja.add(os.path.normcase(os.path.abspath(p)))
+                nom = os.path.splitext(f.get("nom") or os.path.basename(p))[0]
+                it = QListWidgetItem(nom + "   —   " + _("ouvert sur « {m} » ({d})", m=machine, d=_date(dte)) + f"\n{os.path.dirname(p)}")
+                it.setIcon(icone("projet", theme.COULEURS["desactive"], 48))
+                it.setForeground(Qt.gray)
+                it.setToolTip(_("Projet ouvert sur un autre poste. Double-clic : PhilCut le cherche sur ce poste "
+                                "(même dossier, Drive, NAS…) et l'ouvre.") + "\n" + p)
+                it.setData(Qt.UserRole, p)
+                it.setData(Qt.UserRole + 1, (machine, f))
+                self.liste.addItem(it)
         if not self.liste.count():                 # aucun projet encore : dire quoi faire plutôt qu'un cadre vide
             it = QListWidgetItem(_("Aucun projet pour l'instant. Pour commencer : « Nouveau projet 16:9 » (YouTube) ou « 9:16 » "
                                    "(Insta, écran LED), ou glissez vos vidéos sur cette fenêtre."))
@@ -117,6 +138,13 @@ class PageAccueil(QWidget):
             self.lbl_autres.setText(_("Sur vos autres postes : ") + " · ".join(_("{m} ({n} projets, {d})", m=m, n=n, d=_date(dte)) for m, dte, n in autres))
         else:
             self.lbl_autres.setText("")
+
+    def _activer(self, it):
+        ailleurs = it.data(Qt.UserRole + 1)
+        if ailleurs:
+            self.reprendre.emit(ailleurs[0], [ailleurs[1]])
+        elif it.data(Qt.UserRole):
+            self.ouvrir.emit(it.data(Qt.UserRole))
 
     def proposer(self, texte, bouton, action, cle=None):
         """Une proposition non bloquante, laissee sur l'Accueil jusqu'a ce qu'on la traite ou la ferme."""
@@ -141,7 +169,14 @@ class PageAccueil(QWidget):
         if not it:
             return
         p = it.data(Qt.UserRole)
+        if not p:
+            return
         m = QMenu(self)
+        if it.data(Qt.UserRole + 1):
+            machine, f = it.data(Qt.UserRole + 1)
+            m.addAction(_("Chercher sur ce poste et ouvrir"), lambda: self.reprendre.emit(machine, [f]))
+            m.exec(self.liste.mapToGlobal(pos))
+            return
         m.addAction(_("Ouvrir"), lambda: self.ouvrir.emit(p))
         m.addAction(_("Montrer dans le dossier"), lambda: self.action_fichier.emit(p, "dossier"))
         m.addAction(_("Retirer de la liste"), lambda: self.action_fichier.emit(p, "retirer"))

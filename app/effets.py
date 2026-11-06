@@ -405,18 +405,16 @@ def filtre_audio(effet, ctx=None):
 URL_CATALOGUE = "https://raw.githubusercontent.com/PhilouElChapo/PhilCut/main/catalogue/effets.json"
 
 
-def catalogue_en_ligne(delai=10):
-    """Effets et packs ajoutes depuis la publication : fusionnes au catalogue local. Jamais bloquant."""
-    import json, urllib.request
-    try:
-        with urllib.request.urlopen(URL_CATALOGUE, timeout=delai) as r:
-            d = json.loads(r.read().decode("utf-8"))
-    except Exception:
-        return 0
+def catalogue_en_ligne(delai=10, reseau=True):
+    """Effets et packs ajoutés depuis la publication (catalogue/effets.json sur GitHub, copie locale sans réseau) :
+    fusionnés au catalogue local. Jamais bloquant. Renvoie le nombre d'effets ajoutés."""
+    from .catalogue_ligne import charger, localise
+    d = charger("effets.json", reseau, delai)
     n = 0
+    familles = {k for k, _l in FAMILLES} - {"transition", "personne"}
     for k, e in (d.get("effets") or {}).items():
-        if k not in CATALOGUE and isinstance(e, dict) and e.get("ffmpeg"):
-            CATALOGUE[k] = (e.get("famille", "wahou"), e.get("nom", k), e.get("description", ""), [], e.get("pack"))
+        if k not in CATALOGUE and isinstance(e, dict) and e.get("ffmpeg") and e.get("famille", "wahou") in familles:
+            CATALOGUE[k] = (e.get("famille", "wahou"), localise(e.get("nom")) or k, localise(e.get("description")), [], e.get("pack"))
             _EN_LIGNE[k] = e["ffmpeg"]
             n += 1
     for k, p in (d.get("packs") or {}).items():

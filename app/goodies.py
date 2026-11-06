@@ -120,6 +120,11 @@ def _haversine(la1, lo1, la2, lo2):
 
 
 # ------------------------------------------------------------------ rendu
+def _dessins():
+    from . import goodies_dessins
+    return goodies_dessins
+
+
 FLUIDES = {"intro_titre", "fleche", "bandeau_tendance"}      # Goodies rendus à la cadence du film (mouvement rapide)
 IPS_GOODIES = 15                # images par seconde des Goodies à l'export (aiguilles fluides, rendu trois fois plus court)
 
@@ -219,6 +224,8 @@ def image(g, t, taille, texte_extra=None, cache=None):
         elif genre in ("polaroid", "post_it", "fleche", "bandeau_tendance", "surligne"):
             from . import autocollants
             autocollants.dessiner(p, g, t, taille, cache)
+        elif style != "hud" and genre in _dessins().GENRES:     # packs Balade, Route, Fête, Maison, Commerce : illustrations animées
+            _dessins().dessiner(p, g, t, taille, v, nom, unite, mini, maxi)
         elif genre == "image":
             if img_source is None or img_source.isNull():          # pas encore d'image choisie : on le dit
                 p.setPen(QPen(QColor(255, 255, 255, 140), max(1.0, taille * 0.012), Qt.DashLine))

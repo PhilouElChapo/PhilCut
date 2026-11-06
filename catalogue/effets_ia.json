@@ -1,0 +1,205 @@
+{
+ "_commentaire": "Effets IA locaux ajoutes par la veille : phrase (prompt) et force pour stable-diffusion.cpp ou acestep.cpp. Noms par langue.",
+ "version": 1,
+ "effets": [
+  {
+   "id": "ia_aquarelle_douce",
+   "famille": "image",
+   "moteur": "image",
+   "nom": {
+    "fr": "Carnet de voyage (aquarelle et encre)",
+    "en": "Travel sketchbook (watercolour and ink)",
+    "de": "Reiseskizzenbuch (Aquarell und Tusche)",
+    "es": "Cuaderno de viaje (acuarela y tinta)",
+    "it": "Taccuino di viaggio (acquerello e inchiostro)"
+   },
+   "prompt": "travel sketchbook illustration, loose ink lines, watercolor washes, paper texture, hand drawn",
+   "force": 0.55
+  },
+  {
+   "id": "ia_pixel",
+   "famille": "image",
+   "moteur": "image",
+   "nom": {
+    "fr": "Jeu vidéo rétro (pixel art)",
+    "en": "Retro video game (pixel art)",
+    "de": "Retro-Videospiel (Pixel-Art)",
+    "es": "Videojuego retro (pixel art)",
+    "it": "Videogioco retrò (pixel art)"
+   },
+   "prompt": "16-bit pixel art, retro video game scene, limited palette, crisp pixels",
+   "force": 0.6
+  },
+  {
+   "id": "ia_lego",
+   "famille": "image",
+   "moteur": "image",
+   "nom": {
+    "fr": "Monde en briques de jouet",
+    "en": "Toy brick world",
+    "de": "Welt aus Spielzeugsteinen",
+    "es": "Mundo de bloques de juguete",
+    "it": "Mondo di mattoncini giocattolo"
+   },
+   "prompt": "made of plastic toy bricks, brick built diorama, studio lighting, playful",
+   "force": 0.6
+  },
+  {
+   "id": "ia_papier",
+   "famille": "image",
+   "moteur": "image",
+   "nom": {
+    "fr": "Papier découpé",
+    "en": "Paper cut-out",
+    "de": "Scherenschnitt aus Papier",
+    "es": "Papel recortado",
+    "it": "Carta ritagliata"
+   },
+   "prompt": "layered paper cut art, papercraft, soft shadows, pastel colors, handmade",
+   "force": 0.6
+  },
+  {
+   "id": "ia_neige",
+   "famille": "image",
+   "moteur": "image",
+   "nom": {
+    "fr": "Paysage sous la neige",
+    "en": "Snowy landscape",
+    "de": "Verschneite Landschaft",
+    "es": "Paisaje nevado",
+    "it": "Paesaggio innevato"
+   },
+   "prompt": "same scene covered in fresh snow, winter, soft falling snow, cold light",
+   "force": 0.45
+  },
+  {
+   "id": "ia_coucher",
+   "famille": "image",
+   "moteur": "image",
+   "nom": {
+    "fr": "Coucher de soleil spectaculaire",
+    "en": "Spectacular sunset",
+    "de": "Spektakulärer Sonnenuntergang",
+    "es": "Puesta de sol espectacular",
+    "it": "Tramonto spettacolare"
+   },
+   "prompt": "same scene at golden hour sunset, dramatic orange and pink sky, warm rim light",
+   "force": 0.4
+  },
+  {
+   "id": "ia_nuit_etoilee",
+   "famille": "image",
+   "moteur": "image",
+   "nom": {
+    "fr": "Nuit étoilée",
+    "en": "Starry night",
+    "de": "Sternennacht",
+    "es": "Noche estrellada",
+    "it": "Notte stellata"
+   },
+   "prompt": "same scene at night under a starry sky, milky way, moonlight, long exposure",
+   "force": 0.45
+  },
+  {
+   "id": "ia_futur",
+   "famille": "image",
+   "moteur": "image",
+   "nom": {
+    "fr": "Ville du futur",
+    "en": "City of the future",
+    "de": "Stadt der Zukunft",
+    "es": "Ciudad del futuro",
+    "it": "Città del futuro"
+   },
+   "prompt": "futuristic version, sleek architecture, flying vehicles, clean sci-fi, cinematic",
+   "force": 0.55
+  },
+  {
+   "id": "ia_autocollant",
+   "famille": "logo",
+   "moteur": "image",
+   "nom": {
+    "fr": "Autocollant (contour blanc)",
+    "en": "Sticker (white outline)",
+    "de": "Sticker (weiße Kontur)",
+    "es": "Pegatina (contorno blanco)",
+    "it": "Adesivo (contorno bianco)"
+   },
+   "prompt": "die-cut sticker, thick white border, flat colors, cute, centered, plain background",
+   "force": 0.7,
+   "action": "logo"
+  },
+  {
+   "id": "ia_badge_retro",
+   "famille": "logo",
+   "moteur": "image",
+   "nom": {
+    "fr": "Badge rétro de club",
+    "en": "Retro club badge",
+    "de": "Retro-Vereinsabzeichen",
+    "es": "Insignia retro de club",
+    "it": "Distintivo retrò da club"
+   },
+   "prompt": "vintage club badge logo, embroidered patch style, two colors, centered, plain background",
+   "force": 1.0,
+   "action": "logo",
+   "sans_source": true
+  },
+  {
+   "id": "m_surf",
+   "famille": "musique",
+   "moteur": "musique",
+   "nom": {
+    "fr": "Rock surf ensoleillé",
+    "en": "Sunny surf rock",
+    "de": "Sonniger Surf-Rock",
+    "es": "Surf rock soleado",
+    "it": "Surf rock solare"
+   },
+   "prompt": "sunny surf rock, twangy reverb guitar, upbeat drums, summer road trip",
+   "force": 1.0
+  },
+  {
+   "id": "m_suspense",
+   "famille": "musique",
+   "moteur": "musique",
+   "nom": {
+    "fr": "Suspense (documentaire)",
+    "en": "Suspense (documentary)",
+    "de": "Spannung (Dokumentarfilm)",
+    "es": "Suspense (documental)",
+    "it": "Suspense (documentario)"
+   },
+   "prompt": "suspenseful documentary underscore, pulsing low strings, ticking percussion, tension",
+   "force": 1.0
+  },
+  {
+   "id": "m_chiptune",
+   "famille": "musique",
+   "moteur": "musique",
+   "nom": {
+    "fr": "Chiptune 8 bits",
+    "en": "8-bit chiptune",
+    "de": "8-Bit-Chiptune",
+    "es": "Chiptune de 8 bits",
+    "it": "Chiptune a 8 bit"
+   },
+   "prompt": "8-bit chiptune, cheerful retro game music, square wave melody, fast arpeggios",
+   "force": 1.0
+  },
+  {
+   "id": "m_cuivres",
+   "famille": "musique",
+   "moteur": "musique",
+   "nom": {
+    "fr": "Fanfare festive",
+    "en": "Festive brass band",
+    "de": "Festliche Blaskapelle",
+    "es": "Charanga festiva",
+    "it": "Fanfara festosa"
+   },
+   "prompt": "festive brass band, trumpets and tuba, joyful march, celebration",
+   "force": 1.0
+  }
+ ]
+}

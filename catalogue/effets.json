@@ -1,5 +1,457 @@
 {
- "_commentaire": "Catalogue en ligne de PhilCut : effets ajoutes apres la publication. Chaque effet simple = une chaine de filtres FFmpeg. Les packs listent ce qu'il faut telecharger.",
- "effets": {},
+ "_commentaire": "Catalogue en ligne de PhilCut : effets ajoutes apres la publication, sans reinstaller. Chaque effet simple = une chaine de filtres FFmpeg (meme taille d'image en sortie). Noms et descriptions par langue.",
+ "version": 1,
+ "effets": {
+  "web_teal_orange": {
+   "famille": "look",
+   "nom": {
+    "fr": "Bleu-orangé (blockbuster)",
+    "en": "Teal & orange (blockbuster)",
+    "de": "Blau-Orange (Blockbuster)",
+    "es": "Azul y naranja (superproducción)",
+    "it": "Blu e arancio (blockbuster)"
+   },
+   "description": {
+    "fr": "Ombres bleutées, peaux et lumières orangées : le look des films d'action.",
+    "en": "Teal shadows, orange skin and highlights: the action-film look.",
+    "de": "Blaugrüne Schatten, orange Haut und Lichter: der Look von Actionfilmen.",
+    "es": "Sombras azuladas, pieles y luces anaranjadas: el look de las películas de acción.",
+    "it": "Ombre blu-verdi, pelle e luci arancioni: il look dei film d'azione."
+   },
+   "ffmpeg": "colorbalance=rs=-0.08:bs=0.12:rh=0.12:bh=-0.10,eq=saturation=1.15:contrast=1.06"
+  },
+  "web_pellicule": {
+   "famille": "look",
+   "nom": {
+    "fr": "Pellicule chaude",
+    "en": "Warm film stock",
+    "de": "Warmer Filmlook",
+    "es": "Película cálida",
+    "it": "Pellicola calda"
+   },
+   "description": {
+    "fr": "Tons chauds, noirs légèrement levés, grain fin : comme une vieille pellicule.",
+    "en": "Warm tones, slightly lifted blacks, fine grain: like old film stock.",
+    "de": "Warme Töne, leicht angehobene Schwarztöne, feines Korn: wie alter Film.",
+    "es": "Tonos cálidos, negros algo levantados, grano fino: como una película antigua.",
+    "it": "Toni caldi, neri leggermente sollevati, grana fine: come una vecchia pellicola."
+   },
+   "ffmpeg": "colortemperature=temperature=5200,curves=r='0/0.04 0.5/0.55 1/0.97':b='0/0.06 1/0.92',noise=alls=6:allf=t"
+  },
+  "web_bleach": {
+   "famille": "look",
+   "nom": {
+    "fr": "Sans blanchiment",
+    "en": "Bleach bypass",
+    "de": "Bleach Bypass",
+    "es": "Sin blanqueo (bleach bypass)",
+    "it": "Bleach bypass"
+   },
+   "description": {
+    "fr": "Couleurs éteintes et contraste dur : un rendu brut, dramatique.",
+    "en": "Muted colours and hard contrast: a raw, dramatic look.",
+    "de": "Gedämpfte Farben und harter Kontrast: roh und dramatisch.",
+    "es": "Colores apagados y contraste duro: un aspecto crudo y dramático.",
+    "it": "Colori spenti e contrasto duro: una resa cruda e drammatica."
+   },
+   "ffmpeg": "eq=saturation=0.45:contrast=1.35:gamma=0.95"
+  },
+  "web_matin": {
+   "famille": "look",
+   "nom": {
+    "fr": "Matin doré",
+    "en": "Golden morning",
+    "de": "Goldener Morgen",
+    "es": "Mañana dorada",
+    "it": "Mattino dorato"
+   },
+   "description": {
+    "fr": "Lumière dorée du lever du soleil, légèrement plus claire.",
+    "en": "Golden sunrise light, slightly brighter.",
+    "de": "Goldenes Licht des Sonnenaufgangs, etwas heller.",
+    "es": "Luz dorada del amanecer, algo más clara.",
+    "it": "Luce dorata dell'alba, leggermente più chiara."
+   },
+   "ffmpeg": "colortemperature=temperature=4300:mix=0.6,eq=brightness=0.03:saturation=1.1"
+  },
+  "web_nuit_americaine": {
+   "famille": "look",
+   "nom": {
+    "fr": "Nuit américaine",
+    "en": "Day for night",
+    "de": "Amerikanische Nacht",
+    "es": "Noche americana",
+    "it": "Notte americana"
+   },
+   "description": {
+    "fr": "Transforme une scène de jour en nuit bleutée, comme au cinéma.",
+    "en": "Turns a daytime scene into a bluish night, as in the movies.",
+    "de": "Verwandelt eine Tagesszene in eine bläuliche Nacht, wie im Kino.",
+    "es": "Convierte una escena de día en una noche azulada, como en el cine.",
+    "it": "Trasforma una scena di giorno in una notte bluastra, come al cinema."
+   },
+   "ffmpeg": "colortemperature=temperature=11000,eq=brightness=-0.18:saturation=0.6:contrast=1.1,vignette=PI/4"
+  },
+  "web_pastel": {
+   "famille": "look",
+   "nom": {
+    "fr": "Pastel",
+    "en": "Pastel",
+    "de": "Pastell",
+    "es": "Pastel",
+    "it": "Pastello"
+   },
+   "description": {
+    "fr": "Couleurs douces et claires, contraste bas : léger et tendre.",
+    "en": "Soft, light colours, low contrast: light and gentle.",
+    "de": "Sanfte, helle Farben, wenig Kontrast: leicht und zart.",
+    "es": "Colores suaves y claros, contraste bajo: ligero y tierno.",
+    "it": "Colori morbidi e chiari, contrasto basso: leggero e delicato."
+   },
+   "ffmpeg": "eq=saturation=0.7:brightness=0.06:contrast=0.85,colorbalance=rm=0.04:bm=0.06"
+  },
+  "web_rouge_garde": {
+   "famille": "look",
+   "nom": {
+    "fr": "Noir et blanc, rouge gardé",
+    "en": "Black and white, red kept",
+    "de": "Schwarzweiß, Rot bleibt",
+    "es": "Blanco y negro, rojo conservado",
+    "it": "Bianco e nero, rosso conservato"
+   },
+   "description": {
+    "fr": "Tout passe en noir et blanc sauf le rouge, qui ressort.",
+    "en": "Everything turns black and white except red, which stands out.",
+    "de": "Alles wird schwarzweiß außer Rot, das hervorsticht.",
+    "es": "Todo pasa a blanco y negro salvo el rojo, que resalta.",
+    "it": "Tutto diventa bianco e nero tranne il rosso, che risalta."
+   },
+   "ffmpeg": "colorhold=color=red:similarity=0.25:blend=0.1"
+  },
+  "web_sepia": {
+   "famille": "look",
+   "nom": {
+    "fr": "Sépia",
+    "en": "Sepia",
+    "de": "Sepia",
+    "es": "Sepia",
+    "it": "Seppia"
+   },
+   "description": {
+    "fr": "Tons bruns d'une vieille photo.",
+    "en": "Brown tones of an old photo.",
+    "de": "Brauntöne eines alten Fotos.",
+    "es": "Tonos marrones de una foto antigua.",
+    "it": "Toni marroni di una vecchia foto."
+   },
+   "ffmpeg": "colorchannelmixer=.393:.769:.189:0:.349:.686:.168:0:.272:.534:.131"
+  },
+  "web_neon": {
+   "famille": "look",
+   "nom": {
+    "fr": "Néon cyberpunk",
+    "en": "Cyberpunk neon",
+    "de": "Cyberpunk-Neon",
+    "es": "Neón cyberpunk",
+    "it": "Neon cyberpunk"
+   },
+   "description": {
+    "fr": "Roses et bleus électriques, contraste fort : la ville la nuit.",
+    "en": "Electric pinks and blues, strong contrast: the city at night.",
+    "de": "Elektrisches Pink und Blau, starker Kontrast: die Stadt bei Nacht.",
+    "es": "Rosas y azules eléctricos, contraste fuerte: la ciudad de noche.",
+    "it": "Rosa e blu elettrici, contrasto forte: la città di notte."
+   },
+   "ffmpeg": "colorbalance=rs=0.15:bs=0.25:gh=-0.1:bh=0.15,eq=saturation=1.4:contrast=1.15"
+  },
+  "web_ciel_profond": {
+   "famille": "look",
+   "nom": {
+    "fr": "Ciel profond (drone)",
+    "en": "Deep sky (drone)",
+    "de": "Tiefer Himmel (Drohne)",
+    "es": "Cielo profundo (dron)",
+    "it": "Cielo profondo (drone)"
+   },
+   "description": {
+    "fr": "Bleus plus denses et détails plus nets : idéal pour les vues aériennes.",
+    "en": "Denser blues and crisper detail: ideal for aerial views.",
+    "de": "Dichtere Blautöne und schärfere Details: ideal für Luftaufnahmen.",
+    "es": "Azules más densos y detalles más nítidos: ideal para vistas aéreas.",
+    "it": "Blu più densi e dettagli più nitidi: ideale per le riprese aeree."
+   },
+   "ffmpeg": "curves=b='0/0 0.5/0.56 1/1',eq=saturation=1.2:contrast=1.05,unsharp=5:5:0.4"
+  },
+  "web_vhs": {
+   "famille": "wahou",
+   "nom": {
+    "fr": "Cassette VHS",
+    "en": "VHS tape",
+    "de": "VHS-Kassette",
+    "es": "Cinta VHS",
+    "it": "Cassetta VHS"
+   },
+   "description": {
+    "fr": "Couleurs qui bavent, bruit et flou léger : un souvenir des années 90.",
+    "en": "Bleeding colours, noise and slight blur: a 90s memory.",
+    "de": "Verlaufende Farben, Rauschen und leichte Unschärfe: eine Erinnerung an die 90er.",
+    "es": "Colores que se corren, ruido y ligero desenfoque: un recuerdo de los 90.",
+    "it": "Colori che sbavano, rumore e leggera sfocatura: un ricordo degli anni 90."
+   },
+   "ffmpeg": "chromashift=cbh=4:crh=-4,noise=alls=12:allf=t,eq=saturation=1.3:contrast=0.92,gblur=sigma=0.6"
+  },
+  "web_negatif": {
+   "famille": "wahou",
+   "nom": {
+    "fr": "Négatif",
+    "en": "Negative",
+    "de": "Negativ",
+    "es": "Negativo",
+    "it": "Negativo"
+   },
+   "description": {
+    "fr": "Les couleurs s'inversent, comme un négatif photo.",
+    "en": "Colours are inverted, like a photo negative.",
+    "de": "Die Farben werden umgekehrt, wie ein Fotonegativ.",
+    "es": "Los colores se invierten, como un negativo fotográfico.",
+    "it": "I colori si invertono, come un negativo fotografico."
+   },
+   "ffmpeg": "negate"
+  },
+  "web_pop_art": {
+   "famille": "wahou",
+   "nom": {
+    "fr": "Pop art (affiche)",
+    "en": "Pop art (poster)",
+    "de": "Pop-Art (Plakat)",
+    "es": "Pop art (cartel)",
+    "it": "Pop art (manifesto)"
+   },
+   "description": {
+    "fr": "Peu de couleurs, très saturées : un effet d'affiche sérigraphiée.",
+    "en": "Few, very saturated colours: a screen-printed poster effect.",
+    "de": "Wenige, sehr gesättigte Farben: ein Siebdruck-Plakat-Effekt.",
+    "es": "Pocos colores, muy saturados: efecto de cartel serigrafiado.",
+    "it": "Pochi colori, molto saturi: effetto manifesto serigrafato."
+   },
+   "ffmpeg": "lutrgb=r='bitand(val,192)+32':g='bitand(val,192)+32':b='bitand(val,192)+32',eq=saturation=1.6"
+  },
+  "web_reve": {
+   "famille": "wahou",
+   "nom": {
+    "fr": "Rêve (flou doux)",
+    "en": "Dream (soft blur)",
+    "de": "Traum (weiche Unschärfe)",
+    "es": "Sueño (desenfoque suave)",
+    "it": "Sogno (sfocatura morbida)"
+   },
+   "description": {
+    "fr": "Image adoucie et lumineuse : souvenir, rêve, flash-back.",
+    "en": "Softened, luminous image: memory, dream, flashback.",
+    "de": "Weiches, helles Bild: Erinnerung, Traum, Rückblende.",
+    "es": "Imagen suavizada y luminosa: recuerdo, sueño, flashback.",
+    "it": "Immagine addolcita e luminosa: ricordo, sogno, flashback."
+   },
+   "ffmpeg": "smartblur=lr=3:ls=0.8,eq=brightness=0.05:saturation=1.1"
+  },
+  "web_contours": {
+   "famille": "wahou",
+   "nom": {
+    "fr": "Dessin (contours)",
+    "en": "Drawing (outlines)",
+    "de": "Zeichnung (Konturen)",
+    "es": "Dibujo (contornos)",
+    "it": "Disegno (contorni)"
+   },
+   "description": {
+    "fr": "Seuls les contours colorés restent : un dessin au trait.",
+    "en": "Only coloured outlines remain: a line drawing.",
+    "de": "Nur farbige Konturen bleiben: eine Strichzeichnung.",
+    "es": "Solo quedan los contornos de color: un dibujo de líneas.",
+    "it": "Restano solo i contorni colorati: un disegno al tratto."
+   },
+   "ffmpeg": "edgedetect=mode=colormix:high=0.15:low=0.05"
+  },
+  "web_pixel": {
+   "famille": "wahou",
+   "nom": {
+    "fr": "Pixel art",
+    "en": "Pixel art",
+    "de": "Pixel-Art",
+    "es": "Pixel art",
+    "it": "Pixel art"
+   },
+   "description": {
+    "fr": "Gros pixels façon jeu vidéo rétro.",
+    "en": "Big pixels, retro video game style.",
+    "de": "Große Pixel im Retro-Videospiel-Stil.",
+    "es": "Píxeles grandes estilo videojuego retro.",
+    "it": "Pixel grandi in stile videogioco retrò."
+   },
+   "ffmpeg": "pixelize=w=12:h=12"
+  },
+  "web_arc_en_ciel": {
+   "famille": "wahou",
+   "nom": {
+    "fr": "Couleurs psychédéliques",
+    "en": "Psychedelic colours",
+    "de": "Psychedelische Farben",
+    "es": "Colores psicodélicos",
+    "it": "Colori psichedelici"
+   },
+   "description": {
+    "fr": "Les teintes tournent sans cesse autour du cercle des couleurs.",
+    "en": "The hues keep turning around the colour wheel.",
+    "de": "Die Farbtöne drehen sich ständig um den Farbkreis.",
+    "es": "Los tonos giran sin parar por la rueda de colores.",
+    "it": "Le tinte girano senza sosta intorno al cerchio dei colori."
+   },
+   "ffmpeg": "hue=h=t*90:s=1.4"
+  },
+  "web_strobo": {
+   "famille": "wahou",
+   "nom": {
+    "fr": "Stroboscope",
+    "en": "Strobe",
+    "de": "Stroboskop",
+    "es": "Estroboscopio",
+    "it": "Stroboscopio"
+   },
+   "description": {
+    "fr": "Flashs lumineux rapides, à poser sur un passage de musique forte.",
+    "en": "Fast light flashes, for a loud music passage.",
+    "de": "Schnelle Lichtblitze, für eine laute Musikpassage.",
+    "es": "Destellos rápidos, para un pasaje de música fuerte.",
+    "it": "Flash luminosi rapidi, da usare su un passaggio di musica forte."
+   },
+   "ffmpeg": "eq=brightness='0.18*gt(sin(2*PI*t*6),0)':eval=frame"
+  },
+  "web_echo": {
+   "famille": "mouvement",
+   "nom": {
+    "fr": "Traînées (écho)",
+    "en": "Trails (echo)",
+    "de": "Schlieren (Echo)",
+    "es": "Estelas (eco)",
+    "it": "Scie (eco)"
+   },
+   "description": {
+    "fr": "Les objets en mouvement laissent une traînée derrière eux.",
+    "en": "Moving objects leave a trail behind them.",
+    "de": "Bewegte Objekte ziehen eine Spur hinter sich her.",
+    "es": "Los objetos en movimiento dejan una estela.",
+    "it": "Gli oggetti in movimento lasciano una scia."
+   },
+   "ffmpeg": "tmix=frames=5:weights='1 1 1 1 1'"
+  },
+  "web_niveaux_auto": {
+   "famille": "correction",
+   "nom": {
+    "fr": "Niveaux automatiques",
+    "en": "Auto levels",
+    "de": "Automatische Tonwerte",
+    "es": "Niveles automáticos",
+    "it": "Livelli automatici"
+   },
+   "description": {
+    "fr": "Etire les noirs et les blancs pour une image bien exposée.",
+    "en": "Stretches blacks and whites for a well-exposed image.",
+    "de": "Streckt Schwarz und Weiß für ein gut belichtetes Bild.",
+    "es": "Estira negros y blancos para una imagen bien expuesta.",
+    "it": "Estende neri e bianchi per un'immagine ben esposta."
+   },
+   "ffmpeg": "normalize=blackpt=black:whitept=white:smoothing=20"
+  },
+  "web_brume": {
+   "famille": "correction",
+   "nom": {
+    "fr": "Enlever la brume",
+    "en": "Remove haze",
+    "de": "Dunst entfernen",
+    "es": "Quitar la bruma",
+    "it": "Togli la foschia"
+   },
+   "description": {
+    "fr": "Plus de contraste et de couleur dans une image voilée (paysage, avion).",
+    "en": "More contrast and colour in a hazy image (landscape, plane).",
+    "de": "Mehr Kontrast und Farbe in einem dunstigen Bild (Landschaft, Flugzeug).",
+    "es": "Más contraste y color en una imagen velada (paisaje, avión).",
+    "it": "Più contrasto e colore in un'immagine velata (paesaggio, aereo)."
+   },
+   "ffmpeg": "curves=all='0/0 0.25/0.18 0.75/0.82 1/1',eq=saturation=1.15"
+  },
+  "web_nettete_forte": {
+   "famille": "correction",
+   "nom": {
+    "fr": "Netteté forte",
+    "en": "Strong sharpening",
+    "de": "Starke Schärfe",
+    "es": "Nitidez fuerte",
+    "it": "Nitidezza forte"
+   },
+   "description": {
+    "fr": "Accentue fortement les détails (texte, paysage lointain).",
+    "en": "Strongly enhances details (text, distant landscape).",
+    "de": "Betont Details stark (Text, ferne Landschaft).",
+    "es": "Acentúa mucho los detalles (texto, paisaje lejano).",
+    "it": "Accentua molto i dettagli (testo, paesaggio lontano)."
+   },
+   "ffmpeg": "unsharp=7:7:1.2:7:7:0.0"
+  },
+  "web_vignette": {
+   "famille": "correction",
+   "nom": {
+    "fr": "Vignette douce",
+    "en": "Soft vignette",
+    "de": "Weiche Vignette",
+    "es": "Viñeta suave",
+    "it": "Vignettatura morbida"
+   },
+   "description": {
+    "fr": "Assombrit légèrement les bords pour guider le regard au centre.",
+    "en": "Slightly darkens the edges to draw the eye to the centre.",
+    "de": "Dunkelt die Ränder leicht ab, um den Blick zur Mitte zu lenken.",
+    "es": "Oscurece ligeramente los bordes para llevar la mirada al centro.",
+    "it": "Scurisce leggermente i bordi per guidare lo sguardo al centro."
+   },
+   "ffmpeg": "vignette=angle=PI/5"
+  },
+  "web_plus_chaud": {
+   "famille": "correction",
+   "nom": {
+    "fr": "Plus chaud",
+    "en": "Warmer",
+    "de": "Wärmer",
+    "es": "Más cálido",
+    "it": "Più caldo"
+   },
+   "description": {
+    "fr": "Corrige une image trop bleue (ombre, temps couvert).",
+    "en": "Corrects an image that is too blue (shade, overcast).",
+    "de": "Korrigiert ein zu blaues Bild (Schatten, bewölkt).",
+    "es": "Corrige una imagen demasiado azul (sombra, nublado).",
+    "it": "Corregge un'immagine troppo blu (ombra, cielo coperto)."
+   },
+   "ffmpeg": "colortemperature=temperature=4800"
+  },
+  "web_plus_froid": {
+   "famille": "correction",
+   "nom": {
+    "fr": "Plus froid",
+    "en": "Cooler",
+    "de": "Kühler",
+    "es": "Más frío",
+    "it": "Più freddo"
+   },
+   "description": {
+    "fr": "Corrige une image trop jaune (lumière d'intérieur).",
+    "en": "Corrects an image that is too yellow (indoor light).",
+    "de": "Korrigiert ein zu gelbes Bild (Innenlicht).",
+    "es": "Corrige una imagen demasiado amarilla (luz interior).",
+    "it": "Corregge un'immagine troppo gialla (luce interna)."
+   },
+   "ffmpeg": "colortemperature=temperature=8500"
+  }
+ },
  "packs": {}
 }

@@ -102,6 +102,11 @@ sur la partie en jaune (dessin anime, flou d'arriere-plan, agrandissement, ralen
 fluide), photo 3D, animer une image (experimental), musique creee par IA selon un style.
 Montage > Atelier IA. Modeles a cocher dans Preferences > IA locale.
 
+0.8.0 : interface en anglais, allemand, espagnol et italien ; tampons video (douze
+tampons maison, vos clips, clips libres Wikimedia Commons, Pixabay, Pexels) ; Goodies
+dessines des packs Balade, Route, Fete, Maison et Commerce ; projets des autres postes
+sur l'Accueil ; catalogue d'effets en ligne (25 effets, 14 effets IA).
+
 Mises a jour
 ------------
 Verifiees au demarrage (une fois par jour) et PROPOSEES sur l'Accueil : rien n'est

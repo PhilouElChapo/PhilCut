@@ -42,6 +42,7 @@ class Fenetre(QMainWindow):
         self.accueil.ouvrir_dialogue.connect(self.dialogue_ouvrir)
         self.accueil.importer_rushes.connect(self.rushes_vers_projet)
         self.accueil.action_fichier.connect(self.action_fichier)
+        self.accueil.reprendre.connect(lambda machine, fichiers: self._reprendre(fichiers, machine))
         self.onglets.addTab(self.accueil, icone("ouvrir", theme.COULEURS["texte2"]), _("Accueil"))
         self.onglets.tabBar().setTabButton(0, self.onglets.tabBar().ButtonPosition.RightSide, None)
         self.setCentralWidget(self.onglets)
@@ -89,6 +90,7 @@ class Fenetre(QMainWindow):
             self.params.enregistrer()
             QTimer.singleShot(3000, lambda: self.verifier_maj(silencieux=True))
         QTimer.singleShot(1500, self.verifier_session)
+        self._catalogues()
         self._minuterie = QTimer(self)
         self._minuterie.timeout.connect(self.ecrire_session)
         self._minuterie.start(60000)
@@ -152,6 +154,8 @@ class Fenetre(QMainWindow):
         mo.addAction(icone("assistant"), _("Dites-le en clair (une phrase devient des actions)…"), lambda: self._ed(lambda ed: ed.dites_le()))
         mo.addAction(icone("effets"), _("Transitions automatiques (selon les images et la musique)…"), lambda: self._ed(lambda ed: ed.transitions_auto()))
         mo.addAction(icone("musique"), _("Bruitages (whoosh, impact, déclic, bip…)…"), lambda: self._ed(lambda ed: ed.bruitage()))
+        mo.addAction(icone("clap"), _("Tampons vidéo (« plus tard… », rembobinage, tadaa, vos clips, clips libres)…"),
+                     lambda: self._ed(lambda ed: ed.tampons()))
         av = mo.addMenu(icone("goodies"), _("Aviation"))
         av.addAction(_("Tableau de bord de vol (profil réglable)…"), lambda: self._ed(lambda ed: ed.tableau_de_bord()))
         av.addAction(_("Carte animée du trajet et mini-carte…"), lambda: self._ed(lambda ed: ed.trajet()))
@@ -1153,6 +1157,23 @@ class Fenetre(QMainWindow):
             mise_a_jour.appliquer(fichier)
             QApplication.quit()
 
+    def _catalogues(self):
+        """Catalogues d'effets : copie locale tout de suite, mise à jour depuis GitHub en arrière-plan (sans bloquer)."""
+        import threading
+        from . import effets as E, catalogue_ligne
+        E.catalogue_en_ligne(reseau=False)
+        if os.environ.get("PHILCUT_SANS_RESEAU") or not self.params.get("effets_en_ligne", True):
+            return
+        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_ia.json")], daemon=True)
+        fil.start()
+
+        def fusion():
+            if fil.is_alive():
+                QTimer.singleShot(2000, fusion)
+            else:
+                E.catalogue_en_ligne(reseau=False)
+        QTimer.singleShot(2000, fusion)
+
     # ---------------------------------------------------------------- session partagee
     def ecrire_session(self):
         if not self.params.get("synchro", True):
@@ -1173,19 +1194,28 @@ class Fenetre(QMainWindow):
             from .session import session_de, date_fr, nb_fichiers
             s = session_de(self.params)
             autres = s.autres_machines()
-            self.accueil.rafraichir(autres)
+            donnees = s.lire()
+            self.accueil.rafraichir(autres, [(m, dte, donnees.get(m, {}).get("fichiers", [])) for m, dte, _n in autres])
             d = s.discordance([ed.projet.chemin for ed in self.editeurs() if ed.projet.chemin])
             if d:
                 machine, date, fichiers = d
                 self.accueil.proposer(_("Sur « {m} » ({d}), {n} projet(s) étaient ouverts : {l}. Les rouvrir ici ?", m=machine, d=date_fr(date), n=len(fichiers),
-                                        l=", ".join(f.get("nom", "") for f in fichiers[:4])), _("Reprendre"), lambda: self._reprendre(fichiers))
+                                        l=", ".join(f.get("nom", "") for f in fichiers[:4])), _("Reprendre"), lambda: self._reprendre(fichiers, machine))
         except Exception as e:    # noqa: BLE001
             from .journal import ecrire
             ecrire("synchro", f"session non lue : {e}")
 
-    def _reprendre(self, fichiers):
+    def _reprendre(self, fichiers, machine=None):
+        s = None
         for f in fichiers:
             p = f.get("chemin")
+            if machine and not (p and os.path.exists(p)):
+                try:                                   # même dossier par défaut, Drive, NAS, dossier déjà appris…
+                    from .session import session_de
+                    s = s or session_de(self.params)
+                    p = s.retrouver_direct(machine, f)[0] or p
+                except Exception:    # noqa: BLE001
+                    pass
             if p and os.path.exists(p):
                 self.ouvrir(p)
             else:

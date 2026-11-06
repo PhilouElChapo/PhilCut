@@ -878,17 +878,36 @@ class Inspecteur(QWidget):
         f = QFormLayout(gr)
         f.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         st = QComboBox()
-        for lib, k in ((_("Cadran (tableau de bord)"), "cadran"), (_("HUD épuré"), "hud")):
+        from . import goodies_dessins as GD
+        illustre = g.get("genre") in GD.GENRES
+        for lib, k in (((_("Illustré (animé)") if illustre else _("Cadran (tableau de bord)")), "cadran"), (_("HUD épuré"), "hud")):
             st.addItem(lib, k)
             if k == g.get("style", "cadran"):
                 st.setCurrentIndex(st.count() - 1)
         st.currentIndexChanged.connect(lambda _i: self._changer(lambda: g.__setitem__("style", st.currentData()), reconstruire=False))
         contenu = g.get("genre") in ("polaroid", "post_it", "fleche", "image", "immatriculation", "bandeau", "pastille", "prix", "horaires",
                                      "date", "bandeau_tendance", "surligne", "intro_titre")
-        if g.get("genre") in GO.GENRES and GO.GENRES[g["genre"]][1]:      # instruments : cadran ou HUD
+        if g.get("genre") in GO.GENRES and GO.GENRES[g["genre"]][1] or illustre:      # instruments : cadran ou HUD
             f.addRow(_("Style d'instrument"), st)
         else:
             st.deleteLater()
+        if g.get("genre") == "meteo":                    # ciel de l'icône météo
+            ciel = QComboBox()
+            for k, lib in GD.CIELS.items():
+                ciel.addItem(lib, k)
+                if k == (g.get("options") or {}).get("ciel", "soleil"):
+                    ciel.setCurrentIndex(ciel.count() - 1)
+            ciel.currentIndexChanged.connect(lambda _i: self._changer(lambda: g.setdefault("options", {}).__setitem__("ciel", ciel.currentData()),
+                                                                      reconstruire=False))
+            f.addRow(_("Ciel"), ciel)
+        if g.get("genre") == "compte_a_rebours":
+            dep = QDoubleSpinBox()
+            dep.setRange(1, 3600)
+            dep.setDecimals(0)
+            dep.setSuffix(" s")
+            dep.setValue(float((g.get("options") or {}).get("depuis", 10)))
+            dep.valueChanged.connect(lambda v: self._changer(lambda: g.setdefault("options", {}).__setitem__("depuis", v), reconstruire=False))
+            f.addRow(_("Compter à partir de"), dep)
         for cle, lib, mini, maxi in (("taille", _("Taille"), 5, 60), ("x", _("Position horizontale"), 0, 100), ("y", _("Position verticale"), 0, 100)):
             sl = QSlider(Qt.Horizontal)
             sl.setRange(mini, maxi)

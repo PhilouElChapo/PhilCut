@@ -858,6 +858,7 @@ class Editeur(QWidget):
         m.addAction(icone("recadrer", theme.COULEURS["texte"]), _("Tracer une zone à flouter, pixelliser ou cacher…"), self.tracer_zone)
         m.addAction(_("Figer l'image ici (cadre photo, légende)…"), self.figer_image)
         m.addAction(_("Bruitage ici…"), self.bruitage)
+        m.addAction(_("Tampon vidéo ici…"), self.tampons)
         av = m.addMenu(icone("goodies", theme.COULEURS["texte"]), _("Aviation"))
         av.addAction(_("Tableau de bord de vol…"), self.tableau_de_bord)
         av.addAction(_("Carte animée du trajet et mini-carte…"), self.trajet)
@@ -1504,6 +1505,8 @@ class Editeur(QWidget):
             c = self.projet.clip(ident)
             if c:
                 self.bruitage("whoosh", max(0.0, c["debut"] - 0.35))
+        elif quoi == "tampon":
+            self.tampons()
         elif quoi == "figer":
             self.figer_image()
         elif quoi in ("zone_suivre", "zone_retracer", "zone_figer"):
@@ -2255,6 +2258,38 @@ class Editeur(QWidget):
         self.timeline.selectionner(ci["id"])
         self.encart.message(_("Image insérée à {t} ; la suite du montage est décalée de {d} s.", t=_tc(t), d=duree))
         return ci
+
+    def inserer_tampon(self, video, t, nom=""):
+        """Insère un tampon vidéo (avec son son) à l'instant t sur la piste Vidéo 1 ; la suite du montage se décale. Annulable."""
+        f = moteur.sonder(video)
+        duree = float(f.get("duree") or 2.0)
+        self.projet.marquer()
+        c = self.projet.clip_a(t, "video")
+        if c and c["debut"] + 0.04 < t < fin_clip(c) - 0.04:
+            self.projet.couper(c["id"], t)
+        for x in self.projet.clips:
+            if x["debut"] >= t - 1e-3:
+                x["debut"] += duree
+        for x in self.projet.titres + self.projet.goodies:
+            if x["debut"] >= t - 1e-3:
+                x["debut"] += duree
+                x["fin"] += duree
+        mi = self.projet.ajouter_media(video, f)
+        mi["nom"] = nom or os.path.basename(video)
+        ci = self.projet.ajouter_clip(mi["id"], "video", t, 0.0, duree)
+        ci["nom"] = mi["nom"]
+        ci["ajustement"] = "contenir_flou"
+        self.biblio.remplir(self.projet)
+        self.rafraichir()
+        self.timeline.selectionner(ci["id"])
+        self.encart.message(_("Tampon « {n} » inséré à {t} ({d:.1f} s) ; la suite du montage est décalée. Supprimer le plan le retire.",
+                              n=mi["nom"], t=_tc(t), d=duree), 8000)
+        return ci
+
+    def tampons(self, onglet=0):
+        """Bibliothèque de tampons vidéo : les vôtres, les tampons maison, les clips libres trouvés en ligne."""
+        from .dialogues_tampons import DialogueTampons
+        DialogueTampons(self, onglet).exec()
 
     def poser_au_dessus(self, video, t, nom=""):
         """Pose un clip créé (effet IA) au-dessus du film, plein cadre, sur la première piste vidéo libre."""

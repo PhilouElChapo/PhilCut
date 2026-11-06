@@ -1067,6 +1067,7 @@ class Timeline(QGraphicsView):
         m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
         self._menu_pistes(m, piste)
         m.addAction(_("Enregistrer l'image à cet endroit…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "image")))
+        m.addAction(_("Insérer un tampon vidéo ici…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "tampon")))
         self._menu_partie(m, t)
         self._menu_zoom(m)
         m.exec(e.globalPos())
@@ -1312,6 +1313,7 @@ class Timeline(QGraphicsView):
         if self.zone_valide():
             m.addAction(_("Effets sur la partie en jaune seulement…"), lambda: self.demande_menu.emit(clip["id"], "effets_partie"))
         m.addAction(_("Enregistrer l'image à cet endroit…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "image")))
+        m.addAction(_("Insérer un tampon vidéo ici…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "tampon")))
         if clip["piste"] == "video":
             m.addAction(_("Figer l'image à cet endroit (cadre photo, légende)…"), lambda: (self.aller_a(t), self.demande_menu.emit(clip["id"], "figer")))
         else:

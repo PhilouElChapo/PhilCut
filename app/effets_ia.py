@@ -106,14 +106,13 @@ def retablir(params, effet_id):
 
 
 def _en_ligne():
-    """Effets ajoutés par la veille dans catalogue/effets_ia.json (livré avec PhilCut, mis à jour avec les versions)."""
-    import sys
-    base = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    try:
-        with open(os.path.join(base, "catalogue", "effets_ia.json"), encoding="utf-8") as f:
-            return [e for e in json.load(f).get("effets", []) if e.get("id") and e.get("famille") in FAMILLES]
-    except (OSError, ValueError):
-        return []
+    """Effets ajoutés par la veille : catalogue/effets_ia.json (copie à jour venue de GitHub, sinon celui livré)."""
+    from .catalogue_ligne import charger, localise
+    out = []
+    for e in charger("effets_ia.json").get("effets", []):
+        if isinstance(e, dict) and e.get("id") and e.get("famille") in FAMILLES and e.get("moteur"):
+            out.append(dict(e, nom=localise(e.get("nom")) or e["id"], en_ligne=True))
+    return out
 
 
 def disponible(effet, params=None):

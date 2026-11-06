@@ -4,7 +4,16 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.7.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.8.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.8.0 : langues, tampons video, Goodies dessines
+- Anglais, allemand, espagnol et italien complets : tous les textes ajoutes depuis la 0.2 sont traduits (un test verifie qu'il n'en manque aucun).
+- Montage > Tampons video : 12 tampons maison fabriques sur ce poste ("Quelques heures plus tard...", rembobinage VHS, tele qui s'eteint, bip de censure, tadaa, bravo, rate, amorce 3-2-1, idee, silence gene, fin...), vos propres clips, et des clips libres trouves sur Wikimedia Commons, Pixabay ou Pexels (cle gratuite dans le coffre du systeme) ; credit ajoute a la publication ; bibliotheque rangee dans le dossier de synchronisation.
+- Goodies dessines et animes pour les packs Balade, Route, Fete, Maison et Commerce (montagne, sentier, profil, meteo, thermometre, compteur, compte a rebours, calendrier, ruban, panneau, etiquette de prix, pastille).
+- Accueil : les projets ouverts sur vos autres postes apparaissent en gris ; double-clic pour les retrouver et les ouvrir ici.
+- Catalogue d'effets en ligne rempli : 25 effets FFmpeg et 14 effets IA, mis a jour sans reinstaller.
+
+## Nouveautes de 0.7.0
 
 ### 0.6 et 0.7 : IA creative sur ce poste (gratuite, rien n'est envoye)
 - Montage > Atelier IA : image du film retouchee par une phrase (personnage 3D, anime, bande dessinee, aquarelle, peinture, croquis, neon, figurine, affiche), phrases modifiables et "mes effets".
