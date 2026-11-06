@@ -4821,5 +4821,19 @@
  "Clef enregistrée dans le coffre du système. Pour la retrouver sur vos autres postes : Préférences › Comptes et synchro › « Synchroniser aussi les mots de passe et clefs ».": "Schlüssel im Schlüsselbund des Systems gespeichert. Um ihn auf Ihren anderen Rechnern zu haben: Einstellungen › Konten und Synchronisierung › „Auch Passwörter und Schlüssel synchronisieren“.",
  "Vos autres postes partagent des mots de passe et clefs (IA, Pixabay, Pexels…). Donnez votre phrase secrète une fois pour les reprendre ici.": "Ihre anderen Rechner teilen Passwörter und Schlüssel (KI, Pixabay, Pexels…). Geben Sie Ihre Passphrase einmal ein, um sie hier zu übernehmen.",
  "Donner la phrase…": "Passphrase eingeben…",
- "clef {x}": "{x}-Schlüssel"
+ "clef {x}": "{x}-Schlüssel",
+ "Dans votre langue (traduit en anglais) : « coucher de soleil », « piano », « épique »…": "In Ihrer Sprache (wird ins Englische übersetzt): „Sonnenuntergang“, „Klavier“, „episch“…",
+ "Dans votre langue, PhilCut traduit en anglais : applaudissements, explosion, foule, rembobinage…": "In Ihrer Sprache, PhilCut übersetzt ins Englische: Applaus, Explosion, Menge, Zurückspulen…",
+ "Importer le clip téléchargé…": "Heruntergeladenen Clip importieren…",
+ "Le clip téléchargé depuis le site (dossier Téléchargements) rejoint votre bibliothèque.": "Der von der Website heruntergeladene Clip (Ordner Downloads) kommt in Ihre Bibliothek.",
+ "Importer le clip téléchargé": "Heruntergeladenen Clip importieren",
+ "Extraits de films : {s} (navigateur)": "Filmausschnitte: {s} (Browser)",
+ "1. Tapez une réplique ou des mots dans votre langue, puis « Chercher » : PhilCut traduit en anglais et ouvre le site dans votre navigateur.": "1. Tippen Sie einen Filmsatz oder Wörter in Ihrer Sprache ein, dann „Suchen“: PhilCut übersetzt ins Englische und öffnet die Website im Browser.",
+ "2. Sur le site, téléchargez l'extrait choisi (bouton de téléchargement du site, quand il existe).": "2. Laden Sie auf der Website den gewählten Ausschnitt herunter (Download-Schaltfläche der Website, falls vorhanden).",
+ "3. « Importer le clip téléchargé… » : l'extrait rejoint votre bibliothèque, prêt à insérer.": "3. „Heruntergeladenen Clip importieren…“: der Ausschnitt kommt in Ihre Bibliothek, bereit zum Einfügen.",
+ "<b>Extraits protégés par le droit d'auteur.</b> PhilCut ouvre la recherche du site dans votre navigateur ; vous y téléchargez l'extrait vous-même (quand le site le permet), puis « Importer le clip téléchargé ». Une courte citation peut être tolérée, mais une vidéo publiée, surtout monétisée, peut être bloquée ou démonétisée par YouTube : à vos risques.": "<b>Urheberrechtlich geschützte Ausschnitte.</b> PhilCut öffnet die Suche der Website in Ihrem Browser; Sie laden den Ausschnitt selbst herunter (wenn die Website es erlaubt), dann „Heruntergeladenen Clip importieren“. Ein kurzes Zitat kann geduldet werden, aber ein veröffentlichtes, vor allem monetarisiertes Video kann von YouTube gesperrt oder demonetarisiert werden: auf eigenes Risiko.",
+ "Ouverture de {s}…": "{s} wird geöffnet…",
+ "Recherche ouverte dans le navigateur.": "Suche im Browser geöffnet.",
+ "Recherché en anglais : « {t} ».": "Auf Englisch gesucht: „{t}“.",
+ "Recherché en anglais : « {t} » ; pas de traduction pour « {m} » : tapez ces mots en anglais.": "Auf Englisch gesucht: „{t}“; keine Übersetzung für „{m}“: tippen Sie diese Wörter auf Englisch."
 }

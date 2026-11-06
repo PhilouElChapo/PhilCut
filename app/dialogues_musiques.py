@@ -29,7 +29,7 @@ class DialogueMusiques(QDialog):
         v.addWidget(intro)
         h = QHBoxLayout()
         self.texte = QLineEdit()
-        self.texte.setPlaceholderText(_("Mots en anglais de préférence : « drone », « sunset », « piano »…"))
+        self.texte.setPlaceholderText(_("Dans votre langue (traduit en anglais) : « coucher de soleil », « piano », « épique »…"))
         self.texte.returnPressed.connect(self.chercher)
         self.ambiance = QComboBox()
         self.ambiance.addItem(_("Toutes ambiances"), None)
@@ -112,7 +112,11 @@ class DialogueMusiques(QDialog):
         texte, amb, lg = self.texte.text(), self.ambiance.currentData(), self.longueur.currentData()
         self._numero = getattr(self, "_numero", 0) + 1
         n = self._numero
-        t = Tache(lambda tache: MU.chercher(texte, amb, lg), _("Musique"))
+        def travail(tache):
+            from . import traduction_recherche as TR
+            tr = TR.en_anglais(texte)
+            return MU.chercher(tr[0], amb, lg), TR.message(texte, tr)
+        t = Tache(travail, _("Musique"))
         self.taches.append(t)
         t.fini.connect(lambda r, e, n=n: self._resultats(r, e) if n == self._numero else None)
         self.b_chercher.hide()
@@ -127,6 +131,7 @@ class DialogueMusiques(QDialog):
         self.etat.setText(_("Recherche arrêtée."))
 
     def _resultats(self, res, err):
+        res, note = res if isinstance(res, tuple) else (res, "")
         self.b_arret.hide()
         self.b_chercher.show()
         self.liste.clear()
@@ -139,7 +144,8 @@ class DialogueMusiques(QDialog):
             it.setData(0, Qt.UserRole, m)
             it.setToolTip(0, m["attribution"] + ("\n" + ", ".join(m["tags"]) if m["tags"] else ""))
             self.liste.addTopLevelItem(it)
-        self.etat.setText(_("{n} morceau(x). Double-clic pour écouter.", n=len(res)) if res else _("Rien trouvé : essayez d'autres mots (en anglais)."))
+        self.etat.setText((_("{n} morceau(x). Double-clic pour écouter.", n=len(res)) if res else _("Rien trouvé : essayez d'autres mots (en anglais)."))
+                          + ("  " + note if note else ""))
 
     def _courant(self):
         it = self.liste.currentItem()

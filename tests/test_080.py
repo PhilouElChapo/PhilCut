@@ -185,6 +185,26 @@ class Test080(unittest.TestCase):
         coffre.supprimer("pixabay_cle")
         coffre.supprimer("pexels_cle")
 
+    def test_traduction_des_recherches(self):
+        from app import traduction_recherche as TR
+        t, comment, manque = TR.en_anglais("Applaudissements de la foule", "fr", reseau=False)
+        self.assertIn("applause", t)
+        self.assertIn("crowd", t)
+        t, comment, manque = TR.en_anglais("coucher de soleil sur la mer", "fr", reseau=False)
+        self.assertIn("sunset", t)
+        self.assertIn("sea", t)
+        self.assertTrue(manque)                                      # « sur », « la » : signalés
+        self.assertIn("anglais", TR.message("coucher de soleil sur la mer", (t, comment, manque)))
+        self.assertEqual(TR.en_anglais("explosion crowd", "fr", reseau=False)[2], [])   # déjà de l'anglais : rien à signaler
+        self.assertEqual(TR.en_anglais("anything", "en")[1], "deja")
+        self.assertEqual(TR.en_anglais("Zeitlupe", "de", reseau=False)[0], "slow motion")
+
+    def test_extraits_de_films_dans_le_navigateur(self):
+        from app import tampons as T
+        self.assertEqual(T.url_extrait("clipcafe", "my precious"), "https://clip.cafe/s/my+precious/")
+        self.assertEqual(T.url_extrait("yarn", "thank you"), "https://yarn.co/yarn-find?text=thank%20you")
+        self.assertIn("playphrase.me/#/search?q=hello", T.url_extrait("playphrase", "hello"))
+
     def test_pixabay_sans_clef_explique(self):
         from app import tampons as T, coffre
         coffre.supprimer(T.CLEFS["pixabay"])

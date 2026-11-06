@@ -330,16 +330,22 @@ class DialogueTampons(QDialog):
         self.source.addItem(_("Wikimedia Commons (libre, sans clef)"), "wikimedia")
         self.source.addItem(_("Pixabay (clef gratuite)"), "pixabay")
         self.source.addItem(_("Pexels (clef gratuite)"), "pexels")
+        for k, (nom, _u) in T.EXTRAITS.items():
+            self.source.addItem(_("Extraits de films : {s} (navigateur)", s=nom), "extrait:" + k)
         self.source.currentIndexChanged.connect(self._source_changee)
         h.addWidget(self.source)
         self.question = QLineEdit()
-        self.question.setPlaceholderText(_("En anglais de préférence : applause, rewind, explosion, crowd, countdown…"))
+        self.question.setPlaceholderText(_("Dans votre langue, PhilCut traduit en anglais : applaudissements, explosion, foule, rembobinage…"))
         self.question.returnPressed.connect(self.chercher)
         h.addWidget(self.question, 1)
         b = QPushButton(_("Chercher"))
         b.setProperty("primaire", True)
         b.clicked.connect(self.chercher)
         h.addWidget(b)
+        self.b_importer_web = QPushButton(_("Importer le clip téléchargé…"))
+        self.b_importer_web.setToolTip(_("Le clip téléchargé depuis le site (dossier Téléchargements) rejoint votre bibliothèque."))
+        self.b_importer_web.clicked.connect(self.importer_telecharge)
+        h.addWidget(self.b_importer_web)
         self.b_clef = QPushButton(_("Ma clef…"))
         self.b_clef.clicked.connect(self.ma_clef)
         h.addWidget(self.b_clef)
@@ -355,20 +361,45 @@ class DialogueTampons(QDialog):
         self.info_res.setTextFormat(Qt.RichText)
         self.info_res.setOpenExternalLinks(True)
         h.addWidget(self.info_res, 1)
-        b = QPushButton(_("Ajouter à ma bibliothèque"))
-        b.clicked.connect(lambda: self.ajouter_resultat(False))
-        h.addWidget(b)
-        b = QPushButton(_("Ajouter et insérer"))
-        b.setProperty("primaire", True)
-        b.clicked.connect(lambda: self.ajouter_resultat(True))
-        h.addWidget(b)
+        self.b_ajouter = QPushButton(_("Ajouter à ma bibliothèque"))
+        self.b_ajouter.clicked.connect(lambda: self.ajouter_resultat(False))
+        h.addWidget(self.b_ajouter)
+        self.b_ajouter_ins = QPushButton(_("Ajouter et insérer"))
+        self.b_ajouter_ins.setProperty("primaire", True)
+        self.b_ajouter_ins.clicked.connect(lambda: self.ajouter_resultat(True))
+        h.addWidget(self.b_ajouter_ins)
         v.addLayout(h)
         self.onglets.addTab(w, _("Chercher en ligne"))
         self._source_changee()
 
     def _source_changee(self):
         s = self.source.currentData()
-        self.b_clef.setVisible(s != "wikimedia")
+        extrait = s.startswith("extrait:")
+        self.b_clef.setVisible(s != "wikimedia" and not extrait)
+        self.b_importer_web.setVisible(extrait)
+        self.b_ajouter.setVisible(not extrait)
+        self.b_ajouter_ins.setVisible(not extrait)
+        self.resultats.clear()
+        if extrait:
+            for ligne in (_("1. Tapez une réplique ou des mots dans votre langue, puis « Chercher » : PhilCut traduit en anglais et "
+                            "ouvre le site dans votre navigateur."),
+                          _("2. Sur le site, téléchargez l'extrait choisi (bouton de téléchargement du site, quand il existe)."),
+                          _("3. « Importer le clip téléchargé… » : l'extrait rejoint votre bibliothèque, prêt à insérer.")):
+                it = QListWidgetItem(ligne)
+                it.setFlags(Qt.ItemIsEnabled)
+                it.setSizeHint(QSize(900, 34))
+                self.resultats.addItem(it)
+        self.resultats.setViewMode(QListWidget.ListMode if extrait else QListWidget.IconMode)
+        self.resultats.setGridSize(QSize() if extrait else QSize(212, 150))
+        self.resultats.setIconSize(QSize(192, 108))
+        self.info_res.setText(_("<b>Extraits protégés par le droit d'auteur.</b> PhilCut ouvre la recherche du site dans votre navigateur ; "
+                                "vous y téléchargez l'extrait vous-même (quand le site le permet), puis « Importer le clip téléchargé ». "
+                                "Une courte citation peut être tolérée, mais une vidéo publiée, surtout monétisée, peut être bloquée "
+                                "ou démonétisée par YouTube : à vos risques.") if extrait else
+                              _("Seuls les clips dont la licence autorise une vidéo publiée sont proposés. Les extraits de films ou "
+                                "d'émissions connus ne sont pas libres : ils ne se trouvent pas ici."))
+        if extrait:
+            return
         if s != "wikimedia":
             from . import coffre
             self.b_clef.setText(_("Ma clef {s} ✓", s=T.SOURCES[s]) if coffre.lire(T.CLEFS[s]) else _("Ma clef {s}…", s=T.SOURCES[s]))
@@ -414,13 +445,48 @@ class DialogueTampons(QDialog):
             self.question.setFocus()
             return
         s = self.source.currentData()
+        if s.startswith("extrait:"):
+            site = s.split(":", 1)[1]
+            self.etat.setText(_("Ouverture de {s}…", s=T.EXTRAITS[site][0]))
+
+            def ouvrir(r, err):
+                if err or not r:
+                    return
+                url, note = r
+                QDesktopServices.openUrl(QUrl(url))
+                self.etat.setText(_("Recherche ouverte dans le navigateur.") + ("  " + note if note else ""))
+            self._lancer(lambda t: self._traduire_extrait(site, texte), None, fin=ouvrir)
+            return
         self.resultats.clear()
         self.etat.setText(_("Recherche sur {s}…", s=T.SOURCES[s]))
         self._lancer(lambda t: self._chercher_et_vignettes(s, texte), None, apres=None, fin=self._resultats_recus)
 
     @staticmethod
+    def _traduire_extrait(site, texte):
+        from . import traduction_recherche as TR
+        tr = TR.en_anglais(texte)
+        return T.url_extrait(site, tr[0]), TR.message(texte, tr)
+
+    def importer_telecharge(self):
+        from .session import dossier_systeme
+        f, _f = QFileDialog.getOpenFileName(self, _("Importer le clip téléchargé"), self.params.get("dossier_tampons_web") or dossier_systeme("telechargements"),
+                                            _("Vidéos") + " (*.mp4 *.mov *.m4v *.mkv *.webm *.gif)")
+        if not f:
+            return
+        self.params["dossier_tampons_web"] = os.path.dirname(f)
+        site = self.source.currentData().split(":", 1)[-1]
+        nom, ok = QInputDialog.getText(self, _("Importer le clip téléchargé"), _("Nom du tampon :"), text=os.path.splitext(os.path.basename(f))[0])
+        if not ok:
+            return
+        mots = [m for m in self.question.text().split() if len(m) > 2] + [T.EXTRAITS.get(site, (site,))[0]]
+        self._lancer(lambda t: T.ajouter_fichier(self.params, f, nom.strip(), mots), _("Copie dans la bibliothèque…"))
+
+    @staticmethod
     def _chercher_et_vignettes(source, texte):
-        res = T.chercher(source, texte)
+        from . import traduction_recherche as TR
+        tr = TR.en_anglais(texte)
+        res = T.chercher(source, tr[0])
+        res = [dict(r, _note=TR.message(texte, tr)) for r in res] or [{"_vide": True, "_note": TR.message(texte, tr)}]
         d = os.path.join(tempfile.gettempdir(), "philcut-tampons", "web")
         os.makedirs(d, exist_ok=True)
         for k, r in enumerate(res):                                     # petites images des résultats
@@ -441,6 +507,8 @@ class DialogueTampons(QDialog):
             self.etat.setText("✕ " + str(err))
             return
         self.resultats.clear()
+        note = (res[0].get("_note") if res else "") or ""
+        res = [r for r in res if not r.get("_vide")]
         for r in res:
             it = QListWidgetItem(f"{r['titre'][:40]}\n{r.get('duree', 0):.0f} s · {r.get('auteur', '')[:24]}")
             if r.get("_vignette"):
@@ -450,8 +518,8 @@ class DialogueTampons(QDialog):
             it.setData(Qt.UserRole, r)
             it.setToolTip(f"{r['titre']}\n{r.get('licence', '')}")
             self.resultats.addItem(it)
-        self.etat.setText(_("{n} clip(s) trouvé(s). Double-clic : ajouter à la bibliothèque et insérer.", n=len(res)) if res else
-                          _("Rien trouvé : essayez d'autres mots (en anglais)."))
+        self.etat.setText((_("{n} clip(s) trouvé(s). Double-clic : ajouter à la bibliothèque et insérer.", n=len(res)) if res else
+                           _("Rien trouvé : essayez d'autres mots (en anglais).")) + ("  " + note if note else ""))
 
     def _resultat_choisi(self):
         it = self.resultats.currentItem()

@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.8.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.8.2 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.8.2 : extraits de films, recherches traduites
+- Tampons video > Chercher en ligne : extraits de films et de series sur clip.cafe, Yarn et PlayPhrase.me (recherche ouverte dans le navigateur, extrait telecharge par vous puis "Importer le clip telecharge" ; avertissement sur le droit d'auteur).
+- On tape dans sa langue : PhilCut traduit en anglais les recherches de tampons (Wikimedia Commons, Pixabay, Pexels, extraits) et de musiques libres ; les mots sans traduction sont signales ("tapez en anglais").
 
 ### 0.8.1 : les clefs suivent sur vos autres postes
 - Preferences > Comptes et synchro > "Synchroniser aussi les mots de passe et clefs" fonctionne : clefs IA, Pixabay, Pexels et mots de passe des comptes sont envoyes chiffres (phrase secrete choisie une fois) dans le dossier de synchronisation, et repris automatiquement sur les autres postes apres avoir donne la phrase une fois.

@@ -20,6 +20,9 @@ API_PIXABAY = "https://pixabay.com/api/videos/"
 API_PEXELS = "https://api.pexels.com/videos/search"
 SOURCES = {"wikimedia": "Wikimedia Commons", "pixabay": "Pixabay", "pexels": "Pexels"}
 CLEFS = {"pixabay": "pixabay_cle", "pexels": "pexels_cle"}         # identifiants dans le coffre du système
+# extraits de films et de séries (protégés) : recherche ouverte dans le navigateur, téléchargement par l'utilisateur
+EXTRAITS = {"clipcafe": ("clip.cafe", "https://clip.cafe/s/{q}/"), "yarn": ("Yarn", "https://yarn.co/yarn-find?text={q}"),
+            "playphrase": ("PlayPhrase.me", "https://www.playphrase.me/#/search?q={q}&language=en")}
 PAGES_CLEF = {"pixabay": "https://pixabay.com/api/docs/", "pexels": "https://www.pexels.com/api/new/"}
 
 
@@ -623,6 +626,12 @@ def telecharger(params, r, progression=None, arret=lambda: False, duree_max=None
     enregistrer(params, liste)
     progression and progression(1.0)
     return e
+
+
+def url_extrait(site, texte):
+    """Page de recherche du site d'extraits pour ces mots (déjà en anglais)."""
+    q = urllib.parse.quote_plus(texte.strip()) if site == "clipcafe" else urllib.parse.quote(texte.strip())
+    return EXTRAITS[site][1].format(q=q)
 
 
 def credit(r):
