@@ -193,8 +193,10 @@ class Test080(unittest.TestCase):
         t, comment, manque = TR.en_anglais("coucher de soleil sur la mer", "fr", reseau=False)
         self.assertIn("sunset", t)
         self.assertIn("sea", t)
-        self.assertTrue(manque)                                      # « sur », « la » : signalés
-        self.assertIn("anglais", TR.message("coucher de soleil sur la mer", (t, comment, manque)))
+        self.assertEqual(manque, [])                                 # « sur », « la » : connus du dictionnaire (0.9.0)
+        t, comment, manque = TR.en_anglais("coucher de soleil sur la falaise", "fr", reseau=False)
+        self.assertEqual(manque, ["falaise"])
+        self.assertIn("anglais", TR.message("coucher de soleil sur la falaise", (t, comment, manque)))
         self.assertEqual(TR.en_anglais("explosion crowd", "fr", reseau=False)[2], [])   # déjà de l'anglais : rien à signaler
         self.assertEqual(TR.en_anglais("anything", "en")[1], "deja")
         self.assertEqual(TR.en_anglais("Zeitlupe", "de", reseau=False)[0], "slow motion")

@@ -13,6 +13,7 @@ Guide de test : docs/guideline-tests.md
 - Un clip plein cadre pose au-dessus du film (dessin anime IA, effet IA) se voit aussi en lecture normale, avec le son du passage, pas seulement a l'arret.
 - Image creee par l'Atelier IA : "Poser au-dessus du film" sur la piste Video 2 (le film n'est plus coupe) ; "Inserer dans le film" reste au choix.
 - Timeline plus grande : la barre entre l'apercu et la timeline est visible et descend bien plus haut (le volet de droite defile au lieu de bloquer la hauteur).
+- Assistant de montage (Analyser et proposer) : le volet montre ce que fait la machine (lecture des rushes, demarrage du modele local ou envoi a l'IA cloud, verification), avec pourcentage, temps ecoule et bouton Arreter.
 - Volet ouvert dans une fenetre plus grande (bouton agrandir) : plus de fenetre noire, le contenu s'affiche.
 
 ### 0.8.9

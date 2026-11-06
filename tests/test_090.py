@@ -132,6 +132,15 @@ class Test090(unittest.TestCase):
         ed.agrandir_volet()
         app.processEvents()
         self.assertTrue(w.isVisible())
+        # analyse et proposition : ce que fait la machine se voit dans le volet
+        ed.proposition.niveau.setCurrentIndex(ed.proposition.niveau.findData("recettes"))
+        ed.analyser()
+        self.assertFalse(ed.proposition.suivi.isHidden())
+        self.assertTrue(ed.proposition.suivi_lbl.text())
+        t = ed.taches[-1]
+        attendre(t, 120)
+        self.assertTrue(ed.proposition.suivi.isHidden())
+        self.assertTrue(ed.proposition.resume.text())
         ed.projet.modifie = False
         f.hide()
         f.deleteLater()

@@ -78,12 +78,16 @@ def proposer(projet, params, fiches=None, indices="", format_=None, duree_cible=
             modele = ia_locale.modele_actif(params)
             if not modele:
                 raise RuntimeError(_("Aucun modèle local : cochez-en un dans Préférences › IA locale."))
+            rapporter and rapporter(_("IA locale ({m}) : démarrage du modèle, lecture de la fiche et de {n} vignettes, puis écriture de la "
+                                      "proposition (une à plusieurs minutes sans carte graphique)…", m=modele, n=len(images)))
             r = ia_locale.generer(modele, texte, images, systeme=CONSIGNES, json_attendu=True, params=params)
+            rapporter and rapporter(_("IA locale : réponse reçue, vérification de la proposition…"))
             d = ia.lire_json(r)
             source = "locale:" + modele
         else:
             rapporter and rapporter(_("IA cloud ({m}) : envoi de la fiche et de {n} vignettes…", m=ia.nom_moteur(params), n=len(images)))
             d = ia.demander(params, CONSIGNES, texte, images=images, json_attendu=True, max_jetons=6000)
+            rapporter and rapporter(_("IA cloud : réponse reçue, vérification de la proposition…"))
             source = "cloud:" + ia.nom_moteur(params)
     except Exception as e:        # noqa: BLE001 : on garde la recette sans IA, avec le message
         base["avertissement"] = _("L'IA n'a pas répondu ({e}) : voici la recette sans IA.", e=str(e)[:200])

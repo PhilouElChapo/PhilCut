@@ -166,6 +166,7 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 5. **Image IA au-dessus** : Atelier IA › un effet Image, « Créer », puis « Poser au-dessus du film (3 s) ». **Attendu** : l'image arrive sur la piste Vidéo 2, le film de la piste Vidéo 1 n'est ni coupé ni décalé ; elle se voit en lecture.
 6. **Taille de la timeline** : glisser la barre entre l'aperçu et la timeline (bulle d'aide au survol) vers le haut. **Attendu** : la timeline prend presque toute la hauteur, l'aperçu rétrécit ; le volet de droite défile. Réglage gardé à la prochaine ouverture.
 7. **Volet agrandi** : bouton d'agrandissement en haut à droite du volet (Effets, Inspecteur ou Proposition). **Attendu** : une fenêtre avec le contenu visible (vignettes des effets), pas une fenêtre noire ; à la fermeture le volet revient à sa place.
+8. **Analyser et proposer** : volet Proposition, Niveau « IA locale » puis « IA cloud », « Analyser et proposer ». **Attendu** : sous le bouton, l'étape en cours (« Étape 1/2 : lecture des rushes… », « Étape 2/2 : IA locale (modèle) : démarrage du modèle… » ou « envoi à l'IA cloud… »), une barre avec pourcentage et temps écoulé qui avance chaque seconde, et « Arrêter ». Si l'IA ne répond pas, la recette sans IA arrive avec le message orange qui dit pourquoi.
 
 ## T29 — 0.8.0 : langues, tampons vidéo, Goodies dessinés, Accueil partagé, catalogue en ligne
 

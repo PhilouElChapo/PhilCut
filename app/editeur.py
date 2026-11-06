@@ -194,6 +194,14 @@ class Bibliotheque(QListWidget):
         m.exec(self.mapToGlobal(pos))
 
 
+def ia_nom(params):
+    try:
+        from . import ia
+        return _("IA cloud : {m}", m=ia.nom_moteur(params))
+    except Exception:     # noqa: BLE001
+        return _("IA cloud")
+
+
 def MARGE_G_TL():
     from .timeline import MARGE_G
     return MARGE_G
@@ -256,6 +264,28 @@ class VoletProposition(QWidget):
         self.b_go.setProperty("primaire", True)
         self.b_go.clicked.connect(self.analyser.emit)
         v.addWidget(self.b_go)
+        # ce que la machine fait pendant l'analyse : étape, pourcentage, temps écoulé, arrêt
+        self.suivi = QFrame()
+        vs = QVBoxLayout(self.suivi)
+        vs.setContentsMargins(0, 4, 0, 4)
+        self.suivi_lbl = QLabel("")
+        self.suivi_lbl.setWordWrap(True)
+        vs.addWidget(self.suivi_lbl)
+        self.suivi_barre = QProgressBar()
+        self.suivi_barre.setRange(0, 1000)
+        vs.addWidget(self.suivi_barre)
+        hs = QHBoxLayout()
+        hs.addStretch(1)
+        self.suivi_stop = QPushButton(_("Arrêter"))
+        hs.addWidget(self.suivi_stop)
+        vs.addLayout(hs)
+        self.suivi.hide()
+        v.addWidget(self.suivi)
+        self._suivi_t0, self._suivi_f, self._suivi_tache = 0.0, 0.0, None
+        from PySide6.QtCore import QTimer
+        self._suivi_horloge = QTimer(self)
+        self._suivi_horloge.setInterval(1000)
+        self._suivi_horloge.timeout.connect(self._suivi_tic)
         self.resume = QLabel("")
         self.resume.setWordWrap(True)
         v.addWidget(self.resume)
@@ -278,6 +308,35 @@ class VoletProposition(QWidget):
         self.b_remplacer.setEnabled(False)
         self.b_ajouter.setEnabled(False)
         self.cases = {}
+
+    def suivre(self, tache, titre):
+        """Montre dans le volet ce que fait l'analyse en cours (en plus de la barre du bas)."""
+        import time as _t
+        self._suivi_tache, self._suivi_t0, self._suivi_f, self._suivi_titre = tache, _t.monotonic(), 0.0, titre
+        self.suivi_lbl.setText(titre + " — " + _("démarrage…"))
+        self.suivi_barre.setValue(0)
+        try:
+            self.suivi_stop.clicked.disconnect()
+        except (RuntimeError, TypeError):
+            pass
+        self.suivi_stop.clicked.connect(tache.stopper)
+        self.suivi.show()
+        self._suivi_tic()
+        self._suivi_horloge.start()
+        tache.progression.connect(self._suivi_prog, Qt.QueuedConnection)
+        tache.fini.connect(lambda *_a: (self._suivi_horloge.stop(), self.suivi.hide()), Qt.QueuedConnection)
+
+    def _suivi_prog(self, f, texte):
+        self._suivi_f = f
+        self.suivi_barre.setValue(int(f * 1000))
+        if texte:
+            self.suivi_lbl.setText(texte)
+        self._suivi_tic()
+
+    def _suivi_tic(self):
+        import time as _t
+        e = int(_t.monotonic() - self._suivi_t0)
+        self.suivi_barre.setFormat(_("{p} % · temps écoulé {t}", p=int(self._suivi_f * 100), t=f"{e // 60}:{e % 60:02d}"))
 
     def montrer(self, recette):
         self.recette = recette
@@ -2190,14 +2249,21 @@ class Editeur(QWidget):
             if not ia.confirmer_cout(self, self.params, 3000 + 900 * len(self.projet.medias), min(12, 4 * len(videos))):
                 return
 
+        n_med = len(self.projet.medias)
+        moteur_txt = {"recettes": _("recettes sans IA"), "locale": _("IA locale, sur ce poste")}.get(niveau) or ia_nom(self.params)
+
         def travail(tache):
-            fiches = A.preparer(self.projet, self.params, progression=lambda f, t: tache.avancer(f * 0.7, t))
-            tache.avancer(0.72, _("recette"))
+            fiches = A.preparer(self.projet, self.params, progression=lambda f, t: tache.avancer(
+                f * 0.7, _("Étape 1/2 : lecture des rushes ({n}) — {t}", n=n_med, t=t or "…")))
+            if tache.arret:
+                raise InterruptedError()
+            tache.avancer(0.72, _("Étape 2/2 : écriture de la proposition ({m})…", m=moteur_txt))
             return A.proposer(self.projet, self.params, fiches, indices=indices, format_=fmt, duree_cible=duree, niveau_force=niveau,
-                              rapporter=lambda t: tache.avancer(0.8, t))
+                              rapporter=lambda t: tache.avancer(0.8, _("Étape 2/2 : {t}", t=t)))
         t = Tache(travail, _("Assistant"))
         self.taches.append(t)
         self.encart.suivre(t, _("Analyse des rushes et recette"))
+        self.proposition.suivre(t, _("Analyse des rushes et proposition ({m})", m=moteur_txt))
         t.fini.connect(self._recette_prete)
         t.start()
         self.proposition.b_go.setEnabled(False)
@@ -2205,6 +2271,9 @@ class Editeur(QWidget):
     def _recette_prete(self, r, e):
         self.proposition.b_go.setEnabled(True)
         self.biblio.remplir(self.projet)
+        if isinstance(e, InterruptedError):
+            self.encart.message(_("Analyse arrêtée."))
+            return
         if e:
             QMessageBox.warning(self, _("Assistant"), str(e))
             return
