@@ -4838,5 +4838,15 @@
  "Recherché en anglais : « {t} » ; pas de traduction pour « {m} » : tapez ces mots en anglais.": "Auf Englisch gesucht: „{t}“; keine Übersetzung für „{m}“: tippen Sie diese Wörter auf Englisch.",
  "Vidéos et sons": "Videos und Töne",
  "Répliques et sons de films : {s} (navigateur)": "Filmzitate und -töne: {s} (Browser)",
- "Son « {n} » posé à {t} sur la piste {p} ({d:.1f} s) ; réglez son volume dans l'Inspecteur.": "Ton „{n}“ bei {t} auf Spur {p} gesetzt ({d:.1f} s); Lautstärke im Inspektor einstellen."
+ "Son « {n} » posé à {t} sur la piste {p} ({d:.1f} s) ; réglez son volume dans l'Inspecteur.": "Ton „{n}“ bei {t} auf Spur {p} gesetzt ({d:.1f} s); Lautstärke im Inspektor einstellen.",
+ "Montage vidéo simple, efficace, effet wahou.": "Einfacher, effizienter Videoschnitt mit Wow-Effekt.",
+ "Version {v}": "Version {v}",
+ "Lecture de vos réglages…": "Ihre Einstellungen werden gelesen…",
+ "Mise en place du thème et des polices…": "Design und Schriften werden eingerichtet…",
+ "Préparation de la fenêtre de montage…": "Schnittfenster wird vorbereitet…",
+ "Ouverture…": "Wird geöffnet…",
+ "Recherche du moteur vidéo (FFmpeg)…": "Video-Engine (FFmpeg) wird gesucht…",
+ "Chargement des effets et des transitions…": "Effekte und Übergänge werden geladen…",
+ "Chargement des Goodies, titres et intros…": "Goodies, Titel und Intros werden geladen…",
+ "Chargement de la timeline et de l'aperçu…": "Timeline und Vorschau werden geladen…"
 }

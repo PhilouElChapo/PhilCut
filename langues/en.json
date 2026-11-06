@@ -4847,5 +4847,15 @@
  "Recherché en anglais : « {t} » ; pas de traduction pour « {m} » : tapez ces mots en anglais.": "Searched in English: \"{t}\"; no translation for \"{m}\": type these words in English.",
  "Vidéos et sons": "Videos and sounds",
  "Répliques et sons de films : {s} (navigateur)": "Film lines and sounds: {s} (browser)",
- "Son « {n} » posé à {t} sur la piste {p} ({d:.1f} s) ; réglez son volume dans l'Inspecteur.": "Sound \"{n}\" placed at {t} on track {p} ({d:.1f} s); adjust its volume in the Inspector."
+ "Son « {n} » posé à {t} sur la piste {p} ({d:.1f} s) ; réglez son volume dans l'Inspecteur.": "Sound \"{n}\" placed at {t} on track {p} ({d:.1f} s); adjust its volume in the Inspector.",
+ "Montage vidéo simple, efficace, effet wahou.": "Simple, efficient video editing with the wow effect.",
+ "Version {v}": "Version {v}",
+ "Lecture de vos réglages…": "Reading your settings…",
+ "Mise en place du thème et des polices…": "Setting up the theme and fonts…",
+ "Préparation de la fenêtre de montage…": "Preparing the editing window…",
+ "Ouverture…": "Opening…",
+ "Recherche du moteur vidéo (FFmpeg)…": "Looking for the video engine (FFmpeg)…",
+ "Chargement des effets et des transitions…": "Loading effects and transitions…",
+ "Chargement des Goodies, titres et intros…": "Loading Goodies, titles and intros…",
+ "Chargement de la timeline et de l'aperçu…": "Loading the timeline and preview…"
 }

@@ -9,10 +9,11 @@ LANGUES = ("en", "de", "es", "it")
 def textes_interface():
     cles = {}
     dossier = os.path.join(RACINE, "app")
-    for f in sorted(os.listdir(dossier)):
-        if not f.endswith(".py"):
-            continue
-        arbre = ast.parse(open(os.path.join(dossier, f), encoding="utf-8").read())
+    fichiers = [os.path.join(dossier, f) for f in sorted(os.listdir(dossier)) if f.endswith(".py")] + [os.path.join(RACINE, "philcut.py")]
+    for chemin in fichiers:
+        f = os.path.basename(chemin)
+        with open(chemin, encoding="utf-8") as g:
+            arbre = ast.parse(g.read())
         for n in ast.walk(arbre):
             if (isinstance(n, ast.Call) and getattr(n.func, "id", None) == "_" and n.args
                     and isinstance(n.args[0], ast.Constant) and isinstance(n.args[0].value, str)):

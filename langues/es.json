@@ -4838,5 +4838,15 @@
  "Recherché en anglais : « {t} » ; pas de traduction pour « {m} » : tapez ces mots en anglais.": "Buscado en inglés: «{t}»; sin traducción para «{m}»: escriba estas palabras en inglés.",
  "Vidéos et sons": "Vídeos y sonidos",
  "Répliques et sons de films : {s} (navigateur)": "Réplicas y sonidos de películas: {s} (navegador)",
- "Son « {n} » posé à {t} sur la piste {p} ({d:.1f} s) ; réglez son volume dans l'Inspecteur.": "Sonido «{n}» puesto en {t} en la pista {p} ({d:.1f} s); ajuste su volumen en el Inspector."
+ "Son « {n} » posé à {t} sur la piste {p} ({d:.1f} s) ; réglez son volume dans l'Inspecteur.": "Sonido «{n}» puesto en {t} en la pista {p} ({d:.1f} s); ajuste su volumen en el Inspector.",
+ "Montage vidéo simple, efficace, effet wahou.": "Montaje de vídeo sencillo, eficaz, efecto wow.",
+ "Version {v}": "Versión {v}",
+ "Lecture de vos réglages…": "Leyendo sus ajustes…",
+ "Mise en place du thème et des polices…": "Preparando el tema y las fuentes…",
+ "Préparation de la fenêtre de montage…": "Preparando la ventana de montaje…",
+ "Ouverture…": "Abriendo…",
+ "Recherche du moteur vidéo (FFmpeg)…": "Buscando el motor de vídeo (FFmpeg)…",
+ "Chargement des effets et des transitions…": "Cargando efectos y transiciones…",
+ "Chargement des Goodies, titres et intros…": "Cargando Goodies, títulos e intros…",
+ "Chargement de la timeline et de l'aperçu…": "Cargando la línea de tiempo y la vista previa…"
 }

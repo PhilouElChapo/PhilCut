@@ -4838,5 +4838,15 @@
  "Recherché en anglais : « {t} » ; pas de traduction pour « {m} » : tapez ces mots en anglais.": "Cercato in inglese: «{t}»; nessuna traduzione per «{m}»: scrivi queste parole in inglese.",
  "Vidéos et sons": "Video e suoni",
  "Répliques et sons de films : {s} (navigateur)": "Battute e suoni di film: {s} (browser)",
- "Son « {n} » posé à {t} sur la piste {p} ({d:.1f} s) ; réglez son volume dans l'Inspecteur.": "Suono «{n}» posto a {t} sulla traccia {p} ({d:.1f} s); regola il volume nell'Ispettore."
+ "Son « {n} » posé à {t} sur la piste {p} ({d:.1f} s) ; réglez son volume dans l'Inspecteur.": "Suono «{n}» posto a {t} sulla traccia {p} ({d:.1f} s); regola il volume nell'Ispettore.",
+ "Montage vidéo simple, efficace, effet wahou.": "Montaggio video semplice, efficace, effetto wow.",
+ "Version {v}": "Versione {v}",
+ "Lecture de vos réglages…": "Lettura delle tue impostazioni…",
+ "Mise en place du thème et des polices…": "Preparazione del tema e dei caratteri…",
+ "Préparation de la fenêtre de montage…": "Preparazione della finestra di montaggio…",
+ "Ouverture…": "Apertura…",
+ "Recherche du moteur vidéo (FFmpeg)…": "Ricerca del motore video (FFmpeg)…",
+ "Chargement des effets et des transitions…": "Caricamento di effetti e transizioni…",
+ "Chargement des Goodies, titres et intros…": "Caricamento di Goodies, titoli e intro…",
+ "Chargement de la timeline et de l'aperçu…": "Caricamento della timeline e dell'anteprima…"
 }

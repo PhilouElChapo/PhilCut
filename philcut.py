@@ -75,16 +75,22 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName("PhilCut")
     app.setOrganizationName("PhilouElChapo")
-    from app import theme, ecran
-    from app.config import Parametres, dossier_donnees
-    params = Parametres()
-    theme.appliquer(params.get("theme", "sombre"))
+    from app.config import VERSION
+    from app.demarrage import EcranDemarrage
+    lancement = EcranDemarrage(VERSION)
     base = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.abspath(__file__))
     polices = os.path.join(base, "fonts")
     if os.path.isdir(polices):
         for f in os.listdir(polices):
             if f.lower().endswith((".ttf", ".otf")):
                 QFontDatabase.addApplicationFont(os.path.join(polices, f))
+    from app.langue import _
+    lancement.etape(_("Lecture de vos réglages…"), 0.08)
+    from app import theme, ecran
+    from app.config import Parametres, dossier_donnees
+    params = Parametres()
+    theme.appliquer(params.get("theme", "sombre"))
+    lancement.etape(_("Mise en place du thème et des polices…"), 0.18)
     police = QFont("Nunito" if "Nunito" in QFontDatabase.families() else app.font().family(), 10)
     app.setFont(police)
     theme.proteger_bulles()
@@ -99,9 +105,23 @@ def main():
         ecran.installer(app)
     except Exception:
         pass
+    import importlib
+    for frac, texte, modules in ((0.3, _("Recherche du moteur vidéo (FFmpeg)…"), ("app.moteur",)),
+                                 (0.4, _("Chargement des effets et des transitions…"), ("app.effets", "app.catalogue_effets")),
+                                 (0.5, _("Chargement des Goodies, titres et intros…"), ("app.goodies", "app.intros")),
+                                 (0.6, _("Chargement de la timeline et de l'aperçu…"), ("app.editeur",))):
+        lancement.etape(texte, frac)
+        for m in modules:
+            try:
+                importlib.import_module(m)
+            except Exception:    # noqa: BLE001 : l'erreur éventuelle réapparaît, lisible, à l'ouverture de la fenêtre
+                pass
     from app.fenetre import Fenetre
+    lancement.etape(_("Préparation de la fenêtre de montage…"), 0.72)
     f = Fenetre([a for a in sys.argv[1:] if os.path.exists(a)])
+    lancement.etape(_("Ouverture…"), 1.0)
     f.show()
+    lancement.close()
     return app.exec()
 
 

@@ -22,6 +22,13 @@ from .taches import Tache
 from .widgets import boutons_fr
 
 
+def progression_maj(tache):
+    """Progression du téléchargement de la mise à jour : mise_a_jour.recuperer donne (octets reçus, taille totale)."""
+    def suivre(fait, total=0):
+        tache.avancer(fait / total if total else 0.0, f"{fait / 1e6:.0f} / {total / 1e6:.0f} Mo" if total else f"{fait / 1e6:.0f} Mo")
+    return suivre
+
+
 class Fenetre(QMainWindow):
     def __init__(self, fichiers=()):
         super().__init__()
@@ -1138,7 +1145,7 @@ class Fenetre(QMainWindow):
         self.onglets.setCurrentIndex(0) if not silencieux else None
 
     def _installer_maj(self, paquet):
-        t = Tache(lambda tache: mise_a_jour.recuperer(paquet, progression=lambda f: tache.avancer(f), arret=lambda: tache.arret), _("Mise à jour"))
+        t = Tache(lambda tache: mise_a_jour.recuperer(paquet, progression=progression_maj(tache), arret=lambda: tache.arret), _("Mise à jour"))
         self.taches.append(t)
         ed = self.editeur_courant()
         if ed:

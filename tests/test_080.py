@@ -220,6 +220,30 @@ class Test080(unittest.TestCase):
         T.retirer(self.params, e["id"])
         T.retirer(self.params, e2["id"])
 
+    def test_ecran_de_lancement(self):
+        from app.demarrage import EcranDemarrage
+        e = EcranDemarrage("9.9.9")
+        e.etape("Chargement des effets…", 0.4)
+        e.etape("Retour en arrière", 0.2)                            # la barre ne recule jamais
+        self.assertAlmostEqual(e.fraction, 0.4)
+        img = e.grab().toImage()
+        self.assertGreater(img.width(), 400)
+        e.close()
+
+    def test_progression_de_la_mise_a_jour(self):
+        from app.fenetre import progression_maj
+        recu = []
+
+        class Faux:
+            def avancer(self, f, t=""):
+                recu.append((f, t))
+        suivre = progression_maj(Faux())
+        suivre(5_000_000, 20_000_000)                                 # mise_a_jour.recuperer donne (fait, total)
+        suivre(3_000_000)
+        self.assertAlmostEqual(recu[0][0], 0.25)
+        self.assertIn("20", recu[0][1])
+        self.assertEqual(recu[1][0], 0.0)
+
     def test_pixabay_sans_clef_explique(self):
         from app import tampons as T, coffre
         coffre.supprimer(T.CLEFS["pixabay"])
