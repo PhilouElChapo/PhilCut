@@ -204,6 +204,28 @@ class DialoguePreferences(QDialog):
         h.addWidget(b)
         fg.addRow(_("Dossier surveillé (Flow)"), h)
         f.addRow(g)
+        # banques de vidéos et de sons libres (tampons vidéo, musiques) : clefs gratuites de l'utilisateur
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        from . import coffre, tampons as T
+        g2 = QGroupBox(_("Vidéos libres pour les tampons (Pixabay, Pexels)"))
+        f2 = QFormLayout(g2)
+        f2.addRow(QLabel(_("<span style='color:#999'>Clefs gratuites : créez un compte sur le site, copiez la clef de l'API et collez-la ici. "
+                           "Elles vont dans le coffre du système et suivent sur vos autres postes si « Synchroniser aussi les mots de passe "
+                           "et clefs » est coché (Comptes et synchro). Wikimedia Commons n'a pas besoin de clef.</span>")))
+        self.clefs_banques = {}
+        for k in ("pixabay", "pexels"):
+            h = QHBoxLayout()
+            champ = QLineEdit(coffre.lire(T.CLEFS[k]) or "")
+            oeil(champ)
+            champ.setPlaceholderText(_("Collez votre clef ici"))
+            b = QPushButton(_("Créer ma clef…"))
+            b.clicked.connect(lambda _c=False, k=k: QDesktopServices.openUrl(QUrl(T.PAGES_CLEF[k])))
+            h.addWidget(champ, 1)
+            h.addWidget(b)
+            f2.addRow(_("Clef {s}", s=T.SOURCES[k]), h)
+            self.clefs_banques[k] = champ
+        f.addRow(g2)
         f.addRow(QLabel(_("<span style='color:#999'>L'IA locale (modèles, test du poste, mode poste léger) se règle dans l'onglet « IA locale ».</span>")))
 
     # ---------------------------------------------------------------- IA locale (portable)
@@ -453,6 +475,11 @@ class DialoguePreferences(QDialog):
         p["ia_consignes_recette"] = self.consignes.toPlainText().strip()
         p["ia_moteur"] = self.moteur.currentData()
         p["clef_claude"] = self.clef_claude.text().strip()
+        from . import coffre, tampons as T
+        for k, champ in getattr(self, "clefs_banques", {}).items():      # clefs Pixabay, Pexels : coffre du système
+            v = champ.text().strip()
+            if v != (coffre.lire(T.CLEFS[k]) or ""):
+                coffre.enregistrer(T.CLEFS[k], v) if v else coffre.supprimer(T.CLEFS[k])
         p["clef_gemini"] = self.clef_gemini.text().strip()
         p["clef_fal"] = self.clef_fal.text().strip()
         p["veo_actif"] = self.veo.isChecked()

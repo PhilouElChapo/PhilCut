@@ -270,14 +270,16 @@ class _ListeOrdonnable(QListWidget):
 def oeil(champ):
     """Champ de mot de passe masque, avec un oeil a droite pour l'afficher ou le masquer."""
     from .icones import icone
+    from . import theme
+    teinte = theme.COULEURS.get("texte2", "#888888")
     champ.setEchoMode(QLineEdit.Password)
-    a = champ.addAction(icone("oeil", "#555555"), QLineEdit.TrailingPosition)
+    a = champ.addAction(icone("oeil", teinte), QLineEdit.TrailingPosition)
     a.setToolTip(_("Afficher le mot de passe"))
 
     def basculer():
         visible = champ.echoMode() == QLineEdit.Password
         champ.setEchoMode(QLineEdit.Normal if visible else QLineEdit.Password)
-        a.setIcon(icone("oeil_barre" if visible else "oeil", "#555555"))
+        a.setIcon(icone("oeil_barre" if visible else "oeil", teinte))
         a.setToolTip(_("Masquer le mot de passe") if visible else _("Afficher le mot de passe"))
     a.triggered.connect(basculer)
     return champ

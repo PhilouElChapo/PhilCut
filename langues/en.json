@@ -4857,5 +4857,10 @@
  "Recherche du moteur vidéo (FFmpeg)…": "Looking for the video engine (FFmpeg)…",
  "Chargement des effets et des transitions…": "Loading effects and transitions…",
  "Chargement des Goodies, titres et intros…": "Loading Goodies, titles and intros…",
- "Chargement de la timeline et de l'aperçu…": "Loading the timeline and preview…"
+ "Chargement de la timeline et de l'aperçu…": "Loading the timeline and preview…",
+ "Vidéos libres pour les tampons (Pixabay, Pexels)": "Free videos for stingers (Pixabay, Pexels)",
+ "<span style='color:#999'>Clefs gratuites : créez un compte sur le site, copiez la clef de l'API et collez-la ici. Elles vont dans le coffre du système et suivent sur vos autres postes si « Synchroniser aussi les mots de passe et clefs » est coché (Comptes et synchro). Wikimedia Commons n'a pas besoin de clef.</span>": "<span style='color:#999'>Free keys: create an account on the site, copy the API key and paste it here. They go into the system keychain and follow you to your other computers if \"Also sync passwords and keys\" is ticked (Accounts and sync). Wikimedia Commons needs no key.</span>",
+ "Créer ma clef…": "Create my key…",
+ "Clef {s}": "{s} key",
+ "Clic : aller à cet instant · glisser sur la règle : choisir une partie de la vidéo (en jaune), puis clic droit dessus : effets, supprimer, garder seulement": "Click: go to this moment · drag on the ruler: choose a section of the video (in yellow), then right-click it: effects, delete, keep only"
 }

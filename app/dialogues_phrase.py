@@ -3,6 +3,7 @@ redonnée une fois sur chaque autre poste. Elle reste dans le coffre du système
 from PySide6.QtWidgets import QDialog, QDialogButtonBox, QFormLayout, QLabel, QLineEdit, QMessageBox
 
 from . import coffre, reglages
+from .widgets import oeil
 from .langue import _
 
 
@@ -24,16 +25,17 @@ def demander_phrase(parent, params, nouvelle=True):
     aide.setWordWrap(True)
     aide.setMinimumWidth(460)
     f.addRow(aide)
-    p1 = QLineEdit()
-    p1.setEchoMode(QLineEdit.Password)
-    f.addRow(_("Phrase secrète"), p1)
-    p2 = QLineEdit()
-    p2.setEchoMode(QLineEdit.Password)
-    ind = QLineEdit()
+    ind = QLineEdit()                        # l'indice d'abord, la phrase ensuite
     if nouvelle:
-        f.addRow(_("Encore une fois"), p2)
         ind.setPlaceholderText(_("Facultatif, visible sur vos autres postes"))
         f.addRow(_("Indice"), ind)
+    p1 = QLineEdit()
+    oeil(p1)                                 # œil : afficher la phrase pour vérifier ce qu'on tape
+    f.addRow(_("Phrase secrète"), p1)
+    p2 = QLineEdit()
+    oeil(p2)
+    if nouvelle:
+        f.addRow(_("Encore une fois"), p2)
     bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
     bb.accepted.connect(d.accept)
     bb.rejected.connect(d.reject)

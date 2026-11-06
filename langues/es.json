@@ -4848,5 +4848,10 @@
  "Recherche du moteur vidéo (FFmpeg)…": "Buscando el motor de vídeo (FFmpeg)…",
  "Chargement des effets et des transitions…": "Cargando efectos y transiciones…",
  "Chargement des Goodies, titres et intros…": "Cargando Goodies, títulos e intros…",
- "Chargement de la timeline et de l'aperçu…": "Cargando la línea de tiempo y la vista previa…"
+ "Chargement de la timeline et de l'aperçu…": "Cargando la línea de tiempo y la vista previa…",
+ "Vidéos libres pour les tampons (Pixabay, Pexels)": "Vídeos libres para las ráfagas (Pixabay, Pexels)",
+ "<span style='color:#999'>Clefs gratuites : créez un compte sur le site, copiez la clef de l'API et collez-la ici. Elles vont dans le coffre du système et suivent sur vos autres postes si « Synchroniser aussi les mots de passe et clefs » est coché (Comptes et synchro). Wikimedia Commons n'a pas besoin de clef.</span>": "<span style='color:#999'>Claves gratuitas: cree una cuenta en el sitio, copie la clave de la API y péguela aquí. Van al almacén del sistema y le siguen a sus otros equipos si «Sincronizar también contraseñas y claves» está marcado (Cuentas y sincronización). Wikimedia Commons no necesita clave.</span>",
+ "Créer ma clef…": "Crear mi clave…",
+ "Clef {s}": "Clave de {s}",
+ "Clic : aller à cet instant · glisser sur la règle : choisir une partie de la vidéo (en jaune), puis clic droit dessus : effets, supprimer, garder seulement": "Clic: ir a este instante · arrastrar sobre la regla: elegir una parte del vídeo (en amarillo), luego clic derecho sobre ella: efectos, eliminar, conservar solo"
 }

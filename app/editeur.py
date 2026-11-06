@@ -1216,10 +1216,10 @@ class Editeur(QWidget):
         if not chemins:
             filtres = _("Vidéos, sons, images") + " (*.mp4 *.mov *.mkv *.m4v *.webm *.avi *.mts *.m2ts *.3gp *.mp3 *.wav *.m4a *.aac *.flac *.ogg *.jpg *.jpeg *.png *.webp *.heic);;" + _("Tous") + " (*)"
             chemins, _f = QFileDialog.getOpenFileNames(self, _("Importer des rushes, musiques ou images"),
-                                                       self.params.get("dernier_dossier") or dossier_systeme("videos"), filtres)
+                                                       self.params.get("dossier_rushes") or dossier_systeme("videos"), filtres)
         if not chemins:
             return
-        self.params["dernier_dossier"] = os.path.dirname(chemins[0])
+        self.params["dossier_rushes"] = os.path.dirname(chemins[0])
         self.params.enregistrer()
         self._file_import = list(chemins)
         self._importer_suivant()

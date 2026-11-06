@@ -1035,6 +1035,15 @@ class Timeline(QGraphicsView):
                 self.viewport().update()
             self.aller_a(t)
             return
+        sp = self.mapToScene(e.pos())                 # au-dessus de la règle des temps : dire comment choisir une partie
+        if sp.y() < H_REGLE:
+            if not getattr(self, "_aide_regle", False):
+                self._aide_regle = True
+                self.viewport().setToolTip(_("Clic : aller à cet instant · glisser sur la règle : choisir une partie de la vidéo (en jaune), "
+                                             "puis clic droit dessus : effets, supprimer, garder seulement"))
+        elif getattr(self, "_aide_regle", False):
+            self._aide_regle = False
+            self.viewport().setToolTip("")
         super().mouseMoveEvent(e)
 
     def mouseReleaseEvent(self, e):

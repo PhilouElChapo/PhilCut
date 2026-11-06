@@ -426,7 +426,8 @@ class DialogueTampons(QDialog):
         b.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(T.PAGES_CLEF[s])))
         f.addRow(b)
         champ = QLineEdit()
-        champ.setEchoMode(QLineEdit.Password)
+        from .widgets import oeil
+        oeil(champ)
         champ.setPlaceholderText(_("Collez votre clef ici"))
         f.addRow(_("Clef"), champ)
         bb = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)

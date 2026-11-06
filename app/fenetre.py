@@ -247,16 +247,20 @@ class Fenetre(QMainWindow):
 
     def rushes_vers_projet(self):
         filtres = _("Vidéos, sons, images") + " (*.mp4 *.mov *.mkv *.m4v *.webm *.avi *.mts *.m2ts *.3gp *.mp3 *.wav *.m4a *.jpg *.jpeg *.png *.heic);;" + _("Tous") + " (*)"
-        chemins, _f = QFileDialog.getOpenFileNames(self, _("Rushes du nouveau projet"), self.params.get("dernier_dossier") or "", filtres)
+        from .session import dossier_systeme
+        depart = self.params.get("dossier_rushes") or dossier_systeme("videos")      # Vidéos du système, puis le dernier dossier
+        chemins, _f = QFileDialog.getOpenFileNames(self, _("Rushes du nouveau projet"), depart, filtres)
         if not chemins:
             return
+        self.params["dossier_rushes"] = os.path.dirname(chemins[0])
         vert = sum(1 for c in chemins if c.lower().endswith(".mp4") and False)
         ed = self.nouveau_projet("16:9", os.path.splitext(os.path.basename(chemins[0]))[0])
         ed.importer(chemins)
         ed.outil("assistant")
 
     def dialogue_ouvrir(self):
-        p, _f = QFileDialog.getOpenFileName(self, _("Ouvrir"), self.params.get("dernier_dossier") or "",
+        from .session import dossier_systeme
+        p, _f = QFileDialog.getOpenFileName(self, _("Ouvrir"), self.params.get("dernier_dossier") or dossier_systeme("videos"),
                                             _("Projets PhilCut et vidéos") + " (*.philcut *.mp4 *.mov *.mkv *.m4v *.webm *.avi *.mts *.m2ts *.3gp)")
         if p:
             self.ouvrir(p)

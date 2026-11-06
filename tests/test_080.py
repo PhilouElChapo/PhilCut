@@ -244,6 +244,43 @@ class Test080(unittest.TestCase):
         self.assertIn("20", recu[0][1])
         self.assertEqual(recu[1][0], 0.0)
 
+    def test_tout_mot_de_passe_a_son_oeil(self):
+        """Règle : chaque champ de mot de passe, phrase ou clef se visualise (œil à droite du champ)."""
+        import re
+        manque = []
+        for f in os.listdir(os.path.join(RACINE, "app")):
+            if not f.endswith(".py") or f == "widgets.py":
+                continue
+            with open(os.path.join(RACINE, "app", f), encoding="utf-8") as g:
+                lignes = g.read().splitlines()
+            for i, l in enumerate(lignes):
+                m = re.search(r"(\S+)\.setEchoMode\(QLineEdit\.Password\)", l)
+                if m:
+                    suite = "\n".join(lignes[i:i + 4])
+                    if f"oeil({m.group(1)})" not in suite and "addAction(icone(\"oeil\"" not in suite:
+                        manque.append(f"{f}:{i + 1}")
+        self.assertEqual(manque, [])
+
+    def test_preferences_clefs_pixabay_pexels(self):
+        from app.config import Parametres
+        from app import coffre, tampons as T
+        from app.preferences import DialoguePreferences
+        from PySide6.QtWidgets import QLineEdit, QWidget
+        pa = Parametres()
+        pa["synchro_secrets"] = False                     # pas de fenêtre de phrase secrète pendant ce test
+
+        class FauxFen(QWidget):
+            def telecharger_pack(self, k): pass
+        fen = FauxFen()
+        d = DialoguePreferences(fen, pa)
+        self.assertIn("pixabay", d.clefs_banques)
+        self.assertEqual(d.clefs_banques["pexels"].echoMode(), QLineEdit.Password)
+        self.assertTrue(d.clefs_banques["pexels"].actions())               # l'œil
+        d.clefs_banques["pexels"].setText("cle-pexels-pref")
+        d.valider()
+        self.assertEqual(coffre.lire(T.CLEFS["pexels"]), "cle-pexels-pref")
+        coffre.supprimer(T.CLEFS["pexels"])
+
     def test_pixabay_sans_clef_explique(self):
         from app import tampons as T, coffre
         coffre.supprimer(T.CLEFS["pixabay"])
