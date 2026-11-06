@@ -25,6 +25,9 @@ class Tache(QThread):
     def stopper(self):
         self.arret = True
 
+    def arret_demande(self):
+        return self.arret
+
     def run(self):
         try:
             self.resultat = self.fonction(self)

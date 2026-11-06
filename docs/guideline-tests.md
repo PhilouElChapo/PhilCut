@@ -157,6 +157,20 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T28 — 0.6 et 0.7 : IA créative sur ce poste (images, effets IA, logo, musique)
+
+Préparation (une fois) : Edition › Préférences › IA locale : cocher « Images rapides (SD-Turbo) » ou « Images de qualité (SDXL-Turbo) » (carte graphique 8 Go), « Profondeur », un « Dessin animé », « Agrandissement IA », « Ralenti fluide IA », « Musique rapide » ou « Musique de qualité », et si l'on veut « Vidéo IA (Wan, expérimental) ». La taille s'affiche avant ; les téléchargements se mettent en pause et reprennent (T25).
+
+1. **Retoucher l'image du film** : tête de lecture sur une belle image ; Montage › Atelier IA › « Retoucher l'image du film ». Choisir « Personnage 3D façon film d'animation », « Anime japonais », « Bande dessinée »… **Attendu** : à gauche l'image du film, à droite le résultat après « Créer » (barre du bas avec le pourcentage). « Force » : 20 % = proche de l'original, 80 % = très transformé. Puis « Insérer à la tête de lecture (3 s) » (la suite se décale, zoom lent), « Ajouter aux médias », « Logo dans la Fabrique… » ou « Enregistrer en JPG (miniature) ».
+2. **Phrase modifiable** : changer la phrase d'un effet, « Garder ma phrase » (elle revient la fois suivante ; « Rétablir » revient à l'original), ou « Enregistrer comme mon effet » (il apparaît avec ★).
+3. **Logo et miniature** : Atelier IA › « Logo, intro ou miniature » : « Mascotte cartoon à partir de l'image » (à partir de la personne ou de l'objet à l'écran), « Emblème rond » et « Fond d'intro » (sans image), « Miniature YouTube éclatante ».
+4. **Effet sur la partie en jaune** : choisir 2 à 5 s en jaune sur un plan ; Atelier IA › « Effet IA sur la partie en jaune » : « Dessin animé (vidéo) » (sans modèle : version OpenCV, instantanée), « Flou d'arrière-plan (effet portrait) », « Agrandir ×2 », « Ralenti fluide ×4 ». **Attendu** : le clip traité est posé au-dessus, sur la piste Vidéo 2, plein cadre ; l'original reste dessous ; le supprimer revient à l'original.
+5. **Photo 3D** : « Photo 3D à partir de l'image (3 s) » : la caméra avance dans l'image, le premier plan bouge plus que le fond.
+5 bis. **Transition 3D** : tête de lecture près d'un raccord ; « Transition 3D entre deux plans » : la caméra plonge dans la dernière image du plan qui part et ressort de la première du suivant ; le clip est posé au-dessus du raccord.
+6. **Animer l'image (Wan, expérimental)** : seulement avec la carte graphique ; plusieurs minutes pour 2 à 3 s. Dire si le résultat vaut l'attente.
+7. **Musique IA** : bouton Musique › « Créer une musique par IA », ou Atelier IA › Musique : style (Pop aérienne, Cinématique épique, Lo-fi calme…), durée (par défaut celle du montage), « Sans paroles » ou des paroles. **Attendu** : le morceau arrive sur la piste Musique, coupé à la fin de la vidéo, avec des fondus. La Proposition (T25 point 9) utilise aussi la musique IA quand le modèle est là.
+8. **Transitions automatiques** (T27) puis export : tout doit se retrouver dans la vidéo exportée.
+
 ## T27 — 0.5.1 et 0.5.2 : textes, transitions et logos modernes, transitions automatiques
 
 1. **Texte moderne** : outil Texte › « Style moderne » (par exemple « Clean minimal — Bas de l'écran, sobre ») et un sous-titre. **Attendu** : le texte animé arrive sur la piste Goodies ; l'Inspecteur change texte, sous-titre et animation. « Aucun » garde le texte classique.

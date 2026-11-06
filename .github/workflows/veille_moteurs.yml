@@ -42,13 +42,23 @@ jobs:
                   nouveau[cle] = json.loads(lire(f"https://api.github.com/repos/{depot}/releases?per_page=1"))[0]["tag_name"]
               except Exception as e:
                   print(f"::warning::{cle} illisible :", e)
+          for cle, depot in (("stable-diffusion.cpp", "leejet/stable-diffusion.cpp"), ("acestep.cpp", "ServeurpersoCom/acestep.cpp")):
+              try:   # moteurs creatifs (images, video, musique) : publies a part, eux aussi
+                  if cle == "acestep.cpp":
+                      nouveau[cle] = json.loads(lire(f"https://api.github.com/repos/{depot}/commits?per_page=1"))[0]["sha"][:12]
+                  else:
+                      nouveau[cle] = json.loads(lire(f"https://api.github.com/repos/{depot}/releases?per_page=1"))[0]["tag_name"]
+              except Exception as e:
+                  print(f"::warning::{cle} illisible :", e)
           try:   # build FFmpeg embarquee (BtbN "latest" : la date de publication fait office de version)
               d = json.loads(lire("https://api.github.com/repos/BtbN/FFmpeg-Builds/releases/tags/latest"))
               nouveau["ffmpeg"] = d.get("published_at", "")[:10]
           except Exception as e:
               print("::warning::FFmpeg illisible :", e)
-          IA = ("llama.cpp", "whisper.cpp")
-          change_ia = [k for k in IA if nouveau.get(k) and nouveau.get(k) != connu.get(k)]
+          IA = ("llama.cpp", "whisper.cpp", "stable-diffusion.cpp", "acestep.cpp")
+          CREATIFS = ("stable-diffusion.cpp", "acestep.cpp")
+          change_ia = [k for k in IA if k not in CREATIFS and nouveau.get(k) and nouveau.get(k) != connu.get(k)]
+          change_creatifs = [k for k in CREATIFS if nouveau.get(k) and connu.get(k) and nouveau.get(k) != connu.get(k)]
           change = [k for k in nouveau if k not in IA and nouveau[k] and connu.get(k) and nouveau[k] != connu[k]]
           for k in change_ia:
               print(f"::notice title=Nouveau moteur IA::{k} {connu.get(k) or '?'} -> {nouveau[k]}")
@@ -60,10 +70,16 @@ jobs:
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               f.write("change=" + ("oui" if change else "non") + "\n")
               f.write("change_ia=" + ("oui" if change_ia else "non") + "\n")
+              f.write("change_creatifs=" + ("oui" if change_creatifs else "non") + "\n")
               f.write("quoi=" + ", ".join(f"{k} {nouveau[k]}" for k in change) + "\n")
       - name: Moteurs IA locaux (fabriques, essayes puis publies a part)
         if: steps.v.outputs.change_ia == 'oui'
         run: gh workflow run moteurs_ia.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Moteurs creatifs (images, video, musique)
+        if: steps.v.outputs.change_creatifs == 'oui'
+        run: gh workflow run moteurs_creatifs.yml --ref main
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Premier passage (versions notees)

@@ -148,7 +148,7 @@ def manifeste(rafraichir=False, delai=8):
     if local:
         with open(local, encoding="utf-8") as f:
             _manifeste = json.load(f)
-        return _manifeste
+        return _fusionner(_manifeste, rafraichir, delai)
     copie = os.path.join(dossier(), "moteurs-ia.json")
     vieux = not os.path.exists(copie) or time.time() - os.path.getmtime(copie) > 86400
     if rafraichir or vieux:
@@ -165,13 +165,17 @@ def manifeste(rafraichir=False, delai=8):
                 raise ErreurIA(_("Catalogue de l'IA locale injoignable : {e}", e=e)) from e
     with open(copie, encoding="utf-8") as f:
         _manifeste = json.load(f)
+    return _fusionner(_manifeste, rafraichir, delai)
+
+
+def _fusionner(man, rafraichir, delai):
     try:
         sup = _manifeste_creatif(rafraichir, delai)
-        _manifeste.setdefault("moteurs", {}).update(sup.get("moteurs", {}))
-        _manifeste.setdefault("modeles", {}).update(sup.get("modeles", {}))
+        man.setdefault("moteurs", {}).update(sup.get("moteurs", {}))
+        man.setdefault("modeles", {}).update(sup.get("modeles", {}))
     except Exception:            # noqa: BLE001 : sans lui, l'IA locale « classique » marche toujours
         pass
-    return _manifeste
+    return man
 
 
 def _manifeste_creatif(rafraichir=False, delai=8):

@@ -54,7 +54,7 @@ MODELES = {
                    {"qualite": 4, "memoire_go": 2, "note": "Photo 3D, flou d'arrière-plan, brume : sur le processeur, rapide (Apache 2.0)."}),
 }
 ANIMEGAN = {"anime_hayao": ("Dessin animé, style Hayao", "Hayao"), "anime_shinkai": ("Dessin animé, style Shinkai (ciels lumineux)", "Shinkai"),
-            "anime_croquis": ("Croquis au crayon", "Sketch")}
+            "anime_portrait": ("Dessin animé, modèle H40 (visages)", "H40")}
 MOTEURS_SEULS = {"upscale_video": ("Agrandissement IA (Real-ESRGAN)", "upscale", "upscale"),
                  "ralenti_ia": ("Ralenti fluide IA (RIFE)", "interpolation", "interpolation")}
 

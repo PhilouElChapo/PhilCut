@@ -1,6 +1,6 @@
 """La page de montage d'un projet : barre d'outils en flux (personnalisable), bibliotheque a gauche, apercu au
 centre, volet a droite (Proposition de l'assistant, Proprietes), timeline en bas, encart de progression."""
-import os
+import os, time
 
 from PySide6.QtCore import Qt, QTimer, Signal, QMimeData, QSize, QByteArray
 from PySide6.QtGui import QPixmap, QIcon, QDrag, QAction, QColor
@@ -1301,6 +1301,28 @@ class Editeur(QWidget):
             self.importer([x["chemin"]])
             self.encart.message(_("Musique : « {t} » de vos dossiers, ambiance {a}.", t=x.get("titre", ""), a=ambiance or "?"))
             return
+        from . import packs_ia as P_
+        if P_.modele_actif("musique", self.params):     # musique IA sur ce poste : gratuite, à la bonne durée
+            from . import creatif as C
+            style = {"energique": "electro", "douce": "piano", "cinema": "cinema", "chaleureuse": "acoustique", "mysterieuse": "ambient",
+                     "legere": "pop_aerienne", "calme": "lofi", "joyeuse": "pop_aerienne", "aventure": "rock"}.get(ambiance or "", "pop_aerienne")
+            from .config import dossier_donnees
+            sortie = os.path.join(dossier_donnees(), "ia_creations", f"musique_{style}_{int(time.time())}.mp3")
+            os.makedirs(os.path.dirname(sortie), exist_ok=True)
+            t = Tache(lambda tache: C.musique(style, sortie, max(15.0, duree + 2), self.params, progression=tache.avancer, arret=tache.arret_demande),
+                      _("Musique IA"))
+            self.taches.append(t)
+            self.encart.suivre(t, _("Musique IA sur ce poste, style « {s} »", s=style))
+
+            def fini_ia(chemin, err):
+                if err or not chemin:
+                    self.encart.message(_("Musique IA impossible : {e}", e=str(err or "")[:160]))
+                    return
+                self._piste_depot = ("audio", 0.0, {"volume": 0.8, "fondu_entree": 1.0, "fondu_sortie": 3.0, "_couper_fin": True})
+                self.importer([chemin])
+            t.fini.connect(fini_ia)
+            t.start()
+            return
         corresp = {"chaleureuse": "acoustique", "douce": "calme", "legere": "joyeuse", "mysterieuse": "calme"}
         amb = corresp.get(ambiance, ambiance)
 
@@ -2204,6 +2226,61 @@ class Editeur(QWidget):
             apprentissage.ecrire(self.params, "recettes.json", d)
         except Exception:
             pass
+
+    def atelier_ia(self, famille="image"):
+        """Atelier IA local : image du film retouchée, effet sur la partie en jaune, logo, musique."""
+        from .dialogues_creatif import DialogueAtelierIA
+        DialogueAtelierIA(self, famille).exec()
+
+    def inserer_image(self, png, t, duree=3.0, nom=""):
+        """Insère une image à l'instant t (la suite du montage se décale), avec un zoom lent ; annulable."""
+        self.projet.marquer()
+        c = self.projet.clip_a(t, "video")
+        if c and c["debut"] + 0.04 < t < fin_clip(c) - 0.04:
+            self.projet.couper(c["id"], t)
+        for x in self.projet.clips:
+            if x["debut"] >= t - 1e-3:
+                x["debut"] += duree
+        for x in self.projet.titres + self.projet.goodies:
+            if x["debut"] >= t - 1e-3:
+                x["debut"] += duree
+                x["fin"] += duree
+        mi = self.projet.ajouter_media(png, moteur.sonder(png))
+        mi["nom"] = nom or os.path.basename(png)
+        ci = self.projet.ajouter_clip(mi["id"], "video", t, 0.0, duree)
+        ci["nom"] = mi["nom"]
+        ci["effets"].insert(0, {"id": "zoom_lent", "params": {"force": 0.08, "sens": "avant"}})
+        self.biblio.remplir(self.projet)
+        self.rafraichir()
+        self.timeline.selectionner(ci["id"])
+        self.encart.message(_("Image insérée à {t} ; la suite du montage est décalée de {d} s.", t=_tc(t), d=duree))
+        return ci
+
+    def poser_au_dessus(self, video, t, nom=""):
+        """Pose un clip créé (effet IA) au-dessus du film, plein cadre, sur la première piste vidéo libre."""
+        from .projet import duree_clip
+        f = moteur.sonder(video)
+        d = float(f.get("duree") or 1.0)
+        self.projet.marquer()
+        piste = None
+        for p in self.projet.pistes_video()[1:]:
+            if not any(x["debut"] < t + d and fin_clip(x) > t for x in self.projet.clips_piste(p)):
+                piste = p
+                break
+        if piste is None:
+            piste = self.projet.ajouter_piste("video")
+        mi = self.projet.ajouter_media(video, f)
+        mi["nom"] = nom or os.path.basename(video)
+        ci = self.projet.ajouter_clip(mi["id"], piste, t, 0.0, d)
+        ci["nom"] = mi["nom"]
+        ci["incrust"] = {"echelle": 1.0, "x": 0.5, "y": 0.5, "opacite": 1.0}
+        ci["muet"] = True
+        self.biblio.remplir(self.projet)
+        self.rafraichir()
+        self.timeline.selectionner(ci["id"])
+        self.encart.message(_("« {n} » posé au-dessus ({p}), {d} : supprimez-le pour revenir à l'original.", n=mi["nom"], p=piste,
+                              d=_tc(duree_clip(ci))))
+        return ci
 
     def transitions_auto(self):
         from .dialogues_transitions import DialogueTransitionsAuto

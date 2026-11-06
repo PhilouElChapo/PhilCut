@@ -351,6 +351,25 @@ def photo_3d(img_bgr, sortie, secondes=3.0, ips=30, mouvement="avance", amplitud
     return sortie
 
 
+def transition_3d(img_a, img_b, sortie, duree=1.2, ips=30, params=None, progression=None):
+    """Transition « IA » locale entre deux plans : la caméra plonge dans la dernière image du plan qui part (grâce à sa
+    profondeur), un fondu rapide, puis elle recule hors de la première image du plan qui arrive."""
+    from . import moteur
+    import cv2
+    H, L = img_a.shape[:2]
+    img_b = cv2.resize(img_b, (L, H), interpolation=cv2.INTER_AREA)
+    d = tempfile.mkdtemp(prefix="philcut-tr3d-")
+    moitie = duree / 2 + 0.15
+    a = photo_3d(img_a, os.path.join(d, "a.mp4"), moitie, ips, "avance", 0.28, params, (lambda f: progression(0.45 * f)) if progression else None)
+    b = photo_3d(img_b, os.path.join(d, "b.mp4"), moitie, ips, "avance", 0.28, params, (lambda f: progression(0.45 + 0.45 * f)) if progression else None)
+    moteur.lancer(["-y", "-i", a, "-i", b, "-filter_complex",
+                   f"[1:v]reverse,setpts=PTS-STARTPTS[br];[0:v][br]xfade=transition=fade:duration=0.3:offset={moitie - 0.3:.3f},"
+                   f"avgblur=sizeX=9:sizeY=9:enable='between(t,{moitie - 0.35:.3f},{moitie + 0.05:.3f})'[v]",
+                   "-map", "[v]", "-c:v", "libx264", "-crf", "17", "-pix_fmt", "yuv420p", sortie])
+    shutil.rmtree(d, ignore_errors=True)
+    return sortie
+
+
 def traiter_video(video, sortie, fonction, debut=0.0, duree=None, ips=30, progression=None, arret=lambda: False):
     """Applique fonction(img_bgr) -> img_bgr à chaque image d'un passage ; garde le son d'origine."""
     from . import moteur

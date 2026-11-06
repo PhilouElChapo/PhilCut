@@ -145,6 +145,10 @@ class Fenetre(QMainWindow):
             o = O.outil(oid)
             mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
         mo.addAction(_("Figer l'image à la tête de lecture (cadre photo, légende)…"), lambda: self._ed(lambda ed: ed.figer_image()))
+        sm_ia = mo.addMenu(icone("assistant"), _("Atelier IA (sur ce poste)"))
+        for fam, lib in (("image", _("Retoucher l'image du film (cartoon, 3D, peinture…)…")), ("video", _("Effet IA sur la partie en jaune…")),
+                         ("logo", _("Logo, intro ou miniature par IA…")), ("musique", _("Créer une musique par IA…"))):
+            sm_ia.addAction(lib, lambda fam=fam: self._ed(lambda ed: ed.atelier_ia(fam)))
         mo.addAction(icone("assistant"), _("Dites-le en clair (une phrase devient des actions)…"), lambda: self._ed(lambda ed: ed.dites_le()))
         mo.addAction(icone("effets"), _("Transitions automatiques (selon les images et la musique)…"), lambda: self._ed(lambda ed: ed.transitions_auto()))
         mo.addAction(icone("musique"), _("Bruitages (whoosh, impact, déclic, bip…)…"), lambda: self._ed(lambda ed: ed.bruitage()))
@@ -614,6 +618,7 @@ class Fenetre(QMainWindow):
         m.addAction(_("Importer une musique…"), lambda: ed.importer())
         self._menu_mes_musiques(m.addMenu(icone("musique"), _("Mes musiques")), ed)
         m.addAction(_("Bibliothèque musicale libre (chercher, écouter, télécharger)…"), lambda: self.bibliotheque_musicale(ed))
+        m.addAction(_("Créer une musique par IA (sur ce poste)…"), lambda: ed.atelier_ia("musique"))
         m.exec(self.cursor().pos())
 
     def _menu_mes_musiques(self, sm, ed):

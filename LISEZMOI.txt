@@ -96,6 +96,12 @@ film ; polices Poppins, Bebas Neue, Anton.
 0.5.2 : textes animes modernes (dont bas de l'ecran), transitions modernes, gabarits de
 logo modernes ; transitions automatiques selon les images et la musique.
 
+0.7.0 : IA creative sur ce poste (gratuite, rien n'est envoye) : image du film retouchee
+par une phrase (cartoon 3D, anime, BD, peinture...), logo et miniature par IA, effets IA
+sur la partie en jaune (dessin anime, flou d'arriere-plan, agrandissement, ralenti
+fluide), photo 3D, animer une image (experimental), musique creee par IA selon un style.
+Montage > Atelier IA. Modeles a cocher dans Preferences > IA locale.
+
 Mises a jour
 ------------
 Verifiees au demarrage (une fois par jour) et PROPOSEES sur l'Accueil : rien n'est
