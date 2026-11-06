@@ -425,5 +425,9 @@ def catalogue_en_ligne(delai=10, reseau=True):
 _EN_LIGNE = {}
 
 
-def filtre_en_ligne(ident):
-    return _EN_LIGNE.get(ident)
+def filtre_en_ligne(ident, ctx=None):
+    """Chaîne FFmpeg d'un effet du catalogue en ligne ; {largeur} et {hauteur} = taille de l'image du projet."""
+    f = _EN_LIGNE.get(ident)
+    if f and ctx:
+        f = f.replace("{largeur}", str(int(ctx.get("largeur") or 1920))).replace("{hauteur}", str(int(ctx.get("hauteur") or 1080)))
+    return f

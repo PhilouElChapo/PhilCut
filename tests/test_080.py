@@ -62,7 +62,7 @@ class Test080(unittest.TestCase):
         for k, e in d["effets"].items():
             for l in ("fr", "en", "de", "es", "it"):
                 self.assertTrue(e["nom"].get(l) and e["description"].get(l), f"{k} : {l} manquant")
-            r = subprocess.run([moteur.ffmpeg(), "-v", "error", "-i", v, "-vf", e["ffmpeg"], "-f", "null", "-"], capture_output=True, text=True)
+            r = subprocess.run([moteur.ffmpeg(), "-v", "error", "-i", v, "-vf", e["ffmpeg"].replace("{largeur}", "320").replace("{hauteur}", "180"), "-f", "null", "-"], capture_output=True, text=True)
             self.assertEqual(r.returncode, 0, f"{k} : {r.stderr[-200:]}")
         E.catalogue_en_ligne(reseau=False)
         self.assertIn("web_vhs", E.CATALOGUE)

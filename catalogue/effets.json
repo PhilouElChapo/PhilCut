@@ -1,5 +1,5 @@
 {
- "_commentaire": "Catalogue en ligne de PhilCut : effets ajoutes apres la publication, sans reinstaller. Chaque effet simple = une chaine de filtres FFmpeg (meme taille d'image en sortie). Noms et descriptions par langue.",
+ "_commentaire": "Catalogue en ligne de PhilCut : effets ajoutes apres la publication, sans reinstaller. Chaque effet simple = une chaine de filtres FFmpeg (meme taille d'image en sortie). Noms et descriptions par langue. {largeur} et {hauteur} = taille de l'image du projet.",
  "version": 1,
  "effets": {
   "web_teal_orange": {
@@ -288,7 +288,7 @@
     "es": "Píxeles grandes estilo videojuego retro.",
     "it": "Pixel grandi in stile videogioco retrò."
    },
-   "ffmpeg": "pixelize=w=12:h=12"
+   "ffmpeg": "scale=iw/12:ih/12:flags=area,scale={largeur}:{hauteur}:flags=neighbor"
   },
   "web_arc_en_ciel": {
    "famille": "wahou",

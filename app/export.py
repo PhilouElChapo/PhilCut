@@ -226,7 +226,7 @@ class Exportateur:
         if avance > 0:
             chaine.append(f"setpts=PTS+{avance:.3f}/TB")
         for e in E.actifs(c):
-            f = E.filtre(e, ctx) or E.filtre_en_ligne(e["id"])
+            f = E.filtre(e, ctx) or E.filtre_en_ligne(e["id"], ctx)
             if f:
                 chaine.append(f)
             elif e["id"] in E.GENERES:
