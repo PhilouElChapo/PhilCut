@@ -189,7 +189,7 @@ class Exportateur:
                     k = max(2, int((self.L if part > 0 else self.H) * abs(part)))
                     sx, sy = (k, 1) if part > 0 else (1, k)
                     flou = f",avgblur=sizeX={sx}:sizeY={sy}:enable='between(t,{long_cour - d:.3f},{long_cour:.3f})'"
-                self.filtres.append(f"[{cour}][{s}]xfade=transition={genre}:duration={d:.3f}:offset={long_cour - d:.3f}{flou}[{nom}]")
+                self.filtres.append(f"[{cour}][{s}]xfade=transition={moteur.transition_xfade(genre)}:duration={d:.3f}:offset={long_cour - d:.3f}{flou}[{nom}]")
                 long_cour = long_cour + lg - d
             else:
                 self.filtres.append(f"[{cour}][{s}]concat=n=2:v=1:a=0[{nom}]")

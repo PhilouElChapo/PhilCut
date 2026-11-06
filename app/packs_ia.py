@@ -14,8 +14,14 @@ from .config import dossier_donnees
 from .langue import _
 
 MANIFESTE_URL = "https://github.com/PhilouElChapo/PhilCut/releases/download/moteurs-ia/moteurs-ia.json"
+# moteurs créatifs (0.6) : images et vidéo (stable-diffusion.cpp), musique (acestep.cpp), agrandissement (Real-ESRGAN),
+# ralenti (RIFE), modèles ONNX (dessin animé, profondeur) ; catalogue séparé, publié dans la même release
+MANIFESTE2_URL = "https://github.com/PhilouElChapo/PhilCut/releases/download/moteurs-ia/moteurs-creatifs.json"
 GENRES = {"vision": _("Vision (idées de montage)"), "whisper": _("Voix (sous-titres automatiques)"), "detourage": _("Détourage de personne"),
-          "voix": _("Voix de synthèse (voix off, doublage)")}
+          "voix": _("Voix de synthèse (voix off, doublage)"), "image": _("Images IA (retouche par une phrase, logos, miniatures)"),
+          "video": _("Vidéo IA (animer une image, expérimental)"), "musique": _("Musique IA (morceau selon un style)"),
+          "anime": _("Effet dessin animé (vidéo)"), "profondeur": _("Profondeur (photo 3D, flou d'arrière-plan)"),
+          "upscale": _("Agrandissement IA (vidéo, image)"), "interpolation": _("Ralenti fluide IA")}
 DEFAUT = {"vision": "vision_leger", "whisper": "whisper_leger", "detourage": "detourage_leger", "voix": "voix_fr_femme"}
 MOTEURS_GENRE = ("vision", "whisper", "voix")          # genres qui ont un programme à télécharger
 UA = {"User-Agent": "PhilCut"}
@@ -45,8 +51,28 @@ def dossier_moteur(genre):
 
 
 def executable(genre):
-    return os.path.join(dossier_moteur(genre), _exe({"vision": "llama-server", "vision_gpu": "llama-server", "whisper": "whisper-cli",
-                                                     "voix": "piper"}[genre]))
+    noms = {"vision": "llama-server", "vision_gpu": "llama-server", "whisper": "whisper-cli", "voix": "piper", "image": "sd-cli",
+            "image_gpu": "sd-cli", "musique": "ace-synth", "musique_gpu": "ace-synth", "upscale": "realesrgan-ncnn-vulkan",
+            "interpolation": "rife-ncnn-vulkan"}
+    base = os.path.join(dossier_moteur(genre), _exe(noms[genre]))
+    if not os.path.exists(base) and genre in ("image", "image_gpu"):           # anciennes versions : « sd »
+        ancien = os.path.join(dossier_moteur(genre), _exe("sd"))
+        if os.path.exists(ancien):
+            return ancien
+    return base
+
+
+def moteur_du_modele(m):
+    """Moteur (programme) qu'un modèle demande, ou None (modèles ONNX lus par onnxruntime)."""
+    if m.get("moteur"):
+        return m["moteur"]
+    return m.get("genre") if m.get("genre") in MOTEURS_GENRE else None
+
+
+def moteur_gpu_du_modele(m):
+    if m.get("genre") == "vision":
+        return "vision_gpu"
+    return m.get("moteur_gpu")
 
 
 # ------------------------------------------------------------------ carte graphique (Vulkan)
@@ -139,7 +165,35 @@ def manifeste(rafraichir=False, delai=8):
                 raise ErreurIA(_("Catalogue de l'IA locale injoignable : {e}", e=e)) from e
     with open(copie, encoding="utf-8") as f:
         _manifeste = json.load(f)
+    try:
+        sup = _manifeste_creatif(rafraichir, delai)
+        _manifeste.setdefault("moteurs", {}).update(sup.get("moteurs", {}))
+        _manifeste.setdefault("modeles", {}).update(sup.get("modeles", {}))
+    except Exception:            # noqa: BLE001 : sans lui, l'IA locale « classique » marche toujours
+        pass
     return _manifeste
+
+
+def _manifeste_creatif(rafraichir=False, delai=8):
+    local = os.environ.get("PHILCUT_IA_MANIFESTE2")
+    if local:
+        with open(local, encoding="utf-8") as f:
+            return json.load(f)
+    copie = os.path.join(dossier(), "moteurs-creatifs.json")
+    if rafraichir or not os.path.exists(copie) or time.time() - os.path.getmtime(copie) > 86400:
+        try:
+            req = urllib.request.Request(MANIFESTE2_URL, headers=UA)
+            with urllib.request.urlopen(req, timeout=delai) as r:
+                donnees = r.read()
+            json.loads(donnees.decode("utf-8"))
+            with open(copie + ".tmp", "wb") as f:
+                f.write(donnees)
+            os.replace(copie + ".tmp", copie)
+        except Exception:        # noqa: BLE001
+            if not os.path.exists(copie):
+                return {}
+    with open(copie, encoding="utf-8") as f:
+        return json.load(f)
 
 
 def modeles(genre=None, avec_essai=False):
@@ -232,21 +286,28 @@ def a_telecharger(cle):
     """Octets à télécharger pour installer ce modèle (moteur compris s'il manque)."""
     m = modeles(avec_essai=True).get(cle) or {}
     total = 0 if installe(cle) else m.get("taille", 0)
-    g = m.get("genre")
-    if g in MOTEURS_GENRE and not moteur_installe(g):
-        total += (moteur_info(g) or {}).get("taille", 0)
-    if g == "vision" and gpu_voulu() and not moteur_installe("vision_gpu"):
-        total += (moteur_info("vision_gpu") or {}).get("taille", 0)
+    mg, mgpu = moteur_du_modele(m), moteur_gpu_du_modele(m)
+    if mg and not moteur_installe(mg):
+        total += (moteur_info(mg) or {}).get("taille", 0)
+    if mgpu and gpu_voulu_pour(mgpu) and not moteur_installe(mgpu):
+        total += (moteur_info(mgpu) or {}).get("taille", 0)
     return total
+
+
+def gpu_voulu_pour(genre_gpu, params=None):
+    """Version carte graphique d'un moteur : seulement avec une carte dédiée, si elle existe pour ce système."""
+    if (params or {}).get("ia_gpu", True) is False:
+        return False
+    return bool(carte_graphique()) and bool(moteur_info(genre_gpu))
 
 
 def octets_partiels(cle):
     """Octets déjà téléchargés (fichiers .part) pour ce modèle et son moteur : la reprise repartira de là."""
-    g = (modeles(avec_essai=True).get(cle) or {}).get("genre")
+    g = moteur_du_modele(modeles(avec_essai=True).get(cle) or {})
     total = 0
     for base, _d, fichiers in os.walk(dossier_modele(cle)):
         total += sum(os.path.getsize(os.path.join(base, f)) for f in fichiers if f.endswith(".part"))
-    if g in MOTEURS_GENRE and not moteur_installe(g):
+    if g and not moteur_installe(g):
         info = moteur_info(g) or {}
         p = os.path.join(dossier(), "tmp", (info.get("fichier") or "?") + ".part")
         if os.path.exists(p):
@@ -391,14 +452,15 @@ def installer(cle, progression=None, arret=lambda: False):
         def p(f):
             progression and progression(min(0.99, (fait[0] + f * taille) / total), texte)
         return p
-    if g in MOTEURS_GENRE and not moteur_installe(g):
-        t = (moteur_info(g) or {}).get("taille", 0)
-        installer_moteur(g, prog_part(t, _("moteur {g}", g=g)), arret)
+    mg, mgpu = moteur_du_modele(m), moteur_gpu_du_modele(m)
+    if mg and not moteur_installe(mg):
+        t = (moteur_info(mg) or {}).get("taille", 0)
+        installer_moteur(mg, prog_part(t, _("moteur {g}", g=mg)), arret)
         fait[0] += t
-    if g == "vision" and gpu_voulu() and not moteur_installe("vision_gpu"):
-        t = (moteur_info("vision_gpu") or {}).get("taille", 0)
+    if mgpu and gpu_voulu_pour(mgpu) and not moteur_installe(mgpu):
+        t = (moteur_info(mgpu) or {}).get("taille", 0)
         try:        # facultatif : sans lui, le processeur prend le relais
-            installer_moteur("vision_gpu", prog_part(t, _("moteur carte graphique")), arret)
+            installer_moteur(mgpu, prog_part(t, _("moteur carte graphique")), arret)
         except InterruptedError:
             raise
         except Exception as e:      # noqa: BLE001
@@ -423,9 +485,10 @@ def supprimer(cle):
     e = etat().get(cle) or {}
     shutil.rmtree(dossier_modele(cle), ignore_errors=True)
     _noter(cle, None)
-    g = e.get("genre")
-    if g in MOTEURS_GENRE and not installes(g):
-        for m in ((g, "vision_gpu") if g == "vision" else (g,)):
+    info = modeles(avec_essai=True).get(cle) or {"genre": e.get("genre")}
+    mg, mgpu = moteur_du_modele(info), moteur_gpu_du_modele(info)
+    if mg and not any(moteur_du_modele(modeles(avec_essai=True).get(c) or {"genre": etat()[c].get("genre")}) == mg for c in installes()):
+        for m in (mg, mgpu) if mgpu else (mg,):
             shutil.rmtree(dossier_moteur(m), ignore_errors=True)
             _noter(f"moteur_{m}", None)
     shutil.rmtree(os.path.join(dossier(), "tmp"), ignore_errors=True)

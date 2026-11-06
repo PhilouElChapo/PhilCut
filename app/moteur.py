@@ -78,6 +78,25 @@ def filtre_disponible(nom):
     return nom in _filtres
 
 
+_xfade = None
+REMPLACANTS_XFADE = {"zoomin": "circleopen", "hrwind": "slideright", "hlslice": "wipeleft", "coverleft": "slideleft",
+                     "fadegrays": "fade", "smoothleft": "slideleft", "radial": "wipeleft", "slideup": "slideup"}
+
+
+def transition_xfade(genre):
+    """Le nom xfade si ce FFmpeg le connaît, sinon un remplaçant proche (FFmpeg anciens des distributions Linux)."""
+    global _xfade
+    if _xfade is None:
+        try:
+            aide = sortie(["-hide_banner", "-h", "filter=xfade"], delai=30).decode("utf-8", "replace")
+            _xfade = set(re.findall(r"^\s+([a-z]+)\s+-?\d+\s", aide, re.M))
+        except Exception:       # noqa: BLE001
+            _xfade = set()
+    if not _xfade or genre in _xfade:
+        return genre
+    return REMPLACANTS_XFADE.get(genre, "fade")
+
+
 def version_majeure():
     """7 pour « 7.1 », 8 pour une build « N-128293-g… » (master BtbN = la plus recente), 0 si inconnue."""
     v = version()

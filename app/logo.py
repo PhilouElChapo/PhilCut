@@ -54,8 +54,8 @@ def gabarits(nom="PhilCut"):
             forme("rectangle", x=800, y=350, l=1300, h=330, couleur="#ff8c1a", rotation=-4),
             texte(court.upper(), x=800, y=350, taille=270 if len(court) < 9 else 190, couleur="#111111", police="Anton", gras=False, rotation=-4)]),
         _("Moderne : ligne et lettres espacées"): dict(nouveau(nom, 1600, 600), elements=[
-            texte(court.upper(), x=800, y=270, taille=120, couleur="#ffffff", gras=False, espacement=45),
-            forme("rectangle", x=800, y=380, l=520, h=6, couleur="#e8c27a")]),
+            texte(court.upper(), x=800, y=270, taille=150, couleur="#ffffff", gras=False, espacement=40),
+            forme("rectangle", x=800, y=400, l=560, h=10, couleur="#e8c27a")]),
         _("Moderne : pastille arrondie"): dict(nouveau(nom), elements=[
             forme("arrondi", l=820, h=820, couleur="#7b2ff7"),
             texte(initiales, y=530, taille=330, couleur="#ffffff", effet="ombre", couleur2="#2a0a5e")]),
