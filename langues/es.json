@@ -4911,5 +4911,9 @@
  "recettes sans IA": "recetas sin IA",
  "IA locale, sur ce poste": "IA local, en este equipo",
  "Étape 1/2 : lecture des rushes ({n}) — {t}": "Paso 1/2: leyendo los brutos ({n}) — {t}",
- "Étape 2/2 : {t}": "Paso 2/2: {t}"
+ "Étape 2/2 : {t}": "Paso 2/2: {t}",
+ "Cadran (tableau de bord) ou illustré animé": "Esfera (salpicadero) o ilustración animada",
+ "Aperçu (joué en boucle, comme dans le film)": "Vista previa (en bucle, como en la película)",
+ "Instant : {t} s (de {a} à {b} s)": "Instante: {t} s (de {a} a {b} s)",
+ "PNG transparent de préférence": "Preferiblemente un PNG transparente"
 }

@@ -4920,5 +4920,9 @@
  "recettes sans IA": "recipes without AI",
  "IA locale, sur ce poste": "local AI, on this computer",
  "Étape 1/2 : lecture des rushes ({n}) — {t}": "Step 1/2: reading the footage ({n}) — {t}",
- "Étape 2/2 : {t}": "Step 2/2: {t}"
+ "Étape 2/2 : {t}": "Step 2/2: {t}",
+ "Cadran (tableau de bord) ou illustré animé": "Dial (dashboard) or animated illustration",
+ "Aperçu (joué en boucle, comme dans le film)": "Preview (looped, as in the film)",
+ "Instant : {t} s (de {a} à {b} s)": "Time: {t} s (from {a} to {b} s)",
+ "PNG transparent de préférence": "Preferably a transparent PNG"
 }

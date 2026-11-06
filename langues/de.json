@@ -4911,5 +4911,9 @@
  "recettes sans IA": "Rezepte ohne KI",
  "IA locale, sur ce poste": "lokale KI, auf diesem Rechner",
  "Étape 1/2 : lecture des rushes ({n}) — {t}": "Schritt 1/2: Aufnahmen werden gelesen ({n}) — {t}",
- "Étape 2/2 : {t}": "Schritt 2/2: {t}"
+ "Étape 2/2 : {t}": "Schritt 2/2: {t}",
+ "Cadran (tableau de bord) ou illustré animé": "Rundinstrument (Armaturenbrett) oder animierte Illustration",
+ "Aperçu (joué en boucle, comme dans le film)": "Vorschau (in Schleife, wie im Film)",
+ "Instant : {t} s (de {a} à {b} s)": "Zeitpunkt: {t} s (von {a} bis {b} s)",
+ "PNG transparent de préférence": "Am besten ein transparentes PNG"
 }

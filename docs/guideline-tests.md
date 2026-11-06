@@ -167,6 +167,7 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 6. **Taille de la timeline** : glisser la barre entre l'aperçu et la timeline (bulle d'aide au survol) vers le haut. **Attendu** : la timeline prend presque toute la hauteur, l'aperçu rétrécit ; le volet de droite défile. Réglage gardé à la prochaine ouverture.
 7. **Volet agrandi** : bouton d'agrandissement en haut à droite du volet (Effets, Inspecteur ou Proposition). **Attendu** : une fenêtre avec le contenu visible (vignettes des effets), pas une fenêtre noire ; à la fermeture le volet revient à sa place.
 8. **Analyser et proposer** : volet Proposition, Niveau « IA locale » puis « IA cloud », « Analyser et proposer ». **Attendu** : sous le bouton, l'étape en cours (« Étape 1/2 : lecture des rushes… », « Étape 2/2 : IA locale (modèle) : démarrage du modèle… » ou « envoi à l'IA cloud… »), une barre avec pourcentage et temps écoulé qui avance chaque seconde, et « Arrêter ». Si l'IA ne répond pas, la recette sans IA arrive avec le message orange qui dit pourquoi.
+9. **Aperçu du Goodie** : double-clic sur un Goodie de la timeline. **Attendu** : à droite, l'image du film avec le Goodie qui s'anime en boucle de son début à sa fin ; changer la taille, la position, le texte ou le genre se voit aussitôt.
 
 ## T29 — 0.8.0 : langues, tampons vidéo, Goodies dessinés, Accueil partagé, catalogue en ligne
 

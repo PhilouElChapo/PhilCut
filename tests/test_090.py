@@ -145,6 +145,22 @@ class Test090(unittest.TestCase):
         f.hide()
         f.deleteLater()
 
+    def test_goodie_se_voit_dans_sa_fenetre(self):
+        from app.dialogues_video import DialogueGoodie
+        g = {"genre": "meteo", "debut": 0.3, "fin": 2.8, "x": 0.7, "y": 0.4, "taille": 0.4, "style": "cadran", "valeurs": [], "options": {}}
+        dl = DialogueGoodie(None, g)
+        dl.show()
+        t0 = time.time()
+        while time.time() - t0 < 0.6:
+            app.processEvents()
+            time.sleep(0.03)
+        self.assertGreater(dl._t_vue, 0.3)                                   # l'aperçu avance
+        img = dl.vue.pixmap().toImage()
+        self.assertNotEqual(img.pixelColor(int(0.7 * img.width()), int(0.4 * img.height())).name(), "#000000")
+        dl.taille.setValue(0.2)
+        self.assertEqual(dl._g_vue["taille"], 0.2)                           # réglage pris en compte tout de suite
+        dl.reject()
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.1
+- Fenetre d'un Goodie (double-clic) : apercu anime sur l'image du film, joue en boucle de son debut a sa fin ; chaque reglage (genre, style, position, taille, texte, valeurs) se voit tout de suite.
 
 ### 0.9.0
 - Musique > "Mes musiques" s'ouvre dans une fenetre : recherche (titre, artiste, album, dossier), classement par dossier, album, artiste ou titre, groupes repliables, ecoute, double-clic pour poser sous la video. Fini le menu geant.

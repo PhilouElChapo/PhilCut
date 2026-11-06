@@ -4911,5 +4911,9 @@
  "recettes sans IA": "ricette senza IA",
  "IA locale, sur ce poste": "IA locale, su questo computer",
  "Étape 1/2 : lecture des rushes ({n}) — {t}": "Passo 1/2: lettura del girato ({n}) — {t}",
- "Étape 2/2 : {t}": "Passo 2/2: {t}"
+ "Étape 2/2 : {t}": "Passo 2/2: {t}",
+ "Cadran (tableau de bord) ou illustré animé": "Quadrante (cruscotto) o illustrazione animata",
+ "Aperçu (joué en boucle, comme dans le film)": "Anteprima (in loop, come nel film)",
+ "Instant : {t} s (de {a} à {b} s)": "Istante: {t} s (da {a} a {b} s)",
+ "PNG transparent de préférence": "Preferibilmente un PNG trasparente"
 }

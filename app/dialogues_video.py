@@ -2,7 +2,7 @@
 import os
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QPixmap
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, QLabel, QLineEdit, QComboBox, QDoubleSpinBox, QSpinBox, QTreeWidget, QTreeWidgetItem, QMenu,
                                QCheckBox, QPushButton, QDialogButtonBox, QListWidget, QListWidgetItem, QColorDialog, QSlider, QGroupBox,
                                QPlainTextEdit, QFileDialog, QTabWidget, QWidget, QMessageBox, QProgressBar, QTextBrowser, QRadioButton)
@@ -565,7 +565,11 @@ class DialogueGoodie(QDialog):
         self.setWindowTitle(_("Goodie"))
         g = goodie or {"genre": "altimetre", "debut": position, "fin": min(duree, position + 10), "x": 0.88, "y": 0.85, "taille": 0.22, "style": "cadran", "valeurs": [], "options": {}}
         self.g = g
-        f = QFormLayout(self)
+        self.ed = parent
+        racine = QHBoxLayout(self)
+        f = QFormLayout()
+        racine.addLayout(f, 1)
+        self._apercu_construire(racine)
         self.genre = QComboBox()
         coches = set((params or {}).get("goodies_coches") or ["aviation", "maison"])
         for pk, p in GO.PACKS.items():
@@ -576,7 +580,7 @@ class DialogueGoodie(QDialog):
                     self.genre.setCurrentIndex(self.genre.count() - 1)
         f.addRow(_("Goodie"), self.genre)
         self.style = QComboBox()
-        self.style.addItem(_("Cadran (tableau de bord)"), "cadran")
+        self.style.addItem(_("Cadran (tableau de bord) ou illustré animé"), "cadran")
         self.style.addItem(_("HUD épuré"), "hud")
         self.style.setCurrentIndex(1 if g.get("style") == "hud" else 0)
         f.addRow(_("Style"), self.style)
@@ -612,7 +616,7 @@ class DialogueGoodie(QDialog):
         f.addRow(_("Texte (badge, immatriculation…)"), self.texte)
         hi = QHBoxLayout()
         self.chemin_image = QLineEdit((g.get("options") or {}).get("chemin", ""))
-        self.chemin_image.setPlaceholderText(_("Pour « Image ou logo » : un PNG transparent de préférence"))
+        self.chemin_image.setPlaceholderText(_("PNG transparent de préférence"))
         b_img = QPushButton(_("Image…"))
         b_img.clicked.connect(self._choisir_image)
         hi.addWidget(self.chemin_image, 1)
@@ -632,6 +636,86 @@ class DialogueGoodie(QDialog):
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         f.addRow(bb)
+        # tout réglage se voit tout de suite dans l'aperçu animé
+        for w, sig in ((self.genre, "currentIndexChanged"), (self.style, "currentIndexChanged"), (self.debut, "valueChanged"),
+                       (self.fin, "valueChanged"), (self.x, "valueChanged"), (self.y, "valueChanged"), (self.taille, "valueChanged"),
+                       (self.texte, "textChanged"), (self.chemin_image, "textChanged"), (self.valeurs, "textChanged")):
+            getattr(w, sig).connect(lambda *_a: self._apercu_regle())
+        self._apercu_regle()
+        self._horloge.start()
+
+    # ---- aperçu animé : le Goodie sur l'image du film, joué en boucle de son début à sa fin
+    def _apercu_construire(self, racine):
+        from PySide6.QtCore import QTimer
+        from PySide6.QtWidgets import QVBoxLayout
+        va = QVBoxLayout()
+        projet = getattr(self.ed, "projet", None)
+        L, H = (projet.taille if projet is not None else (1920, 1080))
+        self._ech = 420 / max(L, H)
+        self._L, self._H = int(L * self._ech), int(H * self._ech)
+        self.vue = QLabel()
+        self.vue.setFixedSize(self._L, self._H)
+        self.vue.setStyleSheet("background:#000;border-radius:6px")
+        va.addWidget(QLabel(_("Aperçu (joué en boucle, comme dans le film)")))
+        va.addWidget(self.vue)
+        self.vue_temps = QLabel("")
+        self.vue_temps.setStyleSheet("color:#9aa4b2")
+        va.addWidget(self.vue_temps)
+        va.addStretch(1)
+        racine.addLayout(va)
+        self._fond = None
+        try:
+            png = self.ed.apercu.image_courante(max(self._L, 320)) if hasattr(self.ed, "apercu") else None
+            if png:
+                px = QPixmap()
+                px.loadFromData(png)
+                if not px.isNull():
+                    self._fond = px.scaled(self._L, self._H, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        except Exception:      # noqa: BLE001 : sans image du film, fond noir
+            self._fond = None
+        self._cache, self._t_vue = {}, 0.0
+        self._horloge = QTimer(self)
+        self._horloge.setInterval(66)
+        self._horloge.timeout.connect(self._apercu_tic)
+
+    def _apercu_regle(self):
+        self._cache = {}
+        self._g_vue = self.resultat()
+
+    def _apercu_tic(self):
+        g = self._g_vue
+        d, fin = float(g["debut"]), float(g["fin"])
+        self._t_vue = self._t_vue + 0.066 if d <= self._t_vue < fin else d
+        self._dessiner(self._t_vue)
+
+    def _dessiner(self, t):
+        from PySide6.QtGui import QPainter, QColor
+        g = self._g_vue
+        img = QPixmap(self._L, self._H)
+        img.fill(QColor("#000"))
+        p = QPainter(img)
+        if self._fond is not None:
+            p.drawPixmap((self._L - self._fond.width()) // 2, (self._H - self._fond.height()) // 2, self._fond)
+        taille = max(24, int(self._H * float(g.get("taille", 0.22))))
+        x = float(g.get("x", 0.88)) * self._L - taille / 2
+        y = float(g.get("y", 0.85)) * self._H - taille / 2
+        try:
+            if g["genre"] == "image" and (g.get("options") or {}).get("chemin"):
+                src = QPixmap(g["options"]["chemin"]).scaled(taille, taille, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+                p.drawPixmap(int(x + (taille - src.width()) / 2), int(y + (taille - src.height()) / 2), src)
+            else:
+                chaine = (getattr(self.ed, "projet", None).d.get("chaine") if getattr(self.ed, "projet", None) is not None else None)
+                p.drawImage(int(x), int(y), GO.image(g, t, taille, chaine, self._cache))
+        except Exception as e:     # noqa: BLE001 : on montre pourquoi plutôt que rien
+            p.setPen(QColor("#ff8a80"))
+            p.drawText(10, 20, str(e)[:80])
+        p.end()
+        self.vue.setPixmap(img)
+        self.vue_temps.setText(_("Instant : {t} s (de {a} à {b} s)", t=f"{t:.1f}", a=f"{float(g['debut']):.1f}", b=f"{float(g['fin']):.1f}"))
+
+    def done(self, r):
+        self._horloge.stop()
+        super().done(r)
 
     def _choisir_image(self):
         p, _f = QFileDialog.getOpenFileName(self, _("Image ou logo"), "", "Images (*.png *.jpg *.jpeg *.webp *.svg)")
