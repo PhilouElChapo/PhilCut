@@ -34,7 +34,7 @@ class DialogueFiger(QDialog):
         self.zoom.setChecked(True)
         f.addRow(self.zoom)
         self.legende = QLineEdit()
-        self.legende.setPlaceholderText(_("Légende (facultatif) : « Arrivée à Calvi »"))
+        self.legende.setPlaceholderText(_("Légende (facultatif) : « Arrivée au sommet »"))
         f.addRow(_("Légende"), self.legende)
         self.flash = QCheckBox(_("Flash blanc au moment où l'image se fige"))
         self.flash.setChecked(True)
@@ -170,7 +170,7 @@ class GalerieGoodies(QDialog):
                     continue
                 vus.add(gid)
                 g = {"genre": gid, "debut": 0, "fin": 10, "x": 0.5, "y": 0.5, "taille": 0.3, "style": "cadran", "valeurs": [],
-                     "options": {"etapes": [{"nom": "LFMD", "code": "LFMD", "lat": 43.548, "lon": 6.954}, {"nom": "LFTZ", "code": "LFTZ", "lat": 43.205, "lon": 6.482}],
+                     "options": {"etapes": [{"nom": "A", "code": "A", "lat": 45.0, "lon": 4.0}, {"nom": "B", "code": "B", "lat": 44.6, "lon": 4.6}],
                                  "texte": GO.GENRES.get(gid, (gid,))[0], "angle": 30}}
                 if gid == "fleche":
                     g["options"].update(style="courbe", angle=10)

@@ -436,7 +436,7 @@ class Exportateur:
             if g["fin"] <= g["debut"] or g.get("genre") == "zone":
                 continue
             dossier = tempfile.mkdtemp(prefix="goodie-", dir=self.tmp)
-            ips = min(self.cad, GO.IPS_GOODIES)
+            ips = self.cad if g.get("genre") in GO.FLUIDES else min(self.cad, GO.IPS_GOODIES)
             motif, n, x, y = GO.rendre(dossier, g, self.L, self.H, ips, texte_extra=self.p.d.get("chaine"))
             if (g.get("suivi") or {}).get("positions"):          # Goodie accroché à une personne
                 from . import suivi
@@ -675,10 +675,30 @@ class Exportateur:
                 moteur.lancer(args, progression=progression, duree=self.duree, arret=arret)
             else:
                 raise
+        self.vignette = None
+        if self.p.d.get("vignette_t") is not None:
+            try:
+                self.vignette = poser_vignette(self.sortie, float(self.p.d["vignette_t"]))
+            except Exception as e:      # noqa: BLE001 : la vidéo est faite, la vignette est un plus
+                self.journal.append(f"Vignette non posée : {e}")
         return self.sortie
 
     def nettoyer(self):
         shutil.rmtree(self.tmp, ignore_errors=True)
+
+
+def poser_vignette(video, t):
+    """Image du film choisie comme vignette du fichier : intégrée au MP4 (explorateur de fichiers, lecteurs) et
+    enregistrée à côté en JPG (à envoyer comme miniature sur YouTube). Renvoie le chemin du JPG."""
+    base, ext = os.path.splitext(video)
+    jpg = base + "_vignette.jpg"
+    moteur.lancer(["-y", "-ss", f"{max(0.0, t):.3f}", "-i", video, "-frames:v", "1", "-q:v", "2", jpg])
+    if ext.lower() in (".mp4", ".mov", ".m4v"):
+        tmp = base + "_avec_vignette" + ext
+        moteur.lancer(["-y", "-i", video, "-i", jpg, "-map", "0", "-map", "1", "-c", "copy", "-c:v:1", "mjpeg",
+                       "-disposition:v:1", "attached_pic", "-movflags", "+faststart", tmp])
+        os.replace(tmp, video)
+    return jpg
 
 
 def autre_format(projet, destination):

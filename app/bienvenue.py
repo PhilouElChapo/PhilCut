@@ -33,7 +33,7 @@ class DialogueBienvenue(QDialog):
         self.auteur = QLineEdit(params.get("auteur", ""))
         self.auteur.setPlaceholderText(_("Nom inscrit sur les tampons et commentaires"))
         self.machine = QLineEdit(params.get("machine", ""))
-        self.machine.setPlaceholderText(_("ex. Pharmacie, Maison, Portable Linux"))
+        self.machine.setPlaceholderText(_("ex. Bureau, Maison, Portable Linux"))
         if not seulement_synchro:
             f.addRow(_("Langue"), self.langue)
             f.addRow(_("Votre nom"), self.auteur)

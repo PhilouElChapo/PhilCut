@@ -77,7 +77,7 @@ bruitages fabriques sur ce poste (whoosh, impact, declic...) ; autocollants
 (polaroid, post-it, fleche).
 
 Confort (0.4.2) : la timeline tient dans la hauteur de l'ecran, colonne des medias
-repliable (F3), galerie des Goodies en vignettes, croix de pharmacie animee.
+repliable (F3), galerie des Goodies en vignettes, croix verte animee.
 
 IA sur les rushes (0.4.3), sur ce poste uniquement : clic droit sur un media >
 Analyser avec l'IA locale : description, lieux, textes lus (immatriculations) ;
@@ -88,6 +88,10 @@ video) ; telechargements en pause, repris a la session suivante ; Mes musiques c
 par dossier, album ou artiste ; « Dites-le en clair » (une phrase devient des actions) ;
 fleches courbes et titres bandeau qui bougent et tournent ; voix studio (debruitage
 par reseau de neurones, sur ce poste).
+
+0.5.0 : intros modernes (Punchy, Clean minimal, Cinema) en vignettes animees avec
+votre texte ; titre d'ouverture pose sur le film ; vignette du fichier choisie dans le
+film ; polices Poppins, Bebas Neue, Anton.
 
 Mises a jour
 ------------

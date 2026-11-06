@@ -528,7 +528,13 @@ class Fenetre(QMainWindow):
             image = d.image.text().strip() or None
             sous = d.sous.text().strip()
 
+            from . import intros as IN
+            oi = d.options_intro()
+
             def travail(tache):
+                if modele in IN.MODELES:
+                    return IN.fabriquer(sortie, modele, texte, sous, L, H, ed.projet.cadence, duree, fond=oi["fond"], couleurs=oi["couleurs"],
+                                        image_film=oi["image_film"], logo=image, progression=lambda f: tache.avancer(f))
                 return FAB.fabriquer_logo(sortie, texte, modele, L, H, ed.projet.cadence, duree, progression=lambda f: tache.avancer(f), image_logo=image, sous_texte=sous)
             t = Tache(travail, _("Fabrique"))
             self.taches.append(t)

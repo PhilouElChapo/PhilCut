@@ -15,14 +15,14 @@ PACKS = {
     "balade": {"nom": _("Balade et randonnée"), "description": _("Altitude, distance, boussole, météo, dénivelé."),
                "goodies": ["altitude", "distance", "boussole", "meteo", "denivele"]},
     "route": {"nom": _("Route"), "description": _("Compteur de vitesse, carte, kilométrage."), "goodies": ["compteur", "mini_carte", "distance"]},
-    "pharmacie": {"nom": _("Pharmacie"), "description": _("Croix verte, horaires, pastille d'annonce, prix."), "goodies": ["croix", "horaires", "pastille", "prix"]},
+    "pharmacie": {"nom": _("Commerce et santé"), "description": _("Croix verte, horaires, pastille d'annonce, prix."), "goodies": ["croix", "horaires", "pastille", "prix"]},
     "fete": {"nom": _("Fête"), "description": _("Compte à rebours, confettis, date, bandeau."), "goodies": ["compte_a_rebours", "confettis", "date", "bandeau"]},
     "autocollants": {"nom": _("Autocollants"), "description": _("Polaroïd avec votre photo, post-it, flèche qui se trace : à poser ou à accrocher à une personne."),
                      "goodies": ["polaroid", "post_it", "fleche"]},
     "tendance": {"nom": _("Titres et flèches tendance"), "description": _("Le style des miniatures YouTube : flèches courbes à contour blanc, "
                                                                          "titres en majuscules sur boîte inclinée, mot surligné. Ils se "
                                                                          "déplacent et tournent avec les images clefs."),
-                 "goodies": ["bandeau_tendance", "fleche", "surligne"]},
+                 "goodies": ["intro_titre", "bandeau_tendance", "fleche", "surligne"]},
     "perso": {"nom": _("Mes images"), "description": _("Logo, autocollant, photo en PNG transparent : à poser, ou à accrocher à une personne qui bouge."),
               "goodies": ["image"]},
     "maison": {"nom": _("Maison et jardin"), "description": _("Horloge, lune, température, altitude du lieu."), "goodies": ["horloge", "lune", "temperature", "altitude"]},
@@ -39,10 +39,11 @@ GENRES = {
     "bandeau_tendance": (_("Titre bandeau (style YouTube)"), "", (0, 0)), "surligne": (_("Mot surligné"), "", (0, 0)),
     "altitude": (_("Altitude"), "m", (0, 4000)), "distance": (_("Distance"), "km", (0, 1000)), "boussole": (_("Boussole"), "°", (0, 360)),
     "meteo": (_("Météo"), "°C", (-20, 45)), "denivele": (_("Dénivelé"), "m", (0, 3000)), "compteur": (_("Compteur"), "km/h", (0, 240)),
-    "croix": (_("Croix de pharmacie"), "", (0, 0)), "horaires": (_("Horaires"), "", (0, 0)), "pastille": (_("Pastille d'annonce"), "", (0, 0)),
+    "croix": (_("Croix verte (santé)"), "", (0, 0)), "horaires": (_("Horaires"), "", (0, 0)), "pastille": (_("Pastille d'annonce"), "", (0, 0)),
     "prix": (_("Prix"), "€", (0, 0)), "compte_a_rebours": (_("Compte à rebours"), "s", (0, 0)), "confettis": (_("Confettis"), "", (0, 0)),
     "date": (_("Date"), "", (0, 0)), "bandeau": (_("Bandeau"), "", (0, 0)), "horloge": (_("Horloge"), "", (0, 0)), "lune": (_("Lune"), "", (0, 0)),
     "temperature": (_("Température"), "°C", (-20, 45)), "image": (_("Image ou logo"), "", (0, 0)),
+    "intro_titre": (_("Titre d'ouverture animé"), "", (0, 0)),
 }
 
 
@@ -119,6 +120,7 @@ def _haversine(la1, lo1, la2, lo2):
 
 
 # ------------------------------------------------------------------ rendu
+FLUIDES = {"intro_titre", "fleche", "bandeau_tendance"}      # Goodies rendus à la cadence du film (mouvement rapide)
 IPS_GOODIES = 15                # images par seconde des Goodies à l'export (aiguilles fluides, rendu trois fois plus court)
 
 
@@ -160,7 +162,18 @@ def image(g, t, taille, texte_extra=None, cache=None):
         p.setRenderHint(QPainter.TextAntialiasing)
         c = taille / 2
         r = taille * 0.46
-        if genre in ("carte_trajet", "mini_carte", "manche_air"):
+        if genre == "intro_titre":                          # titre moderne posé sur le film (modèles de la Fabrique)
+            from . import intros
+            cle = ("intro", opts.get("modele"), opts.get("texte"), opts.get("sous_texte"), taille, round(float(g["fin"]) - float(g["debut"]), 2),
+                   opts.get("accent"))
+            if cache.get("intro_cle") != cle:
+                cache["intro_cle"] = cle
+                cache["intro_ctx"] = intros.contexte(opts.get("modele") or "masque", opts.get("texte") or "", opts.get("sous_texte") or "",
+                                                     taille, int(taille * 9 / 16) * 2 // 2, float(g["fin"]) - float(g["debut"]), "transparent",
+                                                     {"accent": opts.get("accent")} if opts.get("accent") else None)
+            ctx = cache["intro_ctx"]
+            p.drawImage(0, int((taille - ctx.H) / 2), intros.image(ctx, max(0.0, t - float(g["debut"]))))
+        elif genre in ("carte_trajet", "mini_carte", "manche_air"):
             from . import aviation
             aviation.dessiner(p, g, t, taille, cache)
         elif genre == "croix":                              # croix de pharmacie verte, lumineuse, qui pulse

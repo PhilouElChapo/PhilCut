@@ -14,7 +14,7 @@ from .langue import _
 
 FORMES = [("cercle", _("Cercle")), ("anneau", _("Anneau")), ("rectangle", _("Rectangle")), ("arrondi", _("Rectangle arrondi")),
           ("bandeau", _("Bandeau")), ("etoile", _("Etoile")), ("losange", _("Losange")), ("ailes", _("Ailes (aviation)")),
-          ("croix", _("Croix (pharmacie)")), ("chevron", _("Chevron"))]
+          ("croix", _("Croix")), ("chevron", _("Chevron"))]
 EFFETS = [("aucun", _("Aucun")), ("contour", _("Contour")), ("ombre", _("Ombre")), ("lueur", _("Lueur")), ("degrade", _("Dégradé"))]
 
 
@@ -45,7 +45,7 @@ def gabarits(nom="PhilCut"):
         _("Aviation (ailes)"): dict(nouveau(nom), elements=[forme("ailes", y=380, l=900, h=260, couleur="#d9d9d9"),
                                                            texte(court, y=640, taille=140 if len(court) < 9 else 100, couleur="#ffffff",
                                                                  effet="contour", couleur2="#1d3557", epaisseur=10)]),
-        _("Pharmacie (croix)"): dict(nouveau(nom), elements=[forme("croix", y=380, l=420, h=420, couleur="#2a9d4b"),
+        _("Santé (croix)"): dict(nouveau(nom), elements=[forme("croix", y=380, l=420, h=420, couleur="#2a9d4b"),
                                                             texte(court, y=760, taille=120, couleur="#2a9d4b")]),
         _("Bandeau"): dict(nouveau(nom, 1600, 600), elements=[forme("bandeau", x=800, y=300, l=1500, h=300, couleur="#e63946"),
                                                              texte(court, x=800, y=300, taille=170, couleur="#ffffff", effet="ombre")]),

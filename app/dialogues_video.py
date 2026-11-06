@@ -675,6 +675,24 @@ class DialogueVitesse(QDialog):
         f.addRow(bb)
 
 
+def image_projet(projet, t, largeur=320):
+    """Image du montage à l'instant t (plan de la piste Vidéo 1, sans les effets), en PNG ; None si rien."""
+    from .projet import fin_clip
+    for c in projet.clips_piste("video"):
+        if c["debut"] <= t < fin_clip(c):
+            m = projet.media(c["media"])
+            if not m:
+                return None
+            if m.get("genre") == "image":
+                with open(m["chemin"], "rb") as fh:
+                    return fh.read()
+            try:
+                return moteur.image(m["chemin"], float(c["src_debut"]) + (t - c["debut"]) * float(c.get("vitesse", 1.0) or 1.0), largeur)
+            except moteur.ErreurMoteur:
+                return None
+    return None
+
+
 class DialogueExport(QDialog):
     def __init__(self, parent, projet, params):
         super().__init__(parent)
@@ -723,6 +741,29 @@ class DialogueExport(QDialog):
         f.addRow(hd)
         self.drive = QCheckBox(_("Déposer ensuite sur le Drive / NAS de synchronisation"))
         f.addRow(self.drive)
+        # ---- vignette du fichier : l'image du film qui représente la vidéo
+        hv = QHBoxLayout()
+        self.vignette_cb = QCheckBox(_("Vignette à"))
+        self.vignette_cb.setToolTip(_("L'image choisie est intégrée au fichier (explorateur, lecteurs) et enregistrée à côté en JPG "
+                                      "pour la miniature YouTube. Aussi : clic droit sur la règle › Prendre cette image comme vignette."))
+        self.vignette_t = QDoubleSpinBox()
+        self.vignette_t.setRange(0.0, max(0.0, projet.duree() - 0.05))
+        self.vignette_t.setDecimals(1)
+        self.vignette_t.setSuffix(" s")
+        vt = projet.d.get("vignette_t")
+        self.vignette_cb.setChecked(vt is not None)
+        self.vignette_t.setValue(float(vt) if vt is not None else min(1.0, projet.duree() / 2))
+        self.apercu_vignette = QLabel()
+        self.apercu_vignette.setFixedSize(128, 72)
+        self.apercu_vignette.setStyleSheet("background:#000;border-radius:4px")
+        hv.addWidget(self.vignette_cb)
+        hv.addWidget(self.vignette_t)
+        hv.addWidget(self.apercu_vignette)
+        hv.addStretch(1)
+        f.addRow(_("Image du fichier"), hv)
+        self.vignette_t.valueChanged.connect(lambda _v: (self.vignette_cb.setChecked(True), self._vignette()))
+        self.vignette_cb.toggled.connect(lambda _v: self._vignette())
+        QTimer.singleShot(0, self._vignette)
         self.info = QLabel(_("Durée : {d} · {n} plans", d=moteur.duree_texte(projet.duree()), n=len(projet.clips_piste("video"))))
         f.addRow(self.info)
         bb = boutons_fr(QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel))
@@ -730,6 +771,20 @@ class DialogueExport(QDialog):
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         f.addRow(bb)
+
+    def _vignette(self):
+        """Montre l'image choisie et la garde dans le projet (annulable comme le reste)."""
+        from PySide6.QtGui import QPixmap
+        if not self.vignette_cb.isChecked():
+            self.projet.d.pop("vignette_t", None)
+            self.apercu_vignette.clear()
+            return
+        t = self.vignette_t.value()
+        self.projet.d["vignette_t"] = round(t, 2)
+        png = image_projet(self.projet, t, 256)
+        px = QPixmap()
+        if png and px.loadFromData(png):
+            self.apercu_vignette.setPixmap(px.scaled(128, 72, Qt.KeepAspectRatio, Qt.SmoothTransformation))
 
     def _parcourir(self):
         p, _f = QFileDialog.getSaveFileName(self, _("Exporter la vidéo"), self.chemin.text(), "MP4 (*.mp4)")
@@ -747,7 +802,7 @@ class DialogueFabrique(QDialog):
         self.projet, self.params, self.recette = projet, params, recette or projet.d.get("recette") or {}
         v = QVBoxLayout(self)
         intro = QLabel(_("<b>La Fabrique</b> crée ce que vos rushes n'ont pas : un <b>logo animé</b> ou une <b>intro</b> / <b>fin</b> de vidéo "
-                         "(onglet 1), ou un <b>plan généré par IA</b> à partir d'une phrase, par exemple « survol des collines de Provence au "
+                         "(onglet 1), ou un <b>plan généré par IA</b> à partir d'une phrase, par exemple « survol de collines au "
                          "lever du soleil » (onglet 2). Le résultat arrive dans les médias du projet, prêt à poser sur la timeline. "
                          "Pour dessiner votre logo lui-même : Fabrique › Atelier de logo."))
         intro.setWordWrap(True)
@@ -761,15 +816,64 @@ class DialogueFabrique(QDialog):
         f.addRow(_("Texte"), self.texte)
         self.sous = QLineEdit("")
         f.addRow(_("Sous-titre (facultatif)"), self.sous)
-        self.modele = QComboBox()
+        # ---- modèles en vignettes animées (calculées avec votre texte), grand aperçu du modèle choisi
+        from . import intros as IN
+        self._IN = IN
+        self.modele = QComboBox()                # liste de référence (modernes puis anciens), synchronisée avec les vignettes
+        for k, (fam, lib, _d) in IN.MODELES.items():
+            self.modele.addItem(f"{IN.FAMILLES[fam]} — {lib}", k)
         for k, lib in fabrique.MODELES_LOGO.items():
-            self.modele.addItem(lib, k)
-            if k == (self.recette.get("logo") or {}).get("modele"):
-                self.modele.setCurrentIndex(self.modele.count() - 1)
-        f.addRow(_("Animation"), self.modele)
+            self.modele.addItem(_("Ancien modèle — {n}", n=lib), k)
+        voulu = (self.recette.get("logo") or {}).get("modele")
+        self.modele.setCurrentIndex(max(0, self.modele.findData(voulu if voulu in IN.MODELES else "masque")))
+        self.famille = QComboBox()
+        self.famille.addItem(_("Tous les styles modernes"), "")
+        for k, lib in IN.FAMILLES.items():
+            self.famille.addItem(lib, k)
+        self.famille.addItem(_("Anciens modèles"), "anciens")
+        self.famille.currentIndexChanged.connect(self._remplir_modeles)
+        f.addRow(_("Style"), self.famille)
+        from PySide6.QtCore import QSize
+        from PySide6.QtWidgets import QListView, QListWidget
+        hv = QHBoxLayout()
+        self.vignettes = QListWidget()
+        self.vignettes.setViewMode(QListView.IconMode)
+        self.vignettes.setIconSize(QSize(176, 99))
+        self.vignettes.setGridSize(QSize(188, 130))
+        self.vignettes.setResizeMode(QListView.Adjust)
+        self.vignettes.setMovement(QListView.Static)
+        self.vignettes.setWordWrap(True)
+        self.vignettes.setMinimumHeight(140)
+        self.vignettes.currentItemChanged.connect(self._modele_choisi)
+        hv.addWidget(self.vignettes, 3)
+        va = QVBoxLayout()
+        self.grand = QLabel()
+        self.grand.setFixedSize(320, 180)
+        self.grand.setStyleSheet("background:#000;border-radius:6px")
+        va.addWidget(self.grand)
+        self.desc_modele = QLabel("")
+        self.desc_modele.setWordWrap(True)
+        self.desc_modele.setFixedWidth(320)
+        va.addWidget(self.desc_modele)
+        va.addStretch(1)
+        hv.addLayout(va, 0)
+        f.addRow(hv)
+        self.fond = QComboBox()
+        for k, lib in IN.FONDS.items():
+            self.fond.addItem(lib, k)
+        self.fond.setCurrentIndex(max(0, self.fond.findData(params.get("intro_fond") or "degrade")))
+        self.fond.currentIndexChanged.connect(self._raz_apercus)
+        self.accent = QPushButton(_("Couleur d'accent : celle du style"))
+        self.accent.setStyleSheet("text-align:left;padding:3px 8px")
+        self._accent = ""
+        self.accent.clicked.connect(self._choisir_accent)
+        hf = QHBoxLayout()
+        hf.addWidget(self.fond, 1)
+        hf.addWidget(self.accent)
+        f.addRow(_("Fond"), hf)
         self.duree = QDoubleSpinBox()
         self.duree.setRange(1.0, 10.0)
-        self.duree.setValue(float((self.recette.get("logo") or {}).get("duree") or 2.5))
+        self.duree.setValue(float((self.recette.get("logo") or {}).get("duree") or 3.0))
         self.duree.setSuffix(" s")
         f.addRow(_("Durée"), self.duree)
         h = QHBoxLayout()
@@ -790,6 +894,13 @@ class DialogueFabrique(QDialog):
         self.usage.addItem(_("Seulement dans la bibliothèque"), "biblio")
         f.addRow(_("Placer"), self.usage)
         self.onglets.addTab(w, _("Logo et intro"))
+        self._apercus, self._image_film, self._pos = {}, None, 0
+        self.texte.textChanged.connect(self._raz_apercus)
+        self.sous.textChanged.connect(self._raz_apercus)
+        self.minuterie = QTimer(self)
+        self.minuterie.timeout.connect(self._animer)
+        self.minuterie.start(110)
+        self._remplir_modeles()
         # ---- plan IA
         w2 = QWidget()
         f2 = QFormLayout(w2)
@@ -798,7 +909,7 @@ class DialogueFabrique(QDialog):
         plans = self.recette.get("plans_a_generer") or []
         if plans:
             self.sujet.setPlainText(plans[0].get("consigne", ""))
-        self.sujet.setPlaceholderText(_("Décrivez le plan : « plan aérien au-dessus de la baie de Cannes au lever du soleil »"))
+        self.sujet.setPlaceholderText(_("Décrivez le plan : « plan aérien au-dessus d'une baie au lever du soleil »"))
         f2.addRow(_("Sujet"), self.sujet)
         self.style = QComboBox()
         self.style.setEditable(True)
@@ -859,6 +970,111 @@ class DialogueFabrique(QDialog):
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         v.addWidget(bb)
+
+    # ---- vignettes animées des intros
+    N_IMAGES = 18
+
+    def _remplir_modeles(self):
+        from PySide6.QtWidgets import QListWidgetItem
+        IN = self._IN
+        fam = self.famille.currentData() or ""
+        actuel = self.modele.currentData()
+        self.vignettes.blockSignals(True)
+        self.vignettes.clear()
+        for i in range(self.modele.count()):
+            k = self.modele.itemData(i)
+            moderne = k in IN.MODELES
+            if (fam == "anciens" and moderne) or (fam not in ("", "anciens") and (not moderne or IN.MODELES[k][0] != fam)) or (fam == "" and not moderne):
+                continue
+            it = QListWidgetItem(IN.MODELES[k][1] if moderne else fabrique.MODELES_LOGO[k])
+            it.setData(Qt.UserRole, k)
+            it.setTextAlignment(Qt.AlignHCenter | Qt.AlignTop)
+            self.vignettes.addItem(it)
+            if k == actuel:
+                self.vignettes.setCurrentItem(it)
+        self.vignettes.blockSignals(False)
+        if self.vignettes.currentItem() is None and self.vignettes.count():
+            self.vignettes.setCurrentRow(0)
+        else:
+            self._modele_choisi(self.vignettes.currentItem(), None)
+
+    def _modele_choisi(self, it, _avant=None):
+        if it is None:
+            return
+        k = it.data(Qt.UserRole)
+        self.modele.setCurrentIndex(max(0, self.modele.findData(k)))
+        IN = self._IN
+        self.desc_modele.setText(IN.MODELES[k][2] if k in IN.MODELES else _("Ancien modèle, gardé pour les projets existants."))
+
+    def _raz_apercus(self, *_a):
+        self._apercus = {}
+        self.params["intro_fond"] = self.fond.currentData()
+
+    def _choisir_accent(self):
+        from PySide6.QtWidgets import QColorDialog
+        c = QColorDialog.getColor(QColor(self._accent or "#ff3b30"), self, _("Couleur d'accent"))
+        if c.isValid():
+            self._accent = c.name()
+            self.accent.setText(_("Couleur d'accent : {c}", c=c.name()))
+            self.accent.setStyleSheet(f"text-align:left;padding:3px 8px;background:{c.name()};color:{'#000' if c.lightness() > 140 else '#fff'}")
+            self._raz_apercus()
+
+    def image_film(self):
+        """Une image du premier plan vidéo du projet (fond « premières images du film »)."""
+        if self._image_film is None:
+            self._image_film = ""
+            try:
+                cs = sorted(self.projet.clips_piste("video"), key=lambda c: c["debut"])
+                if cs:
+                    m = self.projet.media(cs[0]["media"])
+                    if m and m.get("genre") != "image":
+                        import tempfile
+                        png = moteur.image(m["chemin"], float(cs[0]["src_debut"]) + 0.5, 960)
+                        chemin = os.path.join(tempfile.gettempdir(), f"philcut_film_{os.getpid()}.png")
+                        with open(chemin, "wb") as fh:
+                            fh.write(png)
+                        self._image_film = chemin
+                    elif m:
+                        self._image_film = m["chemin"]
+            except Exception:            # noqa: BLE001
+                self._image_film = ""
+        return self._image_film or None
+
+    def options_intro(self):
+        return {"fond": self.fond.currentData(), "couleurs": {"accent": self._accent} if self._accent else None,
+                "image_film": self.image_film() if self.fond.currentData() == "film" else None}
+
+    def _animer(self):
+        """Une image de plus par tick pour les vignettes visibles ; le grand aperçu joue le modèle choisi."""
+        from PySide6.QtGui import QIcon, QPixmap
+        IN = self._IN
+        if self.onglets.currentIndex() != 0 or not self.isVisible():
+            return
+        self._pos = (self._pos + 1) % self.N_IMAGES
+        o = self.options_intro()
+        budget = 4
+        duree = 3.0
+        for i in range(self.vignettes.count()):
+            it = self.vignettes.item(i)
+            k = it.data(Qt.UserRole)
+            if k not in IN.MODELES:
+                continue
+            imgs = self._apercus.setdefault(k, [None] * self.N_IMAGES)
+            j = self._pos
+            if imgs[j] is None and budget > 0:
+                budget -= 1
+                ctx = getattr(self, "_ctx_" + k, None)
+                cle = (self.texte.text(), self.sous.text(), o["fond"], self._accent)
+                if ctx is None or getattr(self, "_cle_" + k, None) != cle:
+                    ctx = IN.contexte(k, self.texte.text() or _("Votre titre"), self.sous.text(), 320, 180, duree, o["fond"], o["couleurs"],
+                                      o["image_film"], self.image.text().strip() or None)
+                    setattr(self, "_ctx_" + k, ctx)
+                    setattr(self, "_cle_" + k, cle)
+                imgs[j] = QPixmap.fromImage(IN.image(ctx, 0.2 + (duree - 0.2) * j / self.N_IMAGES))
+            if imgs[j] is not None:
+                it.setIcon(QIcon(imgs[j].scaled(176, 99, Qt.KeepAspectRatio, Qt.SmoothTransformation)))
+                if it is self.vignettes.currentItem():
+                    self.grand.setPixmap(imgs[j])
 
     def _image(self):
         p, _f = QFileDialog.getOpenFileName(self, _("Image du logo"), "", "Images (*.png *.svg *.jpg *.jpeg)")

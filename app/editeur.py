@@ -234,7 +234,7 @@ class VoletProposition(QWidget):
         v.addWidget(gd)
         f = QFormLayout()
         self.indices = QLineEdit()
-        self.indices.setPlaceholderText(_("Indications : « vol au-dessus de Cannes », « pour Insta »…"))
+        self.indices.setPlaceholderText(_("Indications : « balade en montagne », « pour Insta »…"))
         f.addRow(_("Indications"), self.indices)
         self.format = QComboBox()
         for k, lib in (("", _("Selon les rushes")), ("16:9", _("16:9 YouTube")), ("9:16", _("9:16 Insta / Shorts"))):
@@ -1465,6 +1465,17 @@ class Editeur(QWidget):
                 self.projet.marquer()
                 el["suivi"] = None
                 self.rafraichir()
+        elif quoi == "vignette":
+            self.projet.marquer()
+            self.projet.d["vignette_t"] = round(self.timeline.position, 3)
+            self.rafraichir()
+            self.encart.message(_("Vignette du fichier : l'image à {t}. A l'export, elle est intégrée à la vidéo (explorateur de fichiers, "
+                                  "lecteurs) et enregistrée à côté en JPG pour la miniature YouTube.", t=_tc(self.timeline.position)), 9000)
+        elif quoi == "vignette_retirer":
+            self.projet.marquer()
+            self.projet.d.pop("vignette_t", None)
+            self.rafraichir()
+            self.encart.message(_("Vignette retirée : le fichier montrera sa première image."))
         elif quoi == "son_fin":
             self.couper_son_fin(ident)
         elif quoi == "whoosh":
@@ -1816,9 +1827,13 @@ class Editeur(QWidget):
         if gid == "fleche":
             g["options"].update(style="courbe", couleur="#ff3b30", contour="#ffffff", dessin=True)
         elif gid == "bandeau_tendance":
-            g["options"].update(texte=_("GRANDE HORLOGE"), style="incline", couleur="#ff8c1a", angle=-4)
+            g["options"].update(texte=_("TITRE CHOC"), style="incline", couleur="#ff8c1a", angle=-4)
         elif gid == "surligne":
             g["options"].update(texte=_("Incroyable"), couleur="#ffe14d")
+        elif gid == "intro_titre":
+            L_, H_ = self.projet.taille
+            g.update(x=0.5, y=0.5, taille=L_ / max(1, H_), fin=g["debut"] + 3.5)
+            g["options"].update(texte=self.projet.d.get("chaine") or _("Votre titre"), modele="masque")
         self.rafraichir()
         self._ouvrir_volet(1)
         self.inspecteur.montrer_selection([g["id"]])

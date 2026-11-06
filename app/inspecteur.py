@@ -147,6 +147,18 @@ class Inspecteur(QWidget):
             te.setPlaceholderText(_("Texte") if genre != "bandeau_tendance" else _("Texte ; « | » pour passer à la ligne"))
             te.textChanged.connect(lambda v: self._changer(lambda: opts.__setitem__("texte", v), reconstruire=False))
             f.addRow(_("Texte"), te)
+        if genre == "intro_titre":
+            from . import intros as IN
+            ts = QLineEdit(str(opts.get("sous_texte") or ""))
+            ts.setPlaceholderText(_("Sous-titre (facultatif)"))
+            ts.textChanged.connect(lambda v: self._changer(lambda: opts.__setitem__("sous_texte", v), reconstruire=False))
+            f.addRow(_("Sous-titre"), ts)
+            cm = QComboBox()
+            for k, (fam, lib, _d) in IN.MODELES.items():
+                cm.addItem(f"{IN.FAMILLES[fam]} — {lib}", k)
+            cm.setCurrentIndex(max(0, cm.findData(opts.get("modele") or "masque")))
+            cm.currentIndexChanged.connect(lambda _i: self._changer(lambda: opts.__setitem__("modele", cm.currentData()), reconstruire=False))
+            f.addRow(_("Animation"), cm)
         if genre in ("fleche", "bandeau_tendance"):
             cs = QComboBox()
             for k, lib in (AC.STYLES_FLECHE if genre == "fleche" else AC.STYLES_BANDEAU):
@@ -872,7 +884,7 @@ class Inspecteur(QWidget):
                 st.setCurrentIndex(st.count() - 1)
         st.currentIndexChanged.connect(lambda _i: self._changer(lambda: g.__setitem__("style", st.currentData()), reconstruire=False))
         contenu = g.get("genre") in ("polaroid", "post_it", "fleche", "image", "immatriculation", "bandeau", "pastille", "prix", "horaires",
-                                     "date", "bandeau_tendance", "surligne")
+                                     "date", "bandeau_tendance", "surligne", "intro_titre")
         if g.get("genre") in GO.GENRES and GO.GENRES[g["genre"]][1]:      # instruments : cadran ou HUD
             f.addRow(_("Style d'instrument"), st)
         else:

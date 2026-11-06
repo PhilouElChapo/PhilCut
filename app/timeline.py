@@ -830,6 +830,15 @@ class Timeline(QGraphicsView):
             p.drawText(rc, Qt.AlignCenter, info[1])
             p.setPen(QPen(QColor("#ffd24a"), 1))
             p.drawLine(QLineF(x, H_REGLE, x, self.hauteur_totale()))
+        vt = (self.projet.d.get("vignette_t") if self.projet else None)
+        if vt is not None:                           # image choisie comme vignette du fichier : petit cadre sur la règle
+            x = MARGE_G + float(vt) * self.pps
+            rc = QRectF(x - 7, 3, 14, 10)
+            p.setPen(QPen(QColor("#5ad1ff"), 1.4))
+            p.setBrush(QColor(20, 30, 40, 220))
+            p.drawRect(rc)
+            p.drawLine(QLineF(rc.left() + 2, rc.bottom() - 2, rc.center().x(), rc.top() + 4))
+            p.drawLine(QLineF(rc.center().x(), rc.top() + 4, rc.right() - 2, rc.bottom() - 2))
         a, b = self.zone
         if a is not None or b is not None:          # partie sélectionnée : bande jaune sur la règle, voile sur les pistes
             xa = MARGE_G + (a if a is not None else b) * self.pps
@@ -1118,6 +1127,10 @@ class Timeline(QGraphicsView):
     def _menu_partie(self, m, t):
         """Choisir une partie de la vidéo à la souris : début ici, fin ici, puis effets, suppression ou garder."""
         m.addSeparator()
+        if self.projet:
+            m.addAction(_("Prendre cette image comme vignette du fichier"), lambda: (self.aller_a(t), self.demande_menu.emit("", "vignette")))
+            if self.projet.d.get("vignette_t") is not None:
+                m.addAction(_("Retirer la vignette choisie"), lambda: self.demande_menu.emit("", "vignette_retirer"))
         if self.zone != [None, None]:
             m.addAction(_("Enlever la partie jaune (sélection)"), self.effacer_zone)
         sm = m.addMenu(_("Partie de la vidéo (pour un effet, supprimer, garder)"))

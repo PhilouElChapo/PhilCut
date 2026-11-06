@@ -41,7 +41,7 @@ class DialoguePublier(QDialog):
         self.desc.setMaximumHeight(110)
         f.addRow(_("Description"), self.desc)
         self.mots = QLineEdit(", ".join(pub.get("mots_clefs") or []))
-        self.mots.setPlaceholderText(_("aviation, Cannes, vol, …"))
+        self.mots.setPlaceholderText(_("voyage, vlog, montagne, …"))
         f.addRow(_("Mots-clefs"), self.mots)
         v.addLayout(f)
         gy = QGroupBox(_("YouTube (envoi direct)"))

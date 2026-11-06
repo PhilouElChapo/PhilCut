@@ -18,7 +18,7 @@ Réponds UNIQUEMENT par un objet JSON avec ces clefs :
 - "titre": titre court de la vidéo
 - "resume": une phrase sur l'idée du montage
 - "format": "16:9" ou "9:16"
-- "logo": {"modele": trace|particules|code|eclat|lucioles|carnet, "texte": "...", "duree": secondes, "pourquoi": "..."}
+- "logo": {"modele": slam|decoupe|contour|glitch_net|masque|verre|espacement|cinema|horizon|lumiere, "texte": "...", "duree": secondes, "pourquoi": "..."}
 - "musique": {"ambiance": energique|douce|cinema|chaleureuse|mysterieuse|legere, "bpm": nombre, "energie": 0..1, "pourquoi": "..."}
 - "look": un effet de look parmi ciel_altitude, nuit_chaude, cinema, cosy, epure, vintage, noir_blanc, y2k ou ""
 - "plans": liste ordonnée de {"media": id, "src_debut": s, "src_fin": s, "vitesse": 0.25..8, "effets": [ids], "transition": id ou null, "cadrage": remplir|contenir_noir|contenir_flou, "pourquoi": "..."}
@@ -197,7 +197,7 @@ def autre_idee(projet, params, recette, element, rapporter=None):
         import random
         r = dict(recette)
         if element == "logo":
-            modeles = ["trace", "particules", "code", "eclat", "lucioles", "carnet"]
+            modeles = ["slam", "decoupe", "contour", "glitch_net", "masque", "verre", "espacement", "cinema", "horizon", "lumiere"]
             r["logo"] = dict(recette["logo"], modele=random.choice([m for m in modeles if m != recette["logo"].get("modele")]))
         elif element == "musique":
             amb = ["energique", "douce", "cinema", "chaleureuse", "mysterieuse", "legere"]

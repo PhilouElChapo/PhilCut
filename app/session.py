@@ -3,7 +3,7 @@
 Le Drive ne sert que de BOITE AUX LETTRES : il contient <Drive>/PhilCut/session.json, la liste
 des projets ouverts sur chaque machine. Les videos elles-memes ne sont jamais copiees.
 
-Chaque machine a un ALIAS ("Pharmacie", "Maison"...) et declare ses RACINES (dossiers ou sont
+Chaque machine a un ALIAS ("Bureau", "Maison"...) et declare ses RACINES (dossiers ou sont
 ses documents : C:\\Users\\Phil, D:\\Documents, le NAS...). Pour chaque fichier, la session note :
 chemin d'origine, chemin relatif au dossier utilisateur, racine d'origine et chemin relatif a
 elle, nom, taille, empreinte, page affichee, machine et date.

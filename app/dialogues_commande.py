@@ -8,7 +8,7 @@ from .langue import _
 from .taches import Tache
 from .widgets import boutons_fr
 
-EXEMPLES = [_("mets une musique calme et coupe-la à la fin de la vidéo"), _("titre « Vol vers Calvi » au début"),
+EXEMPLES = [_("mets une musique calme et coupe-la à la fin de la vidéo"), _("titre « Notre week-end » au début"),
             _("effet vintage sur tous les plans"), _("ralenti sur le plan 2"), _("une flèche rouge courbe à 5 s"),
             _("fondu de la musique 2 s et 4 s"), _("baisse la musique")]
 

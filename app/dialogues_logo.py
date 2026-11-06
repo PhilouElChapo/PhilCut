@@ -384,7 +384,7 @@ class DialogueLogo(QDialog):
         from . import ia, dialogues_ia
         if not dialogues_ia.verifier_cle(self, self.params):
             return
-        style, ok = QInputDialog.getText(self, _("Idées par l'IA"), _("Style souhaité (ex. « aviation rétro », « pharmacie moderne et rassurante », "
+        style, ok = QInputDialog.getText(self, _("Idées par l'IA"), _("Style souhaité (ex. « rétro », « moderne et rassurant », "
                                                                        "« néon festif ») — laisser vide pour laisser l'IA choisir :"))
         if not ok:
             return

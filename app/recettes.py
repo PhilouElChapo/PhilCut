@@ -11,17 +11,17 @@ import copy
 from .langue import _
 
 TYPES = {
-    "vol": {"nom": _("Vol"), "logo": "code", "musique": {"ambiance": "energique", "bpm": 120, "energie": 0.75}, "look": "ciel_altitude",
+    "vol": {"nom": _("Vol"), "logo": "horizon", "musique": {"ambiance": "energique", "bpm": 120, "energie": 0.75}, "look": "ciel_altitude",
             "goodies": ["altimetre", "anemometre"], "transitions": ["t_puzzle", "t_fondu_enchaine", "t_zoom", "t_fondu_noir"], "plan_s": (4, 9)},
-    "visite": {"nom": _("Visite / ambiance d'un lieu"), "logo": "lucioles", "musique": {"ambiance": "chaleureuse", "bpm": 85, "energie": 0.4},
+    "visite": {"nom": _("Visite / ambiance d'un lieu"), "logo": "lumiere", "musique": {"ambiance": "chaleureuse", "bpm": 85, "energie": 0.4},
                "look": "nuit_chaude", "goodies": ["horloge"], "transitions": ["t_fondu_enchaine", "t_fondu_noir", "t_flou_fondu"], "plan_s": (3, 7)},
-    "portrait": {"nom": _("Portrait / personne"), "logo": "eclat", "musique": {"ambiance": "douce", "bpm": 95, "energie": 0.5}, "look": "cosy",
+    "portrait": {"nom": _("Portrait / personne"), "logo": "espacement", "musique": {"ambiance": "douce", "bpm": 95, "energie": 0.5}, "look": "cosy",
                  "goodies": [], "transitions": ["t_fondu_enchaine", "t_fondu_blanc", "t_zoom"], "plan_s": (2.5, 6)},
-    "clip_ia": {"nom": _("Clip de photos animées"), "logo": "particules", "musique": {"ambiance": "energique", "bpm": 110, "energie": 0.7},
+    "clip_ia": {"nom": _("Clip de photos animées"), "logo": "slam", "musique": {"ambiance": "energique", "bpm": 110, "energie": 0.7},
                 "look": "glow", "goodies": [], "transitions": ["t_glitch", "t_zoom", "t_glisse", "t_pixels"], "plan_s": (2, 5)},
-    "annonce": {"nom": _("Annonce / pharmacie"), "logo": "trace", "musique": {"ambiance": "legere", "bpm": 100, "energie": 0.5}, "look": "epure",
+    "annonce": {"nom": _("Annonce / commerce"), "logo": "contour", "musique": {"ambiance": "legere", "bpm": 100, "energie": 0.5}, "look": "epure",
                 "goodies": ["croix", "horaires"], "transitions": ["t_glisse", "t_cercle"], "plan_s": (3, 6)},
-    "generique": {"nom": _("Montage"), "logo": "trace", "musique": {"ambiance": "douce", "bpm": 100, "energie": 0.5}, "look": "cinema",
+    "generique": {"nom": _("Montage"), "logo": "masque", "musique": {"ambiance": "douce", "bpm": 100, "energie": 0.5}, "look": "cinema",
                   "goodies": [], "transitions": ["t_fondu_noir", "t_fondu_enchaine", "t_zoom"], "plan_s": (3, 8)},
 }
 
@@ -228,11 +228,13 @@ def appliquer(recette, projet, params=None, choix=None, remplacer=True):
     t = 0.0
     decalage = 0.0
     if ok("logo") and recette.get("logo"):
-        g = projet.ajouter_goodie("logo_intro", 0.0, float(recette["logo"].get("duree", 2.5)), x=0.5, y=0.5, taille=0.5, style="hud",
-                                  options={"texte": recette["logo"].get("texte", ""), "modele": recette["logo"].get("modele", "trace")})
-        g["genre"] = "bandeau"           # rendu comme bandeau texte tant que la Fabrique n'a pas genere le logo anime
-        decalage = float(recette["logo"].get("duree", 2.5))
-        t = decalage
+        from . import intros
+        modele = recette["logo"].get("modele")
+        modele = modele if modele in intros.MODELES else "masque"
+        L_, H_ = projet.taille
+        # titre d'ouverture moderne posé SUR les premières images du film (plus de bandeau ni de plan noir en tête)
+        projet.ajouter_goodie("intro_titre", 0.3, 0.3 + max(2.5, float(recette["logo"].get("duree", 3.0))), x=0.5, y=0.5,
+                              taille=L_ / max(1, H_), options={"texte": recette["logo"].get("texte", ""), "modele": modele})
     if ok("plans"):
         for i, p in enumerate(recette.get("plans") or []):
             if not ok(f"plan:{i}") or not projet.media(p["media"]):

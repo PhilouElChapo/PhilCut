@@ -1,6 +1,6 @@
 """« Dites-le en clair » (0.4.4) : une phrase devient des actions de montage, montrées avant d'être faites.
 
-« mets une musique calme et coupe-la à la fin de la vidéo », « titre Vol vers Calvi au début », « effet vintage sur tous
+« mets une musique calme et coupe-la à la fin de la vidéo », « titre Notre week-end au début », « effet vintage sur tous
 les plans », « ralenti sur le plan 2 », « une flèche rouge à 5 s »… Trois façons de comprendre, comme l'assistant :
 - sans IA : des règles reconnaissent les demandes courantes (gratuit, instantané, rien ne sort du poste) ;
 - IA locale : le modèle du poste traduit la phrase en actions (rien n'est envoyé) ;

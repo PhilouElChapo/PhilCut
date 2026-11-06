@@ -90,7 +90,7 @@ def _dessiner_bandeau(p, g, t, taille, u):
     from . import cles as K
     opts = g.get("options") or {}
     style = opts.get("style") or "incline"
-    texte = str(opts.get("texte") or _("GRANDE HORLOGE")).strip()
+    texte = str(opts.get("texte") or _("TITRE CHOC")).strip()
     lignes = [x.strip() for x in texte.replace(" | ", "\n").replace("|", "\n").split("\n") if x.strip()] or [texte]
     if style == "deux" and len(lignes) == 1 and " " in texte:
         mots = texte.split()

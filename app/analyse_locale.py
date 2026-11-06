@@ -11,7 +11,7 @@ from .langue import _
 
 CONSIGNE = (
     "Voici {n} images tirées, dans l'ordre, d'une même vidéo. Réponds en français, uniquement en JSON, avec les clefs : "
-    "\"nom\" (3 à 5 mots qui nomment la vidéo, ex. « Décollage de Cannes »), \"resume\" (une phrase), "
+    "\"nom\" (3 à 5 mots qui nomment la vidéo, ex. « Balade en bord de mer »), \"resume\" (une phrase), "
     "\"lieux_objets\" (liste de mots : lieux, objets, personnes, animaux, météo), "
     "\"textes\" (liste des textes réellement lisibles : immatriculations d'avion comme F-GABC, panneaux, enseignes, "
     "écrans ; liste vide si rien n'est lisible ; n'invente rien).")
