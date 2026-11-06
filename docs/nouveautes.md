@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.8.5 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.8.6 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.8.6
+- Bouton Musique : plus de gel avec un gros dossier de musiques (ou sur un NAS) ; le menu s'ouvre tout de suite, titres, albums et artistes sont lus en arriere-plan.
+- Fenetre Effets : la zone Reglages explique quoi faire tant qu'aucun effet n'est pose, et indique quand un effet n'a pas de reglage.
+
+### 0.8.5
 
 ### 0.8.5
 - Preferences > IA : clefs Pixabay et Pexels (avec bouton "Creer ma clef"), dans le coffre du systeme.

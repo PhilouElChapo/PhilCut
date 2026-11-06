@@ -631,7 +631,8 @@ class Fenetre(QMainWindow):
         ed = self._editeur_ou_nouveau()
         m = QMenu(self)
         m.addAction(_("Importer une musique…"), lambda: ed.importer())
-        self._menu_mes_musiques(m.addMenu(icone("musique"), _("Mes musiques")), ed)
+        sm = m.addMenu(icone("musique"), _("Mes musiques"))
+        sm.aboutToShow.connect(lambda: sm.isEmpty() and self._menu_mes_musiques(sm, ed))     # rempli seulement à l'ouverture
         m.addAction(_("Bibliothèque musicale libre (chercher, écouter, télécharger)…"), lambda: self.bibliotheque_musicale(ed))
         m.addAction(_("Créer une musique par IA (sur ce poste)…"), lambda: ed.atelier_ia("musique"))
         m.exec(self.cursor().pos())
@@ -650,7 +651,11 @@ class Fenetre(QMainWindow):
         sm.addAction(_("Choisir mon dossier de musiques…") if not perso else _("Changer de dossier de musiques ({d})…", d=os.path.basename(perso.rstrip("/\\")) or perso),
                      self._choisir_dossier_musiques)
         sm.addSeparator()
-        liste = MU.morceaux([perso, MU.dossier(self.params)])
+        liste = MU.morceaux([perso, MU.dossier(self.params)], limite=1500, rapide=True, delai=3.0)
+        n = MU.lire_en_fond(liste)                 # titres, albums et artistes lus en arrière-plan, jamais de gel
+        if n:
+            self.statusBar().showMessage(_("Lecture des titres de {n} morceau(x) en arrière-plan : le classement par album et "
+                                           "artiste sera complet à la prochaine ouverture du menu.", n=n), 8000)
         if not liste:
             a = sm.addAction(_("(aucun morceau : choisissez votre dossier, ou téléchargez des musiques libres)"))
             a.setEnabled(False)

@@ -89,8 +89,17 @@ def _fichier_tags():
     return os.path.join(dossier_donnees(), "musiques_etiquettes.json")
 
 
-def etiquettes(chemin):
-    """Titre, artiste, album d'un morceau (lus une fois par ffprobe, puis gardés) ; à défaut tirés du nom de fichier."""
+def _depuis_nom(chemin):
+    nom = os.path.splitext(os.path.basename(chemin))[0]
+    if " - " in nom:
+        a, t = [x.strip() for x in nom.split(" - ", 1)]
+        return {"titre": t, "artiste": a, "album": "", "duree": 0}
+    return {"titre": nom, "artiste": "", "album": "", "duree": 0}
+
+
+def etiquettes(chemin, lire=True):
+    """Titre, artiste, album d'un morceau (lus une fois par ffprobe, puis gardés) ; à défaut tirés du nom de fichier.
+    lire=False : jamais de ffprobe (menu instantané) ; ce qui n'est pas encore connu vient du nom du fichier."""
     global _TAGS
     import json
     if _TAGS is None:
@@ -106,6 +115,8 @@ def etiquettes(chemin):
     cle = f"{chemin}|{int(st.st_mtime)}|{st.st_size}"
     if cle in _TAGS:
         return _TAGS[cle]
+    if not lire:
+        return dict(_depuis_nom(chemin), a_lire=True)
     tags = {}
     try:
         import subprocess
@@ -138,21 +149,27 @@ def _garder_tags():
             pass
 
 
-def morceaux(dossiers, limite=2000):
-    """Tous les morceaux des dossiers donnés (sous-dossiers compris) avec leurs étiquettes."""
+def morceaux(dossiers, limite=2000, rapide=False, delai=None):
+    """Tous les morceaux des dossiers donnés (sous-dossiers compris) avec leurs étiquettes.
+    rapide=True : sans lire les étiquettes encore inconnues (elles se lisent en arrière-plan, voir lire_en_fond) ;
+    delai : temps maximal de parcours en secondes (dossier énorme ou disque réseau lent)."""
+    import time
     from .config import est_audio
     out, vus = [], set()
+    t0 = time.monotonic()
     for racine in dossiers:
         if not racine or not os.path.isdir(racine):
             continue
         for base, sous, fichiers in os.walk(racine):
+            if delai and time.monotonic() - t0 > delai:
+                break
             sous.sort()
             for f in sorted(fichiers):
                 p = os.path.join(base, f)
                 if not est_audio(f) or p in vus or f.endswith(".part"):
                     continue
                 vus.add(p)
-                e = dict(etiquettes(p))
+                e = dict(etiquettes(p, lire=not rapide))
                 e["chemin"] = p
                 e["dossier"] = os.path.relpath(base, racine) if base != racine else os.path.basename(racine.rstrip("/\\")) or racine
                 out.append(e)
@@ -161,6 +178,28 @@ def morceaux(dossiers, limite=2000):
                     return out
     _garder_tags()
     return out
+
+
+_LECTURE = {"fil": None}
+
+
+def lire_en_fond(liste):
+    """Lit en arrière-plan les étiquettes des morceaux encore inconnus (titre, artiste, album, durée) : la prochaine
+    ouverture du menu les montre, sans jamais bloquer PhilCut."""
+    import threading
+    a_lire = [m["chemin"] for m in liste if m.get("a_lire")]
+    if not a_lire or (_LECTURE["fil"] and _LECTURE["fil"].is_alive()):
+        return 0
+
+    def travail():
+        for k, p in enumerate(a_lire):
+            etiquettes(p)
+            if k % 50 == 49:
+                _garder_tags()
+        _garder_tags()
+    _LECTURE["fil"] = threading.Thread(target=travail, daemon=True)
+    _LECTURE["fil"].start()
+    return len(a_lire)
 
 
 def classer(liste, mode):

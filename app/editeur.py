@@ -1291,7 +1291,8 @@ class Editeur(QWidget):
         mots = {"energique": "energ upbeat rock electro dance", "douce": "doux douce calm piano soft", "cinema": "cinema epic film orchestr",
                 "chaleureuse": "acoust guitar warm folk", "mysterieuse": "myst dark ambient", "legere": "happy joy pop ukulele",
                 "calme": "calm ambient piano", "joyeuse": "happy joy pop", "aventure": "adventure epic inspir"}.get(ambiance or "", "")
-        liste = MU.morceaux([self.params.get("musiques_dossier") or "", MU.dossier(self.params)])
+        liste = MU.morceaux([self.params.get("musiques_dossier") or "", MU.dossier(self.params)], limite=1500, rapide=True, delai=3.0)
+        MU.lire_en_fond(liste)
 
         def note(x):
             texte = " ".join(str(x.get(k) or "") for k in ("titre", "album", "artiste", "dossier", "chemin")).lower()

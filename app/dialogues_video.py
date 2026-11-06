@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, Q
                                QCheckBox, QPushButton, QDialogButtonBox, QListWidget, QListWidgetItem, QColorDialog, QSlider, QGroupBox,
                                QPlainTextEdit, QFileDialog, QTabWidget, QWidget, QMessageBox, QProgressBar, QTextBrowser, QRadioButton)
 
-from . import effets as E, goodies as GO, moteur, fabrique
+from . import effets as E, goodies as GO, moteur, fabrique, theme
 from .icones import icone
 from .langue import _
 from .widgets import boutons_fr
@@ -270,6 +270,10 @@ class DialogueEffets(QDialog):
         bb.rejected.connect(self.reject)
         v.addWidget(bb)
         self._remplir()
+        if self.poses.count():                           # effets déjà posés : le premier est choisi, ses réglages s'affichent
+            self.poses.setCurrentRow(0)
+        else:
+            self._parametres(-1)
 
     # ---- catalogue : familles dépliables, favoris, récents, recherche
     COULEURS_FAMILLES = {"look": "#d9a441", "wahou": "#b36cf2", "mouvement": "#5bb3ff", "transition": "#ffd24a", "personne": "#ff7ab3",
@@ -528,9 +532,18 @@ class DialogueEffets(QDialog):
         e = self._courant()
         if not e:
             self.aide.setText("")
+            vide = QLabel(_("Posez d'abord l'effet (« Poser sur ce plan → » ou double-clic), puis cliquez-le dans « Sur ce plan » : "
+                            "ses réglages apparaissent ici, et l'aperçu se refait à chaque changement."))
+            vide.setWordWrap(True)
+            vide.setStyleSheet("color:%s" % theme.COULEURS["texte2"])
+            self.form.addRow(vide)
             return
         fi = E.fiche(e["id"])
         self.aide.setText(fi["description"] if fi else "")
+        if not (fi and fi["parametres"]):
+            sans = QLabel(_("Cet effet n'a pas de réglage."))
+            sans.setStyleSheet("color:%s" % theme.COULEURS["texte2"])
+            self.form.addRow(sans)
         from .inspecteur import widget_parametre
         for spec in (fi["parametres"] if fi else []):
             cle, lib = spec[0], spec[1]

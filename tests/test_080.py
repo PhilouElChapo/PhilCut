@@ -281,6 +281,23 @@ class Test080(unittest.TestCase):
         self.assertEqual(coffre.lire(T.CLEFS["pexels"]), "cle-pexels-pref")
         coffre.supprimer(T.CLEFS["pexels"])
 
+    def test_menu_musiques_sans_gel(self):
+        """Gros dossier de musiques : le menu se construit sans lire les étiquettes (lues ensuite en arrière-plan)."""
+        import shutil
+        from app import musiques as MU
+        d = tempfile.mkdtemp()
+        m = commun.musique_test(d, "base.mp3", duree=1)
+        for i in range(300):
+            shutil.copy(m, os.path.join(d, f"Artiste - Titre {i}.mp3"))
+        t0 = time.time()
+        liste = MU.morceaux([d], rapide=True, delai=3)
+        self.assertLess(time.time() - t0, 2.0)
+        self.assertEqual(len(liste), 301)
+        self.assertEqual(liste[5]["artiste"], "Artiste")               # tiré du nom en attendant
+        self.assertGreater(MU.lire_en_fond(liste), 0)
+        MU._LECTURE["fil"].join(120)
+        self.assertFalse(any(x.get("a_lire") for x in MU.morceaux([d], rapide=True)))
+
     def test_pixabay_sans_clef_explique(self):
         from app import tampons as T, coffre
         coffre.supprimer(T.CLEFS["pixabay"])
