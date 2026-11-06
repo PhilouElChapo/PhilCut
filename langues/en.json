@@ -4844,5 +4844,8 @@
  "Ouverture de {s}…": "Opening {s}…",
  "Recherche ouverte dans le navigateur.": "Search opened in the browser.",
  "Recherché en anglais : « {t} ».": "Searched in English: \"{t}\".",
- "Recherché en anglais : « {t} » ; pas de traduction pour « {m} » : tapez ces mots en anglais.": "Searched in English: \"{t}\"; no translation for \"{m}\": type these words in English."
+ "Recherché en anglais : « {t} » ; pas de traduction pour « {m} » : tapez ces mots en anglais.": "Searched in English: \"{t}\"; no translation for \"{m}\": type these words in English.",
+ "Vidéos et sons": "Videos and sounds",
+ "Répliques et sons de films : {s} (navigateur)": "Film lines and sounds: {s} (browser)",
+ "Son « {n} » posé à {t} sur la piste {p} ({d:.1f} s) ; réglez son volume dans l'Inspecteur.": "Sound \"{n}\" placed at {t} on track {p} ({d:.1f} s); adjust its volume in the Inspector."
 }

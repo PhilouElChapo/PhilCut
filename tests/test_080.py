@@ -205,6 +205,21 @@ class Test080(unittest.TestCase):
         self.assertEqual(T.url_extrait("yarn", "thank you"), "https://yarn.co/yarn-find?text=thank%20you")
         self.assertIn("playphrase.me/#/search?q=hello", T.url_extrait("playphrase", "hello"))
 
+    def test_sons_de_films_et_tampon_sonore(self):
+        from app import tampons as T
+        u = T.url_extrait("voicy", "thank you")
+        self.assertTrue(u.startswith("https://duckduckgo.com/?q="))
+        self.assertIn("site%3Avoicy.network", u)
+        m = commun.musique_test(self.d, "replique.mp3", duree=2)
+        e = T.ajouter_fichier(self.params, m, "Réplique", ["film"])
+        self.assertEqual(e["genre"], "son")
+        self.assertTrue(e["fichier"].endswith(".mp3"))
+        e2 = T.ajouter_fichier(self.params, m, "Réplique courte", [], debut=0.5, duree=1.0)
+        self.assertTrue(e2["fichier"].endswith(".m4a"))
+        self.assertAlmostEqual(float(e2["duree"]), 1.0, delta=0.15)
+        T.retirer(self.params, e["id"])
+        T.retirer(self.params, e2["id"])
+
     def test_pixabay_sans_clef_explique(self):
         from app import tampons as T, coffre
         coffre.supprimer(T.CLEFS["pixabay"])
@@ -249,6 +264,11 @@ class Test080(unittest.TestCase):
         dl2 = DialogueTampons(ed, 1)
         self.assertIn(str(len(T.maison_manquants(ed.params, 1920, 1080))), dl2.b_tous.text())
         dl2.reject()
+        son = commun.musique_test(self.d, "ah.mp3", duree=2)
+        c = ed.poser_son(son, 1.0, "Réplique")
+        self.assertNotEqual(c["piste"], "video")
+        self.assertEqual(len(ed.projet.clips_piste("video")), 3)       # le film n'est pas décalé
+        ed.projet.annuler()
         ed.projet.annuler()
         self.assertEqual(len(ed.projet.clips_piste("video")), 1)       # annulable
 

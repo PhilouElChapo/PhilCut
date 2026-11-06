@@ -2286,6 +2286,25 @@ class Editeur(QWidget):
                               n=mi["nom"], t=_tc(t), d=duree), 8000)
         return ci
 
+    def poser_son(self, son, t, nom=""):
+        """Pose un tampon sonore (réplique, bruit) à l'instant t sur une piste de son libre, sans décaler le film. Annulable."""
+        from . import bruitages
+        f = moteur.sonder(son)
+        d = float(f.get("duree") or 1.0)
+        self.projet.marquer()
+        mi = self.projet.ajouter_media(son, f)
+        mi["nom"] = nom or os.path.basename(son)
+        piste = bruitages.piste_libre(self.projet, t, d)
+        ci = self.projet.ajouter_clip(mi["id"], piste, t)
+        ci["nom"] = mi["nom"]
+        self.projet.ranger(piste)
+        self.biblio.remplir(self.projet)
+        self.rafraichir()
+        self.timeline.selectionner(ci["id"])
+        self.encart.message(_("Son « {n} » posé à {t} sur la piste {p} ({d:.1f} s) ; réglez son volume dans l'Inspecteur.",
+                              n=mi["nom"], t=_tc(t), p=piste, d=d), 8000)
+        return ci
+
     def tampons(self, onglet=0):
         """Bibliothèque de tampons vidéo : les vôtres, les tampons maison, les clips libres trouvés en ligne."""
         from .dialogues_tampons import DialogueTampons

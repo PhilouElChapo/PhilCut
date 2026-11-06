@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.8.2 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.8.3 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.8.3 : repliques et sons de films
+- Tampons video > Chercher en ligne : repliques et sons de films sur Voicy, Movie-sounds.org, MovieSoundClips, WavSource, Sample Focus et QuoDB (recherche ouverte dans le navigateur, son telecharge par vous puis importe).
+- Tampons sonores : un son (mp3, wav...) importe dans la bibliotheque se pose a la tete de lecture sur une piste de son libre, sans decaler le film.
 
 ### 0.8.2 : extraits de films, recherches traduites
 - Tampons video > Chercher en ligne : extraits de films et de series sur clip.cafe, Yarn et PlayPhrase.me (recherche ouverte dans le navigateur, extrait telecharge par vous puis "Importer le clip telecharge" ; avertissement sur le droit d'auteur).

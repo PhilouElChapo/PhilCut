@@ -125,9 +125,12 @@ class DialogueTampons(QDialog):
         tout = T.charger(self.params)
         for e in sorted(T.chercher_local(tout, self.recherche.text()), key=lambda x: x.get("ajoute", ""), reverse=True):
             it = QListWidgetItem(f"{e['nom']}\n{e.get('duree', 0):.1f} s · {T.SOURCES.get(e.get('source'), _('maison') if e.get('source') == 'maison' else _('à moi'))}")
-            vg = T.vignette(self.params, e)
+            vg = None if e.get("genre") == "son" else T.vignette(self.params, e)
             if vg:
                 it.setIcon(QIcon(vg))
+            elif e.get("genre") == "son":
+                from .icones import icone
+                it.setIcon(icone("musique", theme.COULEURS["accent"], 96))
             it.setData(Qt.UserRole, e)
             it.setToolTip(", ".join(e.get("mots") or []))
             self.liste.addItem(it)
@@ -185,12 +188,15 @@ class DialogueTampons(QDialog):
         e = self._entree()
         if not e:
             return
-        self.ed.inserer_tampon(T.chemin(self.params, e), self.ed.timeline.position, e["nom"])
+        if e.get("genre") == "son":
+            self.ed.poser_son(T.chemin(self.params, e), self.ed.timeline.position, e["nom"])
+        else:
+            self.ed.inserer_tampon(T.chemin(self.params, e), self.ed.timeline.position, e["nom"])
         self.accept()
 
     def importer(self):
         f, _f = QFileDialog.getOpenFileName(self, _("Importer mon clip"), self.params.get("dossier_tampons_import") or "",
-                                            _("Vidéos") + " (*.mp4 *.mov *.m4v *.mkv *.webm *.avi)")
+                                            _("Vidéos et sons") + " (*.mp4 *.mov *.m4v *.mkv *.webm *.avi *.mp3 *.wav *.ogg *.m4a *.aac *.flac)")
         if not f:
             return
         self.params["dossier_tampons_import"] = os.path.dirname(f)
@@ -332,6 +338,8 @@ class DialogueTampons(QDialog):
         self.source.addItem(_("Pexels (clef gratuite)"), "pexels")
         for k, (nom, _u) in T.EXTRAITS.items():
             self.source.addItem(_("Extraits de films : {s} (navigateur)", s=nom), "extrait:" + k)
+        for k, (nom, _d) in T.SONS_FILMS.items():
+            self.source.addItem(_("Répliques et sons de films : {s} (navigateur)", s=nom), "extrait:" + k)
         self.source.currentIndexChanged.connect(self._source_changee)
         h.addWidget(self.source)
         self.question = QLineEdit()
@@ -470,7 +478,7 @@ class DialogueTampons(QDialog):
     def importer_telecharge(self):
         from .session import dossier_systeme
         f, _f = QFileDialog.getOpenFileName(self, _("Importer le clip téléchargé"), self.params.get("dossier_tampons_web") or dossier_systeme("telechargements"),
-                                            _("Vidéos") + " (*.mp4 *.mov *.m4v *.mkv *.webm *.gif)")
+                                            _("Vidéos et sons") + " (*.mp4 *.mov *.m4v *.mkv *.webm *.gif *.mp3 *.wav *.ogg *.m4a *.aac *.flac)")
         if not f:
             return
         self.params["dossier_tampons_web"] = os.path.dirname(f)
@@ -478,7 +486,7 @@ class DialogueTampons(QDialog):
         nom, ok = QInputDialog.getText(self, _("Importer le clip téléchargé"), _("Nom du tampon :"), text=os.path.splitext(os.path.basename(f))[0])
         if not ok:
             return
-        mots = [m for m in self.question.text().split() if len(m) > 2] + [T.EXTRAITS.get(site, (site,))[0]]
+        mots = [m for m in self.question.text().split() if len(m) > 2] + [(T.EXTRAITS.get(site) or T.SONS_FILMS.get(site) or (site,))[0]]
         self._lancer(lambda t: T.ajouter_fichier(self.params, f, nom.strip(), mots), _("Copie dans la bibliothèque…"))
 
     @staticmethod

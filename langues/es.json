@@ -4835,5 +4835,8 @@
  "Ouverture de {s}…": "Abriendo {s}…",
  "Recherche ouverte dans le navigateur.": "Búsqueda abierta en el navegador.",
  "Recherché en anglais : « {t} ».": "Buscado en inglés: «{t}».",
- "Recherché en anglais : « {t} » ; pas de traduction pour « {m} » : tapez ces mots en anglais.": "Buscado en inglés: «{t}»; sin traducción para «{m}»: escriba estas palabras en inglés."
+ "Recherché en anglais : « {t} » ; pas de traduction pour « {m} » : tapez ces mots en anglais.": "Buscado en inglés: «{t}»; sin traducción para «{m}»: escriba estas palabras en inglés.",
+ "Vidéos et sons": "Vídeos y sonidos",
+ "Répliques et sons de films : {s} (navigateur)": "Réplicas y sonidos de películas: {s} (navegador)",
+ "Son « {n} » posé à {t} sur la piste {p} ({d:.1f} s) ; réglez son volume dans l'Inspecteur.": "Sonido «{n}» puesto en {t} en la pista {p} ({d:.1f} s); ajuste su volumen en el Inspector."
 }

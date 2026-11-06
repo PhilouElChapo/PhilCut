@@ -23,6 +23,10 @@ CLEFS = {"pixabay": "pixabay_cle", "pexels": "pexels_cle"}         # identifiant
 # extraits de films et de séries (protégés) : recherche ouverte dans le navigateur, téléchargement par l'utilisateur
 EXTRAITS = {"clipcafe": ("clip.cafe", "https://clip.cafe/s/{q}/"), "yarn": ("Yarn", "https://yarn.co/yarn-find?text={q}"),
             "playphrase": ("PlayPhrase.me", "https://www.playphrase.me/#/search?q={q}&language=en")}
+# répliques et sons de films (audio) : recherche limitée au site, ouverte dans le navigateur
+SONS_FILMS = {"voicy": ("Voicy", "voicy.network"), "movie_sounds": ("Movie-sounds.org", "movie-sounds.org"),
+              "moviesoundclips": ("MovieSoundClips", "moviesoundclips.net"), "wavsource": ("WavSource", "wavsource.com"),
+              "samplefocus": ("Sample Focus", "samplefocus.com"), "quodb": ("QuoDB", "quodb.com")}
 PAGES_CLEF = {"pixabay": "https://pixabay.com/api/docs/", "pexels": "https://www.pexels.com/api/new/"}
 
 
@@ -423,19 +427,23 @@ def ajouter_fichier(params, source, nom="", mots=(), debut=0.0, duree=None):
     from . import moteur
     d = dossier_tampons(params)
     nom = nom or os.path.splitext(os.path.basename(source))[0]
-    cible = os.path.join(d, _nom_fichier(nom, ".mp4"))
+    son = moteur.sonder(source).get("genre") == "audio"             # réplique ou bruit sans image : tampon sonore
+    ext = (".m4a" if son else ".mp4") if (debut or duree) else (os.path.splitext(source)[1].lower() or ".mp4")
+    cible = os.path.join(d, _nom_fichier(nom, ext))
     k = 2
     while os.path.exists(cible):
-        cible = os.path.join(d, _nom_fichier(f"{nom} {k}", ".mp4"))
+        cible = os.path.join(d, _nom_fichier(f"{nom} {k}", ext))
         k += 1
     if debut or duree:
         args = ["-ss", f"{float(debut):.3f}", "-i", source] + (["-t", f"{float(duree):.3f}"] if duree else [])
-        moteur.lancer(args + ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k",
-                              "-movflags", "+faststart", cible])
+        video = [] if son else ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+        moteur.lancer(args + video + ["-c:a", "aac", "-b:a", "160k", cible])
     else:
         shutil.copy2(source, cible)
     info = moteur.sonder(cible)
     e = _entree(cible, nom, list(mots), "perso", info.get("duree") or duree or 0)
+    if info.get("genre") == "audio":
+        e["genre"] = "son"
     liste = charger(params)
     liste.append(e)
     enregistrer(params, liste)
@@ -630,6 +638,8 @@ def telecharger(params, r, progression=None, arret=lambda: False, duree_max=None
 
 def url_extrait(site, texte):
     """Page de recherche du site d'extraits pour ces mots (déjà en anglais)."""
+    if site in SONS_FILMS:                  # recherche web limitée au site : marche même si le site change ses adresses
+        return "https://duckduckgo.com/?q=" + urllib.parse.quote_plus(f"site:{SONS_FILMS[site][1]} {texte.strip()}")
     q = urllib.parse.quote_plus(texte.strip()) if site == "clipcafe" else urllib.parse.quote(texte.strip())
     return EXTRAITS[site][1].format(q=q)
 
