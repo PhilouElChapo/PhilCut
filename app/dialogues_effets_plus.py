@@ -60,7 +60,7 @@ class DialogueBruitages(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(_("Bruitages"))
-        self.resize(520, 420)
+        self.resize(640, 560)
         v = QVBoxLayout(self)
         aide = QLabel(_("Sons fabriqués sur ce poste, libres de droits. Cliquez pour écouter ; « Poser » le met à la ligne rouge, sur une "
                         "piste de son libre."))
@@ -72,13 +72,19 @@ class DialogueBruitages(QDialog):
             it.setData(Qt.UserRole, k)
             self.liste.addItem(it)
         self.liste.setCurrentRow(0)
+        self.liste.setWordWrap(True)
         self.liste.itemDoubleClicked.connect(lambda _it: self.accept())
+        self.liste.itemClicked.connect(lambda _it: self.ecouter())              # comme une table de sons : un clic, on entend
         v.addWidget(self.liste, 1)
         h = QHBoxLayout()
         self.b_ecoute = QPushButton(_("▶ Ecouter"))
         self.b_ecoute.clicked.connect(self.ecouter)
         h.addWidget(self.b_ecoute)
         h.addStretch(1)
+        b_plus = QPushButton(_("Plus de sons : mes sons, répliques, sons en ligne…"))
+        b_plus.setToolTip(_("La bibliothèque des tampons : vos propres sons, répliques de films, sons libres trouvés en ligne"))
+        b_plus.clicked.connect(self._plus)
+        h.addWidget(b_plus)
         v.addLayout(h)
         bb = boutons_fr(QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel))
         bb.button(QDialogButtonBox.Ok).setText(_("Poser à la ligne rouge"))
@@ -90,6 +96,12 @@ class DialogueBruitages(QDialog):
     def choix(self):
         it = self.liste.currentItem()
         return it.data(Qt.UserRole) if it else None
+
+    def _plus(self):
+        ed = self.parent()
+        self.reject()
+        if ed is not None and hasattr(ed, "tampons"):
+            ed.tampons()
 
     def ecouter(self):
         k = self.choix()

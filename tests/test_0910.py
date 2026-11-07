@@ -124,6 +124,31 @@ class Test0910(unittest.TestCase):
         self.assertLess(v.minimumSizeHint().width(), 280)            # rien ne déborde dans un volet étroit
         v.deleteLater()
 
+    def test_fenetre_de_choix(self):
+        from PySide6.QtWidgets import QMenu
+        from app.widgets import FenetreChoix
+        from app import bruitages as B
+        self.assertGreaterEqual(len(B.SONS), 25)                          # plus de bruitages
+        m = QMenu()
+        fait = []
+        m.addAction("Premier", lambda: fait.append(1))
+        m.addSeparator()
+        a = m.addAction("Coché", lambda: fait.append(2))
+        a.setCheckable(True)
+        a.setChecked(True)
+        a.setToolTip("Explication du choix")
+        m.addAction("Inactif").setEnabled(False)
+        d = FenetreChoix(None, m, "Essai")
+        textes = [d.liste.item(i).text() for i in range(d.liste.count())]
+        self.assertIn("✓ Coché", textes)
+        it = d.liste.item(textes.index("✓ Coché"))
+        d.liste.setCurrentItem(it)
+        self.assertEqual(d.detail.text(), "Explication du choix")
+        d._prendre(it)
+        d._choisie.trigger()
+        self.assertEqual(fait, [2])
+        d.deleteLater()
+
 
 if __name__ == "__main__":
     unittest.main()

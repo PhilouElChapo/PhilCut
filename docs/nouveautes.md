@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.14 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.15 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.15
+- Voix, Sous-titres, Musique, Cadrage, formes et modeles de logo : une vraie fenetre de choix (une ligne par choix, son explication, ✓ pour ce qui est deja en place) au lieu d'un petit menu sous la souris.
+- Bruitages : 29 sons au lieu de 8 (whoosh inverse, montee, descente, boum, tic-tac, buzzer, validation, notification, laser, roulement de tambour, cymbale, gong, sonnette, battement de coeur, boing, machine a ecrire, sifflet, vent, pluie, glitch, caisse enregistreuse...), un clic pour ecouter, et "Plus de sons" ouvre la bibliotheque des tampons (vos sons, repliques, sons en ligne).
 
 ### 0.9.14
 - YouTube : regarder et telecharger marchent a nouveau. YouTube oblige yt-dlp a utiliser Deno (petit programme libre, depot officiel) : PhilCut propose de l'installer (environ 45 Mo), aussi par "Mettre a jour yt-dlp".

@@ -306,7 +306,8 @@ class DialogueLogo(QDialog):
             m.addAction(lib, lambda k=k: self._ajouter(LG.forme(k, self.logo["largeur"] / 2, self.logo["hauteur"] / 2,
                                                                 min(self.logo["largeur"], self.logo["hauteur"]) * 0.6,
                                                                 min(self.logo["largeur"], self.logo["hauteur"]) * 0.6)))
-        m.exec(self.cursor().pos())
+        from .widgets import fenetre_choix
+        fenetre_choix(self, m, _("Ajouter une forme"))
 
     def _ajouter_image(self):
         from .widgets import ouvrir_fichier
@@ -370,7 +371,8 @@ class DialogueLogo(QDialog):
         for n, lg in LG.gabarits(self.logo.get("nom") or "PhilCut").items():
             px = QPixmap.fromImage(LG.rendre(lg, 96))
             m.addAction(px, n, lambda lg=lg: self._charger(dict(lg, nom=self.logo.get("nom") or lg["nom"])))
-        m.exec(self.cursor().pos())
+        from .widgets import fenetre_choix
+        fenetre_choix(self, m, _("Modèles de logo"), _("Un modèle de départ, à modifier ensuite (votre logo actuel est remplacé)."))
 
     def _mes_logos(self):
         m = QMenu(self)
@@ -379,7 +381,8 @@ class DialogueLogo(QDialog):
             m.addAction(_("Aucun logo enregistré pour l'instant")).setEnabled(False)
         for lg in mes:
             m.addAction(QPixmap.fromImage(LG.rendre(lg, 96)), lg.get("nom", "?"), lambda lg=lg: self._charger(lg))
-        m.exec(self.cursor().pos())
+        from .widgets import fenetre_choix
+        fenetre_choix(self, m, _("Mes logos"))
 
     def _idees_ia(self):
         from . import ia, dialogues_ia

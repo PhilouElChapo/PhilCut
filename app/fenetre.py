@@ -778,7 +778,8 @@ class Fenetre(QMainWindow):
         m.addAction(icone("musique"), _("Mes musiques (chercher, écouter, poser)…"), lambda: self.mes_musiques(ed))
         m.addAction(_("Bibliothèque musicale libre (chercher, écouter, télécharger)…"), lambda: self.bibliotheque_musicale(ed))
         m.addAction(_("Créer une musique par IA (sur ce poste)…"), lambda: ed.atelier_ia("musique"))
-        m.exec(self.cursor().pos())
+        from .widgets import fenetre_choix
+        fenetre_choix(self, m, _("Musique"), _("D'où vient la musique ? Elle est posée sur la piste Musique, sous la vidéo."))
 
     def mes_musiques(self, ed=None):
         """Mon dossier de musiques et les musiques libres téléchargées, dans une fenêtre (recherche, classement, écoute)."""
@@ -825,7 +826,8 @@ class Fenetre(QMainWindow):
         m.setToolTipsVisible(True)
         if ed.projet.d.get("sous_titres"):
             m.addAction(_("Retirer les sous-titres"), lambda: (ed.projet.marquer(), ed.projet.d.__setitem__("sous_titres", []), ed.rafraichir()))
-        m.exec(self.cursor().pos())
+        from .widgets import fenetre_choix
+        fenetre_choix(self, m, _("Sous-titres"), _("Les paroles du film écrites à l'image, sur ce poste (rien n'est envoyé)."))
 
     def _importer_srt(self, ed):
         from . import titres
@@ -866,7 +868,8 @@ class Fenetre(QMainWindow):
         if not c:
             m.addSeparator()
             m.addAction(_("(choisissez un plan pour retoucher sa voix)")).setEnabled(False)
-            m.exec(self.cursor().pos())
+            from .widgets import fenetre_choix
+            fenetre_choix(self, m, _("Voix"), _("Voix off, voix de synthèse, doublage ; cliquez d'abord un plan pour retoucher sa voix."))
             return
         m.addSeparator()
         for eid, lib in VOIX:
@@ -879,7 +882,9 @@ class Fenetre(QMainWindow):
         a = m.addAction(_("Muet"), lambda: (ed.projet.marquer(), c.__setitem__("muet", not c.get("muet")), ed.rafraichir()))
         a.setCheckable(True)
         a.setChecked(bool(c.get("muet")))
-        m.exec(self.cursor().pos())
+        from .widgets import fenetre_choix
+        fenetre_choix(self, m, _("Voix de « {n} »", n=c.get("nom", "")), _("Voix off, synthèse, doublage, ou une retouche de la voix de ce "
+                                                                        "plan (✓ : déjà appliquée ; la choisir à nouveau la retire)."))
 
     # ---------------------------------------------------------------- voix off, synthèse, doublage
     def _poser_voix(self, ed, chemin, debut, effets=()):

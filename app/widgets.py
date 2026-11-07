@@ -443,3 +443,95 @@ def ouvrir_fichiers(parent, titre, filtre, genre="videos", params=None):
     if ps:
         retenir_dossier(parent, genre, ps[0], params)
     return ps
+
+
+# ---------------------------------------------------------------------- menu → vraie fenêtre de choix (0.9.15)
+class FenetreChoix(QDialog):
+    """Les choix d'un outil (Voix, Sous-titres, Musique, Cadrage…) dans une vraie fenêtre : une ligne par choix,
+    son explication dessous, les groupes séparés, ce qui est déjà en place coché ✓. Clic pour voir l'explication,
+    double-clic ou « OK » pour le faire. Remplace les petits menus qui s'ouvraient sous la souris."""
+
+    def __init__(self, parent, menu, titre, intro=""):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QLabel
+        self.setWindowTitle(titre)
+        self.resize(640, 480)
+        self._choisie = None
+        v = QVBoxLayout(self)
+        if intro:
+            lb = QLabel(intro)
+            lb.setWordWrap(True)
+            v.addWidget(lb)
+        self.liste = QListWidget()
+        self.liste.setWordWrap(True)
+        self.liste.setIconSize(QSize(48, 48))
+        self.liste.setSpacing(2)
+        self.liste.setStyleSheet("QListWidget::item{padding:6px}")
+        for a in menu.actions():
+            if a.isSeparator():
+                it = QListWidgetItem("")
+                it.setFlags(Qt.NoItemFlags)
+                it.setSizeHint(QSize(10, 8))
+                self.liste.addItem(it)
+                continue
+            if a.menu() is not None:                       # sous-menu : ses choix suivent, sous son titre
+                tete = QListWidgetItem(a.text().replace("&", ""))
+                tete.setFlags(Qt.NoItemFlags)
+                f = tete.font()
+                f.setBold(True)
+                tete.setFont(f)
+                self.liste.addItem(tete)
+                for b in a.menu().actions():
+                    if not b.isSeparator():
+                        self._ajouter(b, "    ")
+                continue
+            self._ajouter(a)
+        self.liste.itemDoubleClicked.connect(lambda it: self._prendre(it))
+        v.addWidget(self.liste, 1)
+        self.detail = QLabel("")
+        self.detail.setWordWrap(True)
+        self.detail.setStyleSheet("color:#9aa4b2")
+        v.addWidget(self.detail)
+        self.liste.currentItemChanged.connect(lambda it, _p: self.detail.setText((it.data(Qt.UserRole + 1) or "") if it else ""))
+        bb = boutons_fr(QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel))
+        bb.button(QDialogButtonBox.Ok).setText(_("Faire"))
+        bb.accepted.connect(lambda: self._prendre(self.liste.currentItem()))
+        bb.rejected.connect(self.reject)
+        v.addWidget(bb)
+        for i in range(self.liste.count()):                 # le premier choix possible est présélectionné
+            if self.liste.item(i).flags() & Qt.ItemIsEnabled:
+                self.liste.setCurrentRow(i)
+                break
+
+    def _ajouter(self, a, retrait=""):
+        texte = a.text().replace("&", "")
+        if a.isCheckable() and a.isChecked():
+            texte = "✓ " + texte
+        it = QListWidgetItem(retrait + texte)
+        if not a.icon().isNull():
+            it.setIcon(a.icon())
+        aide = a.toolTip() if a.toolTip() and a.toolTip() != a.text().replace("&", "") else (a.statusTip() or "")
+        it.setData(Qt.UserRole, a)
+        it.setData(Qt.UserRole + 1, aide)
+        if aide:
+            it.setToolTip(aide)
+        if not a.isEnabled():
+            it.setFlags(Qt.NoItemFlags)
+        self.liste.addItem(it)
+
+    def _prendre(self, it):
+        if it is None or not (it.flags() & Qt.ItemIsEnabled):
+            return
+        self._choisie = it.data(Qt.UserRole)
+        self.accept()
+
+    def faire(self):
+        if self.exec() == QDialog.Accepted and self._choisie is not None:
+            self._choisie.trigger()
+            return True
+        return False
+
+
+def fenetre_choix(parent, menu, titre, intro=""):
+    """Affiche les choix du menu dans une fenêtre ; déclenche celui qui est choisi."""
+    return FenetreChoix(parent, menu, titre, intro).faire()

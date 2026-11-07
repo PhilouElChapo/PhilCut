@@ -1764,7 +1764,9 @@ class Editeur(QWidget):
             a.setChecked(c.get("ajustement", "remplir") == mode)
         m.addSeparator()
         m.addAction(_("Suivre la personne (recadrage automatique)…"), lambda: self.recadrer_suivi(c))
-        m.exec(self.cursor().pos())
+        from .widgets import fenetre_choix
+        fenetre_choix(self, m, _("Cadrage de « {n} »", n=c.get("nom", "")), _("Comment le plan remplit l'image quand il n'a pas le format "
+                                                                            "du projet (✓ : réglage actuel)."))
 
     def _zone_changee(self):
         z = self.timeline.zone_valide()
