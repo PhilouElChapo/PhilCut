@@ -82,7 +82,7 @@ class TestInterface030(unittest.TestCase):
     def tearDownClass(cls):
         cls.ed.projet.modifie = False
         cls.f.attendre_taches()
-        cls.f.close()
+        cls.f.hide()                     # pas de close() : la destruction en vrac à l'arrêt plantait parfois (code 139 en CI)
         app.processEvents()
 
     def test_etiquettes_et_transition_dessinees(self):
