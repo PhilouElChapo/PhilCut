@@ -207,7 +207,12 @@ class Test060(unittest.TestCase):
             time.sleep(0.05)
         for _i in range(20):
             app.processEvents()
+        self.assertTrue(dl.apercu_media.isVisible() or not dl.apercu_media.isHidden())      # 0.9.15 : on regarde avant de poser
+        self.assertEqual([c for c in ed.projet.clips if c["piste"] != "video"], [])
+        dl.apercu_media.debut.setValue(0.2)
+        dl._poser_clip()
         au_dessus = [c for c in ed.projet.clips if c["piste"] != "video"]
+        self.assertAlmostEqual(au_dessus[0]["src_debut"], 0.2, places=2)
         self.assertEqual(len(au_dessus), 1, dl.info.text())
         self.assertEqual(au_dessus[0]["incrust"]["echelle"], 1.0)
         # image retouchée par la phrase (faux moteur), puis insérée à la tête de lecture
@@ -260,6 +265,15 @@ class Test060(unittest.TestCase):
         self.assertTrue(any("2/2" in t for t in vus), vus)                  # étapes nommées
         self.assertTrue(dl.barre.isHidden())
         self.assertIn(_txt("Musique créée"), dl.info.text())
+        n = len(ed.projet.clips)                                            # rien n'est posé avant d'avoir écouté
+        dl.apercu_media.fin.setValue(1.0)
+        dl._poser_musique()
+        attendre_import = time.time()
+        while len(ed.projet.clips) == n and time.time() - attendre_import < 30:
+            app.processEvents()
+            time.sleep(0.05)
+        musique = [c for c in ed.projet.clips if c["piste"].startswith("audio")][-1]
+        self.assertAlmostEqual(musique["src_fin"], 1.0, places=1)
         # intraduisible sans réseau : rien n'est lancé, on demande l'anglais
         dl.prompt.setPlainText("chanson rigolote pour mon anniversaire")
         dl.creer()

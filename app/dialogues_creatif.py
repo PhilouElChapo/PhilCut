@@ -120,6 +120,8 @@ class DialogueAtelierIA(QDialog):
         self.info.setWordWrap(True)
         self.info.setTextInteractionFlags(Qt.TextSelectableByMouse)
         vd.addWidget(self.info)
+        self.apercu_media = ApercuCreation(self)          # musique, clip : écouter / regarder et garder le morceau avant de poser
+        vd.addWidget(self.apercu_media)
         # avancement de l'IA, visible dans la fenêtre (en plus de la barre du bas et du Centre d'activité)
         self.etape = QLabel("")
         self.etape.setWordWrap(True)
@@ -333,6 +335,9 @@ class DialogueAtelierIA(QDialog):
             return
         if hasattr(self, "diagnostic"):
             self.diagnostic.hide()
+        if hasattr(self, "apercu_media"):
+            self.apercu_media.arreter()
+            self.apercu_media.hide()
         ok, manque = EI.disponible(e, self.ed.params)
         if not ok:
             self.info.setText("⚠ " + manque)
@@ -497,16 +502,44 @@ class DialogueAtelierIA(QDialog):
             self._action(_("Logo dans la Fabrique…"), lambda: self.ed.window().fabrique(image=self.resultat))
             self._action(_("Enregistrer en JPG (miniature)…"), self._enregistrer_jpg)
         elif e["famille"] == "musique":
-            self.info.setText(_("Musique créée et posée sur la piste Musique."))
-            self.ed._piste_depot = ("audio", 0.0, {"volume": 0.8, "fondu_entree": 1.5, "fondu_sortie": 3.0, "_couper_fin": True})
-            self.ed.importer([self.resultat])
+            # rien n'est posé tant que l'utilisateur n'a pas écouté et choisi
+            self.info.setText(_("Musique créée. Écoutez-la, gardez le morceau voulu, puis choisissez :"))
+            self.apercu_media.charger(self.resultat, video=False)
+            self._action(_("Poser sous la vidéo (piste Musique)"), self._poser_musique)
+            self._action(_("Poser à la ligne rouge"), lambda: self._poser_musique(self.ed.timeline.position))
+            self._action(_("Ajouter aux médias seulement"), lambda: (self.ed.importer([self.resultat]),
+                                                                    self.info.setText(_("Ajoutée aux médias du projet."))))
+            self._action(_("Recréer (une autre version)"), self.creer)
         else:
             png = moteur.image(self.resultat, 0.5, 360)
             px = QPixmap()
             px.loadFromData(png)
             self.img_resultat.setPixmap(px.scaled(360, 203, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            self.ed.poser_au_dessus(self.resultat, self._pose or 0.0, e["nom"])
-            self.info.setText(_("Clip créé et posé au-dessus, sur la piste Vidéo 2 : supprimez-le pour revenir à l'original."))
+            self.info.setText(_("Clip créé. Regardez-le, gardez le morceau voulu, puis choisissez :"))
+            self.apercu_media.charger(self.resultat, video=True)
+            self._action(_("Poser au-dessus du film"), self._poser_clip)
+            self._action(_("Ajouter aux médias seulement"), lambda: (self.ed.importer([self.resultat]),
+                                                                    self.info.setText(_("Ajouté aux médias du projet."))))
+            self._action(_("Recréer"), self.creer)
+
+    def _poser_musique(self, debut=0.0):
+        r = self.apercu_media.reglages()
+        self.apercu_media.arreter()
+        reg = dict(r, volume=0.8, _couper_fin=True)
+        self.ed._piste_depot = ("audio", float(debut or 0.0), reg)
+        self.ed.importer([self.resultat])
+        self.info.setText(_("Morceau posé ({d:.1f} s) sur la piste Musique : réglez-le ensuite dans l'Inspecteur.",
+                            d=r["src_fin"] - r["src_debut"]))
+
+    def _poser_clip(self):
+        r = self.apercu_media.reglages()
+        self.apercu_media.arreter()
+        ci = self.ed.poser_au_dessus(self.resultat, self._pose or 0.0, self.effet()["nom"] if self.effet() else "",
+                                     r["src_fin"] - r["src_debut"])
+        if ci is not None:
+            ci["src_debut"], ci["src_fin"] = r["src_debut"], r["src_fin"]
+            self.ed.rafraichir()
+        self.info.setText(_("Clip posé au-dessus, sur une piste vidéo du dessus : supprimez-le pour revenir à l'original."))
 
     def _ouvrir(self, chemin):
         import pathlib, webbrowser
@@ -521,6 +554,8 @@ class DialogueAtelierIA(QDialog):
             self.info.setText(_("Miniature enregistrée."))
 
     def done(self, r):
+        if hasattr(self, "apercu_media"):
+            self.apercu_media.arreter()
         if self.tache is not None and self.tache.isRunning():
             self.info.setText(_("La création continue en tâche de fond ; le résultat arrivera dans le projet."))
         super().done(r)
@@ -528,3 +563,161 @@ class DialogueAtelierIA(QDialog):
 
 def _tc(t):
     return f"{int(t // 60)}:{t % 60:04.1f}"
+
+
+class ApercuCreation(QWidget):
+    """Ecouter ou regarder ce que l'IA vient de créer, et garder seulement le morceau voulu, AVANT de le poser :
+    lecture / pause, curseur, « Début ici » et « Fin ici », fondus. Le fichier créé n'est jamais modifié : le plan posé
+    commence et finit où l'on a dit."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QSlider, QDoubleSpinBox
+        self.chemin, self.duree, self.lecteur, self.video = None, 0.0, None, None
+        v = QVBoxLayout(self)
+        v.setContentsMargins(0, 0, 0, 0)
+        self.titre = QLabel("")
+        self.titre.setStyleSheet("font-weight:600")
+        v.addWidget(self.titre)
+        self.zone_video = QWidget()
+        self.zone_video.setFixedHeight(240)
+        self.zone_video.setStyleSheet("background:#000;border-radius:6px")
+        QVBoxLayout(self.zone_video).setContentsMargins(0, 0, 0, 0)
+        v.addWidget(self.zone_video)
+        self.curseur = QSlider(Qt.Horizontal)
+        self.curseur.setRange(0, 1000)
+        self.curseur.sliderMoved.connect(lambda x: self.lecteur and self.lecteur.setPosition(x * 100))
+        v.addWidget(self.curseur)
+        h = QHBoxLayout()
+        self.b_lire = QPushButton("▶ " + _("Écouter"))
+        self.b_lire.clicked.connect(self.basculer)
+        h.addWidget(self.b_lire)
+        self.temps = QLabel("0:00")
+        h.addWidget(self.temps)
+        h.addStretch(1)
+        b = QPushButton("[ " + _("Début ici"))
+        b.setToolTip(_("Le morceau gardé commence à l'endroit écouté"))
+        b.clicked.connect(lambda: self.debut.setValue(self.position()))
+        h.addWidget(b)
+        b = QPushButton(_("Fin ici") + " ]")
+        b.setToolTip(_("Le morceau gardé s'arrête à l'endroit écouté"))
+        b.clicked.connect(lambda: self.fin.setValue(self.position()))
+        h.addWidget(b)
+        v.addLayout(h)
+        h2 = QHBoxLayout()
+        h2.addWidget(QLabel(_("Garder de")))
+        self.debut = QDoubleSpinBox()
+        self.debut.setSuffix(" s")
+        self.debut.setDecimals(1)
+        h2.addWidget(self.debut)
+        h2.addWidget(QLabel(_("à")))
+        self.fin = QDoubleSpinBox()
+        self.fin.setSuffix(" s")
+        self.fin.setDecimals(1)
+        h2.addWidget(self.fin)
+        self.fondu_e = QCheckBox(_("Fondu au début"))
+        self.fondu_e.setChecked(True)
+        h2.addWidget(self.fondu_e)
+        self.fondu_s = QCheckBox(_("Fondu à la fin"))
+        self.fondu_s.setChecked(True)
+        h2.addWidget(self.fondu_s)
+        h2.addStretch(1)
+        v.addLayout(h2)
+        self.resume = QLabel("")
+        self.resume.setStyleSheet("color:#9aa4b2")
+        v.addWidget(self.resume)
+        for w in (self.debut, self.fin):
+            w.valueChanged.connect(self._maj)
+        self._tic = QTimer(self)
+        self._tic.setInterval(100)
+        self._tic.timeout.connect(self._boucle)
+        self.hide()
+
+    def charger(self, chemin, video=False):
+        self.chemin = chemin
+        self.duree = float((moteur.sonder(chemin) or {}).get("duree") or 0) or 1.0
+        for w, val in ((self.debut, 0.0), (self.fin, self.duree)):
+            w.blockSignals(True)
+            w.setRange(0.0, self.duree)
+            w.setValue(val)
+            w.blockSignals(False)
+        self.titre.setText(_("Écoutez, gardez le morceau voulu, puis posez-le :") if not video else
+                           _("Regardez, gardez le morceau voulu, puis posez-le :"))
+        self.zone_video.setVisible(video)
+        self.b_lire.setText("▶ " + (_("Regarder") if video else _("Écouter")))
+        self.fondu_e.setVisible(not video)
+        self.fondu_s.setVisible(not video)
+        self._maj()
+        self.show()
+        if os.environ.get("QT_QPA_PLATFORM") == "offscreen":       # tests automatiques : pas de lecture réelle
+            return
+        try:
+            from PySide6.QtCore import QUrl
+            from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+        except ImportError:
+            return
+        if self.lecteur is None:
+            self.lecteur = QMediaPlayer(self)
+            self.sortie = QAudioOutput(self)
+            self.lecteur.setAudioOutput(self.sortie)
+            self.lecteur.positionChanged.connect(self._position)
+        if video and self.video is None:
+            from PySide6.QtMultimediaWidgets import QVideoWidget
+            self.video = QVideoWidget()
+            self.zone_video.layout().addWidget(self.video)
+        self.lecteur.setVideoOutput(self.video if video else None)
+        self.lecteur.setSource(QUrl.fromLocalFile(chemin))
+
+    def position(self):
+        return round((self.lecteur.position() / 1000.0) if self.lecteur is not None else self.curseur.value() * self.duree / 1000.0, 1)
+
+    def _position(self, ms):
+        if not self.curseur.isSliderDown():
+            self.curseur.setRange(0, int(self.duree * 10))
+            self.curseur.setValue(int(ms / 100))
+        s_ = ms / 1000.0
+        self.temps.setText(f"{int(s_ // 60)}:{int(s_ % 60):02d}")
+
+    def basculer(self):
+        if self.lecteur is None:
+            return
+        from PySide6.QtMultimedia import QMediaPlayer
+        if self.lecteur.playbackState() == QMediaPlayer.PlayingState:
+            self.lecteur.pause()
+            self._tic.stop()
+            self.b_lire.setText("▶ " + _("Reprendre"))
+        else:
+            if not (self.debut.value() <= self.position() < self.fin.value()):
+                self.lecteur.setPosition(int(self.debut.value() * 1000))
+            self.lecteur.play()
+            self._tic.start()
+            self.b_lire.setText("❚❚ " + _("Pause"))
+
+    def _boucle(self):
+        if self.lecteur is not None and self.position() >= self.fin.value():     # on n'entend que le morceau gardé
+            self.lecteur.pause()
+            self._tic.stop()
+            self.lecteur.setPosition(int(self.debut.value() * 1000))
+            self.b_lire.setText("▶ " + _("Réécouter le morceau"))
+
+    def _maj(self):
+        if self.fin.value() <= self.debut.value() + 0.5:
+            self.fin.blockSignals(True)
+            self.fin.setValue(min(self.duree, self.debut.value() + 0.5))
+            self.fin.blockSignals(False)
+        d = self.fin.value() - self.debut.value()
+        self.resume.setText(_("Morceau gardé : {d:.1f} s sur {t:.1f} s.", d=d, t=self.duree))
+
+    def reglages(self):
+        """Réglages du plan à poser : début et fin dans le fichier, fondus."""
+        r = {"src_debut": round(self.debut.value(), 2), "src_fin": round(self.fin.value(), 2)}
+        if self.fondu_e.isVisible() or not self.zone_video.isVisible():
+            d = self.fin.value() - self.debut.value()
+            r["fondu_entree"] = min(1.5, d / 4) if self.fondu_e.isChecked() else 0.0
+            r["fondu_sortie"] = min(3.0, d / 3) if self.fondu_s.isChecked() else 0.0
+        return r
+
+    def arreter(self):
+        if self.lecteur is not None:
+            self.lecteur.stop()
+        self._tic.stop()

@@ -424,9 +424,20 @@ class Apercu(QGraphicsView):
         x = max(0.0, min(1.0, float(c.get("cadre_x", 0.5)))) if mode == "remplir" else 0.5      # partie gardée en largeur
         self.video.setPos((L - w) * x, (H - h) / 2)
 
+    def _sons_du_projet(self):
+        """Un lecteur par piste de son du projet : M1, M2, M3… et la voix off (les pistes ajoutées s'entendent aussi)."""
+        if not self.sons:
+            return
+        for piste in list(self.projet.pistes_audio()) + ["voix"]:
+            if piste not in self.sons:
+                lp, so = QMediaPlayer(self), QAudioOutput(self)
+                lp.setAudioOutput(so)
+                self.sons[piste] = {"lecteur": lp, "sortie": so, "clip": None, "source": None}
+
     def _placer_audio(self):
         if not self.projet or not self.sons:
             return
+        self._sons_du_projet()
         if self.segment and self.clip and self.clip.get("id") == "__rendu__":
             for sp in self.sons.values():
                 sp["lecteur"].pause()
@@ -449,7 +460,7 @@ class Apercu(QGraphicsView):
                 sp["clip"] = c
                 lp.setPlaybackRate(float(c.get("vitesse", 1.0)))
             coupe = c.get("muet") or self.muet_general or piste in self.pistes_muettes or self.projet.piste_muette(piste)
-            so.setVolume(0.0 if coupe else min(1.0, float(c.get("volume", 1.0)) * (0.8 if piste == "audio" else 1.0)))
+            so.setVolume(0.0 if coupe else min(1.0, float(c.get("volume", 1.0)) * (0.8 if piste.startswith("audio") else 1.0)))
             if abs(lp.position() - pos_ms) > 120 or not self.en_lecture:
                 lp.setPosition(pos_ms)
             if self.en_lecture:
