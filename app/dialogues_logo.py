@@ -309,7 +309,8 @@ class DialogueLogo(QDialog):
         m.exec(self.cursor().pos())
 
     def _ajouter_image(self):
-        p, _f = QFileDialog.getOpenFileName(self, _("Image"), "", "Images (*.png *.jpg *.jpeg *.webp *.svg)")
+        from .widgets import ouvrir_fichier
+        p = ouvrir_fichier(self, _("Image"), "Images (*.png *.jpg *.jpeg *.webp *.svg)", "images")
         if p:
             q = QImage(p)
             e = min(self.logo["largeur"] * 0.6 / max(1, q.width()), self.logo["hauteur"] * 0.6 / max(1, q.height()))

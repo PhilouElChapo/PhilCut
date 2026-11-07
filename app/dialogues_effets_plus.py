@@ -132,7 +132,12 @@ class GalerieGoodies(QDialog):
         self.famille.setCurrentIndex(max(0, i))
         h = QHBoxLayout()
         h.addWidget(self.famille, 1)
+        b_tdb = QPushButton(_("Tableau de bord complet…"))
+        b_tdb.setToolTip(_("Plusieurs instruments posés ensemble (altimètre, vitesse, cap…) avec un profil de vol réglable"))
+        b_tdb.clicked.connect(lambda: (setattr(self, "_choix_special", "tableau_de_bord"), self.accept()))
+        h.addWidget(b_tdb)
         v.addLayout(h)
+        self._choix_special = None
         self.liste = QListWidget()
         self.liste.setViewMode(QListView.IconMode)
         self.liste.setIconSize(QSize(96, 96))
@@ -191,5 +196,7 @@ class GalerieGoodies(QDialog):
         self.liste.setCurrentRow(0)
 
     def choix(self):
+        if getattr(self, "_choix_special", None):
+            return self._choix_special
         it = self.liste.currentItem()
         return it.data(Qt.UserRole) if it else None

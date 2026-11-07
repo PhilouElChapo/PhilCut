@@ -722,7 +722,8 @@ class DialogueGoodie(QDialog):
         super().done(r)
 
     def _choisir_image(self):
-        p, _f = QFileDialog.getOpenFileName(self, _("Image ou logo"), "", "Images (*.png *.jpg *.jpeg *.webp *.svg)")
+        from .widgets import ouvrir_fichier
+        p = ouvrir_fichier(self, _("Image ou logo"), "Images (*.png *.jpg *.jpeg *.webp *.svg)", "images")
         if p:
             self.chemin_image.setText(p)
             self.genre.setCurrentIndex(max(0, self.genre.findData("image")))
@@ -749,7 +750,8 @@ class DialogueGoodie(QDialog):
             self.chemin_image.setText(r)
 
     def _gpx(self):
-        p, _f = QFileDialog.getOpenFileName(self, _("Trace GPX"), "", "GPX (*.gpx)")
+        from .widgets import ouvrir_fichier
+        p = ouvrir_fichier(self, _("Trace GPX"), "GPX (*.gpx)", "documents")
         if not p:
             return
         pts = GO.depuis_gpx(p)
@@ -1214,7 +1216,8 @@ class DialogueFabrique(QDialog):
                     self.grand.setPixmap(imgs[j])
 
     def _image(self):
-        p, _f = QFileDialog.getOpenFileName(self, _("Image du logo"), "", "Images (*.png *.svg *.jpg *.jpeg)")
+        from .widgets import ouvrir_fichier
+        p = ouvrir_fichier(self, _("Image du logo"), "Images (*.png *.svg *.jpg *.jpeg)", "images")
         if p:
             self.image.setText(p)
 

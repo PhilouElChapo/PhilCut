@@ -5415,5 +5415,15 @@
  "Le modèle {n} manque dans le moteur d'agrandissement (dossier « models ») : réinstallez le moteur.": "Falta el modelo {n} en el motor de ampliación (carpeta « models »): reinstale el motor.",
  "Les modèles du moteur manquent": "Faltan los modelos del motor",
  "Le moteur démarre mais ne trouve pas ses modèles (dossier « models ») : l'archive installée était incomplète. La carte graphique et le pilote ne sont pas en cause. Réinstallez le moteur : la version corrigée, avec ses modèles, est téléchargée.": "El motor arranca pero no encuentra sus modelos (carpeta « models »): el archivo instalado estaba incompleto. La tarjeta gráfica y el controlador no son la causa. Reinstale el motor: se descarga la versión corregida, con sus modelos.",
- "En attente du test…": "Esperando la prueba…"
+ "En attente du test…": "Esperando la prueba…",
+ "Goodies (instruments, carte du trajet, vent, compteurs…)…": "Goodies (instrumentos, mapa del trayecto, viento, contadores…)…",
+ "Tableau de bord complet…": "Tablero de instrumentos completo…",
+ "Plusieurs instruments posés ensemble (altimètre, vitesse, cap…) avec un profil de vol réglable": "Varios instrumentos juntos (altímetro, velocidad, rumbo…) con un perfil de vuelo ajustable",
+ "{v} vidéo(s) et {s} Short(s), les Shorts à la fin. ": "{v} vídeo(s) y {s} Short(s), los Shorts al final. ",
+ "Installation de Deno…": "Instalando Deno…",
+ "Installer Deno": "Instalar Deno",
+ "Pour lire et télécharger les vidéos YouTube, yt-dlp a maintenant besoin de Deno, un petit programme libre (dépôt officiel github.com/denoland, environ 45 Mo), rangé dans le dossier de PhilCut. L'installer ?": "Para ver y descargar vídeos de YouTube, yt-dlp necesita ahora Deno, un pequeño programa libre (repositorio oficial github.com/denoland, unos 45 MB), guardado en la carpeta de PhilCut. ¿Instalarlo?",
+ "✓ Deno installé : vous pouvez regarder et télécharger les vidéos YouTube.": "✓ Deno instalado: puede ver y descargar vídeos de YouTube.",
+ "Installation de Deno (lecteur de YouTube)…": "Instalando Deno (lector de YouTube)…",
+ "YouTube demande maintenant un petit programme complémentaire (Deno) pour lire ses vidéos : cliquez « Mettre à jour yt-dlp », qui l'installe aussi (programme officiel, environ 45 Mo), puis réessayez.": "YouTube exige ahora un pequeño programa adicional (Deno) para leer sus vídeos: pulse « Actualizar yt-dlp », que también lo instala (programa oficial, unos 45 MB), y vuelva a intentarlo."
 }

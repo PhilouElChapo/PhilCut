@@ -4,10 +4,18 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.13 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.14 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.14
+- YouTube : regarder et telecharger marchent a nouveau. YouTube oblige yt-dlp a utiliser Deno (petit programme libre, depot officiel) : PhilCut propose de l'installer (environ 45 Mo), aussi par "Mettre a jour yt-dlp".
+- "Videos et Shorts" : les Shorts sont cherches a part (la recherche simple de YouTube n'en renvoie presque pas) et places a la fin ; toutes les vignettes ont la meme taille, le nombre annonce est celui affiche ("30 video(s) et 15 Short(s)").
+- Choisir une image, une video, un son : la premiere fois le dossier du systeme (Images, Videos...), ensuite le dernier dossier utilise pour ce genre (Fabrique, Goodies, logo, rushes, tampons, sous-titres...).
+- Volet Proposition : rien ne deborde quand on le retrecit (boutons et listes suivent sa largeur).
+- Musique IA : le moteur Windows refait avec Visual C++ est en ligne (Reinstaller le moteur).
 
 ### 0.9.13 : test des modeles plus clair
 - "Tester ce modele" efface tout de suite l'ancien resultat : "Test en cours..." avec sa barre d'avancement, puis le nouveau resultat (ou l'ancien remis si le test est arrete). Le cadre d'aide grandit avec son texte, les boutons restent a leur place.
+- Tableau de bord, carte du trajet et manche a air ne sont plus dans le menu Montage ni dans le clic droit : ils sont dans les Goodies (bouton "Tableau de bord complet..." pour plusieurs instruments ensemble).
 - Moteur de musique Windows : la fabrication avec Visual C++ est reparee (Visual Studio du serveur trouve automatiquement).
 
 ### 0.9.12 : musique IA reparee

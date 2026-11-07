@@ -180,11 +180,6 @@ class Fenetre(QMainWindow):
             o = O.outil(oid)
             mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
             # outils voisins, rangés avec leur famille (plus de menu à part)
-            if oid == "goodies":
-                act(icone("goodies"), _("Tableau de bord d'instruments…"), _("Altimètre, vitesse, cap… posés dans l'image, avec un profil réglable"),
-                    lambda: self._ed(lambda ed: ed.tableau_de_bord()))
-                act(None, _("Carte animée du trajet…"), _("Le trajet qui se dessine sur une carte, et une mini-carte GPS"), lambda: self._ed(lambda ed: ed.trajet()))
-                act(None, _("Manche à air (vent)…"), _("Indicateur de la force et de la direction du vent"), lambda: self._ed(lambda ed: ed.manche_air()))
         act(None, _("Figer l'image…"), _("Le film s'arrête sur l'image de la ligne rouge, avec un cadre photo et une légende, puis reprend"),
             lambda: self._ed(lambda ed: ed.figer_image()))
         sm_ia = mo.addMenu(icone("assistant"), _("Atelier IA (sur ce poste)"))
@@ -834,7 +829,8 @@ class Fenetre(QMainWindow):
 
     def _importer_srt(self, ed):
         from . import titres
-        p, _f = QFileDialog.getOpenFileName(self, _("Sous-titres"), "", "SRT (*.srt)")
+        from .widgets import ouvrir_fichier
+        p = ouvrir_fichier(self, _("Sous-titres"), "SRT (*.srt)", "documents", self.params)
         if p:
             with open(p, encoding="utf-8", errors="replace") as f:
                 ed.projet.marquer()
@@ -1208,7 +1204,8 @@ class Fenetre(QMainWindow):
 
     def importer_reglages(self):
         from . import reglages
-        p, _f = QFileDialog.getOpenFileName(self, _("Importer des préférences"), "", _("Préférences PhilCut") + " (*.json *.philcutprefs)")
+        from .widgets import ouvrir_fichier
+        p = ouvrir_fichier(self, _("Importer des préférences"), _("Préférences PhilCut") + " (*.json *.philcutprefs)", "documents", self.params)
         if not p:
             return
         phrase = None

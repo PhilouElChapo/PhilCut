@@ -1,5 +1,6 @@
 """Petits composants communs (repris de PhilCut) : disposition en flux, liste ordonnable, boutons en francais,
 icone oeil des mots de passe, saisie d'un secret."""
+import os
 from PySide6.QtCore import Qt, QRect, QSize, QPoint, QObject, QEvent, QTimer, Signal
 from PySide6.QtGui import QIcon, QAction, QColor, QPainter
 from PySide6.QtWidgets import (QLayout, QWidget, QListWidget, QListWidgetItem, QDialog, QDialogButtonBox, QVBoxLayout,
@@ -382,3 +383,63 @@ def page_a_largeur(zone):
             if not lbl.pixmap() or lbl.pixmap().isNull():
                 lbl.setWordWrap(True)
     return zone
+
+
+# ---------------------------------------------------------------------- choisir un fichier (0.9.14)
+# Règle : la première fois, le dossier du système qui va avec (Images, Vidéos, Musique, Téléchargements, Documents) ;
+# ensuite, le dernier dossier où l'utilisateur a pris un fichier de ce genre (retenu dans les réglages de ce poste).
+CLEFS_DOSSIER = {"images": "dossier_images", "videos": "dossier_rushes", "musique": "dossier_musique_import",
+                 "telechargements": "dossier_telechargements", "documents": "dossier_documents"}
+
+
+def _params_de(parent):
+    w = parent
+    while w is not None:
+        for nom in ("params",):
+            p = getattr(w, nom, None)
+            if p is not None and hasattr(p, "get"):
+                return p
+        ed = getattr(w, "ed", None)
+        if ed is not None and hasattr(getattr(ed, "params", None), "get"):
+            return ed.params
+        w = w.parent() if hasattr(w, "parent") else None
+    try:
+        from .config import Parametres
+        return Parametres()
+    except Exception:      # noqa: BLE001
+        return {}
+
+
+def dossier_depart(parent, genre, params=None):
+    from .session import dossier_systeme
+    p = params if params is not None else _params_de(parent)
+    d = p.get(CLEFS_DOSSIER.get(genre, "dossier_" + genre)) if p is not None else ""
+    return d if d and os.path.isdir(d) else dossier_systeme(genre if genre != "telechargements" else "telechargements")
+
+
+def retenir_dossier(parent, genre, chemin, params=None):
+    p = params if params is not None else _params_de(parent)
+    if p is None or not chemin:
+        return
+    p[CLEFS_DOSSIER.get(genre, "dossier_" + genre)] = os.path.dirname(chemin) if os.path.isfile(chemin) else chemin
+    try:
+        p.enregistrer()
+    except AttributeError:
+        pass
+
+
+def ouvrir_fichier(parent, titre, filtre, genre="images", params=None):
+    """Un fichier ; part du dossier du système (Images…) puis du dernier dossier utilisé pour ce genre."""
+    from PySide6.QtWidgets import QFileDialog
+    p, _f = QFileDialog.getOpenFileName(parent, titre, dossier_depart(parent, genre, params), filtre)
+    if p:
+        retenir_dossier(parent, genre, p, params)
+    return p
+
+
+def ouvrir_fichiers(parent, titre, filtre, genre="videos", params=None):
+    from PySide6.QtWidgets import QFileDialog
+    ps, _f = QFileDialog.getOpenFileNames(parent, titre, dossier_depart(parent, genre, params), filtre)
+    if ps:
+        retenir_dossier(parent, genre, ps[0], params)
+    return ps

@@ -97,6 +97,33 @@ class Test0910(unittest.TestCase):
         f.hide()
         f.deleteLater()
 
+    def test_dossier_des_fichiers_retenu(self):
+        """Image : la première fois le dossier Images du système, ensuite le dernier dossier utilisé."""
+        from PySide6.QtWidgets import QFileDialog
+        from app import widgets as W
+        from app.session import dossier_systeme
+        pa = {}
+        vus = []
+        d = tempfile.mkdtemp()
+        f = os.path.join(d, "logo.png")
+        open(f, "w").close()
+        vrai = QFileDialog.getOpenFileName
+        QFileDialog.getOpenFileName = staticmethod(lambda parent, titre, depart, filtre: (vus.append(depart), (f, ""))[1])
+        try:
+            self.assertEqual(W.ouvrir_fichier(None, "Image", "Images (*.png)", "images", pa), f)
+            W.ouvrir_fichier(None, "Image", "Images (*.png)", "images", pa)
+        finally:
+            QFileDialog.getOpenFileName = vrai
+        self.assertEqual(vus[0], dossier_systeme("images"))
+        self.assertEqual(vus[1], d)
+
+    def test_volet_proposition_etroit(self):
+        from app.config import Parametres
+        from app.editeur import VoletProposition
+        v = VoletProposition(Parametres())
+        self.assertLess(v.minimumSizeHint().width(), 280)            # rien ne déborde dans un volet étroit
+        v.deleteLater()
+
 
 if __name__ == "__main__":
     unittest.main()

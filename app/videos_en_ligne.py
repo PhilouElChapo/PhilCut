@@ -63,6 +63,46 @@ def installer_ytdlp(progression=None, arret=lambda: False):
     return cible
 
 
+# ------------------------------------------------------------------ Deno (0.9.14)
+# YouTube oblige désormais yt-dlp à exécuter un petit programme JavaScript pour lire les vidéos (« No supported
+# JavaScript runtime could be found ») : sans lui, la recherche marche mais pas la lecture ni le téléchargement.
+# yt-dlp recommande Deno : son programme officiel (dépôt GitHub denoland/deno) est rangé à côté de yt-dlp.
+def _nom_deno():
+    if sys.platform.startswith("win"):
+        return "deno-x86_64-pc-windows-msvc.zip", "deno.exe"
+    if sys.platform == "darwin":
+        import platform
+        return ("deno-aarch64-apple-darwin.zip" if platform.machine() == "arm64" else "deno-x86_64-apple-darwin.zip"), "deno"
+    return "deno-x86_64-unknown-linux-gnu.zip", "deno"
+
+
+def chemin_deno():
+    from .config import dossier_donnees
+    return os.path.join(dossier_donnees(), "outils", _nom_deno()[1])
+
+
+def deno_installe():
+    return os.path.exists(chemin_deno())
+
+
+def installer_deno(progression=None, arret=lambda: False):
+    """Télécharge le programme officiel Deno (environ 45 Mo) et le range à côté de yt-dlp."""
+    import zipfile
+    from . import packs_ia
+    archive, exe = _nom_deno()
+    cible = chemin_deno()
+    zp = cible + ".zip"
+    packs_ia._telecharger(f"https://github.com/denoland/deno/releases/latest/download/{archive}", zp, progression=progression, arret=arret)
+    with zipfile.ZipFile(zp) as z:
+        nom = next(n for n in z.namelist() if os.path.basename(n) == exe)
+        with z.open(nom) as src, open(cible, "wb") as dst:
+            dst.write(src.read())
+    os.remove(zp)
+    if not sys.platform.startswith("win"):
+        os.chmod(cible, 0o755)
+    return cible
+
+
 def _options():
     try:
         from .packs_ia import _options_processus
@@ -76,7 +116,10 @@ def _lancer_ytdlp(args, progression=None, arret=lambda: False, delai=3600):
     if not ytdlp_installe():
         raise RuntimeError(_("yt-dlp n'est pas encore installé."))
     from . import moteur
-    cmd = [chemin_ytdlp(), "--no-colors", "--ffmpeg-location", moteur.ffmpeg()] + args
+    cmd = [chemin_ytdlp(), "--no-colors", "--ffmpeg-location", moteur.ffmpeg()]
+    if deno_installe():
+        cmd += ["--js-runtimes", f"deno:{chemin_deno()}"]
+    cmd += args
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, errors="replace", **_options())
     lignes = []
     for ligne in proc.stdout:
@@ -90,6 +133,9 @@ def _lancer_ytdlp(args, progression=None, arret=lambda: False, delai=3600):
     proc.wait()
     if proc.returncode != 0:
         err = "\n".join(l for l in lignes[-6:] if l.strip())
+        if "JavaScript runtime" in err and not deno_installe():
+            raise RuntimeError(_("YouTube demande maintenant un petit programme complémentaire (Deno) pour lire ses vidéos : "
+                                 "cliquez « Mettre à jour yt-dlp », qui l'installe aussi (programme officiel, environ 45 Mo), puis réessayez."))
         raise RuntimeError(_("yt-dlp n'a pas pu : {e}", e=err[-500:]))
     return lignes
 
@@ -118,14 +164,9 @@ def _langue():
         return "fr"
 
 
-def chercher_youtube(texte, n=30, genre="tout"):
-    """Résultats d'une recherche YouTube (sans rien télécharger) : titre, chaîne, durée, adresse, Short ou non. La
-    recherche se fait dans la langue et le pays de l'utilisateur, avec les mots tels qu'il les a tapés (pas de
-    traduction). genre : « tout », « shorts » (vidéos verticales courtes) ou « videos » (sans les Shorts)."""
-    requete = f"{texte} #shorts" if genre == "shorts" else texte
-    n = int(n) * (2 if genre != "tout" else 1)          # on filtre ensuite : on en demande plus
+def _recherche_brute(requete, n):
     lignes = _lancer_ytdlp(["--flat-playlist", "--dump-json", "--xff", pays(), "--extractor-args", f"youtube:lang={_langue()}",
-                            f"ytsearch{n}:{requete}"])
+                            f"ytsearch{int(n)}:{requete}"])
     out = []
     for l in lignes:
         if not l.startswith("{"):
@@ -136,15 +177,40 @@ def chercher_youtube(texte, n=30, genre="tout"):
             continue
         url = d.get("url") or d.get("webpage_url") or (f"https://www.youtube.com/watch?v={d['id']}" if d.get("id") else "")
         duree = float(d.get("duration") or 0)
-        short = "/shorts/" in url or (0 < duree <= 180 and genre == "shorts")
-        if genre == "shorts" and not short:
-            continue
-        if genre == "videos" and short:
-            continue
         out.append({"titre": d.get("title") or "", "auteur": d.get("channel") or d.get("uploader") or "", "duree": duree,
-                    "page": url, "source": "youtube", "licence": d.get("license") or "", "short": short,
-                    "vues": d.get("view_count") or 0,
+                    "page": url, "source": "youtube", "licence": d.get("license") or "", "short": "/shorts/" in url,
+                    "vues": d.get("view_count") or 0, "id": d.get("id") or url,
                     "vignette": f"https://i.ytimg.com/vi/{d['id']}/mqdefault.jpg" if d.get("id") else ""})
+    return out
+
+
+def chercher_youtube(texte, n=30, genre="tout"):
+    """Résultats d'une recherche YouTube (sans rien télécharger) : titre, chaîne, durée, adresse, Short ou non. La
+    recherche se fait dans la langue et le pays de l'utilisateur, avec les mots tels qu'il les a tapés (pas de
+    traduction). genre : « tout » (vidéos, puis les Shorts, comme la page de YouTube), « shorts » ou « videos ».
+    La recherche simple de YouTube ne renvoie presque que des vidéos : les Shorts sont cherchés à part."""
+    n = int(n)
+    vus, out = set(), []
+
+    def ajouter(liste, garder, maximum):
+        k = 0
+        for r in liste:
+            if k >= maximum:
+                break
+            if r["id"] in vus or not garder(r):
+                continue
+            vus.add(r["id"])
+            out.append(r)
+            k += 1
+    if genre in ("tout", "videos"):
+        ajouter(_recherche_brute(texte, n * (2 if genre == "videos" else 1)), (lambda r: not r["short"]) if genre == "videos" else
+                (lambda r: True), n)
+    if genre in ("tout", "shorts"):
+        quota = n if genre == "shorts" else max(10, n // 2)
+        brut = _recherche_brute(f"{texte} #shorts", quota * 2)
+        for r in brut:                                    # une vidéo très courte trouvée par « #shorts » est un Short
+            r["short"] = r["short"] or 0 < r["duree"] <= 180
+        ajouter(brut, lambda r: r["short"], quota)
     return out
 
 

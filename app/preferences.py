@@ -347,8 +347,13 @@ class DialoguePreferences(QDialog):
         from .taches import Tache
         bouton.setEnabled(False)
         self.lbl_ytdlp.setText(_("Mise à jour de yt-dlp…") if VL.ytdlp_installe() else _("Installation de yt-dlp…"))
-        t = Tache(lambda tache: VL.mettre_a_jour_ytdlp() if VL.ytdlp_installe() else
-                  VL.installer_ytdlp(progression=lambda f: tache.avancer(f), arret=tache.arret_demande), _("yt-dlp"))
+        def travail(tache):
+            r = VL.mettre_a_jour_ytdlp() if VL.ytdlp_installe() else VL.installer_ytdlp(progression=lambda f: tache.avancer(f * 0.3),
+                                                                                       arret=tache.arret_demande)
+            if not VL.deno_installe():                  # YouTube : yt-dlp a besoin de Deno pour lire les vidéos
+                VL.installer_deno(progression=lambda f: tache.avancer(0.3 + f * 0.7), arret=tache.arret_demande)
+            return r
+        t = Tache(travail, _("yt-dlp"))
         self._tache_ytdlp = t
         t.progression.connect(lambda f, x: self.lbl_ytdlp.setText(_("yt-dlp : {p} %", p=int(f * 100))), Qt.QueuedConnection)
 

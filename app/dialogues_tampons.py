@@ -292,11 +292,11 @@ class DialogueTampons(QDialog):
         return True
 
     def importer(self):
-        f, _f = QFileDialog.getOpenFileName(self, _("Importer mon clip"), self.params.get("dossier_tampons_import") or "",
-                                            _("Vidéos et sons") + " (*.mp4 *.mov *.m4v *.mkv *.webm *.avi *.mp3 *.wav *.ogg *.m4a *.aac *.flac)")
+        from .widgets import ouvrir_fichier
+        f = ouvrir_fichier(self, _("Importer mon clip"), _("Vidéos et sons") + " (*.mp4 *.mov *.m4v *.mkv *.webm *.avi *.mp3 *.wav *.ogg *.m4a *.aac *.flac)",
+                           "videos", self.params)
         if not f:
             return
-        self.params["dossier_tampons_import"] = os.path.dirname(f)
         nom, ok = QInputDialog.getText(self, _("Importer mon clip"), _("Nom du tampon :"), text=os.path.splitext(os.path.basename(f))[0])
         if not ok:
             return
@@ -868,13 +868,18 @@ class DialogueTampons(QDialog):
             self.resultats.setIconSize(QSize(240, 135))
             self.resultats.setGridSize(QSize(260, 200) if grille else QSize())
         for r in res:
-            if en_ligne and r.get("_vignette"):         # YouTube : vignettes comme sur le site (titre, chaîne, durée)
+            if en_ligne and grille:                       # YouTube : vignettes comme sur le site (titre, chaîne, durée), toutes pareilles
                 d = float(r.get("duree") or 0)
                 it = QListWidgetItem(("▮ Short · " if r.get("short") else "") + (r.get("titre") or "")[:70] + "\n" +
                                      "  ·  ".join(b for b in (r.get("auteur") or "", f"{int(d // 60)}:{int(d % 60):02d}" if d else "") if b))
-                img = QImage(r["_vignette"])
-                if not img.isNull():
-                    it.setIcon(QIcon(QPixmap.fromImage(img.scaled(240, 135, Qt.KeepAspectRatio, Qt.SmoothTransformation))))
+                img = QImage(r["_vignette"]) if r.get("_vignette") else QImage()
+                if img.isNull():                          # image non reçue : une case grise, le résultat reste visible
+                    px = QPixmap(240, 135)
+                    px.fill(Qt.darkGray)
+                else:
+                    px = QPixmap.fromImage(img.scaled(240, 135, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+                it.setIcon(QIcon(px))
+                it.setSizeHint(QSize(250, 195))
                 it.setData(Qt.UserRole, r)
                 it.setToolTip(f"{r.get('titre')}\n{r.get('page') or ''}")
                 self.resultats.addItem(it)
@@ -896,7 +901,11 @@ class DialogueTampons(QDialog):
             it.setData(Qt.UserRole, r)
             it.setToolTip(f"{r['titre']}\n{r.get('licence', '')}")
             self.resultats.addItem(it)
-        self.etat.setText((_("{n} clip(s) trouvé(s). Double-clic : ajouter à la bibliothèque et insérer.", n=len(res)) if res else
+        self.resultats.doItemsLayout()
+        self.resultats.scrollToTop()
+        shorts = sum(1 for r in res if r.get("short"))
+        detail = _("{v} vidéo(s) et {s} Short(s), les Shorts à la fin. ", v=len(res) - shorts, s=shorts) if shorts and en_ligne else ""
+        self.etat.setText((_("{n} clip(s) trouvé(s). Double-clic : ajouter à la bibliothèque et insérer.", n=len(res)) + " " + detail if res else
                            _("Rien trouvé : essayez d'autres mots, ou une autre langue de recherche.")) + ("  " + note if note else ""))
 
     def coller_lien(self):
@@ -938,6 +947,8 @@ class DialogueTampons(QDialog):
             self.etat.setText(_("Choisissez d'abord une vidéo dans la liste."))
             return
         from . import videos_en_ligne as VL
+        if r.get("source") == "youtube" and not self._ytdlp_pret():
+            return
         self.etat.setText(_("Préparation de la lecture de « {t} »…", t=(r.get("titre") or "")[:60]))
 
         def adresse(t):
@@ -1011,9 +1022,23 @@ class DialogueTampons(QDialog):
                                                                   "ce poste. Le télécharger depuis son dépôt officiel (github.com/yt-dlp, "
                                                                   "environ 18 Mo) ?")) != QMessageBox.Yes:
                 return False
-            self._lancer(lambda t: VL.installer_ytdlp(progression=lambda f: t.avancer(f), arret=t.arret_demande),
-                         _("Installation de yt-dlp…"),
+            def les_deux(t):                       # yt-dlp, puis Deno qu'il lui faut maintenant pour YouTube
+                VL.installer_ytdlp(progression=lambda f: t.avancer(f * 0.3, _("Installation de yt-dlp…")), arret=t.arret_demande)
+                if not VL.deno_installe():
+                    VL.installer_deno(progression=lambda f: t.avancer(0.3 + f * 0.7, _("Installation de Deno (lecteur de YouTube)…")),
+                                      arret=t.arret_demande)
+            self._lancer(les_deux, _("Installation de yt-dlp…"),
                          fin=lambda r, err: self.etat.setText("✕ " + str(err) if err else _("✓ yt-dlp installé : relancez la recherche.")))
+            return False
+        if not VL.deno_installe():
+            if QMessageBox.question(self, _("Installer Deno"), _("Pour lire et télécharger les vidéos YouTube, yt-dlp a maintenant besoin de "
+                                                                "Deno, un petit programme libre (dépôt officiel github.com/denoland, "
+                                                                "environ 45 Mo), rangé dans le dossier de PhilCut. L'installer ?")) != QMessageBox.Yes:
+                return True                          # la recherche marche sans lui ; la lecture dira ce qu'il faut
+            self._lancer(lambda t: VL.installer_deno(progression=lambda f: t.avancer(f, _("Installation de Deno (lecteur de YouTube)…")),
+                                                     arret=t.arret_demande), _("Installation de Deno…"),
+                         fin=lambda r, err: self.etat.setText("✕ " + str(err) if err else _("✓ Deno installé : vous pouvez regarder et "
+                                                                                           "télécharger les vidéos YouTube.")))
             return False
         return True
 
@@ -1022,7 +1047,12 @@ class DialogueTampons(QDialog):
         if not VL.ytdlp_installe():
             self._ytdlp_pret()
             return
-        self._lancer(lambda t: VL.mettre_a_jour_ytdlp(), _("Mise à jour de yt-dlp…"),
+        def travail(t):
+            r = VL.mettre_a_jour_ytdlp()
+            if not VL.deno_installe():
+                VL.installer_deno(progression=lambda f: t.avancer(f, _("Installation de Deno (lecteur de YouTube)…")), arret=t.arret_demande)
+            return r
+        self._lancer(travail, _("Mise à jour de yt-dlp…"),
                      fin=lambda r, err: self.etat.setText("✕ " + str(err) if err else _("✓ yt-dlp à jour.")))
 
     def _ajouter_en_ligne(self, r, inserer):

@@ -262,9 +262,21 @@ class VoletProposition(QWidget):
             if k == (params.get("assistant_niveau") or "recettes"):
                 self.niveau.setCurrentIndex(self.niveau.count() - 1)
         f.addRow(_("Niveau"), self.niveau)
+        # volet étroit : les listes et les champs rétrécissent, les libellés passent au-dessus ; rien ne déborde à droite
+        f.setRowWrapPolicy(QFormLayout.WrapLongRows)
+        f.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        for cb in (self.format, self.niveau):
+            cb.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+            cb.setMinimumContentsLength(6)
+        for le in (self.indices, self.phrase):
+            le.setMinimumWidth(60)
+        bd.setMinimumWidth(0)
+        from PySide6.QtWidgets import QSizePolicy
+        bd.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         v.addLayout(f)
         self.b_go = QPushButton(icone("assistant", "#ffffff"), _("Analyser et proposer"))
         self.b_go.setProperty("primaire", True)
+        self.b_go.setMinimumWidth(0)
         self.b_go.clicked.connect(self.analyser.emit)
         v.addWidget(self.b_go)
         # ce que la machine fait pendant l'analyse : étape, pourcentage, temps écoulé, arrêt
@@ -299,14 +311,15 @@ class VoletProposition(QWidget):
         self.vc.setAlignment(Qt.AlignTop)
         self.zone.setWidget(self.corps)
         v.addWidget(self.zone, 1)
-        h = QHBoxLayout()
+        h = QVBoxLayout()                      # l'un sous l'autre : ils suivent la largeur du volet, même étroit
         self.b_remplacer = QPushButton(_("Appliquer (remplace la timeline)"))
         self.b_remplacer.setProperty("primaire", True)
         self.b_remplacer.clicked.connect(lambda: self.appliquer.emit(self.recette_filtree(), True))
         self.b_ajouter = QPushButton(_("Ajouter à la suite"))
         self.b_ajouter.clicked.connect(lambda: self.appliquer.emit(self.recette_filtree(), False))
-        h.addWidget(self.b_remplacer)
-        h.addWidget(self.b_ajouter)
+        for b in (self.b_remplacer, self.b_ajouter):
+            b.setMinimumWidth(0)
+            h.addWidget(b)
         v.addLayout(h)
         self.b_remplacer.setEnabled(False)
         self.b_ajouter.setEnabled(False)
@@ -935,9 +948,8 @@ class Editeur(QWidget):
         m.addAction(_("Vignette YouTube depuis cette image (zones, titre, flèche)…"), lambda: self.vignette_composee("vignette"))
         m.addAction(_("Image fixe composée depuis cette image…"), lambda: self.vignette_composee("image"))
         m.addSeparator()
-        m.addAction(icone("goodies", theme.COULEURS["texte"]), _("Tableau de bord d'instruments…"), self.tableau_de_bord)
-        m.addAction(_("Carte animée du trajet…"), self.trajet)
-        m.addAction(_("Manche à air (vent)…"), self.manche_air)
+        m.addAction(icone("goodies", theme.COULEURS["texte"]), _("Goodies (instruments, carte du trajet, vent, compteurs…)…"),
+                    lambda: self.outil("goodies"))
         m.exec(self.apercu.viewport().mapToGlobal(pos))
 
     def extraire_image(self):
@@ -1290,8 +1302,8 @@ class Editeur(QWidget):
     def importer(self, chemins=None):
         if not chemins:
             filtres = _("Vidéos, sons, images") + " (*.mp4 *.mov *.mkv *.m4v *.webm *.avi *.mts *.m2ts *.3gp *.mp3 *.wav *.m4a *.aac *.flac *.ogg *.jpg *.jpeg *.png *.webp *.heic);;" + _("Tous") + " (*)"
-            chemins, _f = QFileDialog.getOpenFileNames(self, _("Importer des rushes, musiques ou images"),
-                                                       self.params.get("dossier_rushes") or dossier_systeme("videos"), filtres)
+            from .widgets import ouvrir_fichiers
+            chemins = ouvrir_fichiers(self, _("Importer des rushes, musiques ou images"), filtres, "videos", self.params)
         if not chemins:
             return
         self.params["dossier_rushes"] = os.path.dirname(chemins[0])
@@ -1953,6 +1965,9 @@ class Editeur(QWidget):
         if d.exec() != QDialog.Accepted or not d.choix():
             return
         gid = d.choix()
+        if gid == "tableau_de_bord":
+            self.tableau_de_bord()
+            return
         if gid in ("carte_trajet", "mini_carte"):
             self.trajet()
             return

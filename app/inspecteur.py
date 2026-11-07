@@ -59,7 +59,14 @@ def widget_parametre(spec, val, on_change, medias=()):
 
         def choisir_fichier():
             from PySide6.QtWidgets import QFileDialog
-            ch, _f = QFileDialog.getOpenFileName(w, lib, os.path.dirname(str(val)) if val else "", str(mini or "*"))
+            filtre = str(mini or "*")
+            genre = "images" if any(x in filtre.lower() for x in ("png", "jpg", "image")) else \
+                "musique" if any(x in filtre.lower() for x in ("mp3", "wav")) else "videos" if "mp4" in filtre.lower() else "documents"
+            if val and os.path.isdir(os.path.dirname(str(val))):
+                ch, _f = QFileDialog.getOpenFileName(w, lib, os.path.dirname(str(val)), filtre)
+            else:
+                from .widgets import ouvrir_fichier
+                ch = ouvrir_fichier(w, lib, filtre, genre)
             if ch:
                 w.setText(os.path.basename(ch))
                 w.setToolTip(ch)
@@ -173,8 +180,8 @@ class Inspecteur(QWidget):
             def photo():
                 from PySide6.QtWidgets import QFileDialog
                 from .session import dossier_systeme
-                ch, _f = QFileDialog.getOpenFileName(self, _("Photo"), self.ed.params.get("dossier_images") or dossier_systeme("images"),
-                                                     "Images (*.png *.jpg *.jpeg *.webp)")
+                from .widgets import ouvrir_fichier
+                ch = ouvrir_fichier(self, _("Photo"), "Images (*.png *.jpg *.jpeg *.webp)", "images", self.ed.params)
                 if ch:
                     self._changer(lambda: opts.__setitem__("chemin", ch), reconstruire=False)
                     self.montrer_goodie(g)

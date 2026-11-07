@@ -342,7 +342,8 @@ class DialogueCompte(QDialog):
 
     def _icone_image(self):
         from PySide6.QtWidgets import QFileDialog
-        p, _f = QFileDialog.getOpenFileName(self, _("Image du compte"), "", _("Images") + " (*.png *.jpg *.jpeg *.bmp *.gif *.svg *.ico *.webp)")
+        from .widgets import ouvrir_fichier
+        p = ouvrir_fichier(self, _("Image du compte"), _("Images") + " (*.png *.jpg *.jpeg *.bmp *.gif *.svg *.ico *.webp)", "images", self.params)
         if p:
             b = avatars.image_en_texte(p)
             if b:
