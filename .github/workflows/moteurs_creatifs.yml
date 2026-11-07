@@ -77,13 +77,14 @@ jobs:
           git checkout ${{ needs.catalogue.outputs.ace_ref }} 2>nul
           git submodule update --init --recursive
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cmake -S . -B build-cpu -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DBUILD_SHARED_LIBS=OFF
+          cmake -S . -B build-cpu -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DGGML_OPENMP=OFF
           cmake --build build-cpu --target ace-lm ace-synth -j %NUMBER_OF_PROCESSORS%
           mkdir ..\pack-ace
           for /r build-cpu %%f in (ace-lm.exe ace-synth.exe *.dll) do copy "%%f" ..\pack-ace\ >nul
           copy LICENSE ..\pack-ace\LICENSE.txt
           cd ..
           dir pack-ace
+          python outils_dev\verifier_dll.py pack-ace || exit /b 1
           powershell -Command "Compress-Archive pack-ace\* dist\philcut-ace-windows-x64.zip"
       - name: Vulkan SDK
         id: vksdk
@@ -99,13 +100,14 @@ jobs:
         run: |
           cd src-ace
           call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
-          cmake -S . -B build-vk -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_VULKAN=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_PREFIX_PATH="%VULKAN_SDK%" -DSPIRV-Headers_DIR="%VULKAN_SDK%\share\cmake\SPIRV-Headers"
+          cmake -S . -B build-vk -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_VULKAN=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DGGML_OPENMP=OFF -DCMAKE_PREFIX_PATH="%VULKAN_SDK%" -DSPIRV-Headers_DIR="%VULKAN_SDK%\share\cmake\SPIRV-Headers"
           cmake --build build-vk --target ace-lm ace-synth -j %NUMBER_OF_PROCESSORS% || exit /b 1
           mkdir ..\pack-ace-vk
           for /r build-vk %%f in (ace-lm.exe ace-synth.exe *.dll) do copy "%%f" ..\pack-ace-vk\ >nul
           copy LICENSE ..\pack-ace-vk\LICENSE.txt
           cd ..
           if not exist pack-ace-vk\ace-synth.exe exit /b 1
+          python outils_dev\verifier_dll.py pack-ace-vk || exit /b 1
           powershell -Command "Compress-Archive pack-ace-vk\* dist\philcut-ace-vulkan-windows-x64.zip"
       - uses: actions/upload-artifact@v4
         with:

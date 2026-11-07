@@ -193,6 +193,26 @@ def corriger_catalogue(dossier):
     return 0
 
 
+def corriger_moteur(dossier, genre, prefixe, version=""):
+    """Remplace dans moteurs-creatifs.json l'archive Windows d'un moteur (taille, empreinte) par celle du dossier."""
+    p = os.path.join(dossier, "moteurs-creatifs.json")
+    man = json.load(open(p, encoding="utf-8"))
+    f = f"{prefixe}-windows-x64.zip"
+    a = os.path.join(dossier, f)
+    if not os.path.exists(a) or os.path.getsize(a) < 100_000:
+        print(f"::warning::{f} absent ou vide : {genre} inchangé")
+        return 0
+    m = man["moteurs"].setdefault(genre, {"nom": genre, "licence": "MIT"})
+    m["windows"] = {"fichier": f, "taille": os.path.getsize(a), "sha256": empreinte(a),
+                    "url": f"https://github.com/PhilouElChapo/PhilCut/releases/download/moteurs-ia/{f}"}
+    if version:
+        m["version"] = version
+    man["date"] = time.strftime("%Y-%m-%d")
+    json.dump(man, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(f"::notice title={genre}::{f} ({os.path.getsize(a) / 1e6:.1f} Mo)")
+    return 0
+
+
 def assembler(dossier):
     v = json.load(open(os.path.join(dossier, "versions-creatifs.json")))
     man = {"format": 1, "date": time.strftime("%Y-%m-%d"), "depot": "PhilouElChapo/PhilCut", "tag": "moteurs-ia",
@@ -238,6 +258,8 @@ if __name__ == "__main__":
         sys.exit(assembler(sys.argv[2]))
     if cmd == "repaquer_esrgan":
         sys.exit(repaquer_esrgan(sys.argv[2], sys.argv[3]))
+    if cmd == "corriger_moteur":
+        sys.exit(corriger_moteur(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5] if len(sys.argv) > 5 else ""))
     if cmd == "corriger_catalogue":
         sys.exit(corriger_catalogue(sys.argv[2]))
     print(__doc__)

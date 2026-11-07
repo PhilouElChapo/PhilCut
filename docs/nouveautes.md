@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.11 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.12 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.12 : musique IA reparee
+- Le moteur de musique pour Windows avait ete fabrique avec le mauvais compilateur (MinGW) : il demandait libgomp-1.dll, libgcc_s_seh-1.dll, libstdc++-6.dll et libwinpthread-1.dll, absentes de Windows (code 3221225781). Il est refait avec Visual C++, sans aucune bibliotheque a installer. Preferences > IA locale > Musique > "Reinstaller le moteur".
+- Chaque moteur Windows publie est desormais verifie : la fabrication echoue s'il demande une bibliotheque qui n'est ni livree ni dans Windows.
 
 ### 0.9.11 : agrandissement IA repare
 - L'archive du moteur d'agrandissement (Real-ESRGAN) etait publiee sans ses modeles ("_wfopen models/realesrgan-x4plus.param failed") : elle est refaite avec ses modeles. Preferences > IA locale > Agrandissement IA > "Reinstaller le moteur" (ou decocher puis recocher) la telecharge.
