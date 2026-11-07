@@ -928,11 +928,11 @@ class Editeur(QWidget):
         m.addAction(_("Figer l'image ici (cadre photo, légende)…"), self.figer_image)
         m.addAction(_("Bruitage ici…"), self.bruitage)
         m.addAction(_("Tampon vidéo ici…"), self.tampons)
-        av = m.addMenu(icone("goodies", theme.COULEURS["texte"]), _("Aviation"))
-        av.addAction(_("Tableau de bord de vol…"), self.tableau_de_bord)
-        av.addAction(_("Carte animée du trajet et mini-carte…"), self.trajet)
-        av.addAction(_("Manche à air…"), self.manche_air)
-        av.addAction(_("Sous-titres des échanges radio…"), self.radio)
+        m.addSeparator()
+        m.addAction(icone("goodies", theme.COULEURS["texte"]), _("Tableau de bord (instruments, profil réglable)…"), self.tableau_de_bord)
+        m.addAction(_("Carte animée du trajet et mini-carte (GPS)…"), self.trajet)
+        m.addAction(_("Indicateur de vent (manche à air)…"), self.manche_air)
+        m.addAction(_("Sous-titres des échanges radio…"), self.radio)
         m.exec(self.apercu.viewport().mapToGlobal(pos))
 
     def extraire_image(self):

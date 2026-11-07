@@ -4924,5 +4924,8 @@
  "Cadran (tableau de bord) ou illustré animé": "Dial (dashboard) or animated illustration",
  "Aperçu (joué en boucle, comme dans le film)": "Preview (looped, as in the film)",
  "Instant : {t} s (de {a} à {b} s)": "Time: {t} s (from {a} to {b} s)",
- "PNG transparent de préférence": "Preferably a transparent PNG"
+ "PNG transparent de préférence": "Preferably a transparent PNG",
+ "Tableau de bord (instruments, profil réglable)…": "Dashboard (instruments, adjustable profile)…",
+ "Carte animée du trajet et mini-carte (GPS)…": "Animated route map and mini-map (GPS)…",
+ "Indicateur de vent (manche à air)…": "Wind indicator (windsock)…"
 }

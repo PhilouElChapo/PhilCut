@@ -4915,5 +4915,8 @@
  "Cadran (tableau de bord) ou illustré animé": "Quadrante (cruscotto) o illustrazione animata",
  "Aperçu (joué en boucle, comme dans le film)": "Anteprima (in loop, come nel film)",
  "Instant : {t} s (de {a} à {b} s)": "Istante: {t} s (da {a} a {b} s)",
- "PNG transparent de préférence": "Preferibilmente un PNG trasparente"
+ "PNG transparent de préférence": "Preferibilmente un PNG trasparente",
+ "Tableau de bord (instruments, profil réglable)…": "Cruscotto (strumenti, profilo regolabile)…",
+ "Carte animée du trajet et mini-carte (GPS)…": "Mappa animata del percorso e minimappa (GPS)…",
+ "Indicateur de vent (manche à air)…": "Indicatore del vento (manica a vento)…"
 }

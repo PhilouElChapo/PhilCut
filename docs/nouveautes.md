@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.2 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.2
+- Plus de sous-menu "Aviation" : tableau de bord, carte animee du trajet, indicateur de vent et sous-titres radio sont ranges avec les Goodies et les sous-titres, dans le menu Montage et au clic droit sur l'apercu.
 
 ### 0.9.1
 - Fenetre d'un Goodie (double-clic) : apercu anime sur l'image du film, joue en boucle de son debut a sa fin ; chaque reglage (genre, style, position, taille, texte, valeurs) se voit tout de suite.

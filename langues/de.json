@@ -4915,5 +4915,8 @@
  "Cadran (tableau de bord) ou illustré animé": "Rundinstrument (Armaturenbrett) oder animierte Illustration",
  "Aperçu (joué en boucle, comme dans le film)": "Vorschau (in Schleife, wie im Film)",
  "Instant : {t} s (de {a} à {b} s)": "Zeitpunkt: {t} s (von {a} bis {b} s)",
- "PNG transparent de préférence": "Am besten ein transparentes PNG"
+ "PNG transparent de préférence": "Am besten ein transparentes PNG",
+ "Tableau de bord (instruments, profil réglable)…": "Armaturenbrett (Instrumente, einstellbares Profil)…",
+ "Carte animée du trajet et mini-carte (GPS)…": "Animierte Routenkarte und Minikarte (GPS)…",
+ "Indicateur de vent (manche à air)…": "Windanzeiger (Windsack)…"
 }

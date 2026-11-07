@@ -169,6 +169,13 @@ class Fenetre(QMainWindow):
         for oid in ("vitesse", "recadrer", "stabiliser", "texte", "effets", "goodies", "zone", "sous_titres", "musique", "voix"):
             o = O.outil(oid)
             mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
+            # outils voisins, rangés avec leur famille (plus de menu à part)
+            if oid == "goodies":
+                mo.addAction(icone("goodies"), _("Tableau de bord (instruments, profil réglable)…"), lambda: self._ed(lambda ed: ed.tableau_de_bord()))
+                mo.addAction(_("Carte animée du trajet et mini-carte (GPS)…"), lambda: self._ed(lambda ed: ed.trajet()))
+                mo.addAction(_("Indicateur de vent (manche à air)…"), lambda: self._ed(lambda ed: ed.manche_air()))
+            elif oid == "sous_titres":
+                mo.addAction(_("Sous-titres des échanges radio…"), lambda: self._ed(lambda ed: ed.radio()))
         mo.addAction(_("Figer l'image à la tête de lecture (cadre photo, légende)…"), lambda: self._ed(lambda ed: ed.figer_image()))
         sm_ia = mo.addMenu(icone("assistant"), _("Atelier IA (sur ce poste)"))
         for fam, lib in (("image", _("Retoucher l'image du film (cartoon, 3D, peinture…)…")), ("video", _("Effet IA sur la partie en jaune…")),
@@ -179,11 +186,6 @@ class Fenetre(QMainWindow):
         mo.addAction(icone("musique"), _("Bruitages (whoosh, impact, déclic, bip…)…"), lambda: self._ed(lambda ed: ed.bruitage()))
         mo.addAction(icone("clap"), _("Tampons vidéo (« plus tard… », rembobinage, tadaa, vos clips, clips libres)…"),
                      lambda: self._ed(lambda ed: ed.tampons()))
-        av = mo.addMenu(icone("goodies"), _("Aviation"))
-        av.addAction(_("Tableau de bord de vol (profil réglable)…"), lambda: self._ed(lambda ed: ed.tableau_de_bord()))
-        av.addAction(_("Carte animée du trajet et mini-carte…"), lambda: self._ed(lambda ed: ed.trajet()))
-        av.addAction(_("Manche à air…"), lambda: self._ed(lambda ed: ed.manche_air()))
-        av.addAction(_("Sous-titres des échanges radio…"), lambda: self._ed(lambda ed: ed.radio()))
         mo.addSeparator()
         mo.addAction(_("Ajouter une piste vidéo au-dessus (incrustation, image dans l'image)"), lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("video")))
         mo.addAction(_("Ajouter une piste de musique ou de sons"), lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("audio")))
