@@ -5515,7 +5515,6 @@
  "Ajouter un point ici ({a:.4f}, {o:.4f})": "Añadir un punto aquí ({a:.4f}, {o:.4f})",
  "Zoomer ici": "Ampliar aquí",
  "Ajoutez les étapes dans l'ordre : cherchez un aérodrome (code OACI, nom ou ville), reprenez un de vos points, ou double-cliquez sur la carte. Pendant la vidéo, le trait se dessine et l'avion avance au prorata des distances.": "Añada las etapas en orden: busque un aeródromo (código OACI, nombre o ciudad), use uno de sus puntos o haga doble clic en el mapa. Durante el vídeo, la línea se dibuja y el avión avanza según las distancias.",
- "Chercher un aérodrome : LFMD, Cannes, Fayence…": "Buscar un aeródromo: LFMD, Cannes, Fayence…",
  "Télécharger tous les aérodromes du monde (OurAirports, libre, environ 12 Mo)": "Descargar todos los aeródromos del mundo (OurAirports, libre, unos 12 MB)",
  "Plus de 40 000 aérodromes, altisurfaces, hydrobases et héliports ; gardés sur ce poste": "Más de 40 000 aeródromos, pistas, hidrobases y helipuertos; guardados en este equipo",
  "Ajouter ces coordonnées": "Añadir estas coordenadas",
@@ -5615,5 +5614,6 @@
  "Assemblage du clip…": "Montando el clip…",
  "Tampon prêt.": "Ráfaga lista.",
  "animation": "animación",
- "Dessin de l'image par l'IA : {p} %": "La IA dibuja la imagen: {p} %"
+ "Dessin de l'image par l'IA : {p} %": "La IA dibuja la imagen: {p} %",
+ "Chercher un aérodrome : LFPG, Toulouse, Megève…": "Buscar un aeródromo: LFPG, Toulouse, Megève…"
 }

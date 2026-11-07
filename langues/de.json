@@ -5515,7 +5515,6 @@
  "Ajouter un point ici ({a:.4f}, {o:.4f})": "Hier einen Punkt hinzufügen ({a:.4f}, {o:.4f})",
  "Zoomer ici": "Hier zoomen",
  "Ajoutez les étapes dans l'ordre : cherchez un aérodrome (code OACI, nom ou ville), reprenez un de vos points, ou double-cliquez sur la carte. Pendant la vidéo, le trait se dessine et l'avion avance au prorata des distances.": "Fügen Sie die Etappen der Reihe nach hinzu: suchen Sie einen Flugplatz (ICAO-Code, Name oder Ort), nehmen Sie einen Ihrer Punkte, oder doppelklicken Sie auf die Karte. Im Video zeichnet sich die Linie und das Flugzeug bewegt sich entsprechend den Entfernungen.",
- "Chercher un aérodrome : LFMD, Cannes, Fayence…": "Flugplatz suchen: LFMD, Cannes, Fayence…",
  "Télécharger tous les aérodromes du monde (OurAirports, libre, environ 12 Mo)": "Alle Flugplätze der Welt herunterladen (OurAirports, frei, etwa 12 MB)",
  "Plus de 40 000 aérodromes, altisurfaces, hydrobases et héliports ; gardés sur ce poste": "Über 40.000 Flugplätze, Landeplätze, Wasserflugplätze und Hubschrauberlandeplätze; auf diesem Rechner gespeichert",
  "Ajouter ces coordonnées": "Diese Koordinaten hinzufügen",
@@ -5615,5 +5614,6 @@
  "Assemblage du clip…": "Clip wird zusammengesetzt…",
  "Tampon prêt.": "Einspieler fertig.",
  "animation": "Animation",
- "Dessin de l'image par l'IA : {p} %": "Die KI zeichnet das Bild: {p} %"
+ "Dessin de l'image par l'IA : {p} %": "Die KI zeichnet das Bild: {p} %",
+ "Chercher un aérodrome : LFPG, Toulouse, Megève…": "Flugplatz suchen: LFPG, Toulouse, Megève…"
 }

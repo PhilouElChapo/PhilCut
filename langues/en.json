@@ -5524,7 +5524,6 @@
  "Ajouter un point ici ({a:.4f}, {o:.4f})": "Add a point here ({a:.4f}, {o:.4f})",
  "Zoomer ici": "Zoom here",
  "Ajoutez les étapes dans l'ordre : cherchez un aérodrome (code OACI, nom ou ville), reprenez un de vos points, ou double-cliquez sur la carte. Pendant la vidéo, le trait se dessine et l'avion avance au prorata des distances.": "Add the stages in order: search an aerodrome (ICAO code, name or town), reuse one of your points, or double-click on the map. During the video, the line draws itself and the plane moves in proportion to the distances.",
- "Chercher un aérodrome : LFMD, Cannes, Fayence…": "Search an aerodrome: LFMD, Cannes, Fayence…",
  "Télécharger tous les aérodromes du monde (OurAirports, libre, environ 12 Mo)": "Download all the world's aerodromes (OurAirports, free, about 12 MB)",
  "Plus de 40 000 aérodromes, altisurfaces, hydrobases et héliports ; gardés sur ce poste": "Over 40,000 aerodromes, airstrips, seaplane bases and heliports; kept on this computer",
  "Ajouter ces coordonnées": "Add these coordinates",
@@ -5624,5 +5623,6 @@
  "Assemblage du clip…": "Assembling the clip…",
  "Tampon prêt.": "Stinger ready.",
  "animation": "animation",
- "Dessin de l'image par l'IA : {p} %": "AI drawing the image: {p} %"
+ "Dessin de l'image par l'IA : {p} %": "AI drawing the image: {p} %",
+ "Chercher un aérodrome : LFPG, Toulouse, Megève…": "Search an aerodrome: LFPG, Toulouse, Megève…"
 }

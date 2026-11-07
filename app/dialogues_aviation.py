@@ -180,7 +180,7 @@ class DialogueTrajet(QDialog):
         self._AD = AD
         ha = QHBoxLayout()
         self.cherche_ad = QLineEdit()
-        self.cherche_ad.setPlaceholderText(_("Chercher un aérodrome : LFMD, Cannes, Fayence…"))
+        self.cherche_ad.setPlaceholderText(_("Chercher un aérodrome : LFPG, Toulouse, Megève…"))
         self.cherche_ad.setClearButtonEnabled(True)
         self.cherche_ad.textChanged.connect(self._chercher_ad)
         self.cherche_ad.returnPressed.connect(self._ajouter_ad)
