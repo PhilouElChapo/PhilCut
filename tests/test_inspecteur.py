@@ -87,9 +87,10 @@ class TestInterface030(unittest.TestCase):
 
     def test_etiquettes_et_transition_dessinees(self):
         tl = self.ed.timeline
+        tl.ajuster()                                    # les deux plans visibles, quelle que soit la taille de l'écran
+        app.processEvents()
         it0 = tl.items_clips[self.ed.projet.clips[0]["id"]]
         it1 = tl.items_clips[self.ed.projet.clips[1]["id"]]
-        app.processEvents()
         self.f.grab()                                   # force le dessin
         self.assertEqual([g for _r, g, _i in it0.chips], ["effet", "effet"])
         self.assertIsNotNone(it1.rect_transition)

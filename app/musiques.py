@@ -64,12 +64,15 @@ def credit_texte(x):
     return f"« {titre} » par {auteur}, licence CC {lic} {x.get('license_version') or ''}".strip()
 
 
-def dossier(params):
-    """Dossier où arrivent les musiques libres téléchargées : celui choisi (retenu), sinon Musique › PhilCut - musiques libres."""
+def dossier(params, creer=True):
+    """Dossier où arrivent les musiques libres téléchargées : celui choisi (retenu), sinon Musique › PhilCut - musiques libres.
+    creer=False : seulement le nom, sans toucher au disque (affichage ; un disque réseau absent ne gèle rien)."""
     d = (params or {}).get("musiques_telechargement") or ""
     if not d:
         from .session import dossier_systeme
         d = os.path.join(dossier_systeme("musique"), "PhilCut - musiques libres")
+    if not creer:
+        return d
     try:
         os.makedirs(d, exist_ok=True)
     except OSError:

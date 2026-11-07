@@ -126,8 +126,9 @@ class DialogueMesMusiques(QDialog):
         if self.tache is not None and self.tache.isRunning():
             return
         self.etat.setText(_("Recherche des morceaux…"))
-        dossiers = [self._perso(), MU.dossier(self.params)]
-        self.tache = Tache(lambda t: MU.morceaux(dossiers, limite=20000, rapide=True, delai=20.0), _("Mes musiques"))
+        perso, params = self._perso(), self.params
+        # tout ce qui touche au disque (dossier réseau, NAS endormi) se fait en tâche de fond : la fenêtre ne gèle jamais
+        self.tache = Tache(lambda t: MU.morceaux([perso, MU.dossier(params)], limite=20000, rapide=True, delai=20.0), _("Mes musiques"))
         self.tache.fini.connect(self._charge, Qt.QueuedConnection)
         self.tache.start()
 

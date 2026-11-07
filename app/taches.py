@@ -18,9 +18,12 @@ class Tache(QThread):
         self.arret = False
         self.resultat = None
         self.erreur = None
+        self.dernier = (0.0, "")              # dernière progression : pour dire ce qui est en cours (fermeture…)
 
     def avancer(self, fraction, texte=""):
-        self.progression.emit(max(0.0, min(1.0, float(fraction))), texte)
+        f = max(0.0, min(1.0, float(fraction)))
+        self.dernier = (f, texte or self.dernier[1])
+        self.progression.emit(f, texte)
 
     def stopper(self):
         self.arret = True

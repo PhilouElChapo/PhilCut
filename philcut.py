@@ -122,14 +122,21 @@ def main():
     lancement.etape(_("Ouverture…"), 1.0)
     f.afficher()
     lancement.close()
-    return app.exec()
+    code = app.exec()
+    sortir(code)                        # ici, pas après le retour de main() : sinon Python détruit la fenêtre et ses
+    return code                         # tâches de fond encore vivantes (« QThread détruit en cours » : plantage à l'arrêt)
 
 
-if __name__ == "__main__":
-    code = main()
-    try:                                # tout est enregistré à la fermeture de la fenêtre : on sort sans laisser Python
-        sys.stdout.flush()              # détruire les objets Qt dans le désordre (plantage possible à l'arrêt)
+def sortir(code):
+    """Tout est enregistré à la fermeture de la fenêtre : on sort sans laisser Python ni Qt détruire les objets dans le
+    désordre (plantages à l'arrêt dans pyside6.abi3.dll ou ucrtbase.dll vus sous Windows)."""
+    try:
+        sys.stdout.flush()
         sys.stderr.flush()
     except Exception:       # noqa: BLE001 : version sans console (Windows)
         pass
     os._exit(code or 0)
+
+
+if __name__ == "__main__":
+    sortir(main())

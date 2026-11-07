@@ -94,11 +94,11 @@ class DialogueMusiques(QDialog):
         v.addLayout(hb)
 
     def _montrer_dossier(self):
-        self.lbl_dossier.setText(_("Dossier de téléchargement : {d}", d=MU.dossier(self.params)))
+        self.lbl_dossier.setText(_("Dossier de téléchargement : {d}", d=MU.dossier(self.params, creer=False)))
 
     def changer_dossier(self):
         from PySide6.QtWidgets import QFileDialog
-        d = QFileDialog.getExistingDirectory(self, _("Dossier des musiques téléchargées"), MU.dossier(self.params))
+        d = QFileDialog.getExistingDirectory(self, _("Dossier des musiques téléchargées"), MU.dossier(self.params, creer=False))
         if d:
             self.params["musiques_telechargement"] = d
             try:

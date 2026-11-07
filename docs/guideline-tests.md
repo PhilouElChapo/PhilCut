@@ -157,6 +157,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T36 — 0.9.8 : mise à jour visible, fermeture fiable
+
+1. **Mise à jour** (depuis 0.9.8 vers une version suivante) : Accueil › « Télécharger et installer ». **Attendu** : une fenêtre s'ouvre tout de suite (« Connexion à GitHub… »), puis Mo reçus / total, vitesse, temps restant, barre ; « Arrêter le téléchargement » ; à la fin « Installer et redémarrer ». Couper le réseau pendant le téléchargement : message clair, pas de silence.
+2. **Quitter pendant une opération** (export, import, téléchargement) : la fenêtre liste chaque opération (nom, %, étape) ; « Voir les opérations » ouvre le Centre d'activité ; « Rester » ; « Quitter quand même » ferme en moins de 3 s.
+3. **Fermeture** : ouvrir un projet, lire la vidéo et écouter un son (Mes musiques, tampons), puis fermer PhilCut. **Attendu** : aucun « PhilCut a cessé de fonctionner », ni « Audio Windows » dans Panneau de configuration › Sécurité et maintenance › Historique de fiabilité.
+4. **Bibliothèque musicale** avec un dossier sur un NAS éteint : la fenêtre s'ouvre tout de suite ; le dossier est seulement affiché.
+5. **Petit écran** (ou mise à l'échelle 150 %) : ouvrir un projet : la fenêtre reste dans l'écran, la barre d'état visible ; la barre entre l'aperçu et la timeline monte et descend.
+
 ## T35 — 0.9.7 : vidéos en ligne (yt-dlp) et films du domaine public (Internet Archive)
 
 1. **Première fois** : Tampons vidéo › Chercher en ligne › « Vidéos en ligne : YouTube et autres, par yt-dlp », taper des mots, « Chercher ». **Attendu** : fenêtre « ce qui est permis » (70 ans après la mort du dernier auteur, licences libres, courte citation) ; OK seulement après avoir coché la confirmation ; puis proposition d'installer yt-dlp (dépôt officiel, environ 18 Mo), avec progression.

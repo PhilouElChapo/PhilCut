@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.7 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.8 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.8 : fiabilite
+- Mise a jour : "Telecharger et installer" ouvre une fenetre qui montre le telechargement (Mo, vitesse, temps restant, Arreter), puis "Installer et redemarrer". Depuis une version 0.8.x, telecharger une fois la nouvelle version a la main.
+- Fermeture : plus de plantage a l'arret (taches de fond encore vivantes) ; le son est arrete proprement avant de quitter ; l'attente des operations ne bloque plus la fenetre (3 s au plus en tout).
+- Quitter avec des operations en cours : la liste de ce qui tourne (nom, pourcentage, etape), "Voir les operations", "Quitter quand meme" ou "Rester".
+- Bibliotheque musicale : le dossier (disque reseau, NAS endormi) n'est plus touche a l'ouverture de la fenetre ; plus de gel.
+- La fenetre ne depasse plus l'ecran a l'ouverture d'un projet ; la timeline peut retrecir davantage (petits ecrans).
 
 ### 0.9.7 : extraits de videos en ligne
 - Tampons > Chercher en ligne > "Videos en ligne : YouTube et autres, par yt-dlp" : une adresse ou des mots, la liste des resultats (titre, chaine, duree, licence Creative Commons mise en avant), puis seul le morceau choisi (de ... a ...) est telecharge, video ou son seulement, et rangé dans la bibliotheque avec son credit.

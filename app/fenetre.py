@@ -259,7 +259,27 @@ class Fenetre(QMainWindow):
         i = self.onglets.addTab(ed, icone("projet", theme.COULEURS["accent"]), projet.nom)
         self.onglets.setCurrentIndex(i)
         ed.appliquer_volet()
+        QTimer.singleShot(0, self.tenir_dans_ecran)
         return ed
+
+    def tenir_dans_ecran(self):
+        """La fenêtre ne dépasse jamais l'écran (ouvrir un projet ne doit pas l'agrandir sous la barre des tâches)."""
+        if self.isMaximized() or self.isFullScreen():
+            return
+        ecr = self.screen() or QApplication.primaryScreen()
+        if not ecr:
+            return
+        dispo = ecr.availableGeometry()
+        g = self.frameGeometry()
+        if dispo.contains(g):
+            return
+        marge_h = g.height() - self.height()
+        marge_l = g.width() - self.width()
+        w = min(self.width(), dispo.width() - marge_l)
+        h = min(self.height(), dispo.height() - marge_h)
+        self.resize(max(640, w), max(400, h))
+        g = self.frameGeometry()
+        self.move(max(dispo.left(), min(g.left(), dispo.right() - g.width())), max(dispo.top(), min(g.top(), dispo.bottom() - g.height())))
 
     def _maj_titre(self, ed):
         i = self.onglets.indexOf(ed)
@@ -414,6 +434,34 @@ class Fenetre(QMainWindow):
         else:
             self.showMaximized()
 
+    @staticmethod
+    def description_taches(taches):
+        """« • Export : 42 % — encodage… » : une ligne par opération en cours."""
+        lignes = []
+        for t in taches:
+            f, texte = getattr(t, "dernier", (0.0, ""))
+            titre = getattr(t, "titre", "") or _("Opération")
+            if "|" in (texte or ""):             # progression brute (octets) : on ne la montre pas
+                texte = ""
+            lignes.append(f"• {titre} : {int(f * 100)} %" + (f" — {texte[:80]}" if texte else ""))
+        return "\n".join(lignes)
+
+    def _quitter_malgre(self, en_cours):
+        """Dire quelles opérations tournent (comme PhilPDF), les montrer d'un clic, ou quitter quand même."""
+        m = QMessageBox(self)
+        m.setIcon(QMessageBox.Question)
+        m.setWindowTitle(_("Quitter"))
+        m.setText(_("{n} opération(s) encore en cours :", n=len(en_cours)))
+        m.setInformativeText(self.description_taches(en_cours) + "\n\n" + _("Les quitter maintenant les arrête."))
+        voir = m.addButton(_("Voir les opérations"), QMessageBox.ActionRole)
+        quitter = m.addButton(_("Quitter quand même"), QMessageBox.DestructiveRole)
+        m.addButton(_("Rester"), QMessageBox.RejectRole)
+        m.exec()
+        if m.clickedButton() is voir:
+            self.voir_activite()
+            return False
+        return m.clickedButton() is quitter
+
     def _retenir_geometrie(self):
         try:
             self.params["fenetre_maximisee"] = self.isMaximized()
@@ -438,30 +486,66 @@ class Fenetre(QMainWindow):
         en_cours = [t for t in self.taches + sum((ed.taches for ed in self.editeurs()), []) if t.isRunning()]
         if self.telechargements.tache is not None:
             en_cours.append(self.telechargements.tache)
-        if en_cours and QMessageBox.question(self, _("Quitter"), _("{n} opération(s) en cours (export, import…). Quitter quand même ?", n=len(en_cours))) != QMessageBox.Yes:
+        if en_cours and not self._quitter_malgre(en_cours):
             e.ignore()
             return
         for t in en_cours:
             t.stopper()
+        self.statusBar().showMessage(_("Fermeture : arrêt des opérations en cours et du son…"))
+        self.arreter_sons()
         for ed in self.editeurs():
-            ed.apercu.arreter()
-            ed.preparation.fermer()
-            ed.catalogue.fermer()
+            try:
+                ed.apercu.arreter()
+                ed.preparation.fermer()
+                ed.catalogue.fermer()
+            except Exception:    # noqa: BLE001 : on ferme quand même
+                pass
         self.ecrire_session()
         self.params.enregistrer()
-        self.attendre_taches(8000)
+        self.attendre_taches(3000)
         e.accept()
 
+    @staticmethod
+    def arreter_sons():
+        """Tous les lecteurs audio et vidéo arrêtés et vidés avant de quitter : le service audio de Windows n'est pas
+        laissé avec un flux ouvert au moment où le programme s'arrête."""
+        try:
+            from PySide6.QtMultimedia import QMediaPlayer
+            from PySide6.QtCore import QUrl
+        except ImportError:
+            return
+        for w in QApplication.topLevelWidgets():
+            for lp in w.findChildren(QMediaPlayer):
+                try:
+                    lp.stop()
+                    lp.setSource(QUrl())
+                except RuntimeError:
+                    pass
+        QApplication.processEvents()
+
     def attendre_taches(self, ms=30000):
-        """Attend la fin des taches de fond (Qt refuse qu'un fil soit detruit en cours de route)."""
+        """Demande l'arrêt de toutes les tâches de fond puis attend, au plus ms en tout (pas par tâche), en laissant la
+        fenêtre répondre : Windows ne la croit jamais « bloquée ». Ce qui ne s'arrête pas à temps (un téléchargement
+        coincé sur le réseau) est abandonné proprement par la sortie directe du programme."""
+        import time as _t
         autres = [self.telechargements.tache] if getattr(self, "telechargements", None) and self.telechargements.tache else []
-        for t in list(self.taches) + sum((list(ed.taches) for ed in self.editeurs()), []) + autres:
+        taches = list(self.taches) + sum((list(ed.taches) for ed in self.editeurs()), []) + autres
+        for t in taches:
             try:
                 if t.isRunning():
                     t.stopper()
-                    t.wait(ms)
             except RuntimeError:
                 pass
+        fin = _t.monotonic() + ms / 1000
+        while _t.monotonic() < fin:
+            try:
+                vivantes = [t for t in taches if t.isRunning()]
+            except RuntimeError:
+                vivantes = []
+            if not vivantes:
+                return
+            QApplication.processEvents()
+            vivantes[0].wait(50)
 
     # ---------------------------------------------------------------- glisser-deposer sur la fenetre
     def dragEnterEvent(self, e):
@@ -1177,28 +1261,27 @@ class Fenetre(QMainWindow):
         version, paquet, notes = res
         texte = _("PhilCut {n} est disponible (vous avez {v}).", n=version, v=VERSION) + \
             (f"<br><span style='color:#999'>{resume_notes(notes)}</span>" if resume_notes(notes) else "")
-        self.accueil.proposer(texte, _("Télécharger et installer"), lambda: self._installer_maj(paquet))
+        self.accueil.proposer(texte, _("Télécharger et installer"), lambda: self._installer_maj(paquet, version))
         self.onglets.setCurrentIndex(0) if not silencieux else None
 
-    def _installer_maj(self, paquet):
-        t = Tache(lambda tache: mise_a_jour.recuperer(paquet, progression=progression_maj(tache), arret=lambda: tache.arret), _("Mise à jour"))
+    def _installer_maj(self, paquet, version=""):
+        """Fenêtre de mise à jour : progression visible tout de suite (Mo, vitesse, temps restant), arrêt possible,
+        puis « Installer et redémarrer ». Suivie aussi dans la barre du bas et le Centre d'activité."""
+        from .dialogues_maj import DialogueMaj
+        d = getattr(self, "_dialogue_maj", None)
+        if d is not None and d.tache.isRunning():
+            d.show()
+            d.raise_()
+            return
+        d = DialogueMaj(self, version or _("nouvelle version"), paquet)
+        self._dialogue_maj = d
+        t = d.demarrer()
         self.taches.append(t)
-        ed = self.editeur_courant()
-        if ed:
-            ed.encart.suivre(t, _("Téléchargement de la mise à jour"))
-        t.fini.connect(lambda r, e: self._maj_recue(r, e))
-        t.start()
-
-    def _maj_recue(self, fichier, erreur):
-        if erreur or not fichier:
-            QMessageBox.warning(self, _("Mise à jour"), str(erreur or _("téléchargement vide")))
-            return
-        if not mise_a_jour.fichier_valide(fichier):
-            QMessageBox.warning(self, _("Mise à jour"), _("Le fichier téléchargé n'est pas valide : rien n'a été changé."))
-            return
-        if QMessageBox.question(self, _("Mise à jour"), _("Mise à jour téléchargée. Fermer PhilCut et l'installer maintenant ?")) == QMessageBox.Yes:
-            mise_a_jour.appliquer(fichier)
-            QApplication.quit()
+        try:
+            self.encart_global.suivre(t, _("Téléchargement de la mise à jour"))
+            self.centre.suivre(t, _("Mise à jour de PhilCut"))
+        except Exception:      # noqa: BLE001 : la fenêtre suffit
+            pass
 
     def _catalogues(self):
         """Catalogues d'effets : copie locale tout de suite, mise à jour depuis GitHub en arrière-plan (sans bloquer)."""

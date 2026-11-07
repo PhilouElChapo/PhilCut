@@ -608,7 +608,7 @@ class Timeline(QGraphicsView):
         self.setMouseTracking(True)
         self.zone = [None, None]        # partie sélectionnée : début (I) et fin (O)
         self.h_video = H_VIDEO          # hauteur de la piste vidéo : Alt + molette ou Affichage › Images de la timeline
-        self.setMinimumHeight(H_REGLE + H_VIDEO + H_AUDIO + H_VOIX + H_CALQUE * 2 + 14)
+        self.setMinimumHeight(H_REGLE + H_VIDEO + 24)       # la règle et la piste vidéo ; le reste défile (petits écrans)
         self.setFrameShape(QFrame.NoFrame)
         self.setBackgroundBrush(_c("fond"))
         self._glisse_curseur = False

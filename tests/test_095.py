@@ -279,6 +279,50 @@ class Test095(unittest.TestCase):
         f.hide()
         f.deleteLater()
 
+    def test_fenetre_de_mise_a_jour(self):
+        """0.9.8 : « Télécharger et installer » ouvre une fenêtre qui montre la progression (Mo, vitesse, reste), puis
+        « Installer et redémarrer » ; une erreur est dite clairement."""
+        from app import mise_a_jour as M
+        from app.dialogues_maj import DialogueMaj
+        vrai_r, vrai_v = M.recuperer, M.fichier_valide
+
+        def faux(paquet, progression=None, arret=lambda: False):
+            for i in range(1, 6):
+                if arret():
+                    raise RuntimeError("annule")
+                progression(i * 40_000_000, 200_000_000)
+                time.sleep(0.05)
+            return os.path.join(self.d, "PhilCut_portable.zip")
+        M.recuperer, M.fichier_valide = faux, lambda f: True
+        try:
+            d = DialogueMaj(None, "0.9.8", "https://exemple.invalid/PhilCut_portable.zip")
+            t = d.demarrer()
+            self.assertTrue(d.isVisible())
+            vus = []
+            t0 = time.time()
+            while (t.isRunning() or not d.b_installer.isVisibleTo(d)) and time.time() - t0 < 10:
+                app.processEvents()
+                vus.append(d.detail.text())
+                time.sleep(0.02)
+            self.assertTrue(any("/ 200 Mo" in v and "Mo/s" in v for v in vus), vus[-3:])
+            self.assertFalse(d.b_installer.isHidden())
+            self.assertIn("Installer et redémarrer", d.b_installer.text())
+            d.close()
+            # erreur réseau : message clair, pas de silence
+            M.recuperer = lambda paquet, progression=None, arret=None: (_ for _ in ()).throw(OSError("réseau coupé"))
+            d2 = DialogueMaj(None, "0.9.8", "x")
+            t = d2.demarrer()
+            t0 = time.time()
+            while t.isRunning() and time.time() - t0 < 10:
+                app.processEvents()
+            for _i in range(10):
+                app.processEvents()
+            self.assertIn("réseau coupé", d2.detail.text())
+            self.assertTrue(d2.b_installer.isHidden())
+            d2.close()
+        finally:
+            M.recuperer, M.fichier_valide = vrai_r, vrai_v
+
 
 if __name__ == "__main__":
     unittest.main()
