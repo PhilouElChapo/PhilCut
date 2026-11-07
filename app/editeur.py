@@ -118,6 +118,8 @@ class Bibliotheque(QListWidget):
     retirer = Signal(str)
     fond = Signal(str)
     importer = Signal()
+    recreer = Signal(str)                  # rouvrir l'Atelier IA avec la recette du fichier (0.9.19)
+    copie = Signal(str)                    # enregistrer une copie du fichier ailleurs
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -188,6 +190,10 @@ class Bibliotheque(QListWidget):
                 m.addAction(_("Etiquette « {t} » (texte lu)", t=t), lambda t=t: self.etiquette.emit(ident, t))
             if (med or {}).get("genre") == "image":
                 m.addAction(_("Retirer le fond (copie PNG transparente)…"), lambda: self.fond.emit(ident))
+            from .creations import lire as _recette
+            if med and _recette(med.get("chemin") or ""):
+                m.addAction(icone("ia"), _("Modifier la création IA (phrase, paroles, durée)…"), lambda: self.recreer.emit(ident))
+            m.addAction(_("Enregistrer une copie sous…"), lambda: self.copie.emit(ident))
             m.addSeparator()
             m.addAction(icone("supprimer"), _("Retirer du projet"), lambda: self.retirer.emit(ident))
         m.addAction(icone("ia"), _("Analyser tous les rushes avec l'IA locale"), lambda: self.analyser.emit([]))
@@ -557,6 +563,8 @@ class Editeur(QWidget):
         self.biblio.fiche.connect(self.montrer_fiche)
         self.biblio.retirer.connect(self.retirer_media)
         self.biblio.fond.connect(lambda ident: self.retirer_fond(ident))
+        self.biblio.recreer.connect(lambda ident: self.reprendre_creation(media_id=ident))
+        self.biblio.copie.connect(self.copier_media)
         self.biblio.importer.connect(self.importer)
         vg.addWidget(self.biblio, 1)
         # colonne repliée : deux icônes nommées
@@ -1665,7 +1673,13 @@ class Editeur(QWidget):
         self.rafraichir()
 
     def _demande_menu(self, ident, quoi):
-        if quoi == "corriger":
+        if quoi == "recreer_ia":
+            self.reprendre_creation(clip_id=ident)
+        elif quoi == "copie":
+            c = self.projet.clip(ident)
+            if c:
+                self.copier_media(c["media"])
+        elif quoi == "corriger":
             self.corriger_suivi(ident)
         elif quoi == "suivi":
             c = self.projet.clip(ident)
@@ -2465,6 +2479,48 @@ class Editeur(QWidget):
         """Atelier IA local : image du film retouchée, effet sur la partie en jaune, logo, musique."""
         from .dialogues_creatif import DialogueAtelierIA
         DialogueAtelierIA(self, famille).exec()
+
+    def reprendre_creation(self, clip_id=None, media_id=None):
+        """Rouvre l'Atelier IA avec ce qui a servi à créer ce morceau, cette image ou ce clip (phrase, paroles, voix, durée) ;
+        le nouveau résultat peut remplacer l'ancien dans le film."""
+        from . import creations
+        from .dialogues_creatif import DialogueAtelierIA
+        c = self.projet.clip(clip_id) if clip_id else None
+        m = self.projet.media(c["media"] if c else media_id) or {}
+        rec = creations.lire(m.get("chemin") or "")
+        if not rec:
+            self.encart.message(_("Ce fichier n'a pas de recette IA : il n'a pas été créé par l'Atelier IA de PhilCut 0.9.19 ou plus."), 7000)
+            return
+        if c is None:
+            c = next((x for x in self.projet.clips if x["media"] == m.get("id")), None)
+        d = DialogueAtelierIA(self, rec.get("famille") or "musique")
+        d.reprendre(rec, c["id"] if c else None)
+        d.exec()
+
+    def remplacer_media_clip(self, clip_id, chemin, reglages=None):
+        """Le plan garde sa place et ses réglages ; il utilise le nouveau fichier (le morceau gardé dans l'aperçu). Annulable."""
+        c = self.projet.clip(clip_id)
+        if not c or not chemin:
+            return False
+        self.projet.marquer()
+        nm = self.projet.ajouter_media(chemin, moteur.sonder(chemin))
+        c["media"] = nm["id"]
+        c["nom"] = nm["nom"]
+        if reglages:
+            d, f = float(reglages.get("src_debut", 0.0)), float(reglages.get("src_fin", 0.0))
+            if f > d:
+                c["src_debut"], c["src_fin"] = d, f
+        self.biblio.remplir(self.projet)
+        self.rafraichir()
+        self.encart.message(_("Le plan utilise la nouvelle version ; l'ancienne reste dans les médias."), 6000)
+        return True
+
+    def copier_media(self, media_id):
+        from .dialogues_creatif import enregistrer_copie
+        m = self.projet.media(media_id) or {}
+        c = enregistrer_copie(self, m.get("chemin"), self.params)
+        if c:
+            self.encart.message(_("✓ Copie enregistrée : {f}", f=c), 7000)
 
     def inserer_image(self, png, t, duree=3.0, nom=""):
         """Insère une image à l'instant t (la suite du montage se décale), avec un zoom lent ; annulable."""

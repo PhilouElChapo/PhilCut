@@ -363,8 +363,13 @@ class DialogueTampons(QDialog):
         m.addSeparator()
         m.addAction(_("Raccourcir…"), self.raccourcir)
         m.addAction(_("Renommer, mots-clefs…"), self.renommer)
+        m.addAction(_("Enregistrer une copie sous…"), lambda: self._copie(e))
         m.addAction(_("Retirer"), self.retirer)
         m.exec(self.liste.mapToGlobal(pos))
+
+    def _copie(self, e):
+        from .dialogues_creatif import enregistrer_copie
+        enregistrer_copie(self, os.path.join(T.dossier_tampons(self.params), e.get("fichier", "")), self.params)
 
     # ------------------------------------------------------------------ tampons maison
     # ------------------------------------------------------------------ tampons créés par l'IA (0.9.18)

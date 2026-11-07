@@ -2215,7 +2215,7 @@
  "Enregistrer en Excel": "",
  "Enregistrer en Excel...": "",
  "Enregistrer tout seul dans un dossier": "",
- "Enregistrer une copie": "",
+ "Enregistrer une copie": "Kopie speichern",
  "Enregistrer une copie PDF/A": "",
  "Enregistrer une copie PDF/A...": "",
  "Enregistrer une copie...": "",
@@ -5615,5 +5615,15 @@
  "Tampon prêt.": "Einspieler fertig.",
  "animation": "Animation",
  "Dessin de l'image par l'IA : {p} %": "Die KI zeichnet das Bild: {p} %",
- "Chercher un aérodrome : LFPG, Toulouse, Megève…": "Flugplatz suchen: LFPG, Toulouse, Megève…"
+ "Chercher un aérodrome : LFPG, Toulouse, Megève…": "Flugplatz suchen: LFPG, Toulouse, Megève…",
+ "Création reprise : modifiez la phrase, les paroles ou la durée, puis « Créer ». Le résultat pourra remplacer l'original.": "Erstellung wieder geöffnet: ändern Sie Satz, Text oder Dauer, dann « Erstellen ». Das Ergebnis kann das Original ersetzen.",
+ "✓ Remplacé dans le film (Annuler pour revenir à l'ancienne version).": "✓ Im Film ersetzt (Rückgängig, um zur alten Version zurückzukehren).",
+ "✓ Copie enregistrée : {f}": "✓ Kopie gespeichert: {f}",
+ "Remplacer le morceau d'origine": "Ursprüngliches Stück ersetzen",
+ "Remplacer le plan d'origine": "Ursprüngliche Einstellung ersetzen",
+ "Enregistrer une copie sous…": "Kopie speichern unter…",
+ "Le plan utilise la nouvelle version ; l'ancienne reste dans les médias.": "Die Einstellung nutzt die neue Version; die alte bleibt in den Medien.",
+ "Ce fichier n'a pas de recette IA : il n'a pas été créé par l'Atelier IA de PhilCut 0.9.19 ou plus.": "Diese Datei hat kein KI-Rezept: Sie wurde nicht mit der KI-Werkstatt von PhilCut 0.9.19 oder neuer erstellt.",
+ "Modifier la création IA (phrase, paroles, durée)…": "KI-Erstellung ändern (Satz, Text, Dauer)…",
+ "Enregistrer une copie du fichier sous…": "Kopie der Datei speichern unter…"
 }

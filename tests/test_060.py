@@ -274,6 +274,30 @@ class Test060(unittest.TestCase):
             time.sleep(0.05)
         musique = [c for c in ed.projet.clips if c["piste"].startswith("audio")][-1]
         self.assertAlmostEqual(musique["src_fin"], 1.0, places=1)
+        # 0.9.19 : la recette est rangée à côté du fichier ; on rouvre l'Atelier pré-rempli et on remplace le morceau
+        from app import creations
+        rec = creations.lire(dl.resultat)
+        self.assertEqual(rec["prompt"], "musique douce au piano")
+        self.assertEqual(rec["duree"], 10)
+        dl2 = DialogueAtelierIA(ed, "image")
+        dl2.reprendre(rec, musique["id"])
+        self.assertEqual(dl2.famille.currentData(), "musique")
+        self.assertEqual(dl2.prompt.toPlainText(), "musique douce au piano")
+        self.assertEqual(dl2.duree.value(), 10)
+        ancien = musique["media"]
+        import shutil
+        autre = dl.resultat.replace(".mp3", "_v2.mp3")
+        shutil.copy2(dl.resultat, autre)
+        self.assertTrue(ed.remplacer_media_clip(musique["id"], autre, {"src_debut": 0.0, "src_fin": 2.0}))
+        self.assertNotEqual(musique["media"], ancien)
+        self.assertAlmostEqual(musique["src_fin"], 2.0)
+        dl2.reject()
+        from PySide6.QtWidgets import QFileDialog
+        from app.dialogues_creatif import enregistrer_copie
+        cible = os.path.join(tempfile.mkdtemp(), "ma_musique")
+        QFileDialog.getSaveFileName = staticmethod(lambda *a, **k: (cible, ""))
+        c = enregistrer_copie(ed, dl.resultat, ed.params)
+        self.assertTrue(c.endswith(".mp3") and os.path.exists(c) and creations.lire(c))
         # intraduisible sans réseau : rien n'est lancé, on demande l'anglais
         dl.prompt.setPlainText("chanson rigolote pour mon anniversaire")
         dl.creer()

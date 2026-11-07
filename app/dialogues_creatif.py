@@ -464,6 +464,10 @@ class DialogueAtelierIA(QDialog):
                 if comment != "deja":
                     t.avancer(0.0, _("Phrase envoyée au moteur, en anglais : « {t} »", t=en[:160]))
             return base(t)
+        self._recette = {"famille": e["famille"], "effet": e["id"], "prompt": prompt, "force": force}
+        if e["famille"] == "musique":
+            self._recette.update(duree=self.duree.value(), instrumental=self.instrumental.isChecked(), paroles=self.paroles.toPlainText(),
+                                 voix=self.voix_chant.currentData(), langue=self.langue_chant.currentData())
         self.envoye.hide()
         self.info.setStyleSheet("")
         self.tache = Tache(travail, _("Atelier IA"))
@@ -536,6 +540,9 @@ class DialogueAtelierIA(QDialog):
             return
         self.info.setStyleSheet("")
         self.resultat = r if isinstance(r, str) else (r[0] if isinstance(r, (tuple, list)) else r)
+        if isinstance(self.resultat, str) and os.path.exists(self.resultat):          # pour pouvoir la reprendre et la modifier
+            from . import creations
+            creations.ecrire(self.resultat, dict(getattr(self, "_recette", {}), anglais=self._ph.get("en", "")))
         if e["famille"] in ("image", "logo"):
             px = QPixmap(self.resultat)
             self.img_resultat.setPixmap(px.scaled(360, 203, Qt.KeepAspectRatio, Qt.SmoothTransformation))
@@ -545,6 +552,7 @@ class DialogueAtelierIA(QDialog):
             self._action(_("Ajouter aux médias"), lambda: self.ed.importer([self.resultat]))
             self._action(_("Logo dans la Fabrique…"), lambda: self.ed.window().fabrique(image=self.resultat))
             self._action(_("Enregistrer en JPG (miniature)…"), self._enregistrer_jpg)
+            self._action(_("Enregistrer sous…"), self._enregistrer_sous)
         elif e["famille"] == "musique":
             # rien n'est posé tant que l'utilisateur n'a pas écouté et choisi
             self.info.setText(_("Musique créée. Écoutez-la, gardez le morceau voulu, puis choisissez :"))
@@ -553,7 +561,10 @@ class DialogueAtelierIA(QDialog):
             self._action(_("Poser à la ligne rouge"), lambda: self._poser_musique(self.ed.timeline.position))
             self._action(_("Ajouter aux médias seulement"), lambda: (self.ed.importer([self.resultat]),
                                                                     self.info.setText(_("Ajoutée aux médias du projet."))))
+            if getattr(self, "_remplace", None):
+                self._action(_("Remplacer le morceau d'origine"), self._remplacer)
             self._action(_("Ranger dans ma bibliothèque"), self._ranger)
+            self._action(_("Enregistrer sous…"), self._enregistrer_sous)
             self._action(_("Recréer (une autre version)"), self.creer)
         else:
             png = moteur.image(self.resultat, 0.5, 360)
@@ -565,8 +576,44 @@ class DialogueAtelierIA(QDialog):
             self._action(_("Poser au-dessus du film"), self._poser_clip)
             self._action(_("Ajouter aux médias seulement"), lambda: (self.ed.importer([self.resultat]),
                                                                     self.info.setText(_("Ajouté aux médias du projet."))))
+            if getattr(self, "_remplace", None):
+                self._action(_("Remplacer le plan d'origine"), self._remplacer)
             self._action(_("Ranger dans ma bibliothèque"), self._ranger)
+            self._action(_("Enregistrer sous…"), self._enregistrer_sous)
             self._action(_("Recréer"), self.creer)
+
+    def reprendre(self, recette, clip_id=None):
+        """Rouvre une création : même effet, même phrase, mêmes paroles, même durée ; « Remplacer » remettra le résultat
+        à la place du plan d'origine."""
+        self._remplace = clip_id
+        fam = recette.get("famille")
+        i = self.famille.findData(fam) if hasattr(self, "famille") else -1
+        if i >= 0:
+            self.famille.setCurrentIndex(i)
+        for k in range(self.liste.count()):
+            if (self.liste.item(k).data(Qt.UserRole) or {}).get("id") == recette.get("effet"):
+                self.liste.setCurrentRow(k)
+                break
+        self.prompt.setPlainText(recette.get("prompt") or recette.get("anglais") or "")
+        if fam == "musique":
+            self.duree.setValue(float(recette.get("duree") or self.duree.value()))
+            self.instrumental.setChecked(bool(recette.get("instrumental", True)))
+            self.paroles.setPlainText(recette.get("paroles") or "")
+            self.voix_chant.setCurrentIndex(max(0, self.voix_chant.findData(recette.get("voix") or "auto")))
+            self.langue_chant.setCurrentIndex(max(0, self.langue_chant.findData(recette.get("langue") or "fr")))
+        self.info.setText(_("Création reprise : modifiez la phrase, les paroles ou la durée, puis « Créer ». Le résultat pourra "
+                            "remplacer l'original."))
+
+    def _remplacer(self):
+        r = self.apercu_media.reglages()
+        self.apercu_media.arreter()
+        if self.ed.remplacer_media_clip(self._remplace, self.resultat, r):
+            self.info.setText(_("✓ Remplacé dans le film (Annuler pour revenir à l'ancienne version)."))
+
+    def _enregistrer_sous(self):
+        c = enregistrer_copie(self, self.resultat, self.ed.params)
+        if c:
+            self.info.setText(_("✓ Copie enregistrée : {f}", f=c))
 
     def _ranger(self):
         """La création rejoint la bibliothèque (celle des tampons : sons et clips, rangée, synchronisée), avec sa phrase."""
@@ -812,3 +859,31 @@ class ApercuCreation(QWidget):
         if self.lecteur is not None:
             self.lecteur.stop()
         self._tic.stop()
+
+
+def enregistrer_copie(parent, chemin, params=None):
+    """Copie d'un fichier (créé par l'IA ou non) là où l'on veut : dossier Musique, Images ou Vidéos du système la première
+    fois, puis le dernier dossier choisi pour ce genre de copie. La recette IA (paroles, phrase…) suit la copie."""
+    from .widgets import dossier_depart, retenir_dossier
+    from . import creations
+    if not chemin or not os.path.exists(chemin):
+        return None
+    ext = os.path.splitext(chemin)[1].lower()
+    genre = "musique" if ext in (".mp3", ".wav", ".m4a", ".flac", ".ogg", ".aac") else \
+        "images" if ext in (".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp") else "videos"
+    cle = "copie_" + genre
+    p = params if params is not None else None
+    depart = (p or {}).get("dossier_" + cle) if p is not None else ""
+    if not depart or not os.path.isdir(depart):
+        from .session import dossier_systeme
+        depart = dossier_systeme(genre)
+    cible, _f = QFileDialog.getSaveFileName(parent, _("Enregistrer une copie"), os.path.join(depart, os.path.basename(chemin)),
+                                            f"*{ext}")
+    if not cible:
+        return None
+    if not cible.lower().endswith(ext):
+        cible += ext
+    if os.path.abspath(cible) != os.path.abspath(chemin):
+        creations.copier(chemin, cible)
+    retenir_dossier(parent, cle, cible, params)
+    return cible

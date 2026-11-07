@@ -2215,7 +2215,7 @@
  "Enregistrer en Excel": "",
  "Enregistrer en Excel...": "",
  "Enregistrer tout seul dans un dossier": "",
- "Enregistrer une copie": "",
+ "Enregistrer une copie": "Guardar una copia",
  "Enregistrer une copie PDF/A": "",
  "Enregistrer une copie PDF/A...": "",
  "Enregistrer une copie...": "",
@@ -5615,5 +5615,15 @@
  "Tampon prêt.": "Ráfaga lista.",
  "animation": "animación",
  "Dessin de l'image par l'IA : {p} %": "La IA dibuja la imagen: {p} %",
- "Chercher un aérodrome : LFPG, Toulouse, Megève…": "Buscar un aeródromo: LFPG, Toulouse, Megève…"
+ "Chercher un aérodrome : LFPG, Toulouse, Megève…": "Buscar un aeródromo: LFPG, Toulouse, Megève…",
+ "Création reprise : modifiez la phrase, les paroles ou la durée, puis « Créer ». Le résultat pourra remplacer l'original.": "Creación reabierta: cambie la frase, la letra o la duración y luego « Crear ». El resultado podrá sustituir al original.",
+ "✓ Remplacé dans le film (Annuler pour revenir à l'ancienne version).": "✓ Sustituido en la película (Deshacer para volver a la versión anterior).",
+ "✓ Copie enregistrée : {f}": "✓ Copia guardada: {f}",
+ "Remplacer le morceau d'origine": "Sustituir el tema original",
+ "Remplacer le plan d'origine": "Sustituir el plano original",
+ "Enregistrer une copie sous…": "Guardar una copia como…",
+ "Le plan utilise la nouvelle version ; l'ancienne reste dans les médias.": "El plano usa la nueva versión; la anterior se queda en los medios.",
+ "Ce fichier n'a pas de recette IA : il n'a pas été créé par l'Atelier IA de PhilCut 0.9.19 ou plus.": "Este archivo no tiene receta IA: no se creó con el Taller IA de PhilCut 0.9.19 o posterior.",
+ "Modifier la création IA (phrase, paroles, durée)…": "Modificar la creación IA (frase, letra, duración)…",
+ "Enregistrer une copie du fichier sous…": "Guardar una copia del archivo como…"
 }

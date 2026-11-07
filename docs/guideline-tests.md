@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T39 — 0.9.15 à 0.9.19 : écouter avant de poser, reprendre une création IA, enregistrer une copie
+
+1. **Reprendre une musique IA** : Montage › Atelier IA › Musique, une phrase, des paroles, « Créer », écouter, « Poser sous la vidéo ». Puis clic droit sur ce morceau dans la timeline › « Modifier la création IA (phrase, paroles, durée)… ». **Attendu** : l'Atelier se rouvre sur le même effet, avec la même phrase, les mêmes paroles, la même voix, la même langue et la même durée. Changer une ligne des paroles, « Créer », écouter, « Remplacer le morceau d'origine ». **Attendu** : le morceau garde sa place dans le film ; Annuler (Ctrl+Z) remet l'ancienne version, qui reste dans les médias.
+2. **Même chose depuis les médias** : clic droit sur la vignette du morceau dans les médias du projet › « Modifier la création IA… ». Un fichier qui ne vient pas de l'Atelier n'a pas cette ligne.
+3. **Enregistrer une copie** : dans l'Atelier, après une création, « Enregistrer sous… » ; au clic droit d'un média, d'un plan de la timeline ou d'un tampon de la bibliothèque, « Enregistrer une copie sous… ». **Attendu** : la première fois, le dossier Musique (pour un son), Images (pour une image) ou Vidéos (pour un clip) du système ; la fois suivante, le dernier dossier choisi pour ce genre de fichier. Le fichier « .ia.json » à côté de la copie permet de la reprendre plus tard.
+4. **Écouter avant de poser (0.9.16)** : une musique ou un clip créé n'est jamais posé tout seul : on l'écoute, « Début ici », « Fin ici », puis on choisit où le poser.
+5. **Tampons IA (0.9.18)** : Montage › Tampons vidéo › Tampons IA : choisir un modèle (fusée, BOUM, robot…), le modifier, « Créer ce tampon ». **Attendu** : il arrive dans « Ma bibliothèque », avec image, mouvement, texte, bruitages et voix.
+6. **Carte du trajet (0.9.18)** : Goodies › Aviation › Trajet : la carte OpenStreetMap se déplace à la souris, zoome à la molette ; un double-clic propose de garder le point dans « Mes points » ; la recherche trouve un aérodrome par code, nom ou ville après « Télécharger tous les aérodromes du monde ».
+
 ## T38 — 0.9.10 : la bibliothèque qui manque, synchronisation des réglages
 
 1. **Musique IA (code 3221225781)** : Préférences › IA locale › « Tester ce modèle ». **Attendu** : le titre nomme le fichier qui manque (ex. « Il manque VCRUNTIME140_1.dll : Visual C++ de Microsoft ») et un seul bouton, le bon. Le bouton « pilote Nvidia » n'apparaît que si c'est nvcuda.dll qui manque.

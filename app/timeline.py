@@ -1454,6 +1454,12 @@ class Timeline(QGraphicsView):
         if (med or {}).get("genre") == "image" and not clip.get("vignette"):
             m.addAction(_("Retirer le fond de l'image…"), lambda: self.demande_menu.emit(clip["id"], "fond_retirer"))
             m.addSeparator()
+        if med and med.get("chemin"):
+            from .creations import lire as _recette
+            if _recette(med["chemin"]):
+                m.addAction(_("Modifier la création IA (phrase, paroles, durée)…"), lambda: self.demande_menu.emit(clip["id"], "recreer_ia"))
+            m.addAction(_("Enregistrer une copie du fichier sous…"), lambda: self.demande_menu.emit(clip["id"], "copie"))
+            m.addSeparator()
         m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
         m.addAction(_("Supprimer ce plan (la suite se recolle)"), lambda: self.supprimer_selection(True))
         m.addAction(_("Supprimer ce plan en laissant un trou"), lambda: self.supprimer_selection(False))

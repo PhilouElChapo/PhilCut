@@ -447,6 +447,8 @@ def ajouter_fichier(params, source, nom="", mots=(), debut=0.0, duree=None):
         moteur.lancer(args + video + ["-c:a", "aac", "-b:a", "160k", cible])
     else:
         shutil.copy2(source, cible)
+    if os.path.exists(source + ".ia.json"):                # la recette IA suit : on pourra la reprendre
+        shutil.copy2(source + ".ia.json", cible + ".ia.json")
     info = moteur.sonder(cible)
     e = _entree(cible, nom, list(mots), "perso", info.get("duree") or duree or 0)
     if info.get("genre") == "audio":

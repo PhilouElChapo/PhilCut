@@ -5624,5 +5624,15 @@
  "Tampon prêt.": "Stinger ready.",
  "animation": "animation",
  "Dessin de l'image par l'IA : {p} %": "AI drawing the image: {p} %",
- "Chercher un aérodrome : LFPG, Toulouse, Megève…": "Search an aerodrome: LFPG, Toulouse, Megève…"
+ "Chercher un aérodrome : LFPG, Toulouse, Megève…": "Search an aerodrome: LFPG, Toulouse, Megève…",
+ "Création reprise : modifiez la phrase, les paroles ou la durée, puis « Créer ». Le résultat pourra remplacer l'original.": "Creation reopened: change the sentence, the lyrics or the length, then « Create ». The result can replace the original.",
+ "✓ Remplacé dans le film (Annuler pour revenir à l'ancienne version).": "✓ Replaced in the film (Undo to go back to the old version).",
+ "✓ Copie enregistrée : {f}": "✓ Copy saved: {f}",
+ "Remplacer le morceau d'origine": "Replace the original track",
+ "Remplacer le plan d'origine": "Replace the original shot",
+ "Enregistrer une copie sous…": "Save a copy as…",
+ "Le plan utilise la nouvelle version ; l'ancienne reste dans les médias.": "The shot uses the new version; the old one stays in the media.",
+ "Ce fichier n'a pas de recette IA : il n'a pas été créé par l'Atelier IA de PhilCut 0.9.19 ou plus.": "This file has no AI recipe: it was not created by the AI Workshop of PhilCut 0.9.19 or later.",
+ "Modifier la création IA (phrase, paroles, durée)…": "Edit the AI creation (sentence, lyrics, length)…",
+ "Enregistrer une copie du fichier sous…": "Save a copy of the file as…"
 }

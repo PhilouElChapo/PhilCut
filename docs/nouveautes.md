@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.18 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.19 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.19
+- Reprendre une creation IA : chaque musique, image ou clip cree garde sa "recette" (phrase, paroles, qui chante, langue, duree, force) a cote du fichier. Clic droit sur le plan dans la timeline (ou sur le media) > "Modifier la creation IA (phrase, paroles, duree)..." : l'Atelier IA se rouvre pre-rempli ; on change ce qu'on veut, on recree, on ecoute, puis "Remplacer le morceau d'origine" (meme place dans le film ; Annuler revient a l'ancienne version, qui reste dans les medias).
+- Enregistrer une copie : "Enregistrer sous..." dans l'Atelier IA (musique, image, clip) et "Enregistrer une copie sous..." au clic droit d'un media, d'un plan de la timeline ou d'un tampon de la bibliotheque. Premiere fois dans le dossier Musique, Images ou Videos du systeme, ensuite le dernier dossier choisi. La recette IA suit la copie (et le rangement dans la bibliotheque).
 
 ### 0.9.18
 - Musique IA avec paroles : qui chante (femme, homme, duo, choeur, enfant, rap), langue des paroles, paroles sur plusieurs lignes, et "Ecrire les paroles par l'IA" (locale ou cloud) a partir du theme et du debut que vous avez tape.

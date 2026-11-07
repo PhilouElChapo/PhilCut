@@ -2215,7 +2215,7 @@
  "Enregistrer en Excel": "",
  "Enregistrer en Excel...": "",
  "Enregistrer tout seul dans un dossier": "",
- "Enregistrer une copie": "",
+ "Enregistrer une copie": "Salva una copia",
  "Enregistrer une copie PDF/A": "",
  "Enregistrer une copie PDF/A...": "",
  "Enregistrer une copie...": "",
@@ -5615,5 +5615,15 @@
  "Tampon prêt.": "Stacchetto pronto.",
  "animation": "animazione",
  "Dessin de l'image par l'IA : {p} %": "L'IA disegna l'immagine: {p} %",
- "Chercher un aérodrome : LFPG, Toulouse, Megève…": "Cerca un aeroporto: LFPG, Toulouse, Megève…"
+ "Chercher un aérodrome : LFPG, Toulouse, Megève…": "Cerca un aeroporto: LFPG, Toulouse, Megève…",
+ "Création reprise : modifiez la phrase, les paroles ou la durée, puis « Créer ». Le résultat pourra remplacer l'original.": "Creazione riaperta: cambi la frase, il testo o la durata, poi « Crea ». Il risultato potrà sostituire l'originale.",
+ "✓ Remplacé dans le film (Annuler pour revenir à l'ancienne version).": "✓ Sostituito nel film (Annulla per tornare alla versione precedente).",
+ "✓ Copie enregistrée : {f}": "✓ Copia salvata: {f}",
+ "Remplacer le morceau d'origine": "Sostituisci il brano originale",
+ "Remplacer le plan d'origine": "Sostituisci l'inquadratura originale",
+ "Enregistrer une copie sous…": "Salva una copia con nome…",
+ "Le plan utilise la nouvelle version ; l'ancienne reste dans les médias.": "L'inquadratura usa la nuova versione; la vecchia resta nei media.",
+ "Ce fichier n'a pas de recette IA : il n'a pas été créé par l'Atelier IA de PhilCut 0.9.19 ou plus.": "Questo file non ha una ricetta IA: non è stato creato dal Laboratorio IA di PhilCut 0.9.19 o successivo.",
+ "Modifier la création IA (phrase, paroles, durée)…": "Modifica la creazione IA (frase, testo, durata)…",
+ "Enregistrer une copie du fichier sous…": "Salva una copia del file con nome…"
 }
