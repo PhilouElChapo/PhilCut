@@ -421,7 +421,8 @@ class Apercu(QGraphicsView):
                 w = H * r_src
         self.video.setAspectRatioMode(Qt.IgnoreAspectRatio)
         self.video.setSize(QSizeF(w, h))
-        self.video.setPos((L - w) / 2, (H - h) / 2)
+        x = max(0.0, min(1.0, float(c.get("cadre_x", 0.5)))) if mode == "remplir" else 0.5      # partie gardée en largeur
+        self.video.setPos((L - w) * x, (H - h) / 2)
 
     def _placer_audio(self):
         if not self.projet or not self.sons:
@@ -595,7 +596,8 @@ class Apercu(QGraphicsView):
             mode = "remplir"
         px2 = px.scaled(L, H, Qt.KeepAspectRatioByExpanding if mode == "remplir" else Qt.KeepAspectRatio, Qt.SmoothTransformation)
         self.image_fixe.setPixmap(px2)
-        self.image_fixe.setPos((L - px2.width()) / 2, (H - px2.height()) / 2)
+        x = max(0.0, min(1.0, float(c.get("cadre_x", 0.5)))) if mode == "remplir" else 0.5
+        self.image_fixe.setPos((L - px2.width()) * x, (H - px2.height()) / 2)
         self.image_fixe.setVisible(True)
 
     # ---------------------------------------------------------------- calques : titres et goodies

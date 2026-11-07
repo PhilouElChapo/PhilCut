@@ -26,6 +26,7 @@ class DialoguePreferences(QDialog):
         self._apparence()
         self._export()
         self._assistant()
+        self._tampons()
         self._ia_locale()
         self._packs()
         self._comptes()
@@ -204,6 +205,80 @@ class DialoguePreferences(QDialog):
         h.addWidget(b)
         fg.addRow(_("Dossier surveillé (Flow)"), h)
         f.addRow(g)
+        f.addRow(QLabel(_("<span style='color:#999'>L'IA locale (modèles, test du poste, mode poste léger) se règle dans l'onglet « IA locale ».</span>")))
+
+    # ---------------------------------------------------------------- Tampons et extraits en ligne (0.9.9)
+    def _tampons(self):
+        f = self._page(_("Tampons et extraits"))
+        from . import tampons as T0
+        from .dialogues_tampons import AJUSTER, CADRAGES, COMMENT, QUAND, placement_defaut
+        intro = QLabel(_("Les tampons vidéo sont de petites séquences toutes faites (rembobinage, « tadaa », bip…), vos propres clips et les "
+                         "extraits pris en ligne. Montage › Tampons vidéo pour les poser. Ces réglages suivent sur vos autres postes "
+                         "(Comptes et synchro), comme la bibliothèque, son ordre et ses favoris."))
+        intro.setWordWrap(True)
+        f.addRow(intro)
+        g0 = QGroupBox(_("Bibliothèque des tampons"))
+        f0 = QFormLayout(g0)
+        dossier = T0.dossier_tampons(self.params)
+        lbl = QLabel(dossier)
+        lbl.setWordWrap(True)
+        lbl.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        f0.addRow(_("Dossier"), lbl)
+        sync = "PhilCut" in dossier and dossier != os.path.join(dossier_donnees(), "tampons")
+        n0 = QLabel(_("Sur le lieu de synchronisation : la bibliothèque, son ordre et ses favoris sont les mêmes sur tous vos postes.") if sync else
+                    _("Sur ce poste seulement. Choisissez un lieu de synchronisation (Comptes et synchro) pour la retrouver sur vos autres postes."))
+        n0.setWordWrap(True)
+        n0.setStyleSheet("color:#9aa4b2")
+        f0.addRow(n0)
+        bo = QPushButton(_("Ouvrir le dossier"))
+        bo.clicked.connect(lambda: self._ouvrir(dossier))
+        f0.addRow(a_gauche(bo))
+        self.classement_tampons = QComboBox()
+        for k, lib in T0.CLASSEMENTS.items():
+            self.classement_tampons.addItem(lib, k)
+        self.classement_tampons.setCurrentIndex(max(0, self.classement_tampons.findData(self.params.get("tampons_classement", "perso"))))
+        f0.addRow(_("Classer la bibliothèque"), self.classement_tampons)
+        n1 = QLabel(_("« Mon ordre » : dans la fenêtre des tampons, glissez les vignettes pour les ranger, ou clic droit › Monter, Descendre, "
+                      "★ Favori (toujours en tête)."))
+        n1.setWordWrap(True)
+        n1.setStyleSheet("color:#9aa4b2")
+        f0.addRow(n1)
+        f.addRow(g0)
+        gp = QGroupBox(_("Poser un tampon dans le film"))
+        fp = QFormLayout(gp)
+        d = placement_defaut(self.params)
+        self.pl_quand = QComboBox()
+        for k, lib in QUAND.items():
+            self.pl_quand.addItem(lib, k)
+        self.pl_quand.setCurrentIndex(max(0, self.pl_quand.findData(d["quand"])))
+        fp.addRow(_("Où, par défaut"), self.pl_quand)
+        self.pl_comment = QComboBox()
+        for k, lib in COMMENT.items():
+            self.pl_comment.addItem(lib, k)
+        self.pl_comment.setCurrentIndex(max(0, self.pl_comment.findData(d["comment"])))
+        fp.addRow(_("Comment"), self.pl_comment)
+        self.pl_ajuster = QComboBox()
+        for k, lib in AJUSTER.items():
+            self.pl_ajuster.addItem(lib, k)
+        self.pl_ajuster.setCurrentIndex(max(0, self.pl_ajuster.findData(d["ajuster"])))
+        fp.addRow(_("S'il n'a pas la durée de la partie en jaune"), self.pl_ajuster)
+        self.pl_cadrage = QComboBox()
+        for k, lib in CADRAGES.items():
+            self.pl_cadrage.addItem(lib, k)
+        self.pl_cadrage.setCurrentIndex(max(0, self.pl_cadrage.findData(d["cadrage"])))
+        fp.addRow(_("S'il n'a pas le format du projet (16:9, 9:16…)"), self.pl_cadrage)
+        self.pl_son = QCheckBox(_("Par-dessus : garder le son du tampon (sinon on entend le film)"))
+        self.pl_son.setChecked(d["son"])
+        fp.addRow(self.pl_son)
+        self.pl_demander = QCheckBox(_("Toujours demander où et comment, avec ces choix proposés"))
+        self.pl_demander.setChecked(d["demander"])
+        fp.addRow(self.pl_demander)
+        n2 = QLabel(_("La ligne rouge, c'est l'instant affiché dans l'aperçu, sur la ligne de temps. La partie en jaune se choisit par un "
+                      "double-clic sur la règle des temps, au début puis à la fin."))
+        n2.setWordWrap(True)
+        n2.setStyleSheet("color:#9aa4b2")
+        fp.addRow(n2)
+        f.addRow(gp)
         # banques de vidéos et de sons libres (tampons vidéo, musiques) : clefs gratuites de l'utilisateur
         from PySide6.QtCore import QUrl
         from PySide6.QtGui import QDesktopServices
@@ -251,7 +326,21 @@ class DialoguePreferences(QDialog):
         self.accord_ytdlp.setChecked(bool(self.params.get("ytdlp_accord")))
         f3.addRow(self.accord_ytdlp)
         f.addRow(g3)
-        f.addRow(QLabel(_("<span style='color:#999'>L'IA locale (modèles, test du poste, mode poste léger) se règle dans l'onglet « IA locale ».</span>")))
+        gy = QGroupBox(_("Téléchargement des extraits YouTube"))
+        fy = QFormLayout(gy)
+        self.ytdlp_hauteur = QComboBox()
+        for h_, lib in VL.HAUTEURS.items():
+            self.ytdlp_hauteur.addItem(lib, h_)
+        self.ytdlp_hauteur.setCurrentIndex(max(0, self.ytdlp_hauteur.findData(int(self.params.get("ytdlp_hauteur") or 1080))))
+        fy.addRow(_("Qualité maximale"), self.ytdlp_hauteur)
+        self.ytdlp_son_seul = QCheckBox(_("Cocher « Le son seulement » par défaut (répliques, musiques)"))
+        self.ytdlp_son_seul.setChecked(bool(self.params.get("ytdlp_son_seul")))
+        fy.addRow(self.ytdlp_son_seul)
+        self.ytdlp_resultats = QSpinBox()
+        self.ytdlp_resultats.setRange(10, 100)
+        self.ytdlp_resultats.setValue(int(self.params.get("ytdlp_resultats") or 30))
+        fy.addRow(_("Résultats par recherche"), self.ytdlp_resultats)
+        f.addRow(gy)
 
     def _ytdlp(self, bouton):
         from . import videos_en_ligne as VL
@@ -364,16 +453,10 @@ class DialoguePreferences(QDialog):
                     av.setWordWrap(True)
                     av.setStyleSheet("color:#e0a040")
                     fg.addRow(av)
-                le = QLabel(essai_ia.resume((self.params.get("essais_ia") or {}).get(genre)))
-                le.setWordWrap(True)
-                self.lbl_essais[genre] = le
-                bt1 = QPushButton(_("Tester"))
-                bt1.setToolTip(_("Fait un petit travail réel avec ce modèle et chronomètre : {q}", q=essai_ia.ESSAIS[genre]))
-                bt1.clicked.connect(lambda _c=False, g=genre: self._tester_modeles([g]))
-                hl = QHBoxLayout()
-                hl.addWidget(le, 1)
-                hl.addWidget(bt1)
-                fg.addRow(hl)
+                re_ = ResultatEssai(self.params, genre, lambda g=genre: self._tester_modeles([g]))
+                re_.montrer((self.params.get("essais_ia") or {}).get(genre))
+                self.lbl_essais[genre] = re_
+                fg.addRow(re_)
             f.addRow(g)
         h = QHBoxLayout()
         self.lbl_place = QLabel(_("Place utilisée par l'IA locale : {t}", t=packs_ia.taille_texte(packs_ia.taille_dossier()) if packs_ia.installes() else "0"))
@@ -463,7 +546,7 @@ class DialoguePreferences(QDialog):
                 self.essai_barre.hide()
                 for g, r in (res or {}).items():
                     if g in self.lbl_essais:
-                        self.lbl_essais[g].setText(essai_ia.resume(r))
+                        self.lbl_essais[g].montrer(r)
                 ok = sum(1 for r in (res or {}).values() if r.get("ok"))
                 self.essai_etape.setText(_("Test interrompu : {e}", e=err) if err else
                                          _("Test terminé : {o} modèle(s) sur {n} fonctionnent.", o=ok, n=len(res or {})))
@@ -599,6 +682,13 @@ class DialoguePreferences(QDialog):
         p["machine"] = self.machine.text().strip() or p.get("machine")
         p["tampons_guetter"] = self.guetter_tel.isChecked()
         p["ytdlp_accord"] = self.accord_ytdlp.isChecked()
+        p["ytdlp_hauteur"] = self.ytdlp_hauteur.currentData()
+        p["ytdlp_son_seul"] = self.ytdlp_son_seul.isChecked()
+        p["ytdlp_resultats"] = self.ytdlp_resultats.value()
+        p["tampons_classement"] = self.classement_tampons.currentData()
+        p["tampons_placement"] = {"quand": self.pl_quand.currentData(), "comment": self.pl_comment.currentData(),
+                                  "ajuster": self.pl_ajuster.currentData(), "son": self.pl_son.isChecked(), "demander": self.pl_demander.isChecked(),
+                                  "cadrage": self.pl_cadrage.currentData()}
         p["proxys"] = self.proxys.isChecked()
         p["dossier_proxys"] = self.dossier_proxys.text().strip()
         p["ajout_auto"] = self.ajout_auto.isChecked()
@@ -677,3 +767,45 @@ class DialoguePreferences(QDialog):
         if a_installer:
             self.fenetre.installer_ia(a_installer)
         self.accept()
+
+
+class ResultatEssai(QWidget):
+    """Résultat du test d'un modèle, lisible : une ligne verte ou rouge (marche ou non, en combien de temps), sur quoi et
+    quand, le bouton « Tester » ; en cas d'échec, la cause en clair et les solutions en boutons (PanneauDiagnostic)."""
+
+    def __init__(self, params, genre, tester):
+        super().__init__()
+        from .dialogues_diagnostic import PanneauDiagnostic
+        self.genre = genre
+        v = QVBoxLayout(self)
+        v.setContentsMargins(0, 4, 0, 4)
+        self.ligne = QLabel("")
+        self.ligne.setWordWrap(True)
+        v.addWidget(self.ligne)
+        self.sous = QLabel("")
+        self.sous.setWordWrap(True)
+        self.sous.setStyleSheet("color:#9aa4b2")
+        v.addWidget(self.sous)
+        self.panneau = PanneauDiagnostic(self, params, reessayer=tester)
+        v.addWidget(self.panneau)
+        from . import essai_ia
+        self.b_tester = QPushButton(_("Tester ce modèle"))
+        self.b_tester.setToolTip(_("Fait un petit travail réel avec ce modèle et chronomètre : {q}", q=essai_ia.ESSAIS.get(genre, "")))
+        self.b_tester.clicked.connect(tester)
+        v.addLayout(a_gauche(self.b_tester))
+
+    def montrer(self, r):
+        from . import essai_ia
+        self.ligne.setText(essai_ia.resume(r))
+        couleur = "#9aa4b2" if not r else ("#5bd27a" if r.get("ok") else "#ff8a80")
+        self.ligne.setStyleSheet(f"color:{couleur};font-weight:600")
+        self.sous.setText(essai_ia.sous_titre(r))
+        self.sous.setVisible(bool(r))
+        if r and not r.get("ok") and r.get("message") != _("Test arrêté."):
+            self.panneau.montrer(r.get("detail") or r.get("message", ""), self.genre, r.get("journal") or None, r.get("moteur") or None,
+                                 r.get("peripherique") or "")
+        else:
+            self.panneau.hide()
+
+    def setText(self, texte):              # compatibilité : ancien libellé simple
+        self.ligne.setText(texte)

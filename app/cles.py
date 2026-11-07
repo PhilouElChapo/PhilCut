@@ -4,7 +4,7 @@ Une image clef fixe les réglages à un instant : {"t": secondes depuis le débu
 Entre deux images clefs, les valeurs passent de l'une à l'autre en ligne droite ; avant la première et après la
 dernière, elles restent fixes. Sans image clef, l'élément garde ses réglages fixes (comme avant).
 
-Règle d'usage : dès qu'un élément a une image clef, chaque réglage fait à la tête de lecture (curseur de l'Inspecteur,
+Règle d'usage : dès qu'un élément a une image clef, chaque réglage fait à la ligne rouge (curseur de l'Inspecteur,
 glisser dans l'image) pose ou modifie l'image clef de cet instant. Les losanges ◆ sur la timeline les montrent.
 """
 from .projet import fin_clip
@@ -102,7 +102,7 @@ def retirer(elem, t_rel):
 
 
 def regler(elem, t_montage, **changes):
-    """Un réglage fait par l'utilisateur à la tête de lecture : image clef si l'élément est animé, sinon réglage fixe."""
+    """Un réglage fait par l'utilisateur à la ligne rouge : image clef si l'élément est animé, sinon réglage fixe."""
     if elem.get("cles"):
         poser(elem, t_montage - base(elem), **changes)
         return True

@@ -760,7 +760,7 @@ class Editeur(QWidget):
     def couper_son_a(self, cid, t):
         c = self.projet.clip(cid)
         if not c or not (c["debut"] + 0.1 < t < fin_clip(c)):
-            self.encart.message(_("Placez la tête de lecture sur le plan de son, à l'endroit où il doit s'arrêter."))
+            self.encart.message(_("Placez la ligne rouge sur le plan de son, à l'endroit où il doit s'arrêter."))
             return
         self.projet.marquer()
         v = float(c.get("vitesse", 1.0) or 1.0)
@@ -931,14 +931,13 @@ class Editeur(QWidget):
         m.addAction(icone("recadrer", theme.COULEURS["texte"]), _("Tracer une zone à flouter, pixelliser ou cacher…"), self.tracer_zone)
         m.addAction(_("Figer l'image ici (cadre photo, légende)…"), self.figer_image)
         m.addAction(_("Bruitage ici…"), self.bruitage)
-        m.addAction(_("Tampon vidéo ici…"), self.tampons)
+        m.addAction(_("Tampon vidéo à cet instant…"), self.tampons)
         m.addAction(_("Vignette YouTube depuis cette image (zones, titre, flèche)…"), lambda: self.vignette_composee("vignette"))
         m.addAction(_("Image fixe composée depuis cette image…"), lambda: self.vignette_composee("image"))
         m.addSeparator()
-        m.addAction(icone("goodies", theme.COULEURS["texte"]), _("Tableau de bord (instruments, profil réglable)…"), self.tableau_de_bord)
-        m.addAction(_("Carte animée du trajet et mini-carte (GPS)…"), self.trajet)
-        m.addAction(_("Indicateur de vent (manche à air)…"), self.manche_air)
-        m.addAction(_("Sous-titres des échanges radio…"), self.radio)
+        m.addAction(icone("goodies", theme.COULEURS["texte"]), _("Tableau de bord d'instruments…"), self.tableau_de_bord)
+        m.addAction(_("Carte animée du trajet…"), self.trajet)
+        m.addAction(_("Manche à air (vent)…"), self.manche_air)
         m.exec(self.apercu.viewport().mapToGlobal(pos))
 
     def extraire_image(self):
@@ -993,7 +992,7 @@ class Editeur(QWidget):
             self.apercu.aller_a(t)
         self._temps(t)
         cib = self.inspecteur._cible
-        if cib and not self.apercu.en_lecture:          # élément animé : les curseurs suivent la tête de lecture
+        if cib and not self.apercu.en_lecture:          # élément animé : les curseurs suivent la ligne rouge
             el = self.projet.clip(cib[1]) if cib[0] == "clip" else next((x for x in self.projet.titres + self.projet.goodies if x["id"] == cib[1]), None)
             if el is not None and el.get("cles"):
                 if not hasattr(self, "_minut_insp"):
@@ -1086,7 +1085,7 @@ class Editeur(QWidget):
                     Z.deplacer(e, x, y, self.timeline.position)
                 else:
                     from . import cles as K
-                    K.regler(e, self.timeline.position, x=x, y=y)        # animé : image clef à la tête de lecture
+                    K.regler(e, self.timeline.position, x=x, y=y)        # animé : image clef à la ligne rouge
                     self.timeline.reconstruire()
                 self._modifie()
                 if self.inspecteur._cible and self.inspecteur._cible[1] == ident:
@@ -1138,7 +1137,7 @@ class Editeur(QWidget):
             if e["id"] == ident:
                 self.inspecteur._marquer(("taille", ident))
                 defaut = 1.0 if e in self.projet.titres else 0.22
-                if e in self.projet.titres and e.get("cles"):           # texte animé : image clef à la tête de lecture
+                if e in self.projet.titres and e.get("cles"):           # texte animé : image clef à la ligne rouge
                     from . import cles as K
                     v = K.valeurs_a(e, self.timeline.position)["taille"]
                     K.regler(e, self.timeline.position, taille=round(min(4.0, max(0.2, v * facteur)), 3))
@@ -1168,7 +1167,7 @@ class Editeur(QWidget):
     def tracer_zone(self):
         """Tracer à la souris, dans l'image, une zone à flouter, pixelliser, cacher…"""
         if not self.projet.clip_a(self.timeline.position, "video"):
-            self.encart.message(_("Placez la tête de lecture sur un plan vidéo, puis tracez la zone dans l'image."))
+            self.encart.message(_("Placez la ligne rouge sur un plan vidéo, puis tracez la zone dans l'image."))
             return
         if self.apercu.en_lecture:
             self.apercu.pause()
@@ -1179,7 +1178,7 @@ class Editeur(QWidget):
     def retracer_zone(self, z):
         t = self.timeline.position
         if not (z["debut"] <= t < z["fin"]):
-            self.encart.message(_("Placez la tête de lecture pendant la zone, au moment où le suivi se trompe, puis retracez-la."))
+            self.encart.message(_("Placez la ligne rouge pendant la zone, au moment où le suivi se trompe, puis retracez-la."))
             return
         if self.apercu.en_lecture:
             self.apercu.pause()
@@ -1238,8 +1237,8 @@ class Editeur(QWidget):
                 self.encart.message(_("Suivi impossible : {e}", e=str(err)))
             else:
                 n = len((z.get("suivi") or {}).get("positions") or [])
-                self.encart.message(_("Zone suivie : {n} positions. Lisez le passage pour vérifier ; si elle décroche, « Corriger à la tête "
-                                      "de lecture ».", n=n))
+                self.encart.message(_("Zone suivie : {n} positions. Lisez le passage pour vérifier ; si elle décroche, « Corriger à la ligne "
+                                      "rouge (retracer ici) ».", n=n))
             self.timeline.reconstruire()
             self._modifie()
             if self.inspecteur._cible == ("zone", z["id"]):
@@ -1681,19 +1680,19 @@ class Editeur(QWidget):
         t.start()
 
     def corriger_suivi(self, ident):
-        """Le suivi a décroché (personne cachée, sortie du cadre) : on la redésigne à la tête de lecture, le reste est refait."""
+        """Le suivi a décroché (personne cachée, sortie du cadre) : on la redésigne à la ligne rouge, le reste est refait."""
         from .dialogues_suivi import DialogueSuivi
         t = self.timeline.position
         clip = self.projet.clip(ident)
         element = None if clip else next((e for e in self.projet.titres + self.projet.goodies if e["id"] == ident), None)
         if clip:
             if not (clip["debut"] <= t < fin_clip(clip)):
-                self.encart.message(_("Placez la tête de lecture sur ce plan, au moment où le suivi se trompe."))
+                self.encart.message(_("Placez la ligne rouge sur ce plan, au moment où le suivi se trompe."))
                 return
             m = self.projet.media(clip["media"])
         elif element and element.get("suivi"):
             if not (element["debut"] <= t < element["fin"]):
-                self.encart.message(_("Placez la tête de lecture pendant l'élément, au moment où le suivi se trompe."))
+                self.encart.message(_("Placez la ligne rouge pendant l'élément, au moment où le suivi se trompe."))
                 return
             m = self.projet.media(element["suivi"].get("media"))
             clip = next((c for c in self.projet.clips_piste("video") if c["media"] == m["id"] and c["debut"] <= t < fin_clip(c)), None) if m else None
@@ -1845,7 +1844,7 @@ class Editeur(QWidget):
 
     def poser_effet(self, cid, eid):
         """Effet ou transition du catalogue posé sur un plan (glissé sur la timeline, double-clic, clic droit).
-        cid None : le plan sélectionné, sinon celui sous la tête de lecture."""
+        cid None : le plan sélectionné, sinon celui sous la ligne rouge."""
         from . import effets as E
         c = self.projet.clip(cid) if cid else self._clip_selectionne()
         fi = E.fiche(eid)
@@ -2038,7 +2037,7 @@ class Editeur(QWidget):
 
     # ---------------------------------------------------------------- image figée, bruitages
     def figer_image(self, t=None):
-        """Image figée à la tête de lecture : le plan s'arrête sur cette image pendant quelques secondes (cadre photo,
+        """Image figée à la ligne rouge : le plan s'arrête sur cette image pendant quelques secondes (cadre photo,
         légende, flash, déclic au choix), puis reprend. La suite du montage est décalée d'autant."""
         from .dialogues_effets_plus import DialogueFiger
         from . import bruitages as B
@@ -2046,7 +2045,7 @@ class Editeur(QWidget):
         c = self.projet.clip_a(t, "video")
         m = self.projet.media(c["media"]) if c else None
         if not m or m.get("genre") != "video":
-            self.encart.message(_("Placez la tête de lecture sur un plan vidéo, à l'image à figer."))
+            self.encart.message(_("Placez la ligne rouge sur un plan vidéo, à l'image à figer."))
             return
         d = DialogueFiger(self)
         if d.exec() != QDialog.Accepted:
@@ -2224,7 +2223,7 @@ class Editeur(QWidget):
                 self.projet.marquer()
                 self.projet.d["sous_titres_radio"] = d.resultat()
                 self.rafraichir()
-                self.encart.message(_("{n} sous-titre(s) radio posés (en haut de l'image, style radio). Montage › Aviation › Sous-titres radio "
+                self.encart.message(_("{n} sous-titre(s) radio posés (en haut de l'image, style radio). Montage › Sous-titres › Seulement les échanges radio "
                                       "pour les revoir.", n=len(d.resultat())))
         t.fini.connect(fini)
         t.start()
@@ -2393,11 +2392,16 @@ class Editeur(QWidget):
         self.encart.message(_("Image insérée à {t} ; la suite du montage est décalée de {d} s.", t=_tc(t), d=duree))
         return ci
 
-    def inserer_tampon(self, video, t, nom=""):
-        """Insère un tampon vidéo (avec son son) à l'instant t sur la piste Vidéo 1 ; la suite du montage se décale. Annulable."""
+    def inserer_tampon(self, video, t, nom="", src_fin=None, vitesse=1.0, marquer=True, message=True):
+        """Insère un tampon vidéo (avec son son) à l'instant t sur la piste Vidéo 1 ; la suite du montage se décale. Annulable.
+        src_fin : le couper à cette durée ; vitesse : accéléré (> 1) ou ralenti (< 1)."""
         f = moteur.sonder(video)
-        duree = float(f.get("duree") or 2.0)
-        self.projet.marquer()
+        duree_src = float(f.get("duree") or 2.0)
+        src_fin = min(float(src_fin), duree_src) if src_fin else duree_src
+        vitesse = max(0.1, min(16.0, float(vitesse or 1.0)))
+        duree = src_fin / vitesse
+        if marquer:
+            self.projet.marquer()
         c = self.projet.clip_a(t, "video")
         if c and c["debut"] + 0.04 < t < fin_clip(c) - 0.04:
             self.projet.couper(c["id"], t)
@@ -2410,14 +2414,66 @@ class Editeur(QWidget):
                 x["fin"] += duree
         mi = self.projet.ajouter_media(video, f)
         mi["nom"] = nom or os.path.basename(video)
-        ci = self.projet.ajouter_clip(mi["id"], "video", t, 0.0, duree)
+        ci = self.projet.ajouter_clip(mi["id"], "video", t, 0.0, src_fin, vitesse)
         ci["nom"] = mi["nom"]
         ci["ajustement"] = "contenir_flou"
         self.biblio.remplir(self.projet)
         self.rafraichir()
         self.timeline.selectionner(ci["id"])
-        self.encart.message(_("Tampon « {n} » inséré à {t} ({d:.1f} s) ; la suite du montage est décalée. Supprimer le plan le retire.",
-                              n=mi["nom"], t=_tc(t), d=duree), 8000)
+        if message:
+            self.encart.message(_("Tampon « {n} » inséré à {t} ({d:.1f} s) ; la suite du montage est décalée. Supprimer le plan le retire.",
+                                  n=mi["nom"], t=_tc(t), d=duree), 8000)
+        return ci
+
+    def placer_tampon(self, video, nom, choix):
+        """Pose un tampon selon la fenêtre « Où mettre ce tampon ? » : choix = {"t", "comment": inserer|dessus|remplacer,
+        "zone": (a, b), "src_fin", "vitesse", "son"}. Une seule annulation remet tout comme avant."""
+        comment = choix.get("comment", "inserer")
+        t = float(choix.get("t") or 0.0)
+        src_fin, vitesse = choix.get("src_fin"), float(choix.get("vitesse") or 1.0)
+        if comment == "dessus":
+            f = moteur.sonder(video)
+            d_src = float(f.get("duree") or 2.0)
+            fin = min(float(src_fin), d_src) if src_fin else d_src
+            ci = self.poser_au_dessus(video, t, nom, fin / vitesse)
+            ci["src_fin"] = fin
+            ci["vitesse"] = vitesse
+            ci["muet"] = not choix.get("son", True)
+            self.rafraichir()
+            self.encart.message(_("Tampon « {n} » posé par-dessus le film à {t} ({d:.1f} s) : rien n'est décalé. Supprimer le plan le retire.",
+                                  n=nom, t=_tc(t), d=fin / vitesse), 8000)
+            return ci
+        if comment == "remplacer" and choix.get("zone"):
+            a, b = choix["zone"]
+            self.projet.marquer()
+            self.projet.partie(a, b, False)
+            self.timeline.zone = [None, None]
+            ci = self._cadrer_tampon(self.inserer_tampon(video, a, nom, src_fin, vitesse, marquer=False, message=False), choix)
+            self.encart.message(_("La partie en jaune ({a} → {b}) est remplacée par le tampon « {n} » ({d:.1f} s). Annuler pour revenir.",
+                                  a=_tc(a), b=_tc(b), n=nom, d=duree_clip(ci)), 8000)
+            return ci
+        return self._cadrer_tampon(self.inserer_tampon(video, t, nom, src_fin, vitesse), choix)
+
+    def _cadrer_tampon(self, ci, choix):
+        """Tampon d'un autre format que le projet (16:9 dans un projet 9:16…) : fond flou, bandes noires, recadré
+        (centre, gauche, droite) ou suivi de la personne, selon le choix."""
+        mode = choix.get("cadrage") or "contenir_flou"
+        if ci is None:
+            return ci
+        if mode.startswith("remplir"):
+            ci["ajustement"] = "remplir"
+            ci["cadre_x"] = {"remplir_g": 0.0, "remplir_d": 1.0}.get(mode, 0.5)
+        elif mode == "suivi":
+            ci["ajustement"] = "contenir_flou"
+            self.rafraichir()
+            try:
+                self.recadrer_suivi(ci)
+            except Exception:      # noqa: BLE001 : à défaut, il reste entier sur fond flou
+                pass
+            return ci
+        else:
+            ci["ajustement"] = mode
+        self.rafraichir()
         return ci
 
     def poser_son(self, son, t, nom=""):

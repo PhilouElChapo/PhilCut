@@ -418,6 +418,7 @@ class Test080(unittest.TestCase):
         dl.liste.setCurrentItem([i for i in items if i.data(0x0100)["id"] == e["id"]][0])
         app.processEvents()
         self.assertIn("Jane Doe", T.credit({"titre": "Applause", "auteur": "Jane Doe", "licence": "CC BY 4.0", "source": "wikimedia"}))
+        ed.params["tampons_placement"] = {"demander": False}          # 0.9.9 : sans la fenêtre « Où mettre ? » (ligne rouge, insérer)
         dl.inserer()
         vids = sorted(ed.projet.clips_piste("video"), key=lambda c: c["debut"])
         self.assertEqual(len(vids), 3)                               # plan coupé à 2 s, tampon au milieu

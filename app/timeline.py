@@ -564,7 +564,7 @@ class ItemCalque(QGraphicsRectItem):
             m.addAction(_("Refaire le suivi depuis le début") if suivie else _("Suivre ce qu'elle couvre (analyse de l'image)"),
                         lambda: self.tl.demande_menu.emit(self.elem["id"], "zone_suivre"))
             if suivie:
-                m.addAction(_("Corriger à la tête de lecture (retracer ici)"), lambda: self.tl.demande_menu.emit(self.elem["id"], "zone_retracer"))
+                m.addAction(_("Corriger à la ligne rouge (retracer ici)"), lambda: self.tl.demande_menu.emit(self.elem["id"], "zone_retracer"))
                 m.addAction(_("Figer (ne plus suivre)"), lambda: self.tl.demande_menu.emit(self.elem["id"], "zone_figer"))
             m.addSeparator()
             m.addAction(_("Supprimer"), lambda: self.tl.supprimer_element(self.elem["id"]))
@@ -573,7 +573,7 @@ class ItemCalque(QGraphicsRectItem):
         m.addAction(_("Tous les réglages (fenêtre)…"), lambda: self.tl.proprietes.emit(self.elem["id"]))
         m.addAction(_("Accrocher à une personne (suit ses mouvements)…"), lambda: self.tl.demande_menu.emit(self.elem["id"], "accrocher"))
         if self.elem.get("suivi"):
-            m.addAction(_("Corriger le suivi à la tête de lecture…"), lambda: self.tl.demande_menu.emit(self.elem["id"], "corriger"))
+            m.addAction(_("Corriger le suivi à la ligne rouge…"), lambda: self.tl.demande_menu.emit(self.elem["id"], "corriger"))
             m.addAction(_("Décrocher (position fixe)"), lambda: self.tl.demande_menu.emit(self.elem["id"], "decrocher"))
         m.addAction(_("Supprimer"), lambda: self.tl.supprimer_element(self.elem["id"]))
         m.exec(e.screenPos())
@@ -1064,7 +1064,7 @@ class Timeline(QGraphicsView):
             self.balayage.emit(True)
             return
         if e.button() == Qt.LeftButton and (sp.y() < H_REGLE or self.itemAt(e.pos()) is None) and sp.x() >= MARGE_G:
-            # un clic ou un glissement déplace toujours la tête de lecture rouge (jamais de sélection par erreur) ;
+            # un clic ou un glissement déplace toujours la ligne rouge rouge (jamais de sélection par erreur) ;
             # la partie jaune se fait par double-clic sur la règle (début puis fin), par [ ] ou Maj + glisser sur la règle
             self._glisse_curseur = True
             self.balayage.emit(True)
@@ -1108,11 +1108,11 @@ class Timeline(QGraphicsView):
         if self._rect_zoom().contains(e.position()):
             aide = _("Molette : zoom sur la timeline (là où est la souris) · Maj + molette : défiler · clic ici : tout voir")
         elif any(rc.contains(sp) for rc in getattr(self, "_boutons_tete", []) or []):
-            aide = _("[ : la partie jaune commence à la tête de lecture · ] : elle finit ici")
+            aide = _("[ : la partie jaune commence à la ligne rouge · ] : elle finit ici")
         elif self._bord_zone_a(sp) is not None:
             aide = _("Tirer ce bord pour ajuster la partie jaune")
         elif sp.y() < H_REGLE:
-            aide = _("Clic ou glisser : déplacer la tête de lecture · double-clic : début, puis fin de la partie jaune · "
+            aide = _("Clic ou glisser : déplacer la ligne rouge · double-clic : début, puis fin de la partie jaune · "
                      "molette : zoom")
         if aide != getattr(self, "_aide_regle", None):
             self._aide_regle = aide
@@ -1472,7 +1472,7 @@ class Timeline(QGraphicsView):
             a.setCheckable(True)
             a.setChecked(clip.get("ajustement") == "suivi")
             if clip.get("ajustement") == "suivi":
-                sm.addAction(_("Corriger le suivi à la tête de lecture…"), lambda: self.demande_menu.emit(clip["id"], "corriger"))
+                sm.addAction(_("Corriger le suivi à la ligne rouge…"), lambda: self.demande_menu.emit(clip["id"], "corriger"))
         a = m.addAction(_("Muet"), lambda: self._muet(clip))
         a.setCheckable(True)
         a.setChecked(bool(clip.get("muet")))

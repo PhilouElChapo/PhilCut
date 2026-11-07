@@ -15,7 +15,11 @@ from .langue import _
 
 
 class ErreurCreatif(Exception):
-    pass
+    """Erreur d'un moteur : code d'arrêt (code), lignes de sa sortie (lignes), genre du moteur (genre), journal (journal)."""
+    code = None
+    lignes = ()
+    genre = None
+    journal = None
 
 
 def modele_pour(genre, params=None):
@@ -32,7 +36,15 @@ def _fichier(cle, role):
     return os.path.join(P.dossier_modele(cle), nom) if nom else ""
 
 
-def _moteur(genre_moteur, genre_gpu, params):
+def _moteur(genre_moteur, genre_gpu, params, progression=None):
+    evite = bool(genre_gpu) and genre_gpu in ((params or {}).get("moteurs_evites") or [])
+    if evite and not P.moteur_installe(genre_moteur) and P.moteur_info(genre_moteur):
+        # la version carte graphique ne marche pas sur ce poste : on installe la version processeur (une fois)
+        _avancer(progression, 0.0, _("Installation du moteur sur processeur (la version carte graphique ne marche pas ici)…"))
+        P.installer_moteur(genre_moteur, progression=(lambda f, *_a: _avancer(progression, 0.0, _(
+            "Installation du moteur sur processeur : {p} %", p=int(f * 100)))) if progression else None)
+    if evite and P.moteur_installe(genre_moteur):
+        return genre_moteur
     if genre_gpu and P.moteur_installe(genre_gpu) and (params or {}).get("ia_gpu", True) is not False and P.carte_graphique():
         return genre_gpu
     if P.moteur_installe(genre_moteur):
@@ -114,6 +126,9 @@ def _lancer(genre, args, progression=None, arret=lambda: False, delai=3600, jour
         fin = "\n".join(l for l in lignes[-12:] if l.strip())
         err = ErreurCreatif(_("Le moteur s'est arrêté (code {c}) : {f}", c=proc.returncode, f=fin[-600:]))
         err.journal = chemin_journal
+        err.code = proc.returncode & 0xFFFFFFFF
+        err.lignes = lignes[-200:]
+        err.genre = genre
         raise err
     return lignes
 
@@ -126,7 +141,7 @@ def image(prompt, sortie, params=None, negatif="", largeur=None, hauteur=None, i
         m, e = P.modeles(avec_essai=True).get(cle) or {}, P.etat().get(cle) or {}
     else:
         cle, m, e = modele_pour("image", params)
-    genre = _moteur(m.get("moteur", "image"), m.get("moteur_gpu"), params)
+    genre = _moteur(m.get("moteur", "image"), m.get("moteur_gpu"), params, progression)
     px = int(m.get("taille_px", 512))
     if init and (largeur is None or hauteur is None):
         from PySide6.QtGui import QImage
@@ -151,7 +166,13 @@ def image(prompt, sortie, params=None, negatif="", largeur=None, hauteur=None, i
     args = _remplir(m.get("args") or [], valeurs) + (_remplir(m.get("args_init") or [], valeurs) if init else [])
     if not args:
         raise ErreurCreatif(_("Catalogue sans ligne de commande pour ce modèle : mettez à jour l'IA locale."))
-    _lancer(genre, args, progression, arret, journal="image", etape=_("Dessin de l'image"))
+    try:
+        _lancer(genre, args, progression, arret, journal="image", etape=_("Dessin de l'image"))
+    except ErreurCreatif as err:
+        if not (m.get("moteur_gpu") and _repli_processeur(err, m.get("moteur", "image"), m.get("moteur_gpu"), params, progression)):
+            raise
+        genre = _moteur(m.get("moteur", "image"), m.get("moteur_gpu"), params, progression)
+        _lancer(genre, args, progression, arret, journal="image", etape=_("Dessin de l'image (processeur)"))
     if not os.path.exists(sortie):
         raise ErreurCreatif(_("Le moteur n'a pas produit d'image."))
     return sortie
@@ -198,7 +219,32 @@ STYLES_MUSIQUE = [
 def musique(style, sortie, duree=60.0, params=None, instrumental=True, paroles="", langue="fr", bpm=0, progression=None, arret=lambda: False):
     """Un morceau (MP3) d'environ `duree` secondes dans le style donné (phrase libre ou clef de STYLES_MUSIQUE)."""
     cle, m, e = modele_pour("musique", params)
-    genre = _moteur("musique", m.get("moteur_gpu", "musique_gpu"), params)
+    genre_gpu = m.get("moteur_gpu", "musique_gpu")
+    try:
+        return _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, progression, arret, cle, m, e,
+                        _moteur("musique", genre_gpu, params, progression))
+    except ErreurCreatif as err:
+        if not _repli_processeur(err, "musique", genre_gpu, params, progression):
+            raise
+    return _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, progression, arret, cle, m, e,
+                    _moteur("musique", genre_gpu, params, progression))
+
+
+def _repli_processeur(err, genre_moteur, genre_gpu, params, progression=None):
+    """La version carte graphique d'un moteur s'arrête avant de travailler (DLL manquante, arrêt brutal) : on note de
+    l'éviter et on réessaie sur le processeur, si cette version existe. Renvoie True si on peut réessayer."""
+    from . import diagnostic_ia as D
+    if params is None or getattr(err, "genre", None) != genre_gpu or err.code not in (D.DLL_MANQUANTE, D.POINT_ENTREE, D.ARRET_BRUTAL, D.ACCES):
+        return False
+    if not (P.moteur_installe(genre_moteur) or P.moteur_info(genre_moteur)):
+        return False
+    D.appliquer("processeur", genre_gpu, params)
+    _avancer(progression, 0.0, _("La version carte graphique du moteur ne démarre pas ici (code {c}) : nouvel essai sur le processeur…",
+                                 c=err.code))
+    return True
+
+
+def _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, progression, arret, cle, m, e, genre):
     caption = dict((k, c) for k, _n, c in STYLES_MUSIQUE).get(style, style)
     d = tempfile.mkdtemp(prefix="philcut-ace-")
     roles = e.get("roles") or {}
@@ -245,6 +291,33 @@ def _images_video(video, dossier, debut=0.0, duree=None, ips=None):
     return len([f for f in os.listdir(dossier) if f.endswith(".png")])
 
 
+def _lancer_ncnn(genre, args, params, progression, arret, journal, etape):
+    """Real-ESRGAN et RIFE (Vulkan) prennent par défaut la première carte graphique, souvent la carte intégrée d'un
+    portable (Intel UHD), trop faible : ils plantent (code 3221226505). On lit les cartes qu'ils listent, on réessaie
+    tout seul sur la carte dédiée (Nvidia, AMD) et on la retient pour la suite (params["vulkan_carte"])."""
+    from . import diagnostic_ia as D
+    cartes = dict((params or {}).get("vulkan_carte") or {})
+    carte = cartes.get(genre)
+    gpu = [] if carte is None else ["-g", str(carte)]
+    try:
+        lignes = _lancer(genre, args + gpu, progression, arret, journal=journal, etape=etape)
+    except ErreurCreatif as err:
+        dediee = D.carte_dediee(err.lignes)
+        if dediee is None or dediee == carte:
+            raise
+        _avancer(progression, 0.0, _("La première carte graphique a échoué : nouvel essai sur la carte dédiée…"))
+        lignes = _lancer(genre, args + ["-g", str(dediee)], progression, arret, journal=journal, etape=etape + _(" (carte dédiée)"))
+        carte = dediee
+    else:
+        if carte is None:                     # tout s'est bien passé : on retient quand même la carte dédiée pour la suite
+            dediee = D.carte_dediee(lignes)
+            carte = dediee if dediee not in (None, 0) else None
+    if params is not None and carte is not None and cartes.get(genre) != carte:
+        cartes[genre] = carte
+        params["vulkan_carte"] = cartes
+    return lignes
+
+
 def agrandir(video, sortie, facteur=2, debut=0.0, duree=None, ips=30, params=None, progression=None, arret=lambda: False, anime=False):
     from . import moteur
     if not P.moteur_installe("upscale"):
@@ -254,7 +327,7 @@ def agrandir(video, sortie, facteur=2, debut=0.0, duree=None, ips=30, params=Non
     os.makedirs(os.path.join(d, "out"))
     nom = "realesr-animevideov3" if anime else "realesrgan-x4plus"
     args = ["-i", os.path.join(d, "in"), "-o", os.path.join(d, "out"), "-n", nom, "-s", str(int(facteur) if anime else 4), "-f", "png"]
-    _lancer("upscale", args, progression, arret, journal="agrandissement", etape=_("Agrandissement des images"))
+    _lancer_ncnn("upscale", args, params, progression, arret, journal="agrandissement", etape=_("Agrandissement des images"))
     if not anime and facteur != 4:
         moteur.lancer(["-y", "-framerate", str(ips), "-i", os.path.join(d, "out", "%06d.png"), "-vf", f"scale=iw*{facteur}/4:ih*{facteur}/4:flags=lanczos",
                        "-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p", sortie])
@@ -272,8 +345,8 @@ def ralentir(video, sortie, facteur=4, debut=0.0, duree=None, ips=30, params=Non
     d = tempfile.mkdtemp(prefix="philcut-rife-")
     n = _images_video(video, os.path.join(d, "in"), debut, duree, ips)
     os.makedirs(os.path.join(d, "out"))
-    _lancer("interpolation", ["-i", os.path.join(d, "in"), "-o", os.path.join(d, "out"), "-n", str(n * int(facteur)), "-m", "rife-v4.6", "-f", "%06d.png"],
-            progression, arret, journal="ralenti", etape=_("Images intermédiaires du ralenti"))
+    _lancer_ncnn("interpolation", ["-i", os.path.join(d, "in"), "-o", os.path.join(d, "out"), "-n", str(n * int(facteur)), "-m", "rife-v4.6",
+                                   "-f", "%06d.png"], params, progression, arret, journal="ralenti", etape=_("Images intermédiaires du ralenti"))
     moteur.lancer(["-y", "-framerate", str(ips), "-i", os.path.join(d, "out", "%06d.png"), "-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p", sortie])
     shutil.rmtree(d, ignore_errors=True)
     return sortie

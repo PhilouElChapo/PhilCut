@@ -263,7 +263,7 @@ class Inspecteur(QWidget):
         tb.itemChanged.connect(relire)
         v.addWidget(tb)
         h = QHBoxLayout()
-        ba = QPushButton(_("+ Point à la tête de lecture"))
+        ba = QPushButton(_("+ Point à la ligne rouge"))
 
         def ajouter():
             from . import goodies as GO_
@@ -292,14 +292,14 @@ class Inspecteur(QWidget):
 
     # ------------------------------------------------------------ images clefs
     def _valeur(self, elem, cle, defaut):
-        """Valeur affichée d'un réglage : celle de la tête de lecture si l'élément est animé."""
+        """Valeur affichée d'un réglage : celle de la ligne rouge si l'élément est animé."""
         from . import cles as K
         if elem.get("cles") and cle in dict(K.PROPRIETES[K.genre(elem)]):
             return float(K.valeurs_a(elem, self.ed.timeline.position)[cle])
         return defaut
 
     def _regler(self, elem, cle, v):
-        """Un réglage : image clef à la tête de lecture si l'élément est animé (et que ce réglage s'anime), sinon fixe."""
+        """Un réglage : image clef à la ligne rouge si l'élément est animé (et que ce réglage s'anime), sinon fixe."""
         from . import cles as K
         if elem.get("cles") and cle in dict(K.PROPRIETES[K.genre(elem)]):
             self._changer(lambda: K.regler(elem, self.ed.timeline.position, **{cle: v}))
@@ -320,12 +320,12 @@ class Inspecteur(QWidget):
         dedans = -0.01 <= t_rel <= K.duree(elem) + 0.01
         if cl:
             ici = K.a_cle(elem, t_rel)
-            txt = _("{n} image(s) clef(s) ◆ (losanges sur la timeline). A la tête de lecture, chaque réglage (curseurs ci-dessus, "
+            txt = _("{n} image(s) clef(s) ◆ (losanges sur la timeline). A la ligne rouge, chaque réglage (curseurs ci-dessus, "
                     "glisser dans l'image) pose ou modifie l'image clef de cet instant ; entre deux, le mouvement est progressif.", n=len(cl))
             if ici:
-                txt += " " + _("La tête de lecture est sur une image clef.")
+                txt += " " + _("La ligne rouge est sur une image clef.")
         else:
-            txt = _("Pour qu'il bouge, tourne, grossisse ou s'efface : placez la tête de lecture au début du mouvement, « ◆ Image clef ici », "
+            txt = _("Pour qu'il bouge, tourne, grossisse ou s'efface : placez la ligne rouge au début du mouvement, « ◆ Image clef ici », "
                     "puis à la fin, réglez-le (curseurs ou souris dans l'image) : une seconde image clef se pose toute seule.")
         l = QLabel(txt)
         l.setWordWrap(True)
@@ -333,7 +333,7 @@ class Inspecteur(QWidget):
         h = QHBoxLayout()
         b = QPushButton(_("◆ Image clef ici"))
         b.setEnabled(dedans)
-        b.setToolTip(_("Fige les réglages actuels à la tête de lecture"))
+        b.setToolTip(_("Fige les réglages actuels à la ligne rouge"))
         b.clicked.connect(lambda: (self._changer(lambda: K.poser(elem, t_rel)), rafraichir()))
         h.addWidget(b)
         for lib, sens in (("◀", -1), ("▶", 1)):
@@ -532,7 +532,7 @@ class Inspecteur(QWidget):
             b1 = QPushButton(_("Couper à la fin de la vidéo"))
             b1.setToolTip(_("Le son s'arrête avec le dernier plan vidéo (fondu de sortie compris)."))
             b1.clicked.connect(lambda: (self.ed.couper_son_fin(c["id"]), self.montrer_clip(c["id"])))
-            b2 = QPushButton(_("Couper à la tête de lecture"))
+            b2 = QPushButton(_("Couper à la ligne rouge"))
             b2.clicked.connect(lambda: (self.ed.couper_son_a(c["id"], self.ed.timeline.position), self.montrer_clip(c["id"])))
             for b_ in (b1, b2):
                 b_.setStyleSheet("text-align:left;padding:4px 8px")
@@ -1012,8 +1012,8 @@ class Inspecteur(QWidget):
         b1.clicked.connect(lambda: self.ed.suivre_zone(z))
         v.addWidget(b1)
         if pos:
-            b2 = QPushButton(_("Corriger à la tête de lecture (retracer ici)"))
-            b2.setToolTip(_("Le suivi s'est trompé ? Placez la tête de lecture à cet instant, retracez la zone : la suite est refaite."))
+            b2 = QPushButton(_("Corriger à la ligne rouge (retracer ici)"))
+            b2.setToolTip(_("Le suivi s'est trompé ? Placez la ligne rouge à cet instant, retracez la zone : la suite est refaite."))
             b2.clicked.connect(lambda: self.ed.retracer_zone(z))
             v.addWidget(b2)
             b3 = QPushButton(_("Figer (ne plus suivre)"))

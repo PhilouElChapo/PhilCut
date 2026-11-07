@@ -98,9 +98,34 @@ def mettre_a_jour_ytdlp(progression=None):
     return "\n".join(_lancer_ytdlp(["-U"], progression))
 
 
-def chercher_youtube(texte, n=10):
-    """Résultats d'une recherche YouTube (sans rien télécharger) : titre, chaîne, durée, adresse."""
-    lignes = _lancer_ytdlp(["--flat-playlist", "--dump-json", f"ytsearch{int(n)}:{texte}"])
+def pays():
+    """Pays de l'utilisateur (« FR ») d'après la langue du système : la recherche se fait sur le YouTube de son pays."""
+    try:
+        from PySide6.QtCore import QLocale
+        nom = QLocale.system().name()           # fr_FR, de_CH…
+        if "_" in nom:
+            return nom.split("_", 1)[1][:2].upper()
+    except Exception:      # noqa: BLE001
+        pass
+    return "FR"
+
+
+def _langue():
+    try:
+        from .langue import LANGUE
+        return (LANGUE or "fr")[:2]
+    except Exception:      # noqa: BLE001
+        return "fr"
+
+
+def chercher_youtube(texte, n=30, genre="tout"):
+    """Résultats d'une recherche YouTube (sans rien télécharger) : titre, chaîne, durée, adresse, Short ou non. La
+    recherche se fait dans la langue et le pays de l'utilisateur, avec les mots tels qu'il les a tapés (pas de
+    traduction). genre : « tout », « shorts » (vidéos verticales courtes) ou « videos » (sans les Shorts)."""
+    requete = f"{texte} #shorts" if genre == "shorts" else texte
+    n = int(n) * (2 if genre != "tout" else 1)          # on filtre ensuite : on en demande plus
+    lignes = _lancer_ytdlp(["--flat-playlist", "--dump-json", "--xff", pays(), "--extractor-args", f"youtube:lang={_langue()}",
+                            f"ytsearch{n}:{requete}"])
     out = []
     for l in lignes:
         if not l.startswith("{"):
@@ -110,9 +135,75 @@ def chercher_youtube(texte, n=10):
         except ValueError:
             continue
         url = d.get("url") or d.get("webpage_url") or (f"https://www.youtube.com/watch?v={d['id']}" if d.get("id") else "")
-        out.append({"titre": d.get("title") or "", "auteur": d.get("channel") or d.get("uploader") or "", "duree": d.get("duration") or 0,
-                    "page": url, "source": "youtube", "licence": d.get("license") or ""})
+        duree = float(d.get("duration") or 0)
+        short = "/shorts/" in url or (0 < duree <= 180 and genre == "shorts")
+        if genre == "shorts" and not short:
+            continue
+        if genre == "videos" and short:
+            continue
+        out.append({"titre": d.get("title") or "", "auteur": d.get("channel") or d.get("uploader") or "", "duree": duree,
+                    "page": url, "source": "youtube", "licence": d.get("license") or "", "short": short,
+                    "vues": d.get("view_count") or 0,
+                    "vignette": f"https://i.ytimg.com/vi/{d['id']}/mqdefault.jpg" if d.get("id") else ""})
     return out
+
+
+def vignettes(resultats, dossier, arret=lambda: False):
+    """Télécharge les petites images des résultats (en parallèle) ; ajoute « _vignette » (chemin local)."""
+    from concurrent.futures import ThreadPoolExecutor
+    os.makedirs(dossier, exist_ok=True)
+
+    def une(r):
+        if not r.get("vignette") or arret():
+            return
+        f = os.path.join(dossier, re.sub(r"[^\w]", "_", r["vignette"])[-90:] + ".jpg")
+        if not os.path.exists(f):
+            try:
+                with urllib.request.urlopen(urllib.request.Request(r["vignette"], headers=_agent()), timeout=10) as rep, open(f, "wb") as g:
+                    g.write(rep.read())
+            except Exception:      # noqa: BLE001 : sans image, le résultat reste listé
+                return
+        r["_vignette"] = f
+    with ThreadPoolExecutor(max_workers=8) as ex:
+        list(ex.map(une, resultats))
+    return resultats
+
+
+def suggestions(texte):
+    """Orthographe proposée par YouTube pour une recherche mal tapée (« planette interdite » → « planète interdite »)."""
+    url = "https://suggestqueries.google.com/complete/search?" + urllib.parse.urlencode(
+        {"client": "firefox", "ds": "yt", "hl": _langue(), "gl": pays(), "q": texte})
+    with urllib.request.urlopen(urllib.request.Request(url, headers=_agent()), timeout=8) as r:
+        d = json.loads(r.read().decode("utf-8", "replace"))
+    return [x for x in (d[1] if isinstance(d, list) and len(d) > 1 else []) if isinstance(x, str)]
+
+
+def correction(texte, propositions):
+    """La bonne orthographe si la recherche semble mal tapée, sinon None."""
+    import difflib
+    import unicodedata
+
+    def net(t):
+        return " ".join(unicodedata.normalize("NFKD", t.lower()).encode("ascii", "ignore").decode().split())
+    q = net(texte)
+    if not q or any(net(p).startswith(q) for p in propositions):
+        return None                                    # la recherche est bien tapée (les suggestions la prolongent)
+    meilleure, score = None, 0.0
+    for p in propositions:
+        debut = " ".join(p.split()[:len(texte.split())])        # même nombre de mots que la recherche
+        r = difflib.SequenceMatcher(None, q, net(debut)).ratio()
+        if r > score:
+            meilleure, score = debut, r
+    return meilleure if meilleure and score >= 0.7 and net(meilleure) != q else None
+
+
+def flux_lecture(url):
+    """Adresse directe d'une version légère (son et image, 360p à 480p) pour regarder la vidéo dans PhilCut."""
+    lignes = _lancer_ytdlp(["-g", "--no-playlist", "-f", "18/b[ext=mp4][vcodec!=none][acodec!=none][height<=480]/b[height<=480]/b", url])
+    for l in lignes:
+        if l.startswith("http"):
+            return l.strip()
+    raise RuntimeError(_("Pas de version lisible de cette vidéo."))
 
 
 def infos(url):
@@ -126,16 +217,20 @@ def infos(url):
     return {"page": url}
 
 
-def telecharger(url, dossier, audio_seul=False, debut=None, fin=None, progression=None, arret=lambda: False):
-    """Télécharge la vidéo (MP4 jusqu'à 1080p) ou le son seul (M4A) ; debut/fin (secondes) : seulement ce morceau.
-    Renvoie le chemin du fichier."""
+HAUTEURS = {720: _("720p (fichier léger)"), 1080: _("1080p (conseillé)"), 2160: _("4K si disponible (gros fichier)")}
+
+
+def telecharger(url, dossier, audio_seul=False, debut=None, fin=None, progression=None, arret=lambda: False, hauteur=1080):
+    """Télécharge la vidéo (MP4 jusqu'à `hauteur`, 1080p par défaut) ou le son seul (M4A) ; debut/fin (secondes) :
+    seulement ce morceau. Renvoie le chemin du fichier."""
+    h = int(hauteur or 1080)
     os.makedirs(dossier, exist_ok=True)
     modele = os.path.join(dossier, "%(title).80s [%(id)s].%(ext)s")
     args = ["--no-playlist", "--restrict-filenames", "-o", modele, "--print", "after_move:filepath", "--newline"]
     if audio_seul:
         args += ["-f", "bestaudio[ext=m4a]/bestaudio", "-x", "--audio-format", "m4a"]
     else:
-        args += ["-f", "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/b[height<=1080][ext=mp4]/b", "--merge-output-format", "mp4"]
+        args += ["-f", f"bv*[height<={h}][ext=mp4]+ba[ext=m4a]/b[height<={h}][ext=mp4]/bv*[height<={h}]+ba/b", "--merge-output-format", "mp4"]
     if debut is not None and fin is not None and fin > debut:
         args += ["--download-sections", f"*{float(debut):.2f}-{float(fin):.2f}", "--force-keyframes-at-cuts"]
     lignes = _lancer_ytdlp(args + [url], progression, arret)
@@ -146,9 +241,11 @@ def telecharger(url, dossier, audio_seul=False, debut=None, fin=None, progressio
 
 
 # ------------------------------------------------------------------ Internet Archive (domaine public)
-def chercher_archive(texte, n=12):
-    """Films et extraits du domaine public ou sous licence libre sur archive.org."""
-    q = f"({texte}) AND mediatype:(movies) AND (licenseurl:* OR collection:(prelinger OR feature_films OR publicdomainmovies))"
+def chercher_archive(texte, n=30, anglais=""):
+    """Films et extraits du domaine public ou sous licence libre sur archive.org ; avec les mots tapés ET leur
+    traduction anglaise si elle est différente (la plupart des fiches sont en anglais)."""
+    mots = f"({texte}) OR ({anglais})" if anglais and anglais.lower() != texte.lower() else f"({texte})"
+    q = f"({mots}) AND mediatype:(movies) AND (licenseurl:* OR collection:(prelinger OR feature_films OR publicdomainmovies))"
     url = ARCHIVE_API + "?" + urllib.parse.urlencode({"q": q, "fl[]": ["identifier", "title", "year", "creator", "licenseurl"], "rows": n,
                                                        "output": "json"}, doseq=True)
     with urllib.request.urlopen(urllib.request.Request(url, headers=_agent()), timeout=20) as r:

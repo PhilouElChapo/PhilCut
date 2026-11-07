@@ -123,8 +123,13 @@ def tester(genre, params=None, progression=None, arret=lambda: False):
     except InterruptedError:
         res["message"] = _("Test arrêté.")
     except Exception as e:       # noqa: BLE001 : le message dit pourquoi
+        from . import diagnostic_ia as D
         res["secondes"] = round(time.time() - debut, 1)
-        res["message"] = _("Ne fonctionne pas : {e}", e=str(e)[:300])
+        res["detail"] = str(e)[:4000]
+        res["journal"] = getattr(e, "journal", None) or ""
+        res["moteur"] = getattr(e, "genre", None) or ""
+        res["cause"] = D.diagnostiquer(res["detail"], res["moteur"] or genre)["titre"]
+        res["message"] = _("Ne fonctionne pas : {c}.", c=res["cause"])
     finally:
         import shutil
         shutil.rmtree(dossier, ignore_errors=True)
@@ -150,8 +155,19 @@ def tester_tout(params=None, genres=None, progression=None, arret=lambda: False)
 
 
 def resume(r):
-    """Une ligne pour les Préférences."""
+    """Une ligne courte pour les Préférences (le détail technique est à part, replié)."""
     if not r:
         return _("Pas encore testé.")
     signe = "✓" if r.get("ok") else "✕"
-    return f"{signe} {r.get('message', '')} · {r.get('peripherique', '')} · {r.get('date', '')}"
+    msg = r.get("message", "") or (_("Ne fonctionne pas : {c}.", c=r["cause"]) if r.get("cause") else "")
+    if not r.get("ok") and not r.get("cause"):             # ancien résultat : on raccourcit le message brut du moteur
+        from . import diagnostic_ia as D
+        msg = _("Ne fonctionne pas : {c}.", c=D.diagnostiquer(msg, r.get("genre"))["titre"])
+    return f"{signe} {msg}"
+
+
+def sous_titre(r):
+    """Sur quoi et quand : « carte graphique (…) · 2026-11-07 21:10 »."""
+    if not r:
+        return ""
+    return " · ".join(x for x in (r.get("peripherique", ""), r.get("date", "")) if x)

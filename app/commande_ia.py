@@ -225,10 +225,10 @@ def decrire(a):
         return _("Vitesse ×{v} sur {q}", v=a.get("valeur"), q=qui)
     if k == "texte":
         return _("Texte « {t} »{d}", t=a.get("texte", ""), d=_(" à la fin") if a.get("debut") == "fin" else
-                 (_(" à {s} s", s=a["debut"]) if a.get("debut") not in (None, "") else _(" à la tête de lecture")))
+                 (_(" à {s} s", s=a["debut"]) if a.get("debut") not in (None, "") else _(" à la ligne rouge")))
     if k == "fleche":
         return _("Flèche {s} ({c}){d}, que vous déplacez ensuite dans l'image", s=_("courbe") if a.get("style") == "courbe" else _("droite"),
-                 c=a.get("couleur", "#ff3030"), d=_(" à {s} s", s=a["debut"]) if a.get("debut") is not None else _(" à la tête de lecture"))
+                 c=a.get("couleur", "#ff3030"), d=_(" à {s} s", s=a["debut"]) if a.get("debut") is not None else _(" à la ligne rouge"))
     if k == "goodie":
         return _("Goodie « {g} »", g=a.get("genre", ""))
     if k == "couper":

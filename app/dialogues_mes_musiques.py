@@ -145,11 +145,31 @@ class DialogueMesMusiques(QDialog):
             self._veille.start()
 
     def _veiller(self):
+        """Pendant la lecture des étiquettes : l'avancement en bas, et la liste mise à jour toutes les 6 s (sans perdre le
+        groupe ouvert ni le morceau choisi) ; à la fin, une dernière fois."""
         fil = MU._LECTURE.get("fil")
-        if fil is None or not fil.is_alive():
-            self._veille.stop()
+        fini = fil is None or not fil.is_alive()
+        self._tours = getattr(self, "_tours", 0) + 1
+        if fini or self._tours % 4 == 0:
+            ouverts = {self.arbre.topLevelItem(i).text(0).rsplit("  (", 1)[0] for i in range(self.arbre.topLevelItemCount())
+                       if self.arbre.topLevelItem(i).isExpanded()}
+            choisi = self._chemin()
             self.liste = [dict(MU.etiquettes(m["chemin"], lire=False), chemin=m["chemin"], dossier=m.get("dossier", "")) for m in self.liste]
             self.remplir()
+            for i in range(self.arbre.topLevelItemCount()):
+                it = self.arbre.topLevelItem(i)
+                if it.text(0).rsplit("  (", 1)[0] in ouverts:
+                    it.setExpanded(True)
+                    for j in range(it.childCount()):
+                        if choisi and it.child(j).data(0, Qt.UserRole) == choisi:
+                            self.arbre.setCurrentItem(it.child(j))
+        if fini:
+            self._veille.stop()
+            self.etat.setText(_("{t} morceau(x), titres, artistes et albums lus. Double-clic, ou « Poser sous la vidéo », pour le mettre "
+                                "sur la piste Musique.", t=len(self.liste)))
+        else:
+            self.etat.setText(_("Lecture des étiquettes (titre, artiste, album, n° de piste) : {f} / {n}. La liste se complète toute seule.",
+                                f=MU._LECTURE.get("faits", 0), n=MU._LECTURE.get("total", 0)))
 
     # ---- liste
     def _classement_change(self):

@@ -256,7 +256,7 @@ class Test095(unittest.TestCase):
         self.assertIn("morceau", dl.etat.text())                        # vidéo de 15 min : il faut dire quel morceau
         vrai_tel, vrai_inst = VL.telecharger, VL.ytdlp_installe
         VL.ytdlp_installe = lambda: True
-        VL.telecharger = lambda url, d, audio=False, a=None, b=None, progression=None, arret=None: commun.video_test(d, "extrait.mp4", duree=2)
+        VL.telecharger = lambda url, d, audio=False, a=None, b=None, progression=None, arret=None, hauteur=1080: commun.video_test(d, "extrait.mp4", duree=2)
         dl.morceau_de.setText("1:00")
         dl.morceau_a.setText("1:05")
         avant = {e["id"] for e in T.charger(ed.params)}

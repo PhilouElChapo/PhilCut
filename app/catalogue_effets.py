@@ -1,7 +1,7 @@
 """Catalogue des effets dans le volet de droite (0.3.3) : vignettes animées et glisser-déposer.
 
 Chaque effet et chaque transition a sa vignette qui bouge : un petit film d'une seconde et demie, fabriqué en
-arrière-plan sur VOTRE plan (celui sous la tête de lecture), en tout petit, effet par effet. On voit ainsi ce que fait
+arrière-plan sur VOTRE plan (celui sous la ligne rouge), en tout petit, effet par effet. On voit ainsi ce que fait
 chaque effet avant de le poser. On le pose en le glissant sur un plan de la timeline (une transition : sur un raccord
 entre deux plans), par double-clic (plan sélectionné) ou par clic droit.
 """
@@ -177,7 +177,7 @@ class CatalogueEffets(QWidget):
         v.setContentsMargins(8, 8, 8, 8)
         v.setSpacing(6)
         aide = QLabel(_("Glissez une vignette sur un plan de la timeline (une transition : sur le raccord entre deux plans). "
-                        "Double-clic : sur le plan sélectionné. Les vignettes montrent l'effet sur le plan sous la tête de lecture."))
+                        "Double-clic : sur le plan sélectionné. Les vignettes montrent l'effet sur le plan sous la ligne rouge."))
         aide.setWordWrap(True)
         aide.setStyleSheet(f"color:{theme.COULEURS['texte2']}")
         v.addWidget(aide)
@@ -269,7 +269,7 @@ class CatalogueEffets(QWidget):
         self.actualiser()
 
     def actualiser(self):
-        """A appeler quand le volet devient visible ou que la tête de lecture change de plan : vignettes à fabriquer."""
+        """A appeler quand le volet devient visible ou que la ligne rouge change de plan : vignettes à fabriquer."""
         if not self.isVisible():
             return
         c = self.ed.projet.clip_a(self.ed.timeline.position, "video") or next(iter(self.ed.projet.clips_piste("video")), None)

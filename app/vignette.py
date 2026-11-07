@@ -32,11 +32,30 @@ except ImportError:      # pragma: no cover
 FORMATS = {"youtube": (_("Miniature YouTube 16:9 (1280 × 720)"), 1280, 720), "short": (_("Short / Reels 9:16 (1080 × 1920)"), 1080, 1920),
            "projet": (_("Format du projet"), 0, 0)}
 
-COULEURS_ZONES = {"rouge": ("#ff3b30", _("Rouge : à montrer"), _("Ce qu'on veut montrer (objet, personne du film) : détouré, agrandi, contour, reste assombri")),
-                  "jaune": ("#ffd60a", _("Jaune : désigner"), _("Ce qu'il faut désigner : une flèche (petite zone) ou un cercle (grande zone)")),
-                  "bleu": ("#0a84ff", _("Bleu : texte"), _("La place du titre : il s'ajuste tout seul à la zone")),
-                  "vert": ("#30d158", _("Vert : éléments"), _("Les éléments précisés dans la phrase ou dans « Éléments » : pastilles, validées ou non")),
-                  "blanc": ("#f2f2f7", _("Blanc : laisser libre"), _("Facultatif : rien ne se pose dans cette zone (visage, information importante)"))}
+COULEURS_ZONES = {
+    "rouge": ("#ff3b30", _("Rouge : le sujet à montrer"),
+              _("<b>Rouge : le sujet à montrer.</b> Entourez l'objet ou la personne du film qui doit attirer l'œil. PhilCut le détoure, "
+                "lui met un contour et assombrit le reste. Exemple : le moteur posé sur l'établi.")),
+    "jaune": ("#ffd60a", _("Jaune : une flèche vers un détail"),
+              _("<b>Jaune : une flèche ou un cercle vers un détail.</b> Entourez le détail à désigner : petite zone, une flèche y pointe ; "
+                "grande zone, un cercle l'entoure. Le texte de la zone s'écrit au départ de la flèche. Exemple : « la fissure ».")),
+    "bleu": ("#0a84ff", _("Bleu : la place du titre"),
+             _("<b>Bleu : la place du titre.</b> Entourez l'endroit libre où écrire le titre : il s'ajuste tout seul à la zone. "
+               "Le texte de la zone remplace le titre général pour cette zone. Exemple : « 3 erreurs à éviter ».")),
+    "vert": ("#30d158", _("Vert : une liste de pastilles"),
+             _("<b>Vert : une liste de pastilles (étapes, points, outils).</b> Entourez la place de la liste, puis écrivez ses éléments "
+               "dans le texte de la zone, séparés par des virgules, avec ✓ (fait) ou ✗ (pas fait). Exemple : « Isolation ✓, Fenêtre ✓, "
+               "Électricité ✗ ».")),
+    "blanc": ("#f2f2f7", _("Blanc : ne rien poser ici"),
+              _("<b>Blanc : ne rien poser ici (facultatif).</b> Entourez ce qui doit rester visible : un visage, le logo de la chaîne, "
+                "une information. Ni texte, ni flèche, ni pastille n'y sera posé.")),
+}
+
+# ce qu'on écrit dans le champ « Qu'y a-t-il ici ? » de chaque zone : exemple affiché en grisé
+EXEMPLES_ZONES = {"rouge": _("Ex. : le moteur, la personne de gauche"), "jaune": _("Ex. : la fissure (écrit au départ de la flèche)"),
+                  "bleu": _("Ex. : 3 erreurs à éviter (le titre de cette zone)"),
+                  "vert": _("Ex. : Isolation ✓, Fenêtre ✓, Électricité ✗"), "blanc": _("Ex. : visage, logo de la chaîne")}
+
 
 # Kits : un seul style par vignette, c'est ce qui fait propre
 KITS = {
@@ -631,11 +650,13 @@ def composer(recette, img, img2=None, L=1280, H=720, progression=None):
             p.drawText(r, Qt.AlignCenter, lib)
     av(0.7, _("Pastilles, texte et flèche…"))
     for z in zones(recette, "vert"):
-        _pastilles(p, _elements(recette.get("elements") or ""), kit, pal, _bbox(z, L, H))
+        _pastilles(p, _elements((z.get("texte") or "").strip() or recette.get("elements") or ""), kit, pal, _bbox(z, L, H))
     taille_titre = 0
     bleues = [_bbox(z, L, H) for z in zones(recette, "bleu")]
-    for b in bleues:
-        taille_titre = max(taille_titre, _titre(p, recette, kit, pal, b, L, H))
+    for z in zones(recette, "bleu"):
+        propre = (z.get("texte") or "").strip()
+        rec_z = dict(recette, titre=propre) if propre else recette
+        taille_titre = max(taille_titre, _titre(p, rec_z, kit, pal, _bbox(z, L, H), L, H))
     interdites = [_bbox(z, L, H) for z in zones(recette, "blanc") + rouges] + bleues + [_bbox(z, L, H) for z in zones(recette, "vert")]
     mode = recette.get("fleche") or "auto"
     for i, z in enumerate(zones(recette, "jaune")):
@@ -649,10 +670,31 @@ def composer(recette, img, img2=None, L=1280, H=720, progression=None):
             dep = depart_fleche(b, interdites, bleues, L, H, graine + i)
             arr = _bord(b, dep, epaisseur * 0.4)
             _fleche(p, dep, arr, kit, pal, epaisseur, courbe=0.22 if (graine + i) % 2 == 0 else -0.22)
+            if (z.get("texte") or "").strip():
+                _etiquette(p, z["texte"].strip(), dep, kit, pal, L, H)
     p.end()
     infos = {"taille_titre": taille_titre, "palette": pal, "avertissements": lisibilite(recette, taille_titre, L, H)}
     av(1.0, _("Vignette prête."))
     return q, infos
+
+
+def _etiquette(p, texte, point, kit, pal, L, H):
+    """Petit texte au départ de la flèche jaune (« la fissure »), dans une pastille lisible, gardé dans l'image."""
+    from PySide6.QtCore import Qt, QRectF
+    from PySide6.QtGui import QFontMetrics
+    f = _police(kit, max(14, int(H * 0.045)))
+    p.setFont(f)
+    fm = QFontMetrics(f)
+    texte = texte[:40]
+    w, h = fm.horizontalAdvance(texte) + H * 0.03, fm.height() * 1.25
+    x = min(max(0.0, point[0] - w / 2), L - w)
+    y = min(max(0.0, point[1] - h - H * 0.01), H - h)
+    r = QRectF(x, y, w, h)
+    p.setPen(Qt.NoPen)
+    p.setBrush(_qcolor("#141414", 225))
+    p.drawRoundedRect(r, h * 0.3, h * 0.3)
+    p.setPen(_qcolor(pal["accent"]))
+    p.drawText(r, Qt.AlignCenter, texte)
 
 
 def lisibilite(recette, taille_titre, L, H):
@@ -660,6 +702,8 @@ def lisibilite(recette, taille_titre, L, H):
     out = []
     titre = (recette.get("titre") or "").strip()
     echelle = 168 / max(1, L)
+    if not titre and zones(recette, "bleu") and not any((z.get("texte") or "").strip() for z in zones(recette, "bleu")):
+        out.append(_("Zone bleue sans titre : écrivez-le dans « Qu'y a-t-il ici ? » de la zone, ou dans « Titre »."))
     if titre and not zones(recette, "bleu"):
         out.append(_("Le titre n'apparaît pas : entourez en bleu la place du texte."))
     if titre and zones(recette, "bleu") and taille_titre * echelle < 8:
@@ -668,8 +712,9 @@ def lisibilite(recette, taille_titre, L, H):
         out.append(_("Titre long ({n} mots) : 3 à 5 mots se lisent mieux en petit.", n=len(titre.split())))
     if len(_elements(recette.get("elements") or "")) > 5:
         out.append(_("Plus de 5 pastilles : illisibles en petit."))
-    if zones(recette, "vert") and not (recette.get("elements") or "").strip():
-        out.append(_("Zone verte sans éléments : précisez-les dans « Éléments » (ou laissez l'IA les proposer)."))
+    if any(not (z.get("texte") or "").strip() for z in zones(recette, "vert")) and not (recette.get("elements") or "").strip():
+        out.append(_("Zone verte sans éléments : écrivez-les dans « Qu'y a-t-il ici ? » de la zone (ex. Isolation ✓, Fenêtre ✗), "
+                     "ou laissez l'IA les proposer."))
     return out
 
 
@@ -706,9 +751,13 @@ Pas d'emoji dans le titre, pas de majuscules partout (le logiciel s'en charge), 
 
 
 def demande_ia(recette, contexte=""):
-    zs = ", ".join(sorted({z["couleur"] for z in recette.get("zones") or []})) or "aucune"
+    roles = {"rouge": "sujet à montrer", "jaune": "détail désigné par une flèche", "bleu": "place du titre",
+             "vert": "liste de pastilles", "blanc": "à laisser libre"}
+    lignes = [f"- {z['couleur']} ({roles.get(z['couleur'], '')}) : {(z.get('texte') or '').strip() or '(non précisé)'}"
+              for z in recette.get("zones") or []]
+    zs = ("\n" + "\n".join(lignes)) if lignes else " aucune"
     return (f"Consigne de l'utilisateur : {recette.get('prompt') or ''}\n"
-            f"Zones tracées : {zs}.\nTitre actuel : {recette.get('titre') or '(vide)'}\n"
+            f"Zones tracées (couleur, rôle, ce que l'utilisateur y a écrit) :{zs}\nTitre actuel : {recette.get('titre') or '(vide)'}\n"
             f"Éléments actuels : {recette.get('elements') or '(vide)'}\n{contexte}")
 
 

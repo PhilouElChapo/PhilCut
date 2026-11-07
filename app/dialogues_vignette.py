@@ -196,8 +196,8 @@ class DialogueVignette(QDialog):
         self.format.currentIndexChanged.connect(lambda: self._regle("format", self.format.currentData()))
         f1.addRow(_("Format"), self.format)
         self.temps, self.lbl_t = self._curseur_temps(duree, self.recette.get("source_t") or 0.0, "source_t")
-        bt = QPushButton(_("Prendre la tête de lecture"))
-        bt.setToolTip(_("Prendre l'image à la tête de lecture de la timeline"))
+        bt = QPushButton(_("Prendre l'image sous la ligne rouge"))
+        bt.setToolTip(_("Prendre l'image sous la ligne rouge de la ligne de temps (l'instant affiché)"))
         bt.clicked.connect(lambda: self.temps.setValue(int(round(getattr(ed.timeline, "position", 0.0) * 10))))
         h = QHBoxLayout()
         h.addWidget(self.temps, 1)
@@ -254,9 +254,18 @@ class DialogueVignette(QDialog):
         v2.addLayout(grille)
         self.aide_zone = QLabel(V.COULEURS_ZONES["rouge"][2])
         self.aide_zone.setWordWrap(True)
-        self.aide_zone.setStyleSheet("color:#9aa4b2")
+        self.aide_zone.setTextFormat(Qt.RichText)
+        self.aide_zone.setStyleSheet("color:#c8ced8;background:#22262d;border-radius:6px;padding:8px")
         self.groupe_couleurs.buttonClicked.connect(lambda b: self.aide_zone.setText(b.toolTip()))
         v2.addWidget(self.aide_zone)
+        # chaque zone tracée : sa couleur, son rôle et « Qu'y a-t-il ici ? » (la consigne de la zone, lue par PhilCut et l'IA)
+        self.titre_liste = QLabel(_("<b>Vos zones</b> : dites ce qu'il y a dans chacune (c'est la consigne de la zone)."))
+        self.titre_liste.setWordWrap(True)
+        v2.addWidget(self.titre_liste)
+        self.boite_zones = QVBoxLayout()
+        self.boite_zones.setSpacing(4)
+        v2.addLayout(self.boite_zones)
+        self.champs_zones = []
         hm = QHBoxLayout()
         self.mode = QComboBox()
         self.mode.addItem(_("Tracer à main levée"), "lasso")
@@ -272,16 +281,23 @@ class DialogueVignette(QDialog):
         self.voir_zones.toggled.connect(lambda on: (setattr(self.toile, "montrer", on), self.toile.update()))
         v2.addWidget(self.voir_zones)
         vg.addWidget(g2)
-        g3 = QGroupBox(_("Phrase pour l'IA (facultatif)"))
+        g3 = QGroupBox(_("Consigne pour l'IA (prompt)"))
         v3 = QVBoxLayout(g3)
         self.prompt_id = QComboBox()
         for k, (lib, _t) in V.PROMPTS.items():
             self.prompt_id.addItem(lib, k)
         self.prompt_id.setCurrentIndex(max(0, self.prompt_id.findData(self.recette.get("prompt_id"))))
         self.prompt_id.currentIndexChanged.connect(self._prompt_choisi)
+        aide_p = QLabel(_("Choisissez un modèle de consigne, puis modifiez-la à votre idée, en français. Elle sert au bouton « Proposer par "
+                          "l'IA », avec les textes de vos zones. Sans IA, PhilCut compose avec vos zones, votre titre et vos éléments."))
+        aide_p.setWordWrap(True)
+        aide_p.setStyleSheet("color:#9aa4b2")
+        v3.addWidget(aide_p)
         v3.addWidget(self.prompt_id)
         self.prompt = QPlainTextEdit(self.recette.get("prompt") or "")
-        self.prompt.setMaximumHeight(90)
+        self.prompt.setMinimumHeight(70)
+        self.prompt.setMaximumHeight(110)
+        self.prompt.setPlaceholderText(_("Ex. : montrer le moteur remis à neuf ; titre qui donne envie ; lister les pièces changées."))
         self.prompt.setToolTip(_("Modifiable : précisez le sujet et ce que la zone verte doit montrer (ex. « pistons, soupapes, arbre à cames »)."))
         self.prompt.textChanged.connect(lambda: self.recette.__setitem__("prompt", self.prompt.toPlainText()))
         v3.addWidget(self.prompt)
@@ -327,6 +343,7 @@ class DialogueVignette(QDialog):
         vc = QVBoxLayout()
         self.toile = Toile(self.recette)
         self.toile.zones_changees.connect(self.recomposer)
+        self.toile.zones_changees.connect(self._liste_zones)
         vc.addWidget(self.toile, 1)
         hv = QHBoxLayout()
         bv = QPushButton(_("Proposer 3 variantes"))
@@ -387,7 +404,7 @@ class DialogueVignette(QDialog):
         self.duree_pose.setValue(float(self.recette.get("duree_pose", 6.0)))
         self.duree_pose.setSuffix(" s")
         hb.addWidget(self.duree_pose)
-        self.b_poser = QPushButton(_("Poser dans le film (au-dessus, à la tête de lecture)"))
+        self.b_poser = QPushButton(_("Poser dans le film (au-dessus, à la ligne rouge)"))
         self.b_poser.setStyleSheet("font-weight:600;padding:6px 14px")
         self.b_poser.clicked.connect(self.poser)
         hb.addWidget(self.b_poser)
@@ -401,6 +418,7 @@ class DialogueVignette(QDialog):
         self._delai.timeout.connect(self._lancer)
         self._t0 = 0.0
         self.recomposer()
+        self._liste_zones()
         if not self.recette["zones"]:
             self.etat.setText(_("Entourez sur l'image : en rouge ce qu'il faut montrer, en bleu la place du titre, en jaune ce qu'il faut "
                                 "désigner, en vert les éléments à lister. Clic droit sur une zone pour la supprimer."))
@@ -445,7 +463,45 @@ class DialogueVignette(QDialog):
     def _effacer_zones(self):
         self.recette["zones"].clear()
         self.toile.update()
+        self._liste_zones()
         self.recomposer()
+
+    def _liste_zones(self):
+        """Une ligne par zone tracée : pastille de couleur, rôle, champ « Qu'y a-t-il ici ? », ✕ pour la supprimer."""
+        avant = len(self.champs_zones)
+        while self.boite_zones.count():
+            it = self.boite_zones.takeAt(0)
+            w = it.widget()
+            if w is not None:
+                w.hide()
+                w.deleteLater()
+        self.champs_zones = []
+        zs = self.recette.get("zones") or []
+        self.titre_liste.setVisible(bool(zs))
+        for i, z in enumerate(zs):
+            hexa, lib, _aide = V.COULEURS_ZONES.get(z["couleur"], ("#ffffff", z["couleur"], ""))
+            ligne = QWidget()
+            h = QHBoxLayout(ligne)
+            h.setContentsMargins(0, 0, 0, 0)
+            pastille = QLabel(lib.split(" : ")[0])
+            pastille.setToolTip(lib)
+            pastille.setStyleSheet(f"background:{hexa};color:{'#111' if z['couleur'] in ('jaune', 'blanc', 'vert') else '#fff'};"
+                                   "border-radius:4px;padding:2px 6px;font-weight:600")
+            h.addWidget(pastille)
+            champ = QLineEdit(z.get("texte") or "")
+            champ.setPlaceholderText(V.EXEMPLES_ZONES.get(z["couleur"], _("Qu'y a-t-il ici ?")))
+            champ.setToolTip(_("Qu'y a-t-il ici ? {r}", r=lib))
+            champ.textChanged.connect(lambda t, z=z: (z.__setitem__("texte", t), self.recomposer()))
+            h.addWidget(champ, 1)
+            bx = QToolButton()
+            bx.setText("✕")
+            bx.setToolTip(_("Supprimer cette zone"))
+            bx.clicked.connect(lambda _c=False, i=i: self.toile._supprimer(i))
+            h.addWidget(bx)
+            self.boite_zones.addWidget(ligne)
+            self.champs_zones.append(champ)
+        if len(zs) > avant and self.champs_zones:          # zone qu'on vient de tracer : on écrit tout de suite ce qu'il y a dedans
+            self.champs_zones[-1].setFocus()
 
     # ---- composition en tâche de fond
     def recomposer(self):

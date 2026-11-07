@@ -92,17 +92,50 @@ def _fichier_tags():
     return os.path.join(dossier_donnees(), "musiques_etiquettes.json")
 
 
+VERSION_TAGS = 2          # 0.9.9 : numéro de piste, disque, artiste de l'album ; étiquettes des flux (FLAC, OGG, M4A)
+_NUM = re.compile(r"^\s*(?:(?:cd|disc|disque)\s*\d+\s*[-_. ]\s*|\d-(?=\d{2}))?(\d{1,3})(?:\s*[-_.)]\s*|\s+)(?=\S)", re.I)
+
+
+def _sans_numero(texte):
+    """« 01 - Hells Bells », « 1-03. Shake A Leg », « 07 Shoot To Thrill » → (« Hells Bells », 1)."""
+    m = _NUM.match(texte or "")
+    if m and not texte[m.start(1):m.end()].strip(" ").replace(m.group(1), "", 1) and not m.group(1).startswith("0"):
+        m = None                       # « 99 Luftballons » : un nombre suivi d'une espace seule n'est un n° de piste que s'il est « 07 »
+    if m and len(texte) > m.end():
+        return texte[m.end():].strip(), int(m.group(1))
+    return (texte or "").strip(), 0
+
+
 def _depuis_nom(chemin):
+    """Faute d'étiquettes : rangement habituel « Artiste/Album/01 - Titre », ou « Artiste - Titre » ; le numéro de piste
+    n'est jamais pris pour un artiste."""
     nom = os.path.splitext(os.path.basename(chemin))[0]
-    if " - " in nom:
-        a, t = [x.strip() for x in nom.split(" - ", 1)]
-        return {"titre": t, "artiste": a, "album": "", "duree": 0}
-    return {"titre": nom, "artiste": "", "album": "", "duree": 0}
+    titre, piste = _sans_numero(nom)
+    artiste = ""
+    if " - " in titre:
+        g, d = [x.strip() for x in titre.split(" - ", 1)]
+        d2, p2 = _sans_numero(d)
+        if not g.isdigit():
+            artiste, titre, piste = g, d2, piste or p2
+    parent = os.path.basename(os.path.dirname(chemin))
+    grand = os.path.basename(os.path.dirname(os.path.dirname(chemin)))
+    album = ""
+    if piste and parent:                       # « 01 - Titre » dans un dossier : c'est un album
+        album = parent
+        if not artiste and grand:
+            artiste = grand
+    return {"titre": titre, "artiste": artiste, "album": album, "duree": 0, "piste": piste, "disque": 0, "artiste_album": ""}
+
+
+def _entier(v):
+    m = re.match(r"\s*(\d+)", str(v or ""))
+    return int(m.group(1)) if m else 0
 
 
 def etiquettes(chemin, lire=True):
-    """Titre, artiste, album d'un morceau (lus une fois par ffprobe, puis gardés) ; à défaut tirés du nom de fichier.
-    lire=False : jamais de ffprobe (menu instantané) ; ce qui n'est pas encore connu vient du nom du fichier."""
+    """Titre, artiste, album, n° de piste d'un morceau (lus une fois par ffprobe, puis gardés) ; à défaut tirés du nom
+    de fichier et des dossiers. lire=False : jamais de ffprobe ; ce qui n'est pas encore lu vient de l'ancien cache ou du
+    nom du fichier, avec a_lire=True."""
     global _TAGS
     import json
     if _TAGS is None:
@@ -116,28 +149,38 @@ def etiquettes(chemin, lire=True):
     except OSError:
         return {}
     cle = f"{chemin}|{int(st.st_mtime)}|{st.st_size}"
-    if cle in _TAGS:
-        return _TAGS[cle]
+    connu = _TAGS.get(cle)
+    if connu and connu.get("v") == VERSION_TAGS:
+        return connu
     if not lire:
-        return dict(_depuis_nom(chemin), a_lire=True)
+        base = dict(_depuis_nom(chemin))
+        if connu:                                   # lu par une version précédente : on le montre en attendant
+            base.update({k: v for k, v in connu.items() if v})
+        return dict(base, a_lire=True)
     tags = {}
     try:
         import subprocess
         from . import moteur
-        r = subprocess.run([moteur.ffprobe(), "-v", "error", "-print_format", "json", "-show_entries", "format_tags=title,artist,album,album_artist:format=duration", chemin],
+        r = subprocess.run([moteur.ffprobe(), "-v", "error", "-print_format", "json", "-show_entries",
+                            "format_tags:stream_tags:format=duration", "-select_streams", "a:0", chemin],
                            capture_output=True, timeout=15, **moteur._sans_console())
-        fmt = (json.loads(r.stdout.decode("utf-8", "replace") or "{}").get("format") or {})
-        t = {k.lower(): v for k, v in (fmt.get("tags") or {}).items()}
-        tags = {"titre": t.get("title", ""), "artiste": t.get("artist") or t.get("album_artist") or "", "album": t.get("album", ""),
-                "duree": float(fmt.get("duration") or 0)}
+        d = json.loads(r.stdout.decode("utf-8", "replace") or "{}")
+        fmt = d.get("format") or {}
+        t = {}
+        for flux in d.get("streams") or []:        # FLAC, OGG, Opus : étiquettes rangées sur le flux
+            t.update({k.lower(): v for k, v in (flux.get("tags") or {}).items()})
+        t.update({k.lower(): v for k, v in (fmt.get("tags") or {}).items()})       # MP3 (ID3), M4A : sur le fichier
+        tags = {"titre": (t.get("title") or "").strip(), "artiste": (t.get("artist") or t.get("album_artist") or t.get("albumartist") or "").strip(),
+                "artiste_album": (t.get("album_artist") or t.get("albumartist") or t.get("album artist") or "").strip(),
+                "album": (t.get("album") or "").strip(), "duree": float(fmt.get("duration") or 0),
+                "piste": _entier(t.get("track") or t.get("tracknumber")), "disque": _entier(t.get("disc") or t.get("discnumber"))}
     except Exception:            # noqa: BLE001
         pass
-    nom = os.path.splitext(os.path.basename(chemin))[0]
-    if not tags.get("titre"):
-        if " - " in nom and not tags.get("artiste"):
-            tags["artiste"], tags["titre"] = [x.strip() for x in nom.split(" - ", 1)]
-        else:
-            tags["titre"] = nom
+    devine = _depuis_nom(chemin)
+    for k, v in devine.items():
+        if not tags.get(k):
+            tags[k] = v
+    tags["v"] = VERSION_TAGS
     _TAGS[cle] = tags
     return tags
 
@@ -147,7 +190,7 @@ def _garder_tags():
     if _TAGS:
         try:
             with open(_fichier_tags(), "w", encoding="utf-8") as f:
-                json.dump(_TAGS, f, ensure_ascii=False)
+                json.dump(dict(_TAGS), f, ensure_ascii=False)
         except OSError:
             pass
 
@@ -195,26 +238,50 @@ def lire_en_fond(liste):
         return 0
 
     def travail():
-        for k, p in enumerate(a_lire):
-            etiquettes(p)
-            if k % 50 == 49:
-                _garder_tags()
+        from concurrent.futures import ThreadPoolExecutor
+        _LECTURE["faits"], _LECTURE["total"] = 0, len(a_lire)
+
+        def un(p):
+            try:
+                etiquettes(p)
+            finally:
+                _LECTURE["faits"] += 1
+        with ThreadPoolExecutor(max_workers=max(2, min(6, (os.cpu_count() or 4) // 2))) as ex:      # 4 à 6 fois plus vite
+            for k, _r in enumerate(ex.map(un, a_lire)):
+                if k % 100 == 99:
+                    _garder_tags()
         _garder_tags()
     _LECTURE["fil"] = threading.Thread(target=travail, daemon=True)
     _LECTURE["fil"].start()
     return len(a_lire)
 
 
+def _ordre_album(m):
+    return (int(m.get("disque") or 0), int(m.get("piste") or 0) or 999, (m.get("titre") or "").lower())
+
+
+def _artiste_groupe(m):
+    """Comme les lecteurs de musique : l'artiste de l'album d'abord (une compilation reste ensemble), sinon l'artiste."""
+    return (m.get("artiste_album") or m.get("artiste") or "").strip()
+
+
 def classer(liste, mode):
-    """[(groupe, [morceaux])] triés ; « titre » donne un seul groupe."""
+    """[(groupe, [morceaux])] triés ; « titre » donne un seul groupe. Dans un album, l'ordre des pistes (disque, n°)."""
     if mode == "titre":
         return [("", sorted(liste, key=lambda m: (m.get("titre") or "").lower()))]
-    cle = {"dossier": "dossier", "album": "album", "artiste": "artiste"}.get(mode, "dossier")
-    inconnu = {"album": _("Album inconnu"), "artiste": _("Artiste inconnu"), "dossier": "?"}[cle]
+    if mode == "artiste":
+        cle_g, inconnu = _artiste_groupe, _("Artiste inconnu")
+        ordre = lambda m: ((m.get("album") or "").lower(),) + _ordre_album(m)
+    elif mode == "album":
+        cle_g, inconnu = (lambda m: (m.get("album") or "").strip()), _("Album inconnu")
+        ordre = _ordre_album
+    else:
+        cle_g, inconnu = (lambda m: (m.get("dossier") or "").strip()), "?"
+        ordre = _ordre_album
     groupes = {}
     for m in liste:
-        groupes.setdefault((m.get(cle) or "").strip() or inconnu, []).append(m)
-    return [(g, sorted(v, key=lambda m: (m.get("titre") or "").lower())) for g, v in sorted(groupes.items(), key=lambda kv: kv[0].lower())]
+        groupes.setdefault(cle_g(m) or inconnu, []).append(m)
+    return [(g, sorted(v, key=ordre)) for g, v in sorted(groupes.items(), key=lambda kv: (kv[0] in (inconnu, "?"), kv[0].lower()))]
 
 
 def libelle(m):

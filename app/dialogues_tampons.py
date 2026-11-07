@@ -1,4 +1,4 @@
-"""Fenêtre « Tampons vidéo » : ma bibliothèque (aperçus animés, recherche, insertion à la tête de lecture), tampons
+"""Fenêtre « Tampons vidéo » : ma bibliothèque (aperçus animés, recherche, insertion à la ligne rouge), tampons
 maison fabriqués sur ce poste, et recherche de clips libres en ligne (Wikimedia Commons, Pixabay, Pexels)."""
 import os, tempfile, time, urllib.request
 
@@ -28,8 +28,9 @@ class DialogueTampons(QDialog):
         self.format = (1920, 1080) if L >= H else (1080, 1920)
         v = QVBoxLayout(self)
         intro = QLabel(_("Des petites séquences toutes faites, avec leur son, à glisser dans le montage pour ponctuer ou faire rire. "
-                         "Double-clic ou « Insérer » : le tampon arrive à la tête de lecture ({t}) et la suite du montage se décale ; "
-                         "c'est un plan comme un autre (supprimer, rogner, effets).", t=_tc(ed.timeline.position)))
+                         "Double-clic ou « Mettre dans le film… » : PhilCut demande où (début, ligne rouge, partie en jaune, fin) et "
+                         "comment (insérer ou par-dessus). Réglages par défaut, ordre et emplacement de la bibliothèque : Edition › "
+                         "Préférences › Tampons et extraits."))
         intro.setWordWrap(True)
         v.addWidget(intro)
         self.onglets = QTabWidget()
@@ -43,6 +44,7 @@ class DialogueTampons(QDialog):
         self.etat.setStyleSheet("color:%s" % theme.COULEURS["texte2"])
         v.addWidget(self.etat)
         bb = QDialogButtonBox(QDialogButtonBox.Close)
+        bb.button(QDialogButtonBox.Close).setText(_("Fermer"))
         bb.rejected.connect(self.reject)
         v.addWidget(bb)
         self.taches = []
@@ -72,6 +74,13 @@ class DialogueTampons(QDialog):
         self.recherche.setPlaceholderText(_("Chercher : nom ou mot-clef (humour, fin, retour…)"))
         self.recherche.textChanged.connect(self.remplir_biblio)
         h.addWidget(self.recherche, 1)
+        h.addWidget(QLabel(_("Classer")))
+        self.classement = QComboBox()
+        for k, lib in T.CLASSEMENTS.items():
+            self.classement.addItem(lib, k)
+        self.classement.setCurrentIndex(max(0, self.classement.findData(self.params.get("tampons_classement", "perso"))))
+        self.classement.currentIndexChanged.connect(self._classement_change)
+        h.addWidget(self.classement)
         b = QPushButton(_("Importer mon clip…"))
         b.setToolTip(_("Un de vos clips (réaction, gag, logo animé…) : une copie est rangée dans la bibliothèque, avec un nom et des mots-clefs."))
         b.clicked.connect(self.importer)
@@ -83,6 +92,7 @@ class DialogueTampons(QDialog):
         v.addLayout(h)
         corps = QHBoxLayout()
         self.liste = self._liste_icones()
+        self.liste.model().rowsMoved.connect(lambda *_a: QTimer.singleShot(0, self._ordre_glisse))
         self.liste.currentItemChanged.connect(lambda *_a: self._choisi())
         self.liste.itemDoubleClicked.connect(lambda _i: self.inserer())
         # comme une table de sons : un clic sur un son, on l'entend
@@ -102,7 +112,8 @@ class DialogueTampons(QDialog):
         self.infos.setOpenExternalLinks(True)
         self.infos.setMaximumWidth(320)
         droite.addWidget(self.infos)
-        self.b_inserer = QPushButton(_("Insérer à la tête de lecture"))
+        self.b_inserer = QPushButton(_("Mettre dans le film…"))
+        self.b_inserer.setToolTip(_("Choisir où (début, ligne rouge, partie en jaune, fin) et comment (insérer ou par-dessus)"))
         self.b_inserer.setProperty("primaire", True)
         self.b_inserer.clicked.connect(self.inserer)
         droite.addWidget(self.b_inserer)
@@ -126,6 +137,10 @@ class DialogueTampons(QDialog):
         b = QPushButton(_("Ouvrir le dossier des tampons"))
         b.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(T.dossier_tampons(self.params))))
         droite.addWidget(b)
+        b = QPushButton(_("Réglages des tampons et extraits…"))
+        b.setToolTip(_("Edition › Préférences › Tampons et extraits : où poser par défaut, classement, clefs, YouTube"))
+        b.clicked.connect(self._reglages)
+        droite.addWidget(b)
         droite.addStretch(1)
         corps.addLayout(droite, 0)
         v.addLayout(corps, 1)
@@ -134,8 +149,12 @@ class DialogueTampons(QDialog):
     def remplir_biblio(self, *_a, choisir=None):
         self.liste.clear()
         tout = T.charger(self.params)
-        for e in sorted(T.chercher_local(tout, self.recherche.text()), key=lambda x: x.get("ajoute", ""), reverse=True):
-            it = QListWidgetItem(f"{e['nom']}\n{e.get('duree', 0):.1f} s · {T.SOURCES.get(e.get('source'), _('maison') if e.get('source') == 'maison' else _('à moi'))}")
+        mode = self.classement.currentData() or "perso"
+        perso = mode == "perso" and not self.recherche.text().strip()
+        self.liste.setMovement(QListWidget.Snap if perso else QListWidget.Static)
+        self.liste.setDragDropMode(QListWidget.InternalMove if perso else QListWidget.NoDragDrop)
+        for e in T.trier(T.chercher_local(tout, self.recherche.text()), mode):
+            it = QListWidgetItem(("★ " if e.get("favori") else "") + f"{e['nom']}\n{e.get('duree', 0):.1f} s · {T.SOURCES.get(e.get('source'), _('maison') if e.get('source') == 'maison' else _('à moi'))}")
             vg = None if e.get("genre") == "son" else T.vignette(self.params, e)
             if vg:
                 it.setIcon(QIcon(vg))
@@ -156,6 +175,58 @@ class DialogueTampons(QDialog):
     def _entree(self):
         it = self.liste.currentItem()
         return it.data(Qt.UserRole) if it else None
+
+    # ---- ordre de la bibliothèque (rangé dans la bibliothèque : suit sur vos autres postes)
+    def _reglages(self):
+        f = self.ed.window()
+        if hasattr(f, "preferences"):
+            f.preferences("Tampons")
+            self.classement.blockSignals(True)
+            self.classement.setCurrentIndex(max(0, self.classement.findData(self.params.get("tampons_classement", "perso"))))
+            self.classement.blockSignals(False)
+            self.remplir_biblio()
+
+    def _classement_change(self):
+        self.params["tampons_classement"] = self.classement.currentData()
+        self.params.enregistrer()
+        self.remplir_biblio()
+
+    def _ids_affiches(self):
+        return [self.liste.item(i).data(Qt.UserRole)["id"] for i in range(self.liste.count()) if self.liste.item(i).data(Qt.UserRole)]
+
+    def _ordre_glisse(self):
+        if self.classement.currentData() != "perso":
+            return
+        T.ranger(self.params, self._ids_affiches())
+        self.etat.setText(_("Ordre enregistré (il suit sur vos autres postes avec la bibliothèque)."))
+
+    def _passer_en_perso(self):
+        """Monter, descendre : on passe à « Mon ordre » en partant de l'ordre affiché."""
+        ids = self._ids_affiches()
+        if self.classement.currentData() != "perso":
+            T.ranger(self.params, ids)
+            self.classement.blockSignals(True)
+            self.classement.setCurrentIndex(self.classement.findData("perso"))
+            self.classement.blockSignals(False)
+            self.params["tampons_classement"] = "perso"
+        return ids
+
+    def deplacer(self, sens):
+        e = self._entree()
+        if not e:
+            return
+        ids = self._passer_en_perso()
+        i = ids.index(e["id"])
+        j = 0 if sens == "haut" else len(ids) - 1 if sens == "bas" else max(0, min(len(ids) - 1, i + sens))
+        ids.insert(j, ids.pop(i))
+        T.ranger(self.params, ids)
+        self.remplir_biblio(choisir=e["id"])
+
+    def basculer_favori(self):
+        e = self._entree()
+        if e:
+            T.modifier(self.params, e["id"], favori=not e.get("favori"))
+            self.remplir_biblio(choisir=e["id"])
 
     def _choisi(self):
         e = self._entree()
@@ -202,13 +273,23 @@ class DialogueTampons(QDialog):
 
     def inserer(self):
         e = self._entree()
+        if e:
+            self.poser_entree(e)
+
+    def poser_entree(self, e):
+        """Demande où et comment (début, ligne rouge, partie en jaune, fin ; insérer, par-dessus), puis pose le tampon."""
         if not e:
-            return
+            return False
+        choix = DialoguePlacement(self, self.ed, e).demander()
+        if not choix:
+            return False
         if e.get("genre") == "son":
-            self.ed.poser_son(T.chemin(self.params, e), self.ed.timeline.position, e["nom"])
+            self.ed.poser_son(T.chemin(self.params, e), choix["t"], e["nom"])
         else:
-            self.ed.inserer_tampon(T.chemin(self.params, e), self.ed.timeline.position, e["nom"])
+            self.ed.placer_tampon(T.chemin(self.params, e), e["nom"], choix)
+        T.noter_usage(self.params, e["id"])
         self.accept()
+        return True
 
     def importer(self):
         f, _f = QFileDialog.getOpenFileName(self, _("Importer mon clip"), self.params.get("dossier_tampons_import") or "",
@@ -269,8 +350,16 @@ class DialogueTampons(QDialog):
             return
         self.liste.setCurrentItem(it)
         m = QMenu(self)
-        m.addAction(_("Insérer à la tête de lecture"), self.inserer)
+        e = it.data(Qt.UserRole)
+        m.addAction(_("Mettre dans le film…"), self.inserer)
         m.addAction("▶ " + _("Écouter"), self.ecouter)
+        m.addSeparator()
+        m.addAction(_("Retirer des favoris") if e.get("favori") else _("★ Favori (toujours en tête)"), self.basculer_favori)
+        m.addAction(_("Monter"), lambda: self.deplacer(-1))
+        m.addAction(_("Descendre"), lambda: self.deplacer(1))
+        m.addAction(_("Tout en haut"), lambda: self.deplacer("haut"))
+        m.addAction(_("Tout en bas"), lambda: self.deplacer("bas"))
+        m.addSeparator()
         m.addAction(_("Raccourcir…"), self.raccourcir)
         m.addAction(_("Renommer, mots-clefs…"), self.renommer)
         m.addAction(_("Retirer"), self.retirer)
@@ -370,6 +459,11 @@ class DialogueTampons(QDialog):
         b.setProperty("primaire", True)
         b.clicked.connect(self.chercher)
         h.addWidget(b)
+        bl = QPushButton(_("Coller un lien"))
+        bl.setToolTip(_("Un lien de vidéo copié (YouTube, Vimeo, Dailymotion, lien direct vers un fichier .mp4…) : PhilCut la lit, vous "
+                        "la regardez ici, choisissez le morceau, et seul ce morceau est téléchargé, avec la progression."))
+        bl.clicked.connect(self.coller_lien)
+        h.addWidget(bl)
         self.b_importer_web = QPushButton(_("Importer le clip téléchargé…"))
         self.b_importer_web.setToolTip(_("Le clip téléchargé depuis le site (dossier Téléchargements) rejoint votre bibliothèque."))
         self.b_importer_web.clicked.connect(self.importer_telecharge)
@@ -390,12 +484,29 @@ class DialogueTampons(QDialog):
         self.morceau_a.setMaximumWidth(80)
         hm.addWidget(self.morceau_a)
         self.audio_seul = QCheckBox(_("Le son seulement"))
+        self.audio_seul.setChecked(bool(self.params.get("ytdlp_son_seul")))
         hm.addWidget(self.audio_seul)
         self.b_maj_ytdlp = QPushButton(_("Mettre à jour yt-dlp"))
         self.b_maj_ytdlp.setToolTip(_("Les sites changent souvent : si un téléchargement échoue, mettez yt-dlp à jour"))
         self.b_maj_ytdlp.clicked.connect(self.maj_ytdlp)
         hm.addWidget(self.b_maj_ytdlp)
         h2.addWidget(self.ligne_morceau)
+        self.genre_yt = QComboBox()
+        self.genre_yt.addItem(_("Vidéos et Shorts"), "tout")
+        self.genre_yt.addItem(_("Shorts seulement"), "shorts")
+        self.genre_yt.addItem(_("Vidéos (sans les Shorts)"), "videos")
+        from .videos_en_ligne import pays
+        self.genre_yt.setToolTip(_("Recherche sur le YouTube de votre pays ({p}), avec vos mots tels que tapés", p=pays()))
+        h2.addWidget(self.genre_yt)
+        self.langue_rech = QComboBox()
+        self.langue_rech.addItem(_("Mots tapés et en anglais"), "deux")
+        self.langue_rech.addItem(_("Mots tels que tapés"), "tel")
+        self.langue_rech.addItem(_("Traduits en anglais"), "anglais")
+        self.langue_rech.setToolTip(_("Ces sites sont surtout en anglais : chercher aussi la traduction anglaise donne plus de résultats. "
+                                      "Choisissez « tels que tapés » pour un nom propre ou un titre de film."))
+        self.langue_rech.setCurrentIndex(max(0, self.langue_rech.findData(self.params.get("tampons_langue_recherche", "deux"))))
+        self.langue_rech.currentIndexChanged.connect(lambda: self.params.__setitem__("tampons_langue_recherche", self.langue_rech.currentData()))
+        h2.addWidget(self.langue_rech)
         self.guette = QCheckBox(_("Ajouter tout seul ce que je télécharge"))
         self.guette.setChecked(self.params.get("tampons_guetter", True) is not False)
         self.guette.setToolTip(_("Pendant 15 minutes après l'ouverture du site, les sons et clips qui arrivent dans votre dossier "
@@ -408,6 +519,11 @@ class DialogueTampons(QDialog):
         h.addWidget(self.b_clef)
         v.addLayout(h)
         v.addLayout(h2)
+        self.suggestion = QLabel("")
+        self.suggestion.setTextFormat(Qt.RichText)
+        self.suggestion.linkActivated.connect(self._prendre_suggestion)
+        self.suggestion.hide()
+        v.addWidget(self.suggestion)
         self.resultats = self._liste_icones()
         self.resultats.currentItemChanged.connect(lambda *_a: self._resultat_choisi())
         self.resultats.itemDoubleClicked.connect(lambda _i: self.ajouter_resultat(True))
@@ -419,6 +535,10 @@ class DialogueTampons(QDialog):
         self.info_res.setTextFormat(Qt.RichText)
         self.info_res.setOpenExternalLinks(True)
         h.addWidget(self.info_res, 1)
+        self.b_voir = QPushButton("▶ " + _("Regarder et choisir le morceau…"))
+        self.b_voir.setToolTip(_("Regarder la vidéo ici, dans PhilCut, et marquer le début et la fin du morceau à importer"))
+        self.b_voir.clicked.connect(self.regarder)
+        h.addWidget(self.b_voir)
         self.b_ajouter = QPushButton(_("Ajouter à ma bibliothèque"))
         self.b_ajouter.clicked.connect(lambda: self.ajouter_resultat(False))
         h.addWidget(self.b_ajouter)
@@ -436,8 +556,8 @@ class DialogueTampons(QDialog):
         site = s.split(":", 1)[-1]
         self.question.setPlaceholderText(_("Une réplique ou des mots, en français : c'est pas faux, la voiture, on se calme…")
                                          if site in T.SANS_TRADUCTION else
-                                         _("Adresse d'une vidéo (https://…) ou mots à chercher sur YouTube") if s == "ytdlp" else
-                                         _("Dans votre langue, PhilCut traduit en anglais : applaudissements, explosion, foule, rembobinage…"))
+                                         _("Mots à chercher sur YouTube, ou un lien collé : YouTube, Vimeo, Dailymotion, fichier .mp4…") if s == "ytdlp" else
+                                         _("Dans votre langue : applaudissements, explosion, foule, rembobinage…"))
         self.b_clef.setVisible(s != "wikimedia" and not extrait)
         self.b_importer_web.setVisible(extrait)
         self.guette.setVisible(extrait)
@@ -445,6 +565,10 @@ class DialogueTampons(QDialog):
         self.ligne_morceau.setVisible(en_ligne)
         self.b_maj_ytdlp.setVisible(s == "ytdlp")
         self.audio_seul.setVisible(s == "ytdlp")
+        self.genre_yt.setVisible(s == "ytdlp")
+        self.langue_rech.setVisible(not extrait and s != "ytdlp")
+        self.b_voir.setVisible(en_ligne)
+        self.suggestion.hide()
         self.b_ajouter.setVisible(not extrait)
         self.b_ajouter_ins.setVisible(not extrait)
         self.resultats.clear()
@@ -524,6 +648,11 @@ class DialogueTampons(QDialog):
             self.question.setFocus()
             return
         s = self.source.currentData()
+        if texte.startswith(("http://", "https://")) and s != "ytdlp":
+            # un lien collé (YouTube, Vimeo, Dailymotion, fichier .mp4…) : il se lit par yt-dlp, quelle que soit la source choisie
+            self.source.setCurrentIndex(self.source.findData("ytdlp"))
+            self.question.setText(texte)
+            s = "ytdlp"
         if s.startswith("extrait:"):
             site = s.split(":", 1)[1]
             self.etat.setText(_("Ouverture de {s}…", s=T.EXTRAITS[site][0]))
@@ -554,18 +683,26 @@ class DialogueTampons(QDialog):
             self.resultats.clear()
             url = texte.startswith(("http://", "https://"))
             self.etat.setText(_("Lecture de la vidéo…") if url else _("Recherche sur YouTube…"))
-            self._lancer(lambda t: [dict(VL.infos(texte), source="youtube")] if url else VL.chercher_youtube(texte), None, fin=self._resultats_recus)
+            n, genre = int(self.params.get("ytdlp_resultats") or 30), self.genre_yt.currentData()
+            dv = os.path.join(tempfile.gettempdir(), "philcut-tampons", "youtube")
+            self._lancer(lambda t: [dict(VL.infos(texte), source="youtube")] if url else
+                         VL.vignettes(VL.chercher_youtube(texte, n, genre), dv, t.arret_demande), None, fin=self._resultats_recus)
+            if not url:
+                self._verifier_orthographe(texte)
             return
         if s == "archive":
             from . import videos_en_ligne as VL
             from . import traduction_recherche as TR
             self.resultats.clear()
             self.etat.setText(_("Recherche sur Internet Archive…"))
-            self._lancer(lambda t: VL.chercher_archive(TR.en_anglais(texte)[0]), None, fin=self._resultats_recus)
+            mode = self.langue_rech.currentData()
+            self._lancer(lambda t: VL.chercher_archive(texte if mode != "anglais" else TR.en_anglais(texte)[0], 30,
+                                                       TR.en_anglais(texte)[0] if mode == "deux" else ""), None, fin=self._resultats_recus)
             return
         self.resultats.clear()
         self.etat.setText(_("Recherche sur {s}…", s=T.SOURCES[s]))
-        self._lancer(lambda t: self._chercher_et_vignettes(s, texte), None, apres=None, fin=self._resultats_recus)
+        mode = self.langue_rech.currentData()
+        self._lancer(lambda t: self._chercher_et_vignettes(s, texte, mode), None, apres=None, fin=self._resultats_recus)
 
     @staticmethod
     def _traduire_extrait(site, texte):
@@ -693,11 +830,15 @@ class DialogueTampons(QDialog):
         self._lancer(lambda t: T.ajouter_fichier(self.params, f, nom.strip(), mots), _("Copie dans la bibliothèque…"))
 
     @staticmethod
-    def _chercher_et_vignettes(source, texte):
+    def _chercher_et_vignettes(source, texte, mode="deux"):
         from . import traduction_recherche as TR
-        tr = TR.en_anglais(texte)
-        res = T.chercher(source, tr[0])
-        res = [dict(r, _note=TR.message(texte, tr)) for r in res] or [{"_vide": True, "_note": TR.message(texte, tr)}]
+        tr = TR.en_anglais(texte) if mode != "tel" else (texte, "tel", [])
+        res = T.chercher(source, tr[0]) if mode != "tel" else []
+        if mode in ("tel", "deux") and tr[0].lower() != texte.lower():          # aussi les mots tels que tapés
+            vus = {r.get("url") for r in res}
+            res += [r for r in T.chercher(source, texte) if r.get("url") not in vus]
+        note = TR.message(texte, tr) if mode != "tel" else ""
+        res = [dict(r, _note=note) for r in res] or [{"_vide": True, "_note": note}]
         d = os.path.join(tempfile.gettempdir(), "philcut-tampons", "web")
         os.makedirs(d, exist_ok=True)
         for k, r in enumerate(res):                                     # petites images des résultats
@@ -721,10 +862,26 @@ class DialogueTampons(QDialog):
         note = (res[0].get("_note") if res else "") or ""
         res = [r for r in res if not r.get("_vide")]
         en_ligne = self.source.currentData() in ("ytdlp", "archive")
+        if en_ligne:
+            grille = any(r.get("_vignette") for r in res)
+            self.resultats.setViewMode(QListWidget.IconMode if grille else QListWidget.ListMode)
+            self.resultats.setIconSize(QSize(240, 135))
+            self.resultats.setGridSize(QSize(260, 200) if grille else QSize())
         for r in res:
+            if en_ligne and r.get("_vignette"):         # YouTube : vignettes comme sur le site (titre, chaîne, durée)
+                d = float(r.get("duree") or 0)
+                it = QListWidgetItem(("▮ Short · " if r.get("short") else "") + (r.get("titre") or "")[:70] + "\n" +
+                                     "  ·  ".join(b for b in (r.get("auteur") or "", f"{int(d // 60)}:{int(d % 60):02d}" if d else "") if b))
+                img = QImage(r["_vignette"])
+                if not img.isNull():
+                    it.setIcon(QIcon(QPixmap.fromImage(img.scaled(240, 135, Qt.KeepAspectRatio, Qt.SmoothTransformation))))
+                it.setData(Qt.UserRole, r)
+                it.setToolTip(f"{r.get('titre')}\n{r.get('page') or ''}")
+                self.resultats.addItem(it)
+                continue
             if en_ligne:                      # liste : titre entier, chaîne, durée, année, licence (Creative Commons mise en avant)
                 d = float(r.get("duree") or 0)
-                bouts = [r.get("titre") or "", r.get("auteur") or "", f"{int(d // 60)}:{int(d % 60):02d}" if d else "", r.get("annee") or "",
+                bouts = [("▮ Short  " if r.get("short") else "") + (r.get("titre") or ""), r.get("auteur") or "", f"{int(d // 60)}:{int(d % 60):02d}" if d else "", r.get("annee") or "",
                          ("✓ " + r["licence"]) if r.get("licence") else ""]
                 it = QListWidgetItem("  ·  ".join(b for b in bouts if b))
                 it.setData(Qt.UserRole, r)
@@ -740,7 +897,66 @@ class DialogueTampons(QDialog):
             it.setToolTip(f"{r['titre']}\n{r.get('licence', '')}")
             self.resultats.addItem(it)
         self.etat.setText((_("{n} clip(s) trouvé(s). Double-clic : ajouter à la bibliothèque et insérer.", n=len(res)) if res else
-                           _("Rien trouvé : essayez d'autres mots (en anglais).")) + ("  " + note if note else ""))
+                           _("Rien trouvé : essayez d'autres mots, ou une autre langue de recherche.")) + ("  " + note if note else ""))
+
+    def coller_lien(self):
+        from PySide6.QtWidgets import QApplication
+        lien = QApplication.clipboard().text().strip()
+        if not lien.startswith(("http://", "https://")):
+            self.etat.setText(_("Copiez d'abord le lien de la vidéo (clic droit sur la vidéo › Copier l'adresse), puis « Coller un lien »."))
+            return
+        self.question.setText(lien)
+        self.chercher()
+
+    # ---- orthographe : « Vouliez-vous dire … ? » (comme la recherche de YouTube)
+    def _verifier_orthographe(self, texte):
+        from . import videos_en_ligne as VL
+        self.suggestion.hide()
+        t = Tache(lambda tache: VL.correction(texte, VL.suggestions(texte)), _("Orthographe"))
+        self.taches.append(t)
+
+        def fin(r, err):
+            try:
+                if r and not err and self.question.text().strip() == texte:
+                    self.suggestion.setText(_("Vouliez-vous dire <a href='{c}'><b>{c}</b></a> ? Cliquez pour chercher ainsi.", c=r))
+                    self.suggestion.show()
+            except RuntimeError:
+                pass
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
+
+    def _prendre_suggestion(self, texte):
+        self.question.setText(texte)
+        self.suggestion.hide()
+        self.chercher()
+
+    # ---- regarder dans PhilCut et choisir le morceau
+    def regarder(self):
+        it = self.resultats.currentItem()
+        r = it.data(Qt.UserRole) if it else None
+        if not r or r.get("source") not in ("youtube", "archive"):
+            self.etat.setText(_("Choisissez d'abord une vidéo dans la liste."))
+            return
+        from . import videos_en_ligne as VL
+        self.etat.setText(_("Préparation de la lecture de « {t} »…", t=(r.get("titre") or "")[:60]))
+
+        def adresse(t):
+            if r["source"] == "archive":
+                return VL.fichier_archive(r["ident"])[0]
+            return VL.flux_lecture(r["page"])
+
+        def fin(url, err):
+            if err or not url:
+                self.etat.setText(_("✕ Lecture impossible ici : {e}. « page » ouvre la vidéo dans le navigateur.", e=str(err)[:200]))
+                return
+            self.etat.setText("")
+            d = DialogueVisionner(self, url, r, _lire_temps_txt(self.morceau_de.text()), _lire_temps_txt(self.morceau_a.text()))
+            if d.exec() == QDialog.Accepted:
+                self.morceau_de.setText(_tc_court(d.debut))
+                self.morceau_a.setText(_tc_court(d.fin))
+                self.etat.setText(_("Morceau choisi : de {a} à {b} ({d:.1f} s). « Ajouter à ma bibliothèque » ne télécharge que lui.",
+                                    a=_tc_court(d.debut), b=_tc_court(d.fin), d=d.fin - d.debut))
+        self._lancer(adresse, None, fin=fin)
 
     def _resultat_choisi(self):
         it = self.resultats.currentItem()
@@ -760,8 +976,7 @@ class DialogueTampons(QDialog):
 
         def apres(e=None):
             if inserer and e:
-                self.ed.inserer_tampon(T.chemin(self.params, e), self.ed.timeline.position, e["nom"])
-                self.accept()
+                self.poser_entree(e)
         self._lancer(lambda t: T.telecharger(self.params, r, progression=lambda f: t.avancer(f), arret=t.arret_demande),
                      _("Téléchargement de « {t} »…", t=r["titre"]), fin_entree=apres)
 
@@ -832,7 +1047,8 @@ class DialogueTampons(QDialog):
         def travail(t):
             d = tempfile.mkdtemp(prefix="philcut-en-ligne-")
             if r["source"] == "youtube":
-                f = VL.telecharger(r["page"], d, audio, a, b, progression=t.avancer, arret=t.arret_demande)
+                f = VL.telecharger(r["page"], d, audio, a, b, progression=t.avancer, arret=t.arret_demande,
+                                  hauteur=int(self.params.get("ytdlp_hauteur") or 1080))
             elif a is not None:
                 from . import moteur
                 url, _taille = VL.fichier_archive(r["ident"])
@@ -851,11 +1067,7 @@ class DialogueTampons(QDialog):
 
         def apres(e=None):
             if inserer and e:
-                if e.get("genre") == "son":
-                    self.ed.poser_son(T.chemin(self.params, e), self.ed.timeline.position, e["nom"])
-                else:
-                    self.ed.inserer_tampon(T.chemin(self.params, e), self.ed.timeline.position, e["nom"])
-                self.accept()
+                self.poser_entree(e)
         self._lancer(travail, _("Téléchargement de « {t} »…", t=(r.get("titre") or "")[:50]), fin_entree=apres)
 
     # ------------------------------------------------------------------ tâches de fond
@@ -902,3 +1114,346 @@ class DialogueTampons(QDialog):
 
     def _fermer(self):
         self.minuterie.stop()                       # une création en cours continue en tâche de fond (barre du bas)
+
+
+# ---------------------------------------------------------------------- où et comment poser un tampon (0.9.9)
+QUAND = {"ligne": _("À la ligne rouge (l'instant affiché)"), "debut": _("Au tout début du film"), "zone": _("À la place de la partie en jaune"),
+         "fin": _("À la fin du film")}
+COMMENT = {"inserer": _("Insérer : le film s'écarte, la suite est décalée"), "dessus": _("Par-dessus : il recouvre le film, rien n'est décalé")}
+AJUSTER = {"garder": _("Garder sa durée"), "vitesse": _("L'accélérer ou le ralentir pour remplir la partie"),
+           "couper": _("Le couper à la durée de la partie")}
+
+
+CADRAGES = {"contenir_flou": _("Entier, sur un fond flou de lui-même (conseillé)"), "contenir_noir": _("Entier, avec des bandes noires"),
+            "remplir": _("Remplir l'image en recadrant, partie gardée au centre"), "remplir_g": _("Remplir en recadrant, partie gardée à gauche"),
+            "remplir_d": _("Remplir en recadrant, partie gardée à droite"), "suivi": _("Remplir en suivant la personne (recadrage automatique)")}
+
+
+def _format(l, h):
+    if not l or not h:
+        return ""
+    r = l / h
+    for nom, v in (("16:9", 16 / 9), ("9:16", 9 / 16), ("1:1", 1.0), ("4:3", 4 / 3), ("3:4", 3 / 4), ("21:9", 21 / 9)):
+        if abs(r - v) < 0.04:
+            return nom
+    return f"{l}×{h}"
+
+
+def placement_defaut(params):
+    d = dict(params.get("tampons_placement") or {})
+    return {"quand": d.get("quand", "ligne"), "comment": d.get("comment", "inserer"), "ajuster": d.get("ajuster", "garder"),
+            "son": d.get("son", True) is not False, "demander": d.get("demander", True) is not False,
+            "cadrage": d.get("cadrage", "contenir_flou")}
+
+
+class DialoguePlacement(QDialog):
+    """« Où mettre ce tampon ? » : quand (début, ligne rouge, partie en jaune, fin), comment (insérer ou par-dessus), et
+    si la durée ne correspond pas à la partie en jaune : garder, accélérer/ralentir, couper. Le choix est retenu."""
+
+    def __init__(self, parent, ed, e):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QButtonGroup, QGroupBox, QRadioButton
+        self.ed, self.e = ed, e
+        self.params = ed.params
+        self.duree = float(e.get("duree") or 0) or 2.0
+        self.son = e.get("genre") == "son"
+        tl = ed.timeline
+        self.zone = tl.zone_valide() if hasattr(tl, "zone_valide") else None
+        self.position = float(tl.position or 0.0)
+        self.fin_film = float(ed.projet.duree() or 0.0)
+        d = placement_defaut(self.params)
+        self.setWindowTitle(_("Où mettre « {n} » ?", n=e["nom"]))
+        self.setMinimumWidth(560)
+        v = QVBoxLayout(self)
+        tete = QLabel(_("<b>{n}</b> · {d:.1f} s", n=e["nom"], d=self.duree))
+        v.addWidget(tete)
+        g1 = QGroupBox(_("Quand"))
+        v1 = QVBoxLayout(g1)
+        self.g_quand = QButtonGroup(self)
+        libs = {"ligne": f"{QUAND['ligne']} — {_tc(self.position)}", "debut": f"{QUAND['debut']} — 0:00.0",
+                "zone": (f"{QUAND['zone']} — {_tc(self.zone[0])} → {_tc(self.zone[1])} ({self.zone[1] - self.zone[0]:.1f} s)" if self.zone else
+                         QUAND["zone"] + " — " + _("pas encore choisie")),
+                "fin": f"{QUAND['fin']} — {_tc(self.fin_film)}"}
+        self.r_quand = {}
+        for k in ("ligne", "debut", "zone", "fin"):
+            r = QRadioButton(libs[k])
+            r.setEnabled(k != "zone" or bool(self.zone))
+            if k == "zone" and not self.zone:
+                r.setToolTip(_("Choisir une partie : double-clic sur la règle des temps au début, puis à la fin ; elle devient jaune"))
+            self.g_quand.addButton(r)
+            self.r_quand[k] = r
+            v1.addWidget(r)
+        quand = d["quand"] if (d["quand"] != "zone" or self.zone) else "ligne"
+        if self.zone:
+            quand = "zone"                      # une partie en jaune est choisie : c'est sûrement là qu'on veut le tampon
+        self.r_quand[quand].setChecked(True)
+        v.addWidget(g1)
+        self.g2 = QGroupBox(_("Comment"))
+        v2 = QVBoxLayout(self.g2)
+        self.g_comment = QButtonGroup(self)
+        self.r_comment = {}
+        for k, lib in COMMENT.items():
+            r = QRadioButton(lib)
+            self.g_comment.addButton(r)
+            self.r_comment[k] = r
+            v2.addWidget(r)
+        self.r_comment.get(d["comment"], self.r_comment["inserer"]).setChecked(True)
+        self.c_son = QCheckBox(_("Garder le son du tampon (sinon on entend le film)"))
+        self.c_son.setChecked(d["son"])
+        v2.addWidget(self.c_son)
+        v.addWidget(self.g2)
+        self.g2.setVisible(not self.son)
+        self.g3 = QGroupBox(_("Le tampon et la partie en jaune n'ont pas la même durée"))
+        v3 = QVBoxLayout(self.g3)
+        self.g_ajuster = QButtonGroup(self)
+        self.r_ajuster = {}
+        for k, lib in AJUSTER.items():
+            r = QRadioButton(lib)
+            self.g_ajuster.addButton(r)
+            self.r_ajuster[k] = r
+            v3.addWidget(r)
+        self.r_ajuster.get(d["ajuster"], self.r_ajuster["garder"]).setChecked(True)
+        v.addWidget(self.g3)
+        # format différent du projet (clip 16:9 dans un projet 9:16…) : comment le faire entrer
+        self.fmt_tampon, self.fmt_projet = "", ""
+        try:
+            from . import moteur
+            vi = (moteur.sonder(T.chemin(self.params, e)).get("video") or {}) if not self.son else {}
+            lt, ht = vi.get("largeur") or 0, vi.get("hauteur") or 0
+            if vi.get("rotation") in (90, 270, -90):
+                lt, ht = ht, lt
+            lp, hp = ed.projet.taille
+            self.fmt_tampon, self.fmt_projet = _format(lt, ht), _format(lp, hp)
+            differents = bool(lt and ht) and abs(lt / ht - lp / hp) > 0.04
+        except Exception:      # noqa: BLE001
+            differents = False
+        self.g4 = QGroupBox(_("Le tampon est en {a}, le projet en {b} : comment le faire entrer ?", a=self.fmt_tampon, b=self.fmt_projet))
+        v4 = QVBoxLayout(self.g4)
+        self.g_cadrage = QButtonGroup(self)
+        self.r_cadrage = {}
+        for k, lib in CADRAGES.items():
+            r = QRadioButton(lib)
+            self.g_cadrage.addButton(r)
+            self.r_cadrage[k] = r
+            v4.addWidget(r)
+        self.r_cadrage.get(d["cadrage"], self.r_cadrage["contenir_flou"]).setChecked(True)
+        n4 = QLabel(_("Modifiable ensuite : clic sur le plan › Inspecteur › Cadrage."))
+        n4.setStyleSheet("color:#9aa4b2")
+        v4.addWidget(n4)
+        v.addWidget(self.g4)
+        self.g4.setVisible(differents)
+        self.differents = differents
+        self.resume = QLabel("")
+        self.resume.setWordWrap(True)
+        self.resume.setStyleSheet("background:#22262d;color:#e6e6e6;border-radius:6px;padding:8px")
+        v.addWidget(self.resume)
+        self.c_demander = QCheckBox(_("Toujours me demander (sinon : ce choix, directement, au double-clic)"))
+        self.c_demander.setChecked(d["demander"])
+        v.addWidget(self.c_demander)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.button(QDialogButtonBox.Ok).setText(_("Mettre dans le film"))
+        bb.button(QDialogButtonBox.Cancel).setText(_("Annuler"))
+        bb.accepted.connect(self.accept)
+        bb.rejected.connect(self.reject)
+        v.addWidget(bb)
+        for g in (self.g_quand, self.g_comment, self.g_ajuster, self.g_cadrage):
+            g.buttonClicked.connect(lambda *_a: self._maj())
+        self.c_son.toggled.connect(lambda *_a: self._maj())
+        self._maj()
+
+    def _cle(self, dico):
+        for k, r in dico.items():
+            if r.isChecked():
+                return k
+        return next(iter(dico))
+
+    def choix(self):
+        quand, comment, ajuster = self._cle(self.r_quand), self._cle(self.r_comment), self._cle(self.r_ajuster)
+        t = {"ligne": self.position, "debut": 0.0, "zone": self.zone[0] if self.zone else self.position, "fin": self.fin_film}[quand]
+        c = {"t": t, "quand": quand, "comment": comment, "ajuster": ajuster, "son": self.c_son.isChecked(), "src_fin": None, "vitesse": 1.0,
+             "cadrage": self._cle(self.r_cadrage) if getattr(self, "differents", False) else "contenir_flou"}
+        if quand == "zone" and self.zone:
+            place = self.zone[1] - self.zone[0]
+            if comment == "inserer":
+                c["comment"] = "remplacer"
+                c["zone"] = tuple(self.zone)
+            if abs(place - self.duree) > 0.05:
+                if ajuster == "vitesse":
+                    c["vitesse"] = round(self.duree / place, 3)
+                elif ajuster == "couper" and self.duree > place:
+                    c["src_fin"] = place
+        return c
+
+    def _maj(self):
+        c = self.choix()
+        ecart = bool(self.zone) and c["quand"] == "zone" and abs((self.zone[1] - self.zone[0]) - self.duree) > 0.05
+        self.g3.setVisible(ecart and not self.son)
+        self.c_son.setVisible(c["comment"] == "dessus")
+        if hasattr(self, "g4"):
+            self.g4.setVisible(self.differents and c["comment"] != "dessus")
+        if ecart:
+            self.g3.setTitle(_("Le tampon dure {d:.1f} s, la partie en jaune {p:.1f} s", d=self.duree, p=self.zone[1] - self.zone[0]))
+            self.r_ajuster["couper"].setEnabled(self.duree > self.zone[1] - self.zone[0])
+        duree = (c["src_fin"] or self.duree) / c["vitesse"]
+        if self.son:
+            txt = _("Le son est posé à {t} sur une piste de sons libre, sans rien décaler.", t=_tc(c["t"]))
+        elif c["comment"] == "remplacer":
+            txt = _("La partie en jaune ({a} → {b}) est retirée et le tampon prend sa place ({d:.1f} s).", a=_tc(self.zone[0]), b=_tc(self.zone[1]),
+                    d=duree)
+            ecart_fin = duree - (self.zone[1] - self.zone[0])
+            if abs(ecart_fin) > 0.05:
+                txt += " " + (_("La suite du film est repoussée de {s:.1f} s.", s=ecart_fin) if ecart_fin > 0 else
+                              _("La suite du film est avancée de {s:.1f} s.", s=-ecart_fin))
+        elif c["comment"] == "dessus":
+            txt = _("Le tampon recouvre le film de {a} à {b} ({d:.1f} s) ; le film continue dessous, rien n'est décalé.",
+                    a=_tc(c["t"]), b=_tc(c["t"] + duree), d=duree)
+        else:
+            txt = _("Le tampon est inséré à {t} ({d:.1f} s) : tout ce qui suit est décalé de {d:.1f} s.", t=_tc(c["t"]), d=duree)
+        if c["vitesse"] != 1.0:
+            txt += " " + (_("Il est accéléré (×{v:.2f}).", v=c["vitesse"]) if c["vitesse"] > 1 else _("Il est ralenti (×{v:.2f}).", v=c["vitesse"]))
+        if c["src_fin"]:
+            txt += " " + _("Il est coupé à {s:.1f} s.", s=c["src_fin"])
+        self.resume.setText(txt)
+
+    def demander(self):
+        """Renvoie le choix (dict) ou None ; sans demander si l'utilisateur l'a réglé ainsi."""
+        if not placement_defaut(self.params)["demander"]:
+            return self.choix()
+        if self.exec() != QDialog.Accepted:
+            return None
+        c = self.choix()
+        self.params["tampons_placement"] = {"quand": c["quand"], "comment": self._cle(self.r_comment), "ajuster": c["ajuster"], "son": c["son"],
+                                            "demander": self.c_demander.isChecked(),
+                                            "cadrage": c["cadrage"] if self.differents else placement_defaut(self.params)["cadrage"]}
+        try:
+            self.params.enregistrer()
+        except AttributeError:
+            pass
+        return c
+
+
+def _tc_court(t):
+    t = max(0.0, float(t or 0))
+    m, s_ = divmod(t, 60)
+    return f"{int(m)}:{s_:04.1f}" if s_ % 1 else f"{int(m)}:{int(s_):02d}"
+
+
+def _lire_temps_txt(texte):
+    try:
+        return T.lire_temps(texte)
+    except Exception:      # noqa: BLE001
+        return None
+
+
+class DialogueVisionner(QDialog):
+    """Regarder une vidéo en ligne dans PhilCut (version légère) et marquer le début et la fin du morceau à importer."""
+
+    def __init__(self, parent, url, r, debut=None, fin=None):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QSlider
+        self.url = url
+        self.duree = float(r.get("duree") or 0)
+        self.debut = float(debut or 0.0)
+        self.fin = float(fin) if fin else min(self.duree or 10.0, self.debut + 10.0)
+        self.lecteur = None
+        self.setWindowTitle(_("Regarder : {t}", t=(r.get("titre") or "")[:80]))
+        self.resize(900, 620)
+        v = QVBoxLayout(self)
+        self.vue = QWidget()
+        self.vue.setMinimumHeight(360)
+        self.vue.setStyleSheet("background:#000")
+        v.addWidget(self.vue, 1)
+        self.curseur = QSlider(Qt.Horizontal)
+        self.curseur.setRange(0, int((self.duree or 600) * 10))
+        self.curseur.sliderMoved.connect(lambda x: self.lecteur and self.lecteur.setPosition(x * 100))
+        v.addWidget(self.curseur)
+        h = QHBoxLayout()
+        self.b_lire = QPushButton("▶ " + _("Lecture"))
+        self.b_lire.clicked.connect(self.basculer)
+        h.addWidget(self.b_lire)
+        self.temps = QLabel("0:00")
+        h.addWidget(self.temps)
+        h.addStretch(1)
+        b = QPushButton("[ " + _("Début du morceau ici"))
+        b.clicked.connect(lambda: self._marquer(True))
+        h.addWidget(b)
+        b = QPushButton(_("Fin du morceau ici") + " ]")
+        b.clicked.connect(lambda: self._marquer(False))
+        h.addWidget(b)
+        v.addLayout(h)
+        self.morceau = QLabel("")
+        self.morceau.setStyleSheet("background:#22262d;color:#e6e6e6;border-radius:6px;padding:8px")
+        v.addWidget(self.morceau)
+        aide = QLabel(_("Lisez, mettez en pause au bon endroit, puis « Début du morceau ici » et « Fin du morceau ici ». Seul ce morceau "
+                        "sera téléchargé."))
+        aide.setWordWrap(True)
+        aide.setStyleSheet("color:#9aa4b2")
+        v.addWidget(aide)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.button(QDialogButtonBox.Ok).setText(_("Garder ce morceau"))
+        bb.button(QDialogButtonBox.Cancel).setText(_("Annuler"))
+        bb.accepted.connect(self.accept)
+        bb.rejected.connect(self.reject)
+        v.addWidget(bb)
+        self._maj_morceau()
+        if os.environ.get("QT_QPA_PLATFORM") == "offscreen":      # tests automatiques : pas de lecture réelle
+            return
+        try:
+            from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+            from PySide6.QtMultimediaWidgets import QVideoWidget
+        except ImportError:
+            self.morceau.setText(_("Lecture impossible sur ce poste."))
+            return
+        lay = QVBoxLayout(self.vue)
+        lay.setContentsMargins(0, 0, 0, 0)
+        self.video = QVideoWidget()
+        lay.addWidget(self.video)
+        self.lecteur = QMediaPlayer(self)
+        self.sortie = QAudioOutput(self)
+        self.lecteur.setAudioOutput(self.sortie)
+        self.lecteur.setVideoOutput(self.video)
+        self.lecteur.positionChanged.connect(self._position)
+        self.lecteur.durationChanged.connect(lambda d: d > 0 and self.curseur.setRange(0, int(d / 100)))
+        self.lecteur.setSource(QUrl(url))
+        self.lecteur.setPosition(int(self.debut * 1000))
+        self.lecteur.play()
+        self.b_lire.setText("❚❚ " + _("Pause"))
+
+    def position(self):
+        return (self.lecteur.position() / 1000.0) if self.lecteur is not None else self.curseur.value() / 10.0
+
+    def _position(self, ms):
+        if not self.curseur.isSliderDown():
+            self.curseur.setValue(int(ms / 100))
+        self.temps.setText(_tc_court(ms / 1000.0))
+
+    def basculer(self):
+        if self.lecteur is None:
+            return
+        from PySide6.QtMultimedia import QMediaPlayer
+        if self.lecteur.playbackState() == QMediaPlayer.PlayingState:
+            self.lecteur.pause()
+            self.b_lire.setText("▶ " + _("Lecture"))
+        else:
+            self.lecteur.play()
+            self.b_lire.setText("❚❚ " + _("Pause"))
+
+    def _marquer(self, debut):
+        t = self.position()
+        if debut:
+            self.debut = t
+            if self.fin <= t:
+                self.fin = t + 10.0
+        else:
+            self.fin = max(t, self.debut + 0.5)
+        self._maj_morceau()
+
+    def _maj_morceau(self):
+        self.morceau.setText(_("Morceau à importer : de <b>{a}</b> à <b>{b}</b> ({d:.1f} s)", a=_tc_court(self.debut), b=_tc_court(self.fin),
+                               d=self.fin - self.debut))
+
+    def done(self, r):
+        if self.lecteur is not None:
+            self.lecteur.stop()
+            self.lecteur.setSource(QUrl())
+        super().done(r)

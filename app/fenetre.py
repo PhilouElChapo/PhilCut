@@ -166,37 +166,53 @@ class Fenetre(QMainWindow):
         a.addAction(_("Volet de droite : complet / icônes / masqué"), lambda: self._ed(lambda ed: ed.basculer_volet()), "F4")
         a.addAction(_("Personnaliser la barre d'outils…"), self.personnaliser_barre)
         mo = mb.addMenu(_("&Montage"))
+        mo.setToolTipsVisible(True)
+
+        def act(ic, lib, aide, fonction, raccourci=None):
+            """Libellé court ; l'explication en bulle au survol et dans la barre d'information du bas."""
+            a_ = mo.addAction(ic, lib, fonction) if ic is not None else mo.addAction(lib, fonction)
+            if raccourci:
+                a_.setShortcut(raccourci)
+            a_.setToolTip(aide)
+            a_.setStatusTip(aide)
+            return a_
         for oid in ("vitesse", "recadrer", "stabiliser", "texte", "effets", "goodies", "zone", "sous_titres", "musique", "voix"):
             o = O.outil(oid)
             mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
             # outils voisins, rangés avec leur famille (plus de menu à part)
             if oid == "goodies":
-                mo.addAction(icone("goodies"), _("Tableau de bord (instruments, profil réglable)…"), lambda: self._ed(lambda ed: ed.tableau_de_bord()))
-                mo.addAction(_("Carte animée du trajet et mini-carte (GPS)…"), lambda: self._ed(lambda ed: ed.trajet()))
-                mo.addAction(_("Indicateur de vent (manche à air)…"), lambda: self._ed(lambda ed: ed.manche_air()))
-            elif oid == "sous_titres":
-                mo.addAction(_("Sous-titres des échanges radio…"), lambda: self._ed(lambda ed: ed.radio()))
-        mo.addAction(_("Figer l'image à la tête de lecture (cadre photo, légende)…"), lambda: self._ed(lambda ed: ed.figer_image()))
+                act(icone("goodies"), _("Tableau de bord d'instruments…"), _("Altimètre, vitesse, cap… posés dans l'image, avec un profil réglable"),
+                    lambda: self._ed(lambda ed: ed.tableau_de_bord()))
+                act(None, _("Carte animée du trajet…"), _("Le trajet qui se dessine sur une carte, et une mini-carte GPS"), lambda: self._ed(lambda ed: ed.trajet()))
+                act(None, _("Manche à air (vent)…"), _("Indicateur de la force et de la direction du vent"), lambda: self._ed(lambda ed: ed.manche_air()))
+        act(None, _("Figer l'image…"), _("Le film s'arrête sur l'image de la ligne rouge, avec un cadre photo et une légende, puis reprend"),
+            lambda: self._ed(lambda ed: ed.figer_image()))
         sm_ia = mo.addMenu(icone("assistant"), _("Atelier IA (sur ce poste)"))
         for fam, lib in (("image", _("Retoucher l'image du film (cartoon, 3D, peinture…)…")), ("video", _("Effet IA sur la partie en jaune…")),
                          ("logo", _("Logo, intro ou miniature par IA…")), ("musique", _("Créer une musique par IA…"))):
             sm_ia.addAction(lib, lambda fam=fam: self._ed(lambda ed: ed.atelier_ia(fam)))
-        mo.addAction(icone("assistant"), _("Dites-le en clair (une phrase devient des actions)…"), lambda: self._ed(lambda ed: ed.dites_le()))
-        mo.addAction(icone("effets"), _("Transitions automatiques (selon les images et la musique)…"), lambda: self._ed(lambda ed: ed.transitions_auto()))
-        mo.addAction(icone("musique"), _("Bruitages (whoosh, impact, déclic, bip…)…"), lambda: self._ed(lambda ed: ed.bruitage()))
-        mo.addAction(icone("clap"), _("Tampons vidéo (« plus tard… », rembobinage, tadaa, vos clips, clips libres)…"),
-                     lambda: self._ed(lambda ed: ed.tampons()))
+        act(icone("assistant"), _("Dites-le en clair…"), _("Une phrase (« coupe les silences et mets une musique calme ») devient des actions"),
+            lambda: self._ed(lambda ed: ed.dites_le()))
+        act(icone("effets"), _("Transitions automatiques…"), _("A chaque coupe, la transition qui va avec les images et la musique"),
+            lambda: self._ed(lambda ed: ed.transitions_auto()))
+        act(icone("musique"), _("Bruitages…"), _("Whoosh, impact, déclic, bip… fabriqués sur ce poste, libres de droits"), lambda: self._ed(lambda ed: ed.bruitage()))
+        act(icone("clap"), _("Tampons vidéo…"), _("Petites séquences toutes faites (rembobinage, « tadaa », bip…), vos clips, extraits YouTube "
+                                                 "et Internet Archive"), lambda: self._ed(lambda ed: ed.tampons()))
         mo.addSeparator()
-        mo.addAction(_("Ajouter une piste vidéo au-dessus (incrustation, image dans l'image)"), lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("video")))
-        mo.addAction(_("Ajouter une piste de musique ou de sons"), lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("audio")))
+        act(None, _("Ajouter une piste vidéo"), _("Une piste au-dessus du film : incrustation, image dans l'image, logo"),
+            lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("video")))
+        act(None, _("Ajouter une piste de sons"), _("Une piste de plus pour une musique, une voix ou des bruitages"),
+            lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("audio")))
         mo.addSeparator()
-        mo.addAction(_("Début de la partie à sélectionner (au curseur)"), lambda: self._ed(lambda ed: ed.timeline.marquer_zone(0)), "I")
-        mo.addAction(_("Fin de la partie à sélectionner (au curseur)"), lambda: self._ed(lambda ed: ed.timeline.marquer_zone(1)), "O")
-        mo.addAction(_("Supprimer la partie sélectionnée (la suite se recolle)"), lambda: self._ed(lambda ed: ed.partie(False)))
-        mo.addAction(_("Garder seulement la partie sélectionnée"), lambda: self._ed(lambda ed: ed.partie(True)))
+        act(None, _("Début de la partie jaune ici"), _("La partie jaune commence à la ligne rouge (ou double-clic sur la règle des temps)"),
+            lambda: self._ed(lambda ed: ed.timeline.marquer_zone(0)), "I")
+        act(None, _("Fin de la partie jaune ici"), _("La partie jaune finit à la ligne rouge (ou second double-clic sur la règle)"),
+            lambda: self._ed(lambda ed: ed.timeline.marquer_zone(1)), "O")
+        act(None, _("Supprimer la partie jaune"), _("Elle est retirée et la suite se recolle"), lambda: self._ed(lambda ed: ed.partie(False)))
+        act(None, _("Garder seulement la partie jaune"), _("Tout le reste est retiré"), lambda: self._ed(lambda ed: ed.partie(True)))
         mo.addSeparator()
-        mo.addAction(_("Caler les coupes sur les temps de la musique"), lambda: self._ed(lambda ed: ed.caler_rythme(False)))
-        mo.addAction(_("Caler les coupes sur les débuts de mesure (plus posé)"), lambda: self._ed(lambda ed: ed.caler_rythme(True)))
+        act(None, _("Caler les coupes sur le rythme"), _("Chaque coupe tombe sur un temps de la musique"), lambda: self._ed(lambda ed: ed.caler_rythme(False)))
+        act(None, _("Caler les coupes sur les mesures"), _("Coupes sur les débuts de mesure : plus posé"), lambda: self._ed(lambda ed: ed.caler_rythme(True)))
         asst = mb.addMenu(_("A&ssistant"))
         asst.addAction(icone("assistant"), _("Analyser et proposer un montage"), lambda: self._editeur_ou_nouveau().outil("assistant"), "Ctrl+Shift+A")
         asst.addAction(icone("info"), _("Fiche vidéo du plan sélectionné"), lambda: self._ed(lambda ed: ed.outil("fiche")))
@@ -807,6 +823,11 @@ class Fenetre(QMainWindow):
         m.addAction(_("Sous-titres automatiques (voix transcrite sur ce poste)"), lambda: self._transcrire(ed))
         m.addAction(_("Sous-titres karaoké (chaque mot s'allume quand il est dit)"), lambda: self._transcrire(ed, karaoke=True))
         m.addAction(_("Importer un fichier .srt…"), lambda: self._importer_srt(ed))
+        m.addSeparator()
+        a = m.addAction(_("Seulement les échanges radio (pilote, tour de contrôle)…"), ed.radio)
+        a.setToolTip(_("Pour un film d'avion : PhilCut écoute le son, garde seulement les phrases dites à la radio et les écrit en haut "
+                       "de l'image, style radio. Les autres paroles ne sont pas sous-titrées."))
+        m.setToolTipsVisible(True)
         if ed.projet.d.get("sous_titres"):
             m.addAction(_("Retirer les sous-titres"), lambda: (ed.projet.marquer(), ed.projet.d.__setitem__("sous_titres", []), ed.rafraichir()))
         m.exec(self.cursor().pos())

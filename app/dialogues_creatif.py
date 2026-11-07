@@ -108,7 +108,7 @@ class DialogueAtelierIA(QDialog):
         hi = QHBoxLayout()
         self.img_source = QLabel()
         self.img_resultat = QLabel()
-        for lb, t in ((self.img_source, _("Image du film (tête de lecture)")), (self.img_resultat, _("Résultat"))):
+        for lb, t in ((self.img_source, _("Image du film (ligne rouge)")), (self.img_resultat, _("Résultat"))):
             lb.setFixedSize(360, 203)
             lb.setAlignment(Qt.AlignCenter)
             lb.setStyleSheet("background:#000;border-radius:6px;color:#888")
@@ -156,6 +156,9 @@ class DialogueAtelierIA(QDialog):
         vd.addLayout(hb)
         self.actions = QHBoxLayout()
         vd.addLayout(self.actions)
+        from .dialogues_diagnostic import PanneauDiagnostic
+        self.diagnostic = PanneauDiagnostic(self, self.ed.params, reessayer=self.creer)       # échec : cause et solutions
+        vd.addWidget(self.diagnostic)
         vd.addStretch(1)
         b_pref = QPushButton(_("Modèles IA du poste (Préférences)…"))
         b_pref.setStyleSheet("text-align:left;padding:3px 8px")
@@ -239,18 +242,18 @@ class DialogueAtelierIA(QDialog):
         m = e["moteur"]
         if e["famille"] == "video":
             z = self._partie()
-            ou = _("de {a} à {b}", a=_tc(z[0]), b=_tc(z[1])) if z else _("— placez la tête de lecture sur un plan ou choisissez une partie en jaune")
+            ou = _("de {a} à {b}", a=_tc(z[0]), b=_tc(z[1])) if z else _("— placez la ligne rouge sur un plan ou choisissez une partie en jaune")
             if m == "transition3d":
                 return _("La caméra plonge dans la dernière image du plan qui part et ressort de la première du suivant ; le clip est posé "
-                         "au-dessus du raccord le plus proche de la tête de lecture.")
+                         "au-dessus du raccord le plus proche de la ligne rouge.")
             if m in ("photo3d", "video"):
-                return _("A partir de l'image à la tête de lecture ; le clip créé est posé au-dessus (piste Vidéo 2).")
+                return _("A partir de l'image à la ligne rouge ; le clip créé est posé au-dessus (piste Vidéo 2).")
             return _("Passage traité : {o}. Le résultat est posé au-dessus, sur la piste Vidéo 2 (supprimable, l'original reste).", o=ou)
         if e["famille"] == "musique":
             return _("Le morceau est posé sur la piste Musique, à la durée choisie, avec des fondus.")
         if e.get("sans_source"):
             return _("Image créée à partir de la phrase seule.")
-        return _("L'image du film à la tête de lecture est redessinée selon la phrase ; « Force » règle combien elle change.")
+        return _("L'image du film à la ligne rouge est redessinée selon la phrase ; « Force » règle combien elle change.")
 
     def _enregistrer(self, nouveau):
         e = self.effet()
@@ -328,6 +331,8 @@ class DialogueAtelierIA(QDialog):
         e = self.effet()
         if not e:
             return
+        if hasattr(self, "diagnostic"):
+            self.diagnostic.hide()
         ok, manque = EI.disponible(e, self.ed.params)
         if not ok:
             self.info.setText("⚠ " + manque)
@@ -344,7 +349,7 @@ class DialogueAtelierIA(QDialog):
             travail = lambda t: C.musique(ph["en"], sortie, duree, params, instr, paroles, progression=t.avancer, arret=t.arret_demande)
         elif e["famille"] in ("image", "logo"):
             if not e.get("sans_source") and not self.source:
-                self.info.setText(_("Placez la tête de lecture sur une image du film."))
+                self.info.setText(_("Placez la ligne rouge sur une image du film."))
                 return
             sortie = os.path.join(_dossier_sorties(), f"{e['id']}_{horo}.png")
             init = None if e.get("sans_source") else self.source
@@ -354,14 +359,14 @@ class DialogueAtelierIA(QDialog):
             if m == "transition3d":
                 r = self._raccord()
                 if not r:
-                    self.info.setText(_("Placez la tête de lecture près d'un raccord entre deux plans de la piste Vidéo 1."))
+                    self.info.setText(_("Placez la ligne rouge près d'un raccord entre deux plans de la piste Vidéo 1."))
                     return
                 img_a, img_b, coupe = r
                 travail = lambda t: C.transition_3d(img_a, img_b, sortie, force, projet.cadence, params, t.avancer)
                 self._pose_tr = coupe - force / 2
             elif m in ("photo3d", "video"):
                 if not self.source:
-                    self.info.setText(_("Placez la tête de lecture sur une image du film."))
+                    self.info.setText(_("Placez la ligne rouge sur une image du film."))
                     return
                 src = self.source
                 if m == "photo3d":
@@ -374,7 +379,7 @@ class DialogueAtelierIA(QDialog):
                 c = projet.clip_a(z[0] + 0.01, "video") if z else None
                 med = projet.media(c["media"]) if c else None
                 if not med or med.get("genre") != "video":
-                    self.info.setText(_("Choisissez une partie en jaune (ou placez la tête de lecture) sur un plan vidéo."))
+                    self.info.setText(_("Choisissez une partie en jaune (ou placez la ligne rouge) sur un plan vidéo."))
                     return
                 v = float(c.get("vitesse", 1.0) or 1.0)
                 debut = float(c["src_debut"]) + (z[0] - c["debut"]) * v
@@ -470,11 +475,14 @@ class DialogueAtelierIA(QDialog):
             if isinstance(err, InterruptedError) or getattr(self.tache, "arret", False):
                 self.info.setText(_("Création arrêtée."))
                 return
-            self.info.setText(_("✕ La création n'a pas abouti : {e}", e=str(err)[:700]))
             self.info.setStyleSheet("color:#ff8a80")
-            journal = getattr(err, "journal", None)
-            if journal and os.path.exists(journal):
-                self._action(_("Voir le journal du moteur"), lambda: self._ouvrir(journal))
+            moteur_err = getattr(err, "genre", None)
+            if moteur_err or getattr(err, "code", None):           # un moteur a échoué : la cause en clair et les solutions
+                self.info.setText(_("✕ La création n'a pas abouti. Voici pourquoi, et ce que vous pouvez faire :"))
+                genre = (moteur_err or "").replace("_gpu", "") or {"logo": "image"}.get(e["famille"], e["famille"])
+                self.diagnostic.montrer(str(err), genre, getattr(err, "journal", None), moteur_err)
+            else:
+                self.info.setText(_("✕ La création n'a pas abouti : {e}", e=str(err)[:700]))
             self._action(_("Réessayer"), self.creer)
             return
         self.info.setStyleSheet("")

@@ -4,7 +4,17 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.8 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.9 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.9 : clarte
+- IA locale en panne : la cause en clair et la solution en boutons (installer Visual C++ de Microsoft, passer sur le processeur, reinstaller le moteur, mettre a jour le pilote), dans Preferences > IA locale et dans l'Atelier IA. Musique et images : si la version carte graphique ne demarre pas, nouvel essai automatique sur le processeur. Agrandissement et ralenti : la carte dediee (Nvidia, AMD) est choisie toute seule sur un portable a deux cartes.
+- Resultats des tests des modeles lisibles : une ligne verte ou rouge, les details replies.
+- Tampons : fenetre "Ou mettre ce tampon ?" (debut, ligne rouge, partie en jaune, fin ; inserer, par-dessus, remplacer ; accelerer, ralentir ou couper ; format different du projet : fond flou, bandes, recadre, suivi de la personne).
+- Bibliotheque des tampons rangee a votre idee (mon ordre par glisser, favoris, plus utilises...), qui suit sur vos autres postes. Nouvelle page Preferences > Tampons et extraits.
+- Recherche YouTube : plus de resultats, avec vignettes, sur le YouTube de votre pays, sans traduction ; Shorts ; "Vouliez-vous dire ... ?" ; regarder la video dans PhilCut et choisir le morceau ; coller un lien (YouTube, Vimeo, fichier .mp4).
+- Vignettes : chaque couleur expliquee avec un exemple ; chaque zone a son texte (pastilles, titre, etiquette de la fleche), lu aussi par l'IA.
+- Mes musiques : classement par artiste et album corrige (etiquettes FLAC/OGG/M4A, artiste de l'album, ordre des pistes, plus de numeros pris pour un artiste), lecture des etiquettes plus rapide et visible.
+- Menus : libelles courts avec l'explication au survol, "echanges radio" range dans Sous-titres, "tete de lecture" devient "ligne rouge".
 
 ### 0.9.8 : fiabilite
 - Mise a jour : "Telecharger et installer" ouvre une fenetre qui montre le telechargement (Mo, vitesse, temps restant, Arreter), puis "Installer et redemarrer". Depuis une version 0.8.x, telecharger une fois la nouvelle version a la main.

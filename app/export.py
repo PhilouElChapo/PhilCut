@@ -135,7 +135,8 @@ class Exportateur:
             a, b, fo, dv = self._nom("cfa"), self._nom("cfb"), self._nom("cff"), self._nom("cfd")
             return (f"split[{a}][{b}];[{b}]scale={L}:{H}:force_original_aspect_ratio=increase,crop={L}:{H},gblur=sigma=30,eq=brightness=-0.08[{fo}];"
                     f"[{a}]scale={L}:{H}:force_original_aspect_ratio=decrease[{dv}];[{fo}][{dv}]overlay=(W-w)/2:(H-h)/2")
-        return f"scale={L}:{H}:force_original_aspect_ratio=increase,crop={L}:{H}"
+        x = max(0.0, min(1.0, float(clip.get("cadre_x", 0.5))))        # remplir : quelle partie garder (gauche 0, centre, droite 1)
+        return f"scale={L}:{H}:force_original_aspect_ratio=increase,crop={L}:{H}:(iw-{L})*{x:.3f}:(ih-{H})/2"
 
     # ---------------------------------------------------------------- bande video
     def _segments_video(self):

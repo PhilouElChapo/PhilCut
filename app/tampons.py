@@ -461,8 +461,55 @@ def modifier(params, ident, **champs):
     liste = charger(params)
     for e in liste:
         if e["id"] == ident:
-            e.update({k: v for k, v in champs.items() if k in ("nom", "mots", "auteur", "licence", "page", "source")})
+            e.update({k: v for k, v in champs.items() if k in ("nom", "mots", "auteur", "licence", "page", "source", "favori")})
     enregistrer(params, liste)
+
+
+# ------------------------------------------------------------------ ordre de la bibliothèque (0.9.9)
+# l'ordre, les favoris et les usages sont rangés dans tampons.json, dans le dossier de la bibliothèque : sur le lieu
+# de synchronisation, ils suivent sur vos autres postes
+CLASSEMENTS = {"perso": _("Mon ordre (glisser pour ranger)"), "recent": _("Ajoutés récemment"), "utilise": _("Les plus utilisés"),
+               "nom": _("Nom (A → Z)"), "duree": _("Durée (courts d'abord)"), "genre": _("Vidéos, puis sons")}
+
+
+def trier(liste, mode="perso"):
+    """Favoris toujours en tête, puis selon le classement choisi."""
+    rang = {e["id"]: i for i, e in enumerate(liste)}
+    cles = {"perso": lambda e: (e.get("ordre", 10 ** 6 + rang[e["id"]]),),
+            "recent": lambda e: (_inverse(e.get("ajoute", "")),),
+            "utilise": lambda e: (-int(e.get("usages") or 0), _inverse(e.get("ajoute", ""))),
+            "nom": lambda e: (str(e.get("nom", "")).lower(),),
+            "duree": lambda e: (float(e.get("duree") or 0),),
+            "genre": lambda e: (e.get("genre") == "son", str(e.get("nom", "")).lower())}
+    cle = cles.get(mode, cles["perso"])
+    return sorted(liste, key=lambda e: (not e.get("favori"),) + cle(e))
+
+
+def _inverse(texte):
+    return tuple(-ord(c) for c in str(texte))
+
+
+def ranger(params, ids):
+    """Mon ordre : les tampons dans l'ordre des identifiants donnés (les autres après, sans changer leur ordre)."""
+    liste = charger(params)
+    pos = {i: n for n, i in enumerate(ids)}
+    for e in liste:
+        if e["id"] in pos:
+            e["ordre"] = pos[e["id"]]
+        else:
+            e["ordre"] = len(ids) + int(e.get("ordre", 10 ** 6) if isinstance(e.get("ordre"), int) else 10 ** 6)
+    enregistrer(params, liste)
+
+
+def noter_usage(params, ident):
+    liste = charger(params)
+    for e in liste:
+        if e["id"] == ident:
+            e["usages"] = int(e.get("usages") or 0) + 1
+    try:
+        enregistrer(params, liste)
+    except OSError:
+        pass
 
 
 def retirer(params, ident):

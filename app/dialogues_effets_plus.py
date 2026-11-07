@@ -15,7 +15,7 @@ class DialogueFiger(QDialog):
         super().__init__(parent)
         self.setWindowTitle(_("Figer l'image"))
         v = QVBoxLayout(self)
-        aide = QLabel(_("Le plan s'arrête sur l'image de la tête de lecture, puis reprend. La suite du montage est décalée d'autant. "
+        aide = QLabel(_("Le plan s'arrête sur l'image de la ligne rouge, puis reprend. La suite du montage est décalée d'autant. "
                         "L'image figée devient un plan à part : on peut la rogner, lui ajouter des effets ou la supprimer."))
         aide.setWordWrap(True)
         v.addWidget(aide)
@@ -62,7 +62,7 @@ class DialogueBruitages(QDialog):
         self.setWindowTitle(_("Bruitages"))
         self.resize(520, 420)
         v = QVBoxLayout(self)
-        aide = QLabel(_("Sons fabriqués sur ce poste, libres de droits. Cliquez pour écouter ; « Poser » le met à la tête de lecture, sur une "
+        aide = QLabel(_("Sons fabriqués sur ce poste, libres de droits. Cliquez pour écouter ; « Poser » le met à la ligne rouge, sur une "
                         "piste de son libre."))
         aide.setWordWrap(True)
         v.addWidget(aide)
@@ -81,7 +81,7 @@ class DialogueBruitages(QDialog):
         h.addStretch(1)
         v.addLayout(h)
         bb = boutons_fr(QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel))
-        bb.button(QDialogButtonBox.Ok).setText(_("Poser à la tête de lecture"))
+        bb.button(QDialogButtonBox.Ok).setText(_("Poser à la ligne rouge"))
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         v.addWidget(bb)
@@ -109,7 +109,7 @@ class DialogueBruitages(QDialog):
 
 
 class GalerieGoodies(QDialog):
-    """Choisir un Goodie en le voyant : vignettes dessinées par famille ; un double-clic le pose à la tête de lecture."""
+    """Choisir un Goodie en le voyant : vignettes dessinées par famille ; un double-clic le pose à la ligne rouge."""
 
     def __init__(self, parent=None, params=None):
         super().__init__(parent)
@@ -120,7 +120,7 @@ class GalerieGoodies(QDialog):
         self.setWindowTitle(_("Goodies"))
         self.resize(760, 560)
         v = QVBoxLayout(self)
-        aide = QLabel(_("Cliquez un Goodie puis « Poser », ou double-cliquez : il arrive à la tête de lecture ; vous le placez et le "
+        aide = QLabel(_("Cliquez un Goodie puis « Poser », ou double-cliquez : il arrive à la ligne rouge ; vous le placez et le "
                         "redimensionnez ensuite dans l'image, ses réglages sont dans l'Inspecteur."))
         aide.setWordWrap(True)
         v.addWidget(aide)
@@ -146,7 +146,7 @@ class GalerieGoodies(QDialog):
         self.desc.setWordWrap(True)
         v.addWidget(self.desc)
         bb = boutons_fr(QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel))
-        bb.button(QDialogButtonBox.Ok).setText(_("Poser à la tête de lecture"))
+        bb.button(QDialogButtonBox.Ok).setText(_("Poser à la ligne rouge"))
         bb.accepted.connect(self.accept)
         bb.rejected.connect(self.reject)
         v.addWidget(bb)
