@@ -157,6 +157,12 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T38 — 0.9.10 : la bibliothèque qui manque, synchronisation des réglages
+
+1. **Musique IA (code 3221225781)** : Préférences › IA locale › « Tester ce modèle ». **Attendu** : le titre nomme le fichier qui manque (ex. « Il manque VCRUNTIME140_1.dll : Visual C++ de Microsoft ») et un seul bouton, le bon. Le bouton « pilote Nvidia » n'apparaît que si c'est nvcuda.dll qui manque.
+2. **Synchronisation (Drive en direct, NAS, FTP)** : sur le PC A, changer un réglage commun (Préférences › Général, nom de la chaîne), OK, attendre une minute. Démarrer PhilCut sur le PC B. **Attendu** : la fenêtre « Synchronisation avec … » liste « Réglages » à recevoir ; après « Synchroniser la sélection », la barre du bas dit « ✓ … reçu(s), … envoyé(s). Réglages repris de « PC A » » et le réglage est là.
+3. **Outils › Synchroniser maintenant** : même échange, à la demande.
+
 ## T37 — 0.9.9 : pannes de l'IA expliquées, tampons posés où l'on veut, recherche YouTube, zones des vignettes
 
 1. **Test des modèles** (Préférences › IA locale › « Tester ce modèle ») : le résultat tient sur une ligne verte (✓, durée) ou rouge (✕, cause en clair), puis la carte et la date ; rien n'est coupé. En cas d'échec, un cadre dit pourquoi et propose des boutons : « Installer Visual C++ (Microsoft) », « Utiliser le processeur à la place », « Réinstaller le moteur », « Mettre à jour le pilote Nvidia »… ; « Détails techniques » montre le message brut.

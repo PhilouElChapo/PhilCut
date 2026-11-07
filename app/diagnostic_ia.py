@@ -56,6 +56,88 @@ def carte_dediee(lignes):
     return None
 
 
+# ------------------------------------------------------------------ quelle DLL manque (0.9.10)
+def imports_pe(chemin):
+    """Bibliothèques (DLL) qu'un programme Windows (.exe, .dll) demande : table des imports, et imports différés."""
+    import struct
+    with open(chemin, "rb") as f:
+        b = f.read()
+    if len(b) < 64 or b[:2] != b"MZ":
+        return []
+    u16 = lambda o: struct.unpack_from("<H", b, o)[0]
+    u32 = lambda o: struct.unpack_from("<I", b, o)[0]
+    pe = u32(0x3C)
+    nsec, taille_opt = u16(pe + 6), u16(pe + 20)
+    opt = pe + 24
+    dd = opt + (112 if u16(opt) == 0x20B else 96)
+    secs = opt + taille_opt
+
+    def decalage(rva):
+        for i in range(nsec):
+            s_ = secs + 40 * i
+            va, taille = u32(s_ + 12), max(u32(s_ + 8), u32(s_ + 16))
+            if va <= rva < va + taille:
+                return rva - va + u32(s_ + 20)
+        return -1
+    noms = set()
+    for entree, pas, champ in ((1, 20, 12), (13, 32, 4)):
+        rva = u32(dd + 8 * entree)
+        o = decalage(rva) if rva else -1
+        while 0 < o and o + pas <= len(b):
+            n = u32(o + champ)
+            if not n:
+                break
+            p_ = decalage(n)
+            if p_ < 0:
+                break
+            noms.add(b[p_:b.index(b"\0", p_)].decode("ascii", "replace"))
+            o += pas
+    return sorted(noms)
+
+
+def dll_manquantes(dossier, chemins=None):
+    """{dll: [programmes qui la demandent]} pour les DLL demandées par les .exe et .dll du dossier et introuvables
+    (ni dans le dossier, ni dans Windows › System32, ni dans le PATH). Windows seulement ; {} ailleurs."""
+    import os
+    import sys
+    if not dossier or not os.path.isdir(dossier) or (chemins is None and sys.platform != "win32"):
+        return {}
+    fichiers = []
+    for base, _s, noms in os.walk(dossier):
+        fichiers += [os.path.join(base, n) for n in noms if n.lower().endswith((".exe", ".dll"))]
+    locaux = {os.path.basename(f).lower() for f in fichiers}
+    if chemins is None:
+        chemins = [os.path.join(os.environ.get("WINDIR", r"C:\Windows"), "System32")] + [c for c in os.environ.get("PATH", "").split(os.pathsep) if c]
+    presents = {}
+    manque = {}
+    for f in fichiers:
+        try:
+            demandes = imports_pe(f)
+        except (OSError, ValueError, IndexError, Exception):      # noqa: BLE001 : fichier illisible, on passe
+            continue
+        for d in demandes:
+            dl = d.lower()
+            if dl.startswith(("api-ms-", "ext-ms-")) or dl in locaux:
+                continue
+            if dl not in presents:
+                presents[dl] = any(os.path.exists(os.path.join(c, d)) for c in chemins)
+            if not presents[dl]:
+                manque.setdefault(d, set()).add(os.path.basename(f))
+    return {k: sorted(v) for k, v in manque.items()}
+
+
+def famille_dll(nom):
+    """D'où vient une DLL : « vcredist », « pilote_nvidia », « pilote », « moteur »."""
+    n = nom.lower()
+    if n.startswith(("vcruntime140", "msvcp140", "concrt140", "vcomp140", "vccorlib140", "msvcp_win")):
+        return "vcredist"
+    if n.startswith(("nvcuda", "nvml", "nvapi")):
+        return "pilote_nvidia"
+    if n.startswith(("vulkan-1", "opencl")):
+        return "pilote"
+    return "moteur"
+
+
 def _pilote(texte):
     t = (texte or "").lower()
     if "nvidia" in t or "geforce" in t or "rtx" in t:
@@ -65,22 +147,49 @@ def _pilote(texte):
     return ("pilote_intel", _("Mettre à jour le pilote graphique"))
 
 
-def diagnostiquer(texte, genre=None):
+def diagnostiquer(texte, genre=None, manquantes=None):
+    """manquantes : {dll: [programmes]} déjà cherchées ; sinon cherchées dans le dossier du moteur (genre) si c'est une DLL."""
     texte = str(texte or "")
     bas = texte.lower()
     code = code_arret(texte)
-    gpu = bool(genre and str(genre).endswith("_gpu")) or "cuda" in bas or "vulkan" in bas
     actions = []
-    if code in (DLL_MANQUANTE, POINT_ENTREE) or "dll" in bas and ("not found" in bas or "introuvable" in bas):
+    if manquantes is None and code in (DLL_MANQUANTE, POINT_ENTREE) and genre:
+        try:
+            from . import packs_ia as P
+            manquantes = dll_manquantes(P.dossier_moteur(genre))
+        except Exception:      # noqa: BLE001
+            manquantes = {}
+    manquantes = manquantes or {}
+    if code in (DLL_MANQUANTE, POINT_ENTREE) and manquantes:
+        familles = {famille_dll(d) for d in manquantes}
+        liste = ", ".join(sorted(manquantes))
+        if "vcredist" in familles:
+            titre = _("Il manque {d} : Visual C++ de Microsoft", d=liste)
+            explication = _("Le moteur a besoin de « Visual C++ 2015-2022 » de Microsoft (gratuit, officiel), absent ou trop ancien "
+                            "sur ce poste. L'installer ne change rien aux logiciels qui marchent déjà : les anciennes versions restent "
+                            "à côté. Ensuite, « Réessayer ».")
+            actions = [("vcredist", _("Installer Visual C++ (Microsoft)"))]
+        elif familles == {"pilote_nvidia"}:
+            titre = _("Il manque {d} : pilote Nvidia", d=liste)
+            explication = _("Ce fichier est fourni par le pilote de la carte Nvidia : il est absent ou abîmé. Réinstallez le pilote, "
+                            "ou passez sur le processeur.")
+            actions = [("pilote_nvidia", _("Mettre à jour le pilote Nvidia")), ("processeur", _("Utiliser le processeur à la place"))]
+        elif "pilote" in familles:
+            titre = _("Il manque {d} : pilote graphique", d=liste)
+            explication = _("Ce fichier vient du pilote de la carte graphique. Mettez-le à jour, ou passez sur le processeur.")
+            actions = [_pilote(texte), ("processeur", _("Utiliser le processeur à la place"))]
+        else:
+            titre = _("Il manque {d} dans le moteur", d=liste)
+            explication = _("Ce fichier fait partie du moteur, rangé dans le dossier de PhilCut : téléchargement incomplet ou fichier "
+                            "mis de côté par l'antivirus. Réinstallez le moteur (le modèle est gardé).")
+            actions = [("reinstaller", _("Réinstaller le moteur")), ("processeur", _("Utiliser le processeur à la place"))]
+    elif code in (DLL_MANQUANTE, POINT_ENTREE) or "dll" in bas and ("not found" in bas or "introuvable" in bas):
         titre = _("Il manque un composant de Windows au moteur")
         explication = _("Le moteur ne trouve pas une de ses bibliothèques (DLL) et s'arrête avant même de commencer. C'est presque "
-                        "toujours le « Visual C++ » de Microsoft (gratuit, officiel) qui manque ou est trop ancien ; avec la version "
-                        "carte graphique du moteur, ce peut aussi être un pilote trop ancien. Installez Visual C++, puis réessayez ; "
-                        "si cela ne suffit pas, passez sur le processeur (plus lent, mais sans ces composants).")
-        actions = [("vcredist", _("Installer Visual C++ (Microsoft)")), ("processeur", _("Utiliser le processeur à la place")),
-                   ("reinstaller", _("Réinstaller le moteur"))]
-        if gpu:
-            actions.append(_pilote(texte))
+                        "toujours le « Visual C++ » de Microsoft (gratuit, officiel) qui manque ou est trop ancien. Installez-le, puis "
+                        "réessayez ; sinon réinstallez le moteur, ou passez sur le processeur.")
+        actions = [("vcredist", _("Installer Visual C++ (Microsoft)")), ("reinstaller", _("Réinstaller le moteur")),
+                   ("processeur", _("Utiliser le processeur à la place"))]
     elif code == ARRET_BRUTAL:
         titre = _("Le moteur s'est arrêté d'un coup")
         cartes = cartes_vulkan(texte)
@@ -129,7 +238,7 @@ def diagnostiquer(texte, genre=None):
         explication = _("La cause n'est pas reconnue. Le journal du moteur dit ce qu'il faisait au moment de l'arrêt ; réessayer, "
                         "ou réinstaller le moteur, règle la plupart des cas.")
         actions = [("reessayer", _("Réessayer")), ("reinstaller", _("Réinstaller le moteur"))]
-    return {"titre": titre, "explication": explication, "actions": actions, "code": code}
+    return {"titre": titre, "explication": explication, "actions": actions, "code": code, "manquantes": manquantes}
 
 
 def court(texte):

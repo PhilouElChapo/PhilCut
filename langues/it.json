@@ -5395,5 +5395,21 @@
  "Lecture impossible sur ce poste.": "Riproduzione impossibile su questo computer.",
  "Vouliez-vous dire <a href='{c}'><b>{c}</b></a> ? Cliquez pour chercher ainsi.": "Intendeva <a href='{c}'><b>{c}</b></a>? Clicchi per cercare così.",
  "S'il n'a pas le format du projet (16:9, 9:16…)": "Se non ha il formato del progetto (16:9, 9:16…)",
- "Pas de version lisible de cette vidéo.": "Nessuna versione riproducibile di questo video."
+ "Pas de version lisible de cette vidéo.": "Nessuna versione riproducibile di questo video.",
+ "Il manque {d} : Visual C++ de Microsoft": "Manca {d}: Visual C++ di Microsoft",
+ "Le moteur a besoin de « Visual C++ 2015-2022 » de Microsoft (gratuit, officiel), absent ou trop ancien sur ce poste. L'installer ne change rien aux logiciels qui marchent déjà : les anciennes versions restent à côté. Ensuite, « Réessayer ».": "Il motore ha bisogno di « Visual C++ 2015-2022 » di Microsoft (gratuito, ufficiale), assente o troppo vecchio su questo computer. Installarlo non cambia nulla per i programmi che già funzionano: le versioni vecchie restano accanto. Poi « Riprova ».",
+ "Le moteur ne trouve pas une de ses bibliothèques (DLL) et s'arrête avant même de commencer. C'est presque toujours le « Visual C++ » de Microsoft (gratuit, officiel) qui manque ou est trop ancien. Installez-le, puis réessayez ; sinon réinstallez le moteur, ou passez sur le processeur.": "Il motore non trova una delle sue librerie (DLL) e si ferma prima di iniziare. Quasi sempre manca « Visual C++ » di Microsoft (gratuito, ufficiale) o è troppo vecchio. Lo installi e riprovi; altrimenti reinstalli il motore o passi al processore.",
+ "Il manque {d} : pilote Nvidia": "Manca {d}: driver Nvidia",
+ "Ce fichier est fourni par le pilote de la carte Nvidia : il est absent ou abîmé. Réinstallez le pilote, ou passez sur le processeur.": "Questo file è fornito dal driver della scheda Nvidia: manca o è danneggiato. Reinstalli il driver o passi al processore.",
+ "Il manque {d} : pilote graphique": "Manca {d}: driver grafico",
+ "Ce fichier vient du pilote de la carte graphique. Mettez-le à jour, ou passez sur le processeur.": "Questo file viene dal driver della scheda grafica. Lo aggiorni o passi al processore.",
+ "Il manque {d} dans le moteur": "Manca {d} nel motore",
+ "Ce fichier fait partie du moteur, rangé dans le dossier de PhilCut : téléchargement incomplet ou fichier mis de côté par l'antivirus. Réinstallez le moteur (le modèle est gardé).": "Questo file fa parte del motore, nella cartella di PhilCut: download incompleto o file messo da parte dall'antivirus. Reinstalli il motore (il modello è conservato).",
+ "Synchronisation avec {l} : recherche de ce qui a changé…": "Sincronizzazione con {l}: ricerca delle modifiche…",
+ "Synchronisation avec {l}": "Sincronizzazione con {l}",
+ "Synchronisation avec {l} : envoi et réception…": "Sincronizzazione con {l}: invio e ricezione…",
+ "✕ Synchronisation avec {l} impossible : {e}. Nouvel essai dans une minute.": "✕ Sincronizzazione con {l} impossibile: {e}. Nuovo tentativo tra un minuto.",
+ "✓ Synchronisation avec {l} : {r} reçu(s), {e} envoyé(s).": "✓ Sincronizzazione con {l}: {r} ricevuto/i, {e} inviato/i.",
+ "Synchronisation remise à plus tard : rien n'a été reçu ni envoyé.": "Sincronizzazione rimandata: niente è stato ricevuto né inviato.",
+ "Réglages repris de « {p} ».": "Impostazioni riprese da « {p} »."
 }

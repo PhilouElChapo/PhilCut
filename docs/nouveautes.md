@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.9 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.10 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.10 : la bonne solution, et la synchronisation des reglages
+- Moteur d'IA qui ne demarre pas (code 3221225781) : PhilCut cherche lui-meme quelle bibliotheque manque et propose la seule bonne solution (Visual C++ de Microsoft, reinstaller le moteur, ou pilote Nvidia seulement si c'est son fichier qui manque).
+- Outil a lancer a la main : outils/dll_manquantes.ps1 (PowerShell) liste les bibliotheques qui manquent a chaque moteur.
+- Synchronisation avec un Drive en direct (Google Drive...), un NAS ou un FTP : elle est enfin faite. Au demarrage, comme PhilPDF, la fenetre "Synchronisation avec ..." montre ce qui arrive de vos autres postes ; ensuite, chaque minute et a la fermeture, les changements de ce poste partent sans rien demander ; la barre du bas dit ce qui a ete recu et envoye. Outils > "Synchroniser maintenant" refait l'echange complet.
 
 ### 0.9.9 : clarte
 - IA locale en panne : la cause en clair et la solution en boutons (installer Visual C++ de Microsoft, passer sur le processeur, reinstaller le moteur, mettre a jour le pilote), dans Preferences > IA locale et dans l'Atelier IA. Musique et images : si la version carte graphique ne demarre pas, nouvel essai automatique sur le processeur. Agrandissement et ralenti : la carte dediee (Nvidia, AMD) est choisie toute seule sur un portable a deux cartes.

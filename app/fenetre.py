@@ -112,7 +112,7 @@ class Fenetre(QMainWindow):
             self.params["maj_derniere"] = datetime.date.today().isoformat()
             self.params.enregistrer()
             QTimer.singleShot(3000, lambda: self.verifier_maj(silencieux=True))
-        QTimer.singleShot(1500, self.verifier_session)
+        QTimer.singleShot(1500, self.synchro_demarrage)
         self._catalogues()
         self._minuterie = QTimer(self)
         self._minuterie.timeout.connect(self.ecrire_session)
@@ -227,7 +227,7 @@ class Fenetre(QMainWindow):
         ou = mb.addMenu(_("&Outils"))
         ou.addAction(_("Publier (YouTube, Instagram, TikTok…)…"), self.publier)
         ou.addAction(icone("nuage"), _("Déposer l'export sur le Drive / NAS…"), self.partager)
-        ou.addAction(_("Synchroniser maintenant"), self.ecrire_session)
+        ou.addAction(_("Synchroniser maintenant"), self.synchro_demarrage)
         ou.addAction(_("Centre d'activité (tâches en cours, téléchargements)…"), self.voir_activite)
         ou.addAction(_("Journal des échanges (Drives, IA)…"), self.journal_echanges)
         ou.addAction(_("Ouvrir le dossier des données"), lambda: self.ouvrir_externe(dossier_donnees()))
@@ -1322,6 +1322,98 @@ class Fenetre(QMainWindow):
         QTimer.singleShot(2000, fusion)
 
     # ---------------------------------------------------------------- session partagee
+    # ---------------------------------------------------------------- Drive en direct, NAS, FTP (0.9.10)
+    def _compte_synchro(self):
+        if not self.params.get("synchro", True):
+            return None
+        try:
+            from . import miroir
+            return miroir.compte_drive(self.params)
+        except Exception:      # noqa: BLE001
+            return None
+
+    def synchro_demarrage(self):
+        """Au démarrage, comme PhilPDF : ce qui arrive de vos autres postes (réglages, tampons, session…) est montré
+        dans la fenêtre « Synchronisation avec … » ; sinon, l'échange se fait sans rien demander. La barre du bas dit
+        ce qui se passe. Ensuite seulement, la session des autres postes est lue (projets ouverts ailleurs)."""
+        compte = self._compte_synchro()
+        if compte is None:
+            self.verifier_session()
+            return
+        from . import miroir, synchro_plan
+        lieu = miroir.libelle_compte(compte)
+        self.statusBar().showMessage(_("Synchronisation avec {l} : recherche de ce qui a changé…", l=lieu))
+
+        def plan(t):
+            t.avancer(0.1, _("Synchronisation avec {l} : recherche de ce qui a changé…", l=lieu))
+            return synchro_plan.decrire(miroir.planifier(self.params, compte), self.params, compte)
+        t = Tache(plan, _("Synchronisation"))
+        self.taches.append(t)
+        try:
+            self.centre.suivre(t, _("Synchronisation avec {l}", l=lieu))
+        except Exception:      # noqa: BLE001
+            pass
+
+        def vu(lignes, err):
+            if err:
+                self.statusBar().showMessage(_("✕ Synchronisation avec {l} impossible : {e}. Nouvel essai dans une minute.", l=lieu,
+                                               e=str(err)[:160]), 15000)
+                self.verifier_session()
+                return
+            lignes = lignes or []
+            choix = None
+            if synchro_plan.merite_fenetre(lignes):
+                d = synchro_plan.DialoguePlan(self, lignes, lieu)
+                if d.exec() != QDialog.Accepted:
+                    self.statusBar().showMessage(_("Synchronisation remise à plus tard : rien n'a été reçu ni envoyé."), 8000)
+                    self.verifier_session()
+                    return
+                choix = d.choisis()
+            self._synchroniser(compte, choix=choix, apres=self.verifier_session)
+        t.fini.connect(vu, Qt.QueuedConnection)
+        t.start()
+
+    def _synchroniser(self, compte, choix=None, sens=None, apres=None, silencieux=False):
+        """Echange avec le lieu de synchronisation en tâche de fond ; puis les réglages venus d'un autre poste sont repris."""
+        from . import miroir
+        if getattr(self, "_tache_synchro", None) is not None and self._tache_synchro.isRunning():
+            return self._tache_synchro
+        lieu = miroir.libelle_compte(compte)
+
+        def travail(t):
+            t.avancer(0.2, _("Synchronisation avec {l} : envoi et réception…", l=lieu))
+            return miroir.synchroniser(self.params, compte, choix=choix, sens=sens)
+        t = Tache(travail, _("Synchronisation"))
+        self._tache_synchro = t
+        self.taches.append(t)
+        if not silencieux:
+            self.statusBar().showMessage(_("Synchronisation avec {l} : envoi et réception…", l=lieu))
+
+        def fin(r, err):
+            if err:
+                if not silencieux:
+                    self.statusBar().showMessage(_("✕ Synchronisation avec {l} impossible : {e}. Nouvel essai dans une minute.", l=lieu,
+                                                   e=str(err)[:160]), 15000)
+            else:
+                recus, envoyes = r or (0, 0)
+                repris = None
+                if recus:
+                    try:
+                        from . import reglages
+                        repris = reglages.reprendre_communs_drive(self.params)
+                    except Exception:      # noqa: BLE001
+                        repris = None
+                if recus or envoyes or not silencieux:
+                    msg = _("✓ Synchronisation avec {l} : {r} reçu(s), {e} envoyé(s).", l=lieu, r=recus, e=envoyes)
+                    if repris:
+                        msg += " " + _("Réglages repris de « {p} ».", p=repris[0])
+                    self.statusBar().showMessage(msg, 10000)
+            if apres:
+                apres()
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
+        return t
+
     def ecrire_session(self):
         if not self.params.get("synchro", True):
             return
@@ -1335,6 +1427,10 @@ class Fenetre(QMainWindow):
             n = reglages.synchro_secrets_auto(self.params)        # clefs et mots de passe (chiffrés) entre les postes
             if n:
                 self.statusBar().showMessage(_("{n} mot(s) de passe ou clef(s) repris de vos autres postes.", n=n), 8000)
+            compte = self._compte_synchro()
+            if compte is not None:                                 # Drive en direct, NAS, FTP : les changements de ce poste partent
+                from . import miroir
+                self._synchroniser(compte, sens=set(miroir.ENVOIS), silencieux=True)
         except Exception as e:    # noqa: BLE001
             from .journal import ecrire
             ecrire("synchro", f"session non écrite : {e}")

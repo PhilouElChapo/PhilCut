@@ -5404,5 +5404,21 @@
  "Lecture impossible sur ce poste.": "Playback impossible on this computer.",
  "Vouliez-vous dire <a href='{c}'><b>{c}</b></a> ? Cliquez pour chercher ainsi.": "Did you mean <a href='{c}'><b>{c}</b></a>? Click to search for it.",
  "S'il n'a pas le format du projet (16:9, 9:16…)": "If it does not have the project's format (16:9, 9:16…)",
- "Pas de version lisible de cette vidéo.": "No playable version of this video."
+ "Pas de version lisible de cette vidéo.": "No playable version of this video.",
+ "Il manque {d} : Visual C++ de Microsoft": "{d} is missing: Microsoft Visual C++",
+ "Le moteur a besoin de « Visual C++ 2015-2022 » de Microsoft (gratuit, officiel), absent ou trop ancien sur ce poste. L'installer ne change rien aux logiciels qui marchent déjà : les anciennes versions restent à côté. Ensuite, « Réessayer ».": "The engine needs Microsoft « Visual C++ 2015-2022 » (free, official), missing or too old on this computer. Installing it changes nothing for programs that already work: older versions stay alongside. Then « Try again ».",
+ "Le moteur ne trouve pas une de ses bibliothèques (DLL) et s'arrête avant même de commencer. C'est presque toujours le « Visual C++ » de Microsoft (gratuit, officiel) qui manque ou est trop ancien. Installez-le, puis réessayez ; sinon réinstallez le moteur, ou passez sur le processeur.": "The engine cannot find one of its libraries (DLL) and stops before it even starts. It is almost always Microsoft's « Visual C++ » (free, official) that is missing or too old. Install it, then try again; otherwise reinstall the engine, or switch to the processor.",
+ "Il manque {d} : pilote Nvidia": "{d} is missing: Nvidia driver",
+ "Ce fichier est fourni par le pilote de la carte Nvidia : il est absent ou abîmé. Réinstallez le pilote, ou passez sur le processeur.": "This file comes with the Nvidia card driver: it is missing or damaged. Reinstall the driver, or switch to the processor.",
+ "Il manque {d} : pilote graphique": "{d} is missing: graphics driver",
+ "Ce fichier vient du pilote de la carte graphique. Mettez-le à jour, ou passez sur le processeur.": "This file comes from the graphics card driver. Update it, or switch to the processor.",
+ "Il manque {d} dans le moteur": "{d} is missing from the engine",
+ "Ce fichier fait partie du moteur, rangé dans le dossier de PhilCut : téléchargement incomplet ou fichier mis de côté par l'antivirus. Réinstallez le moteur (le modèle est gardé).": "This file is part of the engine, stored in PhilCut's folder: incomplete download or file set aside by the antivirus. Reinstall the engine (the model is kept).",
+ "Synchronisation avec {l} : recherche de ce qui a changé…": "Sync with {l}: looking for changes…",
+ "Synchronisation avec {l}": "Sync with {l}",
+ "Synchronisation avec {l} : envoi et réception…": "Sync with {l}: sending and receiving…",
+ "✕ Synchronisation avec {l} impossible : {e}. Nouvel essai dans une minute.": "✕ Sync with {l} impossible: {e}. Trying again in a minute.",
+ "✓ Synchronisation avec {l} : {r} reçu(s), {e} envoyé(s).": "✓ Sync with {l}: {r} received, {e} sent.",
+ "Synchronisation remise à plus tard : rien n'a été reçu ni envoyé.": "Sync postponed: nothing was received or sent.",
+ "Réglages repris de « {p} ».": "Settings taken from « {p} »."
 }
