@@ -4,6 +4,7 @@ Tout se fait a la souris : deposer un media depuis la bibliotheque, glisser un p
 rogner, couper au curseur (C), supprimer (Suppr), zoomer (molette + Ctrl). Un aimant colle les plans entre eux
 et au curseur. La timeline lit et ecrit directement le projet (app/projet.py) et previent la fenetre par signaux.
 """
+import math
 from PySide6.QtCore import Qt, QRectF, QPointF, Signal, QMimeData, QLineF
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPixmap, QLinearGradient, QCursor, QFontMetrics, QPolygonF
 from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsItem, QGraphicsRectItem, QGraphicsLineItem, QMenu,
@@ -15,7 +16,7 @@ from .projet import duree_clip, fin_clip
 
 MIME_MEDIA = "application/x-philcut-media"
 MIME_EFFET = "application/x-philcut-effet"     # effet ou transition glissé depuis le catalogue
-H_REGLE = 26
+H_REGLE = 36                    # règle : temps et repères en haut, boutons [ ] de la tête rouge en bas
 H_VIDEO = 74
 H_AUDIO = 48
 H_VOIX = 40                     # voix off, doublage : sous la musique, qui baisse quand la voix parle
@@ -784,7 +785,7 @@ class Timeline(QGraphicsView):
         while MARGE_G + t * self.pps < r.right():
             x = MARGE_G + t * self.pps
             p.drawLine(QLineF(x, H_REGLE - 8, x, H_REGLE))
-            p.drawText(QRectF(x + 3, 2, 80, H_REGLE - 4), Qt.AlignLeft | Qt.AlignVCenter, _tc(t))
+            p.drawText(QRectF(x + 3, 1, 80, 16), Qt.AlignLeft | Qt.AlignVCenter, _tc(t))
             for k in range(1, 5):
                 xs = x + k * pas / 5 * self.pps
                 p.drawLine(QLineF(xs, H_REGLE - 4, xs, H_REGLE))
@@ -840,7 +841,24 @@ class Timeline(QGraphicsView):
             p.drawLine(QLineF(rc.left() + 2, rc.bottom() - 2, rc.center().x(), rc.top() + 4))
             p.drawLine(QLineF(rc.center().x(), rc.top() + 4, rc.right() - 2, rc.bottom() - 2))
         a, b = self.zone
-        if a is not None or b is not None:          # partie sélectionnée : bande jaune sur la règle, voile sur les pistes
+        if (a is None) != (b is None):              # seulement le début (ou la fin) : un fanion jaune l'indique
+            t0 = a if a is not None else b
+            x = MARGE_G + t0 * self.pps
+            p.setPen(QPen(QColor("#ffd24a"), 2))
+            p.drawLine(QLineF(x, 0, x, self.hauteur_totale()))
+            f = QFont()
+            f.setPointSizeF(7.5)
+            f.setBold(True)
+            p.setFont(f)
+            lib = _("Début") if a is not None else _("Fin")
+            w = QFontMetrics(f).horizontalAdvance(lib) + 10
+            rcf = QRectF(x if a is not None else x - w, 2, w, 15)
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor("#ffd24a"))
+            p.drawRoundedRect(rcf, 3, 3)
+            p.setPen(QColor("#1a1a1a"))
+            p.drawText(rcf, Qt.AlignCenter, lib)
+        if a is not None and b is not None:          # partie sélectionnée : bande jaune sur la règle, voile sur les pistes
             xa = MARGE_G + (a if a is not None else b) * self.pps
             xb = MARGE_G + (b if b is not None else a) * self.pps
             p.fillRect(QRectF(xa, 0, max(2.0, xb - xa), H_REGLE), QColor(255, 210, 74, 150))
@@ -849,7 +867,7 @@ class Timeline(QGraphicsView):
             for x in (xa, xb):
                 p.drawLine(QLineF(x, 0, x, self.hauteur_totale()))
             # × pour enlever la sélection (aussi : simple clic sur la règle, Echap, clic droit)
-            rc = QRectF(xb + 3, 2, H_REGLE - 4, H_REGLE - 4)
+            rc = QRectF(xb + 3, 1, 16, 16)
             self._croix_zone = rc
             p.setPen(Qt.NoPen)
             p.setBrush(QColor(40, 40, 46, 230))
@@ -922,6 +940,21 @@ class Timeline(QGraphicsView):
         p.setBrush(QColor("#ff5c5c"))
         p.setPen(Qt.NoPen)
         p.drawPolygon([QPointF(x - 6, 0), QPointF(x + 6, 0), QPointF(x, 9)])
+        # [ ] à côté de la tête : la partie jaune commence / finit ici (à la souris, sans raccourci à retenir)
+        f = QFont()
+        f.setPointSizeF(9)
+        f.setBold(True)
+        p.setFont(f)
+        self._boutons_tete = []
+        for i, (dx, sym) in enumerate(((-21, "["), (5, "]"))):
+            rcb = QRectF(x + dx, 19, 16, 15)
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(255, 92, 92, 215))
+            p.drawRoundedRect(rcb, 3, 3)
+            p.setPen(QColor("#ffffff"))
+            p.drawText(rcb.adjusted(0, -1, 0, 0), Qt.AlignCenter, sym)
+            self._boutons_tete.append(rcb)
+        self._dessiner_rappel_zoom(p)
 
     def _pas_regle(self):
         for pas in (0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600):
@@ -980,6 +1013,9 @@ class Timeline(QGraphicsView):
 
     def mouseDoubleClickEvent(self, e):
         sp = self.mapToScene(e.pos())
+        if e.button() == Qt.LeftButton and sp.y() < H_REGLE and sp.x() >= MARGE_G:
+            self.double_clic_regle((sp.x() - MARGE_G) / self.pps)
+            return
         if sp.x() < MARGE_G and self.projet:
             piste = self.piste_a(sp.y())
             if piste in self.projet.toutes_pistes():
@@ -1011,14 +1047,29 @@ class Timeline(QGraphicsView):
         if e.button() == Qt.LeftButton and cz is not None and cz.adjusted(-2, -2, 2, 2).contains(sp):
             self.effacer_zone()
             return
+        # coin en haut à gauche : rappel « molette = zoom » ; un clic montre tout le montage
+        if e.button() == Qt.LeftButton and self._rect_zoom().contains(e.position()):
+            self.ajuster()
+            self._animer_zoom()
+            return
+        # petits boutons [ ] à côté de la tête rouge : début / fin de la partie jaune ici
+        for i, rc in enumerate(getattr(self, "_boutons_tete", []) or []):
+            if e.button() == Qt.LeftButton and rc.contains(sp):
+                self.marquer_zone(i)
+                return
+        # bord de la partie jaune : on le tire pour l'ajuster
+        bord = self._bord_zone_a(sp)
+        if e.button() == Qt.LeftButton and bord is not None:
+            self._tire_bord = bord
+            self.balayage.emit(True)
+            return
         if e.button() == Qt.LeftButton and (sp.y() < H_REGLE or self.itemAt(e.pos()) is None) and sp.x() >= MARGE_G:
+            # un clic ou un glissement déplace toujours la tête de lecture rouge (jamais de sélection par erreur) ;
+            # la partie jaune se fait par double-clic sur la règle (début puis fin), par [ ] ou Maj + glisser sur la règle
             self._glisse_curseur = True
             self.balayage.emit(True)
-            # sur la règle : tirer la tête de lecture rouge la déplace ; tirer ailleurs choisit une partie (en jaune) ;
-            # un simple clic place la tête de lecture et enlève la partie choisie
-            pres_tete = abs(sp.x() - (MARGE_G + self.position * self.pps)) <= 9
-            self._depart_regle = (e.pos().x(), (sp.x() - MARGE_G) / self.pps) if sp.y() < H_REGLE and not pres_tete else None
-            self._zone_avant = list(self.zone)
+            maj = bool(e.modifiers() & Qt.ShiftModifier)
+            self._depart_regle = (e.pos().x(), (sp.x() - MARGE_G) / self.pps) if sp.y() < H_REGLE and maj else None
             self.aller_a((sp.x() - MARGE_G) / self.pps)
             if self.itemAt(e.pos()) is None:
                 self._scene.clearSelection()
@@ -1026,6 +1077,14 @@ class Timeline(QGraphicsView):
         super().mousePressEvent(e)
 
     def mouseMoveEvent(self, e):
+        tb = getattr(self, "_tire_bord", None)
+        if tb is not None:
+            sp = self.mapToScene(e.pos())
+            t = self.aimanter(max(0.0, (sp.x() - MARGE_G) / self.pps))
+            self.zone[tb] = t
+            self.aller_a(t)
+            self.viewport().update()
+            return
         if self._glisse_curseur:
             sp = self.mapToScene(e.pos())
             t = max(0.0, (sp.x() - MARGE_G) / self.pps)
@@ -1035,22 +1094,43 @@ class Timeline(QGraphicsView):
                 self.viewport().update()
             self.aller_a(t)
             return
-        sp = self.mapToScene(e.pos())                 # au-dessus de la règle des temps : dire comment choisir une partie
-        if sp.y() < H_REGLE:
-            if not getattr(self, "_aide_regle", False):
-                self._aide_regle = True
-                self.viewport().setToolTip(_("Clic : aller à cet instant · glisser sur la règle : choisir une partie de la vidéo (en jaune), "
-                                             "puis clic droit dessus : effets, supprimer, garder seulement"))
-        elif getattr(self, "_aide_regle", False):
-            self._aide_regle = False
-            self.viewport().setToolTip("")
+        sp = self.mapToScene(e.pos())
+        # le curseur dit ce que fera le clic : flèche double sur un bord jaune, main sur [ ] et le coin zoom
+        if self._bord_zone_a(sp) is not None:
+            self.viewport().setCursor(Qt.SizeHorCursor)
+        elif self._rect_zoom().contains(e.position()) or any(rc.contains(sp) for rc in getattr(self, "_boutons_tete", []) or []):
+            self.viewport().setCursor(Qt.PointingHandCursor)
+        elif sp.y() < H_REGLE and sp.x() >= MARGE_G:
+            self.viewport().setCursor(Qt.SplitHCursor if abs(sp.x() - (MARGE_G + self.position * self.pps)) <= 9 else Qt.ArrowCursor)
+        else:
+            self.viewport().unsetCursor()
+        aide = None                                   # bulle d'aide selon l'endroit survolé
+        if self._rect_zoom().contains(e.position()):
+            aide = _("Molette : zoom sur la timeline (là où est la souris) · Maj + molette : défiler · clic ici : tout voir")
+        elif any(rc.contains(sp) for rc in getattr(self, "_boutons_tete", []) or []):
+            aide = _("[ : la partie jaune commence à la tête de lecture · ] : elle finit ici")
+        elif self._bord_zone_a(sp) is not None:
+            aide = _("Tirer ce bord pour ajuster la partie jaune")
+        elif sp.y() < H_REGLE:
+            aide = _("Clic ou glisser : déplacer la tête de lecture · double-clic : début, puis fin de la partie jaune · "
+                     "molette : zoom")
+        if aide != getattr(self, "_aide_regle", None):
+            self._aide_regle = aide
+            self.viewport().setToolTip(aide or "")
         super().mouseMoveEvent(e)
 
     def mouseReleaseEvent(self, e):
+        if getattr(self, "_tire_bord", None) is not None:
+            self._tire_bord = None
+            a, b = self.zone
+            if a is not None and b is not None and b < a:
+                self.zone = [b, a]
+            self.balayage.emit(False)
+            self.zone_changee.emit()
+            self.viewport().update()
+            return
         dep = getattr(self, "_depart_regle", None)
-        if self._glisse_curseur and dep and abs(e.pos().x() - dep[0]) <= 6 and getattr(self, "_zone_avant", [None, None]) != [None, None]:
-            self.effacer_zone()                       # simple clic sur la règle : la partie jaune s'en va
-        elif self._glisse_curseur and dep and self.zone_valide():
+        if self._glisse_curseur and dep and self.zone_valide():
             self.zone_changee.emit()
         self._depart_regle = None
         if self._glisse_curseur:
@@ -1163,10 +1243,12 @@ class Timeline(QGraphicsView):
         if e.modifiers() & Qt.AltModifier:
             d = e.angleDelta().y() or e.angleDelta().x()        # Alt fait parfois passer la molette en horizontal
             self.hauteur_images(1.15 if d > 0 else 1 / 1.15)
-        elif e.modifiers() & Qt.ControlModifier:
-            self.zoomer(1.2 if e.angleDelta().y() > 0 else 1 / 1.2, e.position().x())
-        else:
-            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - e.angleDelta().y())
+        elif e.modifiers() & Qt.ShiftModifier or (e.angleDelta().x() and not e.angleDelta().y()):
+            d = e.angleDelta().y() or e.angleDelta().x()          # Maj + molette, ou molette horizontale : défiler
+            self.horizontalScrollBar().setValue(self.horizontalScrollBar().value() - d)
+        elif e.angleDelta().y():
+            self.zoomer(1.2 if e.angleDelta().y() > 0 else 1 / 1.2, e.position().x())     # molette : zoom là où est la souris
+            self._animer_zoom(e.angleDelta().y() > 0)
 
     def zoomer(self, facteur, x_souris=None):
         ancien = self.pps
@@ -1212,6 +1294,85 @@ class Timeline(QGraphicsView):
         self._croix_zone = None
         self.zone_changee.emit()
         self.viewport().update()
+
+    def double_clic_regle(self, t):
+        """Double-clic sur la règle : 1er = début de la partie jaune, 2e = fin ; un 3e recommence une nouvelle partie."""
+        t = self.aimanter(max(0.0, t))
+        self.aller_a(t)
+        a, b = self.zone
+        if a is not None and b is not None:
+            self.zone = [t, None]
+        elif a is None and b is None:
+            self.zone = [t, None]
+        else:
+            debut = a if a is not None else b
+            self.zone = sorted([debut, t])
+        self.zone_changee.emit()
+        self.viewport().update()
+
+    def _bord_zone_a(self, sp):
+        a, b = self.zone
+        if a is None or b is None:
+            return None
+        for i, t in enumerate((a, b)):
+            if abs(sp.x() - (MARGE_G + t * self.pps)) <= 5 and sp.y() < H_REGLE:
+                return i
+        return None
+
+    def _rect_zoom(self):
+        """Coin du rappel « molette = zoom », en coordonnées de la vue (fixe à gauche, sur la ligne de la règle)."""
+        return QRectF(4, 6, MARGE_G - 8, H_REGLE - 12)
+
+    def _animer_zoom(self, avant=True):
+        from PySide6.QtCore import QVariantAnimation
+        self._zoom_avant = avant
+        a = getattr(self, "_anim_zoom", None)
+        if a is None:
+            a = QVariantAnimation(self)
+            a.setDuration(700)
+            a.setStartValue(0.0)
+            a.setEndValue(1.0)
+            a.valueChanged.connect(lambda v: (setattr(self, "_phase_zoom", float(v)), self.viewport().update()))
+            a.finished.connect(lambda: (setattr(self, "_phase_zoom", None), self.viewport().update()))
+            self._anim_zoom = a
+        a.stop()
+        a.start()
+
+    def _dessiner_rappel_zoom(self, p):
+        """Petite souris avec sa molette et une loupe ; s'anime quand on zoome. Dessiné en coordonnées de la vue."""
+        p.save()
+        p.resetTransform()
+        rc = self._rect_zoom()
+        phase = getattr(self, "_phase_zoom", None)
+        actif = phase is not None
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setPen(Qt.NoPen)
+        p.setBrush(QColor(255, 210, 74, 60) if actif else QColor(255, 255, 255, 18))
+        p.drawRoundedRect(rc, 5, 5)
+        coul = QColor("#ffd24a") if actif else _c("texte2")
+        # souris
+        sx, sy = rc.left() + 8, rc.top() + 3
+        p.setPen(QPen(coul, 1.4))
+        p.setBrush(Qt.NoBrush)
+        p.drawRoundedRect(QRectF(sx, sy, 10, rc.height() - 6), 5, 5)
+        dy = (math.sin((phase or 0) * math.pi * 3) * 2.5) if actif else 0
+        p.drawLine(QLineF(sx + 5, sy + 3 + dy, sx + 5, sy + 6 + dy))
+        # loupe + / −
+        lx, ly = sx + 17, rc.top() + 4
+        k = 1 + (0.25 * math.sin((phase or 0) * math.pi)) if actif else 1
+        r = 5 * k
+        p.drawEllipse(QPointF(lx + 5, ly + 5), r, r)
+        p.drawLine(QLineF(lx + 5 + r * 0.7, ly + 5 + r * 0.7, lx + 5 + r * 1.5, ly + 5 + r * 1.5))
+        p.drawLine(QLineF(lx + 3, ly + 5, lx + 7, ly + 5))
+        if not actif or getattr(self, "_zoom_avant", True):
+            p.drawLine(QLineF(lx + 5, ly + 3, lx + 5, ly + 7))
+        f = QFont()
+        f.setPointSizeF(7.5)
+        f.setBold(True)
+        p.setFont(f)
+        p.setPen(coul)
+        p.drawText(QRectF(lx + 16, rc.top(), rc.right() - lx - 17, rc.height()), Qt.AlignVCenter | Qt.AlignLeft, _("Zoom"))
+        p.restore()
 
     # ---- partie sélectionnée (entrée / sortie)
     def marquer_zone(self, i):

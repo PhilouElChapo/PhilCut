@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.3 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.4 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.4 : timeline plus simple
+- Un clic ou un glissement deplace toujours la tete de lecture rouge : plus de partie jaune creee par erreur.
+- Partie jaune : double-clic sur la regle au debut, puis a la fin (fanion "Debut" entre les deux) ; ou boutons [ ] a cote de la tete rouge ; ses bords se tirent sur la regle pour l'ajuster.
+- La molette zoome la timeline la ou est la souris (Maj + molette : defiler) ; un rappel "Zoom" anime en haut a gauche, clic dessus : tout voir.
+- Le curseur et les bulles d'aide disent ce que fera le clic a chaque endroit de la regle.
 
 ### 0.9.3 : vignettes et images fixes composees
 - Fabrique > "Vignette YouTube composee" (aussi au clic droit sur l'apercu et sur la regle de la timeline) : on prend une image du film et on entoure des zones a la souris. Rouge : ce qu'on veut montrer (objet ou personne du film, detoure, contour, effet loupe ou projecteur). Jaune : designer (fleche ou cercle). Bleu : le titre, ajuste tout seul. Vert : les elements precises (pastilles validees ou non). Blanc : zone a laisser libre.

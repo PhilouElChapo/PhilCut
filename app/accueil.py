@@ -80,7 +80,7 @@ class PageAccueil(QWidget):
         self.lbl_autres.setWordWrap(True)
         self.lbl_autres.setStyleSheet("color:%s" % theme.COULEURS["texte2"])
         v.addWidget(self.lbl_autres)
-        self.astuce = QLabel(_("Astuce : glissez des vidéos sur la fenêtre pour créer un projet. Raccourcis : Espace lecture, C couper, Suppr supprimer, Ctrl+molette zoom."))
+        self.astuce = QLabel(_("Astuce : glissez des vidéos sur la fenêtre pour créer un projet. Raccourcis : Espace lecture, C couper, Suppr supprimer, molette sur la timeline : zoom."))
         self.astuce.setWordWrap(True)
         self.astuce.setStyleSheet("color:%s" % theme.COULEURS["texte2"])
         v.addWidget(self.astuce)

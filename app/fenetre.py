@@ -1145,7 +1145,7 @@ class Fenetre(QMainWindow):
     def raccourcis(self):
         QMessageBox.information(self, _("Raccourcis"), _(
             "Espace : lecture / pause\nC : couper au curseur\nSuppr : supprimer et refermer (Maj+Suppr : laisser un trou)\n"
-            "← → : image par image (Maj : seconde)\nOrigine / Fin : début / fin\nCtrl+molette : zoom de la timeline · Ctrl+0 : tout voir\n"
+            "← → : image par image (Maj : seconde)\nOrigine / Fin : début / fin\nMolette : zoom de la timeline (Maj + molette : défiler) · Ctrl+0 : tout voir\nDouble-clic sur la règle : début puis fin de la partie jaune\n"
             "Ctrl+Z / Ctrl+Y : annuler / rétablir\nCtrl+I : importer · Ctrl+S : enregistrer · Ctrl+E : exporter\nF4 : volet de droite\n"
             "Double-clic sur un plan : effets et transition · clic droit : vitesse, cadrage, muet"))
 

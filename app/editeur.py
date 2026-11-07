@@ -1729,11 +1729,13 @@ class Editeur(QWidget):
         z = self.timeline.zone_valide()
         a, b = self.timeline.zone
         if z:
-            self.encart.message(_("Partie en jaune : {a} → {b} ({d:.1f} s). Clic droit dessus : effets sur cette partie, la supprimer "
-                                  "ou ne garder qu'elle.", a=_tc(z[0]), b=_tc(z[1]), d=z[1] - z[0]), 12000)
+            self.encart.message(_("Partie en jaune : {a} → {b} ({d:.1f} s). Tirez ses bords sur la règle pour l'ajuster ; clic droit dessus : "
+                                  "effets sur cette partie, la supprimer ou ne garder qu'elle ; × pour l'enlever.", a=_tc(z[0]), b=_tc(z[1]), d=z[1] - z[0]), 12000)
         elif a is not None or b is not None:
-            self.encart.message(_("Début de la partie marqué. Clic droit à la fin voulue › Partie de la vidéo › « La partie finit ici ».") if a is not None else
-                                _("Fin de la partie marquée. Clic droit au début voulu › Partie de la vidéo › « La partie commence ici »."), 8000)
+            self.encart.message(_("Début de la partie jaune à {t}. Double-cliquez sur la règle à la fin voulue (ou ] à côté de la tête rouge).",
+                                  t=_tc(a)) if a is not None else
+                                _("Fin de la partie jaune à {t}. Double-cliquez sur la règle au début voulu (ou [ à côté de la tête rouge).",
+                                  t=_tc(b)), 10000)
 
     def morceau_de_partie(self, a, b):
         """Coupe le plan vidéo aux bornes de la partie choisie (I / O) et renvoie le morceau du milieu : un effet posé
