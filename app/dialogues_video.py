@@ -621,6 +621,10 @@ class DialogueGoodie(QDialog):
         b_img.clicked.connect(self._choisir_image)
         hi.addWidget(self.chemin_image, 1)
         hi.addWidget(b_img)
+        self.b_fond = QPushButton(_("Retirer le fond…"))
+        self.b_fond.setToolTip(_("Un JPG (logo sur fond blanc, photo) devient une copie PNG transparente, sur ce poste"))
+        self.b_fond.clicked.connect(self._retirer_fond)
+        hi.addWidget(self.b_fond)
         f.addRow(_("Image"), hi)
         self.valeurs = QPlainTextEdit("\n".join(f"{t}\t{v}" for t, v in (g.get("valeurs") or [])))
         self.valeurs.setPlaceholderText(_("Valeurs saisies : une par ligne « seconde  valeur » (ex. 0  0 puis 60  2500). Vide = décor animé."))
@@ -722,6 +726,27 @@ class DialogueGoodie(QDialog):
         if p:
             self.chemin_image.setText(p)
             self.genre.setCurrentIndex(max(0, self.genre.findData("image")))
+            from . import fond as F
+            try:
+                if not p.lower().endswith(".svg") and not F.a_deja_transparence(F.lire(p)):
+                    if QMessageBox.question(self, _("Image sans transparence"),
+                                            _("Cette image n'a pas de fond transparent : son fond (blanc ou autre) se verra sur le film. "
+                                              "Retirer le fond maintenant ?")) == QMessageBox.Yes:
+                        self._retirer_fond()
+            except Exception:       # noqa: BLE001 : image illisible par OpenCV, on la garde telle quelle
+                pass
+
+    def _retirer_fond(self):
+        p = self.chemin_image.text().strip()
+        if not p or not os.path.exists(p):
+            self._choisir_image()
+            p = self.chemin_image.text().strip()
+            if not p:
+                return
+        from .dialogues_fond import retirer_fond
+        r = retirer_fond(self, p)
+        if r:
+            self.chemin_image.setText(r)
 
     def _gpx(self):
         p, _f = QFileDialog.getOpenFileName(self, _("Trace GPX"), "", "GPX (*.gpx)")

@@ -1450,6 +1450,9 @@ class Timeline(QGraphicsView):
         t = self.position if t is None else t
         if clip.get("vignette"):
             m.addAction(_("Modifier l'image composée…"), lambda: self.demande_menu.emit(clip["id"], "vignette_composee"))
+        med = self.projet.media(clip["media"]) if self.projet else None
+        if (med or {}).get("genre") == "image" and not clip.get("vignette"):
+            m.addAction(_("Retirer le fond de l'image…"), lambda: self.demande_menu.emit(clip["id"], "fond_retirer"))
             m.addSeparator()
         m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
         m.addAction(_("Supprimer ce plan (la suite se recolle)"), lambda: self.supprimer_selection(True))

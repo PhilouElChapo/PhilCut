@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.4 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.5 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.5 : retirer le fond d'une image
+- Une image sans transparence (JPG d'un logo sur fond blanc, photo d'un objet ou d'une personne) devient une copie PNG transparente, sur ce poste : bouton "Retirer le fond..." de la fenetre Goodie (propose tout seul quand on choisit un JPG), clic droit sur l'image dans les medias, ou sur son plan dans la timeline.
+- Avant / apres sur damier, methode (automatique, fond uni, sujet d'une photo), tolerance, recadrage au sujet, interieur des lettres et des anneaux au choix. L'original est garde.
 
 ### 0.9.4 : timeline plus simple
 - Un clic ou un glissement deplace toujours la tete de lecture rouge : plus de partie jaune creee par erreur.

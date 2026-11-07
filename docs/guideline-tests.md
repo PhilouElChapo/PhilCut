@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T33 — 0.9.5 : retirer le fond d'une image
+
+1. **Goodie** : genre « Image ou logo », « Image… » et choisir un JPG (logo sur fond blanc). **Attendu** : PhilCut signale qu'il n'a pas de fond transparent et propose de le retirer ; l'aperçu du Goodie montre bien le rectangle blanc avant.
+2. **Fenêtre « Retirer le fond »** : avant / après sur damier ; méthode Automatique (fond uni détecté) ; tolérance plus haute ou plus basse ; « Recadrer au sujet » ; « Retirer aussi le fond enfermé » (intérieur des lettres, d'un anneau). « Garder l'image sans fond » : une copie « …_sans_fond.png » à côté de l'original, qui reste intact ; l'aperçu du Goodie n'a plus de rectangle blanc.
+3. **Photo** : une photo d'un objet ou d'une personne, méthode « Sujet d'une photo » : le sujet est gardé, le décor devient transparent (meilleur avec le modèle de détourage installé).
+4. **Médias et plan** : clic droit sur une image dans les médias › « Retirer le fond (copie PNG transparente)… » : la copie s'ajoute aux médias et les plans de cette image l'utilisent ; clic droit sur le plan d'une image › « Retirer le fond de l'image… » : ce plan seulement. La barre du bas le dit.
+
 ## T32 — 0.9.4 : timeline plus simple (tête de lecture, partie jaune, zoom)
 
 1. **Clic et glisser** sur la règle ou dans une piste vide : la tête de lecture rouge se déplace, l'aperçu suit ; aucune partie jaune ne se crée par erreur.

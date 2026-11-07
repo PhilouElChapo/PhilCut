@@ -116,6 +116,7 @@ class Bibliotheque(QListWidget):
     ajouter = Signal(str)
     fiche = Signal(str)
     retirer = Signal(str)
+    fond = Signal(str)
     importer = Signal()
 
     def __init__(self, parent=None):
@@ -188,6 +189,8 @@ class Bibliotheque(QListWidget):
             med = self.projet.media(ident) if self.projet else None
             for t in ((med or {}).get("ia_locale") or {}).get("textes") or []:
                 m.addAction(_("Etiquette « {t} » (texte lu)", t=t), lambda t=t: self.etiquette.emit(ident, t))
+            if (med or {}).get("genre") == "image":
+                m.addAction(_("Retirer le fond (copie PNG transparente)…"), lambda: self.fond.emit(ident))
             m.addSeparator()
             m.addAction(icone("supprimer"), _("Retirer du projet"), lambda: self.retirer.emit(ident))
         m.addAction(icone("ia"), _("Analyser tous les rushes avec l'IA locale"), lambda: self.analyser.emit([]))
@@ -459,6 +462,7 @@ class Editeur(QWidget):
         self.biblio.ajouter.connect(lambda i: self.ajouter_a_la_timeline(i))
         self.biblio.fiche.connect(self.montrer_fiche)
         self.biblio.retirer.connect(self.retirer_media)
+        self.biblio.fond.connect(lambda ident: self.retirer_fond(ident))
         self.biblio.importer.connect(self.importer)
         vg.addWidget(self.biblio, 1)
         # colonne repliée : deux icônes nommées
@@ -1440,6 +1444,28 @@ class Editeur(QWidget):
             return
         self.ajouter_a_la_timeline(ident, piste, t)
 
+    def retirer_fond(self, ident, clip_id=None):
+        """Image sans transparence (JPG…) : copie PNG au fond retiré, ajoutée au projet ; ses plans (ou ce plan seulement)
+        utilisent la nouvelle image. L'original reste dans le projet et sur le disque."""
+        m = self.projet.media(ident)
+        if not m:
+            return
+        from .dialogues_fond import retirer_fond
+        r = retirer_fond(self, m["chemin"])
+        if not r:
+            return
+        self.projet.marquer()
+        nouveau = self.projet.ajouter_media(r, moteur.sonder(r))
+        n = 0
+        for c in self.projet.clips:
+            if c["media"] == ident and (clip_id is None or c["id"] == clip_id):
+                c["media"] = nouveau["id"]
+                n += 1
+        self.biblio.remplir(self.projet)
+        self.rafraichir()
+        self.encart.message(_("Fond retiré : « {n} » ajouté aux médias ({k} plan(s) mis à jour). L'original est gardé.",
+                              n=os.path.basename(r), k=n), 8000)
+
     def retirer_media(self, ident):
         m = self.projet.media(ident)
         if not m:
@@ -1567,6 +1593,10 @@ class Editeur(QWidget):
             self.rafraichir()
             self.encart.message(_("Vignette du fichier : l'image à {t}. A l'export, elle est intégrée à la vidéo (explorateur de fichiers, "
                                   "lecteurs) et enregistrée à côté en JPG pour la miniature YouTube.", t=_tc(self.timeline.position)), 9000)
+        elif quoi == "fond_retirer":
+            c = self.projet.clip(ident)
+            if c:
+                self.retirer_fond(c["media"], ident)
         elif quoi == "vignette_nouvelle":
             self.vignette_composee("vignette")
         elif quoi == "vignette_composee":
