@@ -231,6 +231,9 @@ class DialogueMesMusiques(QDialog):
         p = self._chemin()
         if not p:
             return
+        if os.environ.get("QT_QPA_PLATFORM") == "offscreen":     # tests automatiques : pas de carte son
+            self.etat.setText(_("▶ Écoute : {t}", t=self.arbre.currentItem().text(0)))
+            return
         try:
             from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
         except ImportError:

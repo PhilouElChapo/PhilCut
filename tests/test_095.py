@@ -5,6 +5,7 @@ import commun
 app = commun.application()
 import cv2
 import numpy as np
+from PySide6.QtCore import Qt
 
 
 def logo(d):
@@ -88,6 +89,90 @@ class Test095(unittest.TestCase):
         nouveau = ed.projet.media(ed.projet.clip(c["id"])["media"])
         self.assertTrue(nouveau["chemin"].endswith(".png"))
         self.assertIsNotNone(ed.projet.media(m["id"]))
+        ed.projet.modifie = False
+        f.hide()
+        f.deleteLater()
+
+    def test_sources_francaises_et_guet_des_telechargements(self):
+        from app import tampons as T
+        u = T.url_extrait("zonesons", "c'est pas faux")
+        self.assertIn("site%3Azonesons.com", u)
+        self.assertIn("pas+faux", u)                                    # recherche en français, sans traduction
+        self.assertEqual(T.url_extrait("kaamelott", "c'est pas faux"), "https://kaamelott.fspot.org/")
+        self.assertIn("kaamelott", T.SANS_RECHERCHE)
+        d = tempfile.mkdtemp()
+        avant = T.etat_dossier(d)
+        m = commun.musique_test(d, "c_est_pas_faux-kaamelott (1).mp3", duree=1)
+        open(os.path.join(d, "film.mp4.crdownload"), "wb").write(b"x" * 100)
+        prets, prec = T.nouveaux_telecharges(d, avant, avant)
+        self.assertEqual(prets, [])                                     # premier passage : on attend que la taille ne bouge plus
+        prets, prec = T.nouveaux_telecharges(d, avant, prec)
+        self.assertEqual(prets, [m])                                    # le .crdownload (en cours) n'est pas pris
+        self.assertEqual(T.nom_depuis_fichier(m), "C est pas faux kaamelott")
+
+    def test_raccourcir_un_son(self):
+        from app import tampons as T
+        from app.config import Parametres
+        pa = Parametres()
+        m = commun.musique_test(self.d, "replique.mp3", duree=3)
+        e = T.ajouter_fichier(pa, m, "Réplique à raccourcir", ["essai"])
+        e2 = T.raccourcir(pa, e["id"], 0.5, 1.5)
+        self.assertAlmostEqual(float(e2["duree"]), 1.0, delta=0.15)
+        self.assertTrue(os.path.exists(T.chemin(pa, e2)))
+        T.retirer(pa, e["id"])
+
+    def test_fenetre_tampons_ecoute_et_guet(self):
+        from app.config import Parametres
+        pa = Parametres()
+        pa["bienvenue_vue"] = True
+        pa["maj_auto"] = False
+        pa["synchro"] = False
+        pa["synchro_secrets"] = False
+        pa.enregistrer()
+        from app.fenetre import Fenetre
+        from app import tampons as T
+        from app.dialogues_tampons import DialogueTampons
+        f = Fenetre()
+        f.show()
+        ed = f.nouveau_projet("16:9")
+        dl = DialogueTampons(ed, 2)
+        pa = ed.params
+        dl.show()
+        i = dl.source.findData("extrait:zonesons")
+        self.assertGreaterEqual(i, 0)
+        dl.source.setCurrentIndex(i)
+        self.assertIn("français", dl.question.placeholderText())
+        self.assertTrue(dl.guette.isVisible())
+        # le guet : un son arrive dans « Téléchargements » → il rejoint la bibliothèque
+        d = tempfile.mkdtemp()
+        import app.session as S
+        vrai = S.dossier_systeme
+        S.dossier_systeme = lambda quoi: d if quoi == "telechargements" else vrai(quoi)
+        try:
+            dl.question.setText("pas faux")
+            dl.guetter("zonesons")
+            m = commun.musique_test(d, "pas_faux.mp3", duree=1)
+            t0 = time.time()
+            while time.time() - t0 < 15 and not any(e["nom"] == "Pas faux" for e in T.charger(pa)):
+                app.processEvents()
+                time.sleep(0.05)
+        finally:
+            S.dossier_systeme = vrai
+        e = next(e for e in T.charger(pa) if e["nom"] == "Pas faux")
+        self.assertEqual(e["genre"], "son")
+        self.assertIn("ZoneSons (films français)", e["mots"])
+        # un clic sur un son l'écoute
+        for _i in range(20):
+            app.processEvents()
+        ecoutes = []
+        dl.ecouter = lambda: ecoutes.append(dl._entree()["id"])          # pas de vrai son ici (pas de carte son en test)
+        it = next(dl.liste.item(k) for k in range(dl.liste.count()) if (dl.liste.item(k).data(Qt.UserRole) or {}).get("id") == e["id"])
+        dl.liste.setCurrentItem(it)
+        self.assertEqual(ecoutes, [])                                   # choisir ne joue rien…
+        dl.liste.itemClicked.emit(it)
+        self.assertEqual(ecoutes, [e["id"]])                            # …un clic sur un son l'écoute
+        T.retirer(pa, e["id"])
+        dl.reject()
         ed.projet.modifie = False
         f.hide()
         f.deleteLater()

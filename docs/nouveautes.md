@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.5 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.6 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.6 : bibliotheque de sons et d'extraits
+- Tampons > Chercher en ligne : ZoneSons (repliques de films francais) et Kaamelott (fspot) ; la recherche reste en francais sur ces sites et sur Voicy (pas de traduction en anglais) ; pour Kaamelott, la replique tapee est copiee, a coller dans la recherche du site.
+- Ce que vous telechargez depuis le site arrive tout seul dans votre bibliotheque : PhilCut guette le dossier Telechargements pendant 15 minutes (case "Ajouter tout seul ce que je telecharge").
+- Ma bibliotheque : un clic sur un son l'ecoute (table de sons), bouton "Ecouter", "Raccourcir..." (garder seulement de ... a ..., avec ecoute avant).
 
 ### 0.9.5 : retirer le fond d'une image
 - Une image sans transparence (JPG d'un logo sur fond blanc, photo d'un objet ou d'une personne) devient une copie PNG transparente, sur ce poste : bouton "Retirer le fond..." de la fenetre Goodie (propose tout seul quand on choisit un JPG), clic droit sur l'image dans les medias, ou sur son plan dans la timeline.

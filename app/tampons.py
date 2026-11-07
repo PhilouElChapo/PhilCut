@@ -21,12 +21,19 @@ API_PEXELS = "https://api.pexels.com/videos/search"
 SOURCES = {"wikimedia": "Wikimedia Commons", "pixabay": "Pixabay", "pexels": "Pexels"}
 CLEFS = {"pixabay": "pixabay_cle", "pexels": "pexels_cle"}         # identifiants dans le coffre du système
 # extraits de films et de séries (protégés) : recherche ouverte dans le navigateur, téléchargement par l'utilisateur
-EXTRAITS = {"clipcafe": ("clip.cafe", "https://clip.cafe/s/{q}/"), "yarn": ("Yarn", "https://yarn.co/yarn-find?text={q}"),
+EXTRAITS = {"kaamelott": ("Kaamelott (fspot)", "https://kaamelott.fspot.org/"),
+            "clipcafe": ("clip.cafe", "https://clip.cafe/s/{q}/"), "yarn": ("Yarn", "https://yarn.co/yarn-find?text={q}"),
             "playphrase": ("PlayPhrase.me", "https://www.playphrase.me/#/search?q={q}&language=en")}
 # répliques et sons de films (audio) : recherche limitée au site, ouverte dans le navigateur
-SONS_FILMS = {"voicy": ("Voicy", "voicy.network"), "movie_sounds": ("Movie-sounds.org", "movie-sounds.org"),
+SONS_FILMS = {"zonesons": ("ZoneSons (films français)", "zonesons.com"), "voicy": ("Voicy", "voicy.network"),
+              "movie_sounds": ("Movie-sounds.org", "movie-sounds.org"),
               "moviesoundclips": ("MovieSoundClips", "moviesoundclips.net"), "wavsource": ("WavSource", "wavsource.com"),
               "samplefocus": ("Sample Focus", "samplefocus.com"), "quodb": ("QuoDB", "quodb.com")}
+# sites en français : la recherche reste dans la langue tapée (pas de traduction en anglais)
+SANS_TRADUCTION = {"zonesons", "kaamelott", "voicy"}
+# sites sans adresse de recherche : on ouvre l'accueil et la réplique est copiée, à coller dans leur champ de recherche
+SANS_RECHERCHE = {"kaamelott"}
+EXT_TELECHARGES = (".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac", ".opus", ".mp4", ".mov", ".m4v", ".mkv", ".webm", ".gif")
 PAGES_CLEF = {"pixabay": "https://pixabay.com/api/docs/", "pexels": "https://www.pexels.com/api/new/"}
 
 
@@ -637,11 +644,77 @@ def telecharger(params, r, progression=None, arret=lambda: False, duree_max=None
 
 
 def url_extrait(site, texte):
-    """Page de recherche du site d'extraits pour ces mots (déjà en anglais)."""
+    """Page de recherche du site d'extraits pour ces mots (en anglais, sauf sites en français)."""
+    if site in SANS_RECHERCHE:
+        return EXTRAITS[site][1]
     if site in SONS_FILMS:                  # recherche web limitée au site : marche même si le site change ses adresses
         return "https://duckduckgo.com/?q=" + urllib.parse.quote_plus(f"site:{SONS_FILMS[site][1]} {texte.strip()}")
     q = urllib.parse.quote_plus(texte.strip()) if site == "clipcafe" else urllib.parse.quote(texte.strip())
     return EXTRAITS[site][1].format(q=q)
+
+
+# ------------------------------------------------------------------ téléchargements faits dans le navigateur
+def etat_dossier(dossier):
+    """{chemin: taille} des sons et clips du dossier (Téléchargements)."""
+    out = {}
+    try:
+        for f in os.listdir(dossier):
+            if f.lower().endswith(EXT_TELECHARGES):
+                p = os.path.join(dossier, f)
+                try:
+                    out[p] = os.path.getsize(p)
+                except OSError:
+                    pass
+    except OSError:
+        pass
+    return out
+
+
+def nouveaux_telecharges(dossier, avant, precedent):
+    """Fichiers apparus depuis « avant » et dont la taille n'a pas bougé depuis le dernier passage (« precedent ») :
+    le téléchargement est fini (les .part, .crdownload… ne sont pas des sons et ne sont pas pris). Renvoie (prêts, état)."""
+    maintenant = etat_dossier(dossier)
+    prets = [p for p, t in maintenant.items() if p not in avant and t > 0 and precedent.get(p) == t]
+    return sorted(prets), maintenant
+
+
+def nom_depuis_fichier(chemin_):
+    """« c_est_pas_faux-kaamelott (1).mp3 » → « C est pas faux kaamelott »."""
+    n = os.path.splitext(os.path.basename(chemin_))[0]
+    n = re.sub(r"\s*\(\d+\)$", "", n)
+    n = re.sub(r"[_\-.]+", " ", n).strip()
+    return (n[:1].upper() + n[1:]) if n else _("Son téléchargé")
+
+
+def raccourcir(params, ident, debut, fin):
+    """Ne garde que debut → fin (secondes) du tampon ; le fichier est remplacé, l'entrée mise à jour."""
+    from . import moteur
+    liste = charger(params)
+    e = next((x for x in liste if x["id"] == ident), None)
+    if e is None:
+        raise ErreurTampon(_("Tampon introuvable."))
+    src = chemin(params, e)
+    son = e.get("genre") == "son" or moteur.sonder(src).get("genre") == "audio"
+    ext = ".m4a" if son else ".mp4"
+    tmp = os.path.splitext(src)[0] + ".raccourci" + ext
+    video = [] if son else ["-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-movflags", "+faststart"]
+    moteur.lancer(["-y", "-ss", f"{max(0.0, float(debut)):.3f}", "-i", src, "-t", f"{max(0.05, float(fin) - float(debut)):.3f}"] + video +
+                  ["-c:a", "aac", "-b:a", "160k", tmp])
+    cible = os.path.splitext(src)[0] + ext
+    try:
+        os.remove(vignette_chemin(params, e))
+    except OSError:
+        pass
+    if os.path.abspath(cible) != os.path.abspath(src):
+        try:
+            os.remove(src)
+        except OSError:
+            pass
+    os.replace(tmp, cible)
+    e["fichier"] = os.path.basename(cible)
+    e["duree"] = round(float(moteur.sonder(cible).get("duree") or (fin - debut)), 2)
+    enregistrer(params, liste)
+    return e
 
 
 def credit(r):

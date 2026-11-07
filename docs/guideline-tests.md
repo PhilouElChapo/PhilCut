@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T34 — 0.9.6 : sons et extraits (ZoneSons, Kaamelott, Voicy), table de sons, raccourcir
+
+1. **ZoneSons** : Montage › Tampons vidéo › Chercher en ligne › « Répliques et sons de films : ZoneSons (films français) ». Taper une réplique en français, « Chercher ». **Attendu** : le navigateur s'ouvre sur la recherche (en français, pas traduite) ; la barre dit que PhilCut guette le dossier Téléchargements pendant 15 minutes.
+2. **Téléchargement** : sur le site, écouter puis télécharger un son. **Attendu** : quelques secondes après la fin du téléchargement, « ✓ « … » ajouté à votre bibliothèque » ; le son est dans « Ma bibliothèque », nommé d'après le fichier, avec les mots de la recherche.
+3. **Kaamelott (fspot)** : « Extraits de films et séries : Kaamelott (fspot) » ; taper une réplique, « Chercher ». **Attendu** : le site s'ouvre sur son accueil et la réplique est copiée ; Ctrl+V dans la recherche du site ; l'extrait téléchargé (MP4 ou MP3) arrive dans la bibliothèque.
+4. **Case « Ajouter tout seul ce que je télécharge »** décochée : rien n'est ajouté, « Importer le clip téléchargé… » reste possible. Le choix est retenu.
+5. **Table de sons** : dans « Ma bibliothèque », un clic sur un son l'écoute ; « ▶ Écouter » aussi pour un clip vidéo.
+6. **Raccourcir** : « Raccourcir… » (bouton ou clic droit) : Début, Fin, « ▶ Écouter ce morceau », OK : le tampon ne garde que ce morceau, sa durée est mise à jour.
+
 ## T33 — 0.9.5 : retirer le fond d'une image
 
 1. **Goodie** : genre « Image ou logo », « Image… » et choisir un JPG (logo sur fond blanc). **Attendu** : PhilCut signale qu'il n'a pas de fond transparent et propose de le retirer ; l'aperçu du Goodie montre bien le rectangle blanc avant.

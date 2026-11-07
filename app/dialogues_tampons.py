@@ -1,11 +1,11 @@
 """Fenêtre « Tampons vidéo » : ma bibliothèque (aperçus animés, recherche, insertion à la tête de lecture), tampons
 maison fabriqués sur ce poste, et recherche de clips libres en ligne (Wikimedia Commons, Pixabay, Pexels)."""
-import os, tempfile, urllib.request
+import os, tempfile, time, urllib.request
 
 from PySide6.QtCore import Qt, QSize, QTimer, QUrl
 from PySide6.QtGui import QIcon, QPixmap, QImage, QDesktopServices
 from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QWidget, QListWidget, QListWidgetItem, QLabel, QLineEdit,
-                               QPushButton, QComboBox, QMessageBox, QFileDialog, QInputDialog, QDialogButtonBox, QFormLayout)
+                               QPushButton, QComboBox, QMessageBox, QFileDialog, QInputDialog, QDialogButtonBox, QFormLayout, QCheckBox)
 
 from . import tampons as T, theme
 from .langue import _
@@ -85,6 +85,8 @@ class DialogueTampons(QDialog):
         self.liste = self._liste_icones()
         self.liste.currentItemChanged.connect(lambda *_a: self._choisi())
         self.liste.itemDoubleClicked.connect(lambda _i: self.inserer())
+        # comme une table de sons : un clic sur un son, on l'entend
+        self.liste.itemClicked.connect(lambda it: self.ecouter() if (it.data(Qt.UserRole) or {}).get("genre") == "son" else None)
         self.liste.setContextMenuPolicy(Qt.CustomContextMenu)
         self.liste.customContextMenuRequested.connect(self._menu)
         corps.addWidget(self.liste, 3)
@@ -104,6 +106,15 @@ class DialogueTampons(QDialog):
         self.b_inserer.setProperty("primaire", True)
         self.b_inserer.clicked.connect(self.inserer)
         droite.addWidget(self.b_inserer)
+        he = QHBoxLayout()
+        b = QPushButton("▶ " + _("Écouter"))
+        b.setToolTip(_("Un clic sur un son l'écoute aussi"))
+        b.clicked.connect(self.ecouter)
+        he.addWidget(b)
+        b = QPushButton(_("Raccourcir…"))
+        b.clicked.connect(self.raccourcir)
+        he.addWidget(b)
+        droite.addLayout(he)
         hb = QHBoxLayout()
         b = QPushButton(_("Renommer, mots-clefs…"))
         b.clicked.connect(self.renommer)
@@ -160,6 +171,11 @@ class DialogueTampons(QDialog):
         if e.get("page"):
             lignes.append(f"<a href='{e['page']}'>{_('Page d’origine')}</a>")
         self.infos.setText("<br>".join(lignes))
+        if e.get("genre") == "son":                       # comme une table de sons : un clic, on entend
+            self._frames = []
+            from .icones import icone
+            self.apercu.setPixmap(icone("musique", theme.COULEURS["accent"], 96).pixmap(96, 96))
+            return
         self._preparer_images(T.chemin(self.params, e), e.get("duree") or 2)
 
     def _preparer_images(self, video, duree):
@@ -212,8 +228,8 @@ class DialogueTampons(QDialog):
         z = tl.zone_valide() if hasattr(tl, "zone_valide") else None
         c = self.ed.projet.clip_a((z[0] + z[1]) / 2, "video") if z else None
         if not z or not c:
-            QMessageBox.information(self, _("Tampons vidéo"), _("Choisissez d'abord une partie de la vidéo : glissez sur la règle des temps "
-                                                               "(au-dessus des pistes), elle apparaît en jaune."))
+            QMessageBox.information(self, _("Tampons vidéo"), _("Choisissez d'abord une partie de la vidéo : double-clic sur la règle des temps "
+                                                               "(au-dessus des pistes) au début, puis à la fin ; elle apparaît en jaune."))
             return
         med = self.ed.projet.media(c["media"]) or {}
         a = max(z[0], c["debut"])
@@ -254,6 +270,8 @@ class DialogueTampons(QDialog):
         self.liste.setCurrentItem(it)
         m = QMenu(self)
         m.addAction(_("Insérer à la tête de lecture"), self.inserer)
+        m.addAction("▶ " + _("Écouter"), self.ecouter)
+        m.addAction(_("Raccourcir…"), self.raccourcir)
         m.addAction(_("Renommer, mots-clefs…"), self.renommer)
         m.addAction(_("Retirer"), self.retirer)
         m.exec(self.liste.mapToGlobal(pos))
@@ -336,10 +354,10 @@ class DialogueTampons(QDialog):
         self.source.addItem(_("Wikimedia Commons (libre, sans clef)"), "wikimedia")
         self.source.addItem(_("Pixabay (clef gratuite)"), "pixabay")
         self.source.addItem(_("Pexels (clef gratuite)"), "pexels")
-        for k, (nom, _u) in T.EXTRAITS.items():
-            self.source.addItem(_("Extraits de films : {s} (navigateur)", s=nom), "extrait:" + k)
         for k, (nom, _d) in T.SONS_FILMS.items():
             self.source.addItem(_("Répliques et sons de films : {s} (navigateur)", s=nom), "extrait:" + k)
+        for k, (nom, _u) in T.EXTRAITS.items():
+            self.source.addItem(_("Extraits de films et séries : {s} (navigateur)", s=nom), "extrait:" + k)
         self.source.currentIndexChanged.connect(self._source_changee)
         h.addWidget(self.source)
         self.question = QLineEdit()
@@ -353,11 +371,20 @@ class DialogueTampons(QDialog):
         self.b_importer_web = QPushButton(_("Importer le clip téléchargé…"))
         self.b_importer_web.setToolTip(_("Le clip téléchargé depuis le site (dossier Téléchargements) rejoint votre bibliothèque."))
         self.b_importer_web.clicked.connect(self.importer_telecharge)
-        h.addWidget(self.b_importer_web)
+        h2 = QHBoxLayout()                       # 2e ligne : le champ de recherche garde toute sa largeur
+        h2.addWidget(self.b_importer_web)
+        self.guette = QCheckBox(_("Ajouter tout seul ce que je télécharge"))
+        self.guette.setChecked(self.params.get("tampons_guetter", True) is not False)
+        self.guette.setToolTip(_("Pendant 15 minutes après l'ouverture du site, les sons et clips qui arrivent dans votre dossier "
+                                 "Téléchargements rejoignent votre bibliothèque"))
+        self.guette.toggled.connect(lambda on: self.params.__setitem__("tampons_guetter", on))
+        h2.addWidget(self.guette)
+        h2.addStretch(1)
         self.b_clef = QPushButton(_("Ma clef…"))
         self.b_clef.clicked.connect(self.ma_clef)
         h.addWidget(self.b_clef)
         v.addLayout(h)
+        v.addLayout(h2)
         self.resultats = self._liste_icones()
         self.resultats.currentItemChanged.connect(lambda *_a: self._resultat_choisi())
         self.resultats.itemDoubleClicked.connect(lambda _i: self.ajouter_resultat(True))
@@ -383,16 +410,24 @@ class DialogueTampons(QDialog):
     def _source_changee(self):
         s = self.source.currentData()
         extrait = s.startswith("extrait:")
+        site = s.split(":", 1)[-1]
+        self.question.setPlaceholderText(_("Une réplique ou des mots, en français : c'est pas faux, la voiture, on se calme…")
+                                         if site in T.SANS_TRADUCTION else
+                                         _("Dans votre langue, PhilCut traduit en anglais : applaudissements, explosion, foule, rembobinage…"))
         self.b_clef.setVisible(s != "wikimedia" and not extrait)
         self.b_importer_web.setVisible(extrait)
+        self.guette.setVisible(extrait)
         self.b_ajouter.setVisible(not extrait)
         self.b_ajouter_ins.setVisible(not extrait)
         self.resultats.clear()
         if extrait:
-            for ligne in (_("1. Tapez une réplique ou des mots dans votre langue, puis « Chercher » : PhilCut traduit en anglais et "
-                            "ouvre le site dans votre navigateur."),
-                          _("2. Sur le site, téléchargez l'extrait choisi (bouton de téléchargement du site, quand il existe)."),
-                          _("3. « Importer le clip téléchargé… » : l'extrait rejoint votre bibliothèque, prêt à insérer.")):
+            for ligne in ((_("1. Tapez une réplique ou des mots en français, puis « Chercher » : PhilCut ouvre le site dans votre navigateur.")
+                           if site in T.SANS_TRADUCTION else
+                           _("1. Tapez une réplique ou des mots dans votre langue, puis « Chercher » : PhilCut traduit en anglais et "
+                             "ouvre le site dans votre navigateur.")),
+                          _("2. Sur le site, écoutez et téléchargez l'extrait choisi (bouton de téléchargement du site, quand il existe)."),
+                          _("3. PhilCut guette votre dossier Téléchargements : l'extrait rejoint tout seul votre bibliothèque, prêt à "
+                            "écouter, raccourcir et insérer (sinon « Importer le clip téléchargé… »).")):
                 it = QListWidgetItem(ligne)
                 it.setFlags(Qt.ItemIsEnabled)
                 it.setSizeHint(QSize(900, 34))
@@ -401,7 +436,7 @@ class DialogueTampons(QDialog):
         self.resultats.setGridSize(QSize() if extrait else QSize(212, 150))
         self.resultats.setIconSize(QSize(192, 108))
         self.info_res.setText(_("<b>Extraits protégés par le droit d'auteur.</b> PhilCut ouvre la recherche du site dans votre navigateur ; "
-                                "vous y téléchargez l'extrait vous-même (quand le site le permet), puis « Importer le clip téléchargé ». "
+                                "vous y écoutez et téléchargez l'extrait vous-même (quand le site le permet), il rejoint votre bibliothèque. "
                                 "Une courte citation peut être tolérée, mais une vidéo publiée, surtout monétisée, peut être bloquée "
                                 "ou démonétisée par YouTube : à vos risques.") if extrait else
                               _("Seuls les clips dont la licence autorise une vidéo publiée sont proposés. Les extraits de films ou "
@@ -458,6 +493,10 @@ class DialogueTampons(QDialog):
             site = s.split(":", 1)[1]
             self.etat.setText(_("Ouverture de {s}…", s=T.EXTRAITS[site][0]))
 
+            if site in T.SANS_RECHERCHE:
+                from PySide6.QtWidgets import QApplication
+                QApplication.clipboard().setText(texte)
+
             def ouvrir(r, err):
                 if err or not r:
                     return
@@ -465,7 +504,12 @@ class DialogueTampons(QDialog):
                 import webbrowser                # navigateur par défaut du système (fiable depuis toute version de PhilCut)
                 if not webbrowser.open(url):
                     QDesktopServices.openUrl(QUrl(url))
-                self.etat.setText(_("Recherche ouverte dans le navigateur.") + ("  " + note if note else ""))
+                self.guetter(site)
+                if note:
+                    self.etat.setText(self.etat.text() + "  " + note if self.guette.isChecked() else
+                                      _("Recherche ouverte dans le navigateur.") + "  " + note)
+                elif not self.guette.isChecked():
+                    self.etat.setText(_("Recherche ouverte dans le navigateur."))
             self._lancer(lambda t: self._traduire_extrait(site, texte), None, fin=ouvrir)
             return
         self.resultats.clear()
@@ -475,8 +519,113 @@ class DialogueTampons(QDialog):
     @staticmethod
     def _traduire_extrait(site, texte):
         from . import traduction_recherche as TR
+        if site in T.SANS_TRADUCTION:                   # site en français : on cherche tel quel
+            note = _("« {t} » copié : collez-le dans la recherche du site (Ctrl+V).", t=texte) if site in T.SANS_RECHERCHE else ""
+            return T.url_extrait(site, texte), note
         tr = TR.en_anglais(texte)
         return T.url_extrait(site, tr[0]), TR.message(texte, tr)
+
+    # ---- téléchargements faits dans le navigateur : ils rejoignent la bibliothèque tout seuls
+    def guetter(self, site):
+        if not self.guette.isChecked():
+            return
+        from .session import dossier_systeme
+        self._guet_dossier = dossier_systeme("telechargements")
+        self._guet_site = site
+        self._guet_mots = [m for m in self.question.text().split() if len(m) > 2]
+        if not getattr(self, "_guet_timer", None):
+            self._guet_timer = QTimer(self)
+            self._guet_timer.setInterval(1500)
+            self._guet_timer.timeout.connect(self._guet_tic)
+        if not self._guet_timer.isActive():
+            self._guet_avant = T.etat_dossier(self._guet_dossier)
+            self._guet_prec = dict(self._guet_avant)
+        self._guet_fin = time.monotonic() + 15 * 60
+        self._guet_timer.start()
+        self.etat.setText(_("Recherche ouverte dans le navigateur. PhilCut guette votre dossier Téléchargements pendant 15 minutes : "
+                            "ce que vous téléchargez arrive dans votre bibliothèque."))
+
+    def _guet_tic(self):
+        if time.monotonic() > self._guet_fin:
+            self._guet_timer.stop()
+            return
+        prets, self._guet_prec = T.nouveaux_telecharges(self._guet_dossier, self._guet_avant, self._guet_prec)
+        for p in prets:
+            self._guet_avant[p] = self._guet_prec.get(p)
+            nom = T.nom_depuis_fichier(p)
+            site = (T.EXTRAITS.get(self._guet_site) or T.SONS_FILMS.get(self._guet_site) or (self._guet_site,))[0]
+            self.etat.setText(_("Téléchargement repéré : « {n} »… copie dans la bibliothèque.", n=os.path.basename(p)))
+
+            def fin(e, err, nom=nom):
+                if err:
+                    self.etat.setText("✕ " + str(err))
+                    return
+                self.remplir_biblio(choisir=e["id"])
+                self.etat.setText(_("✓ « {n} » ajouté à votre bibliothèque. Onglet « Ma bibliothèque » : écouter, raccourcir, renommer, insérer.",
+                                    n=nom))
+            self._lancer(lambda t, p=p, nom=nom, site=site: T.ajouter_fichier(self.params, p, nom, self._guet_mots + [site]), None, fin=fin)
+
+    def ecouter(self):
+        e = self._entree()
+        if not e:
+            return
+        if os.environ.get("QT_QPA_PLATFORM") == "offscreen":     # tests automatiques : pas de carte son
+            self.etat.setText(_("▶ Écoute : {n}", n=e["nom"]))
+            return
+        try:
+            from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+        except ImportError:
+            self.etat.setText(_("Ecoute impossible sur ce poste."))
+            return
+        if getattr(self, "lecteur", None) is None:
+            self.lecteur = QMediaPlayer(self)
+            self._sortie_son = QAudioOutput(self)
+            self.lecteur.setAudioOutput(self._sortie_son)
+        self.lecteur.setSource(QUrl.fromLocalFile(T.chemin(self.params, e)))
+        self.lecteur.play()
+        self.etat.setText(_("▶ Écoute : {n}", n=e["nom"]))
+
+    def raccourcir(self):
+        e = self._entree()
+        if not e:
+            return
+        from PySide6.QtWidgets import QDoubleSpinBox
+        d = QDialog(self)
+        d.setWindowTitle(_("Raccourcir « {n} »", n=e["nom"]))
+        f = QFormLayout(d)
+        duree = float(e.get("duree") or 0) or 10.0
+        aide = QLabel(_("Gardez seulement le morceau utile (de … à …). Écoutez avant de garder."))
+        aide.setWordWrap(True)
+        f.addRow(aide)
+        a, b = QDoubleSpinBox(), QDoubleSpinBox()
+        for w, v in ((a, 0.0), (b, duree)):
+            w.setRange(0.0, duree)
+            w.setDecimals(2)
+            w.setSingleStep(0.1)
+            w.setSuffix(" s")
+            w.setValue(v)
+        f.addRow(_("Début"), a)
+        f.addRow(_("Fin"), b)
+        be = QPushButton("▶ " + _("Écouter ce morceau"))
+
+        def ecouter_morceau():
+            self.ecouter()
+            if getattr(self, "lecteur", None) is not None:
+                self.lecteur.setPosition(int(a.value() * 1000))
+                QTimer.singleShot(int(max(0.1, b.value() - a.value()) * 1000), self.lecteur.pause)
+        be.clicked.connect(ecouter_morceau)
+        f.addRow(be)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.accepted.connect(d.accept)
+        bb.rejected.connect(d.reject)
+        f.addRow(bb)
+        if d.exec() and b.value() > a.value():
+            if getattr(self, "lecteur", None) is not None:
+                self.lecteur.stop()
+                self.lecteur.setSource(QUrl())
+            self._lancer(lambda t: T.raccourcir(self.params, e["id"], a.value(), b.value()), _("Raccourci en cours…"),
+                         fin=lambda r, err: (self.etat.setText("✕ " + str(err)) if err else
+                                             (self.remplir_biblio(choisir=e["id"]), self.etat.setText(_("✓ « {n} » raccourci.", n=e["nom"])))))
 
     def importer_telecharge(self):
         from .session import dossier_systeme
