@@ -190,6 +190,12 @@ def diagnostiquer(texte, genre=None, manquantes=None):
                         "réessayez ; sinon réinstallez le moteur, ou passez sur le processeur.")
         actions = [("vcredist", _("Installer Visual C++ (Microsoft)")), ("reinstaller", _("Réinstaller le moteur")),
                    ("processeur", _("Utiliser le processeur à la place"))]
+    elif re.search(r"(_wfopen|fopen|load_param|load_model)[^\n]*(\.param|\.bin)[^\n]*failed", texte) or "dossier « models »" in bas:
+        titre = _("Les modèles du moteur manquent")
+        explication = _("Le moteur démarre mais ne trouve pas ses modèles (dossier « models ») : l'archive installée était "
+                        "incomplète. La carte graphique et le pilote ne sont pas en cause. Réinstallez le moteur : la version "
+                        "corrigée, avec ses modèles, est téléchargée.")
+        actions = [("reinstaller", _("Réinstaller le moteur"))]
     elif code == ARRET_BRUTAL:
         titre = _("Le moteur s'est arrêté d'un coup")
         cartes = cartes_vulkan(texte)

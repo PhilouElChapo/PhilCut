@@ -33,6 +33,14 @@ class Test0910(unittest.TestCase):
         d = D.diagnostiquer("code 3221225781", None, {})                       # cause inconnue : pas de pilote Nvidia
         self.assertNotIn("pilote_nvidia", [a for a, _l in d["actions"]])
 
+    def test_modeles_manquants(self):
+        from app import diagnostic_ia as D
+        t = ("Le moteur s'est arrêté (code 3221226505) : [0 Intel(R) UHD Graphics]  queueC=0[1]\n[1 NVIDIA GeForce RTX 3070 Laptop GPU]  "
+             "queueC=2[8]\n_wfopen C:\\PhilCut\\donnees\\ia\\moteurs\\upscale\\models/realesrgan-x4plus.param failed")
+        d = D.diagnostiquer(t, "upscale")
+        self.assertEqual([a for a, _l in d["actions"]], ["reinstaller"])           # ni carte, ni pilote
+        self.assertNotIn("carte", d["titre"].lower())
+
     def test_imports_d_un_programme_windows(self):
         """Petit programme Windows fabriqué à la main : sa table des imports est lue."""
         from app import diagnostic_ia as D

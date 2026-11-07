@@ -303,8 +303,8 @@ def _lancer_ncnn(genre, args, params, progression, arret, journal, etape):
         lignes = _lancer(genre, args + gpu, progression, arret, journal=journal, etape=etape)
     except ErreurCreatif as err:
         dediee = D.carte_dediee(err.lignes)
-        if dediee is None or dediee == carte:
-            raise
+        if dediee is None or dediee == carte or any("failed" in l and ".param" in l for l in err.lignes):
+            raise                              # modèles absents : changer de carte n'y ferait rien
         _avancer(progression, 0.0, _("La première carte graphique a échoué : nouvel essai sur la carte dédiée…"))
         lignes = _lancer(genre, args + ["-g", str(dediee)], progression, arret, journal=journal, etape=etape + _(" (carte dédiée)"))
         carte = dediee
@@ -326,6 +326,12 @@ def agrandir(video, sortie, facteur=2, debut=0.0, duree=None, ips=30, params=Non
     n = _images_video(video, os.path.join(d, "in"), debut, duree, ips)
     os.makedirs(os.path.join(d, "out"))
     nom = "realesr-animevideov3" if anime else "realesrgan-x4plus"
+    modele = os.path.join(P.dossier_moteur("upscale"), "models", nom + ("-x%d" % int(facteur) if anime else "") + ".param")
+    if not os.path.exists(modele):            # archive sans modèles (publiée ainsi jusqu'à la 0.9.9) : on le dit avant de lancer
+        err = ErreurCreatif(_("Le modèle {n} manque dans le moteur d'agrandissement (dossier « models ») : réinstallez le moteur.", n=os.path.basename(modele)))
+        err.genre = "upscale"
+        shutil.rmtree(d, ignore_errors=True)
+        raise err
     args = ["-i", os.path.join(d, "in"), "-o", os.path.join(d, "out"), "-n", nom, "-s", str(int(facteur) if anime else 4), "-f", "png"]
     _lancer_ncnn("upscale", args, params, progression, arret, journal="agrandissement", etape=_("Agrandissement des images"))
     if not anime and facteur != 4:

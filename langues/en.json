@@ -5420,5 +5420,8 @@
  "✕ Synchronisation avec {l} impossible : {e}. Nouvel essai dans une minute.": "✕ Sync with {l} impossible: {e}. Trying again in a minute.",
  "✓ Synchronisation avec {l} : {r} reçu(s), {e} envoyé(s).": "✓ Sync with {l}: {r} received, {e} sent.",
  "Synchronisation remise à plus tard : rien n'a été reçu ni envoyé.": "Sync postponed: nothing was received or sent.",
- "Réglages repris de « {p} ».": "Settings taken from « {p} »."
+ "Réglages repris de « {p} ».": "Settings taken from « {p} ».",
+ "Le modèle {n} manque dans le moteur d'agrandissement (dossier « models ») : réinstallez le moteur.": "The model {n} is missing from the upscaling engine (« models » folder): reinstall the engine.",
+ "Les modèles du moteur manquent": "The engine's models are missing",
+ "Le moteur démarre mais ne trouve pas ses modèles (dossier « models ») : l'archive installée était incomplète. La carte graphique et le pilote ne sont pas en cause. Réinstallez le moteur : la version corrigée, avec ses modèles, est téléchargée.": "The engine starts but cannot find its models (« models » folder): the installed archive was incomplete. The graphics card and driver are not the cause. Reinstall the engine: the corrected version, with its models, is downloaded."
 }

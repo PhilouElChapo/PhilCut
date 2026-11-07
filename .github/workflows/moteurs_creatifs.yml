@@ -61,8 +61,8 @@ jobs:
             Copy-Item "brut\${{ needs.catalogue.outputs.sd_win_vulkan }}" dist\philcut-sd-vulkan-windows-x64.zip
           }
           if ("${{ needs.catalogue.outputs.esrgan_win }}") {
-            gh release download "${{ needs.catalogue.outputs.esrgan_tag }}" -R xinntao/Real-ESRGAN-ncnn-vulkan -p "${{ needs.catalogue.outputs.esrgan_win }}" -D brut
-            Copy-Item "brut\${{ needs.catalogue.outputs.esrgan_win }}" dist\philcut-esrgan-windows-x64.zip
+            gh release download "${{ needs.catalogue.outputs.esrgan_tag }}" -R xinntao/Real-ESRGAN -p "${{ needs.catalogue.outputs.esrgan_win }}" -D brut
+            python outils_dev/moteurs_creatifs.py repaquer_esrgan "brut\${{ needs.catalogue.outputs.esrgan_win }}" dist\philcut-esrgan-windows-x64.zip
           }
           if ("${{ needs.catalogue.outputs.rife_win }}") {
             gh release download "${{ needs.catalogue.outputs.rife_tag }}" -R nihui/rife-ncnn-vulkan -p "${{ needs.catalogue.outputs.rife_win }}" -D brut
@@ -148,8 +148,8 @@ jobs:
           tar czf dist/philcut-sd-linux-x64.tar.gz -C pack sd
           tar czf dist/philcut-ace-linux-x64.tar.gz -C pack ace
           if [ -n "${{ needs.catalogue.outputs.esrgan_linux }}" ]; then
-            gh release download "${{ needs.catalogue.outputs.esrgan_tag }}" -R xinntao/Real-ESRGAN-ncnn-vulkan -p "${{ needs.catalogue.outputs.esrgan_linux }}" -D brut
-            cp "brut/${{ needs.catalogue.outputs.esrgan_linux }}" dist/philcut-esrgan-linux-x64.zip
+            gh release download "${{ needs.catalogue.outputs.esrgan_tag }}" -R xinntao/Real-ESRGAN -p "${{ needs.catalogue.outputs.esrgan_linux }}" -D brut
+            python outils_dev/moteurs_creatifs.py repaquer_esrgan "brut/${{ needs.catalogue.outputs.esrgan_linux }}" dist/philcut-esrgan-linux-x64.zip
           fi
           if [ -n "${{ needs.catalogue.outputs.rife_linux }}" ]; then
             gh release download "${{ needs.catalogue.outputs.rife_tag }}" -R nihui/rife-ncnn-vulkan -p "${{ needs.catalogue.outputs.rife_linux }}" -D brut

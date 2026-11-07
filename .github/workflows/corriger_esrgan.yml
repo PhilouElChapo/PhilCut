@@ -1,0 +1,42 @@
+# 0.9.10 : l'archive de l'agrandissement IA (Real-ESRGAN) publiée dans « moteurs-ia » n'avait pas ses modèles
+# (« _wfopen models/realesrgan-x4plus.param failed »). Refait les deux archives depuis xinntao/Real-ESRGAN v0.2.5.0
+# (programme + models/), met à jour moteurs-creatifs.json et remplace les fichiers de la release. Une seule fois.
+name: Corriger Real-ESRGAN
+
+on:
+  push:
+    paths:
+      - .github/workflows/corriger_esrgan.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  esrgan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Archives avec les modeles
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p brut dist
+          gh release download v0.2.5.0 -R xinntao/Real-ESRGAN -p "realesrgan-ncnn-vulkan-*-windows.zip" -p "realesrgan-ncnn-vulkan-*-ubuntu.zip" -D brut
+          python outils_dev/moteurs_creatifs.py repaquer_esrgan brut/realesrgan-ncnn-vulkan-*-windows.zip dist/philcut-esrgan-windows-x64.zip
+          python outils_dev/moteurs_creatifs.py repaquer_esrgan brut/realesrgan-ncnn-vulkan-*-ubuntu.zip dist/philcut-esrgan-linux-x64.zip
+          gh release download moteurs-ia -p moteurs-creatifs.json -D dist
+          python outils_dev/moteurs_creatifs.py corriger_catalogue dist
+          python -c "import json; print(json.dumps(json.load(open('dist/moteurs-creatifs.json'))['moteurs']['upscale'], indent=1))"
+      - name: Essai sur Linux (le programme trouve son modele)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq mesa-vulkan-drivers libvulkan1 libgomp1 >/dev/null
+          mkdir -p essai && cd essai && unzip -q ../dist/philcut-esrgan-linux-x64.zip && chmod +x realesrgan-ncnn-vulkan
+          python3 -c "import numpy" 2>/dev/null || pip install -q numpy pillow
+          python3 -c "from PIL import Image; Image.new('RGB', (32, 24), (120, 80, 40)).save('in.png')"
+          ./realesrgan-ncnn-vulkan -i in.png -o out.png -n realesr-animevideov3 -s 2 -f png || echo "::warning::essai Vulkan logiciel impossible sur le serveur (normal sans carte)"
+          test -f models/realesrgan-x4plus.param
+      - name: Publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload moteurs-ia dist/philcut-esrgan-windows-x64.zip dist/philcut-esrgan-linux-x64.zip dist/moteurs-creatifs.json --clobber

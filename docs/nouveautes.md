@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.10 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.11 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.11 : agrandissement IA repare
+- L'archive du moteur d'agrandissement (Real-ESRGAN) etait publiee sans ses modeles ("_wfopen models/realesrgan-x4plus.param failed") : elle est refaite avec ses modeles. Preferences > IA locale > Agrandissement IA > "Reinstaller le moteur" (ou decocher puis recocher) la telecharge.
+- PhilCut verifie la presence du modele avant de lancer, et le diagnostic dit "Les modeles du moteur manquent" (ni la carte graphique ni le pilote ne sont en cause).
 
 ### 0.9.10 : la bonne solution, et la synchronisation des reglages
 - Moteur d'IA qui ne demarre pas (code 3221225781) : PhilCut cherche lui-meme quelle bibliotheque manque et propose la seule bonne solution (Visual C++ de Microsoft, reinstaller le moteur, ou pilote Nvidia seulement si c'est son fichier qui manque).

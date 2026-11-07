@@ -5411,5 +5411,8 @@
  "✕ Synchronisation avec {l} impossible : {e}. Nouvel essai dans une minute.": "✕ Sincronizzazione con {l} impossibile: {e}. Nuovo tentativo tra un minuto.",
  "✓ Synchronisation avec {l} : {r} reçu(s), {e} envoyé(s).": "✓ Sincronizzazione con {l}: {r} ricevuto/i, {e} inviato/i.",
  "Synchronisation remise à plus tard : rien n'a été reçu ni envoyé.": "Sincronizzazione rimandata: niente è stato ricevuto né inviato.",
- "Réglages repris de « {p} ».": "Impostazioni riprese da « {p} »."
+ "Réglages repris de « {p} ».": "Impostazioni riprese da « {p} ».",
+ "Le modèle {n} manque dans le moteur d'agrandissement (dossier « models ») : réinstallez le moteur.": "Manca il modello {n} nel motore di ingrandimento (cartella « models »): reinstalli il motore.",
+ "Les modèles du moteur manquent": "Mancano i modelli del motore",
+ "Le moteur démarre mais ne trouve pas ses modèles (dossier « models ») : l'archive installée était incomplète. La carte graphique et le pilote ne sont pas en cause. Réinstallez le moteur : la version corrigée, avec ses modèles, est téléchargée.": "Il motore parte ma non trova i suoi modelli (cartella « models »): l'archivio installato era incompleto. La scheda grafica e il driver non sono la causa. Reinstalli il motore: viene scaricata la versione corretta, con i suoi modelli."
 }

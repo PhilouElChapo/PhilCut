@@ -30,6 +30,10 @@ def genres_moteur(genre):
 def reinstaller(genre, progression=None, arret=lambda: False):
     """Retire puis retélécharge les moteurs du genre (le modèle, lui, est gardé)."""
     from . import packs_ia as P
+    try:                                       # catalogue à jour : une archive corrigée depuis a une autre empreinte
+        P.manifeste(rafraichir=True)
+    except Exception:      # noqa: BLE001 : hors ligne, la copie locale sert
+        pass
     faits = []
     for g in genres_moteur(genre):
         if not P.moteur_info(g):

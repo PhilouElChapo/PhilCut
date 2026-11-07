@@ -64,7 +64,10 @@ def versions():
     tag, n = _derniere("leejet/stable-diffusion.cpp", {"sd_win": lambda x: "bin-win-cpu-x64" in x or ("win" in x and "avx2" in x and x.endswith(".zip")),
                                                         "sd_win_vulkan": lambda x: "bin-win-vulkan-x64" in x})
     out["sd_tag"], out["sd_win"], out["sd_win_vulkan"] = tag, n["sd_win"], n["sd_win_vulkan"]
-    tag, n = _derniere("xinntao/Real-ESRGAN-ncnn-vulkan", {"esrgan_win": lambda x: x.endswith("windows.zip"), "esrgan_linux": lambda x: x.endswith("ubuntu.zip")})
+    # 0.9.10 : les archives de xinntao/Real-ESRGAN-ncnn-vulkan n'ont PAS les modèles (dossier models/ absent : « _wfopen
+    # models/realesrgan-x4plus.param failed ») ; celles de xinntao/Real-ESRGAN (realesrgan-ncnn-vulkan-AAAAMMJJ-*.zip) les ont
+    tag, n = _derniere("xinntao/Real-ESRGAN", {"esrgan_win": lambda x: x.startswith("realesrgan-ncnn-vulkan") and x.endswith("windows.zip"),
+                                               "esrgan_linux": lambda x: x.startswith("realesrgan-ncnn-vulkan") and x.endswith("ubuntu.zip")})
     out["esrgan_tag"], out["esrgan_win"], out["esrgan_linux"] = tag, n["esrgan_win"], n["esrgan_linux"]
     tag, n = _derniere("nihui/rife-ncnn-vulkan", {"rife_win": lambda x: x.endswith("windows.zip"), "rife_linux": lambda x: x.endswith("ubuntu.zip")})
     out["rife_tag"], out["rife_win"], out["rife_linux"] = tag, n["rife_win"], n["rife_linux"]
@@ -151,6 +154,45 @@ def modeles(sortie):
     return 0
 
 
+def repaquer_esrgan(archive, sortie):
+    """Archive Real-ESRGAN officielle → archive PhilCut : programme, bibliothèques et dossier models/ (obligatoire),
+    sans les images et la vidéo de démonstration."""
+    import zipfile
+    with zipfile.ZipFile(archive) as z, zipfile.ZipFile(sortie, "w", zipfile.ZIP_DEFLATED) as o:
+        noms = [n for n in z.namelist() if not n.endswith("/")]
+        tetes = {n.split("/", 1)[0] for n in noms}
+        prefixe = tetes.pop() + "/" if len(tetes) == 1 and all("/" in n for n in noms) else ""
+        garde = 0
+        for n in noms:
+            rel = n[len(prefixe):]
+            if rel.lower().endswith((".jpg", ".png", ".mp4")):
+                continue
+            info = z.getinfo(n)
+            info.filename = rel
+            o.writestr(info, z.read(n))
+            garde += rel.startswith("models/") and rel.endswith(".param")
+    if not garde:
+        raise SystemExit(f"{archive} : pas de models/*.param, archive refusée")
+    print(f"::notice title=Real-ESRGAN::{sortie} : {garde} modèle(s)")
+    return 0
+
+
+def corriger_catalogue(dossier):
+    """Met à jour les entrées « upscale » de moteurs-creatifs.json (taille, empreinte) d'après les archives du dossier."""
+    p = os.path.join(dossier, "moteurs-creatifs.json")
+    man = json.load(open(p, encoding="utf-8"))
+    for systeme in ("windows", "linux"):
+        f = f"philcut-esrgan-{systeme}-x64.zip"
+        a = os.path.join(dossier, f)
+        if os.path.exists(a):
+            man["moteurs"]["upscale"][systeme] = {"fichier": f, "taille": os.path.getsize(a), "sha256": empreinte(a),
+                                                  "url": f"https://github.com/PhilouElChapo/PhilCut/releases/download/moteurs-ia/{f}"}
+    man["moteurs"]["upscale"]["version"] = "v0.2.5.0"
+    man["date"] = time.strftime("%Y-%m-%d")
+    json.dump(man, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    return 0
+
+
 def assembler(dossier):
     v = json.load(open(os.path.join(dossier, "versions-creatifs.json")))
     man = {"format": 1, "date": time.strftime("%Y-%m-%d"), "depot": "PhilouElChapo/PhilCut", "tag": "moteurs-ia",
@@ -194,5 +236,9 @@ if __name__ == "__main__":
         sys.exit(modeles(sys.argv[2]))
     if cmd == "assembler":
         sys.exit(assembler(sys.argv[2]))
+    if cmd == "repaquer_esrgan":
+        sys.exit(repaquer_esrgan(sys.argv[2], sys.argv[3]))
+    if cmd == "corriger_catalogue":
+        sys.exit(corriger_catalogue(sys.argv[2]))
     print(__doc__)
     sys.exit(2)
