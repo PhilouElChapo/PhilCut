@@ -99,12 +99,52 @@ class DialogueAtelierIA(QDialog):
         self.instrumental = QCheckBox(_("Sans paroles"))
         self.instrumental.setChecked(True)
         hm.addWidget(self.instrumental)
-        self.paroles = QLineEdit()
-        self.paroles.setPlaceholderText(_("Paroles (facultatif ; décochez « Sans paroles »)"))
-        self.paroles.setEnabled(False)
-        self.instrumental.toggled.connect(lambda v: self.paroles.setEnabled(not v))
-        hm.addWidget(self.paroles, 1)
+        from . import paroles as PA
+        self.voix_chant = QComboBox()
+        for k, (lib, _en) in PA.VOIX.items():
+            self.voix_chant.addItem(lib, k)
+        self.voix_chant.setToolTip(_("Qui chante"))
+        hm.addWidget(self.voix_chant)
+        self.langue_chant = QComboBox()
+        for k, lib in PA.LANGUES.items():
+            self.langue_chant.addItem(lib, k)
+        from .langue import LANGUE
+        self.langue_chant.setCurrentIndex(max(0, self.langue_chant.findData(LANGUE)))
+        self.langue_chant.setToolTip(_("Langue des paroles"))
+        hm.addWidget(self.langue_chant)
+        hm.addStretch(1)
+        # paroles : plusieurs lignes, écrites à la main ou par l'IA (thème + début de paroles)
+        self.boite_paroles = QWidget()
+        vp = QVBoxLayout(self.boite_paroles)
+        vp.setContentsMargins(0, 0, 0, 0)
+        self.paroles = QPlainTextEdit()
+        self.paroles.setPlaceholderText(_("Paroles : tapez-les, ou seulement le début, puis « Écrire les paroles par l'IA ». Balises "
+                                          "possibles : [verse] couplet, [chorus] refrain, [bridge], [outro]."))
+        self.paroles.setMaximumHeight(130)
+        vp.addWidget(self.paroles)
+        hpa = QHBoxLayout()
+        self.niveau_paroles = QComboBox()
+        self.niveau_paroles.addItem(_("IA locale (sur ce poste)"), "locale")
+        self.niveau_paroles.addItem(_("IA cloud (votre clef)"), "cloud")
+        self.niveau_paroles.setCurrentIndex(1 if (self.ed.params.get("assistant_niveau") or "") == "cloud" else 0)
+        hpa.addWidget(self.niveau_paroles)
+        self.b_paroles = QPushButton(_("Écrire les paroles par l'IA (thème + début)"))
+        self.b_paroles.setToolTip(_("L'IA écrit des paroles sur le thème de la phrase ci-dessus ; si vous avez tapé un début, elle le "
+                                    "garde et continue. Rien n'est envoyé sans ce clic."))
+        self.b_paroles.clicked.connect(self._ecrire_paroles)
+        hpa.addWidget(self.b_paroles)
+        hpa.addStretch(1)
+        vp.addLayout(hpa)
+        self.boite_paroles.setVisible(False)
+
+        def bascule(sans):
+            self.boite_paroles.setVisible(not sans)
+            self.voix_chant.setEnabled(not sans)
+            self.langue_chant.setEnabled(not sans)
+        self.instrumental.toggled.connect(bascule)
+        bascule(True)
         vd.addWidget(self.boite_musique)
+        vd.addWidget(self.boite_paroles)
         hi = QHBoxLayout()
         self.img_source = QLabel()
         self.img_resultat = QLabel()
@@ -350,8 +390,12 @@ class DialogueAtelierIA(QDialog):
         self._ph = ph
         if e["famille"] == "musique":
             sortie = os.path.join(_dossier_sorties(), f"musique_{horo}.mp3")
-            duree, instr, paroles = self.duree.value(), self.instrumental.isChecked(), self.paroles.text()
-            travail = lambda t: C.musique(ph["en"], sortie, duree, params, instr, paroles, progression=t.avancer, arret=t.arret_demande)
+            duree, instr, paroles = self.duree.value(), self.instrumental.isChecked(), self.paroles.toPlainText()
+            from . import paroles as PA
+            voix_en = PA.VOIX.get(self.voix_chant.currentData(), ("", ""))[1]
+            langue_ch = self.langue_chant.currentData()
+            travail = lambda t: C.musique(ph["en"], sortie, duree, params, instr, paroles, langue=langue_ch, progression=t.avancer,
+                                          arret=t.arret_demande, voix=voix_en)
         elif e["famille"] in ("image", "logo"):
             if not e.get("sans_source") and not self.source:
                 self.info.setText(_("Placez la ligne rouge sur une image du film."))
@@ -509,6 +553,7 @@ class DialogueAtelierIA(QDialog):
             self._action(_("Poser à la ligne rouge"), lambda: self._poser_musique(self.ed.timeline.position))
             self._action(_("Ajouter aux médias seulement"), lambda: (self.ed.importer([self.resultat]),
                                                                     self.info.setText(_("Ajoutée aux médias du projet."))))
+            self._action(_("Ranger dans ma bibliothèque"), self._ranger)
             self._action(_("Recréer (une autre version)"), self.creer)
         else:
             png = moteur.image(self.resultat, 0.5, 360)
@@ -520,7 +565,53 @@ class DialogueAtelierIA(QDialog):
             self._action(_("Poser au-dessus du film"), self._poser_clip)
             self._action(_("Ajouter aux médias seulement"), lambda: (self.ed.importer([self.resultat]),
                                                                     self.info.setText(_("Ajouté aux médias du projet."))))
+            self._action(_("Ranger dans ma bibliothèque"), self._ranger)
             self._action(_("Recréer"), self.creer)
+
+    def _ranger(self):
+        """La création rejoint la bibliothèque (celle des tampons : sons et clips, rangée, synchronisée), avec sa phrase."""
+        from . import tampons as T
+        e = self.effet() or {}
+        r = self.apercu_media.reglages()
+        params, f = self.ed.params, self.resultat
+        nom = f"{e.get('nom', _('Création IA'))} — {time.strftime('%d/%m %H:%M')}"
+        mots = [_("IA"), e.get("nom", ""), e.get("famille", "")]
+        debut, duree = r["src_debut"], r["src_fin"] - r["src_debut"]
+        t = Tache(lambda tache: T.ajouter_fichier(params, f, nom, [m for m in mots if m], debut=debut, duree=duree), _("Bibliothèque"))
+        self._tache_ranger = t
+        t.fini.connect(lambda res, err: self.info.setText(("✕ " + str(err)) if err else
+                                                          _("✓ Rangé dans votre bibliothèque (Montage › Tampons vidéo › Ma bibliothèque) : « {n} ».",
+                                                            n=nom)), Qt.QueuedConnection)
+        t.start()
+
+    def _ecrire_paroles(self):
+        from . import paroles as PA
+        theme = self.prompt.toPlainText().strip()
+        debut = self.paroles.toPlainText()
+        niveau = self.niveau_paroles.currentData()
+        if niveau == "cloud":
+            from . import ia
+            if not ia.confirmer_cout(self, self.ed.params, 1500, 0, _("Paroles de chanson")):
+                return
+        args = (theme, debut, self.langue_chant.currentData(), self.voix_chant.currentData(), self.duree.value(), self.ed.params, niveau)
+        self.b_paroles.setEnabled(False)
+        self.info.setText(_("L'IA écrit les paroles…") + (" " + _("(IA locale : démarrage du modèle, une à plusieurs minutes)")
+                                                          if niveau == "locale" else ""))
+        t = Tache(lambda tache: PA.ecrire(*args), _("Paroles"))
+        self._tache_paroles = t
+
+        def fin(r, err):
+            try:
+                self.b_paroles.setEnabled(True)
+                if err:
+                    self.info.setText(_("✕ Paroles non écrites : {e}", e=str(err)[:300]))
+                    return
+                self.paroles.setPlainText(r)
+                self.info.setText(_("Paroles écrites : relisez-les, modifiez-les si besoin, puis « Créer »."))
+            except RuntimeError:
+                pass
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
 
     def _poser_musique(self, debut=0.0):
         r = self.apercu_media.reglages()

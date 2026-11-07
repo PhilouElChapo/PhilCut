@@ -38,6 +38,7 @@ class DialogueTampons(QDialog):
         self._page_biblio()
         self._page_maison()
         self._page_en_ligne()
+        self._page_ia()
         self.onglets.setCurrentIndex(onglet)
         self.etat = QLabel("")
         self.etat.setWordWrap(True)
@@ -366,6 +367,116 @@ class DialogueTampons(QDialog):
         m.exec(self.liste.mapToGlobal(pos))
 
     # ------------------------------------------------------------------ tampons maison
+    # ------------------------------------------------------------------ tampons créés par l'IA (0.9.18)
+    def _page_ia(self):
+        from . import bruitages as B, tampons_ia as TI
+        w = QWidget()
+        h = QHBoxLayout(w)
+        g = QVBoxLayout()
+        aide = QLabel(_("Petites animations créées par l'IA : une image dessinée, du mouvement, un texte qui claque, des bruitages et "
+                        "une phrase dite avec un style de voix. Choisissez un modèle, modifiez-le, puis « Créer » : il rejoint votre "
+                        "bibliothèque."))
+        aide.setWordWrap(True)
+        g.addWidget(aide)
+        self.liste_ia = QListWidget()
+        for k, m in TI.MODELES.items():
+            it = QListWidgetItem(m[0])
+            it.setData(Qt.UserRole, k)
+            self.liste_ia.addItem(it)
+        self.liste_ia.currentItemChanged.connect(lambda *_a: self._modele_ia())
+        g.addWidget(self.liste_ia, 1)
+        h.addLayout(g, 1)
+        f = QFormLayout()
+        self.ia_nom = QLineEdit()
+        f.addRow(_("Nom"), self.ia_nom)
+        from PySide6.QtWidgets import QPlainTextEdit, QDoubleSpinBox
+        self.ia_consigne = QPlainTextEdit()
+        self.ia_consigne.setMaximumHeight(80)
+        self.ia_consigne.setToolTip(_("Ce que l'IA dessine (en anglais, la langue que les moteurs comprennent ; le français est traduit)"))
+        f.addRow(_("Image (phrase pour l'IA)"), self.ia_consigne)
+        self.ia_mouvement = QComboBox()
+        for k, lib in TI.MOUVEMENTS.items():
+            self.ia_mouvement.addItem(lib, k)
+        f.addRow(_("Mouvement"), self.ia_mouvement)
+        self.ia_texte = QLineEdit()
+        self.ia_texte.setPlaceholderText(_("Facultatif : BOUM !, VICTOIRE !…"))
+        f.addRow(_("Texte à l'image"), self.ia_texte)
+        self.ia_phrase = QLineEdit()
+        self.ia_phrase.setPlaceholderText(_("Facultatif : la phrase dite (voix de synthèse de ce poste)"))
+        f.addRow(_("Phrase dite"), self.ia_phrase)
+        self.ia_voix = QComboBox()
+        for k, lib in TI.STYLES_VOIX.items():
+            self.ia_voix.addItem(lib, k)
+        f.addRow(_("Style de voix"), self.ia_voix)
+        hb = QHBoxLayout()
+        self.ia_b1, self.ia_b2 = QComboBox(), QComboBox()
+        for cb in (self.ia_b1, self.ia_b2):
+            cb.addItem(_("(aucun)"), "")
+            for k, (nom, *_r) in B.SONS.items():
+                cb.addItem(nom, k)
+            hb.addWidget(cb)
+        f.addRow(_("Bruitages"), hb)
+        self.ia_duree = QDoubleSpinBox()
+        self.ia_duree.setRange(1.5, 8.0)
+        self.ia_duree.setSuffix(" s")
+        f.addRow(_("Durée"), self.ia_duree)
+        self.ia_niveau = QComboBox()
+        self.ia_niveau.addItem(_("Image par l'IA locale (sur ce poste, gratuit)"), "locale")
+        self.ia_niveau.addItem(_("Image par l'IA cloud (Gemini, votre clef, payant)"), "cloud")
+        f.addRow(_("Dessin"), self.ia_niveau)
+        b = QPushButton(_("Créer ce tampon"))
+        b.setProperty("primaire", True)
+        b.clicked.connect(self.creer_ia)
+        f.addRow(b)
+        d = QWidget()
+        d.setLayout(f)
+        h.addWidget(d, 2)
+        self.onglets.addTab(w, _("Tampons IA"))
+        self.liste_ia.setCurrentRow(0)
+
+    def _modele_ia(self):
+        from . import tampons_ia as TI
+        it = self.liste_ia.currentItem()
+        if not it:
+            return
+        nom, consigne, mouv, bruits, phrase, texte, voix, duree = TI.MODELES[it.data(Qt.UserRole)]
+        self.ia_nom.setText(nom)
+        self.ia_consigne.setPlainText(consigne)
+        self.ia_mouvement.setCurrentIndex(max(0, self.ia_mouvement.findData(mouv)))
+        self.ia_texte.setText(texte)
+        self.ia_phrase.setText(phrase)
+        self.ia_voix.setCurrentIndex(max(0, self.ia_voix.findData(voix)))
+        for cb, b in zip((self.ia_b1, self.ia_b2), list(bruits) + ["", ""]):
+            cb.setCurrentIndex(max(0, cb.findData(b)))
+        self.ia_duree.setValue(duree)
+
+    def reglages_ia(self):
+        return {"nom": self.ia_nom.text().strip() or _("Tampon IA"), "consigne": self.ia_consigne.toPlainText().strip(),
+                "mouvement": self.ia_mouvement.currentData(), "texte": self.ia_texte.text().strip(), "phrase": self.ia_phrase.text().strip(),
+                "voix": self.ia_voix.currentData(), "bruitages": [b for b in (self.ia_b1.currentData(), self.ia_b2.currentData()) if b],
+                "duree": self.ia_duree.value()}
+
+    def creer_ia(self):
+        from . import tampons_ia as TI, traduction_recherche as TR
+        r = self.reglages_ia()
+        niveau = self.ia_niveau.currentData()
+        if niveau == "cloud":
+            from . import ia
+            if not ia.confirmer_cout(self, self.params, 200, 1, _("Image du tampon « {n} »", n=r["nom"])):
+                return
+        L, H = self.format
+
+        def travail(t):
+            ph = TR.phrase_en_anglais(r["consigne"])
+            r2 = dict(r, consigne=ph[0] or r["consigne"])
+            return TI.creer(self.params, r2, L=L // 2 * 2 if L <= 1280 else 1280, H=(H * (1280 / L) if L > 1280 else H) // 2 * 2,
+                            niveau=niveau, progression=t.avancer, arret=t.arret_demande)
+        self._lancer(travail, _("Création du tampon « {n} » par l'IA…", n=r["nom"]),
+                     fin=lambda e, err: (self.etat.setText("✕ " + str(err)[:300]) if err else
+                                         (self.remplir_biblio(choisir=e["id"]), self.onglets.setCurrentIndex(0),
+                                          self.etat.setText(_("✓ « {n} » créé et rangé dans votre bibliothèque : double-clic pour le "
+                                                              "mettre dans le film.", n=e["nom"])))))
+
     def _page_maison(self):
         w = QWidget()
         v = QVBoxLayout(w)

@@ -89,10 +89,26 @@ class TestFenetresAviation(unittest.TestCase):
         self.assertEqual(d.reglages()["croisiere_ft"], 6000)
         t = DialogueTrajet(None, 0, 60, {"etapes": et})
         self.assertEqual(len(t.etapes()), 2)
-        t.liste_ad.setCurrentIndex(t.liste_ad.findData("LFKC"))
+        t.cherche_ad.setText("LFKC")                                   # 0.9.18 : recherche par code, nom ou ville
+        self.assertGreaterEqual(t.resultats_ad.count(), 1)
         t._ajouter_ad()
         self.assertEqual(t.etapes()[-1]["code"], "LFKC")
         self.assertIn("NM", t.resume.text())
+        self.assertEqual(len(t.carte.etapes), 3)                       # les étapes sont sur la carte
+        from app import carte_osm as K
+        x, y = K.vers_pixels(43.548, 6.954, 9)
+        la, lo = K.vers_degres(x, y, 9)
+        self.assertAlmostEqual(la, 43.548, places=4)
+        self.assertAlmostEqual(lo, 6.954, places=4)
+        from app import aerodromes as AD
+        self.assertEqual(AD.chercher("cannes")[0][0], "LFMD")
+        csv_ = ('"id","ident","type","name","latitude_deg","longitude_deg","elevation_ft","continent","iso_country","iso_region",'
+                '"municipality","scheduled_service","icao_code","iata_code","gps_code","local_code"\n'
+                '1,"LFMF","small_airport","Fayence-Tourrettes",43.6106,6.7028,750,"EU","FR","FR-U","Fayence","no","LFMF","","LFMF",""\n'
+                '2,"FR-0001","closed","Ancien terrain",44,5,0,"EU","FR","FR-U","","no","","","",""\n')
+        lus = AD.lire_csv(csv_)
+        self.assertEqual(len(lus), 1)
+        self.assertEqual(lus[0][:4], ["LFMF", "Fayence-Tourrettes", "Fayence", "FR"])
         m = DialogueManche(None, 0, 60, {"vent_kt": 8})
         self.assertEqual(m.options()["vent_kt"], 8)
         m.minut.stop()

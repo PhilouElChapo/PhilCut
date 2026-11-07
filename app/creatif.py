@@ -216,18 +216,19 @@ STYLES_MUSIQUE = [
 ]
 
 
-def musique(style, sortie, duree=60.0, params=None, instrumental=True, paroles="", langue="fr", bpm=0, progression=None, arret=lambda: False):
+def musique(style, sortie, duree=60.0, params=None, instrumental=True, paroles="", langue="fr", bpm=0, progression=None, arret=lambda: False,
+            voix=""):
     """Un morceau (MP3) d'environ `duree` secondes dans le style donné (phrase libre ou clef de STYLES_MUSIQUE)."""
     cle, m, e = modele_pour("musique", params)
     genre_gpu = m.get("moteur_gpu", "musique_gpu")
     try:
         return _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, progression, arret, cle, m, e,
-                        _moteur("musique", genre_gpu, params, progression))
+                        _moteur("musique", genre_gpu, params, progression), voix)
     except ErreurCreatif as err:
         if not _repli_processeur(err, "musique", genre_gpu, params, progression):
             raise
     return _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, progression, arret, cle, m, e,
-                    _moteur("musique", genre_gpu, params, progression))
+                    _moteur("musique", genre_gpu, params, progression), voix)
 
 
 def _repli_processeur(err, genre_moteur, genre_gpu, params, progression=None):
@@ -244,8 +245,10 @@ def _repli_processeur(err, genre_moteur, genre_gpu, params, progression=None):
     return True
 
 
-def _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, progression, arret, cle, m, e, genre):
+def _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, progression, arret, cle, m, e, genre, voix=""):
     caption = dict((k, c) for k, _n, c in STYLES_MUSIQUE).get(style, style)
+    if voix and not instrumental and voix.lower() not in caption.lower():         # qui chante : « female vocals »…
+        caption = f"{caption}, {voix}"
     d = tempfile.mkdtemp(prefix="philcut-ace-")
     roles = e.get("roles") or {}
     req = {"caption": caption, "lyrics": "[Instrumental]" if instrumental or not paroles.strip() else paroles.strip(),

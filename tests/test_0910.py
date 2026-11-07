@@ -149,6 +149,34 @@ class Test0910(unittest.TestCase):
         self.assertEqual(fait, [2])
         d.deleteLater()
 
+    def test_tampon_ia_et_paroles(self):
+        from app import paroles as PA, tampons_ia as TI, tampons as T, moteur
+        from app.config import Parametres
+        from PySide6.QtGui import QImage, QColor
+        self.assertIn("female vocals", PA.VOIX["femme"][1])
+        p = PA.nettoyer("Couplet:\nJe marche au soleil\nRefrain\nLa la la", "Je marche au soleil")
+        self.assertTrue(p.startswith("[verse]"))
+        self.assertIn("[chorus]", p)
+        self.assertIn("Commence EXACTEMENT", PA.demande("été", "Je marche au soleil"))
+        vrai = TI.image
+
+        def faux(consigne, chemin, L, H, params, niveau="locale", progression=None, arret=None):
+            q = QImage(320, 180, QImage.Format_RGB32)
+            q.fill(QColor("#3366aa"))
+            q.save(chemin)
+            return chemin
+        TI.image = faux
+        try:
+            pa = Parametres()
+            m = TI.MODELES["boum_bd"]
+            e = TI.creer(pa, {"nom": "Boum essai", "consigne": m[1], "mouvement": m[2], "bruitages": m[3], "phrase": "", "texte": m[5],
+                              "voix": m[6], "duree": 2.0}, L=320, H=180)
+        finally:
+            TI.image = vrai
+        f = moteur.sonder(T.chemin(pa, e))
+        self.assertAlmostEqual(float(f.get("duree") or 0), 2.0, delta=0.2)
+        T.retirer(pa, e["id"])
+
 
 if __name__ == "__main__":
     unittest.main()

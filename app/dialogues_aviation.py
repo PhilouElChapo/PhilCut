@@ -4,7 +4,7 @@ from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import QColor, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFormLayout,
                                QGridLayout, QGroupBox, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QListWidget, QListWidgetItem,
-                               QPushButton, QSpinBox, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+                               QMessageBox, QPushButton, QSpinBox, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
 from . import aviation as A, goodies as GO, theme
 from .langue import _
@@ -167,26 +167,46 @@ class DialogueTrajet(QDialog):
     def __init__(self, parent, debut, fin, options=None, avec_mini=True):
         super().__init__(parent)
         self.setWindowTitle(_("Trajet : carte animée et mini-carte"))
-        self.resize(820, 600)
+        self.resize(1180, 720)
         opts = dict(options or {})
         v = QVBoxLayout(self)
-        aide = QLabel(_("Ajoutez les étapes dans l'ordre (aérodromes de la liste, ou un point dont vous donnez les coordonnées). "
-                        "Pendant la vidéo, le trait se dessine et l'avion avance au prorata des distances."))
+        aide = QLabel(_("Ajoutez les étapes dans l'ordre : cherchez un aérodrome (code OACI, nom ou ville), reprenez un de vos points, "
+                        "ou double-cliquez sur la carte. Pendant la vidéo, le trait se dessine et l'avion avance au prorata des distances."))
         aide.setWordWrap(True)
         v.addWidget(aide)
         h = QHBoxLayout()
         g = QVBoxLayout()
+        from . import aerodromes as AD
+        self._AD = AD
         ha = QHBoxLayout()
-        self.liste_ad = QComboBox()
-        self.liste_ad.setEditable(True)
-        self.liste_ad.setInsertPolicy(QComboBox.NoInsert)
-        for code, nom, la, lo in A.AERODROMES:
-            self.liste_ad.addItem(f"{code} {nom}", code)
-        ha.addWidget(self.liste_ad, 1)
+        self.cherche_ad = QLineEdit()
+        self.cherche_ad.setPlaceholderText(_("Chercher un aérodrome : LFMD, Cannes, Fayence…"))
+        self.cherche_ad.setClearButtonEnabled(True)
+        self.cherche_ad.textChanged.connect(self._chercher_ad)
+        self.cherche_ad.returnPressed.connect(self._ajouter_ad)
+        ha.addWidget(self.cherche_ad, 1)
         b = QPushButton(_("Ajouter"))
         b.clicked.connect(self._ajouter_ad)
         ha.addWidget(b)
         g.addLayout(ha)
+        self.resultats_ad = QListWidget()
+        self.resultats_ad.setMaximumHeight(110)
+        self.resultats_ad.itemDoubleClicked.connect(lambda _it: self._ajouter_ad())
+        self.resultats_ad.hide()
+        g.addWidget(self.resultats_ad)
+        self.b_monde = QPushButton(_("Télécharger tous les aérodromes du monde (OurAirports, libre, environ 12 Mo)"))
+        self.b_monde.setToolTip(_("Plus de 40 000 aérodromes, altisurfaces, hydrobases et héliports ; gardés sur ce poste"))
+        self.b_monde.clicked.connect(self._telecharger_monde)
+        self.b_monde.setVisible(not AD.installe())
+        g.addWidget(self.b_monde)
+        hm_ = QHBoxLayout()
+        self.mes_points = QComboBox()
+        self._remplir_points()
+        hm_.addWidget(self.mes_points, 1)
+        bmp = QPushButton(_("Ajouter ce point"))
+        bmp.clicked.connect(self._ajouter_mon_point)
+        hm_.addWidget(bmp)
+        g.addLayout(hm_)
         hp = QHBoxLayout()
         self.nom = QLineEdit()
         self.nom.setPlaceholderText(_("Nom du point"))
@@ -195,7 +215,7 @@ class DialogueTrajet(QDialog):
         hp.addWidget(self.nom, 1)
         hp.addWidget(self.lat)
         hp.addWidget(self.lon)
-        bp = QPushButton(_("Ajouter ce point"))
+        bp = QPushButton(_("Ajouter ces coordonnées"))
         bp.clicked.connect(self._ajouter_point)
         hp.addWidget(bp)
         g.addLayout(hp)
@@ -234,10 +254,17 @@ class DialogueTrajet(QDialog):
         fo.addRow(_("Moment"), hm)
         g.addLayout(fo)
         h.addLayout(g, 1)
+        from PySide6.QtWidgets import QTabWidget
+        from .carte_osm import CarteOSM
+        self.onglets_carte = QTabWidget()
+        self.carte = CarteOSM()
+        self.carte.point_demande.connect(self._point_carte)
+        self.onglets_carte.addTab(self.carte, _("Carte (double-clic : poser un point)"))
         self.vue = QLabel()
-        self.vue.setFixedSize(300, 300)
+        self.vue.setMinimumSize(300, 300)
         self.vue.setAlignment(Qt.AlignCenter)
-        h.addWidget(self.vue)
+        self.onglets_carte.addTab(self.vue, _("Aperçu de l'animation"))
+        h.addWidget(self.onglets_carte, 1)
         v.addLayout(h, 1)
         self.resume = QLabel("")
         v.addWidget(self.resume)
@@ -248,23 +275,90 @@ class DialogueTrajet(QDialog):
         for e in opts.get("etapes") or []:
             self._ajouter(e)
         self._apercu()
+        if self.etapes():
+            QTimer.singleShot(0, lambda: self.carte.centrer(self.etapes()))
 
     def _ajouter(self, e):
         it = QListWidgetItem(f"{e.get('nom', '?')}  ({e['lat']:.3f}, {e['lon']:.3f})")
         it.setData(Qt.UserRole, dict(e))
         self.liste.addItem(it)
 
+    def _chercher_ad(self, texte):
+        self.resultats_ad.clear()
+        res = self._AD.chercher(texte, 40, "FR") if len(texte.strip()) >= 2 else []
+        for a in res:
+            it = QListWidgetItem(self._AD.libelle(a))
+            it.setData(Qt.UserRole, a)
+            self.resultats_ad.addItem(it)
+        self.resultats_ad.setVisible(bool(res))
+        if res:
+            self.resultats_ad.setCurrentRow(0)
+
     def _ajouter_ad(self):
-        texte = self.liste_ad.currentText().strip()
-        code = texte.split()[0] if texte else ""
-        e = A.aerodrome(code)
-        if e:
-            self._ajouter(e)
+        it = self.resultats_ad.currentItem()
+        if it is None:
+            return
+        self._ajouter(self._AD.etape(it.data(Qt.UserRole)))
+        self.cherche_ad.clear()
+        self._apercu()
+        self.carte.centrer(self.etapes())
+
+    def _telecharger_monde(self):
+        from .taches import Tache
+        self.b_monde.setEnabled(False)
+        self.b_monde.setText(_("Téléchargement des aérodromes…"))
+        t = Tache(lambda tache: self._AD.telecharger(progression=lambda f: tache.avancer(f), arret=tache.arret_demande), _("Aérodromes"))
+        self._tache_ad = t
+        t.progression.connect(lambda f, _x: self.b_monde.setText(_("Téléchargement des aérodromes : {p} %", p=int(f * 100))), Qt.QueuedConnection)
+
+        def fin(n, err):
+            try:
+                if err:
+                    self.b_monde.setEnabled(True)
+                    self.b_monde.setText(_("✕ Téléchargement impossible : {e}. Réessayer", e=str(err)[:120]))
+                    return
+                self.b_monde.hide()
+                self.resume.setText(_("✓ {n} aérodromes disponibles : cherchez par code, nom ou ville.", n=n))
+                self._chercher_ad(self.cherche_ad.text())
+            except RuntimeError:
+                pass
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
+
+    def _remplir_points(self):
+        self.mes_points.clear()
+        pts = self._AD.mes_points(getattr(self.parent(), "params", None))
+        if not pts:
+            self.mes_points.addItem(_("Mes points : aucun (double-cliquez sur la carte pour en créer)"), None)
+        for p_ in pts:
+            self.mes_points.addItem(f"{p_['nom']}  ({p_['lat']:.4f}, {p_['lon']:.4f})", p_)
+
+    def _ajouter_mon_point(self):
+        p_ = self.mes_points.currentData()
+        if p_:
+            self._ajouter(dict(p_))
             self._apercu()
+            self.carte.centrer(self.etapes())
+
+    def _point_carte(self, lat, lon):
+        """Double-clic sur la carte : un point à cet endroit, nommé par vous, gardé dans « Mes points » si vous voulez."""
+        from PySide6.QtWidgets import QInputDialog
+        nom, ok = QInputDialog.getText(self, _("Nouveau point"), _("Nom du point ({a:.4f}, {o:.4f}) :", a=lat, o=lon),
+                                       text=_("Point {n}", n=self.liste.count() + 1))
+        if not ok:
+            return
+        nom = nom.strip() or _("Point {n}", n=self.liste.count() + 1)
+        self._ajouter({"nom": nom, "lat": round(lat, 5), "lon": round(lon, 5)})
+        if QMessageBox.question(self, _("Mes points"), _("Garder « {n} » dans vos points, pour vos prochains trajets (et vos autres "
+                                                          "postes) ?", n=nom)) == QMessageBox.Yes:
+            self._AD.enregistrer_point(getattr(self.parent(), "params", None), nom, lat, lon)
+            self._remplir_points()
+        self._apercu()
 
     def _ajouter_point(self):
         self._ajouter({"nom": self.nom.text().strip() or _("Point {n}", n=self.liste.count() + 1), "lat": self.lat.value(), "lon": self.lon.value()})
         self._apercu()
+        self.carte.centrer(self.etapes())
 
     def _retirer(self):
         r = self.liste.currentRow()
@@ -287,6 +381,9 @@ class DialogueTrajet(QDialog):
         return {"etapes": self.etapes(), "fond": self.fond.currentData(), "attente": self.attente.value()}
 
     def _apercu(self, *_a):
+        if hasattr(self, "carte"):
+            self.carte.etapes = self.etapes()
+            self.carte.update()
         g = {"genre": "carte_trajet", "debut": 0, "fin": 10, "options": self.options()}
         img = GO.image(g, 6.0, 300)
         self.vue.setPixmap(QPixmap.fromImage(img))

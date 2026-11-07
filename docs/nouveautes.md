@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.17 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.18 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.18
+- Musique IA avec paroles : qui chante (femme, homme, duo, choeur, enfant, rap), langue des paroles, paroles sur plusieurs lignes, et "Ecrire les paroles par l'IA" (locale ou cloud) a partir du theme et du debut que vous avez tape.
+- "Ranger dans ma bibliotheque" : musiques et clips crees rejoignent la bibliotheque (celle des tampons : rangee, synchronisee).
+- Tampons IA (Montage > Tampons video > Tampons IA) : 12 modeles preremplis (fusee cartoon, BOUM bande dessinee, soucoupe volante, robot, chat surpris, trophee, jackpot, eureka, hyperespace, dodo, "quelques heures plus tard", alerte) : image dessinee par l'IA (locale ou cloud), mouvement, texte qui claque, bruitages et phrase dite avec un style de voix (robot, aigue, grave, radio, echo). Tout est modifiable.
+- Trajet : vraie carte OpenStreetMap (glisser, molette, double-clic pour poser un point), recherche d'aerodrome par code, nom ou ville, telechargement de tous les aerodromes du monde (OurAirports, libre), et "Mes points" gardes et synchronises.
 
 ### 0.9.17
 - Medias du projet plus compacts, avec une vraie vignette : image du film, l'image elle-meme, et pour un son sa pochette (image integree au MP3, FLAC, M4A) ou sa forme d'onde dessinee, avec la duree et un badge "IA" pour ce que PhilCut a cree.

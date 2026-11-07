@@ -413,7 +413,7 @@ class Test080(unittest.TestCase):
             g.write(T.credit({"titre": "Applause", "auteur": "Jane Doe", "licence": "CC BY 4.0", "source": "wikimedia", "page": "https://x"}) + "\n")
         from app.dialogues_tampons import DialogueTampons
         dl = DialogueTampons(ed)
-        self.assertEqual(dl.onglets.count(), 3)
+        self.assertEqual(dl.onglets.count(), 4)                         # 0.9.18 : + Tampons IA
         items = [dl.liste.item(i) for i in range(dl.liste.count()) if dl.liste.item(i).data(0x0100)]
         dl.liste.setCurrentItem([i for i in items if i.data(0x0100)["id"] == e["id"]][0])
         app.processEvents()
