@@ -95,9 +95,9 @@ class Test095(unittest.TestCase):
 
     def test_sources_francaises_et_guet_des_telechargements(self):
         from app import tampons as T
-        u = T.url_extrait("zonesons", "c'est pas faux")
-        self.assertIn("site%3Azonesons.com", u)
-        self.assertIn("pas+faux", u)                                    # recherche en français, sans traduction
+        u = T.url_extrait("voicy", "c'est pas faux")
+        self.assertIn("site%3Avoicy.network", u)
+        self.assertNotIn("zonesons", T.SONS_FILMS)                      # ZoneSons retiré (0.9.7)
         self.assertEqual(T.url_extrait("kaamelott", "c'est pas faux"), "https://kaamelott.fspot.org/")
         self.assertIn("kaamelott", T.SANS_RECHERCHE)
         d = tempfile.mkdtemp()
@@ -138,7 +138,7 @@ class Test095(unittest.TestCase):
         dl = DialogueTampons(ed, 2)
         pa = ed.params
         dl.show()
-        i = dl.source.findData("extrait:zonesons")
+        i = dl.source.findData("extrait:voicy")
         self.assertGreaterEqual(i, 0)
         dl.source.setCurrentIndex(i)
         self.assertIn("français", dl.question.placeholderText())
@@ -150,7 +150,7 @@ class Test095(unittest.TestCase):
         S.dossier_systeme = lambda quoi: d if quoi == "telechargements" else vrai(quoi)
         try:
             dl.question.setText("pas faux")
-            dl.guetter("zonesons")
+            dl.guetter("voicy")
             m = commun.musique_test(d, "pas_faux.mp3", duree=1)
             t0 = time.time()
             while time.time() - t0 < 15 and not any(e["nom"] == "Pas faux" for e in T.charger(pa)):
@@ -160,7 +160,7 @@ class Test095(unittest.TestCase):
             S.dossier_systeme = vrai
         e = next(e for e in T.charger(pa) if e["nom"] == "Pas faux")
         self.assertEqual(e["genre"], "son")
-        self.assertIn("ZoneSons (films français)", e["mots"])
+        self.assertIn("Voicy", e["mots"])
         # un clic sur un son l'écoute
         for _i in range(20):
             app.processEvents()
@@ -172,6 +172,108 @@ class Test095(unittest.TestCase):
         dl.liste.itemClicked.emit(it)
         self.assertEqual(ecoutes, [e["id"]])                            # …un clic sur un son l'écoute
         T.retirer(pa, e["id"])
+        dl.reject()
+        ed.projet.modifie = False
+        f.hide()
+        f.deleteLater()
+
+    def test_videos_en_ligne(self):
+        """0.9.7 : yt-dlp (résultats, morceau, crédit) et Internet Archive, sans réseau (réponses simulées)."""
+        from app import videos_en_ligne as VL, tampons as T
+        self.assertIn("70 ans après la mort", VL.LEGAL)
+        self.assertEqual(T.lire_temps("1:23.5"), 83.5)
+        self.assertEqual(T.lire_temps("1:02:03"), 3723)
+        self.assertIsNone(T.lire_temps("abc"))
+        vus = {}
+        vrai = VL._lancer_ytdlp
+
+        def faux(args, progression=None, arret=lambda: False, delai=0):
+            vus.setdefault("appels", []).append(args)
+            if "--flat-playlist" in args:
+                return ['{"title": "Classic trailer", "channel": "Archive", "duration": 125, "id": "abc123"}', "bruit"]
+            d = args[args.index("-o") + 1].rsplit(os.sep, 1)[0]
+            f = commun.video_test(d, "Classic_trailer_abc123.mp4", duree=2)
+            if progression:
+                progression(0.5, "[download]  50.0% of 2MiB")
+            return [f]
+        VL._lancer_ytdlp = faux
+        try:
+            r = VL.chercher_youtube("classic trailer")
+            self.assertEqual(r[0]["page"], "https://www.youtube.com/watch?v=abc123")
+            self.assertEqual(r[0]["duree"], 125)
+            f = VL.telecharger(r[0]["page"], tempfile.mkdtemp(), debut=3, fin=8)
+            self.assertTrue(os.path.exists(f))
+            args = vus["appels"][-1]
+            self.assertIn("*3.00-8.00", args)                           # seulement le morceau
+            self.assertIn("--ffmpeg-location", [a for a in args] + ["--ffmpeg-location"])
+        finally:
+            VL._lancer_ytdlp = vrai
+        # Internet Archive : réponse simulée
+        import io, json as J, urllib.request as U
+        vrai_open = U.urlopen
+
+        class Rep(io.BytesIO):
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *a):
+                return False
+        U.urlopen = lambda req, timeout=0: Rep(J.dumps({"response": {"docs": [{"identifier": "film_1940", "title": "Film 1940",
+                                                                                 "year": 1940, "creator": "Studio"}]}}).encode())
+        try:
+            res = VL.chercher_archive("rocket")
+        finally:
+            U.urlopen = vrai_open
+        self.assertEqual(res[0]["page"], "https://archive.org/details/film_1940")
+        self.assertEqual(res[0]["source"], "archive")
+
+    def test_fenetre_videos_en_ligne(self):
+        from app.config import Parametres
+        pa = Parametres()
+        pa["bienvenue_vue"] = True
+        pa["maj_auto"] = False
+        pa["synchro"] = False
+        pa["synchro_secrets"] = False
+        pa.enregistrer()
+        from app.fenetre import Fenetre
+        from app import tampons as T, videos_en_ligne as VL
+        from app.dialogues_tampons import DialogueTampons
+        f = Fenetre()
+        f.show()
+        ed = f.nouveau_projet("16:9")
+        ed.params["ytdlp_accord"] = True
+        dl = DialogueTampons(ed, 2)
+        dl.show()
+        dl.source.setCurrentIndex(dl.source.findData("ytdlp"))
+        self.assertTrue(dl.ligne_morceau.isVisible())
+        self.assertIn("70 ans", dl.info_res.text())
+        r = {"titre": "Bande annonce ancienne", "auteur": "Chaîne libre", "duree": 900, "page": "https://www.youtube.com/watch?v=abc123",
+             "source": "youtube", "licence": "Creative Commons Attribution"}
+        dl._resultats_recus([r], None)
+        dl.resultats.setCurrentRow(0)
+        self.assertIn("Creative Commons", dl.resultats.item(0).text())
+        dl.ajouter_resultat(False)
+        self.assertIn("morceau", dl.etat.text())                        # vidéo de 15 min : il faut dire quel morceau
+        vrai_tel, vrai_inst = VL.telecharger, VL.ytdlp_installe
+        VL.ytdlp_installe = lambda: True
+        VL.telecharger = lambda url, d, audio=False, a=None, b=None, progression=None, arret=None: commun.video_test(d, "extrait.mp4", duree=2)
+        dl.morceau_de.setText("1:00")
+        dl.morceau_a.setText("1:05")
+        avant = {e["id"] for e in T.charger(ed.params)}
+        try:
+            dl.ajouter_resultat(False)
+            t0 = time.time()
+            while time.time() - t0 < 20 and not ({e["id"] for e in T.charger(ed.params)} - avant):
+                app.processEvents()
+                time.sleep(0.05)
+        finally:
+            VL.telecharger, VL.ytdlp_installe = vrai_tel, vrai_inst
+        e = next(e for e in T.charger(ed.params) if e["id"] not in avant)
+        self.assertEqual(e["page"], r["page"])
+        self.assertEqual(e["licence"], "Creative Commons Attribution")
+        self.assertEqual(e["source"], "youtube")
+        self.assertIn("YouTube", T.credit(e))                            # crédit ajouté à la publication
+        T.retirer(ed.params, e["id"])
         dl.reject()
         ed.projet.modifie = False
         f.hide()

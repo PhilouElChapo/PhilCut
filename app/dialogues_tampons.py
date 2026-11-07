@@ -354,6 +354,8 @@ class DialogueTampons(QDialog):
         self.source.addItem(_("Wikimedia Commons (libre, sans clef)"), "wikimedia")
         self.source.addItem(_("Pixabay (clef gratuite)"), "pixabay")
         self.source.addItem(_("Pexels (clef gratuite)"), "pexels")
+        self.source.addItem(_("Films du domaine public : Internet Archive"), "archive")
+        self.source.addItem(_("Vidéos en ligne : YouTube et autres, par yt-dlp (à vos risques)"), "ytdlp")
         for k, (nom, _d) in T.SONS_FILMS.items():
             self.source.addItem(_("Répliques et sons de films : {s} (navigateur)", s=nom), "extrait:" + k)
         for k, (nom, _u) in T.EXTRAITS.items():
@@ -373,6 +375,27 @@ class DialogueTampons(QDialog):
         self.b_importer_web.clicked.connect(self.importer_telecharge)
         h2 = QHBoxLayout()                       # 2e ligne : le champ de recherche garde toute sa largeur
         h2.addWidget(self.b_importer_web)
+        # morceau à garder (vidéos longues : on ne télécharge que lui)
+        self.ligne_morceau = QWidget()
+        hm = QHBoxLayout(self.ligne_morceau)
+        hm.setContentsMargins(0, 0, 0, 0)
+        hm.addWidget(QLabel(_("Morceau à garder : de")))
+        self.morceau_de = QLineEdit()
+        self.morceau_de.setPlaceholderText("0:00")
+        self.morceau_de.setMaximumWidth(80)
+        hm.addWidget(self.morceau_de)
+        hm.addWidget(QLabel(_("à")))
+        self.morceau_a = QLineEdit()
+        self.morceau_a.setPlaceholderText("0:10")
+        self.morceau_a.setMaximumWidth(80)
+        hm.addWidget(self.morceau_a)
+        self.audio_seul = QCheckBox(_("Le son seulement"))
+        hm.addWidget(self.audio_seul)
+        self.b_maj_ytdlp = QPushButton(_("Mettre à jour yt-dlp"))
+        self.b_maj_ytdlp.setToolTip(_("Les sites changent souvent : si un téléchargement échoue, mettez yt-dlp à jour"))
+        self.b_maj_ytdlp.clicked.connect(self.maj_ytdlp)
+        hm.addWidget(self.b_maj_ytdlp)
+        h2.addWidget(self.ligne_morceau)
         self.guette = QCheckBox(_("Ajouter tout seul ce que je télécharge"))
         self.guette.setChecked(self.params.get("tampons_guetter", True) is not False)
         self.guette.setToolTip(_("Pendant 15 minutes après l'ouverture du site, les sons et clips qui arrivent dans votre dossier "
@@ -413,10 +436,15 @@ class DialogueTampons(QDialog):
         site = s.split(":", 1)[-1]
         self.question.setPlaceholderText(_("Une réplique ou des mots, en français : c'est pas faux, la voiture, on se calme…")
                                          if site in T.SANS_TRADUCTION else
+                                         _("Adresse d'une vidéo (https://…) ou mots à chercher sur YouTube") if s == "ytdlp" else
                                          _("Dans votre langue, PhilCut traduit en anglais : applaudissements, explosion, foule, rembobinage…"))
         self.b_clef.setVisible(s != "wikimedia" and not extrait)
         self.b_importer_web.setVisible(extrait)
         self.guette.setVisible(extrait)
+        en_ligne = s in ("ytdlp", "archive")
+        self.ligne_morceau.setVisible(en_ligne)
+        self.b_maj_ytdlp.setVisible(s == "ytdlp")
+        self.audio_seul.setVisible(s == "ytdlp")
         self.b_ajouter.setVisible(not extrait)
         self.b_ajouter_ins.setVisible(not extrait)
         self.resultats.clear()
@@ -441,6 +469,13 @@ class DialogueTampons(QDialog):
                                 "ou démonétisée par YouTube : à vos risques.") if extrait else
                               _("Seuls les clips dont la licence autorise une vidéo publiée sont proposés. Les extraits de films ou "
                                 "d'émissions connus ne sont pas libres : ils ne se trouvent pas ici."))
+        if s in ("ytdlp", "archive"):
+            from . import videos_en_ligne as VL
+            self.b_clef.hide()
+            self.resultats.setViewMode(QListWidget.ListMode)
+            self.resultats.setGridSize(QSize())
+            self.info_res.setText(VL.LEGAL)
+            return
         if extrait:
             return
         if s != "wikimedia":
@@ -511,6 +546,22 @@ class DialogueTampons(QDialog):
                 elif not self.guette.isChecked():
                     self.etat.setText(_("Recherche ouverte dans le navigateur."))
             self._lancer(lambda t: self._traduire_extrait(site, texte), None, fin=ouvrir)
+            return
+        if s == "ytdlp":
+            if not self._ytdlp_pret():
+                return
+            from . import videos_en_ligne as VL
+            self.resultats.clear()
+            url = texte.startswith(("http://", "https://"))
+            self.etat.setText(_("Lecture de la vidéo…") if url else _("Recherche sur YouTube…"))
+            self._lancer(lambda t: [dict(VL.infos(texte), source="youtube")] if url else VL.chercher_youtube(texte), None, fin=self._resultats_recus)
+            return
+        if s == "archive":
+            from . import videos_en_ligne as VL
+            from . import traduction_recherche as TR
+            self.resultats.clear()
+            self.etat.setText(_("Recherche sur Internet Archive…"))
+            self._lancer(lambda t: VL.chercher_archive(TR.en_anglais(texte)[0]), None, fin=self._resultats_recus)
             return
         self.resultats.clear()
         self.etat.setText(_("Recherche sur {s}…", s=T.SOURCES[s]))
@@ -669,8 +720,18 @@ class DialogueTampons(QDialog):
         self.resultats.clear()
         note = (res[0].get("_note") if res else "") or ""
         res = [r for r in res if not r.get("_vide")]
+        en_ligne = self.source.currentData() in ("ytdlp", "archive")
         for r in res:
-            it = QListWidgetItem(f"{r['titre'][:40]}\n{r.get('duree', 0):.0f} s · {r.get('auteur', '')[:24]}")
+            if en_ligne:                      # liste : titre entier, chaîne, durée, année, licence (Creative Commons mise en avant)
+                d = float(r.get("duree") or 0)
+                bouts = [r.get("titre") or "", r.get("auteur") or "", f"{int(d // 60)}:{int(d % 60):02d}" if d else "", r.get("annee") or "",
+                         ("✓ " + r["licence"]) if r.get("licence") else ""]
+                it = QListWidgetItem("  ·  ".join(b for b in bouts if b))
+                it.setData(Qt.UserRole, r)
+                it.setToolTip(r.get("page") or "")
+                self.resultats.addItem(it)
+                continue
+            it = QListWidgetItem(f"{r['titre'][:40]}\n{r.get('duree') or 0:.0f} s · {r.get('auteur', '')[:24]}")
             if r.get("_vignette"):
                 img = QImage(r["_vignette"])
                 if not img.isNull():
@@ -693,6 +754,9 @@ class DialogueTampons(QDialog):
         r = it.data(Qt.UserRole) if it else None
         if not r:
             return
+        if r.get("source") in ("youtube", "archive"):
+            self._ajouter_en_ligne(r, inserer)
+            return
 
         def apres(e=None):
             if inserer and e:
@@ -700,6 +764,99 @@ class DialogueTampons(QDialog):
                 self.accept()
         self._lancer(lambda t: T.telecharger(self.params, r, progression=lambda f: t.avancer(f), arret=t.arret_demande),
                      _("Téléchargement de « {t} »…", t=r["titre"]), fin_entree=apres)
+
+    # ------------------------------------------------------------------ yt-dlp et Internet Archive
+    def _ytdlp_pret(self):
+        """Accord sur ce qui est permis (une fois), puis installation de yt-dlp si besoin."""
+        from . import videos_en_ligne as VL
+        if not self.params.get("ytdlp_accord"):
+            d = QDialog(self)
+            d.setWindowTitle(_("Vidéos en ligne : ce qui est permis"))
+            v = QVBoxLayout(d)
+            l = QLabel(VL.LEGAL)
+            l.setWordWrap(True)
+            l.setTextFormat(Qt.RichText)
+            l.setMinimumWidth(560)
+            v.addWidget(l)
+            c = QCheckBox(VL.CONFIRMATION)
+            c.setStyleSheet("font-weight:600")
+            v.addWidget(c)
+            bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+            bb.button(QDialogButtonBox.Ok).setEnabled(False)
+            c.toggled.connect(bb.button(QDialogButtonBox.Ok).setEnabled)
+            bb.accepted.connect(d.accept)
+            bb.rejected.connect(d.reject)
+            v.addWidget(bb)
+            if not d.exec():
+                return False
+            self.params["ytdlp_accord"] = True
+            self.params.enregistrer()
+        if not VL.ytdlp_installe():
+            if QMessageBox.question(self, _("Installer yt-dlp"), _("yt-dlp, le programme libre qui lit les vidéos en ligne, n'est pas encore sur "
+                                                                  "ce poste. Le télécharger depuis son dépôt officiel (github.com/yt-dlp, "
+                                                                  "environ 18 Mo) ?")) != QMessageBox.Yes:
+                return False
+            self._lancer(lambda t: VL.installer_ytdlp(progression=lambda f: t.avancer(f), arret=t.arret_demande),
+                         _("Installation de yt-dlp…"),
+                         fin=lambda r, err: self.etat.setText("✕ " + str(err) if err else _("✓ yt-dlp installé : relancez la recherche.")))
+            return False
+        return True
+
+    def maj_ytdlp(self):
+        from . import videos_en_ligne as VL
+        if not VL.ytdlp_installe():
+            self._ytdlp_pret()
+            return
+        self._lancer(lambda t: VL.mettre_a_jour_ytdlp(), _("Mise à jour de yt-dlp…"),
+                     fin=lambda r, err: self.etat.setText("✕ " + str(err) if err else _("✓ yt-dlp à jour.")))
+
+    def _ajouter_en_ligne(self, r, inserer):
+        from . import videos_en_ligne as VL
+        a, b = T.lire_temps(self.morceau_de.text()), T.lire_temps(self.morceau_a.text())
+        if b is not None and a is None:
+            a = 0.0
+        duree = float(r.get("duree") or 0)
+        sans_morceau = a is None or b is None
+        if sans_morceau and (duree > 300 or (r.get("source") == "archive" and duree == 0)):
+            self.etat.setText(_("Vidéo longue ({m} min) : indiquez le morceau à garder (de … à …), seul ce morceau est téléchargé.",
+                                m=int(duree // 60) or "?"))
+            self.morceau_de.setFocus()
+            return
+        if a is not None and b is not None and b <= a:
+            self.etat.setText(_("Le morceau doit finir après son début."))
+            return
+        audio = self.audio_seul.isChecked() and r.get("source") == "youtube"
+        params = self.params
+        mots = [m for m in self.question.text().split() if len(m) > 2 and not m.startswith("http")]
+
+        def travail(t):
+            d = tempfile.mkdtemp(prefix="philcut-en-ligne-")
+            if r["source"] == "youtube":
+                f = VL.telecharger(r["page"], d, audio, a, b, progression=t.avancer, arret=t.arret_demande)
+            elif a is not None:
+                from . import moteur
+                url, _taille = VL.fichier_archive(r["ident"])
+                f = os.path.join(d, "extrait.mp4")
+                t.avancer(0.1, _("Lecture du morceau sur archive.org…"))
+                moteur.lancer(["-y", "-ss", f"{a:.2f}", "-i", url, "-t", f"{b - a:.2f}", "-c:v", "libx264", "-preset", "veryfast", "-crf", "20",
+                               "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", f])
+            else:
+                f = VL.telecharger_archive(r["ident"], d, progression=lambda x: t.avancer(x), arret=t.arret_demande)
+            e = T.ajouter_fichier(params, f, (r.get("titre") or "")[:60], mots + [r["source"]])
+            T.modifier(params, e["id"], auteur=r.get("auteur") or "", licence=r.get("licence") or "", page=r.get("page") or "", source=r["source"])
+            import shutil
+            shutil.rmtree(d, ignore_errors=True)
+            e.update(auteur=r.get("auteur") or "", licence=r.get("licence") or "", page=r.get("page") or "")
+            return e
+
+        def apres(e=None):
+            if inserer and e:
+                if e.get("genre") == "son":
+                    self.ed.poser_son(T.chemin(self.params, e), self.ed.timeline.position, e["nom"])
+                else:
+                    self.ed.inserer_tampon(T.chemin(self.params, e), self.ed.timeline.position, e["nom"])
+                self.accept()
+        self._lancer(travail, _("Téléchargement de « {t} »…", t=(r.get("titre") or "")[:50]), fin_entree=apres)
 
     # ------------------------------------------------------------------ tâches de fond
     def _lancer(self, travail, message, apres=None, fin=None, fin_entree=None):

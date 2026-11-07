@@ -157,9 +157,19 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
-## T34 — 0.9.6 : sons et extraits (ZoneSons, Kaamelott, Voicy), table de sons, raccourcir
+## T35 — 0.9.7 : vidéos en ligne (yt-dlp) et films du domaine public (Internet Archive)
 
-1. **ZoneSons** : Montage › Tampons vidéo › Chercher en ligne › « Répliques et sons de films : ZoneSons (films français) ». Taper une réplique en français, « Chercher ». **Attendu** : le navigateur s'ouvre sur la recherche (en français, pas traduite) ; la barre dit que PhilCut guette le dossier Téléchargements pendant 15 minutes.
+1. **Première fois** : Tampons vidéo › Chercher en ligne › « Vidéos en ligne : YouTube et autres, par yt-dlp », taper des mots, « Chercher ». **Attendu** : fenêtre « ce qui est permis » (70 ans après la mort du dernier auteur, licences libres, courte citation) ; OK seulement après avoir coché la confirmation ; puis proposition d'installer yt-dlp (dépôt officiel, environ 18 Mo), avec progression.
+2. **Recherche** : des mots ou une adresse https://… **Attendu** : liste titre · chaîne · durée · licence (« ✓ Creative Commons… » quand c'est indiqué) ; texte « Ce qui est permis » sous la liste.
+3. **Morceau** : vidéo de plus de 5 min sans « de … à … » : PhilCut demande le morceau. Avec « de 1:00 à 1:10 » : seul ce morceau est téléchargé (progression), il arrive dans « Ma bibliothèque » avec auteur, page et licence ; « Le son seulement » donne un son.
+4. **Crédit** : un tampon venu de YouTube posé dans le montage : le crédit (titre, chaîne, page) est ajouté à la description à la publication.
+5. **Mettre à jour yt-dlp** : bouton dans la fenêtre et dans Préférences › IA › Extraits en ligne.
+6. **Internet Archive** : « Films du domaine public : Internet Archive », mots (traduits en anglais), choisir un film, « de 2:00 à 2:15 », « Ajouter » : seul le morceau est lu et rangé (pas tout le film).
+7. **Préférences › IA › Extraits en ligne** : case d'ajout automatique des téléchargements, état de yt-dlp, texte de ce qui est permis, case de confirmation (la décocher : la fenêtre « ce qui est permis » revient au prochain usage).
+
+## T34 — 0.9.6 : sons et extraits (Kaamelott, Voicy), table de sons, raccourcir
+
+1. **Voicy** : Montage › Tampons vidéo › Chercher en ligne › « Répliques et sons de films : Voicy ». Taper une réplique en français, « Chercher ». **Attendu** : le navigateur s'ouvre sur la recherche (en français, pas traduite) ; la barre dit que PhilCut guette le dossier Téléchargements pendant 15 minutes.
 2. **Téléchargement** : sur le site, écouter puis télécharger un son. **Attendu** : quelques secondes après la fin du téléchargement, « ✓ « … » ajouté à votre bibliothèque » ; le son est dans « Ma bibliothèque », nommé d'après le fichier, avec les mots de la recherche.
 3. **Kaamelott (fspot)** : « Extraits de films et séries : Kaamelott (fspot) » ; taper une réplique, « Chercher ». **Attendu** : le site s'ouvre sur son accueil et la réplique est copiée ; Ctrl+V dans la recherche du site ; l'extrait téléchargé (MP4 ou MP3) arrive dans la bibliothèque.
 4. **Case « Ajouter tout seul ce que je télécharge »** décochée : rien n'est ajouté, « Importer le clip téléchargé… » reste possible. Le choix est retenu.

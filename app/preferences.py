@@ -226,7 +226,52 @@ class DialoguePreferences(QDialog):
             f2.addRow(_("Clef {s}", s=T.SOURCES[k]), h)
             self.clefs_banques[k] = champ
         f.addRow(g2)
+        # extraits en ligne : guet des téléchargements, yt-dlp (installé au premier usage), accord sur ce qui est permis
+        from . import videos_en_ligne as VL
+        g3 = QGroupBox(_("Extraits en ligne (sons, films, YouTube)"))
+        f3 = QFormLayout(g3)
+        self.guetter_tel = QCheckBox(_("Ajouter tout seul à la bibliothèque des tampons ce que je télécharge depuis un site ouvert par PhilCut"))
+        self.guetter_tel.setChecked(self.params.get("tampons_guetter", True) is not False)
+        f3.addRow(self.guetter_tel)
+        self.lbl_ytdlp = QLabel(_("yt-dlp installé sur ce poste.") if VL.ytdlp_installe() else
+                                _("yt-dlp pas encore installé : il le sera au premier usage (Tampons vidéo › Vidéos en ligne)."))
+        self.lbl_ytdlp.setWordWrap(True)
+        hy = QHBoxLayout()
+        hy.addWidget(self.lbl_ytdlp, 1)
+        by = QPushButton(_("Mettre à jour yt-dlp") if VL.ytdlp_installe() else _("Installer yt-dlp"))
+        by.clicked.connect(lambda: self._ytdlp(by))
+        hy.addWidget(by)
+        f3.addRow(hy)
+        legal = QLabel(VL.LEGAL)
+        legal.setWordWrap(True)
+        legal.setTextFormat(Qt.RichText)
+        legal.setStyleSheet("color:#999")
+        f3.addRow(legal)
+        self.accord_ytdlp = QCheckBox(VL.CONFIRMATION)
+        self.accord_ytdlp.setChecked(bool(self.params.get("ytdlp_accord")))
+        f3.addRow(self.accord_ytdlp)
+        f.addRow(g3)
         f.addRow(QLabel(_("<span style='color:#999'>L'IA locale (modèles, test du poste, mode poste léger) se règle dans l'onglet « IA locale ».</span>")))
+
+    def _ytdlp(self, bouton):
+        from . import videos_en_ligne as VL
+        from .taches import Tache
+        bouton.setEnabled(False)
+        self.lbl_ytdlp.setText(_("Mise à jour de yt-dlp…") if VL.ytdlp_installe() else _("Installation de yt-dlp…"))
+        t = Tache(lambda tache: VL.mettre_a_jour_ytdlp() if VL.ytdlp_installe() else
+                  VL.installer_ytdlp(progression=lambda f: tache.avancer(f), arret=tache.arret_demande), _("yt-dlp"))
+        self._tache_ytdlp = t
+        t.progression.connect(lambda f, x: self.lbl_ytdlp.setText(_("yt-dlp : {p} %", p=int(f * 100))), Qt.QueuedConnection)
+
+        def fin(r, err):
+            try:
+                bouton.setEnabled(True)
+                bouton.setText(_("Mettre à jour yt-dlp"))
+                self.lbl_ytdlp.setText(("✕ " + str(err)[:200]) if err else _("✓ yt-dlp installé et à jour."))
+            except RuntimeError:
+                pass
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
 
     # ---------------------------------------------------------------- IA locale (portable)
     def _ia_locale(self):
@@ -552,6 +597,8 @@ class DialoguePreferences(QDialog):
         p["chaine_nom"] = self.chaine.text().strip()
         p["langue"] = self.langue.currentData()
         p["machine"] = self.machine.text().strip() or p.get("machine")
+        p["tampons_guetter"] = self.guetter_tel.isChecked()
+        p["ytdlp_accord"] = self.accord_ytdlp.isChecked()
         p["proxys"] = self.proxys.isChecked()
         p["dossier_proxys"] = self.dossier_proxys.text().strip()
         p["ajout_auto"] = self.ajout_auto.isChecked()

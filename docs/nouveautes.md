@@ -4,10 +4,17 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.6 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.7 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.7 : extraits de videos en ligne
+- Tampons > Chercher en ligne > "Videos en ligne : YouTube et autres, par yt-dlp" : une adresse ou des mots, la liste des resultats (titre, chaine, duree, licence Creative Commons mise en avant), puis seul le morceau choisi (de ... a ...) est telecharge, video ou son seulement, et rangé dans la bibliotheque avec son credit.
+- Ce qui est permis, clairement indique (70 ans apres la mort du dernier auteur en France et en Europe, licences libres, courte citation), avec une confirmation la premiere fois. yt-dlp est telecharge au premier usage depuis son depot officiel et se met a jour d'un clic.
+- "Films du domaine public : Internet Archive" : recherche et morceau extrait sans telecharger tout le film.
+- Preferences > IA : groupe "Extraits en ligne" (ajout automatique des telechargements, yt-dlp, ce qui est permis).
+- ZoneSons retire.
 
 ### 0.9.6 : bibliotheque de sons et d'extraits
-- Tampons > Chercher en ligne : ZoneSons (repliques de films francais) et Kaamelott (fspot) ; la recherche reste en francais sur ces sites et sur Voicy (pas de traduction en anglais) ; pour Kaamelott, la replique tapee est copiee, a coller dans la recherche du site.
+- Tampons > Chercher en ligne : Kaamelott (fspot) ; la recherche reste en francais sur ce site et sur Voicy (pas de traduction en anglais) ; pour Kaamelott, la replique tapee est copiee, a coller dans la recherche du site.
 - Ce que vous telechargez depuis le site arrive tout seul dans votre bibliotheque : PhilCut guette le dossier Telechargements pendant 15 minutes (case "Ajouter tout seul ce que je telecharge").
 - Ma bibliotheque : un clic sur un son l'ecoute (table de sons), bouton "Ecouter", "Raccourcir..." (garder seulement de ... a ..., avec ecoute avant).
 

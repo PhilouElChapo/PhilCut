@@ -18,19 +18,19 @@ from .langue import _
 API_COMMONS = "https://commons.wikimedia.org/w/api.php"
 API_PIXABAY = "https://pixabay.com/api/videos/"
 API_PEXELS = "https://api.pexels.com/videos/search"
-SOURCES = {"wikimedia": "Wikimedia Commons", "pixabay": "Pixabay", "pexels": "Pexels"}
+SOURCES = {"wikimedia": "Wikimedia Commons", "pixabay": "Pixabay", "pexels": "Pexels", "youtube": "YouTube", "archive": "Internet Archive"}
 CLEFS = {"pixabay": "pixabay_cle", "pexels": "pexels_cle"}         # identifiants dans le coffre du système
 # extraits de films et de séries (protégés) : recherche ouverte dans le navigateur, téléchargement par l'utilisateur
 EXTRAITS = {"kaamelott": ("Kaamelott (fspot)", "https://kaamelott.fspot.org/"),
             "clipcafe": ("clip.cafe", "https://clip.cafe/s/{q}/"), "yarn": ("Yarn", "https://yarn.co/yarn-find?text={q}"),
             "playphrase": ("PlayPhrase.me", "https://www.playphrase.me/#/search?q={q}&language=en")}
 # répliques et sons de films (audio) : recherche limitée au site, ouverte dans le navigateur
-SONS_FILMS = {"zonesons": ("ZoneSons (films français)", "zonesons.com"), "voicy": ("Voicy", "voicy.network"),
+SONS_FILMS = {"voicy": ("Voicy", "voicy.network"),
               "movie_sounds": ("Movie-sounds.org", "movie-sounds.org"),
               "moviesoundclips": ("MovieSoundClips", "moviesoundclips.net"), "wavsource": ("WavSource", "wavsource.com"),
               "samplefocus": ("Sample Focus", "samplefocus.com"), "quodb": ("QuoDB", "quodb.com")}
 # sites en français : la recherche reste dans la langue tapée (pas de traduction en anglais)
-SANS_TRADUCTION = {"zonesons", "kaamelott", "voicy"}
+SANS_TRADUCTION = {"kaamelott", "voicy"}
 # sites sans adresse de recherche : on ouvre l'accueil et la réplique est copiée, à coller dans leur champ de recherche
 SANS_RECHERCHE = {"kaamelott"}
 EXT_TELECHARGES = (".mp3", ".wav", ".ogg", ".m4a", ".aac", ".flac", ".opus", ".mp4", ".mov", ".m4v", ".mkv", ".webm", ".gif")
@@ -461,7 +461,7 @@ def modifier(params, ident, **champs):
     liste = charger(params)
     for e in liste:
         if e["id"] == ident:
-            e.update({k: v for k, v in champs.items() if k in ("nom", "mots")})
+            e.update({k: v for k, v in champs.items() if k in ("nom", "mots", "auteur", "licence", "page", "source")})
     enregistrer(params, liste)
 
 
@@ -676,6 +676,20 @@ def nouveaux_telecharges(dossier, avant, precedent):
     maintenant = etat_dossier(dossier)
     prets = [p for p, t in maintenant.items() if p not in avant and t > 0 and precedent.get(p) == t]
     return sorted(prets), maintenant
+
+
+def lire_temps(texte):
+    """« 1:23.5 », « 83,5 » ou « 1:02:03 » → secondes ; None si vide ou illisible."""
+    t = (texte or "").strip().replace(",", ".")
+    if not t:
+        return None
+    try:
+        s = 0.0
+        for morceau in t.split(":"):
+            s = s * 60 + float(morceau)
+        return s
+    except ValueError:
+        return None
 
 
 def nom_depuis_fichier(chemin_):
