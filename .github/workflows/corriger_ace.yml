@@ -1,6 +1,6 @@
 # 0.9.12 : le moteur de musique Windows (acestep.cpp) avait été compilé par MinGW au lieu de Visual C++ : il demandait
 # libgomp-1.dll, libgcc_s_seh-1.dll, libstdc++-6.dll et libwinpthread-1.dll, absentes chez l'utilisateur (code
-# 3221225781). Recompile avec cl (Visual C++), bibliothèque C intégrée (MultiThreaded), sans OpenMP ; vérifie qu'aucune
+# 3221225781 ; vcvars64.bat n'était pas à l'endroit attendu sur le serveur). Recompile avec cl (Visual C++), bibliothèque C intégrée (MultiThreaded), sans OpenMP ; vérifie qu'aucune
 # DLL non livrée n'est demandée ; met à jour moteurs-creatifs.json et la release « moteurs-ia ».
 name: Corriger moteur musique
 
@@ -21,6 +21,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Visual C++ (cl dans le PATH, quelle que soit la version de Visual Studio du serveur)
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
       - name: acestep.cpp (processeur, Visual C++)
         shell: cmd
         run: |
@@ -28,7 +32,6 @@ jobs:
           git clone --recursive https://github.com/ServeurpersoCom/acestep.cpp src-ace
           cd src-ace
           git submodule update --init --recursive
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           cmake -S . -B build-cpu -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DGGML_OPENMP=OFF || exit /b 1
           cmake --build build-cpu --target ace-lm ace-synth -j %NUMBER_OF_PROCESSORS% || exit /b 1
           mkdir ..\pack-ace
@@ -53,7 +56,6 @@ jobs:
         shell: cmd
         run: |
           cd src-ace
-          call "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           cmake -S . -B build-vk -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_VULKAN=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DGGML_OPENMP=OFF -DCMAKE_PREFIX_PATH="%VULKAN_SDK%" -DSPIRV-Headers_DIR="%VULKAN_SDK%\share\cmake\SPIRV-Headers" || exit /b 1
           cmake --build build-vk --target ace-lm ace-synth -j %NUMBER_OF_PROCESSORS% || exit /b 1
           mkdir ..\pack-ace-vk

@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.12 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.13 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.13 : test des modeles plus clair
+- "Tester ce modele" efface tout de suite l'ancien resultat : "Test en cours..." avec sa barre d'avancement, puis le nouveau resultat (ou l'ancien remis si le test est arrete). Le cadre d'aide grandit avec son texte, les boutons restent a leur place.
+- Moteur de musique Windows : la fabrication avec Visual C++ est reparee (Visual Studio du serveur trouve automatiquement).
 
 ### 0.9.12 : musique IA reparee
 - Le moteur de musique pour Windows avait ete fabrique avec le mauvais compilateur (MinGW) : il demandait libgomp-1.dll, libgcc_s_seh-1.dll, libstdc++-6.dll et libwinpthread-1.dll, absentes de Windows (code 3221225781). Il est refait avec Visual C++, sans aucune bibliotheque a installer. Preferences > IA locale > Musique > "Reinstaller le moteur".

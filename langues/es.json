@@ -5414,5 +5414,6 @@
  "Réglages repris de « {p} ».": "Ajustes tomados de « {p} ».",
  "Le modèle {n} manque dans le moteur d'agrandissement (dossier « models ») : réinstallez le moteur.": "Falta el modelo {n} en el motor de ampliación (carpeta « models »): reinstale el motor.",
  "Les modèles du moteur manquent": "Faltan los modelos del motor",
- "Le moteur démarre mais ne trouve pas ses modèles (dossier « models ») : l'archive installée était incomplète. La carte graphique et le pilote ne sont pas en cause. Réinstallez le moteur : la version corrigée, avec ses modèles, est téléchargée.": "El motor arranca pero no encuentra sus modelos (carpeta « models »): el archivo instalado estaba incompleto. La tarjeta gráfica y el controlador no son la causa. Reinstale el motor: se descarga la versión corregida, con sus modelos."
+ "Le moteur démarre mais ne trouve pas ses modèles (dossier « models ») : l'archive installée était incomplète. La carte graphique et le pilote ne sont pas en cause. Réinstallez le moteur : la version corrigée, avec ses modèles, est téléchargée.": "El motor arranca pero no encuentra sus modelos (carpeta « models »): el archivo instalado estaba incompleto. La tarjeta gráfica y el controlador no son la causa. Reinstale el motor: se descarga la versión corregida, con sus modelos.",
+ "En attente du test…": "Esperando la prueba…"
 }

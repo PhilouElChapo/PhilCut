@@ -5414,5 +5414,6 @@
  "Réglages repris de « {p} ».": "Einstellungen von « {p} » übernommen.",
  "Le modèle {n} manque dans le moteur d'agrandissement (dossier « models ») : réinstallez le moteur.": "Das Modell {n} fehlt im Vergrößerungsmodul (Ordner « models »): Modul neu installieren.",
  "Les modèles du moteur manquent": "Die Modelle des Moduls fehlen",
- "Le moteur démarre mais ne trouve pas ses modèles (dossier « models ») : l'archive installée était incomplète. La carte graphique et le pilote ne sont pas en cause. Réinstallez le moteur : la version corrigée, avec ses modèles, est téléchargée.": "Das Modul startet, findet aber seine Modelle nicht (Ordner « models »): das installierte Archiv war unvollständig. Grafikkarte und Treiber sind nicht die Ursache. Installieren Sie das Modul neu: die korrigierte Version mit ihren Modellen wird heruntergeladen."
+ "Le moteur démarre mais ne trouve pas ses modèles (dossier « models ») : l'archive installée était incomplète. La carte graphique et le pilote ne sont pas en cause. Réinstallez le moteur : la version corrigée, avec ses modèles, est téléchargée.": "Das Modul startet, findet aber seine Modelle nicht (Ordner « models »): das installierte Archiv war unvollständig. Grafikkarte und Treiber sind nicht die Ursache. Installieren Sie das Modul neu: die korrigierte Version mit ihren Modellen wird heruntergeladen.",
+ "En attente du test…": "Warten auf den Test…"
 }

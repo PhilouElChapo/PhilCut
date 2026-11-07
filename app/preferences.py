@@ -525,6 +525,10 @@ class DialoguePreferences(QDialog):
         self.b_essais_stop.clicked.connect(t.stopper)
         self.essai_etape.setText(_("Préparation du test…"))
         self.essai_etape.show()
+        for g in genres:
+            if g in self.lbl_essais:
+                self.lbl_essais[g].en_cours(_("En attente du test…") if len(genres) > 1 else "")
+        rang = {g: i for i, g in enumerate(genres)}
         self.essai_barre.setValue(0)
         self.essai_barre.show()
 
@@ -535,6 +539,11 @@ class DialoguePreferences(QDialog):
                 self.essai_barre.setFormat(_("{p} % · temps écoulé {t}", p=int(f * 100), t=f"{e // 60}:{e % 60:02d}"))
                 if texte:
                     self.essai_etape.setText(texte)
+                i = min(len(genres) - 1, int(f * len(genres)))           # le modèle testé en ce moment montre son avancement
+                g = genres[i]
+                if g in self.lbl_essais:
+                    sous = texte.split(" : ", 1)[-1] if texte else ""
+                    self.lbl_essais[g].avancer(f * len(genres) - i, sous)
             except RuntimeError:
                 pass
 
@@ -547,6 +556,9 @@ class DialoguePreferences(QDialog):
                 for g, r in (res or {}).items():
                     if g in self.lbl_essais:
                         self.lbl_essais[g].montrer(r)
+                for g in genres:                                   # interrompu : on remet le résultat précédent
+                    if g not in (res or {}) and g in self.lbl_essais:
+                        self.lbl_essais[g].montrer((self.params.get("essais_ia") or {}).get(g))
                 ok = sum(1 for r in (res or {}).values() if r.get("ok"))
                 self.essai_etape.setText(_("Test interrompu : {e}", e=err) if err else
                                          _("Test terminé : {o} modèle(s) sur {n} fonctionnent.", o=ok, n=len(res or {})))
@@ -786,16 +798,53 @@ class ResultatEssai(QWidget):
         self.sous.setWordWrap(True)
         self.sous.setStyleSheet("color:#9aa4b2")
         v.addWidget(self.sous)
+        # test en cours : on le dit tout de suite (l'ancien résultat disparaît), avec sa progression
+        self.barre = QProgressBar()
+        self.barre.setRange(0, 1000)
+        self.barre.setMaximumHeight(12)
+        self.barre.setTextVisible(False)
+        self.barre.hide()
+        v.addWidget(self.barre)
         self.panneau = PanneauDiagnostic(self, params, reessayer=tester)
+        from PySide6.QtWidgets import QSizePolicy
+        self.panneau.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         v.addWidget(self.panneau)
         from . import essai_ia
         self.b_tester = QPushButton(_("Tester ce modèle"))
         self.b_tester.setToolTip(_("Fait un petit travail réel avec ce modèle et chronomètre : {q}", q=essai_ia.ESSAIS.get(genre, "")))
         self.b_tester.clicked.connect(tester)
         v.addLayout(a_gauche(self.b_tester))
+        self.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
+
+    def _relayout(self):
+        """Le cadre grandit ou rétrécit avec son contenu : rien ne s'écrase dans le groupe ni dans la page."""
+        w = self
+        while w is not None:
+            if w.layout() is not None:
+                w.layout().invalidate()
+                w.layout().activate()
+            w.updateGeometry()
+            w = w.parentWidget()
+
+    def en_cours(self, texte=""):
+        self.panneau.hide()
+        self.sous.hide()
+        self.ligne.setStyleSheet("color:#c8ced8;font-weight:600")
+        self.ligne.setText("⏳ " + (texte or _("Test en cours…")))
+        self.barre.setValue(0)
+        self.barre.show()
+        self.b_tester.setEnabled(False)
+        self._relayout()
+
+    def avancer(self, f, texte=""):
+        self.barre.setValue(int(max(0.0, min(1.0, f)) * 1000))
+        if texte:
+            self.ligne.setText("⏳ " + texte)
 
     def montrer(self, r):
         from . import essai_ia
+        self.barre.hide()
+        self.b_tester.setEnabled(True)
         self.ligne.setText(essai_ia.resume(r))
         couleur = "#9aa4b2" if not r else ("#5bd27a" if r.get("ok") else "#ff8a80")
         self.ligne.setStyleSheet(f"color:{couleur};font-weight:600")
@@ -806,6 +855,7 @@ class ResultatEssai(QWidget):
                                  r.get("peripherique") or "")
         else:
             self.panneau.hide()
+        self._relayout()
 
     def setText(self, texte):              # compatibilité : ancien libellé simple
         self.ligne.setText(texte)
