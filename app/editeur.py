@@ -122,7 +122,8 @@ class Bibliotheque(QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setViewMode(QListWidget.IconMode)
-        self.setIconSize(QSize(128, 72))
+        self.setIconSize(QSize(112, 63))                 # plus compact : on voit plus de médias
+        self.setStyleSheet("QListWidget{font-size:11px}")
         self.setResizeMode(QListWidget.Adjust)
         self.setMovement(QListWidget.Static)
         self.setSpacing(6)
@@ -152,11 +153,7 @@ class Bibliotheque(QListWidget):
             a = m.get("ia_locale") or {}
             it = QListWidgetItem(m["nom"] + (f"\n{a['nom']}" if a.get("nom") else ""))
             it.setData(Qt.UserRole, m["id"])
-            px = QPixmap(m["vignettes"]) if m.get("vignettes") and os.path.exists(m["vignettes"]) else QPixmap()
-            if not px.isNull():
-                it.setIcon(QIcon(px.copy(0, 0, min(px.width(), int(px.height() * 16 / 9) if px.height() else px.width()), px.height())))
-            else:
-                it.setIcon(icone({"audio": "musique", "image": "image"}.get(m.get("genre"), "camera"), theme.COULEURS["texte2"], 64))
+            it.setIcon(QIcon(vignette_media(m)))
             res = a.get("resume") or (m.get("analyse") or {}).get("resume") or moteur.resume_fiche(m.get("fiche"))
             if a.get("textes"):
                 res += "\n" + _("Textes lus : {t}", t=", ".join(a["textes"]))
@@ -195,6 +192,90 @@ class Bibliotheque(QListWidget):
             m.addAction(icone("supprimer"), _("Retirer du projet"), lambda: self.retirer.emit(ident))
         m.addAction(icone("ia"), _("Analyser tous les rushes avec l'IA locale"), lambda: self.analyser.emit([]))
         m.exec(self.mapToGlobal(pos))
+
+
+_VIGNETTES = {}
+
+
+def vignette_media(m, L=224, H=126):
+    """Vignette d'un média (0.9.16) : image du film ; l'image elle-même ; pour un son, sa pochette (image intégrée au
+    MP3, FLAC, M4A) sinon sa forme d'onde dessinée, avec la durée et « IA » si PhilCut l'a créé."""
+    from PySide6.QtGui import QColor, QFont, QLinearGradient, QPainter, QPen
+    cle = (m.get("chemin"), m.get("vignettes"), len(m.get("onde") or []))
+    if cle in _VIGNETTES:
+        return _VIGNETTES[cle]
+    px = QPixmap()
+    genre = m.get("genre")
+    if m.get("vignettes") and os.path.exists(m["vignettes"]):
+        brut = QPixmap(m["vignettes"])
+        if not brut.isNull():
+            px = brut.copy(0, 0, min(brut.width(), int(brut.height() * 16 / 9) if brut.height() else brut.width()), brut.height())
+    elif genre == "image" and os.path.exists(m.get("chemin", "")):
+        px = QPixmap(m["chemin"])
+    elif genre == "audio":
+        px = _pochette(m.get("chemin", ""))
+    if not px.isNull():
+        px = px.scaled(L, H, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation)
+        px = px.copy((px.width() - L) // 2, (px.height() - H) // 2, L, H)
+    else:
+        px = QPixmap(L, H)
+        p = QPainter(px)
+        p.setRenderHint(QPainter.Antialiasing)
+        ia = os.path.basename(m.get("chemin", "")).lower().startswith(("musique_", "ia_", "atelier"))
+        g = QLinearGradient(0, 0, L, H)
+        g.setColorAt(0, QColor("#2a2440" if ia else "#1f3038"))
+        g.setColorAt(1, QColor("#16141f" if ia else "#121a1e"))
+        p.fillRect(px.rect(), g)
+        onde = m.get("onde") or []
+        if genre == "audio" and onde:
+            coul = QColor("#a98bff" if ia else "#5fc8c8")
+            p.setPen(QPen(coul, 2))
+            n = len(onde)
+            mx = max(onde) or 1
+            for i in range(0, L, 3):
+                v = float(onde[min(n - 1, int(i * n / L))]) / mx
+                h = max(2, v * H * 0.36)
+                p.drawLine(i, int(H * 0.55 - h), i, int(H * 0.55 + h))
+        else:
+            ic = icone({"audio": "musique", "image": "image"}.get(genre, "camera"), theme.COULEURS["texte2"], 56)
+            p.drawPixmap((L - 56) // 2, (H - 56) // 2, ic.pixmap(56, 56))
+        d = float((m.get("fiche") or {}).get("duree") or 0)
+        f = QFont()
+        f.setPixelSize(16)
+        f.setBold(True)
+        p.setFont(f)
+        if d:
+            p.setPen(QColor("#ffffff"))
+            p.drawText(px.rect().adjusted(0, 0, -8, -6), Qt.AlignRight | Qt.AlignBottom, f"{int(d // 60)}:{int(d % 60):02d}")
+        if ia:
+            p.setBrush(QColor("#8b6cff"))
+            p.setPen(Qt.NoPen)
+            p.drawRoundedRect(8, 8, 34, 22, 6, 6)
+            p.setPen(QColor("#ffffff"))
+            p.drawText(8, 8, 34, 22, Qt.AlignCenter, "IA")
+        p.end()
+    _VIGNETTES[cle] = px
+    return px
+
+
+def _pochette(chemin):
+    """Image intégrée d'un fichier son (pochette d'album), extraite une fois et gardée ; QPixmap vide sinon."""
+    import hashlib
+    from .config import dossier_donnees
+    if not chemin or not os.path.exists(chemin):
+        return QPixmap()
+    d = os.path.join(dossier_donnees(), "pochettes")
+    os.makedirs(d, exist_ok=True)
+    st = os.stat(chemin)
+    f = os.path.join(d, hashlib.md5(f"{chemin}|{st.st_size}|{int(st.st_mtime)}".encode("utf-8", "replace")).hexdigest() + ".jpg")
+    if not os.path.exists(f) and not os.path.exists(f + ".aucune"):
+        try:
+            moteur.lancer(["-y", "-i", chemin, "-an", "-map", "0:v:0?", "-frames:v", "1", "-vf", "scale=320:-2", f])
+        except Exception:      # noqa: BLE001
+            pass
+        if not os.path.exists(f) or os.path.getsize(f) < 200:
+            open(f + ".aucune", "w").close()
+    return QPixmap(f) if os.path.exists(f) else QPixmap()
 
 
 def ia_nom(params):

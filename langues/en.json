@@ -5507,5 +5507,17 @@
  "Regarder": "Watch",
  "Réécouter le morceau": "Listen to the piece again",
  "Ajoutée aux médias du projet.": "Added to the project's media.",
- "Ajouté aux médias du projet.": "Added to the project's media."
+ "Ajouté aux médias du projet.": "Added to the project's media.",
+ "Logo animé, intro, fin (sur ce poste) · plan vidéo (IA cloud)…": "Animated logo, intro, ending (on this computer) · video shot (cloud AI)…",
+ "Logos, intros et fins animés : dessinés sur ce poste, gratuits. Les plans vidéo générés passent par Flow ou Veo (IA cloud, votre compte, prix affiché avant).": "Animated logos, intros and endings: drawn on this computer, free. Generated video shots go through Flow or Veo (cloud AI, your account, price shown first).",
+ "Atelier de logo (sur ce poste) · idées par l'IA cloud…": "Logo workshop (on this computer) · ideas by cloud AI…",
+ "Créer et modifier un logo sur ce poste ; le bouton « Idées par l'IA » demande des propositions à l'IA cloud (votre clef).": "Create and edit a logo on this computer; the « Ideas by AI » button asks the cloud AI for proposals (your key).",
+ "Logo, intro ou miniature par IA locale (sur ce poste, gratuit)…": "Logo, intro or thumbnail by local AI (on this computer, free)…",
+ "Une image dessinée par l'IA de ce poste à partir d'une phrase : rien n'est envoyé, rien n'est payé ; plus lent sans carte graphique.": "An image drawn by this computer's AI from a sentence: nothing is sent, nothing is paid; slower without a graphics card.",
+ "Plan ou effet vidéo par IA locale (sur ce poste)…": "Video shot or effect by local AI (on this computer)…",
+ "Un clip créé par l'IA de ce poste (long : plusieurs minutes), regardé puis posé si vous le gardez.": "A clip created by this computer's AI (long: several minutes), watched then placed if you keep it.",
+ "Vignette YouTube composée (sur ce poste)…": "Composed YouTube thumbnail (on this computer)…",
+ "Zones de couleur, titre, flèche, pastilles, composées sur ce poste ; propositions par l'IA locale ou cloud, au choix.": "Colour zones, title, arrow, badges, composed on this computer; proposals by local or cloud AI, as you choose.",
+ "Image fixe composée à poser dans le film (sur ce poste)…": "Composed still image to place in the film (on this computer)…",
+ "Même fenêtre que la vignette, au format du film, posée au-dessus à la ligne rouge.": "Same window as the thumbnail, in the film's format, placed on top at the red line."
 }

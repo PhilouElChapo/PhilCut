@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.16 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.17 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.17
+- Medias du projet plus compacts, avec une vraie vignette : image du film, l'image elle-meme, et pour un son sa pochette (image integree au MP3, FLAC, M4A) ou sa forme d'onde dessinee, avec la duree et un badge "IA" pour ce que PhilCut a cree.
+- Menu Fabrique : chaque entree dit ou elle travaille ("sur ce poste" ou "IA cloud") ; nouvelles entrees "Logo, intro ou miniature par IA locale" et "Plan ou effet video par IA locale".
 
 ### 0.9.16
 - Atelier IA : une musique ou un clip cree n'est plus pose tout seul. On l'ecoute (ou le regarde) dans la fenetre, on garde le morceau voulu ("Debut ici", "Fin ici", fondus), puis "Poser sous la video", "Poser a la ligne rouge", "Ajouter aux medias seulement" ou "Recreer".

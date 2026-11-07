@@ -214,11 +214,35 @@ class Fenetre(QMainWindow):
         asst.addAction(_("Changer le niveau (sans IA, locale, cloud)…"), lambda: self.preferences("Assistant"))
         asst.addAction(_("Connecter une IA (obtenir et tester ma clef)…"), self.connecter_ia)
         fb = mb.addMenu(_("Fa&brique"))
-        fb.addAction(icone("fabrique"), _("Logo, intro, fin, plan IA…"), self.fabrique, "Ctrl+Shift+F")
-        fb.addAction(_("Atelier de logo (créer, modifier, idées par l'IA)…"), self.atelier_logo)
+        fb.setToolTipsVisible(True)
+
+        def actf(ic, lib, aide, fonction, raccourci=None):
+            a_ = fb.addAction(ic, lib, fonction) if ic is not None else fb.addAction(lib, fonction)
+            if raccourci:
+                a_.setShortcut(raccourci)
+            a_.setToolTip(aide)
+            a_.setStatusTip(aide)
+            return a_
+        actf(icone("fabrique"), _("Logo animé, intro, fin (sur ce poste) · plan vidéo (IA cloud)…"),
+             _("Logos, intros et fins animés : dessinés sur ce poste, gratuits. Les plans vidéo générés passent par Flow ou Veo "
+               "(IA cloud, votre compte, prix affiché avant)."), self.fabrique, "Ctrl+Shift+F")
+        actf(None, _("Atelier de logo (sur ce poste) · idées par l'IA cloud…"),
+             _("Créer et modifier un logo sur ce poste ; le bouton « Idées par l'IA » demande des propositions à l'IA cloud (votre clef)."),
+             self.atelier_logo)
         fb.addSeparator()
-        fb.addAction(icone("image"), _("Vignette YouTube composée (zones, titre, flèche, pastilles)…"), lambda: self._ed(lambda ed: ed.vignette_composee("vignette")))
-        fb.addAction(_("Image fixe composée à poser dans le film…"), lambda: self._ed(lambda ed: ed.vignette_composee("image")))
+        actf(icone("assistant"), _("Logo, intro ou miniature par IA locale (sur ce poste, gratuit)…"),
+             _("Une image dessinée par l'IA de ce poste à partir d'une phrase : rien n'est envoyé, rien n'est payé ; plus lent sans carte graphique."),
+             lambda: self._ed(lambda ed: ed.atelier_ia("logo")))
+        actf(None, _("Plan ou effet vidéo par IA locale (sur ce poste)…"),
+             _("Un clip créé par l'IA de ce poste (long : plusieurs minutes), regardé puis posé si vous le gardez."),
+             lambda: self._ed(lambda ed: ed.atelier_ia("video")))
+        fb.addSeparator()
+        actf(icone("image"), _("Vignette YouTube composée (sur ce poste)…"),
+             _("Zones de couleur, titre, flèche, pastilles, composées sur ce poste ; propositions par l'IA locale ou cloud, au choix."),
+             lambda: self._ed(lambda ed: ed.vignette_composee("vignette")))
+        actf(None, _("Image fixe composée à poser dans le film (sur ce poste)…"),
+             _("Même fenêtre que la vignette, au format du film, posée au-dessus à la ligne rouge."),
+             lambda: self._ed(lambda ed: ed.vignette_composee("image")))
         ou = mb.addMenu(_("&Outils"))
         ou.addAction(_("Publier (YouTube, Instagram, TikTok…)…"), self.publier)
         ou.addAction(icone("nuage"), _("Déposer l'export sur le Drive / NAS…"), self.partager)
