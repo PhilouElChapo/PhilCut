@@ -4,7 +4,7 @@ import os, subprocess, sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QDialog, QTabWidget, QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QComboBox,
-                               QPushButton, QDialogButtonBox, QSpinBox, QFileDialog, QGroupBox, QPlainTextEdit, QMessageBox, QScrollArea)
+                               QPushButton, QDialogButtonBox, QSpinBox, QFileDialog, QGroupBox, QPlainTextEdit, QMessageBox, QScrollArea, QProgressBar)
 
 from . import effets as E, goodies as GO, ia_locale, moteur, packs_ia, theme
 from .config import VERSION, est_portable, dossier_donnees
@@ -257,6 +257,33 @@ class DialoguePreferences(QDialog):
             f.addRow(QLabel(_("Catalogue des modèles injoignable pour l'instant (hors ligne ?). Revenez ici une fois connecté. {e}", e=erreur or "")))
         etat = self.params.get("ia_locale") or {}
         conseil = etat.get("conseil") or ia_locale.modele_conseille(etat.get("materiel") or ia_locale.materiel())
+        from . import essai_ia
+        self.lbl_essais = {}
+        # vérifier que les modèles installés marchent vraiment ici (progression visible, non bloquant)
+        gv = QGroupBox(_("Vérifier les modèles installés"))
+        fv = QVBoxLayout(gv)
+        lv = QLabel(_("Chaque modèle fait un petit travail réel, chronométré : on sait qu'il marche sur ce poste, avec la carte graphique ou le "
+                      "processeur, et en combien de temps. Vous pouvez continuer à travailler pendant le test."))
+        lv.setWordWrap(True)
+        fv.addWidget(lv)
+        self.essai_etape = QLabel("")
+        self.essai_etape.setWordWrap(True)
+        self.essai_barre = QProgressBar()
+        self.essai_barre.setRange(0, 1000)
+        self.essai_etape.hide()
+        self.essai_barre.hide()
+        fv.addWidget(self.essai_etape)
+        fv.addWidget(self.essai_barre)
+        hv = QHBoxLayout()
+        self.b_essais = QPushButton(_("Tester les modèles installés"))
+        self.b_essais.clicked.connect(lambda: self._tester_modeles(None))
+        self.b_essais_stop = QPushButton(_("Arrêter le test"))
+        self.b_essais_stop.hide()
+        hv.addWidget(self.b_essais)
+        hv.addWidget(self.b_essais_stop)
+        hv.addStretch(1)
+        fv.addLayout(hv)
+        f.addRow(gv)
         for genre, titre in packs_ia.GENRES.items():
             items = {k: m for k, m in catalogue.items() if m.get("genre") == genre}
             if not items:
@@ -286,6 +313,22 @@ class DialoguePreferences(QDialog):
                     ln = QLabel(f"<span style='color:#999'>{note.strip()}</span>")
                     ln.setWordWrap(True)
                     fg.addRow(ln)
+            if genre in essai_ia.ESSAIS and any(packs_ia.installe(k) for k in items):
+                if genre in ("image", "video"):
+                    av = QLabel(_("Sans carte graphique dédiée, les images et vidéos IA sont lentes et le résultat reste faible."))
+                    av.setWordWrap(True)
+                    av.setStyleSheet("color:#e0a040")
+                    fg.addRow(av)
+                le = QLabel(essai_ia.resume((self.params.get("essais_ia") or {}).get(genre)))
+                le.setWordWrap(True)
+                self.lbl_essais[genre] = le
+                bt1 = QPushButton(_("Tester"))
+                bt1.setToolTip(_("Fait un petit travail réel avec ce modèle et chronomètre : {q}", q=essai_ia.ESSAIS[genre]))
+                bt1.clicked.connect(lambda _c=False, g=genre: self._tester_modeles([g]))
+                hl = QHBoxLayout()
+                hl.addWidget(le, 1)
+                hl.addWidget(bt1)
+                fg.addRow(hl)
             f.addRow(g)
         h = QHBoxLayout()
         self.lbl_place = QLabel(_("Place utilisée par l'IA locale : {t}", t=packs_ia.taille_texte(packs_ia.taille_dossier()) if packs_ia.installes() else "0"))
@@ -327,6 +370,63 @@ class DialoguePreferences(QDialog):
             self.clef_claude.setText(self.params.get("clef_claude", ""))
             self.clef_gemini.setText(self.params.get("clef_gemini", ""))
             self.clef_fal.setText(self.params.get("clef_fal", ""))
+
+    def _tester_modeles(self, genres=None):
+        from . import essai_ia
+        from .taches import Tache
+        import time as _t
+        self.params["ia_gpu"] = self.ia_gpu.isChecked()
+        genres = genres or essai_ia.genres_installes(self.params)
+        if not genres:
+            self.essai_etape.setText(_("Aucun modèle installé à tester : cochez-en un ci-dessous."))
+            self.essai_etape.show()
+            return
+        t = Tache(lambda tache: essai_ia.tester_tout(self.params, genres, tache.avancer, tache.arret_demande), _("Test des modèles d'IA"))
+        self._tache_essais = t
+        from . import activite
+        activite.centre().suivre(t, _("Test des modèles d'IA locale"))
+        if hasattr(self.fenetre, "taches"):
+            self.fenetre.taches.append(t)
+        t0 = _t.monotonic()
+        self.b_essais.setEnabled(False)
+        self.b_essais_stop.show()
+        try:
+            self.b_essais_stop.clicked.disconnect()
+        except (RuntimeError, TypeError):
+            pass
+        self.b_essais_stop.clicked.connect(t.stopper)
+        self.essai_etape.setText(_("Préparation du test…"))
+        self.essai_etape.show()
+        self.essai_barre.setValue(0)
+        self.essai_barre.show()
+
+        def prog(f, texte):
+            try:
+                e = int(_t.monotonic() - t0)
+                self.essai_barre.setValue(int(f * 1000))
+                self.essai_barre.setFormat(_("{p} % · temps écoulé {t}", p=int(f * 100), t=f"{e // 60}:{e % 60:02d}"))
+                if texte:
+                    self.essai_etape.setText(texte)
+            except RuntimeError:
+                pass
+
+        def fin(res, err):
+            self.params.enregistrer()
+            try:
+                self.b_essais.setEnabled(True)
+                self.b_essais_stop.hide()
+                self.essai_barre.hide()
+                for g, r in (res or {}).items():
+                    if g in self.lbl_essais:
+                        self.lbl_essais[g].setText(essai_ia.resume(r))
+                ok = sum(1 for r in (res or {}).values() if r.get("ok"))
+                self.essai_etape.setText(_("Test interrompu : {e}", e=err) if err else
+                                         _("Test terminé : {o} modèle(s) sur {n} fonctionnent.", o=ok, n=len(res or {})))
+            except RuntimeError:
+                pass
+        t.progression.connect(prog, Qt.QueuedConnection)
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
 
     def _tester_locale(self):
         from .taches import Tache

@@ -1139,6 +1139,7 @@ class Timeline(QGraphicsView):
         m.addSeparator()
         if self.projet:
             m.addAction(_("Prendre cette image comme vignette du fichier"), lambda: (self.aller_a(t), self.demande_menu.emit("", "vignette")))
+            m.addAction(_("Composer une vignette YouTube depuis cette image…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "vignette_nouvelle")))
             if self.projet.d.get("vignette_t") is not None:
                 m.addAction(_("Retirer la vignette choisie"), lambda: self.demande_menu.emit("", "vignette_retirer"))
         if self.zone != [None, None]:
@@ -1286,6 +1287,9 @@ class Timeline(QGraphicsView):
     def menu_clip(self, clip, pos, t=None):
         m = QMenu()
         t = self.position if t is None else t
+        if clip.get("vignette"):
+            m.addAction(_("Modifier l'image composée…"), lambda: self.demande_menu.emit(clip["id"], "vignette_composee"))
+            m.addSeparator()
         m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
         m.addAction(_("Supprimer ce plan (la suite se recolle)"), lambda: self.supprimer_selection(True))
         m.addAction(_("Supprimer ce plan en laissant un trou"), lambda: self.supprimer_selection(False))

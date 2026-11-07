@@ -122,6 +122,21 @@ class Test060(unittest.TestCase):
         self.assertEqual(q.width() % 64, 0)
         self.assertGreater(q.pixelColor(10, 10).red(), 200)          # le faux moteur a vu l'image d'origine (-i)
 
+    def test_verifier_les_modeles_installes(self):
+        """0.9.3 : Préférences › IA locale › Tester : un petit travail réel par modèle installé, chronométré."""
+        from app import essai_ia
+        pa = {}
+        genres = essai_ia.genres_installes(pa)
+        self.assertIn("image", genres)
+        etapes = []
+        res = essai_ia.tester_tout(pa, ["image", "musique"], progression=lambda f, t: etapes.append(t))
+        self.assertTrue(res["image"]["ok"], res["image"])
+        self.assertTrue(res["musique"]["ok"], res["musique"])
+        self.assertIsNotNone(res["image"]["secondes"])
+        self.assertIn("image", pa["essais_ia"])
+        self.assertTrue(any("Test 1/2" in t for t in etapes) and any("Test 2/2" in t for t in etapes), etapes)
+        self.assertTrue(essai_ia.resume(res["image"]).startswith("✓"))
+
     def test_video_wan(self):
         from app import creatif as C
         out = C.video("slow push in", os.path.join(self.d, "v.mp4"), {}, init=self.img, secondes=1.0)

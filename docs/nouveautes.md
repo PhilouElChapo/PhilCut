@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.2 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.3 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.3 : vignettes et images fixes composees
+- Fabrique > "Vignette YouTube composee" (aussi au clic droit sur l'apercu et sur la regle de la timeline) : on prend une image du film et on entoure des zones a la souris. Rouge : ce qu'on veut montrer (objet ou personne du film, detoure, contour, effet loupe ou projecteur). Jaune : designer (fleche ou cercle). Bleu : le titre, ajuste tout seul. Vert : les elements precises (pastilles validees ou non). Blanc : zone a laisser libre.
+- PhilCut dessine tout lui-meme d'apres un kit coherent (Punchy, Editorial, Documentaire, Tech, Aviation) et une palette tiree de l'image : pas d'aspect "fait par IA". Phrases pretes a l'emploi et modifiables ; l'IA locale ou cloud peut proposer le titre, les elements et le style.
+- Avant / apres coupe en diagonale, apercu en taille telephone avec conseils de lisibilite, 3 variantes d'un clic.
+- Resultat : miniature YouTube de l'export (integree au MP4 et JPG a cote), image enregistree, ou image fixe posee dans le film au-dessus de la video (duree au choix), que l'on rouvre par clic droit > "Modifier l'image composee".
+- Preferences > IA locale > "Tester les modeles installes" (et "Tester" par modele) : un petit travail reel chronometre par modele, avec carte graphique ou processeur, progression et arret ; avertissement sur la qualite des images IA sans carte graphique dediee.
 
 ### 0.9.2
 - Plus de sous-menu "Aviation" : tableau de bord, carte animee du trajet, indicateur de vent et sous-titres radio sont ranges avec les Goodies et les sous-titres, dans le menu Montage et au clic droit sur l'apercu.

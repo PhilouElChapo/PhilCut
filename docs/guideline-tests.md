@@ -157,6 +157,18 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T31 — 0.9.3 : vignettes et images fixes composées, test des modèles d'IA
+
+1. **Ouvrir** : Fabrique › « Vignette YouTube composée… » (ou clic droit sur l'aperçu, ou sur la règle de la timeline). **Attendu** : l'image du film à la tête de lecture, au format 1280 × 720 ; la barre du bas de la fenêtre dit ce qui se passe.
+2. **Zones** : choisir Rouge et entourer un objet ou une personne du film à main levée ; Bleu : un rectangle pour le titre ; Jaune : un petit détail ; Vert : une bande en bas. **Attendu** : le sujet rouge détouré, avec contour, le reste assombri ; la flèche part du titre vers le détail jaune (un cercle si la zone jaune est grande). Clic droit sur une zone › Supprimer ou Changer sa couleur.
+3. **Contenu** : taper un titre, un mot en couleur, des éléments « Pistons ✓ », « Soupapes ✗ ». **Attendu** : titre ajusté à la zone bleue, mot en couleur, pastilles avec coche verte ou croix rouge, libellés entiers.
+4. **Style** : changer de kit (Punchy, Éditorial, Documentaire, Tech, Aviation), d'effet rouge (loupe, projecteur), de flèche. « Proposer 3 variantes » puis cliquer une variante.
+5. **Taille téléphone** : l'aperçu de droite et ses conseils (titre trop petit, trop long, zone verte vide…).
+6. **Avant / après** : cocher, choisir l'image « après ». **Attendu** : image coupée en diagonale, étiquettes AVANT / APRÈS.
+7. **IA** : écrire la phrase (ex. « moteur : pistons, soupapes, arbre à cames »), IA locale puis IA cloud, « Proposer par l'IA ». **Attendu** : progression et temps écoulé visibles, puis titre, éléments et style remplis, tous modifiables.
+8. **Résultats** : « Miniature YouTube de l'export » puis exporter : la vignette du MP4 et le JPG à côté sont l'image composée. « Poser dans le film » : l'image arrive sur la piste Vidéo 2 pour la durée choisie ; clic droit sur ce plan › « Modifier l'image composée… » rouvre tout, « Poser » remplace l'ancien plan.
+9. **Test des modèles** : Préférences › IA locale › « Tester les modèles installés ». **Attendu** : étape « Test 1/n : … », barre et temps écoulé, « Arrêter le test » ; sous chaque modèle : ✓ ou ✕, durée, carte graphique ou processeur. Sur la carte NVIDIA du portable, cocher « Utiliser la carte graphique ».
+
 ## T30 — 0.9.0 : Mes musiques, Atelier IA en anglais et avancement visible, effet IA visible à la lecture
 
 1. **Mes musiques** : bouton Musique › « Mes musiques (chercher, écouter, poser)… ». **Attendu** : une fenêtre (plus de menu géant) ; la barre du bas de la fenêtre dit ce qui se passe (recherche des morceaux, lecture des titres en arrière-plan). Taper deux mots dans la recherche : la liste se réduit tout de suite. « Classer » : Par dossier, Par album, Par artiste, Tout par titre (retenu à la prochaine ouverture). Clic droit sur un morceau › Écouter, puis « Arrêter l'écoute ». Double-clic (ou « Poser sous la vidéo ») : la musique arrive sur la piste Musique.

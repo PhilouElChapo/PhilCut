@@ -928,6 +928,8 @@ class Editeur(QWidget):
         m.addAction(_("Figer l'image ici (cadre photo, légende)…"), self.figer_image)
         m.addAction(_("Bruitage ici…"), self.bruitage)
         m.addAction(_("Tampon vidéo ici…"), self.tampons)
+        m.addAction(_("Vignette YouTube depuis cette image (zones, titre, flèche)…"), lambda: self.vignette_composee("vignette"))
+        m.addAction(_("Image fixe composée depuis cette image…"), lambda: self.vignette_composee("image"))
         m.addSeparator()
         m.addAction(icone("goodies", theme.COULEURS["texte"]), _("Tableau de bord (instruments, profil réglable)…"), self.tableau_de_bord)
         m.addAction(_("Carte animée du trajet et mini-carte (GPS)…"), self.trajet)
@@ -1565,6 +1567,10 @@ class Editeur(QWidget):
             self.rafraichir()
             self.encart.message(_("Vignette du fichier : l'image à {t}. A l'export, elle est intégrée à la vidéo (explorateur de fichiers, "
                                   "lecteurs) et enregistrée à côté en JPG pour la miniature YouTube.", t=_tc(self.timeline.position)), 9000)
+        elif quoi == "vignette_nouvelle":
+            self.vignette_composee("vignette")
+        elif quoi == "vignette_composee":
+            self.vignette_composee(clip_id=ident)
         elif quoi == "vignette_retirer":
             self.projet.marquer()
             self.projet.d.pop("vignette_t", None)
@@ -2310,6 +2316,21 @@ class Editeur(QWidget):
             apprentissage.ecrire(self.params, "recettes.json", d)
         except Exception:
             pass
+
+    def vignette_composee(self, usage="vignette", recette_id=None, clip_id=None):
+        """Vignette YouTube ou image fixe composée à partir d'une image du film (zones de couleur, kit de style)."""
+        from .dialogues_vignette import DialogueVignette
+        rec = None
+        if clip_id:
+            c = self.projet.clip(clip_id)
+            recette_id = (c or {}).get("vignette")
+        if recette_id:
+            rec = next((r for r in self.projet.d.get("vignettes") or [] if r.get("id") == recette_id), None)
+        d = DialogueVignette(self, rec, usage)
+        if clip_id:
+            d.clip_a_remplacer = clip_id
+        d.exec()
+        self.rafraichir()
 
     def atelier_ia(self, famille="image"):
         """Atelier IA local : image du film retouchée, effet sur la partie en jaune, logo, musique."""
