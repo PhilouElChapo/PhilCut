@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.21 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.22 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.22
+- Sauvegarde automatique : chaque minute (reglable : 1, 2 ou 5 minutes, ou jamais), une copie de chaque projet modifie est faite a part, sans toucher a votre fichier ; les 5 dernieres versions sont gardees (reglable). La barre du bas l'indique discretement.
+- Recuperation apres plantage : si PhilCut s'est mal ferme (plantage, coupure de courant, redemarrage de Windows), il propose au demarrage de recuperer chaque projet non enregistre ("Recuperer les projets coches", "Jeter", "Plus tard"). Le projet recupere garde son emplacement : "Enregistrer" ecrit au bon endroit.
+- Fichier > "Revenir a une sauvegarde automatique..." : la liste des dernieres versions du projet ; un clic y revient, Ctrl+Z ramene l'etat actuel.
+- Preferences > General > Sauvegarde automatique : intervalle, nombre de versions, "Ouvrir le dossier des sauvegardes".
 
 ### 0.9.21
 - Replique dite dans un clip IA : la video donne le jeu, un moteur de voix a part donne le phrase, et les deux sont meles dans le meme clip. Atelier IA > un effet video > "Replique dite" : le texte, la maniere de parler (prise automatiquement du style de la phrase, ex. "joue comme Alain Delon" > froid et impassible, "a la John Wayne" > lent et trainant, "style Belmondo" > gouailleur ; ou au choix parmi 15 : bourru, nerveux, naif, detective de film noir, crooner, heros d'action, theatral, chuchote, conteur, bande-annonce...), et le moteur : voix locale (debit, pauses entre les phrases, expressivite, hauteur, grain) ou voix Gemini (joue vraiment la phrase d'apres la consigne de jeu ; prix affiche). "Ecouter la replique" avant de creer ; "Recrire la replique a sa maniere (IA)" change les tournures sans citer de replique de film ; "Refaire seulement la voix" garde le clip. Une replique plus longue que le clip tient la derniere image. Maniere de dire, jamais la voix d'une personne : aucun clonage.

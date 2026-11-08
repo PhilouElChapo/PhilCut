@@ -119,6 +119,10 @@ class Fenetre(QMainWindow):
         self._minuterie = QTimer(self)
         self._minuterie.timeout.connect(self.ecrire_session)
         self._minuterie.start(60000)
+        self._minuterie_secours = QTimer(self)                  # sauvegarde automatique (0.9.22)
+        self._minuterie_secours.timeout.connect(self.sauvegarde_auto)
+        self.regler_sauvegarde_auto()
+        QTimer.singleShot(1200, self.proposer_recuperation)
         from .journal import noter_version
         noter_version(VERSION)
 
@@ -136,6 +140,7 @@ class Fenetre(QMainWindow):
         m.addSeparator()
         m.addAction(icone("enregistrer"), _("Enregistrer"), self.enregistrer, QKeySequence.Save)
         m.addAction(_("Enregistrer sous…"), lambda: self.enregistrer(sous=True), "Ctrl+Shift+S")
+        m.addAction(_("Revenir à une sauvegarde automatique…"), self.revenir_sauvegarde)
         m.addSeparator()
         m.addAction(icone("exporter"), _("Exporter la vidéo…"), self.exporter, "Ctrl+E")
         m.addSeparator()
@@ -427,6 +432,9 @@ class Fenetre(QMainWindow):
         self.params.ajouter_recent(chemin)
         self.params["dernier_dossier"] = os.path.dirname(chemin)
         self.params.enregistrer()
+        from . import secours
+        secours.effacer(p)                        # enregistré : les copies de secours ne servent plus
+        ed._secours_empreinte = None
         self._maj_titre(ed)
         self.accueil.rafraichir()
         self.ecrire_session()
@@ -445,6 +453,8 @@ class Fenetre(QMainWindow):
                 self.onglets.setCurrentIndex(i)
                 if not self.enregistrer():
                     return
+        from . import secours
+        secours.effacer(w.projet)                  # fermeture voulue : enregistré, ou « Ne pas enregistrer »
         w.apercu.arreter()
         w.preparation.fermer()
         w.catalogue.fermer()
@@ -539,6 +549,9 @@ class Fenetre(QMainWindow):
                 pass
         self.ecrire_session()
         self.params.enregistrer()
+        from . import secours
+        for ed in self.editeurs():                 # fermeture normale : rien à récupérer au prochain démarrage
+            secours.effacer(ed.projet)
         self.attendre_taches(3000)
         e.accept()
 
@@ -1360,6 +1373,65 @@ class Fenetre(QMainWindow):
         except Exception:      # noqa: BLE001
             return None
 
+    # ---------------------------------------------------------------- sauvegarde automatique (0.9.22)
+    def regler_sauvegarde_auto(self):
+        from . import secours
+        m = int(self.params.get("secours_minutes", secours.INTERVALLE_DEFAUT) or 0)
+        if m:
+            self._minuterie_secours.start(m * 60000)
+        else:
+            self._minuterie_secours.stop()
+
+    def sauvegarde_auto(self):
+        """Copie de secours de chaque projet modifié depuis la dernière copie ; le fichier de l'utilisateur n'est pas touché."""
+        import hashlib, json
+        from . import secours
+        n = 0
+        for ed in self.editeurs():
+            if not ed.projet.modifie:
+                continue
+            secours.cle(ed.projet)
+            emp = hashlib.md5(json.dumps(ed.projet.d, sort_keys=True, default=str).encode()).hexdigest()
+            if emp == getattr(ed, "_secours_empreinte", None):
+                continue
+            try:
+                secours.sauver(ed.projet, int(self.params.get("secours_versions", secours.VERSIONS_DEFAUT) or 5), self.params.get("machine", ""))
+                ed._secours_empreinte = emp
+                n += 1
+            except OSError:
+                pass
+        if n:
+            self.statusBar().showMessage(_("Sauvegarde automatique : {h}", h=datetime.datetime.now().strftime("%Hh%M")), 4000)
+        return n
+
+    def proposer_recuperation(self):
+        """Au démarrage : des copies de secours restent, PhilCut ne s'est pas fermé normalement. On propose de reprendre."""
+        from . import secours
+        ouverts = {ed.projet.d.get("secours_id") for ed in self.editeurs()}
+        liste = [r for r in secours.a_recuperer(ouverts) if r["plus_recent"]]
+        if not liste:
+            for r in secours.a_recuperer(ouverts):              # rien de plus récent que le fichier enregistré : inutile
+                secours.jeter(r["cle"])
+            return None
+        if os.environ.get("QT_QPA_PLATFORM") == "offscreen" and not getattr(self, "_recuperation_test", False):
+            return None
+        d = DialogueRecuperation(self, liste)
+        d.exec()
+        return d
+
+    def revenir_sauvegarde(self):
+        ed = self.editeur_courant()
+        if not ed:
+            return
+        from . import secours
+        v = secours.versions(secours.cle(ed.projet))
+        if not v:
+            QMessageBox.information(self, _("Sauvegardes automatiques"), _("Pas encore de sauvegarde automatique pour ce projet "
+                                                                            "(une copie est faite chaque minute dès qu'il est modifié)."))
+            return
+        d = DialogueVersions(self, ed, v)
+        d.exec()
+
     def nettoyer_creations(self, silencieux=True):
         """Une fois par jour, en tâche de fond : les créations IA plus vieilles que la durée choisie (Préférences › Assistant
         et IA) et qu'aucun projet récent ou ouvert n'utilise sont supprimées. La barre du bas le dit."""
@@ -1533,3 +1605,128 @@ class Fenetre(QMainWindow):
                 self.ouvrir(p)
             else:
                 self.statusBar().showMessage(_("Introuvable ici : {n}", n=f.get("nom", "")), 8000)
+
+
+class DialogueRecuperation(QDialog):
+    """PhilCut ne s'est pas fermé normalement : les projets non enregistrés, cochés, à récupérer (0.9.22)."""
+
+    def __init__(self, fenetre, liste):
+        super().__init__(fenetre)
+        from PySide6.QtWidgets import QListWidgetItem, QPushButton
+        from . import secours
+        self.fenetre, self.liste_r = fenetre, liste
+        self.setWindowTitle(_("Récupérer le travail"))
+        self.resize(640, 360)
+        v = QVBoxLayout(self)
+        t = QLabel(_("PhilCut ne s'est pas fermé normalement la dernière fois (plantage, coupure de courant, redémarrage de Windows). "
+                     "Ces projets ont des modifications qui n'étaient pas enregistrées ; la sauvegarde automatique les a gardées."))
+        t.setWordWrap(True)
+        v.addWidget(t)
+        self.liste = QListWidget()
+        for r in liste:
+            ou = r["origine"] or _("jamais enregistré")
+            it = QListWidgetItem(_("« {n} » — {q}, {p} plan(s)\n{o}", n=r["nom"], q=secours.depuis(r["quand"]), p=r["plans"], o=ou))
+            it.setFlags(it.flags() | Qt.ItemIsUserCheckable)
+            it.setCheckState(Qt.Checked)
+            it.setData(Qt.UserRole, r)
+            self.liste.addItem(it)
+        v.addWidget(self.liste, 1)
+        h = QHBoxLayout()
+        b1 = QPushButton(_("Récupérer les projets cochés"))
+        b1.setDefault(True)
+        b1.clicked.connect(self.recuperer)
+        b2 = QPushButton(_("Jeter les projets cochés"))
+        b2.clicked.connect(self.jeter)
+        b3 = QPushButton(_("Plus tard"))
+        b3.setToolTip(_("Les copies sont gardées : la question reviendra au prochain démarrage."))
+        b3.clicked.connect(self.reject)
+        for b in (b1, b2, b3):
+            h.addWidget(b)
+        h.addStretch(1)
+        v.addLayout(h)
+        self.ouverts = []
+
+    def _coches(self):
+        return [self.liste.item(i).data(Qt.UserRole) for i in range(self.liste.count()) if self.liste.item(i).checkState() == Qt.Checked]
+
+    def recuperer(self):
+        from . import secours
+        for r in self._coches():
+            try:
+                p = secours.recuperer(r["chemin"])
+            except Exception as e:    # noqa: BLE001
+                QMessageBox.warning(self, _("Récupérer"), _("Copie illisible : {e}", e=e))
+                continue
+            ed = self.fenetre.ajouter_onglet(p)
+            self.fenetre._reconstruire_medias(ed)
+            self.fenetre._maj_titre(ed)
+            ed.encart.message(_("Projet récupéré ({q}). Enregistrez-le pour le garder.", q=secours.depuis(r["quand"])), 10000)
+            self.ouverts.append(ed)
+        self.accept()
+
+    def jeter(self):
+        from . import secours
+        coches = self._coches()
+        if coches and question_fr(self, _("Jeter"), _("Jeter les modifications non enregistrées de {n} projet(s) ?", n=len(coches)),
+                                  QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
+            return
+        for r in coches:
+            secours.jeter(r["cle"])
+        self.accept()
+
+
+class DialogueVersions(QDialog):
+    """Fichier › Revenir à une sauvegarde automatique : les dernières copies du projet ; Annuler revient en arrière."""
+
+    def __init__(self, fenetre, ed, versions):
+        super().__init__(fenetre)
+        from PySide6.QtWidgets import QListWidgetItem, QPushButton
+        from . import secours
+        self.ed = ed
+        self.setWindowTitle(_("Sauvegardes automatiques"))
+        self.resize(520, 320)
+        v = QVBoxLayout(self)
+        t = QLabel(_("Choisissez une version : le projet revient à cet état (Annuler, Ctrl+Z, ramène l'état actuel)."))
+        t.setWordWrap(True)
+        v.addWidget(t)
+        self.liste = QListWidget()
+        for r in versions:
+            it = QListWidgetItem(_("{q} — {p} plan(s)", q=secours.depuis(r["quand"]), p=r["plans"]))
+            it.setData(Qt.UserRole, r)
+            self.liste.addItem(it)
+        self.liste.setCurrentRow(0)
+        self.liste.itemDoubleClicked.connect(lambda _i: self.revenir())
+        v.addWidget(self.liste, 1)
+        h = QHBoxLayout()
+        b = QPushButton(_("Revenir à cette version"))
+        b.clicked.connect(self.revenir)
+        h.addWidget(b)
+        b2 = QPushButton(_("Fermer"))
+        b2.clicked.connect(self.reject)
+        h.addWidget(b2)
+        h.addStretch(1)
+        v.addLayout(h)
+
+    def revenir(self):
+        it = self.liste.currentItem()
+        if not it:
+            return
+        import json
+        with open(it.data(Qt.UserRole)["chemin"], encoding="utf-8") as f:
+            d = json.load(f)
+        d.pop("_secours", None)
+        p = self.ed.projet
+        p.marquer()
+        for m in d.get("medias") or []:                       # proxys et vignettes de la version actuelle, s'ils existent
+            ancien = p.media(m.get("id"))
+            if ancien:
+                for k in ("proxy", "vignettes", "onde"):
+                    if ancien.get(k) and not m.get(k):
+                        m[k] = ancien[k]
+        d["secours_id"] = p.d.get("secours_id")
+        p.d.clear()
+        p.d.update(d)
+        self.ed.biblio.remplir(p)
+        self.ed.rafraichir()
+        self.ed.encart.message(_("Projet revenu à la sauvegarde de {q} (Ctrl+Z pour annuler).", q=it.text().split(" — ")[0]), 8000)
+        self.accept()

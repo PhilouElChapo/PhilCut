@@ -91,6 +91,27 @@ class DialoguePreferences(QDialog):
         self.assoc.setChecked(self.params.get("association_video", False))
         self.assoc.setEnabled(sys.platform == "win32")
         f.addRow(self.assoc)
+        from . import secours as SC
+        g = QGroupBox(_("Sauvegarde automatique"))
+        fg = QFormLayout(g)
+        l = QLabel(_("Une copie de chaque projet modifié est faite à intervalle régulier, sans toucher à votre fichier. Si PhilCut se "
+                     "ferme mal (plantage, coupure de courant), il propose de tout récupérer au démarrage. Fichier › « Revenir à une "
+                     "sauvegarde automatique » remonte aux versions précédentes."))
+        l.setWordWrap(True)
+        fg.addRow(l)
+        self.secours_minutes = QComboBox()
+        for k, lib in SC.INTERVALLES.items():
+            self.secours_minutes.addItem(_(lib), k)
+        self.secours_minutes.setCurrentIndex(max(0, self.secours_minutes.findData(int(self.params.get("secours_minutes", SC.INTERVALLE_DEFAUT)))))
+        fg.addRow(_("Copie toutes les"), self.secours_minutes)
+        self.secours_versions = QSpinBox()
+        self.secours_versions.setRange(1, 30)
+        self.secours_versions.setValue(int(self.params.get("secours_versions", SC.VERSIONS_DEFAUT) or 5))
+        fg.addRow(_("Versions gardées par projet"), self.secours_versions)
+        bs = QPushButton(_("Ouvrir le dossier des sauvegardes"))
+        bs.clicked.connect(lambda: self._ouvrir(SC.dossier()))
+        fg.addRow(a_gauche(bs))
+        f.addRow(g)
         f.addRow(QLabel(_("<span style='color:#999'>Données de ce poste : {d}</span>", d=dossier_donnees())))
 
     # ---------------------------------------------------------------- Apparence
@@ -751,6 +772,10 @@ class DialoguePreferences(QDialog):
     def valider(self):
         p = self.params
         p["creations_purge_jours"] = self.purge.currentData() or 0
+        p["secours_minutes"] = self.secours_minutes.currentData() or 0
+        p["secours_versions"] = self.secours_versions.value()
+        if hasattr(self.fenetre, "regler_sauvegarde_auto"):
+            self.fenetre.regler_sauvegarde_auto()
         perso = {}
         for ligne in self.styles_perso.toPlainText().splitlines():
             if "=" in ligne:

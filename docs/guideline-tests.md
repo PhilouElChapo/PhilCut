@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T42 — 0.9.22 : sauvegarde automatique et récupération après plantage
+
+1. **Copie automatique** : ouvrir un projet, poser un plan, attendre une minute. **Attendu** : « Sauvegarde automatique : 14h05 » dans la barre du bas ; votre fichier .philcut n'a pas changé (date de modification inchangée).
+2. **Plantage simulé** : modifier le projet, attendre la copie, puis fermer PhilCut par le Gestionnaire des tâches (Fin de tâche). Relancer. **Attendu** : la fenêtre « Récupérer le travail » liste le projet (nom, il y a combien de temps, nombre de plans, emplacement) ; « Récupérer les projets cochés » le rouvre avec les modifications ; « Enregistrer » écrit à son emplacement d'origine.
+3. **Plus tard / Jeter** : refaire le test, choisir « Plus tard » : la question revient au démarrage suivant ; « Jeter » : elle ne revient plus.
+4. **Revenir à une version** : modifier plusieurs fois en attendant une minute entre chaque, puis Fichier › « Revenir à une sauvegarde automatique… ». **Attendu** : la liste des versions ; un double-clic y revient ; Ctrl+Z ramène l'état d'avant.
+5. **Fermeture normale** : quitter en enregistrant (ou « Ne pas enregistrer ») : au démarrage suivant, aucune question.
+6. **Réglages** : Préférences › Général › Sauvegarde automatique : 2 minutes, 10 versions, « Ouvrir le dossier des sauvegardes ».
+
 ## T41 — 0.9.21 : réplique dite avec le phrasé du style, mêlée au clip
 
 1. **Réplique** : ligne rouge sur un plan ; Atelier IA › un effet vidéo (ex. « Dessin animé ») ; phrase « un gangster joué comme Alain Delon » ; « Réplique dite » : « Ici, c'est moi qui fais la loi. ». **Attendu** : « Phrasé : Froid, impassible, peu de mots (d'après « alain delon ») ». « ▶ Écouter la réplique » : la voix seule, lente, plate, grave.
