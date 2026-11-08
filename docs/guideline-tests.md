@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T44 — 0.9.24 : prolonger un plan trop court
+
+1. **Image tenue** : clic droit sur un plan › « Prolonger ce plan… », 2 s, à la fin, « Image tenue », « Fabriquer ». **Attendu** : barre de progression, puis l'aperçu montre la dernière image avec un lent zoom et le son d'ambiance qui s'éteint ; rien n'est posé avant « Poser dans le film ». Après : le plan suivant, les textes et les sous-titres sont décalés de 2 s. Ctrl+Z revient.
+2. **Ralenti** : même chose avec « Ralenti de la fin » : la dernière seconde ralentie en douceur, sans saccade.
+3. **Au début** : « Au début du plan » : le morceau arrive avant le plan.
+4. **IA** (avec un modèle vidéo installé) : « Prolongé par l'IA » : la scène continue (mouvement plausible) ; une à plusieurs minutes. Sans modèle, la ligne est grisée et dit quoi installer.
+
 ## T43 — 0.9.23 : monter par le texte
 
 1. **Transcrire** : un projet avec un rush où l'on parle ; Montage › « Monter par le texte… » (Ctrl+T) › « Transcrire les rushes ». **Attendu** : barre de progression ; puis le texte s'affiche, un paragraphe par rush ou après une longue pause. Refermer et rouvrir : pas de nouvelle transcription (gardée dans le projet, aussi après Enregistrer et réouverture).

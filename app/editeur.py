@@ -1673,7 +1673,11 @@ class Editeur(QWidget):
         self.rafraichir()
 
     def _demande_menu(self, ident, quoi):
-        if quoi == "recreer_ia":
+        if quoi == "prolonger":
+            c = self.projet.clip(ident)
+            if c:
+                self.prolonger_plan(c)
+        elif quoi == "recreer_ia":
             self.reprendre_creation(clip_id=ident)
         elif quoi == "copie":
             c = self.projet.clip(ident)
@@ -2474,6 +2478,13 @@ class Editeur(QWidget):
             d.clip_a_remplacer = clip_id
         d.exec()
         self.rafraichir()
+
+    def prolonger_plan(self, clip):
+        """Quelques secondes de plus au début ou à la fin d'un plan (image tenue, ralenti ou IA), regardées avant d'être posées."""
+        from .dialogues_prolonger import DialogueProlonger
+        d = DialogueProlonger(self, clip)
+        d.exec()
+        return d
 
     def monter_par_texte(self):
         """Le texte de ce qui est dit, pour couper la vidéo en effaçant des mots (0.9.23). Fenêtre non bloquante."""
