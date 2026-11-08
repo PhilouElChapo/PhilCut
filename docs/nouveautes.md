@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.19 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.20 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.20
+- Styles "a la maniere de" dans l'Atelier IA : "une ballade chantee a la maniere de Sinatra, musique facon Liza Minnelli", "un cow-boy a la John Wayne, look Star Wars", "un gangster joue comme Alain Delon". Le nom est remplace par la description du style (grain et maniere de chanter, orchestre, epoque ; lumiere, pellicule, decors, costumes, attitude et maniere de parler de l'acteur). La fenetre montre la transposition sous la phrase ; le nom n'est jamais envoye au moteur. Environ 80 references connues hors ligne (chanteurs, groupes, compositeurs, acteurs, films, realisateurs) ; un nom inconnu se transpose par l'IA locale ou cloud, sur votre clic, et rejoint "Mes styles" (Preferences > Assistant et IA), modifiables et synchronises. Marche aussi pour l'image des tampons IA.
+- Creations de l'IA : Preferences > Assistant et IA > "Ouvrir le dossier des creations", taille du dossier, "Nettoyer maintenant", et nettoyage automatique au choix (jamais, 30 jours, 90 jours, 1 an ; 90 jours par defaut) de ce qu'aucun projet recent ou ouvert n'utilise.
 
 ### 0.9.19
 - Reprendre une creation IA : chaque musique, image ou clip cree garde sa "recette" (phrase, paroles, qui chante, langue, duree, force) a cote du fichier. Clic droit sur le plan dans la timeline (ou sur le media) > "Modifier la creation IA (phrase, paroles, duree)..." : l'Atelier IA se rouvre pre-rempli ; on change ce qu'on veut, on recree, on ecoute, puis "Remplacer le morceau d'origine" (meme place dans le film ; Annuler revient a l'ancienne version, qui reste dans les medias).

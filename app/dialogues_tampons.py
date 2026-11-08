@@ -472,8 +472,11 @@ class DialogueTampons(QDialog):
         L, H = self.format
 
         def travail(t):
-            ph = TR.phrase_en_anglais(r["consigne"])
-            r2 = dict(r, consigne=ph[0] or r["consigne"])
+            from . import styles_ia as S
+            st = S.transposer(r["consigne"], "image", self.params)       # « façon Tim Burton » → description du style
+            ph = TR.phrase_en_anglais(st["texte"]) if st["texte"] else ("", "deja", [])
+            en = ", ".join(x for x in (ph[0] or st["texte"], st["ajout"]) if x)
+            r2 = dict(r, consigne=en or r["consigne"])
             return TI.creer(self.params, r2, L=L // 2 * 2 if L <= 1280 else 1280, H=(H * (1280 / L) if L > 1280 else H) // 2 * 2,
                             niveau=niveau, progression=t.avancer, arret=t.arret_demande)
         self._lancer(travail, _("Création du tampon « {n} » par l'IA…", n=r["nom"]),

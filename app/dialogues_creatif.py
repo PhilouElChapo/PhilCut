@@ -17,10 +17,8 @@ from .taches import Tache
 
 
 def _dossier_sorties():
-    from .config import dossier_donnees
-    d = os.path.join(dossier_donnees(), "ia_creations")
-    os.makedirs(d, exist_ok=True)
-    return d
+    from .creations import dossier
+    return dossier()
 
 
 class DialogueAtelierIA(QDialog):
@@ -75,6 +73,29 @@ class DialogueAtelierIA(QDialog):
         self.envoye.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.envoye.hide()
         vd.addWidget(self.envoye)
+        # « à la manière de Sinatra », « un cow-boy à la John Wayne » : le nom devient la description du style (0.9.20)
+        self.style_info = QLabel("")
+        self.style_info.setWordWrap(True)
+        self.style_info.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.style_info.hide()
+        vd.addWidget(self.style_info)
+        self.boite_style = QWidget()
+        hs = QHBoxLayout(self.boite_style)
+        hs.setContentsMargins(0, 0, 0, 0)
+        self.niveau_style = QComboBox()
+        self.niveau_style.addItem(_("IA locale (sur ce poste)"), "locale")
+        self.niveau_style.addItem(_("IA cloud (votre clef)"), "cloud")
+        self.niveau_style.setCurrentIndex(1 if (self.ed.params.get("assistant_niveau") or "") == "cloud" else 0)
+        hs.addWidget(self.niveau_style)
+        self.b_style = QPushButton(_("Transposer ce style avec l'IA"))
+        self.b_style.setToolTip(_("L'IA décrit le style de ce nom (voix, orchestre, époque, image, jeu d'acteur) sans le nommer ni copier "
+                                  "la personne ; la description est gardée dans Préférences › Assistant et IA › Styles. Rien n'est envoyé sans ce clic."))
+        self.b_style.clicked.connect(self._transposer_ia)
+        hs.addWidget(self.b_style)
+        hs.addStretch(1)
+        self.boite_style.hide()
+        vd.addWidget(self.boite_style)
+        self.prompt.textChanged.connect(self._maj_style)
         hf = QHBoxLayout()
         self.lbl_force = QLabel(_("Force"))
         hf.addWidget(self.lbl_force)
@@ -368,6 +389,57 @@ class DialogueAtelierIA(QDialog):
             return (c["debut"], min(fin_clip(c), c["debut"] + 10.0))
         return None
 
+    # ---- styles « à la manière de »
+    def _transposition(self):
+        from . import styles_ia as S
+        e = self.effet() or {}
+        return S.transposer(self.prompt.toPlainText().strip(), e.get("famille", "image"), self.ed.params)
+
+    def _maj_style(self):
+        tr = self._transposition()
+        lignes = [_("🎭 « {n} » → {d}", n=n, d=d) for n, d in tr["styles"]]
+        if tr["inconnus"]:
+            lignes.append(_("❓ Style inconnu : {n}. Le moteur ne connaît pas les noms : transposez-le avec l'IA, ou décrivez-le "
+                            "(voix, orchestre, époque, image, attitude).", n=", ".join(tr["inconnus"])))
+        if tr["styles"]:
+            lignes.append(_("Le nom n'est pas envoyé au moteur : seule cette description l'est (un style n'est à personne ; la voix exacte, "
+                            "le visage, les personnages et les logos, si)."))
+        self.style_info.setText("\n".join(lignes))
+        self.style_info.setStyleSheet("color:#9ad0ff")
+        self.style_info.setVisible(bool(lignes) and self.prompt.isVisible())
+        self.boite_style.setVisible(bool(tr["inconnus"]) and self.prompt.isVisible())
+
+    def _transposer_ia(self):
+        from . import styles_ia as S
+        tr = self._transposition()
+        if not tr["inconnus"]:
+            return
+        niveau = self.niveau_style.currentData()
+        if niveau == "cloud":
+            from . import ia
+            if not ia.confirmer_cout(self, self.ed.params, 600, 0, _("Transposer un style")):
+                return
+        e = self.effet() or {}
+        noms, fam, ctx, params = tr["inconnus"], e.get("famille", "image"), self.prompt.toPlainText(), self.ed.params
+        self.b_style.setEnabled(False)
+        self.info.setText(_("L'IA décrit le style de {n}…", n=", ".join(noms)))
+        t = Tache(lambda tache: S.transposer_ia(noms, fam, ctx, params, niveau), _("Style"))
+        self._tache_style = t
+
+        def fin(r, err):
+            try:
+                self.b_style.setEnabled(True)
+                if err or not r:
+                    self.info.setText(_("✕ Style non transposé : {e}", e=str(err or _("réponse vide"))[:300]))
+                    return
+                S.retenir(params, r)
+                self._maj_style()
+                self.info.setText(_("Style transposé et gardé dans vos styles : relisez la description, puis « Créer »."))
+            except RuntimeError:
+                pass
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
+
     # ---- création
     def creer(self):
         e = self.effet()
@@ -383,6 +455,7 @@ class DialogueAtelierIA(QDialog):
             self.info.setText("⚠ " + manque)
             return
         prompt, force, params = self.prompt.toPlainText().strip(), self._valeur_force(e), self.ed.params
+        tr = self._transposition() if prompt else {"texte": "", "ajout": "", "styles": []}
         horo = time.strftime("%Y%m%d_%H%M%S")
         projet = self.ed.projet
         m = e["moteur"]
@@ -456,10 +529,13 @@ class DialogueAtelierIA(QDialog):
         def travail(t, base=base):
             if a_traduire:                       # les moteurs ne comprennent bien que l'anglais
                 t.avancer(0.0, _("Traduction de la phrase en anglais…"))
-                en, comment, manque = TR.phrase_en_anglais(prompt)
+                en, comment, manque = TR.phrase_en_anglais(tr["texte"]) if tr["texte"] else ("", "deja", [])
                 if manque and comment != "service":
                     raise C.ErreurCreatif(_("Pas de traduction pour « {m} » (pas de réseau ?) : écrivez ces mots en anglais dans la phrase.",
                                             m=", ".join(dict.fromkeys(manque))))
+                if tr["ajout"]:                  # « à la manière de … » : la description du style, jamais le nom
+                    en = ", ".join(x for x in (en, tr["ajout"]) if x)
+                    comment = "style" if comment == "deja" else comment
                 ph.update(en=en, comment=comment)
                 if comment != "deja":
                     t.avancer(0.0, _("Phrase envoyée au moteur, en anglais : « {t} »", t=en[:160]))

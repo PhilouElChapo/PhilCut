@@ -113,6 +113,8 @@ class Fenetre(QMainWindow):
             self.params.enregistrer()
             QTimer.singleShot(3000, lambda: self.verifier_maj(silencieux=True))
         QTimer.singleShot(1500, self.synchro_demarrage)
+        if self.params.get("creations_purge_derniere") != datetime.date.today().isoformat():
+            QTimer.singleShot(20000, self.nettoyer_creations)
         self._catalogues()
         self._minuterie = QTimer(self)
         self._minuterie.timeout.connect(self.ecrire_session)
@@ -1357,6 +1359,28 @@ class Fenetre(QMainWindow):
             return miroir.compte_drive(self.params)
         except Exception:      # noqa: BLE001
             return None
+
+    def nettoyer_creations(self, silencieux=True):
+        """Une fois par jour, en tâche de fond : les créations IA plus vieilles que la durée choisie (Préférences › Assistant
+        et IA) et qu'aucun projet récent ou ouvert n'utilise sont supprimées. La barre du bas le dit."""
+        from . import creations as CR
+        from .taches import Tache
+        jours = int(self.params.get("creations_purge_jours", CR.DUREE_DEFAUT) or 0)
+        self.params["creations_purge_derniere"] = datetime.date.today().isoformat()
+        self.params.enregistrer()
+        if not jours:
+            return None
+        projets = [ed.projet for ed in self.editeurs()]
+        t = Tache(lambda tache: CR.nettoyer(jours, CR.en_usage(self.params, projets)), _("Créations IA"))
+
+        def fin(r, err):
+            if not err and r and r[0]:
+                self.statusBar().showMessage(_("Créations IA de plus de {j} jours, utilisées par aucun projet : {n} fichier(s) supprimé(s), "
+                                               "{m} Mo libérés.", j=jours, n=r[0], m=round(r[1] / 1e6, 1)), 12000)
+        t.fini.connect(fin, Qt.QueuedConnection)
+        self.taches.append(t)
+        t.start()
+        return t
 
     def synchro_demarrage(self):
         """Au démarrage, comme PhilPDF : ce qui arrive de vos autres postes (réglages, tampons, session…) est montré

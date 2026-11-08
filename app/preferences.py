@@ -206,6 +206,63 @@ class DialoguePreferences(QDialog):
         fg.addRow(_("Dossier surveillé (Flow)"), h)
         f.addRow(g)
         f.addRow(QLabel(_("<span style='color:#999'>L'IA locale (modèles, test du poste, mode poste léger) se règle dans l'onglet « IA locale ».</span>")))
+        f.addRow(self._groupe_creations())
+        f.addRow(self._groupe_styles())
+
+    def _groupe_creations(self):
+        """Dossier des créations IA (0.9.20) : où elles sont, combien elles pèsent, nettoyage automatique."""
+        from . import creations as CR
+        g = QGroupBox(_("Créations de l'IA (musiques, images, clips)"))
+        fg = QFormLayout(g)
+        n, o = CR.taille()
+        intro = QLabel(_("Tout ce que l'IA crée est gardé dans ce dossier, même si le projet n'est pas enregistré : {n} fichier(s), {m} Mo. "
+                         "Ce qu'un projet récent ou ouvert utilise n'est jamais supprimé.", n=n, m=round(o / 1e6, 1)))
+        intro.setWordWrap(True)
+        fg.addRow(intro)
+        self.purge = QComboBox()
+        for j, lib in CR.DUREES.items():
+            self.purge.addItem(_("Ne jamais supprimer") if not j else _("Supprimer ce qui n'est utilisé par aucun projet depuis {d}", d=_(lib)), j)
+        self.purge.setCurrentIndex(max(0, self.purge.findData(int(self.params.get("creations_purge_jours", CR.DUREE_DEFAUT) or 0))))
+        fg.addRow(_("Nettoyage automatique"), self.purge)
+        h = QHBoxLayout()
+        bo = QPushButton(_("Ouvrir le dossier des créations"))
+        bo.clicked.connect(lambda: self._ouvrir(CR.dossier()))
+        bn = QPushButton(_("Nettoyer maintenant"))
+        bn.clicked.connect(lambda: self._nettoyer_creations(intro))
+        h.addWidget(bo)
+        h.addWidget(bn)
+        h.addStretch(1)
+        fg.addRow(h)
+        return g
+
+    def _nettoyer_creations(self, intro):
+        from . import creations as CR
+        j = self.purge.currentData() or 0
+        if not j:
+            QMessageBox.information(self, _("Créations"), _("Choisissez d'abord une durée (30 jours, 90 jours ou 1 an)."))
+            return
+        projets = [ed.projet for ed in (self.fenetre.editeurs() if hasattr(self.fenetre, "editeurs") else [])]
+        n, o = CR.nettoyer(j, CR.en_usage(self.params, projets))
+        t, ot = CR.taille()
+        intro.setText(_("{n} fichier(s) supprimé(s), {m} Mo libérés. Il reste {r} création(s), {mr} Mo.", n=n, m=round(o / 1e6, 1), r=t,
+                        mr=round(ot / 1e6, 1)))
+
+    def _groupe_styles(self):
+        """Mes styles (0.9.20) : les « à la manière de … » appris, modifiables."""
+        from . import styles_ia as S
+        g = QGroupBox(_("Styles « à la manière de »"))
+        fg = QFormLayout(g)
+        l = QLabel(_("Dans l'Atelier IA, écrivez « chanté à la manière de … », « un cow-boy à la … », « look de … » : PhilCut remplace le "
+                     "nom par la description du style (voix, orchestre, époque, image, jeu d'acteur), car les moteurs ne connaissent pas les noms "
+                     "et ne doivent pas copier une personne. {n} références connues ; celles que l'IA a transposées pour vous sont ici, "
+                     "modifiables (une par ligne : nom = description en anglais).", n=len(S.REFERENCES)))
+        l.setWordWrap(True)
+        fg.addRow(l)
+        self.styles_perso = QPlainTextEdit("\n".join(f"{k} = {v}" for k, v in (self.params.get("styles_perso") or {}).items()))
+        self.styles_perso.setPlaceholderText(_("ex. : mon groupe préféré = 1990s britpop, jangly guitars, nasal male vocals"))
+        self.styles_perso.setMinimumHeight(80)
+        fg.addRow(self.styles_perso)
+        return g
 
     # ---------------------------------------------------------------- Tampons et extraits en ligne (0.9.9)
     def _tampons(self):
@@ -693,6 +750,14 @@ class DialoguePreferences(QDialog):
 
     def valider(self):
         p = self.params
+        p["creations_purge_jours"] = self.purge.currentData() or 0
+        perso = {}
+        for ligne in self.styles_perso.toPlainText().splitlines():
+            if "=" in ligne:
+                k, v = ligne.split("=", 1)
+                if k.strip() and v.strip():
+                    perso[k.strip()] = v.strip()
+        p["styles_perso"] = perso
         p["auteur"] = self.auteur.text().strip()
         p["chaine_nom"] = self.chaine.text().strip()
         p["langue"] = self.langue.currentData()

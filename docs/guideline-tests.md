@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T40 — 0.9.20 : styles « à la manière de », dossier des créations
+
+1. **Musique** : Atelier IA › Musique, phrase « une ballade chantée à la manière de Sinatra, musique façon Liza Minnelli ». **Attendu** : sous la phrase, en bleu, « 🎭 « sinatra » → smooth baritone crooner vocals… » et « liza minnelli » → Broadway cabaret… ; « Créer » : la ligne « Envoyé au moteur, en anglais » ne contient aucun nom. Écouter : voix de crooner, orchestre de cabaret.
+2. **Vidéo ou image** : Atelier IA › Image, « un cow-boy à la John Wayne dans un look Star Wars » ; puis « un gangster joué comme Alain Delon ». **Attendu** : descriptions d'époque, de lumière, de costume et d'attitude ; aucun visage copié, aucun personnage ni logo.
+3. **Nom inconnu** : « à la manière de » suivi d'un nom que PhilCut ne connaît pas. **Attendu** : « ❓ Style inconnu » et le bouton « Transposer ce style avec l'IA » (locale, ou cloud avec le coût affiché). Après la réponse, la description apparaît, et elle est dans Préférences › Assistant et IA › Styles (modifiable ; elle suit sur vos autres postes).
+4. **Créations** : Préférences › Assistant et IA › « Créations de l'IA » : nombre et taille, « Ouvrir le dossier des créations », « Nettoyer maintenant », durée au choix. **Attendu** : ce qu'un projet récent ou ouvert utilise reste ; la barre du bas dit ce qui a été supprimé au démarrage (une fois par jour).
+
 ## T39 — 0.9.15 à 0.9.19 : écouter avant de poser, reprendre une création IA, enregistrer une copie
 
 1. **Reprendre une musique IA** : Montage › Atelier IA › Musique, une phrase, des paroles, « Créer », écouter, « Poser sous la vidéo ». Puis clic droit sur ce morceau dans la timeline › « Modifier la création IA (phrase, paroles, durée)… ». **Attendu** : l'Atelier se rouvre sur le même effet, avec la même phrase, les mêmes paroles, la même voix, la même langue et la même durée. Changer une ligne des paroles, « Créer », écouter, « Remplacer le morceau d'origine ». **Attendu** : le morceau garde sa place dans le film ; Annuler (Ctrl+Z) remet l'ancienne version, qui reste dans les médias.
