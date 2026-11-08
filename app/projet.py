@@ -280,13 +280,16 @@ class Projet:
                 return self.couper(c["id"], t)
         return None
 
-    def partie(self, a, b, garder):
+    def partie(self, a, b, garder, sauf=()):
         """Sélection [a, b] de la timeline. garder=True : on ne garde qu'elle (elle passe au début) ;
-        garder=False : on la supprime et la suite se recolle. Toutes les pistes, textes et Goodies compris."""
+        garder=False : on la supprime et la suite se recolle. Toutes les pistes, textes et Goodies compris, sauf les
+        pistes de « sauf » (la musique qui continue sous un montage par le texte, 0.9.23)."""
         a, b = sorted((max(0.0, a), max(0.0, b)))
         if b - a < 0.04:
             return False
         for piste in self.toutes_pistes():
+            if piste in sauf:
+                continue
             for t in (a, b):
                 for c in list(self.clips_piste(piste)):
                     if c["debut"] + 0.04 < t < fin_clip(c) - 0.04:
@@ -298,6 +301,9 @@ class Projet:
         clips = []
         for c in self.clips:
             d, f = c["debut"], fin_clip(c)
+            if c["piste"] in sauf:
+                clips.append(c)
+                continue
             if garder:
                 if dedans(d, f):
                     c["debut"] = d - a

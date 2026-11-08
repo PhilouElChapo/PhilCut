@@ -193,6 +193,8 @@ class Fenetre(QMainWindow):
         for fam, lib in (("image", _("Retoucher l'image du film (cartoon, 3D, peinture…)…")), ("video", _("Effet IA sur la partie en jaune…")),
                          ("logo", _("Logo, intro ou miniature par IA…")), ("musique", _("Créer une musique par IA…"))):
             sm_ia.addAction(lib, lambda fam=fam: self._ed(lambda ed: ed.atelier_ia(fam)))
+        act(icone("sous_titres"), _("Monter par le texte…"), _("Le texte de ce qui est dit : effacer une phrase coupe la vidéo ; « euh » et "
+                                                                 "silences enlevés d'un clic"), lambda: self._ed(lambda ed: ed.monter_par_texte()), "Ctrl+T")
         act(icone("assistant"), _("Dites-le en clair…"), _("Une phrase (« coupe les silences et mets une musique calme ») devient des actions"),
             lambda: self._ed(lambda ed: ed.dites_le()))
         act(icone("effets"), _("Transitions automatiques…"), _("A chaque coupe, la transition qui va avec les images et la musique"),

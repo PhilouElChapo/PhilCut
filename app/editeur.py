@@ -2475,6 +2475,20 @@ class Editeur(QWidget):
         d.exec()
         self.rafraichir()
 
+    def monter_par_texte(self):
+        """Le texte de ce qui est dit, pour couper la vidéo en effaçant des mots (0.9.23). Fenêtre non bloquante."""
+        from .dialogues_texte import DialogueMontageTexte
+        d = getattr(self, "_fen_texte", None)
+        if d is None:
+            d = DialogueMontageTexte(self)
+            self._fen_texte = d
+            d.finished.connect(lambda _r: setattr(self, "_fen_texte", None))
+        else:
+            d.remplir()
+        d.show()
+        d.raise_()
+        return d
+
     def atelier_ia(self, famille="image"):
         """Atelier IA local : image du film retouchée, effet sur la partie en jaune, logo, musique."""
         from .dialogues_creatif import DialogueAtelierIA

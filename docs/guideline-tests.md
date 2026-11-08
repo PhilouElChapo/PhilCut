@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T43 — 0.9.23 : monter par le texte
+
+1. **Transcrire** : un projet avec un rush où l'on parle ; Montage › « Monter par le texte… » (Ctrl+T) › « Transcrire les rushes ». **Attendu** : barre de progression ; puis le texte s'affiche, un paragraphe par rush ou après une longue pause. Refermer et rouvrir : pas de nouvelle transcription (gardée dans le projet, aussi après Enregistrer et réouverture).
+2. **Cliquer un mot** : la ligne rouge va à ce mot. Lire (Espace) : le mot entendu est surligné en jaune.
+3. **Couper** : sélectionner une phrase à la souris, « ✂ Couper ce passage » (ou Suppr). **Attendu** : la phrase disparaît du texte et de la vidéo, la suite se recolle sans trou, la musique continue (case cochée). Ctrl+Z la remet.
+4. **« euh » et silences** : le bouton dit combien il y en a ; un clic les enlève ; régler 1,5 s pour ne couper que les longues pauses.
+5. **Garder seulement ce passage** : sélection, puis le bouton : il ne reste que ce passage.
+6. **Chercher** : taper un mot, Entrée : il est sélectionné et la ligne rouge y va ; Entrée encore : l'occurrence suivante.
+
 ## T42 — 0.9.22 : sauvegarde automatique et récupération après plantage
 
 1. **Copie automatique** : ouvrir un projet, poser un plan, attendre une minute. **Attendu** : « Sauvegarde automatique : 14h05 » dans la barre du bas ; votre fichier .philcut n'a pas changé (date de modification inchangée).

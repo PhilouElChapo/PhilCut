@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.22 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.23 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.23
+- Monter par le texte (Montage > "Monter par le texte...", Ctrl+T) : les rushes sont transcrits sur ce poste (une seule fois, garde dans le projet) et le texte de ce qui est dit s'affiche dans l'ordre du montage. Selectionner des mots puis "Couper ce passage" (ou Suppr) coupe la video et recolle la suite ; "Garder seulement ce passage" ; un clic sur un mot y amene la ligne rouge ; pendant la lecture, le mot entendu est surligne en jaune ; recherche d'un mot.
+- "Retirer les euh" (euh, hum, bah, ben isoles...) et "Retirer les silences de plus de 0,8 s" (reglable), avec leur nombre affiche avant de cliquer. La musique continue sous les coupes (au choix). Ctrl+Z annule.
 
 ### 0.9.22
 - Sauvegarde automatique : chaque minute (reglable : 1, 2 ou 5 minutes, ou jamais), une copie de chaque projet modifie est faite a part, sans toucher a votre fichier ; les 5 dernieres versions sont gardees (reglable). La barre du bas l'indique discretement.
