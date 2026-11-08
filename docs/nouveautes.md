@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.29 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.30 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.30
+- Presentation de photos : les images peuvent venir des videos du montage. "+ Derniere image du plan" ajoute la derniere image du plan a la ligne rouge (celui apres lequel la presentation est inseree : l'enchainement est parfait) ; "+ Images d'une video..." ouvre une planche d'images du plan (ou du plan selectionne) : on coche celles a garder, ou "Repartir sur tout le plan" en coche le nombre voulu. Les images retenues s'affichent dans une bande : glisser pour changer l'ordre, clic droit pour retirer.
 
 ### 0.9.29
 - Presentation de photos animee : deux animations de plus, "Tourbillon" (la photo s'enroule en spirale et disparait au centre, la suivante en jaillit en tournoyant) et "Feuilles qui tombent" (les photos tombent comme des feuilles d'automne, en se balancant et en virevoltant, et se posent les unes sur les autres). Dix animations en tout.

@@ -29,10 +29,32 @@ class DialoguePresentation(QDialog):
         hp = QHBoxLayout()
         self.nb = QLabel("")
         hp.addWidget(self.nb, 1)
-        b_ch = QPushButton(_("Choisir les photos…"))
+        b_ch = QPushButton(_("Ajouter des photos…"))
         b_ch.clicked.connect(self._choisir)
         hp.addWidget(b_ch)
+        b_der = QPushButton(_("+ Dernière image du plan"))
+        b_der.setToolTip(_("Ajoute la dernière image du plan à la ligne rouge (celui après lequel la présentation sera insérée)"))
+        b_der.clicked.connect(self._derniere_image)
+        hp.addWidget(b_der)
+        b_img = QPushButton(_("+ Images d'une vidéo…"))
+        b_img.setToolTip(_("Choisir des images dans la vidéo du plan à la ligne rouge (ou du plan sélectionné)"))
+        b_img.clicked.connect(self._images_video)
+        hp.addWidget(b_img)
         v.addLayout(hp)
+        # les photos retenues, dans l'ordre : glisser pour réordonner, clic droit pour retirer (0.9.29)
+        self.bande = QListWidget()
+        self.bande.setViewMode(QListView.IconMode)
+        self.bande.setFlow(QListView.LeftToRight)
+        self.bande.setWrapping(False)
+        self.bande.setIconSize(QSize(96, 54))
+        self.bande.setFixedHeight(84)
+        self.bande.setDragDropMode(QListWidget.InternalMove)
+        self.bande.setMovement(QListView.Snap)
+        self.bande.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.bande.customContextMenuRequested.connect(self._menu_bande)
+        self.bande.model().rowsMoved.connect(self._bande_reordonnee)
+        self.bande.setToolTip(_("Glissez une image pour changer l'ordre ; clic droit : retirer"))
+        v.addWidget(self.bande)
         self.styles = QListWidget()
         self.styles.setViewMode(QListView.IconMode)
         self.styles.setIconSize(QSize(176, 99))
@@ -94,6 +116,7 @@ class DialoguePresentation(QDialog):
         self._anim = QTimer(self)
         self._anim.timeout.connect(self._animer)
         self._anim_item, self._anim_t = None, 0.0
+        self._remplir_bande()
         self._remplir_styles()
         self._maj_nb()
 
@@ -161,16 +184,82 @@ class DialoguePresentation(QDialog):
         from .widgets import ouvrir_fichiers
         l = ouvrir_fichiers(self, _("Choisir les photos"), _("Images (*.jpg *.jpeg *.png *.webp *.bmp *.heic)"), "images", self.ed.params)
         if l:
-            self.photos = l
-            self._remplir_styles()
-            self._maj_nb()
+            self._ajouter(l)
+
+    def _ajouter(self, chemins, remplacer=False):
+        self.photos = list(chemins) if remplacer else self.photos + [c for c in chemins if c not in self.photos]
+        self._remplir_bande()
+        self._remplir_styles()
+        self._maj_nb()
+
+    def _remplir_bande(self):
+        self.bande.clear()
+        for c in self.photos:
+            px = QPixmap(c)
+            it = QListWidgetItem(QIcon(px.scaled(96, 54, Qt.KeepAspectRatio, Qt.SmoothTransformation)) if not px.isNull() else QIcon(), "")
+            it.setData(Qt.UserRole, c)
+            it.setToolTip(os.path.basename(c))
+            self.bande.addItem(it)
+
+    def _bande_reordonnee(self, *_a):
+        self.photos = [self.bande.item(i).data(Qt.UserRole) for i in range(self.bande.count())]
+        self.par_date.setChecked(False)                     # l'ordre choisi à la main prime
+        self._remplir_styles()
+
+    def _menu_bande(self, pos):
+        from PySide6.QtWidgets import QMenu
+        it = self.bande.itemAt(pos)
+        m = QMenu(self)
+        if it:
+            m.addAction(_("Retirer cette image"), lambda: self._ajouter([x for x in self.photos if x != it.data(Qt.UserRole)], True))
+        m.addAction(_("Tout retirer"), lambda: self._ajouter([], True))
+        m.exec(self.bande.mapToGlobal(pos))
+
+    def _plan_courant(self):
+        """Le plan vidéo sélectionné, sinon celui sous la ligne rouge (ou le dernier avant elle)."""
+        from .projet import fin_clip
+        p, t = self.ed.projet, self.ed.timeline.position
+        try:
+            ids = list(self.ed.timeline.selection() or [])
+        except (AttributeError, TypeError):
+            ids = []
+        for i in ids:
+            c = p.clip(i)
+            if c and c["piste"].startswith("video") and (p.media(c["media"]) or {}).get("genre") == "video":
+                return c
+        plans = [c for c in p.clips_piste("video") if (p.media(c["media"]) or {}).get("genre") == "video"]
+        sous = [c for c in plans if c["debut"] - 1e-3 <= t < fin_clip(c)]
+        if sous:
+            return sous[0]
+        avant = [c for c in plans if fin_clip(c) <= t + 1e-3]
+        return max(avant, key=fin_clip) if avant else (plans[0] if plans else None)
+
+    def _derniere_image(self):
+        c = self._plan_courant()
+        if not c:
+            self.etat.setText(_("Aucun plan vidéo à la ligne rouge."))
+            return
+        from . import images_plan
+        self._ajouter([images_plan.extraire(self.ed.projet, c, [float(c["src_fin"]) - 0.04])[0]])
+        self.etat.setText(_("Dernière image de « {n} » ajoutée.", n=c.get("nom", "")))
+
+    def _images_video(self):
+        c = self._plan_courant()
+        if not c:
+            self.etat.setText(_("Aucun plan vidéo à la ligne rouge."))
+            return
+        from .images_plan import DialogueImagesPlan
+        d = DialogueImagesPlan(self, self.ed.projet, c)
+        if d.exec() and d.choisies:
+            self._ajouter(d.choisies)
+            self.etat.setText(_("{n} image(s) de « {p} » ajoutée(s).", n=len(d.choisies), p=c.get("nom", "")))
 
     def _maj_nb(self, *_a):
         k, _o = self._style() if hasattr(self, "styles") else ("cartes", None)
         n = len(self.photos)
         d = PR.duree_totale(n, k, self.duree.value()) if n else 0
         self.nb.setText(_("{n} photo(s) — clip d'environ {d:.0f} s", n=n, d=d) if n else
-                        _("Aucune photo dans le projet : « Choisir les photos… »"))
+                        _("Aucune image : « Ajouter des photos… », la dernière image du plan, ou des images d'une vidéo."))
         self.b_fabriquer.setEnabled(n >= 1)
 
     # ---- fabrication

@@ -5924,5 +5924,22 @@
  "Tourbillon": "Whirl",
  "La photo s'enroule en spirale et disparaît au centre ; la suivante en jaillit en tournoyant.": "The photo coils into a spiral and vanishes in the centre; the next one bursts out spinning.",
  "Feuilles qui tombent": "Falling leaves",
- "Les photos tombent comme des feuilles d'automne, en se balançant et en virevoltant, et se posent les unes sur les autres.": "The photos fall like autumn leaves, swaying and twirling, and land on top of each other."
+ "Les photos tombent comme des feuilles d'automne, en se balançant et en virevoltant, et se posent les unes sur les autres.": "The photos fall like autumn leaves, swaying and twirling, and land on top of each other.",
+ "Ajouter des photos…": "Add photos…",
+ "+ Dernière image du plan": "+ Last frame of the shot",
+ "Ajoute la dernière image du plan à la ligne rouge (celui après lequel la présentation sera insérée)": "Adds the last frame of the shot at the red line (the one after which the presentation will be inserted)",
+ "+ Images d'une vidéo…": "+ Frames from a video…",
+ "Choisir des images dans la vidéo du plan à la ligne rouge (ou du plan sélectionné)": "Choose frames in the video of the shot at the red line (or the selected shot)",
+ "Glissez une image pour changer l'ordre ; clic droit : retirer": "Drag an image to change the order; right-click: remove",
+ "Tout retirer": "Remove all",
+ "Dernière image de « {n} » ajoutée.": "Last frame of « {n} » added.",
+ "Retirer cette image": "Remove this image",
+ "Aucun plan vidéo à la ligne rouge.": "No video shot at the red line.",
+ "{n} image(s) de « {p} » ajoutée(s).": "{n} frame(s) from « {p} » added.",
+ "Aucune image : « Ajouter des photos… », la dernière image du plan, ou des images d'une vidéo.": "No image: « Add photos… », the last frame of the shot, or frames from a video.",
+ "Images de « {n} »": "Frames of « {n} »",
+ "Cochez les images à mettre dans la présentation (un clic sur une image la coche ou la décoche).": "Tick the frames to put in the presentation (a click on a frame ticks or unticks it).",
+ "Répartir sur tout le plan": "Spread over the whole shot",
+ "Ajouter les images cochées": "Add the ticked frames",
+ "Nombre d'images": "Number of frames"
 }

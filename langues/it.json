@@ -5915,5 +5915,22 @@
  "Tourbillon": "Vortice",
  "La photo s'enroule en spirale et disparaît au centre ; la suivante en jaillit en tournoyant.": "La foto si avvolge a spirale e sparisce al centro; la successiva ne esce roteando.",
  "Feuilles qui tombent": "Foglie che cadono",
- "Les photos tombent comme des feuilles d'automne, en se balançant et en virevoltant, et se posent les unes sur les autres.": "Le foto cadono come foglie d'autunno, dondolando e volteggiando, e si posano una sull'altra."
+ "Les photos tombent comme des feuilles d'automne, en se balançant et en virevoltant, et se posent les unes sur les autres.": "Le foto cadono come foglie d'autunno, dondolando e volteggiando, e si posano una sull'altra.",
+ "Ajouter des photos…": "Aggiungi foto…",
+ "+ Dernière image du plan": "+ Ultimo fotogramma dell'inquadratura",
+ "Ajoute la dernière image du plan à la ligne rouge (celui après lequel la présentation sera insérée)": "Aggiunge l'ultimo fotogramma dell'inquadratura alla linea rossa (quella dopo cui sarà inserita la presentazione)",
+ "+ Images d'une vidéo…": "+ Fotogrammi di un video…",
+ "Choisir des images dans la vidéo du plan à la ligne rouge (ou du plan sélectionné)": "Scegli fotogrammi nel video dell'inquadratura alla linea rossa (o di quella selezionata)",
+ "Glissez une image pour changer l'ordre ; clic droit : retirer": "Trascini un'immagine per cambiare l'ordine; clic destro: togli",
+ "Tout retirer": "Togli tutto",
+ "Dernière image de « {n} » ajoutée.": "Ultimo fotogramma di « {n} » aggiunto.",
+ "Retirer cette image": "Togli questa immagine",
+ "Aucun plan vidéo à la ligne rouge.": "Nessuna inquadratura video alla linea rossa.",
+ "{n} image(s) de « {p} » ajoutée(s).": "{n} fotogrammi di « {p} » aggiunti.",
+ "Aucune image : « Ajouter des photos… », la dernière image du plan, ou des images d'une vidéo.": "Nessuna immagine: « Aggiungi foto… », l'ultimo fotogramma dell'inquadratura o fotogrammi di un video.",
+ "Images de « {n} »": "Fotogrammi di « {n} »",
+ "Cochez les images à mettre dans la présentation (un clic sur une image la coche ou la décoche).": "Spunti i fotogrammi da mettere nella presentazione (un clic su un fotogramma lo spunta o lo toglie).",
+ "Répartir sur tout le plan": "Distribuisci su tutta l'inquadratura",
+ "Ajouter les images cochées": "Aggiungi i fotogrammi spuntati",
+ "Nombre d'images": "Numero di fotogrammi"
 }

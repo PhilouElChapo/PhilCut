@@ -5915,5 +5915,22 @@
  "Tourbillon": "Wirbel",
  "La photo s'enroule en spirale et disparaît au centre ; la suivante en jaillit en tournoyant.": "Das Foto rollt sich spiralförmig ein und verschwindet in der Mitte; das nächste schießt wirbelnd heraus.",
  "Feuilles qui tombent": "Fallende Blätter",
- "Les photos tombent comme des feuilles d'automne, en se balançant et en virevoltant, et se posent les unes sur les autres.": "Die Fotos fallen wie Herbstblätter, schaukelnd und wirbelnd, und landen aufeinander."
+ "Les photos tombent comme des feuilles d'automne, en se balançant et en virevoltant, et se posent les unes sur les autres.": "Die Fotos fallen wie Herbstblätter, schaukelnd und wirbelnd, und landen aufeinander.",
+ "Ajouter des photos…": "Fotos hinzufügen…",
+ "+ Dernière image du plan": "+ Letztes Bild der Einstellung",
+ "Ajoute la dernière image du plan à la ligne rouge (celui après lequel la présentation sera insérée)": "Fügt das letzte Bild der Einstellung an der roten Linie hinzu (nach der die Präsentation eingefügt wird)",
+ "+ Images d'une vidéo…": "+ Bilder aus einem Video…",
+ "Choisir des images dans la vidéo du plan à la ligne rouge (ou du plan sélectionné)": "Bilder aus dem Video der Einstellung an der roten Linie (oder der markierten) wählen",
+ "Glissez une image pour changer l'ordre ; clic droit : retirer": "Ziehen Sie ein Bild, um die Reihenfolge zu ändern; Rechtsklick: entfernen",
+ "Tout retirer": "Alle entfernen",
+ "Dernière image de « {n} » ajoutée.": "Letztes Bild von « {n} » hinzugefügt.",
+ "Retirer cette image": "Dieses Bild entfernen",
+ "Aucun plan vidéo à la ligne rouge.": "Keine Videoeinstellung an der roten Linie.",
+ "{n} image(s) de « {p} » ajoutée(s).": "{n} Bild(er) aus « {p} » hinzugefügt.",
+ "Aucune image : « Ajouter des photos… », la dernière image du plan, ou des images d'une vidéo.": "Kein Bild: « Fotos hinzufügen… », das letzte Bild der Einstellung oder Bilder aus einem Video.",
+ "Images de « {n} »": "Bilder von « {n} »",
+ "Cochez les images à mettre dans la présentation (un clic sur une image la coche ou la décoche).": "Haken Sie die Bilder für die Präsentation an (ein Klick auf ein Bild hakt es an oder ab).",
+ "Répartir sur tout le plan": "Über die ganze Einstellung verteilen",
+ "Ajouter les images cochées": "Angehakte Bilder hinzufügen",
+ "Nombre d'images": "Anzahl der Bilder"
 }

@@ -5915,5 +5915,22 @@
  "Tourbillon": "Torbellino",
  "La photo s'enroule en spirale et disparaît au centre ; la suivante en jaillit en tournoyant.": "La foto se enrolla en espiral y desaparece en el centro; la siguiente sale girando.",
  "Feuilles qui tombent": "Hojas que caen",
- "Les photos tombent comme des feuilles d'automne, en se balançant et en virevoltant, et se posent les unes sur les autres.": "Las fotos caen como hojas de otoño, balanceándose y revoloteando, y se posan unas sobre otras."
+ "Les photos tombent comme des feuilles d'automne, en se balançant et en virevoltant, et se posent les unes sur les autres.": "Las fotos caen como hojas de otoño, balanceándose y revoloteando, y se posan unas sobre otras.",
+ "Ajouter des photos…": "Añadir fotos…",
+ "+ Dernière image du plan": "+ Última imagen del plano",
+ "Ajoute la dernière image du plan à la ligne rouge (celui après lequel la présentation sera insérée)": "Añade la última imagen del plano en la línea roja (aquel tras el cual se insertará la presentación)",
+ "+ Images d'une vidéo…": "+ Imágenes de un vídeo…",
+ "Choisir des images dans la vidéo du plan à la ligne rouge (ou du plan sélectionné)": "Elegir imágenes del vídeo del plano en la línea roja (o del plano seleccionado)",
+ "Glissez une image pour changer l'ordre ; clic droit : retirer": "Arrastre una imagen para cambiar el orden; clic derecho: quitar",
+ "Tout retirer": "Quitar todo",
+ "Dernière image de « {n} » ajoutée.": "Última imagen de « {n} » añadida.",
+ "Retirer cette image": "Quitar esta imagen",
+ "Aucun plan vidéo à la ligne rouge.": "Ningún plano de vídeo en la línea roja.",
+ "{n} image(s) de « {p} » ajoutée(s).": "{n} imagen(es) de « {p} » añadida(s).",
+ "Aucune image : « Ajouter des photos… », la dernière image du plan, ou des images d'une vidéo.": "Ninguna imagen: « Añadir fotos… », la última imagen del plano o imágenes de un vídeo.",
+ "Images de « {n} »": "Imágenes de « {n} »",
+ "Cochez les images à mettre dans la présentation (un clic sur une image la coche ou la décoche).": "Marque las imágenes para la presentación (un clic en una imagen la marca o desmarca).",
+ "Répartir sur tout le plan": "Repartir por todo el plano",
+ "Ajouter les images cochées": "Añadir las imágenes marcadas",
+ "Nombre d'images": "Número de imágenes"
 }

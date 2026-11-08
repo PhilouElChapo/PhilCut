@@ -65,6 +65,26 @@ class Test0927(unittest.TestCase):
         self.assertEqual(ed.projet.clips_piste("video"), [])                   # rien n'est posé avant d'avoir regardé
         dl.poser()
         self.assertEqual(len(ed.projet.clips_piste("video")), 1)
+        # 0.9.29 : la dernière image du plan et des images choisies dans une vidéo du montage
+        v = commun.video_test(d, "vol.mp4", duree=3)
+        mv = ed.projet.ajouter_media(v, moteur.sonder(v))
+        cv = ed.projet.ajouter_clip(mv["id"], "video", 0.0, 0.5, 3.0)
+        ed.aller_a(1.0)
+        dl2 = DialoguePresentation(ed)
+        n0 = len(dl2.photos)
+        dl2._derniere_image()
+        self.assertEqual(len(dl2.photos), n0 + 1)
+        self.assertEqual(dl2.bande.count(), n0 + 1)
+        from app.images_plan import DialogueImagesPlan
+        di = DialogueImagesPlan(dl2, ed.projet, cv, n=8)
+        self.assertGreaterEqual(di.liste.count(), 6)
+        di.nombre.setValue(3)
+        di.repartir()
+        di.valider()
+        self.assertEqual(len(di.choisies), 3)
+        dl2._ajouter(di.choisies)
+        self.assertEqual(len(dl2.photos), n0 + 4)
+        dl2.reject()
         # modèle à photos
         from app.dialogues_modeles import DialogueModeles
         dm = DialogueModeles(ed)
