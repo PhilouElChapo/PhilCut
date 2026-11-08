@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.20 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.21 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.21
+- Replique dite dans un clip IA : la video donne le jeu, un moteur de voix a part donne le phrase, et les deux sont meles dans le meme clip. Atelier IA > un effet video > "Replique dite" : le texte, la maniere de parler (prise automatiquement du style de la phrase, ex. "joue comme Alain Delon" > froid et impassible, "a la John Wayne" > lent et trainant, "style Belmondo" > gouailleur ; ou au choix parmi 15 : bourru, nerveux, naif, detective de film noir, crooner, heros d'action, theatral, chuchote, conteur, bande-annonce...), et le moteur : voix locale (debit, pauses entre les phrases, expressivite, hauteur, grain) ou voix Gemini (joue vraiment la phrase d'apres la consigne de jeu ; prix affiche). "Ecouter la replique" avant de creer ; "Recrire la replique a sa maniere (IA)" change les tournures sans citer de replique de film ; "Refaire seulement la voix" garde le clip. Une replique plus longue que le clip tient la derniere image. Maniere de dire, jamais la voix d'une personne : aucun clonage.
 
 ### 0.9.20
 - Styles "a la maniere de" dans l'Atelier IA : "une ballade chantee a la maniere de Sinatra, musique facon Liza Minnelli", "un cow-boy a la John Wayne, look Star Wars", "un gangster joue comme Alain Delon". Le nom est remplace par la description du style (grain et maniere de chanter, orchestre, epoque ; lumiere, pellicule, decors, costumes, attitude et maniere de parler de l'acteur). La fenetre montre la transposition sous la phrase ; le nom n'est jamais envoye au moteur. Environ 80 references connues hors ligne (chanteurs, groupes, compositeurs, acteurs, films, realisateurs) ; un nom inconnu se transpose par l'IA locale ou cloud, sur votre clic, et rejoint "Mes styles" (Preferences > Assistant et IA), modifiables et synchronises. Marche aussi pour l'image des tampons IA.

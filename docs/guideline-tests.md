@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T41 — 0.9.21 : réplique dite avec le phrasé du style, mêlée au clip
+
+1. **Réplique** : ligne rouge sur un plan ; Atelier IA › un effet vidéo (ex. « Dessin animé ») ; phrase « un gangster joué comme Alain Delon » ; « Réplique dite » : « Ici, c'est moi qui fais la loi. ». **Attendu** : « Phrasé : Froid, impassible, peu de mots (d'après « alain delon ») ». « ▶ Écouter la réplique » : la voix seule, lente, plate, grave.
+2. **Changer la manière** : choisir « Gouailleur, rapide, charmeur », puis « Bande-annonce de film », réécouter. **Attendu** : débit, pauses, hauteur et grain changent nettement.
+3. **Créer** : « Créer ». **Attendu** : le clip s'ouvre avec la voix dedans ; si la réplique est plus longue que le clip, la dernière image tient jusqu'à la fin de la phrase. « Refaire seulement la voix » (autre texte ou autre manière) garde l'image.
+4. **Voix Gemini** : choisir « Voix Gemini ». **Attendu** : prix affiché et confirmation avant l'envoi ; la phrase est vraiment jouée (intonations).
+5. **Récrire à sa manière** : « Récrire la réplique à sa manière (IA) » (locale ou cloud). **Attendu** : même sens, autres tournures ; aucune réplique de film connue.
+6. **Reprendre** : clic droit sur le clip posé › « Modifier la création IA… ». **Attendu** : la réplique, la manière et le moteur reviennent.
+
 ## T40 — 0.9.20 : styles « à la manière de », dossier des créations
 
 1. **Musique** : Atelier IA › Musique, phrase « une ballade chantée à la manière de Sinatra, musique façon Liza Minnelli ». **Attendu** : sous la phrase, en bleu, « 🎭 « sinatra » → smooth baritone crooner vocals… » et « liza minnelli » → Broadway cabaret… ; « Créer » : la ligne « Envoyé au moteur, en anglais » ne contient aucun nom. Écouter : voix de crooner, orchestre de cabaret.

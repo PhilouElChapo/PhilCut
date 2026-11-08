@@ -85,6 +85,67 @@ class Test0920(unittest.TestCase):
         f.hide()
         f.deleteLater()
 
+    def test_replique_dite_et_melee(self):
+        """0.9.21 : la réplique est dite par un moteur de voix à part avec le phrasé du style, puis mêlée au clip ;
+        une réplique plus longue que le clip tient la dernière image."""
+        from app import diction as DI, moteur
+        self.assertEqual(DI.style_depuis("un gangster joué comme Alain Delon")[0], "froid")
+        self.assertEqual(DI.style_depuis("un cow-boy à la John Wayne")[0], "trainant")
+        self.assertEqual(DI.style_depuis("un chat sur un toit")[0], "naturel")
+        self.assertIn("asetrate", DI.filtres(DI.STYLES["bourru"][1]))
+        d = tempfile.mkdtemp()
+        v = commun.video_test(d, "plan.mp4", duree=2)
+
+        def faux_dire(texte, sortie, params, style="naturel", moteur_voix="local", voix=None, dossier=None):
+            vus.append((texte, style, moteur_voix))
+            moteur.lancer(["-y", "-f", "lavfi", "-i", "sine=f=220:d=3", "-ar", "48000", sortie])
+            return sortie
+        vus = []
+        DI.dire = faux_dire
+        w = os.path.join(d, "r.wav")
+        DI.dire("Salut", w, {})
+        sortie = DI.mixer(v, w, os.path.join(d, "m.mp4"), debut=0.3)
+        info = moteur.sonder(sortie)
+        self.assertTrue(info["audio"])
+        self.assertGreater(info["duree"], 3.4)                              # 0,3 + 3 s de voix + 0,4
+        # dans l'Atelier : effet vidéo (dessin animé OpenCV, hors ligne) + réplique
+        from app.config import Parametres
+        pa = Parametres()
+        pa.update(bienvenue_vue=True, maj_auto=False, synchro=False)
+        pa.enregistrer()
+        from app.fenetre import Fenetre
+        f = Fenetre()
+        ed = f.nouveau_projet("16:9")
+        m = ed.projet.ajouter_media(v, moteur.sonder(v))
+        ed.ajouter_a_la_timeline(m["id"])
+        ed.aller_a(1.0)
+        app.processEvents()
+        from app.dialogues_creatif import DialogueAtelierIA
+        dl = DialogueAtelierIA(ed, "video")
+        dl.show()
+        dl.liste.setCurrentRow([dl.liste.item(i).data(0x0100)["id"] for i in range(dl.liste.count())].index("v_anime"))
+        self.assertFalse(dl.boite_replique.isHidden())
+        dl.replique.setPlainText("Ici, c'est moi qui décide.")
+        dl.diction.setCurrentIndex(dl.diction.findData("gouailleur"))
+        dl.creer()
+        t0 = time.time()
+        while dl.tache.isRunning() and time.time() - t0 < 120:
+            app.processEvents()
+            time.sleep(0.05)
+        for _i in range(20):
+            app.processEvents()
+        self.assertTrue(dl.resultat and moteur.sonder(dl.resultat)["audio"], dl.info.text())
+        self.assertEqual(vus[-1], ("Ici, c'est moi qui décide.", "gouailleur", "local"))
+        self.assertTrue(os.path.exists(dl._clip_brut))
+        from app import creations
+        self.assertEqual(creations.lire(dl.resultat)["replique"], "Ici, c'est moi qui décide.")
+        textes = [dl.actions.itemAt(i).widget().text() for i in range(dl.actions.count()) if dl.actions.itemAt(i).widget()]
+        self.assertIn("Refaire seulement la voix", textes)
+        dl.reject()
+        ed.projet.modifie = False
+        f.hide()
+        f.deleteLater()
+
 
 if __name__ == "__main__":
     unittest.main()

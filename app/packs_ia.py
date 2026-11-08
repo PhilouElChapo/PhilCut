@@ -749,8 +749,9 @@ def mots_segment(jetons, seg):
 
 
 # ------------------------------------------------------------------ voix de synthèse (Piper)
-def synthese(texte, sortie_wav, cle=None, params=None, vitesse=1.0):
-    """Lit le texte avec une voix locale (Piper) ; écrit un WAV. vitesse > 1 : plus rapide."""
+def synthese(texte, sortie_wav, cle=None, params=None, vitesse=1.0, silence=None, expressivite=None):
+    """Lit le texte avec une voix locale (Piper) ; écrit un WAV. vitesse > 1 : plus rapide. silence : pause entre les
+    phrases (s) ; expressivite : 0 (plat) à 1 (très varié), pour le phrasé (0.9.21)."""
     cle = cle or modele_actif("voix", params)
     if not cle or not installe(cle):
         raise ErreurIA(_("Aucune voix de synthèse installée sur ce poste (Préférences › IA locale)."))
@@ -761,6 +762,11 @@ def synthese(texte, sortie_wav, cle=None, params=None, vitesse=1.0):
     cmd = [executable("voix"), "--model", modele, "--output_file", sortie_wav, "--length_scale", f"{1.0 / max(0.5, min(2.0, vitesse)):.3f}"]
     if roles.get("config"):
         cmd += ["--config", os.path.join(dossier_modele(cle), roles["config"])]
+    if silence is not None:
+        cmd += ["--sentence_silence", f"{max(0.0, float(silence)):.2f}"]
+    if expressivite is not None:
+        e = max(0.0, min(1.0, float(expressivite)))
+        cmd += ["--noise_scale", f"{0.35 + 0.6 * e:.3f}", "--noise_w", f"{0.4 + 0.6 * e:.3f}"]
     r = subprocess.run(cmd, input=texte.encode("utf-8"), cwd=dossier_moteur("voix"), env=_env("voix"), capture_output=True, timeout=600,
                        **{k: v for k, v in _options_processus().items() if k != "preexec_fn"})
     if r.returncode != 0 or not os.path.exists(sortie_wav):

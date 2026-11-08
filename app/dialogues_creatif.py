@@ -166,6 +166,7 @@ class DialogueAtelierIA(QDialog):
         bascule(True)
         vd.addWidget(self.boite_musique)
         vd.addWidget(self.boite_paroles)
+        self._construire_replique(vd)
         hi = QHBoxLayout()
         self.img_source = QLabel()
         self.img_resultat = QLabel()
@@ -273,6 +274,7 @@ class DialogueAtelierIA(QDialog):
         self.lbl_prompt.setVisible(avec_phrase)
         self.prompt.setPlainText(e.get("prompt", ""))
         self.boite_musique.setVisible(e["moteur"] == "musique")
+        self.boite_replique.setVisible(e["famille"] == "video")
         reglable = e["moteur"] in ("image", "profondeur", "photo3d", "upscale", "interpolation", "video", "transition3d")
         for w in (self.force, self.lbl_force, self.val_force):
             w.setVisible(reglable)
@@ -388,6 +390,164 @@ class DialogueAtelierIA(QDialog):
         if c:
             return (c["debut"], min(fin_clip(c), c["debut"] + 10.0))
         return None
+
+    # ---- réplique dite (0.9.21) : un moteur de voix à part, avec le phrasé du style, mêlé au clip
+    def _construire_replique(self, vd):
+        from . import diction as DI
+        self.boite_replique = QWidget()
+        vr = QVBoxLayout(self.boite_replique)
+        vr.setContentsMargins(0, 4, 0, 0)
+        t = QLabel(_("Réplique dite (facultatif) : un moteur de voix à part la dit avec la manière de parler choisie, puis elle est "
+                     "mêlée au clip. La vidéo donne le jeu, la voix donne le phrasé."))
+        t.setWordWrap(True)
+        vr.addWidget(t)
+        self.replique = QPlainTextEdit()
+        self.replique.setPlaceholderText(_("ex. : Ici, c'est moi qui fais la loi."))
+        self.replique.setMaximumHeight(52)
+        vr.addWidget(self.replique)
+        h1 = QHBoxLayout()
+        self.diction = QComboBox()
+        self.diction.addItem(_("Manière de parler : celle du style de la phrase"), "auto")
+        for k, (lib, _r) in DI.STYLES.items():
+            self.diction.addItem(lib, k)
+        h1.addWidget(self.diction, 1)
+        self.moteur_replique = QComboBox()
+        self.moteur_replique.addItem(_("Voix locale (sur ce poste, gratuit)"), "local")
+        self.moteur_replique.addItem(_("Voix Gemini (joue vraiment la phrase ; votre clef, payant)"), "gemini")
+        h1.addWidget(self.moteur_replique, 1)
+        vr.addLayout(h1)
+        h2 = QHBoxLayout()
+        self.niveau_replique = QComboBox()
+        self.niveau_replique.addItem(_("IA locale (sur ce poste)"), "locale")
+        self.niveau_replique.addItem(_("IA cloud (votre clef)"), "cloud")
+        self.niveau_replique.setCurrentIndex(1 if (self.ed.params.get("assistant_niveau") or "") == "cloud" else 0)
+        h2.addWidget(self.niveau_replique)
+        self.b_reecrire = QPushButton(_("Récrire la réplique à sa manière (IA)"))
+        self.b_reecrire.setToolTip(_("L'IA garde le sens et change les tournures (gouaille, laconisme…) ; elle invente, ne cite aucune "
+                                     "réplique de film. Rien n'est envoyé sans ce clic."))
+        self.b_reecrire.clicked.connect(self._reecrire_replique)
+        h2.addWidget(self.b_reecrire)
+        self.b_ecouter_replique = QPushButton("▶ " + _("Écouter la réplique"))
+        self.b_ecouter_replique.clicked.connect(self._ecouter_replique)
+        h2.addWidget(self.b_ecouter_replique)
+        h2.addStretch(1)
+        vr.addLayout(h2)
+        self.etat_replique = QLabel("")
+        self.etat_replique.setWordWrap(True)
+        self.etat_replique.setStyleSheet("color:#9aa4b2")
+        vr.addWidget(self.etat_replique)
+        self.boite_replique.hide()
+        vd.addWidget(self.boite_replique)
+        self.diction.currentIndexChanged.connect(self._maj_diction)
+        self.prompt.textChanged.connect(self._maj_diction)
+
+    def _style_replique(self):
+        from . import diction as DI
+        k = self.diction.currentData()
+        if k and k != "auto":
+            return k, ""
+        e = self.effet() or {}
+        return DI.style_depuis(self.prompt.toPlainText(), e.get("famille", "video"), self.ed.params)
+
+    def _maj_diction(self, *_a):
+        if not hasattr(self, "etat_replique"):
+            return
+        from . import diction as DI
+        k, ref = self._style_replique()
+        lib = DI.STYLES[k][0]
+        self.etat_replique.setText(_("Phrasé : {s}", s=lib) + (_(" (d'après « {r} »)", r=ref) if ref else ""))
+
+    def _reecrire_replique(self):
+        from . import diction as DI
+        texte = self.replique.toPlainText().strip()
+        if not texte:
+            self.etat_replique.setText(_("Écrivez d'abord la réplique."))
+            return
+        niveau = self.niveau_replique.currentData()
+        if niveau == "cloud":
+            from . import ia
+            if not ia.confirmer_cout(self, self.ed.params, 400, 0, _("Réplique")):
+                return
+        k, ref = self._style_replique()
+        params = self.ed.params
+        self.b_reecrire.setEnabled(False)
+        self.etat_replique.setText(_("L'IA récrit la réplique…"))
+        t = Tache(lambda tache: DI.reecrire(texte, k, params, niveau, ref), _("Réplique"))
+        self._tache_replique = t
+
+        def fin(r, err):
+            try:
+                self.b_reecrire.setEnabled(True)
+                if err:
+                    self.etat_replique.setText(_("✕ Réplique non récrite : {e}", e=str(err)[:300]))
+                    return
+                self.replique.setPlainText(r)
+                self.etat_replique.setText(_("Réplique récrite : écoutez-la, modifiez-la si besoin."))
+            except RuntimeError:
+                pass
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
+
+    def _confirmer_voix(self):
+        """Voix Gemini : prix affiché et confirmation avant l'envoi."""
+        if self.moteur_replique.currentData() != "gemini":
+            return True
+        from . import ia
+        return ia.confirmer_cout(self, self.ed.params, len(self.replique.toPlainText()) + 120, 0, _("Voix de la réplique (Gemini)"))
+
+    def _ecouter_replique(self):
+        from . import diction as DI
+        texte = self.replique.toPlainText().strip()
+        if not texte or not self._confirmer_voix():
+            return
+        k, _ref = self._style_replique()
+        m, params = self.moteur_replique.currentData(), self.ed.params
+        sortie = os.path.join(_dossier_sorties(), f"_replique_{int(time.time())}.wav")
+        self.b_ecouter_replique.setEnabled(False)
+        self.etat_replique.setText(_("La voix dit la réplique…"))
+        t = Tache(lambda tache: DI.dire(texte, sortie, params, k, m), _("Réplique"))
+        self._tache_ecoute = t
+
+        def fin(r, err):
+            try:
+                self.b_ecouter_replique.setEnabled(True)
+                if err:
+                    self.etat_replique.setText(_("✕ Voix impossible : {e}", e=str(err)[:300]))
+                    return
+                self._maj_diction()
+                self.apercu_media.charger(r, video=False)
+                self.apercu_media.show()
+            except RuntimeError:
+                pass
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
+
+    def _refaire_voix(self):
+        """Garde le clip, refait seulement la voix (autre réplique, autre manière de parler, autre moteur)."""
+        brut = getattr(self, "_clip_brut", None)
+        if not brut or not os.path.exists(brut) or not self.replique.toPlainText().strip() or not self._confirmer_voix():
+            return
+        from . import diction as DI
+        texte, (k, _r), m, params = self.replique.toPlainText().strip(), self._style_replique(), self.moteur_replique.currentData(), self.ed.params
+        sortie = brut.replace("_brut.mp4", f"_voix{int(time.time()) % 10000}.mp4")
+        e = self.effet()
+
+        def travail(t):
+            t.avancer(0.2, _("La voix dit la réplique…"))
+            w = sortie[:-4] + ".wav"
+            DI.dire(texte, w, params, k, m)
+            t.avancer(0.7, _("Réplique mêlée au clip…"))
+            DI.mixer(brut, w, sortie)
+            return sortie
+        self._recette = dict(getattr(self, "_recette", {}), replique=texte, diction=self.diction.currentData(), moteur_replique=m)
+        self.tache = Tache(travail, _("Réplique"))
+        self.tache.progression.connect(self._progression, Qt.QueuedConnection)
+        self.tache.fini.connect(lambda r, err, e=e: self._fini(e, r, err), Qt.QueuedConnection)
+        self.b_creer.setEnabled(False)
+        self._t0, self._fraction = time.monotonic(), 0.0
+        self.barre.setValue(0)
+        self.barre.show()
+        self.tache.start()
 
     # ---- styles « à la manière de »
     def _transposition(self):
@@ -540,7 +700,31 @@ class DialogueAtelierIA(QDialog):
                 if comment != "deja":
                     t.avancer(0.0, _("Phrase envoyée au moteur, en anglais : « {t} »", t=en[:160]))
             return base(t)
+        texte_rep = self.replique.toPlainText().strip() if e["famille"] == "video" else ""
+        self._clip_brut = None
+        if texte_rep:
+            if not self._confirmer_voix():
+                return
+            from . import diction as DI
+            k_rep, _ref = self._style_replique()
+            m_rep = self.moteur_replique.currentData()
+            sortie_finale = sortie
+            brut = sortie[:-4] + "_brut.mp4"
+            self._clip_brut = brut
+            base2 = travail
+
+            def travail(t, base2=base2):
+                r = base2(t)
+                chemin = r if isinstance(r, str) else (r[0] if isinstance(r, (tuple, list)) else r)
+                os.replace(chemin, brut)
+                t.avancer(0.95, _("La voix dit la réplique ({s})…", s=DI.STYLES[k_rep][0]))
+                w = sortie_finale[:-4] + ".wav"
+                DI.dire(texte_rep, w, params, k_rep, m_rep)
+                t.avancer(0.98, _("Réplique mêlée au clip…"))
+                return DI.mixer(brut, w, sortie_finale)
         self._recette = {"famille": e["famille"], "effet": e["id"], "prompt": prompt, "force": force}
+        if texte_rep:
+            self._recette.update(replique=texte_rep, diction=self.diction.currentData(), moteur_replique=m_rep)
         if e["famille"] == "musique":
             self._recette.update(duree=self.duree.value(), instrumental=self.instrumental.isChecked(), paroles=self.paroles.toPlainText(),
                                  voix=self.voix_chant.currentData(), langue=self.langue_chant.currentData())
@@ -652,6 +836,8 @@ class DialogueAtelierIA(QDialog):
             self._action(_("Poser au-dessus du film"), self._poser_clip)
             self._action(_("Ajouter aux médias seulement"), lambda: (self.ed.importer([self.resultat]),
                                                                     self.info.setText(_("Ajouté aux médias du projet."))))
+            if getattr(self, "_clip_brut", None) and os.path.exists(self._clip_brut):
+                self._action(_("Refaire seulement la voix"), self._refaire_voix)
             if getattr(self, "_remplace", None):
                 self._action(_("Remplacer le plan d'origine"), self._remplacer)
             self._action(_("Ranger dans ma bibliothèque"), self._ranger)
@@ -677,6 +863,10 @@ class DialogueAtelierIA(QDialog):
             self.paroles.setPlainText(recette.get("paroles") or "")
             self.voix_chant.setCurrentIndex(max(0, self.voix_chant.findData(recette.get("voix") or "auto")))
             self.langue_chant.setCurrentIndex(max(0, self.langue_chant.findData(recette.get("langue") or "fr")))
+        if recette.get("replique"):
+            self.replique.setPlainText(recette["replique"])
+            self.diction.setCurrentIndex(max(0, self.diction.findData(recette.get("diction") or "auto")))
+            self.moteur_replique.setCurrentIndex(max(0, self.moteur_replique.findData(recette.get("moteur_replique") or "local")))
         self.info.setText(_("Création reprise : modifiez la phrase, les paroles ou la durée, puis « Créer ». Le résultat pourra "
                             "remplacer l'original."))
 
