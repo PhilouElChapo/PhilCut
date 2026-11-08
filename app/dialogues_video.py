@@ -866,18 +866,22 @@ class DialogueExport(QDialog):
         f.addRow(_("Fichier"), h)
         self.srt = QCheckBox(_("Ecrire aussi les sous-titres en .srt (pour YouTube)"))
         f.addRow(self.srt)
-        hd = QHBoxLayout()
-        self.double = QCheckBox(_("Exporter aussi en"))
-        self.dest2 = QComboBox()
-        for k, d in moteur.DESTINATIONS.items():
-            if k != "original":
-                self.dest2.addItem(d[0], k)
-        self.dest2.setCurrentIndex(max(0, self.dest2.findData("insta" if projet.taille[0] >= projet.taille[1] else "youtube")))
-        self.double.setToolTip(_("Deux fichiers d'un coup : par exemple horizontal pour YouTube et vertical pour Instagram. "
-                                 "Les plans qui suivent une personne la suivent dans les deux formats ; les autres passent en fond flou."))
-        hd.addWidget(self.double)
-        hd.addWidget(self.dest2, 1)
-        f.addRow(hd)
+        # exports en série (0.9.25) : la même vidéo dans plusieurs formats d'un coup, un fichier par format
+        from PySide6.QtWidgets import QGridLayout, QGroupBox
+        g = QGroupBox(_("Exporter aussi en (un fichier par format coché)"))
+        g.setToolTip(_("Par exemple horizontal pour YouTube, vertical pour les Reels et carré : les plans qui suivent une personne la "
+                       "suivent dans chaque format ; les autres passent en fond flou (rien n'est coupé)."))
+        gl = QGridLayout(g)
+        self.autres = {}
+        deja = set(params.get("export_autres") or [])
+        for i, (k, d) in enumerate((k, d) for k, d in moteur.DESTINATIONS.items() if k != "original"):
+            cb = QCheckBox(d[0])
+            cb.setChecked(k in deja)
+            self.autres[k] = cb
+            gl.addWidget(cb, i // 2, i % 2)
+        self.dest.currentIndexChanged.connect(self._maj_autres)
+        self._maj_autres()
+        f.addRow(g)
         self.drive = QCheckBox(_("Déposer ensuite sur le Drive / NAS de synchronisation"))
         f.addRow(self.drive)
         # ---- vignette du fichier : l'image du film qui représente la vidéo
@@ -924,6 +928,15 @@ class DialogueExport(QDialog):
         px = QPixmap()
         if png and px.loadFromData(png):
             self.apercu_vignette.setPixmap(px.scaled(128, 72, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
+    def _maj_autres(self, *_a):
+        for k, cb in self.autres.items():
+            cb.setEnabled(k != self.dest.currentData())
+
+    def autres_formats(self):
+        l = [k for k, cb in self.autres.items() if cb.isChecked() and cb.isEnabled()]
+        self.params["export_autres"] = l
+        return l
 
     def _parcourir(self):
         p, _f = QFileDialog.getSaveFileName(self, _("Exporter la vidéo"), self.chemin.text(), "MP4 (*.mp4)")

@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.24 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.25 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.25
+- Modeles de montage (Montage > "Modeles de montage...") : 10 modeles tout faits (Vlog voyage 30 s vertical, Vlog 2 min, Short dynamique 15 s, Vol en avion 1 min, Souvenirs de famille, Anniversaire, Bande-annonce cinema, Presentation d'un lieu, Annonce 20 s, Diaporama de photos). PhilCut analyse vos rushes sur ce poste et monte a la facon du modele : format, duree, rythme des coupes, transitions, look, titre anime, ecran de fin, musique du projet calee sur les temps forts. Tout reste modifiable ; Ctrl+Z revient au montage d'avant. Rien de payant, aucun filigrane.
+- Exports en serie : dans la fenetre d'export, "Exporter aussi en" coche autant de formats que voulu (YouTube, 4K, Reels 9:16, carre, WhatsApp, ecran LED) : un fichier par format, d'un coup ; les plans qui suivent une personne la suivent dans chaque format, les autres passent en fond flou. Les formats coches sont retenus.
 
 ### 0.9.24
 - Prolonger un plan trop court : clic droit sur un plan > "Prolonger ce plan (image tenue, ralenti ou IA)...". De 0,5 a 6 s, a la fin ou au debut, de trois facons : image tenue avec un lent zoom (instantane), ralenti de la derniere seconde avec images fondues, ou suite de la scene inventee par l'IA video locale. Le son du plan est prolonge (ambiance en fondu) ou silence. On regarde le resultat avant de le poser ; la suite du montage (plans, textes, Goodies, sous-titres) est decalee ; Ctrl+Z l'enleve.

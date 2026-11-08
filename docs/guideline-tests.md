@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T45 — 0.9.25 : modèles de montage, exports en série
+
+1. **Modèle** : nouveau projet, importer 4 à 10 rushes et une musique ; Montage › « Modèles de montage… » › « Short dynamique, 15 s » › « Monter avec ce modèle ». **Attendu** : barre d'analyse, puis un montage vertical d'environ 15 s, coupes très rapides sur les temps de la musique, transitions glitch et zoom, titre animé, écran de fin. Ctrl+Z revient au montage d'avant.
+2. **Autres modèles** : refaire avec « Souvenirs de famille » puis « Bande-annonce cinéma » : rythme, transitions et look changent nettement. Modifier un plan ensuite : tout reste modifiable.
+3. **Sans musique** : la fenêtre prévient que le montage n'en aura pas.
+4. **Exports en série** : Fichier › Exporter, destination YouTube, cocher « Instagram / Reels », « Instagram carré » et « Ecran LED ». **Attendu** : quatre fichiers d'un coup (nom, nom_vertical, nom_carre, nom_ecran_led) ; une personne suivie reste cadrée dans chacun. A la fois suivante, les mêmes cases sont cochées.
+
 ## T44 — 0.9.24 : prolonger un plan trop court
 
 1. **Image tenue** : clic droit sur un plan › « Prolonger ce plan… », 2 s, à la fin, « Image tenue », « Fabriquer ». **Attendu** : barre de progression, puis l'aperçu montre la dernière image avec un lent zoom et le son d'ambiance qui s'éteint ; rien n'est posé avant « Poser dans le film ». Après : le plan suivant, les textes et les sous-titres sont décalés de 2 s. Ctrl+Z revient.

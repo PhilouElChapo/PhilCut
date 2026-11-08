@@ -2479,6 +2479,13 @@ class Editeur(QWidget):
         d.exec()
         self.rafraichir()
 
+    def modeles_montage(self):
+        """Modèles de montage tout faits, avec les rushes du projet (0.9.25)."""
+        from .dialogues_modeles import DialogueModeles
+        d = DialogueModeles(self)
+        d.exec()
+        return d
+
     def prolonger_plan(self, clip):
         """Quelques secondes de plus au début ou à la fin d'un plan (image tenue, ralenti ou IA), regardées avant d'être posées."""
         from .dialogues_prolonger import DialogueProlonger

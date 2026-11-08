@@ -56,15 +56,16 @@ def classer(fiches, indices=None):
     return "generique"
 
 
-def proposer(medias, params=None, indices="", format_=None, duree_cible=None, type_force=None):
-    """Recette sans IA, a partir des medias du projet (chacun avec m["analyse"] = fiche)."""
+def proposer(medias, params=None, indices="", format_=None, duree_cible=None, type_force=None, reglages=None):
+    """Recette sans IA, a partir des medias du projet (chacun avec m["analyse"] = fiche). reglages : ce qu'un modèle de
+    montage impose (rythme des plans, transitions, look, musique, Goodies ; 0.9.25)."""
     params = params or {}
     fiches = [dict(m.get("analyse") or {}, media=m["id"], nom=m["nom"], genre=m.get("genre")) for m in medias]
     videos = sorted([f for f in fiches if f.get("genre") == "video" and f.get("duree")], key=lambda f: ((f.get("date") or ""), (f.get("heure") or ""), f["nom"]))
     images = [f for f in fiches if f.get("genre") == "image"]
     musiques = [f for f in fiches if f.get("genre") == "audio"]
     type_ = type_force or classer(fiches, indices + " " + " ".join(f["nom"] for f in fiches))
-    T = TYPES[type_]
+    T = dict(TYPES[type_], **(reglages or {}))
     vertical = format_ == "9:16" if format_ else (sum(1 for f in videos if f.get("vertical")) > len(videos) / 2 if videos else False)
     fmt = format_ or ("9:16" if vertical else "16:9")
     cible = duree_cible or (55 if fmt == "9:16" else min(240, max(45, sum(f["duree"] for f in videos) * 0.45)))

@@ -193,6 +193,8 @@ class Fenetre(QMainWindow):
         for fam, lib in (("image", _("Retoucher l'image du film (cartoon, 3D, peinture…)…")), ("video", _("Effet IA sur la partie en jaune…")),
                          ("logo", _("Logo, intro ou miniature par IA…")), ("musique", _("Créer une musique par IA…"))):
             sm_ia.addAction(lib, lambda fam=fam: self._ed(lambda ed: ed.atelier_ia(fam)))
+        act(icone("clap"), _("Modèles de montage…"), _("Vlog voyage 30 s, Short dynamique, Vol en avion, Souvenirs de famille… : vos rushes "
+                                                         "montés à la façon du modèle"), lambda: self._editeur_ou_nouveau().modeles_montage())
         act(icone("sous_titres"), _("Monter par le texte…"), _("Le texte de ce qui est dit : effacer une phrase coupe la vidéo ; « euh » et "
                                                                  "silences enlevés d'un clic"), lambda: self._ed(lambda ed: ed.monter_par_texte()), "Ctrl+T")
         act(icone("assistant"), _("Dites-le en clair…"), _("Une phrase (« coupe les silences et mets une musique calme ») devient des actions"),
@@ -652,9 +654,16 @@ class Fenetre(QMainWindow):
         import copy
         projet_copie = copy.deepcopy(ed.projet)
         travaux = [(projet_copie, sortie, dest)]
-        if d.double.isChecked() and d.dest2.currentData() != dest:
-            dest2 = d.dest2.currentData()
-            travaux.append((export.autre_format(ed.projet, dest2), export.nom_autre(sortie, dest2), dest2))
+        noms = {sortie}
+        for dest2 in d.autres_formats():                    # exports en série (0.9.25) : un fichier par format coché
+            if dest2 == dest:
+                continue
+            nom = export.nom_autre(sortie, dest2)
+            if nom in noms:
+                b, x = os.path.splitext(nom)
+                nom = f"{b}_{dest2}{x}"
+            noms.add(nom)
+            travaux.append((export.autre_format(ed.projet, dest2), nom, dest2))
 
         def travail(tache):
             journal = []
