@@ -37,6 +37,20 @@ class TestCatalogue(unittest.TestCase):
             if look:
                 self.assertIn(look, E.CATALOGUE, m["id"])
             self.assertIn("fr", m["nom"])
+        from app import modeles_montage as MM, presentation as PRS
+        for ident, maj in (d.get("mises_a_jour_modeles") or {}).items():
+            self.assertIn(ident, MM.MODELES, ident)
+            for t in (maj.get("reglages") or {}).get("transitions") or []:
+                self.assertIn(t, E.CATALOGUE, (ident, t))
+            if maj.get("presentation"):
+                self.assertIn(maj["presentation"], PRS.STYLES, ident)
+        for v in d.get("presentations") or []:
+            self.assertIn(v["style"], PRS.STYLES, v["id"])
+            self.assertIn(v.get("fond", "flou"), PRS.FONDS, v["id"])
+            self.assertTrue(2 <= int(v.get("fragments", 6)) <= 40, v["id"])
+        for m in d.get("modeles_montage") or []:
+            if m.get("presentation"):
+                self.assertIn(m["presentation"], PRS.STYLES, m["id"])
         for nom, s in (d.get("styles") or {}).items():
             self.assertTrue(any(isinstance(s.get(k), str) and s[k] for k in ("voix", "musique", "image", "jeu")), nom)
             for k in ("voix", "musique", "image", "jeu"):
@@ -70,7 +84,7 @@ class TestCatalogue(unittest.TestCase):
         self.assertEqual(NV.nombre_nouveaux(params), len(arrives) - len(gs))
         for a in arrives:
             if a["cat"] == "modeles_montage":
-                self.assertIn(a["id"], MM.tous(params))
+                self.assertIn(a["id"].split("@")[0], MM.tous(params))
             if a["cat"] == "tampons_ia":
                 self.assertIn(a["id"], TI.MODELES)
         if any(a["cat"] == "styles" and a["id"] == "top gun" for a in arrives):

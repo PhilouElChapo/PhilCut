@@ -99,6 +99,8 @@ class DialogueNouveautes(QDialog):
             return
         if a["cat"] == "goodies":
             ed.outil("goodies")
+        elif a["cat"] == "presentations":
+            ed.presentation_photos()
         elif a["cat"] == "modeles_montage":
             ed.modeles_montage()
         elif a["cat"] == "tampons_ia":

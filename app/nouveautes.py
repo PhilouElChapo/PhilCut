@@ -7,8 +7,8 @@ from .catalogue_ligne import charger, localise
 from .langue import _
 
 FICHIER = "nouveautes.json"
-CATEGORIES = {"goodies": _("Goodies"), "modeles_montage": _("Modèles de montage"), "styles": _("Styles « à la manière de »"),
-              "tampons_ia": _("Modèles de tampons IA")}
+CATEGORIES = {"goodies": _("Goodies"), "modeles_montage": _("Modèles de montage"), "presentations": _("Présentations de photos"),
+              "styles": _("Styles « à la manière de »"), "tampons_ia": _("Modèles de tampons IA")}
 _ARRIVES = []              # [{cat, id, nom, desc, ajoute}]
 _INTEGRES = {"styles": set(), "tampons_ia": set()}      # déjà ajoutés par le catalogue (intégrer deux fois ne change rien)
 
@@ -31,6 +31,20 @@ def integrer(reseau=False, delai=8):
             pack["goodies"].append(genre)
         arrives.append({"cat": "goodies", "id": genre, "nom": localise(e.get("nom")) or gid, "desc": localise(e.get("description")),
                         "ajoute": e.get("ajoute", "")})
+    MM.mettre_a_jour(d.get("mises_a_jour_modeles"))          # les modèles intégrés évoluent aussi (0.9.27)
+    for ident, maj in (d.get("mises_a_jour_modeles") or {}).items():
+        if ident in MM.MODELES:
+            arrives.append({"cat": "modeles_montage", "id": ident + "@" + str(maj.get("ajoute", "")), "nom": MM.MODELES[ident]["nom"],
+                            "desc": localise(maj.get("explication")) or _("Modèle mis à jour : nouvelles transitions ou animations."),
+                            "ajoute": maj.get("ajoute", "")})
+    from . import presentation as PR
+    for v in d.get("presentations") or []:                     # variantes des présentations de photos
+        if isinstance(v, dict) and v.get("id") and v.get("style") in PR.STYLES:
+            PR.VARIANTES[v["id"]] = {"nom": localise(v.get("nom")) or v["id"], "desc": localise(v.get("desc")), "style": v["style"],
+                                     "fond": v.get("fond", "flou") if v.get("fond") in PR.FONDS else "flou",
+                                     "options": {k: v[k] for k in ("fragments",) if k in v}, "duree_image": v.get("duree_image")}
+            arrives.append({"cat": "presentations", "id": v["id"], "nom": PR.VARIANTES[v["id"]]["nom"], "desc": PR.VARIANTES[v["id"]]["desc"],
+                            "ajoute": v.get("ajoute", "")})
     MM._EN_LIGNE.clear()
     for m in d.get("modeles_montage") or []:
         if isinstance(m, dict) and m.get("id") and m.get("type") in __import__("app.recettes", fromlist=["TYPES"]).TYPES:

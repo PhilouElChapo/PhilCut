@@ -83,6 +83,7 @@ class DialogueModeles(QDialog):
             txt += " " + _("Le montage actuel sera remplacé (Ctrl+Z revient en arrière).")
         self.etat.setText(txt)
         self.b_monter.setEnabled(bool(nv or ni))
+        it = self.liste.currentItem() if hasattr(self, "liste") else None
 
     def _importer(self):
         self.ed.importer()
@@ -98,6 +99,30 @@ class DialogueModeles(QDialog):
         self.barre.setValue(0)
         self.barre.show()
         self._choix = (it.data(Qt.UserRole), self.duree.value(), self.format.currentData())
+        m = MM.tous(params)[it.data(Qt.UserRole)]
+        if m.get("presentation"):                         # modèle à photos : la présentation animée devient le montage (0.9.27)
+            import os, time
+            from . import presentation as PR
+            from .creations import dossier
+            from .projet import FORMATS
+            photos = PR.trier_par_date([x["chemin"] for x in p.medias if x.get("genre") == "image" and os.path.exists(x.get("chemin", ""))])
+            if not photos:
+                self.barre.hide()
+                self.b_monter.setEnabled(True)
+                self.etat.setText(_("Ce modèle monte des photos : ajoutez des photos au projet (« Ajouter des rushes… »)."))
+                return
+            mm = dict(m, duree=self.duree.value())
+            taille = FORMATS.get(self.format.currentData(), p.taille)
+            sortie = os.path.join(dossier(), f"modele_{it.data(Qt.UserRole)}_{time.strftime('%Y%m%d_%H%M%S')}.mp4")
+            self.tache = Tache(lambda t: PR.fabriquer(photos, sortie, m["presentation"], MM.duree_par_photo(mm, len(photos)), taille, p.cadence,
+                                                      m.get("fond", "flou"), options=m.get("options"), progression=t.avancer,
+                                                      arret=t.arret_demande), _("Modèle de montage"))
+            self.ed.taches.append(self.tache)
+            self.ed.encart.suivre(self.tache, _("Présentation de photos animée"))
+            self.tache.progression.connect(lambda f, txt: (self.barre.setValue(int(f * 1000)), txt and self.etat.setText(txt)), Qt.QueuedConnection)
+            self.tache.fini.connect(self._presentation, Qt.QueuedConnection)
+            self.tache.start()
+            return
         self.tache = Tache(lambda t: A.preparer(p, params, progression=lambda f, txt: t.avancer(f * 0.95, _("Analyse : {n}", n=txt))),
                            _("Modèle de montage"))
         self.ed.taches.append(self.tache)
@@ -105,6 +130,26 @@ class DialogueModeles(QDialog):
         self.tache.progression.connect(lambda f, txt: (self.barre.setValue(int(f * 1000)), txt and self.etat.setText(txt)), Qt.QueuedConnection)
         self.tache.fini.connect(self._analyse, Qt.QueuedConnection)
         self.tache.start()
+
+    def _presentation(self, r, err):
+        try:
+            self.tache = None
+            self.barre.hide()
+            self.b_monter.setEnabled(True)
+            if err:
+                self.etat.setText(_("✕ Présentation impossible : {e}", e=str(err)[:300]))
+                return
+            k, _d, fmt = self._choix
+            self.ed.projet.d["format"] = fmt
+            MM.appliquer_presentation(self.ed.projet, r, k, self.ed.params)
+            self.ed.projet.d["format"] = fmt
+            self.ed.biblio.remplir(self.ed.projet)
+            self.ed.rafraichir()
+            self.ed.encart.message(_("Montage « {m} » posé. Ctrl+Z revient en arrière.", m=MM.tous(self.ed.params)[k]["nom"]), 9000)
+            self.resultat = {"modele": k, "clip": r}
+            self.accept()
+        except RuntimeError:
+            pass
 
     def _analyse(self, r, err):
         try:

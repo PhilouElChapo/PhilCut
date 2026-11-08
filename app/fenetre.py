@@ -193,6 +193,9 @@ class Fenetre(QMainWindow):
         for fam, lib in (("image", _("Retoucher l'image du film (cartoon, 3D, peinture…)…")), ("video", _("Effet IA sur la partie en jaune…")),
                          ("logo", _("Logo, intro ou miniature par IA…")), ("musique", _("Créer une musique par IA…"))):
             sm_ia.addAction(lib, lambda fam=fam: self._ed(lambda ed: ed.atelier_ia(fam)))
+        act(icone("image"), _("Présentation de photos animée…"), _("Lancer de cartes, explosion en particules, puzzle, mur de photos, "
+                                                                     "carrousel 3D, éventail, polaroïds sur une corde"),
+            lambda: self._editeur_ou_nouveau().presentation_photos())
         act(icone("clap"), _("Modèles de montage…"), _("Vlog voyage 30 s, Short dynamique, Vol en avion, Souvenirs de famille… : vos rushes "
                                                          "montés à la façon du modèle"), lambda: self._editeur_ou_nouveau().modeles_montage())
         act(icone("sous_titres"), _("Monter par le texte…"), _("Le texte de ce qui est dit : effacer une phrase coupe la vidéo ; « euh » et "

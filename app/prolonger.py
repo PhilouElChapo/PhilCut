@@ -136,3 +136,13 @@ def poser(projet, clip, chemin, cote="fin", nom=""):
 def copy_(v):
     import copy
     return copy.deepcopy(v)
+
+
+def inserer(projet, chemin, t, piste="video", nom=""):
+    """Insère un fichier dans la piste à l'instant t (après le plan qui s'y trouve) ; la suite est décalée."""
+    from .projet import fin_clip
+    sous = next((c for c in projet.clips_piste(piste) if c["debut"] - 1e-3 <= t < fin_clip(c) - 1e-3), None)
+    if sous:
+        t = fin_clip(sous)
+    repere = {"debut": t, "piste": piste}                  # poser() avant ce repère = insérer à t
+    return poser(projet, repere, chemin, "debut", nom)

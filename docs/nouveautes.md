@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.26 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.27 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.27
+- Presentation de photos animee (Montage > "Presentation de photos animee...") : une serie de photos devient un clip anime, dessine sur ce poste. Huit animations : lancer de cartes sur une table, explosion en particules (les fragments sont des morceaux de la photo, la suivante se reforme), puzzle qui s'assemble, pile de photos qui s'envole, mur de photos ou la camera plonge, carrousel 3D, eventail comme une main de cartes, polaroids sur une corde qui se balancent. La vignette de chaque animation bouge quand on la survole. Fond floute, sombre, table en bois ou clair ; duree par photo ; ordre de prise de vue. On regarde avant de poser ; "Ranger dans ma bibliotheque".
+- 4 modeles de montage a photos (lancer de cartes, explosion, mur de souvenirs, polaroids sur une corde) : la presentation devient le montage, avec la musique et le titre anime.
+- Les modeles integres evoluent par le catalogue en ligne (nouvelles transitions ajoutees, autre animation de photos) et le catalogue peut ajouter des variantes de presentations (premieres : "Confettis de photos", "Grand puzzle") ; le Diaporama passe a la pile qui s'envole.
 
 ### 0.9.26
 - Nouveautes du catalogue (Aide > "Nouveautes du catalogue...", et bouton "Nouveautes..." dans la galerie des Goodies) : chaque mois, une veille automatique ajoute des Goodies, des modeles de montage, des styles "a la maniere de" et des modeles de tampons IA, sans reinstaller PhilCut. ✦ marque ce que vous n'avez pas encore vu (dans la liste, la galerie des Goodies et les modeles) ; "Verifier maintenant" interroge le catalogue et dit s'il y a du nouveau ; un double-clic ouvre l'endroit ou l'utiliser. Copie gardee pour les jours sans reseau.

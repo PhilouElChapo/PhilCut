@@ -1,7 +1,7 @@
 {
  "format": 1,
  "maj": "2026-11-08",
- "_commentaire": "Nouveautes de PhilCut ajoutees sans reinstaller (veille mensuelle) : uniquement des donnees. Goodies en SVG (viewBox 0 0 100 100, dessins originaux, aucun personnage ni logo de marque), modeles de montage (type = un type de app/recettes.py), styles a la maniere de (descriptions en anglais, jamais un visage ni une voix exacte), modeles de tampons IA. Textes par langue.",
+ "_commentaire": "Nouveautes de PhilCut ajoutees sans reinstaller (veille mensuelle) : uniquement des donnees. Goodies en SVG (viewBox 0 0 100 100, dessins originaux, aucun personnage ni logo de marque), modeles de montage (type = un type de app/recettes.py), styles a la maniere de (descriptions en anglais, jamais un visage ni une voix exacte), modeles de tampons IA. Textes par langue. Depuis 0.9.27 : mises_a_jour_modeles {id d'un modele integre: reglages (listes ajoutees), presentation, fond, titre, explication} et presentations [{id, style (cartes, explosion, puzzle, pile, mur, carrousel, eventail, corde), fond (flou, sombre, table, clair), fragments, nom, desc}].",
  "packs_goodies": {
   "reactions": {
    "nom": {
@@ -483,6 +483,79 @@
    },
    "voix": "radio",
    "duree": 3.0
+  }
+ ],
+ "mises_a_jour_modeles": {
+  "vlog_30": {
+   "ajoute": "2026-11-08",
+   "reglages": {
+    "transitions": [
+     "t_balayage"
+    ]
+   },
+   "explication": {
+    "fr": "Vlog 30 s : une transition « balayage » en plus.",
+    "en": "30 s vlog: one more « wipe » transition.",
+    "de": "Vlog 30 s: ein zusätzlicher « Wisch »-Übergang.",
+    "es": "Vlog 30 s: una transición « barrido » más.",
+    "it": "Vlog 30 s: una transizione « tendina » in più."
+   }
+  },
+  "diaporama": {
+   "ajoute": "2026-11-08",
+   "presentation": "pile",
+   "fond": "flou",
+   "explication": {
+    "fr": "Diaporama : les photos arrivent maintenant en pile qui s'envole.",
+    "en": "Slideshow: photos now come as a flying stack.",
+    "de": "Diashow: Fotos kommen jetzt als wegfliegender Stapel.",
+    "es": "Diaporama: las fotos llegan ahora en una pila que sale volando.",
+    "it": "Diaporama: le foto ora arrivano in una pila che vola via."
+   }
+  }
+ },
+ "presentations": [
+  {
+   "id": "confettis",
+   "style": "explosion",
+   "fond": "clair",
+   "fragments": 22,
+   "ajoute": "2026-11-08",
+   "nom": {
+    "fr": "Confettis de photos",
+    "en": "Photo confetti",
+    "de": "Foto-Konfetti",
+    "es": "Confeti de fotos",
+    "it": "Coriandoli di foto"
+   },
+   "desc": {
+    "fr": "L'explosion en tout petits fragments, sur fond clair : comme des confettis.",
+    "en": "The explosion in tiny fragments on a light background: like confetti.",
+    "de": "Die Explosion in winzige Teile auf hellem Grund: wie Konfetti.",
+    "es": "La explosión en fragmentos diminutos sobre fondo claro: como confeti.",
+    "it": "L'esplosione in minuscoli frammenti su fondo chiaro: come coriandoli."
+   }
+  },
+  {
+   "id": "grand_puzzle",
+   "style": "puzzle",
+   "fond": "sombre",
+   "fragments": 10,
+   "ajoute": "2026-11-08",
+   "nom": {
+    "fr": "Grand puzzle",
+    "en": "Big jigsaw",
+    "de": "Großes Puzzle",
+    "es": "Gran puzle",
+    "it": "Grande puzzle"
+   },
+   "desc": {
+    "fr": "Le puzzle avec deux fois plus de pièces, qui tombent en pluie.",
+    "en": "The jigsaw with twice as many pieces, falling like rain.",
+    "de": "Das Puzzle mit doppelt so vielen Teilen, die wie Regen fallen.",
+    "es": "El puzle con el doble de piezas, que caen como lluvia.",
+    "it": "Il puzzle con il doppio dei pezzi, che cadono come pioggia."
+   }
   }
  ]
 }

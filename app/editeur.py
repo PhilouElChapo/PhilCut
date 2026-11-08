@@ -2479,6 +2479,13 @@ class Editeur(QWidget):
         d.exec()
         self.rafraichir()
 
+    def presentation_photos(self, chemins=None):
+        """Une série de photos devient un clip animé (lancer de cartes, explosion, puzzle, mur…) ; 0.9.27."""
+        from .dialogues_presentation import DialoguePresentation
+        d = DialoguePresentation(self, chemins)
+        d.exec()
+        return d
+
     def modeles_montage(self):
         """Modèles de montage tout faits, avec les rushes du projet (0.9.25)."""
         from .dialogues_modeles import DialogueModeles
