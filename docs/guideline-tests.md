@@ -168,9 +168,9 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 
 ## T47 — 0.9.27 : présentation de photos animée
 
-1. **Fenêtre** : un projet avec 6 à 15 photos ; Montage › « Présentation de photos animée… ». **Attendu** : 8 animations (et les variantes du catalogue, ✦), chaque vignette bouge au survol ; le nombre de photos et la durée du clip sont affichés.
+1. **Fenêtre** : un projet avec 6 à 15 photos ; Montage › « Présentation de photos animée… ». **Attendu** : 10 animations depuis 0.9.29 (et les variantes du catalogue, ✦), chaque vignette bouge au survol ; le nombre de photos et la durée du clip sont affichés.
 2. **Lancer de cartes** (fond « Table en bois »), « Fabriquer » : barre « Image 120 sur 600… », puis l'aperçu : les photos arrivent en tournoyant et s'empilent. « Poser à la ligne rouge » : le clip est inséré, la suite décalée ; Ctrl+Z revient.
-3. **Explosion, puzzle, mur, carrousel, éventail, corde, pile** : chacune fabriquée une fois, regardée ; photos verticales et horizontales mélangées bien cadrées.
+3. **Explosion, puzzle, mur, carrousel, éventail, corde, pile, tourbillon, feuilles qui tombent (0.9.29)** : chacune fabriquée une fois, regardée ; photos verticales et horizontales mélangées bien cadrées.
 4. **Ordre** : la case « Dans l'ordre de prise de vue » range les photos par date.
 5. **Modèles à photos** : Modèles de montage › « Photos : mur de souvenirs » : le montage devient la présentation, avec la musique du projet et le titre.
 6. **Catalogue** : Aide › Nouveautés : « Confettis de photos », « Grand puzzle », « Diaporama » mis à jour.

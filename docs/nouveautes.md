@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.28 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.29 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.29
+- Presentation de photos animee : deux animations de plus, "Tourbillon" (la photo s'enroule en spirale et disparait au centre, la suivante en jaillit en tournoyant) et "Feuilles qui tombent" (les photos tombent comme des feuilles d'automne, en se balancant et en virevoltant, et se posent les unes sur les autres). Dix animations en tout.
 
 ### 0.9.28
 - Etalonnage simple (clic droit sur un plan > "Etalonnage...", ou Montage > "Etalonnage du plan...", Ctrl+Maj+E) : l'image du plan a la ligne rouge avec un rideau avant / apres que l'on fait glisser ; trois roues de couleur (ombres, tons moyens, hautes lumieres) ; exposition, contraste, saturation, temperature, teinte. "Auto" retire une dominante et redonne du peps ; "Accorder sur ce plan" donne a un plan la lumiere et les couleurs d'un autre (deux cameras, deux heures de la journee) ; "Copier" sur les plans du meme rush ou sur tous. Meme rendu a l'apercu et a l'export ; Ctrl+Z revient.

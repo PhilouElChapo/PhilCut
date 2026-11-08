@@ -27,6 +27,9 @@ STYLES = {
     "carrousel": (_("Carrousel 3D"), _("Les photos tournent sur un manège en perspective ; celle de devant s'éclaire et s'agrandit.")),
     "eventail": (_("Éventail"), _("Les photos s'ouvrent en éventail comme une main de cartes, puis chacune vient au premier plan.")),
     "corde": (_("Polaroïds sur une corde"), _("Des polaroïds suspendus par des pinces se balancent ; la caméra longe la corde.")),
+    "tourbillon": (_("Tourbillon"), _("La photo s'enroule en spirale et disparaît au centre ; la suivante en jaillit en tournoyant.")),
+    "feuilles": (_("Feuilles qui tombent"), _("Les photos tombent comme des feuilles d'automne, en se balançant et en virevoltant, et se posent "
+                                              "les unes sur les autres.")),
 }
 VARIANTES = {}             # id -> {nom, desc, style, fond, options, duree_image} : variantes venues du catalogue en ligne
 FONDS = {"flou": _("La photo floutée"), "sombre": _("Sombre"), "table": _("Table en bois"), "clair": _("Clair")}
@@ -72,7 +75,8 @@ def trier_par_date(chemins):
 def duree_totale(n, style, duree_image):
     n = max(1, n)
     d = float(duree_image)
-    return {"cartes": n * d + 1.2, "explosion": n * d + 0.9, "mur": 1.2 + n * d + 1.4, "eventail": 1.2 + n * d + 0.6}.get(style, n * d)
+    return {"cartes": n * d + 1.2, "explosion": n * d + 0.9, "mur": 1.2 + n * d + 1.4, "eventail": 1.2 + n * d + 0.6,
+            "tourbillon": n * d + 0.7, "feuilles": n * d + 1.8}.get(style, n * d)
 
 
 class _Rendu:
@@ -136,6 +140,9 @@ class _Rendu:
         self.pile = [(R.uniform(-0.02, 0.02) * L, R.uniform(-0.02, 0.02) * H, R.uniform(-7, 7)) for _i in range(self.n)]
         self.sorties = [R.choice((-1, 1)) for _i in range(self.n)]
         self.balance = [(R.uniform(0.8, 1.4), R.uniform(0, 6.28)) for _i in range(self.n)]
+        self.chutes = [{"x0": R.uniform(0.25, 0.75) * L, "x1": L / 2 + R.uniform(-0.16, 0.16) * L, "y1": H / 2 + R.uniform(-0.04, 0.1) * H,
+                        "ampl": R.uniform(0.08, 0.16) * L, "freq": R.uniform(1.6, 2.4), "ph": R.uniform(0, 6.28), "rot1": R.uniform(-18, 18),
+                        "sens": R.choice((-1, 1))} for _i in range(self.n)]
 
     # ---- dessin commun
     def _fond(self, p, t):
@@ -388,6 +395,59 @@ class _Rendu:
         x = self.L / 2 + math.sin(ra) * dist
         y = pivot_y - math.cos(ra) * dist
         self._carte(p, self.photos[j], x, y, ech, a, op, hauteur=0.05)
+
+    def _tourbillon(self, p, t):
+        """Spirale : la photo s'enroule et rétrécit vers le centre, la suivante se déroule depuis le centre."""
+        entree = 0.7
+        cx, cy = self.L / 2, self.H / 2
+        n = self.n
+
+        def spirale(img, k, sortie, rot_fin):
+            # k : 0 → la photo est au centre et minuscule ; 1 → posée, pleine taille
+            ang = (1 - k) * 2.2 * math.pi * (1 if sortie else -1)
+            r = (1 - k) * k * 1.6 * min(self.L, self.H) * 0.5
+            x, y = cx + math.cos(ang) * r, cy + math.sin(ang) * r
+            self._carte(p, img, x, y, max(0.02, k), rot_fin * k + (1 - k) * (540 if sortie else -540), min(1.0, k * 3), hauteur=1 - k)
+        if t < entree:
+            spirale(self.photos[0], _sortie_douce(t / entree), False, 0)
+            return
+        t2 = t - entree
+        i = min(n - 1, int(t2 / self.d))
+        u = t2 - i * self.d
+        tr = min(0.9, self.d * 0.45)
+        if i < n - 1 and u > self.d - tr:
+            k = (u - (self.d - tr)) / tr
+            spirale(self.photos[i], 1 - _lisse(k), True, 0)                      # s'enroule vers le centre
+            spirale(self.photos[i + 1], _sortie_douce(max(0.0, (k - 0.35) / 0.65)), False, 0)
+        else:
+            self._carte(p, self.photos[i], cx, cy, 1.0, 0, 1.0)
+
+    def _feuilles(self, p, t):
+        """Chute de feuille : balancement de pendule, virevolte (la carte se retourne à demi), puis se pose."""
+        chute = min(2.2, self.d * 0.9 + 0.6)
+        for i in range(self.n):
+            s = i * self.d
+            if t < s:
+                break
+            c = self.chutes[i]
+            u = min(1.0, (t - s) / chute)
+            if u < 1:
+                e = _lisse(u)
+                bal = math.sin((t - s) * c["freq"] * math.pi + c["ph"]) * (1 - e)
+                x = c["x0"] + (c["x1"] - c["x0"]) * e + bal * c["ampl"]
+                y = -0.45 * self.H + (c["y1"] + 0.45 * self.H) * e - abs(bal) * 0.04 * self.H
+                rot = bal * 35 * c["sens"] + c["rot1"] * e
+                vire = 0.55 + 0.45 * abs(math.cos((t - s) * c["freq"] * 1.3 * math.pi))            # demi-retournement
+                img = self.photos[i]
+                p.save()
+                p.translate(x, y)
+                p.scale(1.0, vire * (1 - e) + e)
+                self._carte(p, img, 0, 0, 0.92, rot, 1.0, hauteur=1 - e)
+                p.restore()
+            else:
+                vieux = (t - s) / self.d
+                op = 1.0 if i >= self.n - 1 or vieux < 6 else max(0.0, 1 - (vieux - 6))
+                self._carte(p, self.photos[i], c["x1"], c["y1"], 0.92, c["rot1"], op)
 
     def _corde(self, p, t):
         from PySide6.QtCore import QPointF, QRectF
