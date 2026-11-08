@@ -190,9 +190,13 @@ class Fenetre(QMainWindow):
         act(None, _("Figer l'image…"), _("Le film s'arrête sur l'image de la ligne rouge, avec un cadre photo et une légende, puis reprend"),
             lambda: self._ed(lambda ed: ed.figer_image()))
         sm_ia = mo.addMenu(icone("assistant"), _("Atelier IA (sur ce poste)"))
-        for fam, lib in (("image", _("Retoucher l'image du film (cartoon, 3D, peinture…)…")), ("video", _("Effet IA sur la partie en jaune…")),
+        for fam, lib in (("image", _("Retoucher l'image du film (cartoon, 3D, peinture…)…")),
+                         ("video", _("Vidéo IA sur la partie en jaune (animer l'image, dessin animé, ralenti…)…")),
                          ("logo", _("Logo, intro ou miniature par IA…")), ("musique", _("Créer une musique par IA…"))):
             sm_ia.addAction(lib, lambda fam=fam: self._ed(lambda ed: ed.atelier_ia(fam)))
+        sm_ia.addSeparator()
+        sm_ia.addAction(_("Séquence IA : une histoire en plusieurs plans (personnages, répliques, musique)…"),
+                        lambda: self._ed(lambda ed: ed.sequence_ia()))
         act(icone("effets"), _("Étalonnage du plan…"), _("Couleurs et lumière du plan à la ligne rouge : roues de couleur, avant / après, "
                                                           "auto, accorder sur un autre plan"), lambda: self._ed(lambda ed: ed.etalonner()), "Ctrl+Shift+E")
         act(icone("image"), _("Présentation de photos animée…"), _("Lancer de cartes, explosion en particules, puzzle, mur de photos, "
