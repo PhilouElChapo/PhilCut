@@ -1014,9 +1014,16 @@ class Inspecteur(QWidget):
         gs = QGroupBox(_("Suivre ce qu'elle couvre"))
         v = QVBoxLayout(gs)
         pos = (z.get("suivi") or {}).get("positions") or []
-        etat = QLabel(_("La zone suit l'objet : {n} positions trouvées par analyse de l'image.", n=len(pos)) if pos else
-                      _("La zone est fixe. PhilCut peut analyser le rush image par image pour qu'elle suive le visage, la plaque "
-                        "ou l'objet qu'elle couvre."))
+        etat = QLabel(_("La zone suit l'objet : {n} positions trouvées par analyse de l'image.", n=len(pos)) + "<br><br>" +
+                      _("<b>Elle décroche ?</b> Arrêtez la lecture là où elle se trompe (→ et ← : image par image), puis "
+                        "<b>glissez la zone</b> à sa bonne place dans l'image (ou tirez un coin) : la correction vaut à cet "
+                        "instant et s'estompe sur 0,6 s autour. Recommencez aux autres moments où elle décroche. "
+                        "Maj + glisser déplace toute la trajectoire. Si elle est perdue pour de bon : « Corriger à la ligne "
+                        "rouge » retrace la zone et refait le suivi à partir d'ici.") if pos else
+                      _("La zone est fixe. PhilCut peut analyser le plan image par image pour qu'elle suive le visage, la plaque "
+                        "ou l'objet qu'elle couvre, à partir de l'image où vous l'avez tracée (en avant et en arrière). "
+                        "Astuce : faites d'abord une partie jaune sur la règle, la zone couvrira exactement ce passage."))
+        etat.setTextFormat(Qt.RichText)
         etat.setWordWrap(True)
         v.addWidget(etat)
         b1 = QPushButton(icone("synchro", theme.COULEURS["texte"]), _("Refaire le suivi depuis le début") if pos else _("Suivre ce qu'elle couvre"))

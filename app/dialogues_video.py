@@ -1080,13 +1080,28 @@ class DialogueFabrique(QDialog):
         b_c = QPushButton(_("Rédiger la consigne"))
         b_c.clicked.connect(self._consigne)
         f2.addRow(b_c)
-        self.voie_flow = QRadioButton(_("Flow (votre abonnement) : PhilCut copie la consigne, ouvre Flow, puis récupère le clip dans le dossier surveillé"))
+        self.voie_flow = QRadioButton(_("Google Flow, avec votre abonnement Google (sans clef, sans frais en plus)"))
         self.voie_flow.setChecked(True)
+        self.aide_flow = QLabel(_(
+            "<b>Comment ça marche ?</b> Flow est le site de Google qui fabrique des vidéos par IA ; PhilCut ne peut pas "
+            "s'y connecter à votre place, il vous mâche le travail :<br>"
+            "1. « Fabriquer » : PhilCut met la consigne (en anglais) dans le presse-papiers et ouvre Flow dans votre navigateur.<br>"
+            "2. Dans Flow : « Nouveau projet », cliquez dans la zone de texte, <b>Ctrl+V</b> pour coller, puis la flèche pour générer "
+            "(une à quelques minutes).<br>"
+            "3. Sur la vidéo qui vous plaît : bouton <b>Télécharger</b> (MP4). Le fichier arrive dans le dossier surveillé ci-dessous "
+            "(vos Téléchargements en général).<br>"
+            "4. PhilCut attend ce fichier (barre du bas, avec le temps écoulé et « Arrêter »), puis vous le montre : vous le "
+            "regardez, et vous choisissez de l'insérer à la ligne rouge, de le garder dans les médias ou de le jeter."))
+        self.aide_flow.setWordWrap(True)
+        self.aide_flow.setTextFormat(Qt.RichText)
+        self.aide_flow.setStyleSheet("padding:6px 8px;border:1px solid palette(mid);border-radius:6px")
+        self.voie_flow.toggled.connect(self.aide_flow.setVisible)
         self.voie_veo = QRadioButton(_("Générateur IA payant avec votre clef (Google, fal.ai : Kling, Seedance…)"))
         from . import generateurs_video as GV
         dispo = {m["id"] for m in GV.disponibles(params)}
         self.voie_veo.setEnabled(bool(params.get("veo_actif")) and bool(dispo))
         f2.addRow(self.voie_flow)
+        f2.addRow(self.aide_flow)
         f2.addRow(self.voie_veo)
         self.modele_veo = QComboBox()
         for m in GV.modeles(params):
@@ -1306,3 +1321,59 @@ class DialogueFiche(QDialog):
         bb.rejected.connect(self.reject)
         bb.clicked.connect(self.reject)
         v.addWidget(bb)
+
+
+class DialogueClipRecu(QDialog):
+    """Clip reçu (Flow ou autre générateur) : on le regarde AVANT de l'intégrer, puis insérer / garder / jeter."""
+
+    def __init__(self, ed, chemin, titre=""):
+        super().__init__(ed)
+        from .dialogues_creatif import ApercuCreation
+        self.ed, self.chemin = ed, chemin
+        self.setWindowTitle(titre or _("Clip reçu"))
+        v = QVBoxLayout(self)
+        lb = QLabel(_("« {n} » est arrivé. Regardez-le, gardez le morceau voulu, puis choisissez.", n=os.path.basename(chemin)))
+        lb.setWordWrap(True)
+        v.addWidget(lb)
+        self.apercu = ApercuCreation(self)
+        self.apercu.charger(chemin, video=True)
+        self.apercu.show()
+        v.addWidget(self.apercu)
+        h = QHBoxLayout()
+        b1 = QPushButton(_("Insérer à la ligne rouge"))
+        b1.setToolTip(_("Le clip se place après le plan sous la ligne rouge ; la suite du film est décalée (Ctrl+Z revient)."))
+        b1.clicked.connect(self.inserer)
+        b2 = QPushButton(_("Garder dans les médias (sans poser)"))
+        b2.setToolTip(_("Le fichier rejoint les médias du projet, à gauche : vous le glisserez où vous voulez."))
+        b2.clicked.connect(self.garder)
+        b3 = QPushButton(_("Jeter"))
+        b3.setToolTip(_("Rien n'est ajouté au projet ; le fichier téléchargé reste dans votre dossier."))
+        b3.clicked.connect(self.reject)
+        for b in (b1, b2, b3):
+            h.addWidget(b)
+        h.addStretch(1)
+        v.addLayout(h)
+        self.resize(720, 460)
+
+    def inserer(self):
+        from . import prolonger
+        r = self.apercu.reglages()
+        self.apercu.arreter()
+        p = self.ed.projet
+        p.marquer()
+        ci = prolonger.inserer(p, self.chemin, self.ed.timeline.position, "video", os.path.splitext(os.path.basename(self.chemin))[0])
+        if ci:
+            ci["src_debut"], ci["src_fin"] = r["src_debut"], r["src_fin"]
+        self.ed.biblio.remplir(p)
+        self.ed.rafraichir()
+        self.ed.encart.message(_("Clip inséré à la ligne rouge ; la suite est décalée (Ctrl+Z pour revenir)."), 6000)
+        self.accept()
+
+    def garder(self):
+        self.apercu.arreter()
+        self.ed.importer([self.chemin])
+        self.accept()
+
+    def done(self, r):
+        self.apercu.arreter()
+        super().done(r)

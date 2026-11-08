@@ -4,7 +4,7 @@ import os, time
 
 from PySide6.QtCore import Qt, QTimer, Signal, QMimeData, QSize, QByteArray
 from PySide6.QtGui import QPixmap, QIcon, QDrag, QAction, QColor
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QListWidget, QListWidgetItem, QLabel, QPushButton, QToolButton,
+from PySide6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QSplitter, QListWidget, QListWidgetItem, QLabel, QPushButton, QToolButton,
                                QFrame, QProgressBar, QTabWidget, QScrollArea, QCheckBox, QComboBox, QLineEdit, QSpinBox, QMenu, QMessageBox,
                                QFileDialog, QSizePolicy, QFormLayout, QPlainTextEdit, QAbstractItemView, QInputDialog, QDialog, QGroupBox)
 
@@ -1187,7 +1187,15 @@ class Editeur(QWidget):
                 self.projet.marquer()
                 if e.get("genre") == "zone":
                     from . import zones as Z
-                    Z.deplacer(e, x, y, self.timeline.position)
+                    t = self.timeline.position
+                    if (e.get("suivi") or {}).get("positions") and not (QApplication.keyboardModifiers() & Qt.ShiftModifier):
+                        _x, _y, l, h = Z.rect_a(e, t)
+                        Z.corriger_ici(e, x, y, l, h, t)      # suivie : on corrige ici, la correction s'estompe autour
+                        self.encart.message(_("Suivi corrigé à {t} (la correction s'estompe sur 0,6 s autour). Avancez image par image "
+                                              "(→) et corrigez de même là où elle décroche ; Maj + glisser déplace toute la trajectoire.",
+                                              t=_tc(t)), 8000)
+                    else:
+                        Z.deplacer(e, x, y, t)
                 else:
                     from . import cles as K
                     K.regler(e, self.timeline.position, x=x, y=y)        # animé : image clef à la ligne rouge
@@ -1264,7 +1272,10 @@ class Editeur(QWidget):
         if z:
             from . import zones as Z
             self.projet.marquer()
-            Z.redimensionner(z, x, y, l, h, self.timeline.position)
+            if (z.get("suivi") or {}).get("positions") and not (QApplication.keyboardModifiers() & Qt.ShiftModifier):
+                Z.corriger_ici(z, x, y, l, h, self.timeline.position)
+            else:
+                Z.redimensionner(z, x, y, l, h, self.timeline.position)
             self._modifie()
             self._ouvrir_volet(1)
             self.inspecteur.montrer_selection([ident])
@@ -1305,16 +1316,23 @@ class Editeur(QWidget):
                 self.suivre_zone(z, depuis=t, depart=(x, y, l, h))
             return
         c = self.projet.clip_a(t, "video")
-        fin = fin_clip(c) if c else t + 5.0
+        jaune = self.timeline.zone_valide()
         self.projet.marquer()
-        z = Z.nouvelle(t, max(t + 0.5, fin), x, y, l, h)
+        if jaune:                       # une partie jaune : la zone couvre exactement cette partie
+            z = Z.nouvelle(jaune[0], jaune[1], x, y, l, h)
+            sur = _("sur la partie jaune")
+        else:
+            fin = fin_clip(c) if c else t + 5.0
+            z = Z.nouvelle(t, max(t + 0.5, fin), x, y, l, h)
+            sur = _("jusqu'à la fin du plan (astuce : faites d'abord une partie jaune pour limiter la zone)")
+        z["t_trace"] = round(t, 3)      # le suivi part de l'image où elle a été tracée, en avant et en arrière
         self.projet.goodies.append(z)
         self.timeline.reconstruire()
         self._modifie()
         self._ouvrir_volet(1)
         self.inspecteur.montrer_selection([z["id"]])
-        self.encart.message(_("Zone posée de {a} à {b} (floutée). Changez l'effet dans l'Inspecteur ; « Suivre ce qu'elle couvre » "
-                              "la fait bouger avec le visage ou l'objet.", a=_tc(z["debut"]), b=_tc(z["fin"])))
+        self.encart.message(_("Zone posée de {a} à {b}, {s}. Changez l'effet dans l'Inspecteur ; « Suivre ce qu'elle couvre » "
+                              "la fait bouger avec le visage ou l'objet.", a=_tc(z["debut"]), b=_tc(z["fin"]), s=sur))
 
     def suivre_zone(self, z, depuis=None, depart=None):
         """Analyse de l'image : la zone suit ce qu'elle couvre (en arrière-plan, suivi dans le Centre d'activité)."""

@@ -162,11 +162,13 @@ class ErreurZone(Exception):
     pass
 
 
-def suivre_modele(chemin, t0, t1, boite, pas=1.0 / 15, progression=None, arret=lambda: False, largeur_max=640):
+def suivre_modele(chemin, t0, t1, boite, pas=1.0 / 15, progression=None, arret=lambda: False, largeur_max=640, arriere=False):
     """Suit le contenu de `boite` (coin x, coin y, largeur, hauteur normalisés, source à t0) jusqu'à t1 par
     correspondance de motif : à chaque pas, le morceau d'image est recherché autour de sa dernière place, à trois
     tailles (il peut s'approcher ou s'éloigner) ; le motif se met à jour doucement (le visage tourne, la lumière change).
-    Renvoie [(t_source, centre x, centre y, largeur, hauteur)] normalisés. S'il est perdu, la zone reste en place."""
+    Avec arriere=True, t1 < t0 : on remonte le temps (la zone a été tracée au milieu du passage).
+    Renvoie [(t_source, centre x, centre y, largeur, hauteur)] normalisés, dans l'ordre du temps. S'il est perdu,
+    la zone reste en place."""
     try:
         import cv2
         import numpy as np
@@ -175,7 +177,10 @@ def suivre_modele(chemin, t0, t1, boite, pas=1.0 / 15, progression=None, arret=l
     cap = cv2.VideoCapture(chemin)
     if not cap.isOpened():
         raise ErreurZone(_("Vidéo illisible pour le suivi."))
-    cap.set(cv2.CAP_PROP_POS_MSEC, max(0.0, t0) * 1000)
+    cad = cap.get(cv2.CAP_PROP_FPS) or 30
+    saut = max(1, int(round(pas * cad)))
+    debut_lecture = min(t0, t1) if arriere else t0
+    cap.set(cv2.CAP_PROP_POS_MSEC, max(0.0, debut_lecture) * 1000)
     ok, img = cap.read()
     if not ok:
         cap.release()
@@ -187,7 +192,42 @@ def suivre_modele(chemin, t0, t1, boite, pas=1.0 / 15, progression=None, arret=l
         if ech < 1:
             im = cv2.resize(im, (int(L0 * ech), int(H0 * ech)), interpolation=cv2.INTER_AREA)
         return cv2.GaussianBlur(im, (3, 3), 0).astype(np.float32)        # en couleur : le blanc se distingue du jaune
-    g = prep(img)
+
+    def images():
+        """(t, image préparée) dans le sens du suivi, la première étant celle de t0."""
+        if not arriere:
+            t, im = float(t0), img
+            yield t, prep(im)
+            while t < t1 - 1e-6:
+                ok2 = True
+                for _k in range(saut):
+                    ok2, im2 = cap.read()
+                    if not ok2:
+                        break
+                if not ok2:
+                    return
+                t += saut / cad
+                yield t, prep(im2)
+        else:                       # on lit en avant de t1 à t0, puis on rend les images à l'envers
+            pile, t, im = [], float(debut_lecture), img
+            pile.append((t, cv2.resize(im, (int(L0 * ech), int(H0 * ech)), interpolation=cv2.INTER_AREA) if ech < 1 else im))
+            while t < t0 - 1e-6:
+                if arret():
+                    break
+                ok2 = True
+                for _k in range(saut):
+                    ok2, im2 = cap.read()
+                    if not ok2:
+                        break
+                if not ok2:
+                    break
+                t += saut / cad
+                pile.append((t, cv2.resize(im2, (int(L0 * ech), int(H0 * ech)), interpolation=cv2.INTER_AREA) if ech < 1 else im2))
+            for tt, im3 in reversed(pile):
+                yield tt, cv2.GaussianBlur(im3, (3, 3), 0).astype(np.float32)
+
+    flux = images()
+    t, g = next(flux)
     H, L = g.shape[:2]
     bw, bh = max(8.0, boite[2] * L), max(8.0, boite[3] * H)
     cx, cy = boite[0] * L + bw / 2, boite[1] * H + bh / 2
@@ -200,24 +240,13 @@ def suivre_modele(chemin, t0, t1, boite, pas=1.0 / 15, progression=None, arret=l
     noyau = 0.6                     # on suit le cœur de la zone : le bord tracé contient surtout du décor
     modele = morceau(g, cx, cy, bw * noyau, bh * noyau).copy()
     origine = modele.copy()
-    cad = cap.get(cv2.CAP_PROP_FPS) or 30
-    saut = max(1, int(round(pas * cad)))
-    t = float(t0)
     points = [(round(t, 3), cx / L, cy / H, bw / L, bh / H)]
-    total = max(1e-6, t1 - t0)
+    total = max(1e-6, abs(t1 - t0))
     vx = vy = 0.0                   # vitesse (pixels par pas) : on cherche d'abord là où il devrait être
     perdus = 0
-    while t < t1 - 1e-6:
+    for t, g in flux:
         if arret():
             break
-        for _k in range(saut):
-            ok, img = cap.read()
-            if not ok:
-                break
-        if not ok:
-            break
-        t += saut / cad
-        g = prep(img)
         px, py = cx + vx, cy + vy
         cw, ch = bw * noyau, bh * noyau
         marge = max(cw, ch) * (0.8 + 0.5 * min(perdus, 6)) + abs(vx) + abs(vy) + 8
@@ -248,38 +277,74 @@ def suivre_modele(chemin, t0, t1, boite, pas=1.0 / 15, progression=None, arret=l
             vx, vy = vx * 0.5, vy * 0.5
         points.append((round(t, 3), round(cx / L, 4), round(cy / H, 4), round(bw / L, 4), round(bh / H, 4)))
         if progression:
-            progression(min(1.0, (t - t0) / total))
+            progression(min(1.0, abs(t - t0) / total))
     cap.release()
-    return points
+    return sorted(points) if arriere else points
 
 
 def suivre_zone(projet, z, t_depart=None, progression=None, arret=lambda: False):
-    """La zone suit ce qu'elle couvre à partir de t_depart (par défaut son début) jusqu'à sa fin ou la fin du plan.
-    Avant t_depart, la trajectoire existante est gardée (correction en cours de route)."""
+    """La zone suit ce qu'elle couvre. Premier suivi : depuis l'instant où elle a été tracée (z["t_trace"]), en
+    avant jusqu'à sa fin et en arrière jusqu'à son début. Correction (t_depart) : la trajectoire d'avant t_depart
+    est gardée, la suite est refaite depuis la place retracée."""
     from . import suivi
+    from .projet import fin_clip
     L, H = projet.taille
-    t0 = float(z["debut"] if t_depart is None else max(z["debut"], t_depart))
-    c, m = _clip_sous(projet, t0 + 0.01)
+    if t_depart is None:
+        ref = float(z.get("t_trace", z["debut"]))
+        ref = min(max(ref, float(z["debut"])), float(z["fin"]) - 0.05)
+    else:
+        ref = float(max(z["debut"], t_depart))
+    c, m = _clip_sous(projet, ref + 0.01)
     if c is None:
         raise ErreurZone(_("Il n'y a pas de plan vidéo sous la zone à cet instant : rien à suivre."))
     v = float(c.get("vitesse", 1.0) or 1.0)
-    from .projet import fin_clip
     t1 = min(float(z["fin"]), fin_clip(c))
-    s0 = c["src_debut"] + (t0 - c["debut"]) * v
-    s1 = c["src_debut"] + (t1 - c["debut"]) * v
-    x, y, l, h = rect_a(z, t0)
-    boite = vers_source(c, m, L, H, s0, x, y, l, h)
+    t_deb = max(float(z["debut"]), float(c["debut"]))
+    vers_src = lambda tm: c["src_debut"] + (tm - c["debut"]) * v
+    x, y, l, h = rect_a(z, ref)
+    boite = vers_source(c, m, L, H, vers_src(ref), x, y, l, h)
     src = m.get("proxy") or m["chemin"]
-    pts = suivi.lisser(suivre_modele(src, s0, s1, boite, progression=progression, arret=arret), 0.2)
+    arriere = t_depart is None and ref - t_deb > 0.1
+    part_av = (t1 - ref) / max(1e-6, (t1 - ref) + (ref - t_deb if arriere else 0))
+    prog_av = (lambda f: progression(f * part_av)) if progression else None
+    prog_ar = (lambda f: progression(part_av + f * (1 - part_av))) if progression else None
+    pts = suivre_modele(src, vers_src(ref), vers_src(t1), boite, progression=prog_av, arret=arret)
+    if arriere and not arret():
+        pas_ar = max(1.0 / 15, (ref - t_deb) * v / 200)          # au plus 200 images gardées en mémoire
+        pts = suivre_modele(src, vers_src(ref), vers_src(t_deb), boite, pas=pas_ar, progression=prog_ar, arret=arret,
+                            arriere=True)[:-1] + pts
+    pts = suivi.lisser(pts, 0.2)
     nouv = []
     for p in pts:
         tm = c["debut"] + (p[0] - c["src_debut"]) / v
         ix, iy, il, ih = vers_image(c, m, L, H, p[0], p[1], p[2], p[3], p[4])
         nouv.append((round(tm, 3), round(ix, 4), round(iy, 4), round(il, 4), round(ih, 4)))
     nouv = suivi.alleger(nouv, 1.0 / 15)
-    avant = [p for p in (z.get("suivi") or {}).get("positions") or [] if p[0] < t0 - 0.02]
+    avant = [p for p in (z.get("suivi") or {}).get("positions") or [] if p[0] < ref - 0.02] if t_depart is not None else []
     z["suivi"] = {"media": m["id"], "positions": avant + nouv}
     return z
+
+
+def corriger_ici(z, x, y, l, h, t, portee=0.6):
+    """Correction locale d'une zone suivie : à l'instant t elle prend la place (x, y, l, h) ; autour, la correction
+    s'estompe sur `portee` secondes de chaque côté. Le reste de la trajectoire ne bouge pas."""
+    pos = (z.get("suivi") or {}).get("positions") or []
+    if not pos:
+        z["x"], z["y"], z["l"], z["h"] = round(x, 4), round(y, 4), round(max(0.01, l), 4), round(max(0.01, h), 4)
+        return
+    cx, cy, l0, h0 = rect_a(z, t)
+    dx, dy, dl, dh = x - cx, y - cy, l - l0, h - h0
+    if not any(abs(p[0] - t) < 0.02 for p in pos):        # un point exactement à l'instant corrigé
+        pos = sorted(pos + [(round(t, 3), round(cx, 4), round(cy, 4), round(l0, 4), round(h0, 4))])
+    out = []
+    for p in pos:
+        w = max(0.0, 1.0 - abs(p[0] - t) / max(0.05, portee))
+        if w <= 0:
+            out.append(tuple(p))
+            continue
+        out.append((p[0], round(p[1] + dx * w, 4), round(p[2] + dy * w, 4), round(max(0.01, p[3] + dl * w), 4),
+                    round(max(0.01, p[4] + dh * w), 4)))
+    z["suivi"]["positions"] = out
 
 
 def figer(z, t):

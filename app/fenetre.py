@@ -242,6 +242,10 @@ class Fenetre(QMainWindow):
         actf(icone("fabrique"), _("Logo animé, intro, fin (sur ce poste) · plan vidéo (IA cloud)…"),
              _("Logos, intros et fins animés : dessinés sur ce poste, gratuits. Les plans vidéo générés passent par Flow ou Veo "
                "(IA cloud, votre compte, prix affiché avant)."), self.fabrique, "Ctrl+Shift+F")
+        actf(None, _("Mes plans IA déjà fabriqués (dossier)…"),
+             _("Les plans vidéo générés (Gemini, Kling…) et les logos fabriqués sont gardés dans ce dossier, même s'ils ne sont "
+               "plus dans un projet : on les ouvre ou on les glisse dans les médias."),
+             self._dossier_fabrique)
         actf(None, _("Atelier de logo (sur ce poste) · idées par l'IA cloud…"),
              _("Créer et modifier un logo sur ce poste ; le bouton « Idées par l'IA » demande des propositions à l'IA cloud (votre clef)."),
              self.atelier_logo)
@@ -787,8 +791,6 @@ class Fenetre(QMainWindow):
                 t.start()
             else:
                 avant = FAB.preparer_flow(consigne, d.dossier.text().strip())
-                ed.encart.message(_("Consigne copiée dans le presse-papiers, Flow ouvert dans le navigateur. Collez la consigne, générez, téléchargez : "
-                                    "PhilCut surveille le dossier et importera le clip."), 30000)
                 self._surveiller_flow(ed, d.dossier.text().strip(), avant)
 
     def _logo_pret(self, ed, sortie, usage, erreur):
@@ -818,14 +820,49 @@ class Fenetre(QMainWindow):
                 ed.rafraichir()
             QTimer.singleShot(1500, placer)
 
-    def _surveiller_flow(self, ed, dossier, avant, essais=0):
-        nouveaux = FAB.nouveaux_clips(dossier, avant)
-        if nouveaux:
-            ed.importer(nouveaux)
-            ed.encart.message(_("Clip Flow récupéré : {n}", n=", ".join(os.path.basename(x) for x in nouveaux)))
-            return
-        if essais < 600:
-            QTimer.singleShot(3000, lambda: self._surveiller_flow(ed, dossier, avant, essais + 1))
+    def _surveiller_flow(self, ed, dossier, avant):
+        """Attente du clip téléchargé depuis Flow : tâche suivie dans la barre du bas (étape, temps écoulé, Arrêter),
+        puis aperçu avant intégration."""
+        import time
+        LIMITE = 30 * 60
+
+        def travail(tache):
+            t0 = time.monotonic()
+            vus = {}
+            while not tache.arret:
+                ecoule = time.monotonic() - t0
+                if ecoule > LIMITE:
+                    raise RuntimeError(_("Aucun clip arrivé dans « {d} » en 30 minutes. Vérifiez le dossier de téléchargement "
+                                         "de votre navigateur, puis relancez.", d=dossier))
+                prets = []
+                for p in FAB.nouveaux_clips(dossier, avant):
+                    try:
+                        taille = os.path.getsize(p)
+                    except OSError:
+                        continue
+                    if vus.get(p) == taille:
+                        prets.append(p)            # taille stable : le téléchargement est fini
+                    vus[p] = taille
+                if prets:
+                    return prets
+                m, sec = divmod(int(ecoule), 60)
+                etape = (_("téléchargement en cours…") if vus else
+                         _("dans Flow : Ctrl+V, générer, puis « Télécharger »"))
+                tache.avancer(min(0.95, ecoule / LIMITE), _("{e} — en attente depuis {m} min {s:02d} s", e=etape, m=m, s=sec))
+                time.sleep(2)
+            return []
+        t = Tache(travail, _("Clip Flow"))
+        self.taches.append(t)
+        ed.encart.suivre(t, _("Consigne copiée, Flow ouvert : PhilCut attend le clip dans « {d} »", d=os.path.basename(dossier) or dossier))
+
+        def fini(r, e):
+            if e or not r:
+                return
+            from .dialogues_video import DialogueClipRecu
+            for chemin in r:
+                DialogueClipRecu(ed, chemin, _("Clip reçu de Flow")).exec()
+        t.fini.connect(fini, Qt.QueuedConnection)
+        t.start()
 
     def musique(self):
         ed = self._editeur_ou_nouveau()
@@ -1321,6 +1358,11 @@ class Fenetre(QMainWindow):
         h.addWidget(b_f)
         v.addLayout(h)
         d.exec()
+
+    def _dossier_fabrique(self):
+        d = os.path.join(dossier_donnees(), "fabrique")
+        os.makedirs(d, exist_ok=True)
+        self._ouvrir_dans_systeme(d)
 
     def _ouvrir_dans_systeme(self, chemin):
         from PySide6.QtCore import QUrl

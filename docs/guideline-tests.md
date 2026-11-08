@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T50 — 0.9.32 : flou suivi et Google Flow
+
+1. **Partie jaune** : faire une partie jaune sur la règle, ligne rouge au milieu, clic droit sur l'aperçu › « Tracer une zone à flouter… ». **Attendu** : la zone couvre exactement la partie jaune.
+2. **Suivi dans les deux sens** : « Suivre ce qu'elle couvre ». **Attendu** : la zone suit la personne avant et après l'instant du tracé.
+3. **Correction locale** : arrêter là où elle décroche, glisser la zone à sa place. **Attendu** : elle est corrigée à cet instant, le reste de la trajectoire ne bouge pas ; Maj + glisser déplace tout ; Ctrl+Z revient.
+4. **Flow** : Fabrique › Plan généré par IA. **Attendu** : l'explication en 4 étapes ; « Fabriquer » ouvre Flow, la barre du bas montre l'attente et le temps écoulé ; après téléchargement, la fenêtre « Clip reçu de Flow » permet de regarder, insérer, garder ou jeter.
+
 ## T49 — 0.9.31 : retours du 8 novembre
 
 1. **Durée des goodies** : poser un titre sur la piste du haut, tirer son bord droit puis gauche. **Attendu** : curseur ↔ au bord, durée affichée, minimum 0,2 s, Ctrl+Z revient.

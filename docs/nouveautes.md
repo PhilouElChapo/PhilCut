@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.31 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.32 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.32
+- Zones floutees (visage, plaque, ecran) : s'il y a une partie jaune, la zone tracee la couvre exactement ; le suivi part de l'image ou la zone a ete tracee, en avant et en arriere.
+- Corriger le suivi : arreter la ou la zone decroche et la glisser a sa place (ou tirer un coin) ; la correction vaut a cet instant et s'estompe sur 0,6 s autour. Maj + glisser deplace toute la trajectoire. Explication dans l'Inspecteur.
+- Google Flow : la Fabrique explique pas a pas ce que fait PhilCut et ce qu'il faut faire dans Flow ; l'attente du clip telecharge se voit dans la barre du bas (etape, temps ecoule, Arreter) ; le clip recu s'affiche d'abord en apercu : inserer a la ligne rouge, garder dans les medias ou jeter.
+- Fabrique > "Mes plans IA deja fabriques (dossier)..." ouvre le dossier ou sont gardes les plans generes (Gemini, Kling...) et les logos, meme s'ils ne sont plus dans un projet.
 
 ### 0.9.31
 - Goodies, titres, logos, tampons sur la piste du haut : on raccourcit ou allonge a la souris en tirant le bord gauche ou droit (la duree s'affiche pendant le geste).

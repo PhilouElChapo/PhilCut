@@ -131,5 +131,44 @@ class Test0931(unittest.TestCase):
         f.deleteLater()
 
 
+    def test_zone_suivi_depuis_le_trace_et_correction_locale(self):
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from test_zones import _video_motif, _projet
+        from app import zones as Z
+        d = tempfile.mkdtemp()
+        v = _video_motif(d)
+        p = _projet(v)
+        # tracée à 1,5 s (motif en x = 40 + 180 = 220), sur une partie jaune 0,5 → 2,5 : suivi en avant ET en arrière
+        z = Z.nouvelle(0.5, 2.5, (220 + 35) / 640, 175 / 360, 90 / 640, 90 / 360)
+        z["t_trace"] = 1.5
+        p.goodies.append(z)
+        Z.suivre_zone(p, z)
+        pos = z["suivi"]["positions"]
+        self.assertLess(pos[0][0], 0.6)
+        self.assertGreater(pos[-1][0], 2.3)
+        self.assertAlmostEqual(Z.rect_a(z, 0.7)[0] * 640, 40 + 0.7 * 120 + 35, delta=14)
+        self.assertAlmostEqual(Z.rect_a(z, 2.2)[0] * 640, 40 + 2.2 * 120 + 35, delta=14)
+        # correction locale à 2,0 s : la zone y bouge, mais pas à 1,0 s
+        x1 = Z.rect_a(z, 1.0)[0]
+        cx, cy, l, h = Z.rect_a(z, 2.0)
+        Z.corriger_ici(z, cx + 0.1, cy, l, h, 2.0)
+        self.assertAlmostEqual(Z.rect_a(z, 2.0)[0], cx + 0.1, delta=0.01)
+        self.assertAlmostEqual(Z.rect_a(z, 1.0)[0], x1, delta=0.001)
+
+    def test_flow_explique_et_clip_recu(self):
+        f = fenetre()
+        ed = f.nouveau_projet("16:9")
+        from app.dialogues_video import DialogueFabrique, DialogueClipRecu
+        dfab = DialogueFabrique(f, ed.projet, f.params)
+        self.assertIn("Ctrl+V", dfab.aide_flow.text())
+        dfab.reject()
+        c = commun.video_test(tempfile.mkdtemp(), "flow.mp4", duree=2)
+        dc = DialogueClipRecu(ed, c)
+        dc.garder()
+        ed.projet.modifie = False
+        f.hide()
+        f.deleteLater()
+
+
 if __name__ == "__main__":
     unittest.main()
