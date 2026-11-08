@@ -5,6 +5,7 @@ Résultat : miniature YouTube de l'export, image enregistrée, ou image fixe pos
 rouvre et modifie (clic droit sur le plan › « Modifier l'image composée… »)."""
 import copy
 import os
+import re
 import time
 
 from PySide6.QtCore import Qt, QTimer, QPointF, QRectF, Signal
@@ -259,7 +260,9 @@ class DialogueVignette(QDialog):
         self.groupe_couleurs.buttonClicked.connect(lambda b: self.aide_zone.setText(b.toolTip()))
         v2.addWidget(self.aide_zone)
         # chaque zone tracée : sa couleur, son rôle et « Qu'y a-t-il ici ? » (la consigne de la zone, lue par PhilCut et l'IA)
-        self.titre_liste = QLabel(_("<b>Vos zones</b> : dites ce qu'il y a dans chacune (c'est la consigne de la zone)."))
+        self.titre_liste = QLabel(_("<b>Vos zones</b> : une ligne par zone entourée sur l'image. Ecrivez ce qu'elle montre ou ce qu'il faut y mettre "
+                                   "(rouge : « la fissure » ; bleu : le titre ; vert : la liste, ex. « Pistons OK, Soupapes NON »). "
+                                   "PhilCut s'en sert pour dessiner, et l'IA pour ses propositions."))
         self.titre_liste.setWordWrap(True)
         v2.addWidget(self.titre_liste)
         self.boite_zones = QVBoxLayout()
@@ -324,10 +327,27 @@ class DialogueVignette(QDialog):
         self.accent.textChanged.connect(lambda t: self._regle("accent_mots", t))
         f4.addRow(_("Mots en couleur"), self.accent)
         self.elements = QPlainTextEdit(self.recette.get("elements") or "")
-        self.elements.setPlaceholderText(_("Un élément par ligne, suivi de ✓ (validé), ✗ (non) ou rien. Ex. : Pistons ✓"))
+        self.elements.setPlaceholderText(_("Un élément par ligne, suivi de OK (coche verte), NON (croix rouge) ou rien.\n"
+                                           "Ex. :\nPistons OK\nSoupapes NON\nVidange"))
         self.elements.setMaximumHeight(96)
-        self.elements.textChanged.connect(lambda: self._regle("elements", self.elements.toPlainText()))
-        f4.addRow(_("Éléments (zone verte)"), self.elements)
+        self.elements.textChanged.connect(lambda: (self._regle("elements", self.elements.toPlainText()), self._lire_elements()))
+        bloc = QVBoxLayout()
+        bloc.addWidget(self.elements)
+        hb = QHBoxLayout()
+        for lib, mot, aide in (("✓ " + _("Fait"), " OK", _("Ajoute OK à la ligne du curseur : la pastille aura une coche verte")),
+                               ("✗ " + _("Pas fait"), " NON", _("Ajoute NON à la ligne du curseur : la pastille aura une croix rouge"))):
+            b = QPushButton(lib)
+            b.setToolTip(aide)
+            b.clicked.connect(lambda _c=False, mot=mot: self._marquer_ligne(mot))
+            hb.addWidget(b)
+        hb.addStretch(1)
+        bloc.addLayout(hb)
+        self.lu_elements = QLabel("")
+        self.lu_elements.setWordWrap(True)
+        self.lu_elements.setStyleSheet("color:#9aa4b2")
+        bloc.addWidget(self.lu_elements)
+        f4.addRow(_("Éléments (zone verte)"), bloc)
+        self._lire_elements()
         vg.addWidget(g4)
         g5 = QGroupBox(_("Style"))
         f5 = QFormLayout(g5)
@@ -424,6 +444,26 @@ class DialogueVignette(QDialog):
                                 "désigner, en vert les éléments à lister. Clic droit sur une zone pour la supprimer."))
 
     # ---- petits constructeurs
+    def _marquer_ligne(self, mot):
+        """Ajoute OK / NON à la fin de la ligne où est le curseur (remplace un OK / NON déjà là)."""
+        from PySide6.QtGui import QTextCursor
+        c = self.elements.textCursor()
+        c.movePosition(QTextCursor.StartOfBlock)
+        c.movePosition(QTextCursor.EndOfBlock, QTextCursor.KeepAnchor)
+        ligne = re.sub(r"\s+(ok|non|oui|fait|pas fait|✓|✗)\s*$", "", c.selectedText(), flags=re.I).rstrip()
+        c.insertText((ligne or _("Élément")) + mot)
+        self.elements.setTextCursor(c)
+        self.elements.setFocus()
+
+    def _lire_elements(self):
+        """Ce que PhilCut comprend de la liste : l'utilisateur voit tout de suite chaque pastille."""
+        els = V._elements(self.elements.toPlainText())
+        if not els:
+            self.lu_elements.setText(_("Pastilles : aucune pour l'instant."))
+            return
+        signe = {"ok": "✓", "non": "✗", "": "•"}
+        self.lu_elements.setText(_("Pastilles : ") + "   ".join(f"{signe[e]} {lib}" for lib, e in els))
+
     def _curseur_temps(self, duree, valeur, cle):
         s = QSlider(Qt.Horizontal)
         s.setRange(0, int(duree * 10))

@@ -224,13 +224,29 @@ MODELES_VEO = {           # choix : (nom, prix $/s indicatif, note)
 }
 
 
-def consigne_plan(usage, sujet, style="", duree=8, format_="16:9", details=""):
-    """Consigne prete a coller dans Flow (ou envoyee a Veo), en anglais car les generateurs y repondent mieux."""
+def consigne_plan(usage, sujet, style="", duree=8, format_="16:9", details="", params=None, traduire=False):
+    """Consigne prete a coller dans Flow (ou envoyee a Veo), en anglais car les generateurs y repondent mieux.
+    « à la manière de Alain Delon », « comme John Wayne »… : le nom est retiré et remplacé par la description du style
+    (allure, jeu, image), jamais un visage ni un personnage (styles_ia.transposer)."""
     f = "vertical 9:16" if format_ == "9:16" else "widescreen 16:9"
     u = {"intro": "opening shot", "fin": "closing shot", "transition": "short transitional shot", "illustration": "illustrative shot"}.get(usage, "shot")
+    ajout = ""
+    try:
+        from . import styles_ia as S
+        t = S.transposer(sujet, "video", params)
+        if t.get("styles"):
+            sujet, ajout = t["texte"].strip(" ,;."), t.get("ajout", "")
+    except Exception:
+        pass
+    if traduire:
+        try:
+            from .traduction_recherche import phrase_en_anglais
+            sujet = phrase_en_anglais(sujet)[0] or sujet
+        except Exception:
+            pass
     s = f", {style} style" if style else ""
-    return (f"Cinematic {u}, {f}, {int(duree)} seconds: {sujet}{s}. Smooth camera movement, natural light, high detail, "
-            f"no text, no watermark, no logo.{(' ' + details) if details else ''}")
+    return (f"Cinematic {u}, {f}, {int(duree)} seconds: {sujet}{s}.{(' ' + ajout.strip().rstrip('.') + '.') if ajout else ''} Smooth camera movement, "
+            f"natural light, high detail, no text, no watermark, no logo.{(' ' + details) if details else ''}")
 
 
 def preparer_flow(consigne, dossier_surveille):
@@ -257,6 +273,34 @@ def nouveaux_clips(dossier_surveille, avant):
         if f.lower().endswith((".mp4", ".mov", ".webm")) and not f.endswith(".crdownload") and os.path.getsize(p) > 0:
             out.append(p)
     return out
+
+
+def attendre_clip(dossier, avant, tache, limite=30 * 60):
+    """Attend (dans une Tache) qu'une vidéo téléchargée arrive dans le dossier et que sa taille ne bouge plus.
+    Annonce l'étape et le temps écoulé ; renvoie la liste des fichiers prêts ([] si arrêté)."""
+    t0 = time.monotonic()
+    vus = {}
+    while not tache.arret:
+        ecoule = time.monotonic() - t0
+        if ecoule > limite:
+            raise RuntimeError(_("Aucun clip arrivé dans « {d} » en 30 minutes. Vérifiez le dossier de téléchargement "
+                                 "de votre navigateur, puis relancez.", d=dossier))
+        prets = []
+        for p in nouveaux_clips(dossier, avant):
+            try:
+                taille = os.path.getsize(p)
+            except OSError:
+                continue
+            if vus.get(p) == taille:
+                prets.append(p)            # taille stable : le téléchargement est fini
+            vus[p] = taille
+        if prets:
+            return prets
+        m, sec = divmod(int(ecoule), 60)
+        etape = _("téléchargement en cours…") if vus else _("dans Flow : Ctrl+V, générer, puis « Télécharger »")
+        tache.avancer(min(0.95, ecoule / limite), _("{e} — en attente depuis {m} min {s:02d} s", e=etape, m=m, s=sec))
+        time.sleep(2)
+    return []
 
 
 def prix_veo(modele, duree):

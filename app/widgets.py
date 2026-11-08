@@ -578,6 +578,11 @@ class SuiviAttente(QWidget):
         self.show()
         self._minuterie.start(1000)
 
+    def etape(self, quoi):
+        """Change ce qui est annoncé sans remettre le chrono à zéro (plan 2 sur 4…)."""
+        self._quoi = quoi
+        self._tic()
+
     def _tic(self):
         import time
         e = int(time.monotonic() - self._t0)

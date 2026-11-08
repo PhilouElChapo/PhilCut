@@ -404,6 +404,39 @@ def generer_image(params, consigne, delai=240):
     raise derniere or ErreurIA(_("Aucun modèle Gemini d'image disponible avec cette clef."))
 
 
+
+def generer_image_refs(params, consigne, images, delai=240):
+    """Image créée par Gemini à partir d'une consigne et d'images de référence (personnes, lieu) : octets PNG ou JPEG."""
+    clef = nettoyer_clef(params.get("clef_gemini", ""))
+    if not clef:
+        raise ErreurIA(_("Il faut une clef Gemini (Assistant › Connecter une IA) : Claude ne dessine pas d'image."))
+    parts = []
+    for chemin in images[:4]:
+        with open(chemin, "rb") as f:
+            donnees = f.read()
+        mime = "image/png" if chemin.lower().endswith(".png") else ("image/webp" if chemin.lower().endswith(".webp") else "image/jpeg")
+        parts.append({"inline_data": {"mime_type": mime, "data": base64.b64encode(donnees).decode()}})
+    parts.append({"text": consigne})
+    corps = {"contents": [{"role": "user", "parts": parts}], "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}}
+    derniere = None
+    for modele in modeles_image_gemini(clef)[:4]:
+        try:
+            d = _http(f"{GEMINI_API}/models/{modele}:generateContent?key={clef}", corps, delai=delai)
+        except ErreurIA as e:
+            derniere = e
+            if getattr(e, "code", 0) == 404 or getattr(e, "code", 0) in TRANSITOIRES:
+                continue
+            raise
+        for c in d.get("candidates") or []:
+            for p in (c.get("content") or {}).get("parts", []):
+                data = p.get("inline_data") or p.get("inlineData")
+                if data and data.get("data"):
+                    dernier.update(moteur="gemini", modele=modele)
+                    return base64.b64decode(data["data"])
+        raison = (d.get("promptFeedback") or {}).get("blockReason") or "?"
+        derniere = ErreurIA(_("Gemini n'a pas renvoyé d'image ({raison}).", raison=raison))
+    raise derniere or ErreurIA(_("Aucun modèle Gemini d'image disponible avec cette clef."))
+
 def retoucher_image(params, png, consigne, zones_png=None, delai=240):
     """Envoie l'image (PNG) et la consigne a Gemini, qui renvoie l'image modifiee (octets PNG ou JPEG).
     zones_png : la meme image avec les zones entourees et numerotees (la consigne dit quoi faire de chacune).

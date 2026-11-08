@@ -157,6 +157,18 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T51 — 0.9.33 : séquence IA
+
+1. **Ouvrir** : Fabrique › « Séquence IA… » (ou Fabrique › Plan généré par IA › « Plusieurs plans… »). **Attendu** : trois onglets Histoire, Personnages et lieux, Plans.
+2. **Découper** : écrire l'histoire des deux pilotes (l'un à la manière d'Alain Delon, l'autre de Simon Templar), « Découper en plans (IA cloud) ». **Attendu** : personnages, lieu, 4 à 8 plans avec cadrage et répliques.
+3. **Styles** : onglet 2, « Choisir le style… » ; manière de parler « Selon le style (Froid…) » et « (Gentleman…) ».
+4. **Consigne** : onglet 3, « Rédiger la consigne » : en anglais, « Character A / B », aucun nom ; « Améliorer » garde les fiches des personnages.
+5. **Image de départ** : ajouter des photos au lieu, « Composer avec Gemini » : vignette ; confirmation avant l'envoi.
+6. **Flow** : moteur Google Flow, « Copier pour Flow… » : Flow et le dossier des images s'ouvrent ; la barre d'attente compte ; la vidéo téléchargée s'attache au plan (✓) et se regarde.
+7. **Cloud** : moteur Gemini Omni : prix annoncé, confirmation, avancement par plan.
+8. **Monter** : « Monter la séquence à la ligne rouge » : plans dans l'ordre, répliques sur la piste Voix, musique ; Ctrl+Z revient. Rouvrir : la séquence est reprise.
+9. **Vignette** : zone verte « Pistons OK / Soupapes NON » : la ligne « Pastilles » affiche ✓ et ✗.
+
 ## T50 — 0.9.32 : flou suivi et Google Flow
 
 1. **Partie jaune** : faire une partie jaune sur la règle, ligne rouge au milieu, clic droit sur l'aperçu › « Tracer une zone à flouter… ». **Attendu** : la zone couvre exactement la partie jaune.

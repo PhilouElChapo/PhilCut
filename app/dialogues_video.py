@@ -1077,9 +1077,20 @@ class DialogueFabrique(QDialog):
         self.consigne = QPlainTextEdit("")
         self.consigne.setMaximumHeight(90)
         f2.addRow(_("Consigne prête"), self.consigne)
+        hc = QHBoxLayout()
         b_c = QPushButton(_("Rédiger la consigne"))
+        b_c.setToolTip(_("« à la manière de Alain Delon », « comme John Wayne »… dans le sujet : le nom est remplacé par la "
+                         "description du style (allure, jeu, image), jamais un visage"))
         b_c.clicked.connect(self._consigne)
-        f2.addRow(b_c)
+        hc.addWidget(b_c, 1)
+        b_st = QPushButton(_("Style « à la manière de »…"))
+        b_st.clicked.connect(self._style)
+        hc.addWidget(b_st)
+        f2.addRow(hc)
+        b_seq = QPushButton(_("Plusieurs plans avec personnages et répliques : Séquence IA…"))
+        b_seq.setToolTip(_("Une histoire découpée en plans, les mêmes personnages d'un plan à l'autre, leurs répliques et une musique"))
+        b_seq.clicked.connect(self._vers_sequence)
+        f2.addRow(b_seq)
         self.voie_flow = QRadioButton(_("Google Flow, avec votre abonnement Google (sans clef, sans frais en plus)"))
         self.voie_flow.setChecked(True)
         self.aide_flow = QLabel(_(
@@ -1260,9 +1271,21 @@ class DialogueFabrique(QDialog):
         if p:
             self.dossier.setText(p)
 
+    def _style(self):
+        from .dialogues_creatif import choisir_style
+        nom = choisir_style(self, self.params, "video")
+        if nom:
+            t = self.sujet.toPlainText().rstrip(" ,")
+            self.sujet.setPlainText((t + ", " if t else "") + _("à la manière de") + " " + nom)
+            self._consigne()
+
+    def _vers_sequence(self):
+        self.vers_sequence = True
+        self.reject()
+
     def _consigne(self):
         self.consigne.setPlainText(fabrique.consigne_plan("illustration", self.sujet.toPlainText().strip(), self.style.currentText().strip(),
-                                                          self.duree_ia.value(), self.projet.format))
+                                                          self.duree_ia.value(), self.projet.format, params=self.params, traduire=True))
 
     def _prix(self):
         from . import generateurs_video as GV

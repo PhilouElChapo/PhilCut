@@ -43,6 +43,8 @@ STYLES = {
                  consigne="Speak in a low half-whisper, ironic and sensual, unhurried")),
     "conteur": (_("Conteur, chaleureux"), dict(vitesse=0.95, silence=0.5, expr=0.7, hauteur=-1, grain=0.0, gemini="Charon",
                 consigne="Speak like a warm storyteller, engaging, with gentle emphasis and pauses")),
+    "gentleman": (_("Gentleman britannique, ironie légère"), dict(vitesse=1.0, silence=0.4, expr=0.6, hauteur=-1, grain=0.0, gemini="Charon",
+                  consigne="Speak like a suave British gentleman adventurer: polished, light, wry understatement, amused confidence")),
     "annonceur": (_("Bande-annonce de film"), dict(vitesse=0.85, silence=0.8, expr=0.4, hauteur=-4, grain=0.3, gemini="Charon",
                   consigne="Speak like an epic movie trailer narrator: very deep, slow, dramatic pauses")),
 }
@@ -55,6 +57,7 @@ PAR_REFERENCE = {
     "jacques brel": "theatral", "serge gainsbourg": "chuchote", "gainsbourg": "chuchote", "james dean": "chuchote",
     "johnny hallyday": "bourru", "elvis": "crooner", "james bond": "froid", "star wars": "annonceur", "tontons flingueurs": "gouailleur",
     "film noir": "detective", "sergio leone": "trainant", "indiana jones": "heros",
+    "simon templar": "gentleman", "roger moore": "gentleman", "cary grant": "gentleman", "david niven": "gentleman",
 }
 
 

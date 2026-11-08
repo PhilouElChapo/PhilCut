@@ -2490,6 +2490,12 @@ class Editeur(QWidget):
         except Exception:
             pass
 
+    def sequence_ia(self, nouvelle=False):
+        """Séquence IA : histoire en plusieurs plans (personnages constants, répliques, musique) ; reprend la dernière du projet."""
+        from .dialogues_sequence import DialogueSequence
+        anciennes = self.projet.d.get("sequences_ia") or []
+        DialogueSequence(self, None if nouvelle or not anciennes else anciennes[-1]).exec()
+
     def vignette_composee(self, usage="vignette", recette_id=None, clip_id=None):
         """Vignette YouTube ou image fixe composée à partir d'une image du film (zones de couleur, kit de style)."""
         from .dialogues_vignette import DialogueVignette

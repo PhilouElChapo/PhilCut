@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.32 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.33 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.33
+- Sequence IA (Fabrique > "Sequence IA...") : une petite histoire devient plusieurs plans qui se suivent. L'IA (de ce poste ou cloud) propose les personnages, les lieux, les plans avec leur cadrage et des repliques ; chaque personnage garde la meme description d'un plan a l'autre, peut avoir un style "a la maniere de" (allure et jeu, jamais le visage) et des images de reference (personnes d'accord, lieux). Pour chaque plan : consigne detaillee en anglais (sans aucun nom), "Ameliorer" par l'IA, image de depart choisie ou composee (Gemini reunit personnages et lieu). Video par l'IA de ce poste, un generateur cloud avec votre clef (prix annonce), ou Google Flow pas a pas (consigne copiee, dossier des images de reference ouvert, video telechargee rattachee au plan). On regarde chaque plan, on le refait si besoin, puis "Monter la sequence" pose les plans, les repliques (dites avec la maniere de parler de chacun : froid pour un style Delon, gentleman pour un style Templar...) et une musique.
+- Fabrique > Plan genere par IA : "a la maniere de ..." dans le sujet est transpose automatiquement (le nom n'est jamais envoye) ; bouton "Style a la maniere de..." ; consigne traduite en anglais.
+- Nouveaux styles : Simon Templar, Roger Moore, Cary Grant ; maniere de parler "Gentleman britannique".
+- Vignette composee, zone verte : ecrire OK ou NON apres chaque element (ou les boutons "Fait" / "Pas fait") ; la ligne "Pastilles" montre tout de suite ce que PhilCut a compris.
 
 ### 0.9.32
 - Zones floutees (visage, plaque, ecran) : s'il y a une partie jaune, la zone tracee la couvre exactement ; le suivi part de l'image ou la zone a ete tracee, en avant et en arriere.

@@ -242,6 +242,12 @@ class Fenetre(QMainWindow):
         actf(icone("fabrique"), _("Logo animé, intro, fin (sur ce poste) · plan vidéo (IA cloud)…"),
              _("Logos, intros et fins animés : dessinés sur ce poste, gratuits. Les plans vidéo générés passent par Flow ou Veo "
                "(IA cloud, votre compte, prix affiché avant)."), self.fabrique, "Ctrl+Shift+F")
+        actf(icone("ia"), _("Séquence IA : une histoire en plusieurs plans (personnages, répliques, musique)…"),
+             _("Plusieurs plans qui se suivent avec les mêmes personnages (style « à la manière de », images de référence), "
+               "leurs répliques et une musique ; vidéo par l'IA de ce poste, un générateur cloud ou Google Flow."),
+             lambda: self._ed(lambda ed: ed.sequence_ia()))
+        actf(None, _("Nouvelle séquence IA…"), _("Repartir d'une histoire vide (les séquences précédentes restent dans le projet)."),
+             lambda: self._ed(lambda ed: ed.sequence_ia(nouvelle=True)))
         actf(None, _("Mes plans IA déjà fabriqués (dossier)…"),
              _("Les plans vidéo générés (Gemini, Kling…) et les logos fabriqués sont gardés dans ce dossier, même s'ils ne sont "
                "plus dans un projet : on les ouvre ou on les glisse dans les médias."),
@@ -741,6 +747,8 @@ class Fenetre(QMainWindow):
         if texte:
             d.texte.setText(texte)
         if d.exec() != QDialog.Accepted:
+            if getattr(d, "vers_sequence", False):
+                ed.sequence_ia()
             return
         L, H = ed.projet.taille
         if d.onglets.currentIndex() == 0:
@@ -766,7 +774,7 @@ class Fenetre(QMainWindow):
             t.fini.connect(lambda r, e: self._logo_pret(ed, sortie, usage, e))
             t.start()
         else:
-            consigne = d.consigne.toPlainText().strip() or FAB.consigne_plan("illustration", d.sujet.toPlainText().strip(), d.style.currentText().strip(), d.duree_ia.value(), ed.projet.format)
+            consigne = d.consigne.toPlainText().strip() or FAB.consigne_plan("illustration", d.sujet.toPlainText().strip(), d.style.currentText().strip(), d.duree_ia.value(), ed.projet.format, params=self.params, traduire=True)
             self.params["fabrique_style"] = d.style.currentText().strip()
             self.params["dossier_flow"] = d.dossier.text().strip()
             self.params.enregistrer()
@@ -823,34 +831,8 @@ class Fenetre(QMainWindow):
     def _surveiller_flow(self, ed, dossier, avant):
         """Attente du clip téléchargé depuis Flow : tâche suivie dans la barre du bas (étape, temps écoulé, Arrêter),
         puis aperçu avant intégration."""
-        import time
-        LIMITE = 30 * 60
-
         def travail(tache):
-            t0 = time.monotonic()
-            vus = {}
-            while not tache.arret:
-                ecoule = time.monotonic() - t0
-                if ecoule > LIMITE:
-                    raise RuntimeError(_("Aucun clip arrivé dans « {d} » en 30 minutes. Vérifiez le dossier de téléchargement "
-                                         "de votre navigateur, puis relancez.", d=dossier))
-                prets = []
-                for p in FAB.nouveaux_clips(dossier, avant):
-                    try:
-                        taille = os.path.getsize(p)
-                    except OSError:
-                        continue
-                    if vus.get(p) == taille:
-                        prets.append(p)            # taille stable : le téléchargement est fini
-                    vus[p] = taille
-                if prets:
-                    return prets
-                m, sec = divmod(int(ecoule), 60)
-                etape = (_("téléchargement en cours…") if vus else
-                         _("dans Flow : Ctrl+V, générer, puis « Télécharger »"))
-                tache.avancer(min(0.95, ecoule / LIMITE), _("{e} — en attente depuis {m} min {s:02d} s", e=etape, m=m, s=sec))
-                time.sleep(2)
-            return []
+            return FAB.attendre_clip(dossier, avant, tache)
         t = Tache(travail, _("Clip Flow"))
         self.taches.append(t)
         ed.encart.suivre(t, _("Consigne copiée, Flow ouvert : PhilCut attend le clip dans « {d} »", d=os.path.basename(dossier) or dossier))

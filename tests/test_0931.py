@@ -170,5 +170,67 @@ class Test0931(unittest.TestCase):
         f.deleteLater()
 
 
+    def test_sequence_ia(self):
+        from app import sequence_ia as Q, vignette as V, fabrique as FAB
+        s = Q.nouvelle()
+        s["personnages"] = [Q.personnage("Marc", "homme de 45 ans, imperméable beige", "Alain Delon"),
+                            Q.personnage("Paul", "homme de 40 ans, costume clair", "Simon Templar")]
+        s["lieux"] = [Q.lieu("aérodrome", "petit aérodrome au printemps")]
+        s["plans"] = Q.decouper_simple("Marc et Paul arrivent sur l'aérodrome. Ils se préparent puis vérifient l'avion. Enfin ils décollent.")
+        self.assertEqual(len(s["plans"]), 4)
+        for p in s["plans"]:
+            p["personnages"], p["lieu"] = ["Marc", "Paul"], "aérodrome"
+        c = Q.consigne(s, s["plans"][0], traduire=False)
+        for interdit in ("Delon", "Templar", "Marc", "Paul"):
+            self.assertNotIn(interdit, c)
+        self.assertIn("Character A", c)
+        self.assertIn("gentleman", c)
+        self.assertEqual(Q.maniere_de_parler(s["personnages"][0]), "froid")
+        self.assertEqual(Q.maniere_de_parler(s["personnages"][1]), "gentleman")
+        # l'IA a proposé : les personnages de l'utilisateur sont gardés
+        r = Q.fusionner(s, {"personnages": [{"nom": "Marc", "description": "autre"}, {"nom": "Julie", "description": "femme"}],
+                            "plans": [{"action": "Marc salue Julie", "personnages": ["Marc", "Julie"], "duree": 30,
+                                       "repliques": [{"qui": "Marc", "texte": "Bonjour."}]}]})
+        self.assertEqual(r["personnages"][0]["description"], "homme de 45 ans, imperméable beige")
+        self.assertEqual(len(r["personnages"]), 3)
+        self.assertEqual(r["plans"][0]["duree"], 10)
+        # montage : les plans se suivent à la ligne rouge, la suite du film est décalée
+        from app.projet import Projet, fin_clip
+        d = tempfile.mkdtemp()
+        v1, v2, base = (commun.video_test(d, n, duree=2) for n in ("a.mp4", "b.mp4", "base.mp4"))
+        pr = Projet()
+        m = pr.ajouter_media(base, moteur.sonder(base))
+        pr.ajouter_clip(m["id"])
+        s["plans"] = s["plans"][:2]
+        s["plans"][0]["fichier"], s["plans"][1]["fichier"] = v1, v2
+        n, duree = Q.monter(pr, s, 0.0)
+        self.assertEqual(n, 2)
+        cl = sorted(pr.clips_piste("video"), key=lambda c: c["debut"])
+        self.assertEqual([os.path.basename(pr.media(c["media"])["chemin"]) for c in cl], ["a.mp4", "b.mp4", "base.mp4"])
+        self.assertAlmostEqual(cl[2]["debut"], fin_clip(cl[1]), delta=0.01)
+        # zone verte : OK / NON compris
+        self.assertEqual(V._elements("Pistons OK\nSoupapes NON\nVidange"), [("Pistons", "ok"), ("Soupapes", "non"), ("Vidange", "")])
+        # Fabrique : « à la manière de » transposé automatiquement
+        c = FAB.consigne_plan("illustration", "un homme à la manière de Alain Delon arrive")
+        self.assertNotIn("Delon", c)
+        self.assertIn("impassive", c)
+
+    def test_fenetre_sequence(self):
+        f = fenetre()
+        ed = f.nouveau_projet("16:9")
+        from app.dialogues_sequence import DialogueSequence
+        d = DialogueSequence(ed)
+        d.histoire.setPlainText("Ils arrivent. Puis ils décollent.")
+        d.decouper("")
+        self.assertEqual(len(d.seq["plans"]), 2)
+        d.moteur.setCurrentIndex(d.moteur.findData("locale"))
+        self.assertFalse(d.b_flow.isVisibleTo(d))
+        d.reject()
+        self.assertEqual(len(ed.projet.d["sequences_ia"]), 1)
+        ed.projet.modifie = False
+        f.hide()
+        f.deleteLater()
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -575,62 +575,13 @@ class DialogueAtelierIA(QDialog):
     # ---- styles « à la manière de »
     def _choisir_style(self):
         """Liste des styles connus (et de vos styles), avec leur description : un double-clic l'ajoute à la phrase (0.9.31)."""
-        from PySide6.QtWidgets import QDialog, QLineEdit, QTreeWidget, QTreeWidgetItem
-        from . import styles_ia as S
         e = self.effet() or {}
         fam = e.get("famille", "image")
-        d = QDialog(self)
-        d.setWindowTitle(_("Style « à la manière de »"))
-        d.resize(760, 560)
-        v = QVBoxLayout(d)
-        t = QLabel(_("Double-cliquez sur un nom : « à la manière de … » est ajouté à votre phrase. Le moteur ne reçoit jamais le nom, "
-                     "seulement la description du style (à droite). Un nom absent de la liste marche aussi : écrivez-le, puis « Transposer ce "
-                     "style avec l'IA »."))
-        t.setWordWrap(True)
-        v.addWidget(t)
-        cherche = QLineEdit()
-        cherche.setPlaceholderText(_("Chercher : Sinatra, western, Delon, Star Wars…"))
-        v.addWidget(cherche)
-        arbre = QTreeWidget()
-        arbre.setHeaderLabels([_("Nom"), _("Ce que reçoit le moteur")])
-        arbre.setColumnWidth(0, 200)
-        arbre.setWordWrap(True)
-        vus = set()
-        for cle, (nom, asp) in sorted(S._toutes(self.ed.params).items(), key=lambda kv: kv[1][0]):
-            if nom in vus:
-                continue
-            vus.add(nom)
-            desc = S._description(asp, fam)
-            if not desc:
-                continue
-            it = QTreeWidgetItem([nom.title() if nom.islower() else nom, desc])
-            it.setToolTip(1, desc)
-            arbre.addTopLevelItem(it)
-        v.addWidget(arbre, 1)
-
-        def filtrer(txt):
-            txt = S._net(txt)
-            for i in range(arbre.topLevelItemCount()):
-                it = arbre.topLevelItem(i)
-                it.setHidden(bool(txt) and txt not in S._net(it.text(0) + " " + it.text(1)))
-        cherche.textChanged.connect(filtrer)
-
-        def prendre(it, _c=0):
+        nom = choisir_style(self, self.ed.params, fam)
+        if nom:
             lien = _("chanté à la manière de") if fam == "musique" else _("à la manière de")
             p = self.prompt.toPlainText().rstrip(" ,")
-            self.prompt.setPlainText((p + ", " if p else "") + f"{lien} {it.text(0)}")
-            d.accept()
-        arbre.itemDoubleClicked.connect(prendre)
-        h = QHBoxLayout()
-        h.addStretch(1)
-        b_ok = QPushButton(_("Ajouter à la phrase"))
-        b_ok.clicked.connect(lambda: arbre.currentItem() and prendre(arbre.currentItem()))
-        h.addWidget(b_ok)
-        b_f = QPushButton(_("Fermer"))
-        b_f.clicked.connect(d.reject)
-        h.addWidget(b_f)
-        v.addLayout(h)
-        d.exec()
+            self.prompt.setPlainText((p + ", " if p else "") + f"{lien} {nom}")
 
     def _transposition(self):
         from . import styles_ia as S
@@ -1311,3 +1262,61 @@ def enregistrer_copie(parent, chemin, params=None):
         creations.copier(chemin, cible)
     retenir_dossier(parent, cle, cible, params)
     return cible
+
+
+def choisir_style(parent, params, fam="video", bouton=None):
+    """Fenêtre des styles « à la manière de » (chanteurs, acteurs, films…) avec ce que reçoit le moteur ; renvoie le nom choisi."""
+    from PySide6.QtWidgets import QDialog, QLineEdit, QTreeWidget, QTreeWidgetItem
+    from . import styles_ia as S
+    d = QDialog(parent)
+    d.setWindowTitle(_("Style « à la manière de »"))
+    d.resize(760, 560)
+    v = QVBoxLayout(d)
+    t = QLabel(_("Double-cliquez sur un nom : « à la manière de … » est ajouté à votre phrase. Le moteur ne reçoit jamais le nom, "
+                 "seulement la description du style (à droite). Un nom absent de la liste marche aussi : écrivez-le, puis « Transposer ce "
+                 "style avec l'IA »."))
+    t.setWordWrap(True)
+    v.addWidget(t)
+    cherche = QLineEdit()
+    cherche.setPlaceholderText(_("Chercher : Sinatra, western, Delon, Star Wars…"))
+    v.addWidget(cherche)
+    arbre = QTreeWidget()
+    arbre.setHeaderLabels([_("Nom"), _("Ce que reçoit le moteur")])
+    arbre.setColumnWidth(0, 200)
+    arbre.setWordWrap(True)
+    vus = set()
+    for cle, (nom, asp) in sorted(S._toutes(params).items(), key=lambda kv: kv[1][0]):
+        if nom in vus:
+            continue
+        vus.add(nom)
+        desc = S._description(asp, fam)
+        if not desc:
+            continue
+        it = QTreeWidgetItem([nom.title() if nom.islower() else nom, desc])
+        it.setToolTip(1, desc)
+        arbre.addTopLevelItem(it)
+    v.addWidget(arbre, 1)
+
+    def filtrer(txt):
+        txt = S._net(txt)
+        for i in range(arbre.topLevelItemCount()):
+            it = arbre.topLevelItem(i)
+            it.setHidden(bool(txt) and txt not in S._net(it.text(0) + " " + it.text(1)))
+    cherche.textChanged.connect(filtrer)
+    choix = []
+
+    def prendre(it, _c=0):
+        choix.append(it.text(0))
+        d.accept()
+    arbre.itemDoubleClicked.connect(prendre)
+    h = QHBoxLayout()
+    h.addStretch(1)
+    b_ok = QPushButton(bouton or _("Ajouter à la phrase"))
+    b_ok.clicked.connect(lambda: arbre.currentItem() and prendre(arbre.currentItem()))
+    h.addWidget(b_ok)
+    b_f = QPushButton(_("Fermer"))
+    b_f.clicked.connect(d.reject)
+    h.addWidget(b_f)
+    v.addLayout(h)
+    d.exec()
+    return choix[0] if choix else None

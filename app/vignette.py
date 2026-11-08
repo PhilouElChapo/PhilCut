@@ -44,8 +44,9 @@ COULEURS_ZONES = {
                "Le texte de la zone remplace le titre général pour cette zone. Exemple : « 3 erreurs à éviter ».")),
     "vert": ("#30d158", _("Vert : une liste de pastilles"),
              _("<b>Vert : une liste de pastilles (étapes, points, outils).</b> Entourez la place de la liste, puis écrivez ses éléments "
-               "dans le texte de la zone, séparés par des virgules, avec ✓ (fait) ou ✗ (pas fait). Exemple : « Isolation ✓, Fenêtre ✓, "
-               "Électricité ✗ ».")),
+               "dans le texte de la zone, séparés par des virgules. Chaque élément devient une pastille ; écrivez OK (ou oui, fait) "
+               "après un élément pour une coche verte, NON (ou pas fait, à faire) pour une croix rouge, rien pour une pastille simple. "
+               "Exemple : « Isolation OK, Fenêtre OK, Électricité NON ».")),
     "blanc": ("#f2f2f7", _("Blanc : ne rien poser ici"),
               _("<b>Blanc : ne rien poser ici (facultatif).</b> Entourez ce qui doit rester visible : un visage, le logo de la chaîne, "
                 "une information. Ni texte, ni flèche, ni pastille n'y sera posé.")),
@@ -54,7 +55,7 @@ COULEURS_ZONES = {
 # ce qu'on écrit dans le champ « Qu'y a-t-il ici ? » de chaque zone : exemple affiché en grisé
 EXEMPLES_ZONES = {"rouge": _("Ex. : le moteur, la personne de gauche"), "jaune": _("Ex. : la fissure (écrit au départ de la flèche)"),
                   "bleu": _("Ex. : 3 erreurs à éviter (le titre de cette zone)"),
-                  "vert": _("Ex. : Isolation ✓, Fenêtre ✓, Électricité ✗"), "blanc": _("Ex. : visage, logo de la chaîne")}
+                  "vert": _("Ex. : Isolation OK, Fenêtre OK, Électricité NON"), "blanc": _("Ex. : visage, logo de la chaîne")}
 
 
 # Kits : un seul style par vignette, c'est ce qui fait propre
@@ -377,8 +378,10 @@ def _elements(texte):
             continue
         etat = ""
         bas = b.lower()
-        for s, e in (("✓", "ok"), ("✔", "ok"), (" ok", "ok"), (" oui", "ok"), (" v", "ok"), ("✗", "non"), ("✘", "non"), ("❌", "non"),
-                     (" non", "non"), (" x", "non")):
+        for s, e in (("✓", "ok"), ("✔", "ok"), ("✅", "ok"), (" pas fait", "non"), (" pas ok", "non"), (" ok", "ok"), (" oui", "ok"),
+                     (" fait", "ok"), (" bon", "ok"), (" yes", "ok"), (" done", "ok"), (" ja", "ok"), (" sí", "ok"), (" sì", "ok"),
+                     (" +", "ok"), (" v", "ok"), (" nein", "non"), (" no", "non"), ("✗", "non"), ("✘", "non"), ("❌", "non"),
+                     (" non", "non"), (" ko", "non"), (" nok", "non"), (" à faire", "non"), (" -", "non"), (" x", "non")):
             if bas.endswith(s):
                 etat = e
                 b = b[: len(b) - len(s)].strip()

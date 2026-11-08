@@ -87,6 +87,15 @@ _R = [
     (["alain delon", "delon"], {
         "jeu": "cool impassive 1960s French gangster archetype, trench coat and fedora, minimal gestures, icy silence, elegant poise",
         "image": "1960s French policier, cold blue-grey palette, rain-wet Paris streets, neon at night"}),
+    (["simon templar", "le saint*", "templar*"], {
+        "jeu": "suave 1960s British gentleman-adventurer archetype, tailored light suit, raised eyebrow, wry half-smile, unhurried elegance, "
+               "witty and charming under pressure",
+        "image": "1960s British TV adventure series look, glossy colors, Riviera sunshine, vintage white sports car"}),
+    (["roger moore"], {
+        "jeu": "debonair British gentleman archetype, polished manners, ironic raised eyebrow, light humor, impeccable suit",
+        "image": "1970s glamorous spy-adventure look, jet-set locations, warm sunny tones"}),
+    (["cary grant"], {"jeu": "urbane charming leading man archetype, effortless poise, playful wit, sharp tailoring",
+                      "image": "1950s Hollywood romantic thriller, Technicolor, elegant Riviera"}),
     (["belmondo", "jean-paul belmondo", "bebel*"], {
         "jeu": "charming roguish French adventurer archetype, cheeky grin, nonchalant swagger, does his own stunts, quick banter",
         "image": "1970s French action comedy, rooftop chases, sunny Riviera, vintage cars"}),
