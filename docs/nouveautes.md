@@ -4,7 +4,24 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.30 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.31 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.31
+- Goodies, titres, logos, tampons sur la piste du haut : on raccourcit ou allonge a la souris en tirant le bord gauche ou droit (la duree s'affiche pendant le geste).
+- Modeles de montage : "Monter avec ce modele" marche aussi quand les rushes viennent d'etre ajoutes depuis la fenetre des modeles.
+- Etalonnage : explication du rideau jaune (glisser pour comparer avant / apres), curseur "Image du plan" pour choisir l'image a la souris, image retrouvee de facon plus sure (sinon un message l'explique).
+- Montage : Ctrl + molette (ou molette sur le nom des pistes) monte et descend dans les pistes ; ascenseurs plus larges et bien visibles.
+- Menu Musique : icones accordees au reste du menu.
+- Musiques : les numeros de piste ne collent plus au nom de l'artiste ("17 Queen" devient "Queen").
+- Ecriture des paroles, transposition de style, replique : barre d'attente avec le temps ecoule et un bouton Arreter.
+- Musique IA : temps restant, et explication quand la barre est a 100 % mais que le moteur finit le fichier. "Essayer la voix" fait 15 s pour l'ecouter avant. Onze voix de plus (crooner, rauque, soul, douce, folk, lyrique, grave, chanson, country, electro, gospel).
+- Bouton "Style a la maniere de..." dans les creations : on choisit un chanteur, un acteur, un film dans une liste avec la description du style.
+- "Ajouter aux medias seulement" devient "Garder dans les medias (sans poser)", avec une explication sur chaque choix.
+- Transitions : leur nom est sur sa propre ligne, il ne chevauche plus le nom des plans.
+- Synchro : cliquer sur "2 envoyes" montre ce qui a ete envoye et recu, avec une explication. Les reglages ne sont plus renvoyes chaque minute sans raison.
+- Espace lit avec les effets quand il y en a devant la ligne rouge (option dans le clic droit de l'apercu).
+- Journal des echanges et fenetre de reprise apres plantage : bouton Copier.
+- Tampons : "Personnaliser (texte, duree)..." cree votre version d'un tampon.
 
 ### 0.9.30
 - Presentation de photos : les images peuvent venir des videos du montage. "+ Derniere image du plan" ajoute la derniere image du plan a la ligne rouge (celui apres lequel la presentation est inseree : l'enchainement est parfait) ; "+ Images d'une video..." ouvre une planche d'images du plan (ou du plan selectionne) : on coche celles a garder, ou "Repartir sur tout le plan" en coche le nombre voulu. Les images retenues s'affichent dans une bande : glisser pour changer l'ordre, clic droit pour retirer.

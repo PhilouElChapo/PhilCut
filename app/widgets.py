@@ -464,7 +464,8 @@ class FenetreChoix(QDialog):
             v.addWidget(lb)
         self.liste = QListWidget()
         self.liste.setWordWrap(True)
-        self.liste.setIconSize(QSize(48, 48))
+        self.liste.setIconSize(QSize(22, 22))       # petites icônes alignées : une ligne avec icône ne dépareille pas les autres
+        self._avec_icones = any(not a.icon().isNull() for a in menu.actions())
         self.liste.setSpacing(2)
         self.liste.setStyleSheet("QListWidget::item{padding:6px}")
         for a in menu.actions():
@@ -510,6 +511,11 @@ class FenetreChoix(QDialog):
         it = QListWidgetItem(retrait + texte)
         if not a.icon().isNull():
             it.setIcon(a.icon())
+        elif getattr(self, "_avec_icones", False):
+            from PySide6.QtGui import QPixmap
+            vide = QPixmap(22, 22)
+            vide.fill(Qt.transparent)
+            it.setIcon(QIcon(vide))
         aide = a.toolTip() if a.toolTip() and a.toolTip() != a.text().replace("&", "") else (a.statusTip() or "")
         it.setData(Qt.UserRole, a)
         it.setData(Qt.UserRole + 1, aide)
@@ -535,3 +541,57 @@ class FenetreChoix(QDialog):
 def fenetre_choix(parent, menu, titre, intro=""):
     """Affiche les choix du menu dans une fenêtre ; déclenche celui qui est choisi."""
     return FenetreChoix(parent, menu, titre, intro).faire()
+
+
+class SuiviAttente(QWidget):
+    """Pour toute attente sans pourcentage (IA qui écrit, moteur qui démarre) : une barre animée, ce qui se passe et le
+    temps écoulé, mis à jour chaque seconde, et « Arrêter ». On voit que ça travaille, on ne croit pas à un plantage (0.9.31)."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        from PySide6.QtCore import QTimer
+        from PySide6.QtWidgets import QLabel, QProgressBar, QPushButton
+        h = QHBoxLayout(self)
+        h.setContentsMargins(0, 0, 0, 0)
+        self.barre = QProgressBar()
+        self.barre.setRange(0, 0)
+        self.barre.setMaximumWidth(160)
+        self.barre.setTextVisible(False)
+        h.addWidget(self.barre)
+        self.texte = QLabel("")
+        self.texte.setWordWrap(True)
+        h.addWidget(self.texte, 1)
+        self.b_arret = QPushButton(_("Arrêter"))
+        self.b_arret.hide()
+        h.addWidget(self.b_arret)
+        self._minuterie = QTimer(self)
+        self._minuterie.timeout.connect(self._tic)
+        self._t0, self._quoi, self._tache = 0.0, "", None
+        self.b_arret.clicked.connect(self._arreter)
+        self.hide()
+
+    def demarrer(self, quoi, tache=None, conseil=""):
+        import time
+        self._t0, self._quoi, self._conseil, self._tache = time.monotonic(), quoi, conseil, tache
+        self.b_arret.setVisible(tache is not None and hasattr(tache, "stopper"))
+        self._tic()
+        self.show()
+        self._minuterie.start(1000)
+
+    def _tic(self):
+        import time
+        e = int(time.monotonic() - self._t0)
+        t = f"{e // 60}:{e % 60:02d}"
+        self.texte.setText(_("{q} — en cours depuis {t}.", q=self._quoi, t=t) + (" " + self._conseil if self._conseil else ""))
+
+    def _arreter(self):
+        if self._tache is not None:
+            try:
+                self._tache.stopper()
+            except Exception:     # noqa: BLE001
+                pass
+        self.finir()
+
+    def finir(self):
+        self._minuterie.stop()
+        self.hide()

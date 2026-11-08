@@ -94,14 +94,14 @@ def _texte(p, rect, texte, f, couleur, align=None, largeur=None):
     p.drawText(rect, align if align is not None else Qt.AlignCenter, texte)
 
 
-def image_maison(ident, t, L, H):
-    """Image (QImage L × H) du tampon maison à l'instant t."""
+def image_maison(ident, t, L, H, texte_perso=None, duree=None):
+    """Image (QImage L × H) du tampon maison à l'instant t ; texte_perso remplace son texte principal (0.9.31)."""
     import random
     from PySide6.QtCore import Qt, QRectF, QPointF
     from PySide6.QtGui import (QImage, QPainter, QColor, QPen, QRadialGradient, QLinearGradient, QBrush, QPainterPath,
                                QPolygonF)
     from .intros import police
-    d = MAISON[ident][3]
+    d = float(duree or MAISON[ident][3])
     img = QImage(L, H, QImage.Format_RGB32)
     img.fill(QColor(0, 0, 0))
     p = QPainter(img)
@@ -124,7 +124,7 @@ def image_maison(ident, t, L, H):
         fond.setColorAt(1, QColor("#05060a"))
         p.fillRect(plein, QBrush(fond))
         vignette()
-        texte = MAISON[ident][0]
+        texte = texte_perso or MAISON[ident][0]
         n = max(1, int(len(texte) * _ease(t / (d * 0.55))))        # les lettres arrivent une à une
         f = police("Poppins", U * 0.09, 600)
         f.setItalic(True)
@@ -142,7 +142,7 @@ def image_maison(ident, t, L, H):
         for _k in range(120):
             p.fillRect(QRectF(rnd.random() * L, rnd.random() * H, U * 0.01, U * 0.003), QColor(255, 255, 255, 90))
         f = police("DejaVu Sans Mono", U * 0.07, 700)
-        _texte(p, QRectF(L * 0.06, H * 0.08, L * 0.6, U * 0.1), "◀◀ " + _("REMBOBINAGE"), f, "#ffffff", Qt.AlignLeft | Qt.AlignVCenter)
+        _texte(p, QRectF(L * 0.06, H * 0.08, L * 0.6, U * 0.1), "◀◀ " + (texte_perso or _("REMBOBINAGE")), f, "#ffffff", Qt.AlignLeft | Qt.AlignVCenter)
         s = max(0, int(3600 * 1.5 - t * 1800))
         _texte(p, QRectF(L * 0.5, H * 0.82, L * 0.44, U * 0.1), f"{s // 3600:01d}:{s // 60 % 60:02d}:{s % 60:02d}", police("DejaVu Sans Mono", U * 0.07, 700),
                "#ffffff", Qt.AlignRight | Qt.AlignVCenter)
@@ -171,7 +171,7 @@ def image_maison(ident, t, L, H):
             p.fillRect(QRectF(rnd.random() * L, rnd.random() * H, U * 0.006, U * 0.006), QColor(c, c, c))
         p.fillRect(QRectF(0, cy - U * 0.11, L, U * 0.22), QColor(0, 0, 0))
         f = police("Anton", U * 0.16)
-        _texte(p, QRectF(0, cy - U * 0.11, L, U * 0.22), _("BIIIP"), f, "#ffffff" if int(t * 8) % 2 else "#ffeb3b")
+        _texte(p, QRectF(0, cy - U * 0.11, L, U * 0.22), (texte_perso or _("BIIIP")), f, "#ffffff" if int(t * 8) % 2 else "#ffeb3b")
         e = _ease(t / 0.25)
         p.save()
         p.translate(cx + U * 0.32, cy - U * 0.26)
@@ -198,7 +198,7 @@ def image_maison(ident, t, L, H):
             p.save()
             p.translate(cx, cy)
             p.scale(s, s)
-            _texte(p, QRectF(-L / 2, -U * 0.14, L, U * 0.28), _("TADAAA !"), police("Anton", U * 0.2), "#ffd54a", largeur=L * 0.8)
+            _texte(p, QRectF(-L / 2, -U * 0.14, L, U * 0.28), (texte_perso or _("TADAAA !")), police("Anton", U * 0.2), "#ffd54a", largeur=L * 0.8)
             p.restore()
             r2 = random.Random(3)
             couleurs = ["#ff5c8a", "#ffd24a", "#5ad1ff", "#7cff8a", "#c78bff"]
@@ -233,7 +233,7 @@ def image_maison(ident, t, L, H):
         p.save()
         p.translate(cx, cy)
         p.scale(s, s)
-        _texte(p, QRectF(-L / 2, -U * 0.14, L, U * 0.28), _("BRAVO !"), police("Anton", U * 0.2), "#ffffff", largeur=L * 0.8)
+        _texte(p, QRectF(-L / 2, -U * 0.14, L, U * 0.28), (texte_perso or _("BRAVO !")), police("Anton", U * 0.2), "#ffffff", largeur=L * 0.8)
         p.restore()
     elif ident == "rate":
         p.fillRect(plein, QColor("#2a0606"))
@@ -247,7 +247,7 @@ def image_maison(ident, t, L, H):
         if t > 0.15:
             p.drawLine(QPointF(cx + r, cy - r - U * 0.06), QPointF(cx + r - 2 * r * u2, cy - r - U * 0.06 + 2 * r * u2))
         if t > 0.35:
-            _texte(p, QRectF(0, cy + r * 0.85, L, U * 0.18), _("RATÉ !"), police("Anton", U * 0.13), "#ffffff")
+            _texte(p, QRectF(0, cy + r * 0.85, L, U * 0.18), (texte_perso or _("RATÉ !")), police("Anton", U * 0.13), "#ffffff")
     elif ident == "compte_film":
         p.fillRect(plein, QColor("#c9b48a"))
         n = max(1, 3 - int(t))
@@ -297,7 +297,7 @@ def image_maison(ident, t, L, H):
             p.save()
             p.translate(cx, cy + U * 0.28)
             p.scale(s, s)
-            _texte(p, QRectF(-L / 2, -U * 0.08, L, U * 0.16), _("IDÉE !"), police("Anton", U * 0.12), "#ffd54a")
+            _texte(p, QRectF(-L / 2, -U * 0.08, L, U * 0.16), (texte_perso or _("IDÉE !")), police("Anton", U * 0.12), "#ffd54a")
             p.restore()
     elif ident == "silence":
         fond = QLinearGradient(0, 0, 0, H)
@@ -315,14 +315,14 @@ def image_maison(ident, t, L, H):
         p.setOpacity(_ease((t - 0.6) / 0.6))
         f = police("Poppins", U * 0.065, 500)
         f.setItalic(True)
-        _texte(p, QRectF(0, cy + U * 0.02, L, U * 0.12), _("silence gêné"), f, "#8fa1b8")
+        _texte(p, QRectF(0, cy + U * 0.02, L, U * 0.12), (texte_perso or _("silence gêné")), f, "#8fa1b8")
     elif ident == "fin":
         p.fillRect(plein, QColor("#16120c"))
         for _k in range(200):
             c = rnd.randint(50, 110)
             p.fillRect(QRectF(rnd.random() * L, rnd.random() * H, U * 0.004, U * 0.004), QColor(c, c, c, 120))
         p.setOpacity(_ease(t / 0.6))
-        _texte(p, QRectF(0, cy - U * 0.15, L, U * 0.3), _("FIN"), police("DejaVu Serif", U * 0.22, 700), "#f2e6c9")
+        _texte(p, QRectF(0, cy - U * 0.15, L, U * 0.3), (texte_perso or _("FIN")), police("DejaVu Serif", U * 0.22, 700), "#f2e6c9")
         p.setOpacity(1.0)
         iris = max(0.0, 1 - _ease((t - (d - 1.0)) / 0.9))             # l'iris se referme
         if iris < 1:
@@ -338,18 +338,25 @@ def image_maison(ident, t, L, H):
     return img
 
 
-def fabriquer_maison(params, ident, L=1920, H=1080, cadence=30, progression=None):
-    """Fabrique le tampon maison (MP4 avec son) dans la bibliothèque ; renvoie son entrée."""
+def fabriquer_maison(params, ident, L=1920, H=1080, cadence=30, progression=None, texte=None, duree=None):
+    """Fabrique le tampon maison (MP4 avec son) dans la bibliothèque ; renvoie son entrée. texte / duree : version
+    personnalisée (0.9.31), rangée à part sous le nom choisi."""
     from . import moteur, langue
+    import hashlib
     nom, desc, mots, d = MAISON[ident]
+    if duree:
+        d = float(duree)
     dossier = dossier_tampons(params)
-    sortie = os.path.join(dossier, f"maison_{ident}_{langue.LANGUE or 'fr'}_{L}x{H}.mp4")
+    perso = "_" + hashlib.md5(f"{texte}|{d}".encode()).hexdigest()[:8] if (texte or duree) else ""
+    if texte:
+        nom = texte
+    sortie = os.path.join(dossier, f"maison_{ident}{perso}_{langue.LANGUE or 'fr'}_{L}x{H}.mp4")
     if not (os.path.exists(sortie) and os.path.getsize(sortie) > 2000):
         tmp = tempfile.mkdtemp(prefix="philcut-tampon-")
         try:
             n = max(2, int(d * cadence))
             for i in range(n):
-                image_maison(ident, i / cadence, L, H).save(os.path.join(tmp, f"{i:05d}.jpg"), "JPG", 92)
+                image_maison(ident, i / cadence, L, H, texte, d).save(os.path.join(tmp, f"{i:05d}.jpg"), "JPG", 92)
                 progression and progression(0.85 * i / n)
             src, filtres = _SONS[ident]
             args = ["-framerate", str(cadence), "-i", os.path.join(tmp, "%05d.jpg"), "-f", "lavfi", "-i", src.format(d=d)]

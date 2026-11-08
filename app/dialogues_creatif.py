@@ -66,7 +66,15 @@ class DialogueAtelierIA(QDialog):
         vd.addWidget(self.lbl_prompt)
         self.prompt = QPlainTextEdit()
         self.prompt.setMaximumHeight(70)
-        vd.addWidget(self.prompt)
+        self.prompt.setPlaceholderText(_("ex. : « une ballade chantée à la manière de Sinatra », « un cow-boy à la John Wayne, look Star Wars »"))
+        hp_ = QHBoxLayout()
+        hp_.addWidget(self.prompt, 1)
+        self.b_styles = QPushButton(_("Style « à la manière de »…"))
+        self.b_styles.setToolTip(_("Choisir un chanteur, un groupe, un acteur, un film ou un réalisateur : PhilCut ajoute « à la manière de … » "
+                                   "à la phrase et le remplace par la description de son style (voix, orchestre, image, jeu)"))
+        self.b_styles.clicked.connect(self._choisir_style)
+        hp_.addWidget(self.b_styles, 0, Qt.AlignTop)
+        vd.addLayout(hp_)
         self.envoye = QLabel("")
         self.envoye.setWordWrap(True)
         self.envoye.setStyleSheet("color:#9aa4b2")
@@ -124,8 +132,14 @@ class DialogueAtelierIA(QDialog):
         self.voix_chant = QComboBox()
         for k, (lib, _en) in PA.VOIX.items():
             self.voix_chant.addItem(lib, k)
-        self.voix_chant.setToolTip(_("Qui chante"))
+        self.voix_chant.setToolTip(_("Qui chante, et de quelle manière (crooner, rauque, soul, lyrique…). Une manière plus précise : "
+                                     "écrivez-la dans la phrase (« chanté à la manière de … », « voix de crooner »)."))
         hm.addWidget(self.voix_chant)
+        self.b_essai_voix = QPushButton("▶ " + _("Essayer la voix"))
+        self.b_essai_voix.setToolTip(_("Fabrique 15 secondes avec cette voix et cette langue pour l'écouter avant le vrai morceau "
+                                       "(une à quelques minutes sur ce poste)"))
+        self.b_essai_voix.clicked.connect(self._essayer_voix)
+        hm.addWidget(self.b_essai_voix)
         self.langue_chant = QComboBox()
         for k, lib in PA.LANGUES.items():
             self.langue_chant.addItem(lib, k)
@@ -161,6 +175,7 @@ class DialogueAtelierIA(QDialog):
         def bascule(sans):
             self.boite_paroles.setVisible(not sans)
             self.voix_chant.setEnabled(not sans)
+            self.b_essai_voix.setEnabled(not sans)
             self.langue_chant.setEnabled(not sans)
         self.instrumental.toggled.connect(bascule)
         bascule(True)
@@ -182,6 +197,9 @@ class DialogueAtelierIA(QDialog):
         self.info.setWordWrap(True)
         self.info.setTextInteractionFlags(Qt.TextSelectableByMouse)
         vd.addWidget(self.info)
+        from .widgets import SuiviAttente
+        self.suivi = SuiviAttente()                       # attente sans pourcentage : on voit que ça travaille (0.9.31)
+        vd.addWidget(self.suivi)
         self.apercu_media = ApercuCreation(self)          # musique, clip : écouter / regarder et garder le morceau avant de poser
         vd.addWidget(self.apercu_media)
         # avancement de l'IA, visible dans la fenêtre (en plus de la barre du bas et du Centre d'activité)
@@ -272,6 +290,7 @@ class DialogueAtelierIA(QDialog):
         avec_phrase = e["moteur"] in ("image", "video", "musique")
         self.prompt.setVisible(avec_phrase)
         self.lbl_prompt.setVisible(avec_phrase)
+        self.b_styles.setVisible(avec_phrase)
         self.prompt.setPlainText(e.get("prompt", ""))
         self.boite_musique.setVisible(e["moteur"] == "musique")
         self.boite_replique.setVisible(e["famille"] == "video")
@@ -471,12 +490,13 @@ class DialogueAtelierIA(QDialog):
         k, ref = self._style_replique()
         params = self.ed.params
         self.b_reecrire.setEnabled(False)
-        self.etat_replique.setText(_("L'IA récrit la réplique…"))
         t = Tache(lambda tache: DI.reecrire(texte, k, params, niveau, ref), _("Réplique"))
         self._tache_replique = t
+        self.suivi.demarrer(_("L'IA récrit la réplique"), t)
 
         def fin(r, err):
             try:
+                self.suivi.finir()
                 self.b_reecrire.setEnabled(True)
                 if err:
                     self.etat_replique.setText(_("✕ Réplique non récrite : {e}", e=str(err)[:300]))
@@ -504,12 +524,13 @@ class DialogueAtelierIA(QDialog):
         m, params = self.moteur_replique.currentData(), self.ed.params
         sortie = os.path.join(_dossier_sorties(), f"_replique_{int(time.time())}.wav")
         self.b_ecouter_replique.setEnabled(False)
-        self.etat_replique.setText(_("La voix dit la réplique…"))
         t = Tache(lambda tache: DI.dire(texte, sortie, params, k, m), _("Réplique"))
         self._tache_ecoute = t
+        self.suivi.demarrer(_("La voix dit la réplique"), t)
 
         def fin(r, err):
             try:
+                self.suivi.finir()
                 self.b_ecouter_replique.setEnabled(True)
                 if err:
                     self.etat_replique.setText(_("✕ Voix impossible : {e}", e=str(err)[:300]))
@@ -545,11 +566,72 @@ class DialogueAtelierIA(QDialog):
         self.tache.fini.connect(lambda r, err, e=e: self._fini(e, r, err), Qt.QueuedConnection)
         self.b_creer.setEnabled(False)
         self._t0, self._fraction = time.monotonic(), 0.0
+        self._fin_calcul, self._derniere_nouvelle, self._texte_etape = None, time.monotonic(), ""
         self.barre.setValue(0)
         self.barre.show()
+        self._horloge.start()
         self.tache.start()
 
     # ---- styles « à la manière de »
+    def _choisir_style(self):
+        """Liste des styles connus (et de vos styles), avec leur description : un double-clic l'ajoute à la phrase (0.9.31)."""
+        from PySide6.QtWidgets import QDialog, QLineEdit, QTreeWidget, QTreeWidgetItem
+        from . import styles_ia as S
+        e = self.effet() or {}
+        fam = e.get("famille", "image")
+        d = QDialog(self)
+        d.setWindowTitle(_("Style « à la manière de »"))
+        d.resize(760, 560)
+        v = QVBoxLayout(d)
+        t = QLabel(_("Double-cliquez sur un nom : « à la manière de … » est ajouté à votre phrase. Le moteur ne reçoit jamais le nom, "
+                     "seulement la description du style (à droite). Un nom absent de la liste marche aussi : écrivez-le, puis « Transposer ce "
+                     "style avec l'IA »."))
+        t.setWordWrap(True)
+        v.addWidget(t)
+        cherche = QLineEdit()
+        cherche.setPlaceholderText(_("Chercher : Sinatra, western, Delon, Star Wars…"))
+        v.addWidget(cherche)
+        arbre = QTreeWidget()
+        arbre.setHeaderLabels([_("Nom"), _("Ce que reçoit le moteur")])
+        arbre.setColumnWidth(0, 200)
+        arbre.setWordWrap(True)
+        vus = set()
+        for cle, (nom, asp) in sorted(S._toutes(self.ed.params).items(), key=lambda kv: kv[1][0]):
+            if nom in vus:
+                continue
+            vus.add(nom)
+            desc = S._description(asp, fam)
+            if not desc:
+                continue
+            it = QTreeWidgetItem([nom.title() if nom.islower() else nom, desc])
+            it.setToolTip(1, desc)
+            arbre.addTopLevelItem(it)
+        v.addWidget(arbre, 1)
+
+        def filtrer(txt):
+            txt = S._net(txt)
+            for i in range(arbre.topLevelItemCount()):
+                it = arbre.topLevelItem(i)
+                it.setHidden(bool(txt) and txt not in S._net(it.text(0) + " " + it.text(1)))
+        cherche.textChanged.connect(filtrer)
+
+        def prendre(it, _c=0):
+            lien = _("chanté à la manière de") if fam == "musique" else _("à la manière de")
+            p = self.prompt.toPlainText().rstrip(" ,")
+            self.prompt.setPlainText((p + ", " if p else "") + f"{lien} {it.text(0)}")
+            d.accept()
+        arbre.itemDoubleClicked.connect(prendre)
+        h = QHBoxLayout()
+        h.addStretch(1)
+        b_ok = QPushButton(_("Ajouter à la phrase"))
+        b_ok.clicked.connect(lambda: arbre.currentItem() and prendre(arbre.currentItem()))
+        h.addWidget(b_ok)
+        b_f = QPushButton(_("Fermer"))
+        b_f.clicked.connect(d.reject)
+        h.addWidget(b_f)
+        v.addLayout(h)
+        d.exec()
+
     def _transposition(self):
         from . import styles_ia as S
         e = self.effet() or {}
@@ -582,12 +664,13 @@ class DialogueAtelierIA(QDialog):
         e = self.effet() or {}
         noms, fam, ctx, params = tr["inconnus"], e.get("famille", "image"), self.prompt.toPlainText(), self.ed.params
         self.b_style.setEnabled(False)
-        self.info.setText(_("L'IA décrit le style de {n}…", n=", ".join(noms)))
         t = Tache(lambda tache: S.transposer_ia(noms, fam, ctx, params, niveau), _("Style"))
         self._tache_style = t
+        self.suivi.demarrer(_("L'IA décrit le style de {n}", n=", ".join(noms)), t)
 
         def fin(r, err):
             try:
+                self.suivi.finir()
                 self.b_style.setEnabled(True)
                 if err or not r:
                     self.info.setText(_("✕ Style non transposé : {e}", e=str(err or _("réponse vide"))[:300]))
@@ -743,14 +826,18 @@ class DialogueAtelierIA(QDialog):
         self.etape.show()
         self.barre.setValue(0)
         self.barre.show()
+        self._fin_calcul, self._derniere_nouvelle, self._texte_etape = None, time.monotonic(), ""
         self._tic()
         self._horloge.start()
         self.tache.start()
 
     def _progression(self, f, texte):
         self._fraction = f
-        self.barre.setValue(int(f * 1000))
+        self._derniere_nouvelle = time.monotonic()
+        if f >= 0.995 and not getattr(self, "_fin_calcul", None):
+            self._fin_calcul = time.monotonic()
         if texte:
+            self._texte_etape = texte
             self.etape.setText(texte)
         ph = getattr(self, "_ph", None)
         if ph and ph.get("comment") not in (None, "deja"):
@@ -759,8 +846,32 @@ class DialogueAtelierIA(QDialog):
         self._tic()
 
     def _tic(self):
-        ecoule = int(time.monotonic() - self._t0)
-        self.barre.setFormat(_("{p} % · temps écoulé {t}", p=int(self._fraction * 100), t=f"{ecoule // 60}:{ecoule % 60:02d}"))
+        """Toutes les secondes : temps écoulé, temps restant estimé, et ce qui se passe quand le moteur se tait (0.9.31)."""
+        mm = lambda s_: f"{int(s_) // 60}:{int(s_) % 60:02d}"
+        maintenant = time.monotonic()
+        ecoule = maintenant - self._t0
+        f = self._fraction
+        en_cours = self.tache is not None and self.tache.isRunning()
+        fin_calcul = getattr(self, "_fin_calcul", None)
+        if en_cours and fin_calcul:
+            # le calcul est fini (100 %) mais le moteur travaille encore : décodage du son, écriture du fichier
+            self.barre.setRange(0, 0)                         # barre animée : ça bouge, ça ne plante pas
+            self.barre.setFormat("")
+            self.etape.setText(_("Finition : le moteur transforme le calcul en son et écrit le fichier (souvent 1 à 3 minutes pour un "
+                                 "long morceau). Toujours en cours : {t} depuis la fin du calcul, {e} en tout.", t=mm(maintenant - fin_calcul),
+                                 e=mm(ecoule)))
+            return
+        self.barre.setRange(0, 1000)
+        self.barre.setValue(int(f * 1000))
+        reste = ""
+        if en_cours and 0.03 < f < 0.995 and ecoule > 8:
+            reste = " · " + _("reste environ {t}", t=mm(ecoule * (1 - f) / f))
+        self.barre.setFormat(_("{p} % · temps écoulé {t}", p=int(f * 100), t=mm(ecoule)) + reste)
+        silence = maintenant - getattr(self, "_derniere_nouvelle", self._t0)
+        if en_cours and silence > 45:
+            self.etape.setText((getattr(self, "_texte_etape", "") or "") + "  —  " +
+                               _("toujours en cours : le moteur ne donne pas de nouvelles depuis {t}, c'est normal pendant cette étape.",
+                                 t=mm(silence)))
 
     def arreter(self):
         if self.tache is not None:
@@ -775,12 +886,24 @@ class DialogueAtelierIA(QDialog):
     def _action(self, texte, fonction):
         b = QPushButton(texte)
         b.clicked.connect(fonction)
+        aides = {
+            _("Garder dans les médias (sans poser)"): _("Le fichier rejoint les médias du projet (à gauche), sans être posé dans le "
+                                                        "film : vous le glisserez plus tard où vous voulez."),
+            _("Poser sous la vidéo (piste Musique)"): _("Posé au début du film, sur la piste Musique."),
+            _("Poser à la ligne rouge"): _("Posé à l'endroit de la ligne rouge."),
+            _("Ranger dans ma bibliothèque"): _("Gardé dans « Ma bibliothèque » (Montage › Tampons vidéo) pour tous vos projets."),
+            _("Enregistrer sous…"): _("Une copie du fichier où vous voulez sur le disque (dossier Musique, Images ou Vidéos)."),
+            _("Recréer (une autre version)"): _("Mêmes réglages, nouvelle version (l'IA ne refait jamais exactement la même)."),
+        }
+        if texte in aides:
+            b.setToolTip(aides[texte])
         self.actions.addWidget(b)
 
     def _fini(self, e, r, err):
         self.b_creer.setEnabled(True)
         self.b_arreter.hide()
         self._horloge.stop()
+        self.barre.setRange(0, 1000)
         self.barre.hide()
         self.etape.hide()
         self._vider_actions()
@@ -819,8 +942,8 @@ class DialogueAtelierIA(QDialog):
             self.apercu_media.charger(self.resultat, video=False)
             self._action(_("Poser sous la vidéo (piste Musique)"), self._poser_musique)
             self._action(_("Poser à la ligne rouge"), lambda: self._poser_musique(self.ed.timeline.position))
-            self._action(_("Ajouter aux médias seulement"), lambda: (self.ed.importer([self.resultat]),
-                                                                    self.info.setText(_("Ajoutée aux médias du projet."))))
+            self._action(_("Garder dans les médias (sans poser)"), lambda: (self.ed.importer([self.resultat]),
+                                                                           self.info.setText(_("Ajoutée aux médias du projet (à gauche), sans être posée."))))
             if getattr(self, "_remplace", None):
                 self._action(_("Remplacer le morceau d'origine"), self._remplacer)
             self._action(_("Ranger dans ma bibliothèque"), self._ranger)
@@ -834,8 +957,8 @@ class DialogueAtelierIA(QDialog):
             self.info.setText(_("Clip créé. Regardez-le, gardez le morceau voulu, puis choisissez :"))
             self.apercu_media.charger(self.resultat, video=True)
             self._action(_("Poser au-dessus du film"), self._poser_clip)
-            self._action(_("Ajouter aux médias seulement"), lambda: (self.ed.importer([self.resultat]),
-                                                                    self.info.setText(_("Ajouté aux médias du projet."))))
+            self._action(_("Garder dans les médias (sans poser)"), lambda: (self.ed.importer([self.resultat]),
+                                                                           self.info.setText(_("Ajouté aux médias du projet (à gauche), sans être posé."))))
             if getattr(self, "_clip_brut", None) and os.path.exists(self._clip_brut):
                 self._action(_("Refaire seulement la voix"), self._refaire_voix)
             if getattr(self, "_remplace", None):
@@ -897,6 +1020,39 @@ class DialogueAtelierIA(QDialog):
                                                             n=nom)), Qt.QueuedConnection)
         t.start()
 
+    def _essayer_voix(self):
+        """15 s chantées avec la voix et la langue choisies, sur les deux premiers vers (ou un « la la la »), pour écouter."""
+        from . import creatif as C, paroles as PA
+        e = self.effet() or {}
+        params = self.ed.params
+        voix_en = PA.VOIX.get(self.voix_chant.currentData(), ("", ""))[1]
+        langue = self.langue_chant.currentData()
+        vers = [l for l in self.paroles.toPlainText().splitlines() if l.strip() and not l.strip().startswith("[")][:2]
+        paroles = "[verse]\n" + ("\n".join(vers) if vers else PA.ESSAIS.get(langue, PA.ESSAIS["en"]))
+        style = e.get("prompt") or "pop song"
+        sortie = os.path.join(_dossier_sorties(), f"_essai_voix_{int(time.time())}.mp3")
+        self.b_essai_voix.setEnabled(False)
+        t = Tache(lambda tache: C.musique(style, sortie, 15.0, params, False, paroles, langue=langue, progression=tache.avancer,
+                                          arret=tache.arret_demande, voix=voix_en), _("Essai de voix"))
+        self._tache_essai = t
+        self.suivi.demarrer(_("Essai de la voix « {v} »", v=self.voix_chant.currentText()), t,
+                            _("15 secondes de chant : une à quelques minutes sur ce poste."))
+
+        def fin(r, err):
+            try:
+                self.suivi.finir()
+                self.b_essai_voix.setEnabled(True)
+                if err:
+                    self.info.setText(_("✕ Essai impossible : {e}", e=str(err)[:300]))
+                    return
+                self.apercu_media.charger(r if isinstance(r, str) else sortie, video=False)
+                self.apercu_media.show()
+                self.info.setText(_("Écoutez l'essai ; changez de voix et réessayez, ou « Créer » le vrai morceau."))
+            except RuntimeError:
+                pass
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
+
     def _ecrire_paroles(self):
         from . import paroles as PA
         theme = self.prompt.toPlainText().strip()
@@ -908,13 +1064,15 @@ class DialogueAtelierIA(QDialog):
                 return
         args = (theme, debut, self.langue_chant.currentData(), self.voix_chant.currentData(), self.duree.value(), self.ed.params, niveau)
         self.b_paroles.setEnabled(False)
-        self.info.setText(_("L'IA écrit les paroles…") + (" " + _("(IA locale : démarrage du modèle, une à plusieurs minutes)")
-                                                          if niveau == "locale" else ""))
+        self.info.setText("")
         t = Tache(lambda tache: PA.ecrire(*args), _("Paroles"))
         self._tache_paroles = t
+        self.suivi.demarrer(_("L'IA écrit les paroles"), t, _("IA locale : le modèle démarre d'abord (une à plusieurs minutes la première "
+                                                              "fois), puis écrit.") if niveau == "locale" else _("IA cloud : quelques secondes."))
 
         def fin(r, err):
             try:
+                self.suivi.finir()
                 self.b_paroles.setEnabled(True)
                 if err:
                     self.info.setText(_("✕ Paroles non écrites : {e}", e=str(err)[:300]))

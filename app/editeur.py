@@ -803,7 +803,7 @@ class Editeur(QWidget):
                 fl.addWidget(self._bouton_historique("retablir", _("Rétablir"), self.refaire,
                                                      _("Rétablir (Ctrl+Y) — la flèche montre la liste des actions à rétablir"), False))
             elif cle == "lecture":
-                fl.addWidget(self._bouton("lecture", _("Lecture"), lambda: self.apercu.basculer(), _("Lecture / pause (Espace)")))
+                fl.addWidget(self._bouton("lecture", _("Lecture"), lambda: self.lecture_auto(), _("Lecture / pause (Espace)")))
             elif cle == "zoom":
                 z = QWidget()
                 hz = QHBoxLayout(z)
@@ -944,7 +944,7 @@ class Editeur(QWidget):
         h.addStretch(1)
         for ic, aide, f in (("debut", _("Début (Origine)"), lambda: self.aller_a(0)), ("image_prec", _("Image précédente (←)"), lambda: self.aller_a(self.timeline.position - 1 / self.projet.cadence))):
             h.addWidget(self._petit(ic, aide, f))
-        self.b_lecture = self._petit("lecture", _("Lecture / pause (Espace)"), self.apercu.basculer)
+        self.b_lecture = self._petit("lecture", _("Lecture / pause (Espace)"), self.lecture_auto)
         self.b_lecture.setIconSize(QSize(30, 30))
         h.addWidget(self.b_lecture)
         self.b_lire_rendu = QToolButton()
@@ -1027,7 +1027,11 @@ class Editeur(QWidget):
     def _menu_apercu(self, pos):
         m = QMenu(self)
         m.addAction(icone("image", theme.COULEURS["texte"]), _("Enregistrer cette image (PNG, pleine définition)…"), self.extraire_image)
-        m.addAction(_("Lecture / pause"), self.apercu.basculer)
+        m.addAction(_("Lecture / pause"), self.lecture_auto)
+        a_eff = m.addAction(_("Lire avec les effets quand il y en a (petite préparation)"))
+        a_eff.setCheckable(True)
+        a_eff.setChecked(bool(self.params.get("lecture_effets", True)))
+        a_eff.toggled.connect(lambda on: self.params.__setitem__("lecture_effets", on))
         m.addAction(_("Aperçu rendu (avec les effets)"), self.apercu_rendu)
         m.addSeparator()
         m.addAction(icone("recadrer", theme.COULEURS["texte"]), _("Tracer une zone à flouter, pixelliser ou cacher…"), self.tracer_zone)
@@ -2761,6 +2765,30 @@ class Editeur(QWidget):
         t.start()
 
     # ---------------------------------------------------------------- apercu rendu
+    def _a_des_effets(self, a, b):
+        """Y a-t-il entre a et b quelque chose que la lecture directe des rushes ne montre pas ?"""
+        from .projet import fin_clip
+        for c in self.projet.clips:
+            if c["debut"] < b and fin_clip(c) > a and (any(e.get("actif", True) for e in c.get("effets") or [])
+                                                       or c.get("transition")):
+                return True
+        return False                                      # titres et Goodies : déjà dessinés en direct par l'aperçu
+
+    def lecture_auto(self):
+        """Espace / Lecture (0.9.31) : s'il y a des effets ou des transitions à venir, la lecture les
+        montre (le passage est préparé en quelques secondes) ; sinon lecture directe des rushes, immédiate (titres et Goodies
+        compris)."""
+        if self.apercu.en_lecture:
+            self.apercu.pause()
+            return
+        t = self.timeline.position
+        if self.params.get("lecture_effets", True) and self._a_des_effets(t, t + 15):
+            self.encart.message(_("Lecture avec les effets : préparation du passage (quelques secondes)… Pour une lecture immédiate sans "
+                                  "effets, décochez « Lire avec les effets » (clic droit sur l'aperçu)."), 5000)
+            self.lire_rendu()
+        else:
+            self.apercu.basculer()
+
     def lire_rendu(self, duree_max=15.0):
         """Lecture avec effets : le passage à venir est rendu en arrière-plan (720p) puis joué dans l'aperçu ; pendant
         qu'il se joue, le passage suivant se prépare, pour enchaîner sans arrêt."""

@@ -22,7 +22,7 @@ COMMUNS = ["auteur", "langue", "outils_epingles", "barre_rapide", "volet", "ia_m
            "export_destination", "assistant_niveau", "ia_consignes_recette", "effets_coches", "goodies_coches", "effets_favoris", "effets_recents", "effets_familles_ouvertes",
            "musiques_dossier", "chaine_nom", "fabrique_style", "veo_actif", "ia_confirmer_cout", "modeles_video_perso",
            "tampons_guetter", "tampons_classement", "tampons_placement", "ytdlp_accord", "ytdlp_hauteur", "ytdlp_son_seul", "ytdlp_resultats", "tampons_langue_recherche",
-           "musiques_classement", "styles_perso", "creations_purge_jours", "secours_minutes", "secours_versions", "export_autres", "nouveautes_vues"]
+           "musiques_classement", "styles_perso", "creations_purge_jours", "secours_minutes", "secours_versions", "export_autres", "nouveautes_vues", "lecture_effets"]
 POSTE = ["secrets_refuses", "disposition_vue", "volet_largeur", "biblio_replies", "sessions_vues", "synchro_etat",
          "machine", "zoom", "racines", "nas", "dernier_dossier", "drive", "drive_compte", "association_video",
          "recherche_racines", "proxys", "ia_locale", "ia_poste_leger", "ia_gpu", "ia_locale_modeles", "dossier_flow", "dossier_proxys", "encodeur", "apercu_images", "ajout_auto", "dernier_dossier_export", "barre_taille", "dossier_images", "tailles_vue", "apercu_fidele", "preparation_auto", "secrets_empreinte", "dossier_rushes", "fenetre_geometrie", "fenetre_maximisee", "dossier_musique_import", "dossier_telechargements", "dossier_documents",
@@ -162,9 +162,7 @@ def ecrire_drive(params):
         d["communs"] = dict(i["communs"], maj=local, par=i["machine"])
     d.setdefault("postes", {})[i["machine"]] = dict(i["poste"], maj=i["date"])
     try:
-        with open(p, "w", encoding="utf-8") as f:
-            json.dump(d, f, ensure_ascii=False, indent=1)
-        return True
+        return ecrire_si_change(p, d)
     except OSError:
         return False
 
@@ -613,3 +611,35 @@ def reprendre_secrets_choisis(params, phrase, cles):
         n += 1
     params.enregistrer()
     return n
+
+
+def _sans_horodatage(o):
+    if isinstance(o, dict):
+        return {k: _sans_horodatage(v) for k, v in o.items() if k not in ("maj", "date")}
+    if isinstance(o, list):
+        return [_sans_horodatage(v) for v in o]
+    return o
+
+
+def ecrire_si_change(chemin, d, rafraichir_minutes=30):
+    """N'écrit le fichier synchronisé que si son contenu change vraiment (pas seulement l'heure) ou si l'heure du poste
+    date de plus de 30 minutes : sinon la synchronisation renverrait le même fichier chaque minute (0.9.31)."""
+    import datetime
+    try:
+        with open(chemin, encoding="utf-8") as f:
+            avant = json.load(f)
+    except (OSError, ValueError):
+        avant = None
+    if avant is not None and _sans_horodatage(avant) == _sans_horodatage(d):
+        def plus_recent(o):
+            if isinstance(o, dict):
+                vals = [o.get("maj"), o.get("date")] + [plus_recent(v) for v in o.values()]
+                return max([v for v in vals if isinstance(v, str)] or [""])
+            return ""
+        m = plus_recent(avant)
+        limite = (datetime.datetime.now() - datetime.timedelta(minutes=rafraichir_minutes)).isoformat(timespec="minutes")
+        if m and m[:16] >= limite[:16]:
+            return False
+    with open(chemin, "w", encoding="utf-8") as f:
+        json.dump(d, f, ensure_ascii=False, indent=1)
+    return True

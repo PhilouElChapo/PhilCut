@@ -63,6 +63,17 @@ class DialogueModeles(QDialog):
         v.addLayout(h)
         self.liste.setCurrentRow(0)
         self._etat_rushes()
+        from PySide6.QtCore import QTimer
+        self._veille = QTimer(self)                   # l'import des rushes se fait en tâche de fond : on suit le projet
+        self._veille.timeout.connect(self._suivre_projet)
+        self._veille.start(800)
+        self._nb_medias = len(ed.projet.medias)
+
+    def _suivre_projet(self):
+        n = len(self.ed.projet.medias)
+        if n != self._nb_medias and self.tache is None:
+            self._nb_medias = n
+            self._etat_rushes()
 
     def _choisi(self, it, _avant=None):
         if not it:

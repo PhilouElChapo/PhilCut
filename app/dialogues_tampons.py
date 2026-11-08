@@ -508,6 +508,11 @@ class DialogueTampons(QDialog):
         b = QPushButton(_("Créer celui-ci"))
         b.clicked.connect(lambda: self.creer_maison(False))
         h.addWidget(b)
+        b_perso = QPushButton(_("Personnaliser (texte, durée)…"))
+        b_perso.setToolTip(_("Votre version de ce tampon : votre texte (« 3 HEURES PLUS TARD », « BIEN JOUÉ ! »…) et sa durée ; "
+                             "elle rejoint votre bibliothèque à côté de l'original"))
+        b_perso.clicked.connect(self.personnaliser_maison)
+        h.addWidget(b_perso)
         self.b_tous = QPushButton(_("Créer tous les tampons maison"))
         self.b_tous.setProperty("primaire", True)
         self.b_tous.clicked.connect(lambda: self.creer_maison(True))
@@ -536,6 +541,52 @@ class DialogueTampons(QDialog):
         d = T.MAISON[k][3]
         self._t_maison = (self._t_maison + 0.1) % d
         it.setIcon(QIcon(QPixmap.fromImage(T.image_maison(k, self._t_maison, 192, 108))))
+
+    def personnaliser_maison(self):
+        it = self.liste_maison.currentItem()
+        if not it:
+            return
+        k = it.data(Qt.UserRole)
+        from PySide6.QtWidgets import QDialog, QDoubleSpinBox, QFormLayout, QLineEdit
+        d = QDialog(self)
+        d.setWindowTitle(_("Personnaliser « {n} »", n=T.MAISON[k][0]))
+        v = QVBoxLayout(d)
+        img = QLabel()
+        img.setFixedSize(384, 216)
+        v.addWidget(img)
+        f = QFormLayout()
+        texte = QLineEdit()
+        texte.setPlaceholderText(T.MAISON[k][0])
+        f.addRow(_("Texte"), texte)
+        duree = QDoubleSpinBox()
+        duree.setRange(1.0, 8.0)
+        duree.setSingleStep(0.5)
+        duree.setSuffix(" s")
+        duree.setValue(T.MAISON[k][3])
+        f.addRow(_("Durée"), duree)
+        v.addLayout(f)
+
+        def apercu():
+            img.setPixmap(QPixmap.fromImage(T.image_maison(k, duree.value() * 0.7, 384, 216, texte.text().strip() or None, duree.value())))
+        texte.textChanged.connect(apercu)
+        duree.valueChanged.connect(apercu)
+        apercu()
+        h = QHBoxLayout()
+        ok = QPushButton(_("Créer ma version"))
+        ok.setDefault(True)
+        ok.clicked.connect(d.accept)
+        an = QPushButton(_("Annuler"))
+        an.clicked.connect(d.reject)
+        h.addStretch(1)
+        h.addWidget(ok)
+        h.addWidget(an)
+        v.addLayout(h)
+        if not d.exec():
+            return
+        tx, du = texte.text().strip() or None, duree.value()
+        L, H = self.format
+        self._lancer(lambda t: T.fabriquer_maison(self.params, k, L, H, progression=lambda f_: t.avancer(f_, tx or T.MAISON[k][0]), texte=tx, duree=du),
+                     _("Fabrication de votre tampon…"), apres=self._info_maison)
 
     def creer_maison(self, tous):
         it = self.liste_maison.currentItem()

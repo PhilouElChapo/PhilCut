@@ -24,6 +24,7 @@ PALETTES = {
         "alterne": "%(alterne)s",
         "bord_bas": "#b9b9b9",
         "glissiere": "#c4c4c4",
+        "ascenseur": "#9a9a9a",
         "appui_fort": "#e0e0e0",
         "trait_fleche": "#616161",
     },
@@ -44,6 +45,7 @@ PALETTES = {
         "alterne": "#262626",
         "bord_bas": "#4a4a4a",
         "glissiere": "#4a4a4a",
+        "ascenseur": "#7c7c86",
         "appui_fort": "#454545",
         "trait_fleche": "#a8a8a8",
     },
@@ -203,11 +205,11 @@ QSplitter::handle:vertical { height: 6px; }
 QSplitter::handle:hover { background: %(bord)s; }
 
 /* ---------- barres de defilement fines */
-QScrollBar:vertical { background: transparent; width: 10px; margin: 2px; }
-QScrollBar:horizontal { background: transparent; height: 10px; margin: 2px; }
-QScrollBar::handle:vertical { background: %(glissiere)s; border-radius: 3px; min-height: 30px; margin: 0 2px; }
-QScrollBar::handle:horizontal { background: %(glissiere)s; border-radius: 3px; min-width: 30px; margin: 2px 0; }
-QScrollBar::handle:hover { background: #8a8a8a; }
+QScrollBar:vertical { background: rgba(127,127,127,0.12); width: 14px; margin: 2px; border-radius: 6px; }
+QScrollBar:horizontal { background: rgba(127,127,127,0.12); height: 14px; margin: 2px; border-radius: 6px; }
+QScrollBar::handle:vertical { background: %(ascenseur)s; border-radius: 5px; min-height: 36px; margin: 1px 2px; }
+QScrollBar::handle:horizontal { background: %(ascenseur)s; border-radius: 5px; min-width: 36px; margin: 2px 1px; }
+QScrollBar::handle:hover { background: %(accent)s; }
 QScrollBar::add-line, QScrollBar::sub-line { width: 0; height: 0; }
 QScrollBar::add-page, QScrollBar::sub-page { background: transparent; }
 

@@ -156,7 +156,7 @@ class Fenetre(QMainWindow):
         e.addSeparator()
         e.addAction(icone("parametres"), _("Préférences…"), self.preferences, "Ctrl+,")
         a = mb.addMenu(_("&Affichage"))
-        a.addAction(_("Lecture / pause"), lambda: self._ed(lambda ed: ed.apercu.basculer()), "Space")
+        a.addAction(_("Lecture / pause"), lambda: self._ed(lambda ed: ed.lecture_auto()), "Space")
         a.addAction(_("Tout voir dans la timeline"), lambda: self._ed(lambda ed: ed.timeline.ajuster()), "Ctrl+0")
         a.addAction(_("Zoom avant"), lambda: self._ed(lambda ed: ed.timeline.zoomer(1.3)), "Ctrl++")
         a.addAction(_("Zoom arrière"), lambda: self._ed(lambda ed: ed.timeline.zoomer(1 / 1.3)), "Ctrl+-")
@@ -830,10 +830,11 @@ class Fenetre(QMainWindow):
     def musique(self):
         ed = self._editeur_ou_nouveau()
         m = QMenu(self)
-        m.addAction(_("Importer une musique…"), lambda: ed.importer())
-        m.addAction(icone("musique"), _("Mes musiques (chercher, écouter, poser)…"), lambda: self.mes_musiques(ed))
-        m.addAction(_("Bibliothèque musicale libre (chercher, écouter, télécharger)…"), lambda: self.bibliotheque_musicale(ed))
-        m.addAction(_("Créer une musique par IA (sur ce poste)…"), lambda: ed.atelier_ia("musique"))
+        ac = "#9b7bff"                                     # mêmes petites icônes, couleur PhilCut, pour toutes les lignes
+        m.addAction(icone("importer", ac), _("Importer une musique…"), lambda: ed.importer())
+        m.addAction(icone("musique", ac), _("Mes musiques (chercher, écouter, poser)…"), lambda: self.mes_musiques(ed))
+        m.addAction(icone("telecharger", ac), _("Bibliothèque musicale libre (chercher, écouter, télécharger)…"), lambda: self.bibliotheque_musicale(ed))
+        m.addAction(icone("ia", ac), _("Créer une musique par IA (sur ce poste)…"), lambda: ed.atelier_ia("musique"))
         from .widgets import fenetre_choix
         fenetre_choix(self, m, _("Musique"), _("D'où vient la musique ? Elle est posée sur la piste Musique, sous la vidéo."))
 
@@ -1298,18 +1299,41 @@ class Fenetre(QMainWindow):
                 t.setPlainText(f.read()[-200000:])
         except OSError:
             t.setPlainText(_("Aucun échange noté pour l'instant."))
+        t.moveCursor(t.textCursor().MoveOperation.End)
         v.addWidget(t)
-        bb = boutons_fr(QDialogButtonBox(QDialogButtonBox.Close))
-        bb.rejected.connect(d.reject)
-        bb.clicked.connect(d.reject)
-        v.addWidget(bb)
+        h = QHBoxLayout()
+        b_cp = QPushButton(_("Copier"))
+        b_cp.setToolTip(_("Copie la sélection, ou tout le journal si rien n'est sélectionné (pour le coller dans un message)"))
+
+        def copier():
+            txt = t.textCursor().selectedText().replace("\u2029", "\n") or t.toPlainText()
+            QApplication.clipboard().setText(txt)
+            b_cp.setText(_("✓ Copié"))
+            QTimer.singleShot(1800, lambda: b_cp.setText(_("Copier")))
+        b_cp.clicked.connect(copier)
+        h.addWidget(b_cp)
+        b_ou = QPushButton(_("Ouvrir le fichier"))
+        b_ou.clicked.connect(lambda: self._ouvrir_dans_systeme(chemin()))
+        h.addWidget(b_ou)
+        h.addStretch(1)
+        b_f = QPushButton(_("Fermer"))
+        b_f.clicked.connect(d.reject)
+        h.addWidget(b_f)
+        v.addLayout(h)
         d.exec()
+
+    def _ouvrir_dans_systeme(self, chemin):
+        from PySide6.QtCore import QUrl
+        from PySide6.QtGui import QDesktopServices
+        if chemin and os.path.exists(chemin):
+            QDesktopServices.openUrl(QUrl.fromLocalFile(chemin))
 
     def raccourcis(self):
         QMessageBox.information(self, _("Raccourcis"), _(
             "Espace : lecture / pause\nC : couper au curseur\nSuppr : supprimer et refermer (Maj+Suppr : laisser un trou)\n"
             "← → : image par image (Maj : seconde)\nOrigine / Fin : début / fin\nMolette : zoom de la timeline (Maj + molette : défiler) · Ctrl+0 : tout voir\nDouble-clic sur la règle : début puis fin de la partie jaune\n"
             "Ctrl+Z / Ctrl+Y : annuler / rétablir\nCtrl+I : importer · Ctrl+S : enregistrer · Ctrl+E : exporter\nF4 : volet de droite\n"
+            "Ctrl+T : monter par le texte · Ctrl+Maj+E : étalonnage du plan\nCtrl + molette, ou molette sur les noms des pistes : monter / descendre dans les pistes\n"
             "Double-clic sur un plan : effets et transition · clic droit : vitesse, cadrage, muet"))
 
     def a_propos(self):
@@ -1398,6 +1422,50 @@ class Fenetre(QMainWindow):
             return None
 
     # ---------------------------------------------------------------- sauvegarde automatique (0.9.22)
+    def _maj_bouton_synchro(self, recus, envoyes):
+        """Bouton discret dans la barre du bas : la dernière synchronisation ; un clic montre ce qui a été échangé (0.9.31)."""
+        from PySide6.QtWidgets import QToolButton
+        b = getattr(self, "_b_synchro", None)
+        if b is None:
+            b = QToolButton()
+            b.setAutoRaise(True)
+            b.setCursor(Qt.PointingHandCursor)
+            b.clicked.connect(self.voir_synchro)
+            self.statusBar().addPermanentWidget(b)
+            self._b_synchro = b
+        b.setText(_("⇅ {h} : {r} reçu(s), {e} envoyé(s)", h=datetime.datetime.now().strftime("%Hh%M"), r=recus, e=envoyes))
+        b.setToolTip(_("Cliquez pour voir ce qui a été reçu et envoyé"))
+
+    def voir_synchro(self):
+        from PySide6.QtWidgets import QTreeWidget, QTreeWidgetItem
+        from . import miroir
+        d = QDialog(self)
+        d.setWindowTitle(_("Ce qu'échange la synchronisation"))
+        d.resize(720, 460)
+        v = QVBoxLayout(d)
+        t = QLabel(_("Chaque minute, PhilCut échange avec votre Drive les fichiers qui ont vraiment changé : réglages communs, projets "
+                     "ouverts, bibliothèque… Jamais vos vidéos. Voici les dernières synchronisations qui ont échangé quelque chose."))
+        t.setWordWrap(True)
+        v.addWidget(t)
+        arbre = QTreeWidget()
+        arbre.setHeaderLabels([_("Quand"), _("Fichier"), _("Ce que c'est")])
+        arbre.setColumnWidth(0, 150)
+        arbre.setColumnWidth(1, 200)
+        arbre.setWordWrap(True)
+        for h in miroir.HISTORIQUE:
+            tete = QTreeWidgetItem([f"{h['quand']}", h["lieu"], ""])
+            for sens, rel in h["fichiers"]:
+                QTreeWidgetItem(tete, ["↑ " + _("envoyé") if sens == "envoye" else "↓ " + _("reçu"), rel, miroir.expliquer(rel)])
+            arbre.addTopLevelItem(tete)
+            tete.setExpanded(True)
+        if not miroir.HISTORIQUE:
+            arbre.addTopLevelItem(QTreeWidgetItem(["", _("Rien d'échangé depuis le démarrage."), ""]))
+        v.addWidget(arbre, 1)
+        bb = QDialogButtonBox(QDialogButtonBox.Close)
+        bb.rejected.connect(d.reject)
+        v.addWidget(bb)
+        d.exec()
+
     def voir_nouveautes(self):
         from .dialogues_nouveautes import DialogueNouveautes
         d = DialogueNouveautes(self, self.params)
@@ -1555,6 +1623,7 @@ class Fenetre(QMainWindow):
                         repris = reglages.reprendre_communs_drive(self.params)
                     except Exception:      # noqa: BLE001
                         repris = None
+                self._maj_bouton_synchro(recus, envoyes)
                 if recus or envoyes or not silencieux:
                     msg = _("✓ Synchronisation avec {l} : {r} reçu(s), {e} envoyé(s).", l=lieu, r=recus, e=envoyes)
                     if repris:

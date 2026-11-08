@@ -157,6 +157,21 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T49 — 0.9.31 : retours du 8 novembre
+
+1. **Durée des goodies** : poser un titre sur la piste du haut, tirer son bord droit puis gauche. **Attendu** : curseur ↔ au bord, durée affichée, minimum 0,2 s, Ctrl+Z revient.
+2. **Modèles** : ouvrir Modèles de montage, « Ajouter des rushes… », puis « Monter avec ce modèle ». **Attendu** : le montage se fait sans double-clic.
+3. **Étalonnage** : ouvrir sur un plan, lire l'explication du rideau, bouger « Image du plan ». **Attendu** : l'image change, jamais noire sans message.
+4. **Pistes** : vignettes grandes, Ctrl + molette. **Attendu** : on atteint toutes les pistes ; ascenseur bien visible.
+5. **Musiques** : un fichier « 17_Queen_-_Who_wants_to_live_forever.mp3 ». **Attendu** : artiste « Queen ».
+6. **Attentes** : paroles IA, musique IA longue. **Attendu** : temps écoulé, temps restant, puis « Finition… » à 100 %.
+7. **Voix** : « Essayer la voix » avec « Crooner ». **Attendu** : 15 s écoutables avant de créer.
+8. **Style** : « Style « à la manière de »… », chercher Delon, double-clic. **Attendu** : la phrase reçoit « à la manière de Alain Delon ».
+9. **Synchro** : cliquer sur le bouton ⇅ de la barre du bas. **Attendu** : liste des fichiers envoyés / reçus avec l'explication.
+10. **Lecture** : un plan avec un effet, Espace. **Attendu** : l'effet se voit pendant la lecture.
+11. **Journal** : Aide › Journal des échanges › Copier ; fenêtre de reprise › Copier.
+12. **Tampons** : clic droit sur un tampon maison › Personnaliser, changer le texte. **Attendu** : aperçu en direct, la version rejoint la bibliothèque.
+
 ## T48 — 0.9.28 : étalonnage simple
 
 1. **Ouvrir** : clic droit sur un plan › « Étalonnage (couleurs, avant / après)… ». **Attendu** : l'image du plan à la ligne rouge, rideau jaune AVANT / APRÈS que l'on fait glisser, trois roues, cinq curseurs.

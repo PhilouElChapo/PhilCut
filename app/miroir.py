@@ -11,6 +11,7 @@ synchronise ordinaire. synchroniser() rapproche les deux, dans les deux sens :
 """
 import json, os, posixpath, threading, time
 from . import distant
+from .langue import _
 
 _VERROU = threading.RLock()          # jamais deux synchros en meme temps (demarrage, minute, envoi immediat...)
 RECEPTIONS = ("recevoir", "fusionner", "supprimer_ici")
@@ -187,7 +188,35 @@ def synchroniser(params, compte=None, emplacement=None, choix=None, sens=None, p
         return _synchroniser(params, compte, emplacement, choix, sens, plan)
 
 
+_JOURNAL = []              # ce qu'a fait la dernière synchronisation : [(« envoye » | « recu », chemin relatif)]
+HISTORIQUE = []            # les dernières synchronisations : [{quand, lieu, fichiers}] (0.9.31)
+
+
 def _synchroniser(params, compte, emplacement, choix, sens, plan):
+    _JOURNAL.clear()
+    try:
+        return _synchroniser_vrai(params, compte, emplacement, choix, sens, plan)
+    finally:
+        if plan is None and _JOURNAL:
+            import datetime
+            HISTORIQUE.insert(0, {"quand": datetime.datetime.now().strftime("%H:%M:%S"), "lieu": libelle_compte(compte),
+                                  "fichiers": list(_JOURNAL)})
+            del HISTORIQUE[30:]
+
+
+EXPLICATIONS = {"preferences.json": "Vos réglages communs à tous vos postes (thème, langue, dossiers, préférences de PhilCut).",
+                "session.json": "Les projets ouverts et récents de ce poste, pour les retrouver sur vos autres postes.",
+                "tampons": "Votre bibliothèque de tampons et d'extraits.", "apprentissage": "Ce que PhilCut retient de vos choix (assistant).",
+                "mes_points.json": "Vos points enregistrés sur la carte (aviation).", "effets_perso.json": "Vos effets et phrases IA personnels."}
+
+
+def expliquer(rel):
+    """Ce qu'est un fichier synchronisé, en clair."""
+    tete = rel.split("/")[0]
+    return _(EXPLICATIONS.get(rel) or EXPLICATIONS.get(tete) or EXPLICATIONS.get(rel.split("/")[-1]) or "Fichier de PhilCut.")
+
+
+def _synchroniser_vrai(params, compte, emplacement, choix, sens, plan):
     e = emplacement or distant.emplacement(compte)
     base = dossier_miroir(compte)
     local_racine = os.path.join(base, "PhilCut")
@@ -259,12 +288,14 @@ def _synchroniser(params, compte, emplacement, choix, sens, plan):
                     continue
                 e.envoyer(lp, dp)
                 envoyes += 1
+                _JOURNAL.append(("envoye", rel))
                 envoye = True
             elif l_mtime is None:                           # absent ici
                 if avant.get("local") and not distant_modifie:
                     continue                                # supprime ici : on laisse (pas de suppression distante)
                 e.telecharger(dp, lp)
                 recus += 1
+                _JOURNAL.append(("recu", rel))
             elif local_modifie and distant_modifie:         # conflit : les deux postes ont change ce fichier
                 tmp = lp + ".distant"
                 try:
@@ -294,6 +325,7 @@ def _synchroniser(params, compte, emplacement, choix, sens, plan):
                         os.replace(tmp, lp)
                         journal(f"conflit sur {rel} : fusion impossible, version du Drive gardée")
                         recus += 1
+                        _JOURNAL.append(("recu", rel))
                     else:
                         with open(lp, "w", encoding="utf-8") as f:
                             json.dump(_fusion(a, b), f, ensure_ascii=False, indent=1)
@@ -301,17 +333,22 @@ def _synchroniser(params, compte, emplacement, choix, sens, plan):
                         e.envoyer(lp, dp)
                         journal(f"conflit sur {rel} : les deux versions fusionnées")
                         envoyes += 1
+                        _JOURNAL.append(("envoye", rel))
                         envoye = True
                         recus += 1
+                        _JOURNAL.append(("recu", rel))
                 else:
                     os.replace(tmp, lp)
                     recus += 1
+                    _JOURNAL.append(("recu", rel))
             elif distant_modifie:
                 e.telecharger(dp, lp)
                 recus += 1
+                _JOURNAL.append(("recu", rel))
             elif local_modifie:
                 e.envoyer(lp, dp)
                 envoyes += 1
+                _JOURNAL.append(("envoye", rel))
                 envoye = True
             # etat apres synchro
             if envoye:

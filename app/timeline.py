@@ -209,9 +209,15 @@ class ItemClip(QGraphicsRectItem):
         p.setFont(f)
         p.setPen(QColor("#1a1a1a") if actif else QColor(60, 60, 60))
         lib = ("⇆ " if actif else "⇆ (off) ") + fi["nom"] + f" {d:g} s"
-        p.fillRect(QRectF(r.x() + 3, r.y() + 2, min(w - 6, QFontMetrics(f).horizontalAdvance(lib) + 8), 13), QColor(255, 210, 74, 230 if actif else 120))
-        p.drawText(QRectF(r.x() + 7, r.y() + 2, w - 10, 13), Qt.AlignLeft | Qt.AlignVCenter, QFontMetrics(f).elidedText(lib, Qt.ElideRight, int(w - 12)))
-        return min(w + 4, r.width() * 0.5)
+        # l'étiquette de la transition sur sa propre ligne, au milieu du bloc hachuré : le nom du plan (en haut) et les
+        # effets (en bas) ne la chevauchent plus (0.9.31)
+        y = r.y() + max(17.0, r.height() / 2 - 7)
+        if r.height() < 34:
+            y = r.y() + 2
+        largeur = min(w - 6, QFontMetrics(f).horizontalAdvance(lib) + 8)
+        p.fillRect(QRectF(r.x() + 3, y, largeur, 13), QColor(255, 210, 74, 230 if actif else 120))
+        p.drawText(QRectF(r.x() + 7, y, w - 10, 13), Qt.AlignLeft | Qt.AlignVCenter, QFontMetrics(f).elidedText(lib, Qt.ElideRight, int(w - 12)))
+        return 0 if r.height() >= 34 else min(w + 4, r.width() * 0.5)
 
     def _dessiner_chips(self, p, r):
         """Une étiquette par effet posé, en bas du plan : clic = régler, clic droit = désactiver / supprimer."""
@@ -486,7 +492,26 @@ class ItemCalque(QGraphicsRectItem):
         self.h = max(5.0, (hp - 4) / max(1, nb))              # éléments qui se chevauchent : rangés sur des sous-lignes
         self.y0 = y + rang * self.h
         self.setFlags(QGraphicsItem.ItemIsSelectable | QGraphicsItem.ItemIsMovable)
+        self.setAcceptHoverEvents(True)
+        self._bord = None                        # « g » ou « d » : on tire un bord pour changer la durée (0.9.31)
         self.placer()
+
+    def _zone_bord(self, pos):
+        r = self.rect()
+        if r.width() < 3 * BORD:
+            return "d" if pos.x() > r.width() / 2 else None
+        if pos.x() <= BORD:
+            return "g"
+        if pos.x() >= r.width() - BORD:
+            return "d"
+        return None
+
+    def hoverMoveEvent(self, e):
+        b = self._zone_bord(e.pos())
+        self.setCursor(Qt.SizeHorCursor if b else Qt.OpenHandCursor)
+        self.setToolTip(_("Tirez ce bord pour changer la durée") if b else _("Glissez pour déplacer · tirez un bord pour la durée · "
+                                                                              "double-clic : réglages"))
+        super().hoverMoveEvent(e)
 
     def placer(self):
         self.setRect(0, 0, max(6.0, (self.elem["fin"] - self.elem["debut"]) * self.tl.pps), self.h - (1 if nb_lignes_multiples(self) else 0))
@@ -530,9 +555,30 @@ class ItemCalque(QGraphicsRectItem):
             return
         self._sur_cle = False
         self.tl.projet.marquer()
+        self._bord = self._zone_bord(e.pos()) if e.button() == Qt.LeftButton else None
+        if self._bord:
+            self.setSelected(True)
+            self.tl.element_clique.emit(self.elem["id"], "calque", 0)
+            e.accept()
+            return
         super().mousePressEvent(e)
 
     def mouseMoveEvent(self, e):
+        if self._bord:
+            t = max(0.0, (self.mapToScene(e.pos()).x() - MARGE_G) / self.tl.pps)
+            if getattr(self.tl, "aimant", None) and hasattr(self.tl, "aimanter"):
+                try:
+                    t = self.tl.aimanter(t)
+                except Exception:     # noqa: BLE001
+                    pass
+            if self._bord == "g":
+                self.elem["debut"] = min(t, self.elem["fin"] - 0.2)
+            else:
+                self.elem["fin"] = max(t, self.elem["debut"] + 0.2)
+            self.placer()
+            self.tl._info_rognage = (t, _("Durée {d:.1f} s", d=self.elem["fin"] - self.elem["debut"]))
+            self.tl.viewport().update()
+            return
         super().mouseMoveEvent(e)
         t = max(0.0, (self.pos().x() - MARGE_G) / self.tl.pps)
         self.setPos(MARGE_G + t * self.tl.pps, self.y0 + 2)
@@ -540,6 +586,12 @@ class ItemCalque(QGraphicsRectItem):
     def mouseReleaseEvent(self, e):
         if getattr(self, "_sur_cle", False):
             self._sur_cle = False
+            return
+        if self._bord:
+            self._bord = None
+            self.tl._info_rognage = None
+            self.tl.modifie.emit()
+            self.tl.reconstruire()
             return
         super().mouseReleaseEvent(e)
         t = max(0.0, (self.pos().x() - MARGE_G) / self.tl.pps)
@@ -1243,6 +1295,10 @@ class Timeline(QGraphicsView):
         a.setEnabled(False)
 
     def wheelEvent(self, e):
+        if (e.modifiers() & Qt.ControlModifier or e.position().x() < MARGE_G) and e.angleDelta().y():
+            # Ctrl + molette, ou molette sur les noms des pistes : monter / descendre dans les pistes (0.9.31)
+            self.verticalScrollBar().setValue(self.verticalScrollBar().value() - e.angleDelta().y())
+            return
         if e.modifiers() & Qt.AltModifier:
             d = e.angleDelta().y() or e.angleDelta().x()        # Alt fait parfois passer la molette en horizontal
             self.hauteur_images(1.15 if d > 0 else 1 / 1.15)

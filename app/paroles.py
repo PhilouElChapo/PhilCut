@@ -7,7 +7,22 @@ from .langue import _
 VOIX = {"auto": (_("Voix au choix du moteur"), ""), "femme": (_("Voix de femme"), "female vocals"),
         "homme": (_("Voix d'homme"), "male vocals"), "duo": (_("Duo homme et femme"), "male and female duet vocals"),
         "choeur": (_("Chœur"), "choir vocals"), "enfant": (_("Voix d'enfant"), "child vocals"),
-        "rap": (_("Rap"), "rap vocals")}
+        "rap": (_("Rap"), "rap vocals"),
+        # manières de chanter (0.9.31) : décrites au moteur, jamais la voix d'une personne
+        "crooner": (_("Crooner (baryton suave)"), "smooth baritone crooner male vocals, relaxed swing phrasing"),
+        "rauque": (_("Voix rauque, rock"), "raspy powerful rock male vocals"),
+        "soul": (_("Soul puissante (femme)"), "powerful soulful female vocals, gospel runs"),
+        "douce": (_("Douce et intime"), "soft breathy intimate vocals, close to the microphone"),
+        "folk": (_("Folk, guitare et voix"), "warm gentle folk vocals, storytelling"),
+        "lyrique": (_("Lyrique, soprano"), "operatic soprano female vocals, classical"),
+        "grave": (_("Très grave (basse)"), "deep bass male vocals"),
+        "chanson": (_("Chanson française"), "expressive French chanson vocals, theatrical, rolling r"),
+        "country": (_("Country"), "country vocals, light twang"),
+        "electro": (_("Électro, voix traitée"), "auto-tuned processed pop vocals"),
+        "gospel": (_("Gospel, chœur"), "gospel choir vocals, call and response")}
+ESSAIS = {"fr": "La la la, écoute ma voix, la la la, je chante pour toi", "en": "La la la, hear my voice, la la la, I sing for you",
+          "es": "La la la, escucha mi voz, la la la, canto para ti", "de": "La la la, hör meine Stimme, la la la, ich singe für dich",
+          "it": "La la la, ascolta la mia voce, la la la, canto per te"}
 LANGUES = {"fr": "Français", "en": "English", "es": "Español", "de": "Deutsch", "it": "Italiano"}
 
 CONSIGNES = """Tu es parolier. Écris les paroles d'une chanson courte, chantable, avec des rimes simples.

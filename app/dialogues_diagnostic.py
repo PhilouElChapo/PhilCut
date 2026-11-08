@@ -80,6 +80,11 @@ class PanneauDiagnostic(QFrame):
         self.b_journal = QPushButton(_("Voir le journal du moteur"))
         self.b_journal.clicked.connect(self._ouvrir_journal)
         self.ligne2.addWidget(self.b_journal)
+        self.b_copier = QPushButton(_("Copier"))
+        self.b_copier.setToolTip(_("Copie le message, l'explication et les détails techniques (et la fin du journal du moteur) pour les "
+                                   "coller dans un message"))
+        self.b_copier.clicked.connect(self._copier)
+        self.ligne2.addWidget(self.b_copier)
         self.ligne2.addStretch(1)
         v.addLayout(self.ligne2)
         self.details = QPlainTextEdit()
@@ -99,6 +104,20 @@ class PanneauDiagnostic(QFrame):
         self.barre.hide()
         v.addWidget(self.barre)
         self.hide()
+
+    def _copier(self):
+        from PySide6.QtWidgets import QApplication
+        txt = "\n".join(x for x in (self.titre.text(), self.explication.text(), self.details.toPlainText()) if x)
+        if self.journal and os.path.exists(self.journal):
+            try:
+                with open(self.journal, encoding="utf-8", errors="replace") as f:
+                    txt += "\n\n--- journal du moteur (fin) ---\n" + f.read()[-6000:]
+            except OSError:
+                pass
+        QApplication.clipboard().setText(txt)
+        self.b_copier.setText(_("✓ Copié"))
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(1800, lambda: self.b_copier.setText(_("Copier")))
 
     def montrer(self, texte, genre=None, journal=None, genre_moteur=None, materiel=""):
         """materiel : la carte graphique du poste, pour proposer le bon pilote (Nvidia, AMD, Intel)."""

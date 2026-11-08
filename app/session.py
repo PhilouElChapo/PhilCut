@@ -329,8 +329,8 @@ class Session:
                                      "maison": maison, "systeme": sys.platform, "fichiers": fichiers,
                                      "recents": recents}
         try:
-            with open(self.chemin, "w", encoding="utf-8") as f:
-                json.dump(d, f, ensure_ascii=False, indent=1)
+            from .reglages import ecrire_si_change
+            ecrire_si_change(self.chemin, d)              # pas de réécriture si seule l'heure change
         except OSError:
             pass
 

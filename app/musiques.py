@@ -92,7 +92,7 @@ def _fichier_tags():
     return os.path.join(dossier_donnees(), "musiques_etiquettes.json")
 
 
-VERSION_TAGS = 2          # 0.9.9 : numéro de piste, disque, artiste de l'album ; étiquettes des flux (FLAC, OGG, M4A)
+VERSION_TAGS = 3          # 0.9.9 : numéro de piste, disque, artiste de l'album ; étiquettes des flux (FLAC, OGG, M4A)
 _NUM = re.compile(r"^\s*(?:(?:cd|disc|disque)\s*\d+\s*[-_. ]\s*|\d-(?=\d{2}))?(\d{1,3})(?:\s*[-_.)]\s*|\s+)(?=\S)", re.I)
 
 
@@ -106,21 +106,52 @@ def _sans_numero(texte):
     return (texte or "").strip(), 0
 
 
+# artistes dont le nom commence vraiment par un nombre (ils ne perdent pas leur nombre)
+ARTISTES_NOMBRE = {"3 doors down", "50 cent", "10 years", "30 seconds to mars", "4 non blondes", "2 unlimited", "5 seconds of summer",
+                   "98 degrees", "112", "311", "702", "3t", "2pac", "10cc", "4him", "38 special", "the 1975", "21 savage", "6lack"}
+_NUM_DEVANT = re.compile(r"^\s*(\d{1,3})(?:\s*[-_.)]\s*|\s+)(?=\S)")
+
+
+_RACINES = set()           # dossiers de musiques choisis : un fichier rangé dessous, dans un sous-dossier, est dans un album
+
+
+def nettoyer_artiste(a):
+    """« 17 Queen » (n° de piste collé au nom, dans l'étiquette ou le nom du fichier) → « Queen » (0.9.31)."""
+    a = re.sub(r"\s+", " ", (a or "").replace("_", " ")).strip()
+    m = _NUM_DEVANT.match(a)
+    if m and a.lower() not in ARTISTES_NOMBRE and int(m.group(1)) <= 40 and len(a) > m.end():
+        return a[m.end():].strip()
+    return a
+
+
 def _depuis_nom(chemin):
     """Faute d'étiquettes : rangement habituel « Artiste/Album/01 - Titre », ou « Artiste - Titre » ; le numéro de piste
     n'est jamais pris pour un artiste."""
-    nom = os.path.splitext(os.path.basename(chemin))[0]
+    nom = re.sub(r"\s+", " ", os.path.splitext(os.path.basename(chemin))[0].replace("_", " ")).strip()
     titre, piste = _sans_numero(nom)
+    m0 = _NUM_DEVANT.match(nom)
+    dans_sous_dossier = _RACINES and os.path.normcase(os.path.dirname(os.path.abspath(chemin))) not in _RACINES
+    if not piste and m0 and dans_sous_dossier and int(m0.group(1)) <= 40 and " - " not in nom:
+        titre, piste = nom[m0.end():].strip(), int(m0.group(1))      # « 10 Living On My Own » rangé dans un album
     artiste = ""
     if " - " in titre:
         g, d = [x.strip() for x in titre.split(" - ", 1)]
         d2, p2 = _sans_numero(d)
-        if not g.isdigit():
+        m = _NUM_DEVANT.match(g)
+        if m and g.lower() not in ARTISTES_NOMBRE and int(m.group(1)) <= 40:
+            # « 17 Queen - Who Wants… » : n° de piste + artiste ; « 14 Another One Bites The Dust - Free » : n° + titre long
+            reste = g[m.end():].strip()
+            piste = piste or int(m.group(1))
+            if len(reste.split()) <= 3:
+                artiste, titre = reste, d2
+            else:
+                titre = f"{reste} - {d}"
+        elif not g.isdigit():
             artiste, titre, piste = g, d2, piste or p2
     parent = os.path.basename(os.path.dirname(chemin))
     grand = os.path.basename(os.path.dirname(os.path.dirname(chemin)))
     album = ""
-    if piste and parent:                       # « 01 - Titre » dans un dossier : c'est un album
+    if piste and parent and not artiste and dans_sous_dossier is not False:   # « 01 - Titre » dans un dossier : c'est un album
         album = parent
         if not artiste and grand:
             artiste = grand
@@ -180,6 +211,8 @@ def etiquettes(chemin, lire=True):
     for k, v in devine.items():
         if not tags.get(k):
             tags[k] = v
+    for k in ("artiste", "artiste_album"):
+        tags[k] = nettoyer_artiste(tags.get(k))
     tags["v"] = VERSION_TAGS
     _TAGS[cle] = tags
     return tags
@@ -206,6 +239,7 @@ def morceaux(dossiers, limite=2000, rapide=False, delai=None):
     for racine in dossiers:
         if not racine or not os.path.isdir(racine):
             continue
+        _RACINES.add(os.path.normcase(os.path.abspath(racine)))
         for base, sous, fichiers in os.walk(racine):
             if delai and time.monotonic() - t0 > delai:
                 break

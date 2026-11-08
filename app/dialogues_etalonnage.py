@@ -96,6 +96,9 @@ class VueAvantApres(QWidget):
         p = QPainter(self)
         p.fillRect(self.rect(), QColor("#111"))
         if self.apres.isNull():
+            p.setPen(QColor("#cccccc"))
+            p.drawText(self.rect().adjusted(20, 20, -20, -20), Qt.AlignCenter | Qt.TextWordWrap, getattr(self, "message", "") or
+                       _("Image du plan introuvable : choisissez un autre instant avec le curseur « Image du plan » sous l'image."))
             p.end()
             return
         img = self.apres
@@ -127,20 +130,38 @@ class VueAvantApres(QWidget):
             self.update()
 
 
-def image_du_plan(projet, clip, t=None, largeur=640):
-    """Image du rush de ce plan (à l'instant t de la timeline, sinon au milieu du plan), largeur donnée, en QImage."""
+def _dossier_tmp():
+    from .config import dossier_donnees
+    d = os.path.join(dossier_donnees(), "tmp_etalonnage")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def image_du_plan(projet, clip, t=None, largeur=640, src=None):
+    """Image du rush de ce plan (src = instant dans le rush ; sinon l'instant t de la timeline, sinon le milieu du plan),
+    en QImage. Plusieurs essais : un instant mal tombé (fin de fichier, image noire de début) ne donne pas une vue vide."""
     m = projet.media(clip["media"]) or {}
-    if not m.get("chemin"):
+    if not m.get("chemin") or not os.path.exists(m["chemin"]):
         return QImage()
-    if t is None or not (clip["debut"] <= t < clip["debut"] + duree_clip(clip)):
-        t = clip["debut"] + duree_clip(clip) / 2
-    src = float(clip["src_debut"]) + (t - clip["debut"]) * float(clip.get("vitesse", 1.0) or 1.0)
-    f = os.path.join(tempfile.gettempdir(), f"philcut_etal_{clip['id']}.png")
-    if m.get("genre") == "image":
-        moteur.lancer(["-y", "-i", m["chemin"], "-vf", f"scale={largeur}:-2", "-frames:v", "1", f])
-    else:
-        moteur.lancer(["-y", "-ss", f"{max(0.0, src):.3f}", "-i", m["chemin"], "-vf", f"scale={largeur}:-2", "-frames:v", "1", f])
-    return QImage(f)
+    a, b = float(clip["src_debut"]), float(clip["src_fin"])
+    if src is None:
+        if t is None or not (clip["debut"] <= t < clip["debut"] + duree_clip(clip)):
+            t = clip["debut"] + duree_clip(clip) / 2
+        src = a + (t - clip["debut"]) * float(clip.get("vitesse", 1.0) or 1.0)
+    f = os.path.join(_dossier_tmp(), f"plan_{clip['id']}.png")
+    essais = [src, (a + b) / 2, a, 0.0] if m.get("genre") != "image" else [None]
+    for s_ in essais:
+        try:
+            if os.path.exists(f):
+                os.remove(f)
+            av = ["-ss", f"{max(0.0, min(s_, b - 0.05)):.3f}"] if s_ is not None else []
+            moteur.lancer(["-y"] + av + ["-i", m["chemin"], "-vf", f"scale={largeur}:-2", "-frames:v", "1", "-update", "1", f])
+        except Exception:     # noqa: BLE001
+            continue
+        img = QImage(f)
+        if not img.isNull():
+            return img.convertToFormat(QImage.Format_RGB32)
+    return QImage()
 
 
 def etalonner_image(img, reglages):
@@ -148,8 +169,8 @@ def etalonner_image(img, reglages):
     ch = ET.filtre(reglages)
     if not ch or img.isNull():
         return img
-    d = tempfile.gettempdir()
-    a, b = os.path.join(d, "philcut_etal_a.png"), os.path.join(d, "philcut_etal_b.png")
+    d = _dossier_tmp()
+    a, b = os.path.join(d, "avant.png"), os.path.join(d, "apres.png")
     img.save(a)
     moteur.lancer(["-y", "-i", a, "-vf", ch, "-frames:v", "1", b])
     out = QImage(b)
@@ -181,8 +202,25 @@ class DialogueEtalonnage(QDialog):
         aide.setWordWrap(True)
         v.addWidget(aide)
         h = QHBoxLayout()
+        gauche = QVBoxLayout()
         self.vue = VueAvantApres()
-        h.addWidget(self.vue, 3)
+        gauche.addWidget(self.vue, 1)
+        expl = QLabel(_("Le trait jaune est un rideau : à sa gauche l'image d'origine (AVANT), à sa droite l'image corrigée (APRÈS). "
+                        "Cliquez ou faites-le glisser sur l'image pour comparer n'importe quelle zone."))
+        expl.setWordWrap(True)
+        gauche.addWidget(expl)
+        hi = QHBoxLayout()
+        hi.addWidget(QLabel(_("Image du plan")))
+        self.instant = QSlider(Qt.Horizontal)
+        self.instant.setRange(0, 1000)
+        self.instant.setToolTip(_("Choisissez à la souris l'image du plan qui sert à régler (l'étalonnage s'applique à tout le plan)"))
+        self.instant.sliderReleased.connect(self._changer_image)
+        self.instant.valueChanged.connect(lambda _v: self._minuterie_image.start(250))
+        hi.addWidget(self.instant, 1)
+        self.l_instant = QLabel("")
+        hi.addWidget(self.l_instant)
+        gauche.addLayout(hi)
+        h.addLayout(gauche, 3)
         droite = QVBoxLayout()
         g = QGridLayout()
         self.roues = {}
@@ -252,8 +290,26 @@ class DialogueEtalonnage(QDialog):
         self._minuterie = QTimer(self)
         self._minuterie.setSingleShot(True)
         self._minuterie.timeout.connect(self._rendre)
-        self.source = image_du_plan(ed.projet, clip, ed.timeline.position)
-        self.vue.avant = self.source
+        self._minuterie_image = QTimer(self)
+        self._minuterie_image.setSingleShot(True)
+        self._minuterie_image.timeout.connect(self._changer_image)
+        a, b = float(clip["src_debut"]), float(clip["src_fin"])
+        t = ed.timeline.position
+        src = a + (t - clip["debut"]) * float(clip.get("vitesse", 1.0) or 1.0) if clip["debut"] <= t < clip["debut"] + duree_clip(clip) else (a + b) / 2
+        self.instant.blockSignals(True)
+        self.instant.setValue(int(1000 * (src - a) / max(0.01, b - a)))
+        self.instant.blockSignals(False)
+        self.source = QImage()
+        self._changer_image()
+
+    def _changer_image(self):
+        a, b = float(self.clip["src_debut"]), float(self.clip["src_fin"])
+        src = a + (b - a) * self.instant.value() / 1000.0
+        self.l_instant.setText(f"{src - a:.1f} s")
+        img = image_du_plan(self.ed.projet, self.clip, src=src)
+        if not img.isNull():
+            self.source = img
+            self.vue.avant = img
         self._rendre()
 
     # ---- réglages
