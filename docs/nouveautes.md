@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.27 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.28 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.28
+- Etalonnage simple (clic droit sur un plan > "Etalonnage...", ou Montage > "Etalonnage du plan...", Ctrl+Maj+E) : l'image du plan a la ligne rouge avec un rideau avant / apres que l'on fait glisser ; trois roues de couleur (ombres, tons moyens, hautes lumieres) ; exposition, contraste, saturation, temperature, teinte. "Auto" retire une dominante et redonne du peps ; "Accorder sur ce plan" donne a un plan la lumiere et les couleurs d'un autre (deux cameras, deux heures de la journee) ; "Copier" sur les plans du meme rush ou sur tous. Meme rendu a l'apercu et a l'export ; Ctrl+Z revient.
 
 ### 0.9.27
 - Presentation de photos animee (Montage > "Presentation de photos animee...") : une serie de photos devient un clip anime, dessine sur ce poste. Huit animations : lancer de cartes sur une table, explosion en particules (les fragments sont des morceaux de la photo, la suivante se reforme), puzzle qui s'assemble, pile de photos qui s'envole, mur de photos ou la camera plonge, carrousel 3D, eventail comme une main de cartes, polaroids sur une corde qui se balancent. La vignette de chaque animation bouge quand on la survole. Fond floute, sombre, table en bois ou clair ; duree par photo ; ordre de prise de vue. On regarde avant de poser ; "Ranger dans ma bibliotheque".

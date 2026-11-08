@@ -1673,7 +1673,11 @@ class Editeur(QWidget):
         self.rafraichir()
 
     def _demande_menu(self, ident, quoi):
-        if quoi == "prolonger":
+        if quoi == "etalonner":
+            c = self.projet.clip(ident)
+            if c:
+                self.etalonner(c)
+        elif quoi == "prolonger":
             c = self.projet.clip(ident)
             if c:
                 self.prolonger_plan(c)
@@ -2478,6 +2482,20 @@ class Editeur(QWidget):
             d.clip_a_remplacer = clip_id
         d.exec()
         self.rafraichir()
+
+    def etalonner(self, clip=None):
+        """Étalonnage du plan (roues de couleur, avant / après, auto, accorder) ; 0.9.28."""
+        clip = clip or self.projet.clip(self.timeline.selection_id() if hasattr(self.timeline, "selection_id") else None)
+        if clip is None:
+            t = self.timeline.position
+            clip = next((c for c in self.projet.clips_piste("video") if c["debut"] <= t < c["debut"] + __import__("app.projet", fromlist=["duree_clip"]).duree_clip(c)), None)
+        if clip is None:
+            self.encart.message(_("Placez la ligne rouge sur un plan vidéo (ou sélectionnez-le), puis relancez l'étalonnage."), 6000)
+            return None
+        from .dialogues_etalonnage import DialogueEtalonnage
+        d = DialogueEtalonnage(self, clip)
+        d.exec()
+        return d
 
     def presentation_photos(self, chemins=None):
         """Une série de photos devient un clip animé (lancer de cartes, explosion, puzzle, mur…) ; 0.9.27."""

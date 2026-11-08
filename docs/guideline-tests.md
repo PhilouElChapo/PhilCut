@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T48 — 0.9.28 : étalonnage simple
+
+1. **Ouvrir** : clic droit sur un plan › « Étalonnage (couleurs, avant / après)… ». **Attendu** : l'image du plan à la ligne rouge, rideau jaune AVANT / APRÈS que l'on fait glisser, trois roues, cinq curseurs.
+2. **Roues** : pousser la pastille des tons moyens vers l'orange : l'image se réchauffe à droite du rideau ; double-clic : retour au neutre. Même chose pour ombres et hautes lumières.
+3. **Auto** : sur un plan bleuté ou terne : la dominante disparaît, l'image reprend du contraste.
+4. **Accorder** : deux plans de caméras différentes ; choisir l'autre plan, « Accorder sur ce plan » : lumière et couleurs se rapprochent.
+5. **Copier** : « Copier sur les plans du même rush » : tous les morceaux du même rush prennent l'étalonnage.
+6. **Appliquer** : l'aperçu à l'arrêt et l'export montrent le même résultat ; dans l'Inspecteur, l'effet « Étalonnage » ouvre la fenêtre ; Ctrl+Z revient.
+
 ## T47 — 0.9.27 : présentation de photos animée
 
 1. **Fenêtre** : un projet avec 6 à 15 photos ; Montage › « Présentation de photos animée… ». **Attendu** : 8 animations (et les variantes du catalogue, ✦), chaque vignette bouge au survol ; le nombre de photos et la durée du clip sont affichés.

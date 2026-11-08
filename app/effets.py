@@ -33,6 +33,10 @@ CATALOGUE = {
             [("fichier", _("Fichier LUT"), "fichier", "", "LUT (*.cube *.3dl)", 0), ("force", _("Force"), "float", 1.0, 0.1, 1.0)], None),
     "cadre_photo": ("look", _("Cadre photo"), _("Le plan devient une photo : bord blanc, légère inclinaison, posée sur l'image floutée (image figée, souvenir)."),
                     [("inclinaison", _("Inclinaison (°)"), "float", -3.0, -15.0, 15.0), ("taille", _("Taille"), "float", 0.78, 0.4, 0.95)], None),
+    "etalonnage": ("look", _("Étalonnage"), _("Exposition, contraste, saturation, température, teinte et roues de couleur (ombres, "
+                                               "tons moyens, hautes lumières) ; avant / après, auto, accorder sur un autre plan."),
+                   [(k, k, "float", 0.0, -1.0, 1.0) for k in ("exposition", "contraste", "saturation", "temperature", "teinte", "ombres_x",
+                                                               "ombres_y", "moyens_x", "moyens_y", "hautes_x", "hautes_y")], None),
     "vintage": ("look", _("Vintage"), _("Couleurs passées, vignettage, un peu de grain."), [], None),
     "noir_blanc": ("look", _("Noir et blanc"), _("Noir et blanc contrasté."), [], None),
     "y2k": ("look", _("Y2K"), _("Saturé, lumineux, légère aberration colorée : le style des années 2000."), [], None),
@@ -228,6 +232,9 @@ def filtre(effet, ctx=None):
     i = effet["id"]
     f = lambda k: float(_p(effet, k))
     ctx = ctx or {}
+    if i == "etalonnage":
+        from .etalonnage import filtre as filtre_etalonnage
+        return filtre_etalonnage({k: _p(effet, k) for k in defauts(i)}) or "null"
     if i == "ciel_altitude":
         s = f("force")
         return f"eq=saturation={1 + 0.25 * s:.3f}:contrast={1 + 0.08 * s:.3f},colorbalance=bs={0.08 * s:.3f}:gm={0.03 * s:.3f}:rh={-0.03 * s:.3f}"

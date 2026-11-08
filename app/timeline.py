@@ -1154,6 +1154,7 @@ class Timeline(QGraphicsView):
         t = max(0.0, (sp.x() - MARGE_G) / self.pps)
         m = QMenu()
         if clip["piste"].startswith("video"):
+            m.addAction(_("Étalonnage (couleurs, avant / après)…"), lambda: self.demande_menu.emit(clip["id"], "etalonner"))
             m.addAction(_("Prolonger ce plan (image tenue, ralenti ou IA)…"), lambda: self.demande_menu.emit(clip["id"], "prolonger"))
         m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
         self._menu_pistes(m, piste)

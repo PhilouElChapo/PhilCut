@@ -760,7 +760,11 @@ class Inspecteur(QWidget):
         bx.clicked.connect(lambda: (self.ed.timeline._supprimer_effet(c, "effet", i), self.montrer_clip(c["id"])))
         h.addWidget(bx)
         v.addLayout(h)
-        if ouvert:
+        if ouvert and e["id"] == "etalonnage":                 # réglages dans leur fenêtre (roues, avant / après)
+            bo = QPushButton(_("Ouvrir l'étalonnage (roues de couleur, avant / après)…"))
+            bo.clicked.connect(lambda: self.ed.etalonner(c))
+            v.addWidget(bo)
+        elif ouvert:
             if fi["parametres"]:
                 f = QFormLayout()
                 f.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)

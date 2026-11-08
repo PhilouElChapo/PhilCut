@@ -193,6 +193,8 @@ class Fenetre(QMainWindow):
         for fam, lib in (("image", _("Retoucher l'image du film (cartoon, 3D, peinture…)…")), ("video", _("Effet IA sur la partie en jaune…")),
                          ("logo", _("Logo, intro ou miniature par IA…")), ("musique", _("Créer une musique par IA…"))):
             sm_ia.addAction(lib, lambda fam=fam: self._ed(lambda ed: ed.atelier_ia(fam)))
+        act(icone("effets"), _("Étalonnage du plan…"), _("Couleurs et lumière du plan à la ligne rouge : roues de couleur, avant / après, "
+                                                          "auto, accorder sur un autre plan"), lambda: self._ed(lambda ed: ed.etalonner()), "Ctrl+Shift+E")
         act(icone("image"), _("Présentation de photos animée…"), _("Lancer de cartes, explosion en particules, puzzle, mur de photos, "
                                                                      "carrousel 3D, éventail, polaroïds sur une corde"),
             lambda: self._editeur_ou_nouveau().presentation_photos())
