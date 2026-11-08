@@ -1,0 +1,488 @@
+{
+ "format": 1,
+ "maj": "2026-11-08",
+ "_commentaire": "Nouveautes de PhilCut ajoutees sans reinstaller (veille mensuelle) : uniquement des donnees. Goodies en SVG (viewBox 0 0 100 100, dessins originaux, aucun personnage ni logo de marque), modeles de montage (type = un type de app/recettes.py), styles a la maniere de (descriptions en anglais, jamais un visage ni une voix exacte), modeles de tampons IA. Textes par langue.",
+ "packs_goodies": {
+  "reactions": {
+   "nom": {
+    "fr": "Réactions",
+    "en": "Reactions",
+    "de": "Reaktionen",
+    "es": "Reacciones",
+    "it": "Reazioni"
+   },
+   "description": {
+    "fr": "Cœur qui bat, pouce levé, étoile, éclair, point d'exclamation, bulle WOW : pour souligner un moment.",
+    "en": "Beating heart, thumbs up, star, lightning, exclamation mark, WOW bubble: to highlight a moment.",
+    "de": "Schlagendes Herz, Daumen hoch, Stern, Blitz, Ausrufezeichen, WOW-Blase: um einen Moment hervorzuheben.",
+    "es": "Corazón que late, pulgar arriba, estrella, rayo, exclamación, burbuja WOW: para subrayar un momento.",
+    "it": "Cuore che batte, pollice su, stella, fulmine, punto esclamativo, fumetto WOW: per sottolineare un momento."
+   }
+  },
+  "meteo_nature": {
+   "nom": {
+    "fr": "Météo et nature",
+    "en": "Weather and nature",
+    "de": "Wetter und Natur",
+    "es": "Tiempo y naturaleza",
+    "it": "Meteo e natura"
+   },
+   "description": {
+    "fr": "Soleil qui tourne, nuage qui flotte, pluie, flocon : pour un vol, une balade, un voyage.",
+    "en": "Spinning sun, floating cloud, rain, snowflake: for a flight, a walk, a trip.",
+    "de": "Drehende Sonne, schwebende Wolke, Regen, Schneeflocke: für einen Flug, eine Wanderung, eine Reise.",
+    "es": "Sol que gira, nube que flota, lluvia, copo: para un vuelo, un paseo, un viaje.",
+    "it": "Sole che gira, nuvola che fluttua, pioggia, fiocco: per un volo, una passeggiata, un viaggio."
+   }
+  }
+ },
+ "goodies": {
+  "coeur": {
+   "pack": "reactions",
+   "animation": "battement",
+   "nom": {
+    "fr": "Cœur",
+    "en": "Heart",
+    "de": "Herz",
+    "es": "Corazón",
+    "it": "Cuore"
+   },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><path d=\"M50 86 C20 64 8 48 8 32 C8 18 19 10 30 10 C40 10 46 16 50 23 C54 16 60 10 70 10 C81 10 92 18 92 32 C92 48 80 64 50 86Z\" fill=\"#ff3b5c\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\"/><ellipse cx=\"30\" cy=\"30\" rx=\"8\" ry=\"5\" fill=\"#ffffff\" opacity=\"0.6\"/></svg>",
+   "ajoute": "2026-11-08"
+  },
+  "pouce": {
+   "pack": "reactions",
+   "animation": "pop",
+   "nom": {
+    "fr": "Pouce levé",
+    "en": "Thumbs up",
+    "de": "Daumen hoch",
+    "es": "Pulgar arriba",
+    "it": "Pollice su"
+   },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><rect x=\"10\" y=\"44\" width=\"18\" height=\"44\" rx=\"4\" fill=\"#1e90ff\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\"/><path d=\"M30 46 L44 14 C46 8 56 8 56 16 L54 36 L82 36 C90 36 92 44 90 50 L82 82 C80 88 76 90 70 90 L30 90 Z\" fill=\"#ffd21f\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\"/></svg>",
+   "ajoute": "2026-11-08"
+  },
+  "etoile": {
+   "pack": "reactions",
+   "animation": "tourne",
+   "nom": {
+    "fr": "Étoile",
+    "en": "Star",
+    "de": "Stern",
+    "es": "Estrella",
+    "it": "Stella"
+   },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><path d=\"M50 6 L62 36 L94 38 L69 58 L78 90 L50 72 L22 90 L31 58 L6 38 L38 36 Z\" fill=\"#ffd21f\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\"/></svg>",
+   "ajoute": "2026-11-08"
+  },
+  "eclair": {
+   "pack": "reactions",
+   "animation": "pop",
+   "nom": {
+    "fr": "Éclair",
+    "en": "Lightning",
+    "de": "Blitz",
+    "es": "Rayo",
+    "it": "Fulmine"
+   },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><path d=\"M58 4 L18 56 L44 56 L36 96 L82 38 L54 38 Z\" fill=\"#ffcc00\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\"/></svg>",
+   "ajoute": "2026-11-08"
+  },
+  "exclamation": {
+   "pack": "reactions",
+   "animation": "rebond",
+   "nom": {
+    "fr": "Point d'exclamation",
+    "en": "Exclamation mark",
+    "de": "Ausrufezeichen",
+    "es": "Exclamación",
+    "it": "Punto esclamativo"
+   },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><circle cx=\"50\" cy=\"50\" r=\"44\" fill=\"#ff3b30\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\"/><rect x=\"43\" y=\"20\" width=\"14\" height=\"40\" rx=\"7\" fill=\"#ffffff\"/><circle cx=\"50\" cy=\"74\" r=\"8\" fill=\"#ffffff\"/></svg>",
+   "ajoute": "2026-11-08"
+  },
+  "wow": {
+   "pack": "reactions",
+   "animation": "pop",
+   "nom": {
+    "fr": "Bulle WOW",
+    "en": "WOW bubble",
+    "de": "WOW-Blase",
+    "es": "Burbuja WOW",
+    "it": "Fumetto WOW"
+   },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><path d=\"M50 8 L60 22 L78 14 L76 32 L94 38 L80 50 L94 62 L76 68 L78 86 L60 78 L50 92 L40 78 L22 86 L24 68 L6 62 L20 50 L6 38 L24 32 L22 14 L40 22 Z\" fill=\"#ff4fa3\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\"/><text x=\"50\" y=\"58\" font-family=\"Arial Black, Arial\" font-weight=\"900\" font-size=\"22\" fill=\"#ffffff\" text-anchor=\"middle\">WOW</text></svg>",
+   "ajoute": "2026-11-08"
+  },
+  "soleil": {
+   "pack": "meteo_nature",
+   "animation": "tourne",
+   "nom": {
+    "fr": "Soleil",
+    "en": "Sun",
+    "de": "Sonne",
+    "es": "Sol",
+    "it": "Sole"
+   },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><g stroke=\"#ffb000\" stroke-width=\"7\" stroke-linecap=\"round\"><line x1=\"50\" y1=\"4\" x2=\"50\" y2=\"18\"/><line x1=\"50\" y1=\"82\" x2=\"50\" y2=\"96\"/><line x1=\"4\" y1=\"50\" x2=\"18\" y2=\"50\"/><line x1=\"82\" y1=\"50\" x2=\"96\" y2=\"50\"/><line x1=\"17\" y1=\"17\" x2=\"27\" y2=\"27\"/><line x1=\"73\" y1=\"73\" x2=\"83\" y2=\"83\"/><line x1=\"17\" y1=\"83\" x2=\"27\" y2=\"73\"/><line x1=\"73\" y1=\"27\" x2=\"83\" y2=\"17\"/></g><circle cx=\"50\" cy=\"50\" r=\"24\" fill=\"#ffd21f\" stroke=\"#ffffff\" stroke-width=\"4\"/></svg>",
+   "ajoute": "2026-11-08"
+  },
+  "nuage": {
+   "pack": "meteo_nature",
+   "animation": "flotte",
+   "nom": {
+    "fr": "Nuage",
+    "en": "Cloud",
+    "de": "Wolke",
+    "es": "Nube",
+    "it": "Nuvola"
+   },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><path d=\"M26 76 C12 76 6 66 8 58 C10 48 20 44 28 46 C30 30 44 22 56 26 C66 28 72 36 72 44 C84 42 94 50 92 62 C90 72 82 76 74 76 Z\" fill=\"#f2f6fb\" stroke=\"#9fb4c8\" stroke-width=\"5\" stroke-linejoin=\"round\"/></svg>",
+   "ajoute": "2026-11-08"
+  },
+  "pluie": {
+   "pack": "meteo_nature",
+   "animation": "flotte",
+   "nom": {
+    "fr": "Nuage de pluie",
+    "en": "Rain cloud",
+    "de": "Regenwolke",
+    "es": "Nube de lluvia",
+    "it": "Nuvola di pioggia"
+   },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><path d=\"M24 58 C12 58 6 50 8 42 C10 34 18 30 26 32 C28 18 42 12 54 16 C64 18 70 26 70 32 C82 30 92 38 90 48 C88 56 80 58 72 58 Z\" fill=\"#cfd8e3\" stroke=\"#7a8ea4\" stroke-width=\"4\"/><g stroke=\"#1e90ff\" stroke-width=\"6\" stroke-linecap=\"round\"><line x1=\"30\" y1=\"68\" x2=\"24\" y2=\"86\"/><line x1=\"50\" y1=\"68\" x2=\"44\" y2=\"90\"/><line x1=\"70\" y1=\"68\" x2=\"64\" y2=\"86\"/></g></svg>",
+   "ajoute": "2026-11-08"
+  },
+  "flocon": {
+   "pack": "meteo_nature",
+   "animation": "tourne",
+   "nom": {
+    "fr": "Flocon",
+    "en": "Snowflake",
+    "de": "Schneeflocke",
+    "es": "Copo de nieve",
+    "it": "Fiocco di neve"
+   },
+   "svg": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\"><g stroke=\"#8fd3ff\" stroke-width=\"7\" stroke-linecap=\"round\"><line x1=\"50\" y1=\"6\" x2=\"50\" y2=\"94\"/><line x1=\"12\" y1=\"28\" x2=\"88\" y2=\"72\"/><line x1=\"12\" y1=\"72\" x2=\"88\" y2=\"28\"/></g><g stroke=\"#ffffff\" stroke-width=\"4\" stroke-linecap=\"round\" fill=\"none\"><path d=\"M40 14 L50 24 L60 14\"/><path d=\"M40 86 L50 76 L60 86\"/></g><circle cx=\"50\" cy=\"50\" r=\"8\" fill=\"#ffffff\"/></svg>",
+   "ajoute": "2026-11-08"
+  }
+ },
+ "modeles_montage": [
+  {
+   "id": "recette_60",
+   "type": "portrait",
+   "format": "9:16",
+   "duree": 60,
+   "titre": "machine",
+   "ajoute": "2026-11-08",
+   "nom": {
+    "fr": "Recette de cuisine, 60 s",
+    "en": "Cooking recipe, 60 s",
+    "de": "Kochrezept, 60 s",
+    "es": "Receta de cocina, 60 s",
+    "it": "Ricetta di cucina, 60 s"
+   },
+   "desc": {
+    "fr": "Étapes courtes de 2 à 4 s, zooms doux, look chaleureux, titre machine à écrire.",
+    "en": "Short steps of 2 to 4 s, gentle zooms, warm look, typewriter title.",
+    "de": "Kurze Schritte von 2 bis 4 s, sanfte Zooms, warmer Look, Schreibmaschinentitel.",
+    "es": "Pasos cortos de 2 a 4 s, zooms suaves, look cálido, título máquina de escribir.",
+    "it": "Passaggi brevi da 2 a 4 s, zoom dolci, look caldo, titolo macchina da scrivere."
+   },
+   "reglages": {
+    "plan_s": [
+     2.0,
+     4.0
+    ],
+    "transitions": [
+     "t_zoom",
+     "t_glisse",
+     "t_fondu_enchaine"
+    ],
+    "look": "cosy",
+    "goodies": [],
+    "musique": {
+     "ambiance": "legere",
+     "bpm": 105,
+     "energie": 0.6
+    }
+   }
+  },
+  {
+   "id": "travaux",
+   "type": "visite",
+   "format": "16:9",
+   "duree": 60,
+   "titre": "glisse",
+   "ajoute": "2026-11-08",
+   "nom": {
+    "fr": "Avant / après travaux",
+    "en": "Before / after works",
+    "de": "Vorher / nachher Arbeiten",
+    "es": "Antes / después de obras",
+    "it": "Prima / dopo i lavori"
+   },
+   "desc": {
+    "fr": "Plans de 3 à 5 s, balayages, look épuré : la transformation d'une pièce, d'un jardin.",
+    "en": "Shots of 3 to 5 s, wipes, clean look: the transformation of a room, a garden.",
+    "de": "Einstellungen von 3 bis 5 s, Wischblenden, klarer Look: die Verwandlung eines Raums, eines Gartens.",
+    "es": "Planos de 3 a 5 s, barridos, look limpio: la transformación de una habitación, un jardín.",
+    "it": "Inquadrature da 3 a 5 s, tendine, look pulito: la trasformazione di una stanza, di un giardino."
+   },
+   "reglages": {
+    "plan_s": [
+     3.0,
+     5.0
+    ],
+    "transitions": [
+     "t_balayage",
+     "t_glisse",
+     "t_diagonale"
+    ],
+    "look": "epure",
+    "goodies": [],
+    "logo": "contour"
+   }
+  },
+  {
+   "id": "annee",
+   "type": "portrait",
+   "format": "16:9",
+   "duree": 90,
+   "titre": "neon",
+   "ajoute": "2026-11-08",
+   "nom": {
+    "fr": "Récap de l'année",
+    "en": "Year in review",
+    "de": "Jahresrückblick",
+    "es": "Resumen del año",
+    "it": "Riassunto dell'anno"
+   },
+   "desc": {
+    "fr": "Le meilleur des 12 mois : coupes de 1,5 à 3 s sur les temps forts, flashs, titre néon.",
+    "en": "The best of 12 months: cuts of 1.5 to 3 s on the beats, flashes, neon title.",
+    "de": "Das Beste aus 12 Monaten: Schnitte von 1,5 bis 3 s auf den Beats, Blitze, Neontitel.",
+    "es": "Lo mejor de 12 meses: cortes de 1,5 a 3 s en los tiempos fuertes, destellos, título neón.",
+    "it": "Il meglio di 12 mesi: tagli da 1,5 a 3 s sui tempi forti, flash, titolo neon."
+   },
+   "reglages": {
+    "plan_s": [
+     1.5,
+     3.0
+    ],
+    "transitions": [
+     "t_fondu_blanc",
+     "t_zoom_avant",
+     "t_glitch",
+     "t_glisse"
+    ],
+    "look": "glow",
+    "goodies": [],
+    "musique": {
+     "ambiance": "energique",
+     "bpm": 120,
+     "energie": 0.8
+    },
+    "logo": "slam"
+   }
+  }
+ ],
+ "styles": {
+  "top gun": {
+   "image": "1980s jet fighter film look, golden hour sunsets, heat haze over runway, telephoto shots, aviator sunglasses, flight jackets",
+   "jeu": "cocky fighter pilot archetype, aviator sunglasses, leather flight jacket, confident grin",
+   "musique": "1980s synth rock power anthem, big gated drums, soaring guitar",
+   "ajoute": "2026-11-08"
+  },
+  "le grand bleu": {
+   "autres_noms": [
+    "grand bleu"
+   ],
+   "image": "deep blue Mediterranean underwater look, sun rays through water, freediving, calm and dreamy",
+   "musique": "ambient synth score, ethereal pads, slow and oceanic",
+   "ajoute": "2026-11-08"
+  },
+  "les bronzes": {
+   "autres_noms": [
+    "bronzes*"
+   ],
+   "image": "late 1970s French holiday comedy look, sunny club resort, faded warm film colors",
+   "jeu": "awkward holidaymakers, clumsy flirting, deadpan comedy",
+   "ajoute": "2026-11-08"
+  },
+  "fernandel": {
+   "jeu": "warm Provençal comic, huge toothy grin, expressive face pulls, sing-song southern accent",
+   "image": "1950s French black and white provincial comedy",
+   "ajoute": "2026-11-08"
+  },
+  "jean reno": {
+   "autres_noms": [
+    "reno*"
+   ],
+   "jeu": "quiet tough professional archetype, calm deep voice, long coat, minimal gestures",
+   "image": "1990s French action thriller, cool steel tones",
+   "ajoute": "2026-11-08"
+  },
+  "dalida": {
+   "voix": "dramatic deep female vocals, theatrical vibrato, disco and chanson",
+   "musique": "late 1970s French disco, strings, four-on-the-floor",
+   "ajoute": "2026-11-08"
+  },
+  "claude francois": {
+   "autres_noms": [
+    "cloclo"
+   ],
+   "voix": "bright energetic French pop male vocals",
+   "musique": "1970s French disco pop, brass, funky bass, dancers' energy",
+   "jeu": "sequined 1970s pop showman with synchronized dancers",
+   "ajoute": "2026-11-08"
+  },
+  "charles trenet": {
+   "autres_noms": [
+    "trenet"
+   ],
+   "voix": "joyful bouncing French swing male vocals, bright smile in the voice",
+   "musique": "1930s French swing, clarinet, upright bass, light orchestra",
+   "ajoute": "2026-11-08"
+  },
+  "michel legrand": {
+   "autres_noms": [
+    "legrand*"
+   ],
+   "musique": "lush 1960s French jazz film score, swirling strings, piano, bittersweet melody",
+   "ajoute": "2026-11-08"
+  }
+ },
+ "tampons_ia": [
+  {
+   "id": "decollage_avion",
+   "ajoute": "2026-11-08",
+   "nom": {
+    "fr": "Décollage d'avion (cartoon)",
+    "en": "Plane take-off (cartoon)",
+    "de": "Flugzeugstart (Zeichentrick)",
+    "es": "Despegue de avión (dibujos)",
+    "it": "Decollo d'aereo (cartone)"
+   },
+   "consigne": "cartoon small propeller airplane taking off from a sunny runway, motion lines, bright flat colors",
+   "mouvement": "monte",
+   "bruitages": [
+    "moteur",
+    "whoosh"
+   ],
+   "phrase": {
+    "fr": "Moteur, contact… on décolle !",
+    "en": "Engine on… taking off!",
+    "de": "Motor an… wir heben ab!",
+    "es": "Motor en marcha… ¡despegamos!",
+    "it": "Motore acceso… si decolla!"
+   },
+   "texte": {
+    "fr": "DÉCOLLAGE !",
+    "en": "TAKE-OFF!",
+    "de": "START!",
+    "es": "¡DESPEGUE!",
+    "it": "DECOLLO!"
+   },
+   "voix": "radio",
+   "duree": 3.5
+  },
+  {
+   "id": "cafe",
+   "ajoute": "2026-11-08",
+   "nom": {
+    "fr": "Pause café",
+    "en": "Coffee break",
+    "de": "Kaffeepause",
+    "es": "Pausa para el café",
+    "it": "Pausa caffè"
+   },
+   "consigne": "steaming cup of coffee on a wooden table, cozy morning light, flat illustration",
+   "mouvement": "flotte",
+   "bruitages": [
+    "ding"
+   ],
+   "phrase": {
+    "fr": "Petite pause café.",
+    "en": "Quick coffee break.",
+    "de": "Kurze Kaffeepause.",
+    "es": "Pequeña pausa para el café.",
+    "it": "Piccola pausa caffè."
+   },
+   "texte": {
+    "fr": "PAUSE",
+    "en": "BREAK",
+    "de": "PAUSE",
+    "es": "PAUSA",
+    "it": "PAUSA"
+   },
+   "voix": "normale",
+   "duree": 3.0
+  },
+  {
+   "id": "fin_episode",
+   "ajoute": "2026-11-08",
+   "nom": {
+    "fr": "À suivre…",
+    "en": "To be continued…",
+    "de": "Fortsetzung folgt…",
+    "es": "Continuará…",
+    "it": "Continua…"
+   },
+   "consigne": "retro film reel and arrow pointing right, warm sepia tones, vintage poster",
+   "mouvement": "zoom",
+   "bruitages": [
+    "tambour"
+   ],
+   "phrase": {
+    "fr": "La suite au prochain épisode.",
+    "en": "More in the next episode.",
+    "de": "Mehr in der nächsten Folge.",
+    "es": "Más en el próximo episodio.",
+    "it": "Il seguito alla prossima puntata."
+   },
+   "texte": {
+    "fr": "À SUIVRE…",
+    "en": "TO BE CONTINUED…",
+    "de": "FORTSETZUNG FOLGT…",
+    "es": "CONTINUARÁ…",
+    "it": "CONTINUA…"
+   },
+   "voix": "grave",
+   "duree": 3.0
+  },
+  {
+   "id": "meteo_flash",
+   "ajoute": "2026-11-08",
+   "nom": {
+    "fr": "Flash météo",
+    "en": "Weather flash",
+    "de": "Wetterblitz",
+    "es": "Flash del tiempo",
+    "it": "Flash meteo"
+   },
+   "consigne": "cartoon weather map with sun and clouds icons, bright tv weather style, flat colors",
+   "mouvement": "choc",
+   "bruitages": [
+    "notification"
+   ],
+   "phrase": {
+    "fr": "Flash météo : grand soleil !",
+    "en": "Weather flash: full sunshine!",
+    "de": "Wetterblitz: strahlende Sonne!",
+    "es": "Flash del tiempo: ¡sol radiante!",
+    "it": "Flash meteo: sole pieno!"
+   },
+   "texte": {
+    "fr": "MÉTÉO",
+    "en": "WEATHER",
+    "de": "WETTER",
+    "es": "TIEMPO",
+    "it": "METEO"
+   },
+   "voix": "radio",
+   "duree": 3.0
+  }
+ ]
+}

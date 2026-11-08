@@ -5819,5 +5819,20 @@
  "Annonce, publicité 20 s": "Annuncio, pubblicità 20 s",
  "Court et clair : coupes de 2 à 3 s, look épuré, pour un écran ou les réseaux.": "Breve e chiaro: tagli da 2 a 3 s, look pulito, per uno schermo o i social.",
  "Diaporama de photos": "Diaporama di foto",
- "Photos animées une à une (léger zoom), fondus, musique calée sur les temps.": "Foto animate una a una (leggero zoom), dissolvenze, musica allineata ai tempi."
+ "Photos animées une à une (léger zoom), fondus, musique calée sur les temps.": "Foto animate una a una (leggero zoom), dissolvenze, musica allineata ai tempi.",
+ "Nouveautés…": "Novità…",
+ "Ce que la veille mensuelle a ajouté (Goodies, modèles, styles) ; « Vérifier maintenant » interroge le catalogue en ligne": "Ciò che la ricerca mensile ha aggiunto (Goodies, modelli, stili); « Verifica ora » interroga il catalogo online",
+ "{t} élément(s) dans le catalogue, dont {n} nouveau(x) pour vous.": "{t} elementi nel catalogo, di cui {n} nuovi per lei.",
+ "Nouveautés du catalogue": "Novità del catalogo",
+ "Chaque mois, de nouveaux Goodies, modèles de montage, styles et tampons IA arrivent sans réinstaller PhilCut. ✦ = pas encore vu. Double-clic : l'ouvrir là où on l'utilise.": "Ogni mese arrivano nuovi Goodies, modelli di montaggio, stili e stacchetti IA senza reinstallare PhilCut. ✦ = non ancora visto. Doppio clic: aprirlo dove si usa.",
+ "Tout marquer comme vu": "Segna tutto come visto",
+ "Vérification du catalogue en ligne…": "Verifica del catalogo online…",
+ "Nouveautés": "Novità",
+ "Dernière vérification : {d}.": "Ultima verifica: {d}.",
+ "Pas de réseau ou GitHub injoignable : voici la dernière copie gardée sur ce poste.": "Nessuna rete o GitHub irraggiungibile: ecco l'ultima copia conservata su questo computer.",
+ "✓ {n} nouveauté(s) arrivée(s).": "✓ {n} novità arrivate.",
+ "✓ Catalogue à jour : rien de nouveau depuis la dernière fois. La veille en ajoute chaque mois.": "✓ Catalogo aggiornato: niente di nuovo dall'ultima volta. La ricerca ne aggiunge ogni mese.",
+ "Nouveautés du catalogue (Goodies, modèles, styles)…": "Novità del catalogo (Goodies, modelli, stili)…",
+ "✦ {n} nouveauté(s) dans le catalogue : Aide › Nouveautés du catalogue.": "✦ {n} novità nel catalogo: Aiuto › Novità del catalogo.",
+ "Modèles de tampons IA": "Modelli di stacchetti IA"
 }

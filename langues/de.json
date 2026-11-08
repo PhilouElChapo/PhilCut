@@ -5819,5 +5819,20 @@
  "Annonce, publicité 20 s": "Anzeige, Werbung 20 s",
  "Court et clair : coupes de 2 à 3 s, look épuré, pour un écran ou les réseaux.": "Kurz und klar: Schnitte von 2 bis 3 s, klarer Look, für einen Bildschirm oder soziale Netzwerke.",
  "Diaporama de photos": "Foto-Diashow",
- "Photos animées une à une (léger zoom), fondus, musique calée sur les temps.": "Fotos einzeln animiert (leichter Zoom), Blenden, Musik auf den Beats."
+ "Photos animées une à une (léger zoom), fondus, musique calée sur les temps.": "Fotos einzeln animiert (leichter Zoom), Blenden, Musik auf den Beats.",
+ "Nouveautés…": "Neuheiten…",
+ "Ce que la veille mensuelle a ajouté (Goodies, modèles, styles) ; « Vérifier maintenant » interroge le catalogue en ligne": "Was die monatliche Beobachtung hinzugefügt hat (Goodies, Vorlagen, Stile); « Jetzt prüfen » fragt den Online-Katalog ab",
+ "{t} élément(s) dans le catalogue, dont {n} nouveau(x) pour vous.": "{t} Element(e) im Katalog, davon {n} neu für Sie.",
+ "Nouveautés du catalogue": "Neuheiten im Katalog",
+ "Chaque mois, de nouveaux Goodies, modèles de montage, styles et tampons IA arrivent sans réinstaller PhilCut. ✦ = pas encore vu. Double-clic : l'ouvrir là où on l'utilise.": "Jeden Monat kommen neue Goodies, Schnittvorlagen, Stile und KI-Einspieler, ohne PhilCut neu zu installieren. ✦ = noch nicht gesehen. Doppelklick: dort öffnen, wo man es benutzt.",
+ "Tout marquer comme vu": "Alles als gesehen markieren",
+ "Vérification du catalogue en ligne…": "Online-Katalog wird geprüft…",
+ "Nouveautés": "Neuheiten",
+ "Dernière vérification : {d}.": "Letzte Prüfung: {d}.",
+ "Pas de réseau ou GitHub injoignable : voici la dernière copie gardée sur ce poste.": "Kein Netz oder GitHub nicht erreichbar: hier die letzte auf diesem Rechner gespeicherte Kopie.",
+ "✓ {n} nouveauté(s) arrivée(s).": "✓ {n} Neuheit(en) angekommen.",
+ "✓ Catalogue à jour : rien de nouveau depuis la dernière fois. La veille en ajoute chaque mois.": "✓ Katalog aktuell: nichts Neues seit dem letzten Mal. Die Beobachtung fügt jeden Monat etwas hinzu.",
+ "Nouveautés du catalogue (Goodies, modèles, styles)…": "Neuheiten im Katalog (Goodies, Vorlagen, Stile)…",
+ "✦ {n} nouveauté(s) dans le catalogue : Aide › Nouveautés du catalogue.": "✦ {n} Neuheit(en) im Katalog: Hilfe › Neuheiten im Katalog.",
+ "Modèles de tampons IA": "Vorlagen für KI-Einspieler"
 }

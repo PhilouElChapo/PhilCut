@@ -265,6 +265,7 @@ class Fenetre(QMainWindow):
         ai.addAction(_("Raccourcis clavier"), self.raccourcis)
         ai.addAction(_("Guide de test de la première version"), lambda: webbrowser.open("https://github.com/PhilouElChapo/PhilCut/blob/main/docs/guideline-tests.md"))
         ai.addAction(_("Vérifier les mises à jour…"), lambda: self.verifier_maj(silencieux=False))
+        ai.addAction(_("Nouveautés du catalogue (Goodies, modèles, styles)…"), self.voir_nouveautes)
         ai.addAction(_("Site du projet (GitHub)"), lambda: webbrowser.open("https://github.com/PhilouElChapo/PhilCut"))
         ai.addSeparator()
         ai.addAction(_("A propos de PhilCut"), self.a_propos)
@@ -1360,10 +1361,12 @@ class Fenetre(QMainWindow):
         """Catalogues d'effets : copie locale tout de suite, mise à jour depuis GitHub en arrière-plan (sans bloquer)."""
         import threading
         from . import effets as E, catalogue_ligne
+        from . import nouveautes as NV
         E.catalogue_en_ligne(reseau=False)
+        NV.integrer(reseau=False)
         if os.environ.get("PHILCUT_SANS_RESEAU") or not self.params.get("effets_en_ligne", True):
             return
-        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_ia.json")], daemon=True)
+        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_ia.json", NV.FICHIER)], daemon=True)
         fil.start()
 
         def fusion():
@@ -1371,6 +1374,11 @@ class Fenetre(QMainWindow):
                 QTimer.singleShot(2000, fusion)
             else:
                 E.catalogue_en_ligne(reseau=False)
+                NV.integrer(reseau=False)
+                self.params["nouveautes_verifie"] = datetime.datetime.now().strftime("%d/%m/%Y %Hh%M")
+                n = NV.nombre_nouveaux(self.params)
+                if n:                                  # discret : la barre du bas, avec le chemin pour les voir
+                    self.statusBar().showMessage(_("✦ {n} nouveauté(s) dans le catalogue : Aide › Nouveautés du catalogue.", n=n), 15000)
         QTimer.singleShot(2000, fusion)
 
     # ---------------------------------------------------------------- session partagee
@@ -1385,6 +1393,12 @@ class Fenetre(QMainWindow):
             return None
 
     # ---------------------------------------------------------------- sauvegarde automatique (0.9.22)
+    def voir_nouveautes(self):
+        from .dialogues_nouveautes import DialogueNouveautes
+        d = DialogueNouveautes(self, self.params)
+        d.exec()
+        return d
+
     def regler_sauvegarde_auto(self):
         from . import secours
         m = int(self.params.get("secours_minutes", secours.INTERVALLE_DEFAUT) or 0)

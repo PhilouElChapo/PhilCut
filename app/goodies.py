@@ -221,6 +221,9 @@ def image(g, t, taille, texte_extra=None, cache=None):
             p.setBrush(QColor(15, 18, 30, 235))
             dx = r * 0.8 * 2 * (0.5 - abs(phase - 0.5)) * 2
             p.drawEllipse(QPointF(c - dx if phase < 0.5 else c + dx, c), r * 0.8, r * 0.8)
+        elif genre.startswith("svg:"):                          # dessin du catalogue en ligne (0.9.26)
+            from . import goodies_svg
+            goodies_svg.dessiner(p, g, t, taille)
         elif genre in ("polaroid", "post_it", "fleche", "bandeau_tendance", "surligne"):
             from . import autocollants
             autocollants.dessiner(p, g, t, taille, cache)

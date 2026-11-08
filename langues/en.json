@@ -5828,5 +5828,20 @@
  "Annonce, publicité 20 s": "Ad, 20 s promo",
  "Court et clair : coupes de 2 à 3 s, look épuré, pour un écran ou les réseaux.": "Short and clear: cuts of 2 to 3 s, clean look, for a screen or social media.",
  "Diaporama de photos": "Photo slideshow",
- "Photos animées une à une (léger zoom), fondus, musique calée sur les temps.": "Photos animated one by one (slight zoom), dissolves, music synced to the beats."
+ "Photos animées une à une (léger zoom), fondus, musique calée sur les temps.": "Photos animated one by one (slight zoom), dissolves, music synced to the beats.",
+ "Nouveautés…": "What's new…",
+ "Ce que la veille mensuelle a ajouté (Goodies, modèles, styles) ; « Vérifier maintenant » interroge le catalogue en ligne": "What the monthly watch added (Goodies, templates, styles); « Check now » queries the online catalogue",
+ "{t} élément(s) dans le catalogue, dont {n} nouveau(x) pour vous.": "{t} item(s) in the catalogue, {n} of them new for you.",
+ "Nouveautés du catalogue": "What's new in the catalogue",
+ "Chaque mois, de nouveaux Goodies, modèles de montage, styles et tampons IA arrivent sans réinstaller PhilCut. ✦ = pas encore vu. Double-clic : l'ouvrir là où on l'utilise.": "Every month, new Goodies, edit templates, styles and AI stingers arrive without reinstalling PhilCut. ✦ = not seen yet. Double-click: open it where it is used.",
+ "Tout marquer comme vu": "Mark all as seen",
+ "Vérification du catalogue en ligne…": "Checking the online catalogue…",
+ "Nouveautés": "What's new",
+ "Dernière vérification : {d}.": "Last check: {d}.",
+ "Pas de réseau ou GitHub injoignable : voici la dernière copie gardée sur ce poste.": "No network or GitHub unreachable: here is the last copy kept on this computer.",
+ "✓ {n} nouveauté(s) arrivée(s).": "✓ {n} new item(s) arrived.",
+ "✓ Catalogue à jour : rien de nouveau depuis la dernière fois. La veille en ajoute chaque mois.": "✓ Catalogue up to date: nothing new since last time. The watch adds some every month.",
+ "Nouveautés du catalogue (Goodies, modèles, styles)…": "What's new in the catalogue (Goodies, templates, styles)…",
+ "✦ {n} nouveauté(s) dans le catalogue : Aide › Nouveautés du catalogue.": "✦ {n} new item(s) in the catalogue: Help › What's new in the catalogue.",
+ "Modèles de tampons IA": "AI stinger templates"
 }

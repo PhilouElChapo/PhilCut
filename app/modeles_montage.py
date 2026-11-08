@@ -51,16 +51,22 @@ MODELES = {
 }
 
 
+_EN_LIGNE = []             # modèles du catalogue en ligne (nouveautes.integrer)
+
+
 def tous(params=None):
-    """Modèles intégrés + ceux du catalogue en ligne déjà reçus (rangés dans les réglages)."""
+    """Modèles intégrés + ceux du catalogue en ligne (✦ tant qu'ils sont nouveaux pour vous)."""
     out = dict(MODELES)
     from .langue import LANGUE
-    for m in (params or {}).get("modeles_montage_en_ligne") or []:
+    from . import nouveautes as NV
+    for m in list(_EN_LIGNE) + list((params or {}).get("modeles_montage_en_ligne") or []):
         if m.get("id") and m["id"] not in out and m.get("type"):
             nom = m.get("nom") or {}
             desc = m.get("desc") or {}
+            nom = nom if isinstance(nom, dict) else {"fr": nom}
+            desc = desc if isinstance(desc, dict) else {"fr": desc}
             out[m["id"]] = dict(m, nom=nom.get(LANGUE) or nom.get("fr") or m["id"], desc=desc.get(LANGUE) or desc.get("fr") or "",
-                                nouveau=True)
+                                nouveau=NV.est_nouveau(params, "modeles_montage", m["id"]))
     return out
 
 

@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T46 — 0.9.26 : nouveautés du catalogue
+
+1. **Au démarrage** : la barre du bas dit « ✦ 26 nouveauté(s) dans le catalogue : Aide › Nouveautés du catalogue ».
+2. **Fenêtre** : Aide › « Nouveautés du catalogue… » : Goodies, modèles, styles, tampons IA, ✦ devant ce qui n'a pas été vu. « Vérifier maintenant » : « Catalogue à jour » ou le nombre d'arrivées. Double-clic sur un Goodie : la galerie s'ouvre ; sur un modèle : les modèles de montage.
+3. **Goodies** : galerie des Goodies, familles « Réactions » et « Météo et nature » : cœur qui bat, pouce qui apparaît, étoile et soleil qui tournent, nuage qui flotte… Poser, lire, exporter : identiques.
+4. **Modèles et styles** : « Récap de l'année » dans les modèles de montage (✦) ; dans l'Atelier IA, « un pilote à la Top Gun » donne la description du style.
+5. **Tampons IA** : Montage › Tampons vidéo › Tampons IA : « Décollage d'avion », « Pause café », « À suivre… », « Flash météo ».
+6. **Sans réseau** : la dernière copie reste utilisable.
+
 ## T45 — 0.9.25 : modèles de montage, exports en série
 
 1. **Modèle** : nouveau projet, importer 4 à 10 rushes et une musique ; Montage › « Modèles de montage… » › « Short dynamique, 15 s » › « Monter avec ce modèle ». **Attendu** : barre d'analyse, puis un montage vertical d'environ 15 s, coupes très rapides sur les temps de la musique, transitions glitch et zoom, titre animé, écran de fin. Ctrl+Z revient au montage d'avant.

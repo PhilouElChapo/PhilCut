@@ -148,6 +148,10 @@ class GalerieGoodies(QDialog):
         b_tdb.setToolTip(_("Plusieurs instruments posés ensemble (altimètre, vitesse, cap…) avec un profil de vol réglable"))
         b_tdb.clicked.connect(lambda: (setattr(self, "_choix_special", "tableau_de_bord"), self.accept()))
         h.addWidget(b_tdb)
+        b_nv = QPushButton(_("Nouveautés…"))
+        b_nv.setToolTip(_("Ce que la veille mensuelle a ajouté (Goodies, modèles, styles) ; « Vérifier maintenant » interroge le catalogue en ligne"))
+        b_nv.clicked.connect(self._nouveautes)
+        h.addWidget(b_nv)
         v.addLayout(h)
         self._choix_special = None
         self.liste = QListWidget()
@@ -200,12 +204,22 @@ class GalerieGoodies(QDialog):
                     icone_ = self._QIcon(self._QPixmap.fromImage(img))
                 except Exception:       # noqa: BLE001
                     icone_ = self._QIcon()
-                it = QListWidgetItem(icone_, GO.GENRES.get(gid, (gid,))[0])
+                from . import nouveautes as NV
+                it = QListWidgetItem(icone_, ("✦ " if NV.est_nouveau(self.params, "goodies", gid) else "") + GO.GENRES.get(gid, (gid,))[0])
                 it.setData(Qt.UserRole, gid)
                 it.setToolTip(f"{pk['nom']} — {pk['description']}")
                 it.setTextAlignment(Qt.AlignHCenter | Qt.AlignTop)
                 self.liste.addItem(it)
         self.liste.setCurrentRow(0)
+
+    def _nouveautes(self):
+        from .dialogues_nouveautes import DialogueNouveautes
+        w = self.parent()
+        while w is not None and not hasattr(w, "voir_nouveautes"):
+            w = w.parent()
+        d = DialogueNouveautes(w or self, self.params, fermer_seulement=True)      # depuis la galerie : on y reste
+        d.exec()
+        self._remplir()
 
     def choix(self):
         if getattr(self, "_choix_special", None):

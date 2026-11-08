@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.25 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.26 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.26
+- Nouveautes du catalogue (Aide > "Nouveautes du catalogue...", et bouton "Nouveautes..." dans la galerie des Goodies) : chaque mois, une veille automatique ajoute des Goodies, des modeles de montage, des styles "a la maniere de" et des modeles de tampons IA, sans reinstaller PhilCut. ✦ marque ce que vous n'avez pas encore vu (dans la liste, la galerie des Goodies et les modeles) ; "Verifier maintenant" interroge le catalogue et dit s'il y a du nouveau ; un double-clic ouvre l'endroit ou l'utiliser. Copie gardee pour les jours sans reseau.
+- Premier envoi : packs de Goodies "Reactions" (coeur qui bat, pouce leve, etoile, eclair, point d'exclamation, bulle WOW) et "Meteo et nature" (soleil, nuage, pluie, flocon), animes ; 3 modeles de montage (recette de cuisine, avant/apres travaux, recap de l'annee) ; 9 styles (Top Gun, Le Grand Bleu, Les Bronzes, Fernandel, Jean Reno, Dalida, Claude Francois, Charles Trenet, Michel Legrand) ; 4 tampons IA (decollage d'avion, pause cafe, a suivre, flash meteo).
+- Tout ce qui arrive est verifie par les tests avant publication (dessins sans script ni lien externe, transitions et sons existants, aucun nom dans les descriptions de style).
 
 ### 0.9.25
 - Modeles de montage (Montage > "Modeles de montage...") : 10 modeles tout faits (Vlog voyage 30 s vertical, Vlog 2 min, Short dynamique 15 s, Vol en avion 1 min, Souvenirs de famille, Anniversaire, Bande-annonce cinema, Presentation d'un lieu, Annonce 20 s, Diaporama de photos). PhilCut analyse vos rushes sur ce poste et monte a la facon du modele : format, duree, rythme des coupes, transitions, look, titre anime, ecran de fin, musique du projet calee sur les temps forts. Tout reste modifiable ; Ctrl+Z revient au montage d'avant. Rien de payant, aucun filigrane.
