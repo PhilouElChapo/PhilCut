@@ -47,6 +47,15 @@ def verifier(sortie):
     except Exception as e:
         lignes.append(f"moteur GL: ERREUR {e}")
         ok = False
+    try:                                         # éléments animés (Lottie) : le moteur rlottie doit être embarqué
+        from app import elements as EL
+        n = len(EL.integrer(False))
+        g = {"genre": "lottie:coeur_bat", "debut": 0, "fin": 2, "options": {}}
+        img = EL.image(g, 0.5, 64)
+        lignes.append(f"elements animes: {n}, rendu {'ok' if img is not None and not img.isNull() else 'ECHEC'}")
+        ok = ok and n > 0 and img is not None
+    except Exception as e:
+        lignes.append(f"elements animes: ERREUR {e}")
         ok = False
     lignes.append("langues: " + ", ".join(c for c, _n in langue.disponibles()))
     try:

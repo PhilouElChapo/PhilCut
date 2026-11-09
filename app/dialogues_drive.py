@@ -17,10 +17,11 @@ from .widgets import SuiviAttente
 class DialogueManquants(QDialog):
     """Les médias que ce poste ne trouve pas : ils restent dans le projet, intacts, jusqu'à ce qu'on les rattache."""
 
-    def __init__(self, ed):
+    def __init__(self, ed, media=None):
         super().__init__(ed)
         self.ed, self.params = ed, ed.params
         self.taches = []
+        self.media_choisi = media
         self.setWindowTitle(_("Médias introuvables sur ce poste"))
         self.resize(900, 520)
         v = QVBoxLayout(self)
@@ -67,6 +68,8 @@ class DialogueManquants(QDialog):
             it.setData(0, Qt.UserRole, m["id"])
             it.setToolTip(1, ou)
             self.arbre.addTopLevelItem(it)
+            if m["id"] == self.media_choisi:
+                self.arbre.setCurrentItem(it)
         self.arbre.resizeColumnToContents(0)
         if not self.arbre.topLevelItemCount():
             it = QTreeWidgetItem([_("Tous les médias sont retrouvés."), "", "✓"])

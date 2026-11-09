@@ -70,6 +70,11 @@ def integrer(reseau=False, delai=8):
                                    m.get("voix", "normale"), float(m.get("duree", 3.0)))
             arrives.append({"cat": "tampons_ia", "id": m["id"], "nom": localise(m.get("nom")) or m["id"], "desc": localise(m.get("texte")) or "",
                             "ajoute": m.get("ajoute", "")})
+    try:
+        from . import elements as EL                          # éléments animés (Lottie) : leur propre fichier du catalogue
+        arrives += EL.integrer(reseau, delai)
+    except Exception:          # noqa: BLE001 : un catalogue abîmé ne bloque jamais PhilCut
+        pass
     _ARRIVES[:] = arrives
     return arrives
 

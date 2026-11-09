@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.35 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.36 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.36
+- 44 elements animes, en 6 familles (bouton Goodies) : Reactions et emoji (coeur qui bat, coeurs qui s'envolent, etincelles, visages, pouce, flamme), Fleches et reperes (fleches qui se tracent, cercle et soulignement a la main, coche, croix, !, ?, cible, curseur qui clique, chevrons), Vlog et reseaux (point d'enregistrement, cloche, bulles, chargement, epingle de lieu, avion qui passe, horloge, loupe), Meteo et nature (soleil, nuage, pluie, eclair, flocon, arc-en-ciel), Fete (feu d'artifice, ballons, etoile filante, cadeau, explosion de BD), Formes (ondes, bulles, pastille). Dessins vectoriels : nets a toute taille, couleurs modifiables, identiques sur PC et (bientot) telephone. Le catalogue s'enrichit chaque mois sans reinstaller.
+- Galerie des Goodies : l'element choisi s'anime a droite ; recherche, favoris, utilises recemment.
+- Inspecteur d'un element : ses couleurs, son animation (en boucle, s'arrete a la fin, disparait a la fin), sa vitesse.
+- Plan grise ("Introuvable ici") : double-clic ou clic droit > "Ou est ce fichier ?" pour le rattacher directement.
 
 ### 0.9.35
 - 51 nouveaux effets, en 7 familles (Effets du plan) : Retro (8 mm, Super 8, sepia, delave, raye), VHS et camescope, RVB decale, Glitch, Lentille (vignette, lampe, flou du bord, fisheye), Ouvertures (cercle, rideau, losange, coeur...), Cinematique (bandes, teal & orange, noir et blanc, projecteur), Mouvement (flash, zoom pulse, secousse, tourbillon), Lumieres (neon, contours, etoiles, lucioles, poussiere, neige, confettis, fuites de lumiere). Ils sont calcules par la carte graphique ; sans carte graphique, une version simplifiee est utilisee. Le catalogue se met a jour tout seul depuis Internet.

@@ -149,6 +149,8 @@ class Inspecteur(QWidget):
         opts = g.setdefault("options", {})
         genre = g["genre"]
         from . import autocollants as AC
+        if genre.startswith("lottie:"):
+            return self._options_element(g, gr, f)
         if genre != "fleche" and genre != "image":
             te = QLineEdit(str(opts.get("texte") or ""))
             te.setPlaceholderText(_("Texte") if genre != "bandeau_tendance" else _("Texte ; « | » pour passer à la ligne"))
@@ -239,6 +241,66 @@ class Inspecteur(QWidget):
             sl.setToolTip(_("Avec des images clefs, la flèche tourne d'une image clef à l'autre."))
             sl.valueChanged.connect(lambda v: self._regler(g, "angle", float(v)))
             f.addRow(_("Direction (°)") if genre == "fleche" else _("Inclinaison (°)"), sl)
+        return gr
+
+    def _options_element(self, g, gr, f):
+        """Elément animé : ses couleurs principales, sa fin (boucle, reste, disparaît) et sa vitesse."""
+        from . import elements as EL, autocollants as AC
+        opts = g.setdefault("options", {})
+        ident = g["genre"][len(EL.PREFIXE):]
+        e = EL.ELEMENTS.get(ident) or {}
+        actuelles = EL.couleurs_de(g)
+
+        def regler_couleur(i, c):
+            cs = list(opts.get("couleurs") or [])
+            cs += [""] * (i + 1 - len(cs))
+            cs[i] = c
+            self._changer(lambda: opts.__setitem__("couleurs", cs), reconstruire=False)
+            self.montrer_goodie(g)
+        for i, c in enumerate(actuelles):
+            w = QWidget()
+            hl = QHBoxLayout(w)
+            hl.setContentsMargins(0, 0, 0, 0)
+            hl.setSpacing(3)
+            bc = QPushButton(c)
+            bc.setStyleSheet(f"background:{c};color:{'#000' if QColor(c).lightness() > 128 else '#fff'};text-align:left;padding:3px 8px")
+
+            def choisir(_x=False, i=i, c=c):
+                q = QColorDialog.getColor(QColor(c), self, _("Couleur"))
+                if q.isValid():
+                    regler_couleur(i, q.name())
+            bc.clicked.connect(choisir)
+            hl.addWidget(bc, 1)
+            for coul in AC.COULEURS_TENDANCE[:6]:
+                pb = QToolButton()
+                pb.setFixedSize(18, 18)
+                pb.setStyleSheet(f"background:{coul};border:1px solid #777;border-radius:3px")
+                pb.setToolTip(coul)
+                pb.clicked.connect(lambda _c=False, i=i, coul=coul: regler_couleur(i, coul))
+                hl.addWidget(pb)
+            f.addRow(_("Couleur") if len(actuelles) == 1 else _("Couleur {n}", n=i + 1), w)
+        if opts.get("couleurs"):
+            bo = QPushButton(_("Couleurs d'origine"))
+            bo.clicked.connect(lambda: (self._changer(lambda: opts.pop("couleurs", None), reconstruire=False), self.montrer_goodie(g)))
+            f.addRow("", bo)
+        cf = QComboBox()
+        for k, lib in EL.FINS:
+            cf.addItem(lib, k)
+        cf.setCurrentIndex(max(0, cf.findData(opts.get("fin") or e.get("fin", "boucle"))))
+        cf.currentIndexChanged.connect(lambda _i: self._changer(lambda: opts.__setitem__("fin", cf.currentData()), reconstruire=False))
+        f.addRow(_("Animation"), cf)
+        sv = QComboBox()
+        for v, lib in ((0.5, _("Lente")), (1.0, _("Normale")), (1.5, _("Rapide")), (2.0, _("Très rapide"))):
+            sv.addItem(lib, v)
+        sv.setCurrentIndex(max(0, sv.findData(float(opts.get("vitesse", 1.0)))))
+        sv.currentIndexChanged.connect(lambda _i: self._changer(lambda: opts.__setitem__("vitesse", sv.currentData()), reconstruire=False))
+        f.addRow(_("Vitesse"), sv)
+        if not EL.disponible():
+            av = QLabel(_("Le moteur des éléments animés n'est pas chargé sur ce poste : l'élément est gardé, il apparaîtra dès que PhilCut "
+                          "sera réinstallé ou mis à jour. ({e})", e=EL.raison()[:120]))
+            av.setWordWrap(True)
+            av.setStyleSheet("color:#c98a00")
+            f.addRow(av)
         return gr
 
     # ------------------------------------------------------------ valeurs d'un instrument
@@ -896,7 +958,7 @@ class Inspecteur(QWidget):
             if k == g.get("style", "cadran"):
                 st.setCurrentIndex(st.count() - 1)
         st.currentIndexChanged.connect(lambda _i: self._changer(lambda: g.__setitem__("style", st.currentData()), reconstruire=False))
-        contenu = g.get("genre") in ("polaroid", "post_it", "fleche", "image", "immatriculation", "bandeau", "pastille", "prix", "horaires",
+        contenu = str(g.get("genre", "")).startswith("lottie:") or g.get("genre") in ("polaroid", "post_it", "fleche", "image", "immatriculation", "bandeau", "pastille", "prix", "horaires",
                                      "date", "bandeau_tendance", "surligne", "intro_titre")
         if g.get("genre") in GO.GENRES and GO.GENRES[g["genre"]][1] or illustre:      # instruments : cadran ou HUD
             f.addRow(_("Style d'instrument"), st)

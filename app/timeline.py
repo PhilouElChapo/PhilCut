@@ -474,6 +474,9 @@ class ItemClip(QGraphicsRectItem):
         z = self._zone(e.pos())
         if isinstance(z, tuple) or z == "transition":
             return
+        if self.absent:                   # plan gris : on indique où est le fichier (sinon il reste gris, intact)
+            self.tl.demande_menu.emit(self.clip["id"], "ou_media")
+            return
         self.tl.proprietes.emit(self.clip["id"])
 
     def contextMenuEvent(self, e):
@@ -1524,6 +1527,12 @@ class Timeline(QGraphicsView):
         if clip.get("vignette"):
             m.addAction(_("Modifier l'image composée…"), lambda: self.demande_menu.emit(clip["id"], "vignette_composee"))
         med = self.projet.media(clip["media"]) if self.projet else None
+        if med and not os.path.exists(med.get("chemin") or ""):
+            a = m.addAction(_("Où est ce fichier ?…"), lambda: self.demande_menu.emit(clip["id"], "ou_media"))
+            f = a.font()
+            f.setBold(True)
+            a.setFont(f)
+            m.addSeparator()
         if (med or {}).get("genre") == "image" and not clip.get("vignette"):
             m.addAction(_("Retirer le fond de l'image…"), lambda: self.demande_menu.emit(clip["id"], "fond_retirer"))
             m.addSeparator()

@@ -1695,6 +1695,14 @@ class Editeur(QWidget):
         self.rafraichir()
 
     def _demande_menu(self, ident, quoi):
+        if quoi == "ou_media":
+            c = self.projet.clip(ident)
+            if c:
+                from .dialogues_drive import DialogueManquants
+                d = DialogueManquants(self, c.get("media"))
+                d.ou()
+                d.exec()
+            return
         if quoi == "etalonner":
             c = self.projet.clip(ident)
             if c:
@@ -2101,6 +2109,8 @@ class Editeur(QWidget):
         if gid == "manche_air":
             self.manche_air()
             return
+        recents = [x for x in (self.params.get("goodies_recents") or []) if x != gid]
+        self.params["goodies_recents"] = [gid] + recents[:15]
         t = self.timeline.position
         self.projet.marquer()
         g = self.projet.ajouter_goodie(gid, t, min(max(t + 5.0, self.projet.duree()), t + 8.0))
@@ -2113,6 +2123,12 @@ class Editeur(QWidget):
             g["options"].update(texte=_("TITRE CHOC"), style="incline", couleur="#ff8c1a", angle=-4)
         elif gid == "surligne":
             g["options"].update(texte=_("Incroyable"), couleur="#ffe14d")
+        elif gid.startswith("lottie:"):                       # élément animé : au centre, sa durée naturelle s'il ne boucle pas
+            from . import elements as EL
+            e = EL.ELEMENTS.get(gid[7:]) or {}
+            g.update(x=0.5, y=0.45, taille=0.42)
+            if e.get("fin") == "tenir":
+                g["fin"] = g["debut"] + max(3.0, EL.duree(gid[7:]) + 1.5)
         elif gid == "intro_titre":
             L_, H_ = self.projet.taille
             g.update(x=0.5, y=0.5, taille=L_ / max(1, H_), fin=g["debut"] + 3.5)

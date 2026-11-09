@@ -157,6 +157,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T53 — 0.9.36 : éléments animés
+
+1. **Galerie** : bouton Goodies. Familles « ✶ Réactions et emoji », « ✶ Flèches et repères animés », « ✶ Vlog et réseaux », « ✶ Météo et nature », « ✶ Fête animée », « ✶ Formes animées ». **Attendu** : cliquer un élément, il s'anime dans le cadre de droite.
+2. **Recherche** : taper « flèche », puis « soleil » : la liste se réduit.
+3. **Favoris et récents** : « ☆ Ajouter aux favoris » ; famille « ★ Mes favoris » : il y est. Poser un élément : il apparaît dans « ⟲ Utilisés récemment ».
+4. **Poser** : « Flèche courbe qui se trace » : elle se dessine, puis reste. Glisser, tirer un coin, suivre une personne comme un Goodie.
+5. **Inspecteur** : changer la couleur (pastilles ou nuancier), « Couleurs d'origine » ; Animation « En boucle / S'arrête à la fin / Disparaît à la fin » ; Vitesse.
+6. **Export** : le film exporté montre l'élément, fluide et net.
+7. **Plan gris** : renommer le dossier d'un rush, rouvrir le projet ; double-clic sur le plan gris : « Où est ce fichier ? » s'ouvre directement sur lui. Ne rien faire : le plan reste gris ; réenregistrer, remettre le dossier, rouvrir : tout est comme au début.
+
 ## T52 — 0.9.35 : nouveaux effets et projets entre appareils
 
 1. **Effets** : un plan, Effets : familles Rétro, Glitch, Lentille, Ouvertures, Cinématique, Mouvement, Lumières. Cliquer « Super 8 », « Ouvrir en cercle », « Lucioles », « Néon rose » : l'aperçu tourne. **Attendu** : effet visible, ouverture qui progresse sur la durée du plan.
