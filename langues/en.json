@@ -6531,5 +6531,13 @@
  "demandée sur {a}, à calculer sur un PC": "requested on {a}, to compute on a PC",
  "le fichier n'est ni sur ce poste ni sur le Drive": "the file is neither on this computer nor on the Drive",
  "un autre appareil": "another device",
- "A calculer": "To compute"
+ "A calculer": "To compute",
+ "IA locale (sur ce poste, gratuit)": "Local AI (on this computer, free)",
+ "Claude (cloud, le meilleur pour écrire)": "Claude (cloud, the best for writing)",
+ "Gemini (cloud)": "Gemini (cloud)",
+ "Créations payantes": "Paid creations",
+ "Total estimé : ≈ {t} €. Continuer ?": "Estimated total: ≈ €{t}. Continue?",
+ "déjà payée une fois": "already paid once",
+ "Ces créations seront refaites avec votre clef Gemini (payant) :": "These creations will be redone with your Gemini key (paid):",
+ "Envoi à Gemini…": "Sending to Gemini…"
 }

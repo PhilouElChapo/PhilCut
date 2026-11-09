@@ -756,7 +756,7 @@ class DialogueAtelierIA(QDialog):
                 DI.dire(texte_rep, w, params, k_rep, m_rep)
                 t.avancer(0.98, _("Réplique mêlée au clip…"))
                 return DI.mixer(brut, w, sortie_finale)
-        self._recette = {"famille": e["famille"], "effet": e["id"], "prompt": prompt, "force": force}
+        self._recette = {"famille": e["famille"], "effet": e["id"], "prompt": prompt, "force": force, "sans_source": bool(e.get("sans_source"))}
         if texte_rep:
             self._recette.update(replique=texte_rep, diction=self.diction.currentData(), moteur_replique=m_rep)
         if e["famille"] == "musique":
@@ -876,7 +876,16 @@ class DialogueAtelierIA(QDialog):
         self.resultat = r if isinstance(r, str) else (r[0] if isinstance(r, (tuple, list)) else r)
         if isinstance(self.resultat, str) and os.path.exists(self.resultat):          # pour pouvoir la reprendre et la modifier
             from . import creations
-            creations.ecrire(self.resultat, dict(getattr(self, "_recette", {}), anglais=self._ph.get("en", "")))
+            rec = dict(getattr(self, "_recette", {}), anglais=self._ph.get("en", ""))
+            src = getattr(self, "source", None)
+            if rec.get("famille") in ("image", "logo") and src and os.path.exists(src) and self.resultat.lower().endswith(".png"):
+                import shutil                     # l'image de départ voyage avec la recette : la création se refait ailleurs
+                try:
+                    shutil.copy2(src, self.resultat + ".source.png")
+                    rec["source_image"] = os.path.basename(self.resultat + ".source.png")
+                except OSError:
+                    pass
+            creations.ecrire(self.resultat, rec)
         if e["famille"] in ("image", "logo"):
             px = QPixmap(self.resultat)
             self.img_resultat.setPixmap(px.scaled(360, 203, Qt.KeepAspectRatio, Qt.SmoothTransformation))

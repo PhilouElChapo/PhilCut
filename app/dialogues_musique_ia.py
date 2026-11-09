@@ -304,10 +304,18 @@ class DialogueFabriqueMusique(QDialog):
 
     # ---- petits outils
     def _choix_niveau(self):
+        """Pour écrire (consigne, paroles) : Claude d'abord, le meilleur pour cela ; Gemini ou l'IA locale au choix."""
         c = QComboBox()
-        c.addItem(_("IA locale (sur ce poste)"), "locale")
-        c.addItem(_("IA cloud (votre clef)"), "cloud")
-        c.setCurrentIndex(1 if (self.params.get("assistant_niveau") or "") == "cloud" else 0)
+        from . import ia
+        clefs = {m for m, _k in ia.moteurs(dict(self.params, ia_moteur="claude"))}
+        if "claude" in clefs:
+            c.addItem(_("Claude (cloud, le meilleur pour écrire)"), "claude")
+        if "gemini" in clefs:
+            c.addItem(_("Gemini (cloud)"), "gemini")
+        c.addItem(_("IA locale (sur ce poste, gratuit)"), "locale")
+        voulu = self.params.get("musique_ia_ecrire") or ("claude" if "claude" in clefs else "locale")
+        c.setCurrentIndex(max(0, c.findData(voulu)))
+        c.currentIndexChanged.connect(lambda _i: self.params.__setitem__("musique_ia_ecrire", c.currentData()))
         return c
 
     def _remplir_styles(self, *_a):
@@ -417,9 +425,9 @@ class DialogueFabriqueMusique(QDialog):
     def _ecrire_paroles(self):
         from . import paroles as PA
         niveau = self.niveau_paroles.currentData()
-        if niveau == "cloud":
+        if niveau != "locale":
             from . import ia
-            if not ia.confirmer_cout(self, self.params, 1500, 0, _("Paroles de chanson")):
+            if not _avec_moteur(niveau, lambda: ia.confirmer_cout(self, self.params, 1500, 0, _("Paroles de chanson"))):
                 return
         theme = self.phrase.toPlainText().strip() or self.style.currentText()
         args = (theme, self.paroles.toPlainText(), self.langue.currentData(), self.voix.currentData(), self.duree.value(), self.params, niveau)
@@ -432,14 +440,14 @@ class DialogueFabriqueMusique(QDialog):
                 return
             self.paroles.setPlainText(r)
             self.info.setText(_("Paroles écrites : relisez-les, modifiez-les si besoin, puis « Créer la musique »."))
-        self._lancer(lambda t: PA.ecrire(*args), _("Paroles"), _("L'IA écrit les paroles"),
+        self._lancer(lambda t: _avec_moteur(niveau, lambda: PA.ecrire(*args[:-1], "locale" if niveau == "locale" else "cloud")), _("Paroles"), _("L'IA écrit les paroles"),
                      _("IA locale : le modèle démarre d'abord, puis écrit.") if niveau == "locale" else _("IA cloud : quelques secondes."), fin)
 
     def _ameliorer(self):
         niveau = self.niveau_ia.currentData()
-        if niveau == "cloud":
+        if niveau != "locale":
             from . import ia
-            if not ia.confirmer_cout(self, self.params, 900, 0, _("Améliorer la consigne musicale")):
+            if not _avec_moteur(niveau, lambda: ia.confirmer_cout(self, self.params, 900, 0, _("Améliorer la consigne musicale"))):
                 return
         fiche, params = self.fiche(), self.params
         from . import traduction_recherche as TR
@@ -462,7 +470,8 @@ class DialogueFabriqueMusique(QDialog):
                 if i >= 0:
                     self.tonalite.setCurrentIndex(i)
             self.info.setText(_("Consigne améliorée : relisez-la (vous pouvez la modifier), puis « Créer la musique »."))
-        self._lancer(lambda t: MI.ameliorer(fiche, params, niveau, traduire), _("Consigne"), _("L'IA améliore la consigne"),
+        self._lancer(lambda t: _avec_moteur(niveau, lambda: MI.ameliorer(fiche, params, "locale" if niveau == "locale" else "cloud", traduire)),
+                     _("Consigne"), _("L'IA améliore la consigne"),
                      _("IA locale : le modèle démarre d'abord, puis écrit.") if niveau == "locale" else _("IA cloud : quelques secondes."), fin)
 
     # ---- inspiration
@@ -671,6 +680,17 @@ class DialogueFabriqueMusique(QDialog):
         if self.tache is not None and self.tache.isRunning():
             self.info.setText(_("La création continue en tâche de fond."))
         super().done(r)
+
+
+def _avec_moteur(niveau, fn):
+    """Le temps d'une demande, l'IA cloud choisie (Claude ou Gemini) passe avant celle des Préférences."""
+    from . import ia
+    ancien = ia.MOTEUR_FORCE
+    ia.MOTEUR_FORCE = niveau if niveau in ("claude", "gemini") else ancien
+    try:
+        return fn()
+    finally:
+        ia.MOTEUR_FORCE = ancien
 
 
 def _hms(s):

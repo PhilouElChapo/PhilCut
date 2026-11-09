@@ -21,12 +21,18 @@ INTENTIONS = {"musique": _("Musique"), "image": _("Image retouchée"), "logo": _
 # moteur : (nom, gratuit, intentions qu'il sait faire, ce que PhilCut sait relancer seul)
 MOTEURS = {"locale": (_("Sur ce poste (gratuit)"), True), "gemini": (_("Gemini (votre clef, payant)"), False),
            "outil": (_("Ouvrir l'outil avec la recette"), True)}
-AUTOMATIQUE = {("musique", "locale")}         # le reste s'ouvre dans son outil, recette remplie, pour un dernier regard
+AUTOMATIQUE = {("musique", "locale"), ("image", "locale"), ("image", "gemini"), ("logo", "locale"), ("logo", "gemini"),
+               ("voix", "locale"), ("voix", "gemini")}
+PRIX_GEMINI = {"image": 0.04, "logo": 0.04, "voix": 0.01}      # euros, indicatif (relevé novembre 2026) ; affiché avant
 
 
 def intention(recette):
     r = recette or {}
-    return r.get("intention") or r.get("famille") or "image"
+    if r.get("intention"):
+        return r["intention"]
+    if r.get("replique") and not r.get("prompt"):
+        return "voix"
+    return r.get("famille") or "image"
 
 
 def empreinte(recette):
@@ -109,14 +115,42 @@ def a_traiter(projet, params=None):
 
 
 def moteurs_possibles(ligne, params=None):
-    """[(moteur, libellé, prix en euros ou 0, durée estimée en secondes)] : le gratuit d'abord."""
-    it = ligne["intention"]
+    """[(moteur, libellé, prix en euros ou 0, durée estimée en secondes)] : le gratuit d'abord, puis Gemini (tableau des
+    recettes validé le 9 novembre 2026), puis l'outil avec la recette."""
+    it, rec = ligne["intention"], ligne["recette"]
     out = []
-    if (it, "locale") in AUTOMATIQUE:
-        d = float((ligne["recette"].get("fiche") or {}).get("duree") or ligne["recette"].get("duree") or 60)
-        out.append(("locale", MOTEURS["locale"][0], 0.0, max(60.0, d * 3)))
+    if (it, "locale") in AUTOMATIQUE and (it not in ("image",) or source_image(ligne) or rec.get("sans_source")):
+        d = float((rec.get("fiche") or {}).get("duree") or rec.get("duree") or 60) if it == "musique" else 60.0
+        out.append(("locale", MOTEURS["locale"][0], 0.0, max(60.0, d * 3) if it == "musique" else 120.0))
+    if (it, "gemini") in AUTOMATIQUE and _a_clef(params):
+        prix = PRIX_GEMINI.get(it, 0.05)
+        if it == "voix":
+            from . import diction
+            prix = diction.prix(rec.get("replique") or "", "gemini") or prix
+        out.append(("gemini", MOTEURS["gemini"][0], prix, 30.0))
     out.append(("outil", MOTEURS["outil"][0], 0.0, 0.0))
     return out
+
+
+def source_image(ligne):
+    """L'image de départ gardée à côté de la création (« <création>.source.png »), si elle existe sur ce poste ou au Drive."""
+    rec, m = ligne["recette"], ligne["media"]
+    nom = rec.get("source_image")
+    if not nom:
+        return None
+    for d in filter(None, (os.path.dirname(m.get("chemin") or ""), _dossier_creations())):
+        p = os.path.join(d, nom)
+        if os.path.exists(p):
+            return p
+    return None
+
+
+def _dossier_creations():
+    try:
+        from .creations import dossier
+        return dossier()
+    except Exception:      # noqa: BLE001
+        return ""
 
 
 def _a_clef(params):
@@ -134,11 +168,59 @@ def calculer(ligne, moteur, params=None, progression=None, arret=lambda: False):
     deja = deja_fait(rec, params)
     if deja:
         return deja[0]
-    if (ligne["intention"], moteur) not in AUTOMATIQUE:
+    it = ligne["intention"]
+    if (it, moteur) not in AUTOMATIQUE:
         raise RuntimeError(_("Cette création s'ouvre dans son outil pour être refaite."))
     import time
+    from . import creations
+    horo = time.strftime("%Y%m%d_%H%M%S")
+    if it == "musique":
+        return _musique(rec, params, progression, arret, horo)
+    nouvelle = dict(rec, moteur=f"{moteur}", date=time.strftime("%Y-%m-%d %H:%M"), empreinte=rec.get("empreinte") or empreinte(rec))
+    if it in ("image", "logo"):
+        sortie = os.path.join(creations.dossier(), f"{rec.get('effet') or it}_{horo}.png")
+        src = source_image(ligne)
+        consigne = rec.get("anglais") or rec.get("prompt") or ""
+        if moteur == "locale":
+            from . import creatif as C
+            C.image(consigne, sortie, params, init=None if rec.get("sans_source") else src, force=float(rec.get("force") or 0.55),
+                    progression=progression, arret=arret)
+        else:
+            from . import ia
+            if progression:
+                progression(0.2, _("Envoi à Gemini…"))
+            if src:
+                with open(src, "rb") as f:
+                    png = ia.retoucher_image(params, f.read(), consigne)
+            else:
+                png = ia.generer_image(params, consigne)
+            with open(sortie, "wb") as f:
+                f.write(png)
+            nouvelle["paye"] = True
+        if src:
+            import shutil
+            shutil.copy2(src, sortie + ".source.png")
+            nouvelle["source_image"] = os.path.basename(sortie + ".source.png")
+    elif it == "voix":
+        from . import diction
+        sortie = os.path.join(creations.dossier(), f"replique_{horo}.wav")
+        if progression:
+            progression(0.2, _("La voix dit la réplique…"))
+        diction.dire(rec.get("replique") or "", sortie, params, style=rec.get("diction") or "naturel",
+                     moteur_voix="gemini" if moteur == "gemini" else "local")
+        nouvelle["paye"] = moteur == "gemini"
+    else:
+        raise RuntimeError(_("Cette création s'ouvre dans son outil pour être refaite."))
+    creations.ecrire(sortie, nouvelle)
+    if progression:
+        progression(1.0, _("Terminé."))
+    return sortie
+
+
+def _musique(rec, params, progression, arret, horo):
+    import time
     from . import creations, musique_ia as MI
-    sortie = os.path.join(creations.dossier(), f"musique_{time.strftime('%Y%m%d_%H%M%S')}.mp3")
+    sortie = os.path.join(creations.dossier(), f"musique_{horo}.mp3")
     fiche = rec.get("fiche") or {"phrase": rec.get("prompt") or "", "duree": rec.get("duree") or 60, "instrumental": rec.get("instrumental", True),
                                  "paroles": rec.get("paroles") or "", "voix": rec.get("voix") or "auto", "langue": rec.get("langue") or "fr"}
     if rec.get("anglais") and not fiche.get("consigne_ia"):
@@ -146,7 +228,6 @@ def calculer(ligne, moteur, params=None, progression=None, arret=lambda: False):
     chemin, c = MI.creer(fiche, sortie, params, progression, arret)
     nouvelle = MI.recette(fiche, c)
     nouvelle["empreinte"] = rec.get("empreinte") or empreinte(rec)
-    nouvelle["moteur"] = "locale:ace-step"
     nouvelle["date"] = time.strftime("%Y-%m-%d %H:%M")
     creations.ecrire(chemin, nouvelle)
     return chemin

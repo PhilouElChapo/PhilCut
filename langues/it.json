@@ -2604,7 +2604,7 @@
  "Tel quel, allégé, figé ou protégé": "",
  "Terminé : {n} fichier(s) produit(s) sur {t}.": "",
  "Terminé sans image.": "",
- "Terminé.": "",
+ "Terminé.": "Terminato.",
  "Texte barré": "",
  "Texte libre": "",
  "texte reconnu ({n} page(s))": "",
@@ -6522,5 +6522,13 @@
  "demandée sur {a}, à calculer sur un PC": "richiesta su {a}, da calcolare su un PC",
  "le fichier n'est ni sur ce poste ni sur le Drive": "il file non è né su questo computer né sul Drive",
  "un autre appareil": "un altro dispositivo",
- "A calculer": "Da calcolare"
+ "A calculer": "Da calcolare",
+ "IA locale (sur ce poste, gratuit)": "IA locale (su questo computer, gratis)",
+ "Claude (cloud, le meilleur pour écrire)": "Claude (cloud, la migliore per scrivere)",
+ "Gemini (cloud)": "Gemini (cloud)",
+ "Créations payantes": "Creazioni a pagamento",
+ "Total estimé : ≈ {t} €. Continuer ?": "Totale stimato: ≈ {t} €. Continuare?",
+ "déjà payée une fois": "già pagata una volta",
+ "Ces créations seront refaites avec votre clef Gemini (payant) :": "Queste creazioni saranno rifatte con la vostra chiave Gemini (a pagamento):",
+ "Envoi à Gemini…": "Invio a Gemini…"
 }

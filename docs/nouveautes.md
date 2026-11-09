@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.37 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.38 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.38
+- Creations a refaire ou a calculer : les images retouchees, logos et repliques se refont aussi depuis la liste, sur ce poste (gratuit) ou avec Gemini (cout total annonce et confirme, "deja payee une fois" signale). L'image de depart est gardee avec la recette, la creation se refait donc sur un autre appareil.
+- Fabrique musique : pour ameliorer la consigne et ecrire les paroles, Claude est propose en premier (le meilleur pour ecrire), puis Gemini, puis l'IA locale.
 
 ### 0.9.37
 - Fabrique musique (menu Fabrique, ou bouton Musique) : une fiche musicale (style, ambiance, tempo, tonalite, mesure, instruments, deroule, epoque et son, voix, paroles) devient une consigne solide en anglais, visible avant de creer. 42 styles en 8 familles, dont Symphonie, Classique, Baroque, Opera, Piano romantique, Valse, Choeur sacre, Chant gregorien, Marche, et des styles d'epoque (annees 30, musette, rock'n'roll, disco, synthwave). Nouvelles voix : tenor lyrique, mezzo-soprano, choeur de moines.

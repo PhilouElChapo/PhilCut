@@ -237,6 +237,59 @@ class TestRecettes(unittest.TestCase):
         etats = sorted(l["etat"] for l in R.a_traiter(p))
         self.assertEqual(etats, ["a_calculer", "a_refaire"])
 
+    def test_images_et_voix_refaites(self):
+        """Tableau des recettes : image sur ce poste ou avec Gemini (coût annoncé, marquée payée), voix ; l'image de départ suit."""
+        from app import recettes_ia as R, creations, ia, creatif as C, diction
+        from PySide6.QtGui import QImage, QColor
+        d = tempfile.mkdtemp()
+        res = os.path.join(d, "aquarelle.png")
+        q = QImage(64, 64, QImage.Format_RGB32)
+        q.fill(QColor("#336699"))
+        q.save(res)
+        q.save(res + ".source.png")
+        rec = {"famille": "image", "effet": "aquarelle", "prompt": "aquarelle", "anglais": "watercolor painting", "force": 0.5,
+               "source_image": "aquarelle.png.source.png"}
+        m = {"id": "m1", "nom": "aquarelle.png", "chemin": os.path.join(d, "absent.png"), "recette": rec}
+        ligne = {"media": m, "recette": rec, "intention": R.intention(rec), "etat": "a_refaire", "existant": None, "paye": False}
+        m["chemin"] = res + ".absent"
+        os.rename(res + ".source.png", os.path.join(creations.dossier(), "aquarelle.png.source.png"))
+        self.assertTrue(R.source_image(ligne))
+        anciens = ia.retoucher_image, C.image, diction.dire, R._a_clef
+        recu = {}
+        try:
+            R._a_clef = lambda params: True
+
+            def retoucher(params, png, consigne, *a, **k):
+                recu["gemini"] = consigne
+                return open(res, "rb").read()
+            ia.retoucher_image = retoucher
+
+            def image(prompt, sortie, params=None, init=None, force=0.55, **k):
+                recu["locale"] = (prompt, init, force)
+                q.save(sortie)
+            C.image = image
+            self.assertEqual([x[0] for x in R.moteurs_possibles(ligne, {})], ["locale", "gemini", "outil"])
+            out = R.calculer(ligne, "gemini", {})
+            self.assertEqual(recu["gemini"], "watercolor painting")
+            nouv = creations.lire(out)
+            self.assertTrue(nouv["paye"])
+            self.assertTrue(os.path.exists(out + ".source.png"))
+            self.assertEqual(R.calculer(ligne, "locale", {}), out)     # déjà fait (et payé) : repris, rien n'est recalculé
+            self.assertNotIn("locale", recu)
+            os.remove(out)
+            out2 = R.calculer(ligne, "locale", {})
+            self.assertEqual(recu["locale"], ("watercolor painting", R.source_image(ligne), 0.5))
+            self.assertTrue(os.path.exists(out2))
+            rv = {"famille": "image", "replique": "Bonjour à tous", "diction": "naturel"}
+            lv = {"media": {"id": "v"}, "recette": rv, "intention": R.intention(rv), "existant": None, "paye": False}
+            self.assertEqual(lv["intention"], "voix")
+            diction.dire = lambda texte, sortie, params, style="naturel", moteur_voix="local", **k: (recu.__setitem__("voix", (texte, moteur_voix)),
+                                                                                                   open(sortie, "wb").write(b"RIFF"))
+            R.calculer(lv, "gemini", {})
+            self.assertEqual(recu["voix"], ("Bonjour à tous", "gemini"))
+        finally:
+            ia.retoucher_image, C.image, diction.dire, R._a_clef = anciens
+
     def test_fenetres(self):
         from app.config import Parametres
         pa = Parametres()

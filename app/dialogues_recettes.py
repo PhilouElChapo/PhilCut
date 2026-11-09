@@ -137,6 +137,19 @@ class DialogueCreations(QDialog):
             for l in outils[:1]:
                 self.ed.reprendre_creation(media_id=l["media"]["id"])
             return
+        payants = [(l, m) for l, m in auto if m not in ("locale", "deja")]
+        if payants:                                   # coût annoncé, confirmation ; « déjà payée » signalé
+            total = 0.0
+            lignes = []
+            for l, m in payants:
+                prix = next((p for mm, _lib, p, _d in R.moteurs_possibles(l, self.params) if mm == m), 0.0)
+                total += prix
+                lignes.append(f"• {l['media'].get('nom', '')} : ≈ {prix:.2f} €".replace(".", ",") + (" — " + _("déjà payée une fois") if l["paye"] else ""))
+            r = QMessageBox.question(self, _("Créations payantes"),
+                                     _("Ces créations seront refaites avec votre clef Gemini (payant) :") + "\n" + "\n".join(lignes) + "\n\n" +
+                                     _("Total estimé : ≈ {t} €. Continuer ?", t=f"{total:.2f}".replace(".", ",")))
+            if r != QMessageBox.Yes:
+                return
         params = self.params
 
         def travail(t):

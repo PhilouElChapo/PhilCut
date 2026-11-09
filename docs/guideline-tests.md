@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T55 — 0.9.38 : recettes refaites avec Gemini, Claude pour écrire
+
+1. **Image** : Atelier IA › un style d'image sur la ligne rouge, poser. Renommer le fichier créé (dossier des créations), rouvrir le projet : message « création(s) IA à refaire ». Liste : « Sur ce poste (gratuit) » et « Gemini (votre clef, payant) » ; choisir Gemini : fenêtre « Créations payantes » avec le total ; puis avant / après.
+2. **Recommencer** la même ligne : le résultat déjà fait est repris (« Reprendre le résultat déjà fait (gratuit) »), aucune nouvelle dépense.
+3. **Réplique** : une réplique dite (Atelier IA), fichier renommé : la liste propose sur ce poste ou Gemini.
+4. **Fabrique musique** : la liste « Claude (cloud, le meilleur pour écrire) / Gemini / IA locale » à côté d'« Améliorer avec l'IA » et des paroles ; le coût annoncé nomme bien l'IA choisie.
+
 ## T54 — 0.9.37 : fabrique musique, musique en ligne, créations à refaire
 
 1. **Ouvrir** : Fabrique › « Fabrique musique… » (ou bouton Musique). **Attendu** : sections Style et ambiance, Fiche musicale, S'inspirer d'un morceau, Voix de référence, Consigne envoyée au moteur.
