@@ -33,9 +33,9 @@ jobs:
           cd src-ace
           git submodule update --init --recursive
           cmake -S . -B build-cpu -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DGGML_OPENMP=OFF || exit /b 1
-          cmake --build build-cpu --target ace-lm ace-synth -j %NUMBER_OF_PROCESSORS% || exit /b 1
+          cmake --build build-cpu --target ace-lm ace-synth ace-understand -j %NUMBER_OF_PROCESSORS% || exit /b 1
           mkdir ..\pack-ace
-          for /r build-cpu %%f in (ace-lm.exe ace-synth.exe *.dll) do copy "%%f" ..\pack-ace\ >nul
+          for /r build-cpu %%f in (ace-lm.exe ace-synth.exe ace-understand.exe *.dll) do copy "%%f" ..\pack-ace\ >nul
           copy LICENSE ..\pack-ace\LICENSE.txt
           cd ..
           dir pack-ace
@@ -57,9 +57,9 @@ jobs:
         run: |
           cd src-ace
           cmake -S . -B build-vk -G "Ninja" -DCMAKE_BUILD_TYPE=Release -DGGML_NATIVE=OFF -DGGML_AVX2=ON -DGGML_VULKAN=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded -DGGML_OPENMP=OFF -DCMAKE_PREFIX_PATH="%VULKAN_SDK%" -DSPIRV-Headers_DIR="%VULKAN_SDK%\share\cmake\SPIRV-Headers" || exit /b 1
-          cmake --build build-vk --target ace-lm ace-synth -j %NUMBER_OF_PROCESSORS% || exit /b 1
+          cmake --build build-vk --target ace-lm ace-synth ace-understand -j %NUMBER_OF_PROCESSORS% || exit /b 1
           mkdir ..\pack-ace-vk
-          for /r build-vk %%f in (ace-lm.exe ace-synth.exe *.dll) do copy "%%f" ..\pack-ace-vk\ >nul
+          for /r build-vk %%f in (ace-lm.exe ace-synth.exe ace-understand.exe *.dll) do copy "%%f" ..\pack-ace-vk\ >nul
           copy LICENSE ..\pack-ace-vk\LICENSE.txt
           cd ..
           if not exist pack-ace-vk\ace-synth.exe exit /b 1

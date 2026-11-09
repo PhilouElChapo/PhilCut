@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.36 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.37 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.37
+- Fabrique musique (menu Fabrique, ou bouton Musique) : une fiche musicale (style, ambiance, tempo, tonalite, mesure, instruments, deroule, epoque et son, voix, paroles) devient une consigne solide en anglais, visible avant de creer. 42 styles en 8 familles, dont Symphonie, Classique, Baroque, Opera, Piano romantique, Valse, Choeur sacre, Chant gregorien, Marche, et des styles d'epoque (annees 30, musette, rock'n'roll, disco, synthwave). Nouvelles voix : tenor lyrique, mezzo-soprano, choeur de moines.
+- "Ameliorer avec l'IA" : l'IA (locale, ou cloud avec cout annonce) reecrit la fiche comme un producteur ; on relit et on modifie avant de creer.
+- "S'inspirer d'un morceau" : le morceau est analyse sur le poste (tempo, tonalite, mesure, son, deroule ; genre et instruments si le moteur le permet) ; seul le style est garde, jamais la melodie, les paroles ni le nom. Un morceau declare libre de droits ou a vous peut aussi etre reorchestre dans le style choisi.
+- Voix de reference : votre voix, ou celle d'une personne d'accord (declare). Jamais un chanteur ou une personne connue : son style est decrit ("a la maniere de").
+- Musique en ligne : chercher, ecouter et telecharger le son d'un titre YouTube Music, d'une video YouTube, ou d'un enregistrement libre d'archive.org ; texte clair sur les droits (oeuvre et enregistrement), source gardee dans le fichier.
+- Creations a refaire ou a calculer (menu Fabrique) : les creations IA demandees ailleurs ou dont le fichier manque ; proposees, jamais lancees seules ; une creation deja faite ici ou sur le Drive est reprise, jamais payee deux fois ; comparaison avant / apres.
 
 ### 0.9.36
 - 44 elements animes, en 6 familles (bouton Goodies) : Reactions et emoji (coeur qui bat, coeurs qui s'envolent, etincelles, visages, pouce, flamme), Fleches et reperes (fleches qui se tracent, cercle et soulignement a la main, coche, croix, !, ?, cible, curseur qui clique, chevrons), Vlog et reseaux (point d'enregistrement, cloche, bulles, chargement, epingle de lieu, avion qui passe, horloge, loupe), Meteo et nature (soleil, nuage, pluie, eclair, flocon, arc-en-ciel), Fete (feu d'artifice, ballons, etoile filante, cadeau, explosion de BD), Formes (ondes, bulles, pastille). Dessins vectoriels : nets a toute taille, couleurs modifiables, identiques sur PC et (bientot) telephone. Le catalogue s'enrichit chaque mois sans reinstaller.

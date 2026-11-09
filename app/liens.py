@@ -49,6 +49,12 @@ def noter(d, params=None):
     for m in d.get("medias") or []:
         ch = m.get("chemin") or ""
         if ch and os.path.exists(ch) and not m.get("copie_legere"):
+            if not m.get("recette") and os.path.exists(ch + ".ia.json"):     # la recette voyage avec le projet (0.9.37)
+                try:
+                    from .recettes_ia import noter_recette
+                    noter_recette(m, ch)
+                except Exception:      # noqa: BLE001
+                    pass
             ancien = (m.get("emplacements") or {}).get(ici)
             try:
                 st = os.stat(ch)

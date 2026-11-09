@@ -86,6 +86,21 @@ def main():
         out = C.musique("lofi", os.path.join(d, "musique.mp3"), duree=10, params=params)
         return f"{os.path.getsize(out)} octets"
     essai("Musique (ACE-Step)", musique, bloquant=False)
+
+    def comprendre():                     # 0.9.37 : la fabrique musique écoute un morceau (ace-understand)
+        from app import musique_ia as MI
+        r = MI.analyser(os.path.join(d, "musique.mp3"), params)
+        return f"compris={r['compris']} bpm={r['bpm']} {r['tonalite']} : {r['caption_en'][:120]}"
+    essai("Musique : écoute d'un morceau (ace-understand)", comprendre, bloquant=False)
+
+    def reorchestrer():                   # morceau « à moi » réorchestré (cover)
+        from app import musique_ia as MI
+        src = os.path.join(d, "musique.mp3")
+        MI.declarer(src, a_moi=True)
+        f = dict(MI.fiche_vide(), style="symphonie", duree=10, source={"chemin": src, "force": 0.5})
+        out, _c = MI.creer(f, os.path.join(d, "reorchestre.mp3"), params)
+        return f"{os.path.getsize(out)} octets"
+    essai("Musique : réorchestrer un morceau (cover)", reorchestrer, bloquant=False)
     return 0 if ok else 1
 
 

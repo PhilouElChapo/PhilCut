@@ -1697,6 +1697,10 @@ class Editeur(QWidget):
     def _demande_menu(self, ident, quoi):
         if quoi == "ou_media":
             c = self.projet.clip(ident)
+            if c and (self.projet.media(c.get("media")) or {}).get("a_calculer"):      # création demandée ailleurs, à calculer ici
+                from .dialogues_recettes import DialogueCreations
+                DialogueCreations(self).exec()
+                return
             if c:
                 from .dialogues_drive import DialogueManquants
                 d = DialogueManquants(self, c.get("media"))
@@ -2577,9 +2581,27 @@ class Editeur(QWidget):
         return d
 
     def atelier_ia(self, famille="image"):
-        """Atelier IA local : image du film retouchée, effet sur la partie en jaune, logo, musique."""
+        """Atelier IA local : image du film retouchée, effet sur la partie en jaune, logo ; la musique a sa fabrique (0.9.37)."""
+        if famille == "musique":
+            return self.fabrique_musique()
         from .dialogues_creatif import DialogueAtelierIA
         DialogueAtelierIA(self, famille).exec()
+
+    def fabrique_musique(self, fiche=None, remplace=None):
+        """Fabrique musique (brique commune avec PhilMusic) : PhilCut lui donne de quoi poser le morceau dans le film."""
+        from .dialogues_musique_ia import DialogueFabriqueMusique, Hote
+        ed = self
+        h = Hote()
+
+        def poser(chemin, r, a_la_ligne):
+            ed._piste_depot = ("audio", float(ed.timeline.position if a_la_ligne else 0.0), dict(r, volume=0.8, _couper_fin=True))
+            ed.importer([chemin])
+        h.poser = poser
+        h.garder = lambda chemin: ed.importer([chemin])
+        if remplace:
+            h.remplacer = lambda chemin, r: ed.remplacer_media_clip(remplace, chemin, r)
+        duree = max(10.0, min(240.0, round(self.projet.duree() or 60.0)))
+        DialogueFabriqueMusique(self, self.params, h, fiche, duree).exec()
 
     def reprendre_creation(self, clip_id=None, media_id=None):
         """Rouvre l'Atelier IA avec ce qui a servi à créer ce morceau, cette image ou ce clip (phrase, paroles, voix, durée) ;
@@ -2588,12 +2610,18 @@ class Editeur(QWidget):
         from .dialogues_creatif import DialogueAtelierIA
         c = self.projet.clip(clip_id) if clip_id else None
         m = self.projet.media(c["media"] if c else media_id) or {}
-        rec = creations.lire(m.get("chemin") or "")
+        rec = creations.lire(m.get("chemin") or "") or m.get("recette")
         if not rec:
             self.encart.message(_("Ce fichier n'a pas de recette IA : il n'a pas été créé par l'Atelier IA de PhilCut 0.9.19 ou plus."), 7000)
             return
         if c is None:
             c = next((x for x in self.projet.clips if x["media"] == m.get("id")), None)
+        if (rec.get("famille") or "musique") == "musique":          # 0.9.37 : la fabrique musique, avec la fiche d'origine
+            fiche = rec.get("fiche") or {"phrase": rec.get("prompt") or "", "duree": rec.get("duree") or 60,
+                                         "instrumental": rec.get("instrumental", True), "paroles": rec.get("paroles") or "",
+                                         "voix": rec.get("voix") or "auto", "langue": rec.get("langue") or "fr",
+                                         "style": (rec.get("effet") or "m_pop_aerienne")[2:]}
+            return self.fabrique_musique(fiche, c["id"] if c else None)
         d = DialogueAtelierIA(self, rec.get("famille") or "musique")
         d.reprendre(rec, c["id"] if c else None)
         d.exec()

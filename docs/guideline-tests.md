@@ -157,6 +157,18 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T54 — 0.9.37 : fabrique musique, musique en ligne, créations à refaire
+
+1. **Ouvrir** : Fabrique › « Fabrique musique… » (ou bouton Musique). **Attendu** : sections Style et ambiance, Fiche musicale, S'inspirer d'un morceau, Voix de référence, Consigne envoyée au moteur.
+2. **Styles** : famille « Classique, opéra, sacré » : Symphonie, Opéra, Chant grégorien… La consigne en bas change à chaque réglage (tempo, tonalité « ré mineur », mesure).
+3. **À la manière de** : écrire « chanté à la manière de Frank Sinatra » : ligne bleue avec la description ; la consigne ne contient ni « Sinatra » ni « chanté ».
+4. **Améliorer** : « Améliorer avec l'IA » (locale, puis cloud : coût demandé) : consigne réécrite, cochée, modifiable.
+5. **Créer** : « Créer la musique » : étape, temps écoulé et restant, explication quand la barre est pleine ; écouter, garder un passage, « Poser sous la vidéo ».
+6. **S'inspirer** : « Choisir un morceau… » (un MP3 à vous) : résumé (tempo, tonalité, mesure, son) et l'alerte orange. « Partir de ce morceau » reste grisé tant que « Ce morceau est libre de droits ou à moi… » n'est pas déclaré ; ensuite réorchestration possible (curseur Proche / Libre).
+7. **Voix de référence** : choisir un enregistrement : PhilCut demande « C'est ma voix » ou « Une personne d'accord » ; annuler = pas de voix de référence.
+8. **Musique en ligne** : Fabrique › « Musique en ligne… » : texte sur les droits ; YouTube Music, YouTube, archives libres ; installer yt-dlp si demandé ; chercher « Dies irae », écouter (double-clic), télécharger (confirmation la première fois), « Poser dans le film ». Le MP3 a son titre, son artiste et la source en commentaire.
+9. **Créations à refaire** : déplacer un morceau créé par la fabrique, rouvrir le projet : message « création(s) IA à refaire » ; la liste propose « Sur ce poste (gratuit) » ; lancer, comparer avant / après, « Prendre le nouveau ».
+
 ## T53 — 0.9.36 : éléments animés
 
 1. **Galerie** : bouton Goodies. Familles « ✶ Réactions et emoji », « ✶ Flèches et repères animés », « ✶ Vlog et réseaux », « ✶ Météo et nature », « ✶ Fête animée », « ✶ Formes animées ». **Attendu** : cliquer un élément, il s'anime dans le cadre de droite.

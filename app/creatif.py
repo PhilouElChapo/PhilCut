@@ -217,18 +217,18 @@ STYLES_MUSIQUE = [
 
 
 def musique(style, sortie, duree=60.0, params=None, instrumental=True, paroles="", langue="fr", bpm=0, progression=None, arret=lambda: False,
-            voix=""):
+            voix="", options=None):
     """Un morceau (MP3) d'environ `duree` secondes dans le style donné (phrase libre ou clef de STYLES_MUSIQUE)."""
     cle, m, e = modele_pour("musique", params)
     genre_gpu = m.get("moteur_gpu", "musique_gpu")
     try:
         return _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, progression, arret, cle, m, e,
-                        _moteur("musique", genre_gpu, params, progression), voix)
+                        _moteur("musique", genre_gpu, params, progression), voix, options)
     except ErreurCreatif as err:
         if not _repli_processeur(err, "musique", genre_gpu, params, progression):
             raise
     return _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, progression, arret, cle, m, e,
-                    _moteur("musique", genre_gpu, params, progression), voix)
+                    _moteur("musique", genre_gpu, params, progression), voix, options)
 
 
 def _repli_processeur(err, genre_moteur, genre_gpu, params, progression=None):
@@ -245,7 +245,19 @@ def _repli_processeur(err, genre_moteur, genre_gpu, params, progression=None):
     return True
 
 
-def _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, progression, arret, cle, m, e, genre, voix=""):
+def _extrait_wav(source, duree, dossier):
+    """Les `duree` premières secondes du morceau source, en WAV 48 kHz stéréo (ce que le moteur lit)."""
+    from . import moteur
+    w = os.path.join(dossier, "source.wav")
+    moteur.lancer(["-y", "-i", source, "-t", f"{float(duree):.2f}", "-ac", "2", "-ar", "48000", w])
+    return w
+
+
+def _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, progression, arret, cle, m, e, genre, voix="", options=None):
+    """options (0.9.37, fabrique musique) : keyscale, timesignature ; source (morceau libre ou à vous, réorchestré :
+    « cover » d'ACE-Step, sans l'étape de composition), force_source (0..1), fidele (garde la structure de près) ;
+    reference (timbre : votre voix ou celle d'une personne d'accord)."""
+    options = options or {}
     caption = dict((k, c) for k, _n, c in STYLES_MUSIQUE).get(style, style)
     if voix and not instrumental and voix.lower() not in caption.lower():         # qui chante : « female vocals »…
         caption = f"{caption}, {voix}"
@@ -257,8 +269,29 @@ def _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, p
            "inference_steps": 8, "lm_model": roles.get("lm", ""), "synth_model": roles.get("dit", ""), "output_format": "mp3"}
     if not req["bpm"]:
         req["bpm"] = {"lofi": 80, "piano": 72, "ambient": 70, "cinema": 90, "acoustique": 100, "pop_aerienne": 112, "rock": 128, "electro": 126}.get(style, 100)
+    if options.get("keyscale"):
+        req["keyscale"] = options["keyscale"]
+    if options.get("timesignature"):
+        req["timesignature"] = str(options["timesignature"])
     if not req["keyscale"]:
         req["keyscale"] = "C major"
+    ref = ["--ref-audio", options["reference"]] if options.get("reference") else []
+    if options.get("source"):                     # réorchestrer un morceau libre ou à vous : pas d'étape de composition
+        src = _extrait_wav(options["source"], req["duration"], d)
+        req.update(task_type="cover-nofsq" if options.get("fidele") else "cover",
+                   audio_cover_strength=float(max(0.05, min(1.0, options.get("force_source", 0.5)))))
+        for k in ("lm_model", "duration"):
+            req.pop(k, None)
+        chemin = os.path.join(d, "demande.json")
+        with open(chemin, "w", encoding="utf-8") as f:
+            json.dump(req, f, ensure_ascii=False)
+        _lancer(genre, ["--models", P.dossier_modele(cle), "--src-audio", src] + (ref or (["--ref-audio", src] if options.get("fidele") else []))
+                + ["--request", chemin], progression, arret, journal="musique", etape=_("Réorchestration du morceau"))
+        sons = [f for f in os.listdir(d) if f.lower().endswith((".mp3", ".wav")) and f != "source.wav"]
+        if not sons:
+            raise ErreurCreatif(_("Le moteur n'a pas produit de son."))
+        shutil.move(os.path.join(d, sorted(sons)[0]), sortie)
+        return sortie
     chemin = os.path.join(d, "demande.json")
     with open(chemin, "w", encoding="utf-8") as f:
         json.dump(req, f, ensure_ascii=False)
@@ -273,7 +306,7 @@ def _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, p
     suite = os.path.join(d, "demande0.json")
     if not os.path.exists(suite):
         raise ErreurCreatif(_("La première étape de la musique n'a rien produit."))
-    _lancer(genre, ["--models", modeles_dir, "--request", suite], p2, arret, journal="musique", etape=_("Étape 2/2 : fabrication du son"))
+    _lancer(genre, ["--models", modeles_dir] + ref + ["--request", suite], p2, arret, journal="musique", etape=_("Étape 2/2 : fabrication du son"))
     sons = [f for f in os.listdir(d) if f.lower().endswith((".mp3", ".wav"))]
     if not sons:
         raise ErreurCreatif(_("Le moteur n'a pas produit de son."))

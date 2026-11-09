@@ -258,6 +258,14 @@ class Fenetre(QMainWindow):
              lambda: self._ed(lambda ed: ed.sequence_ia()))
         actf(None, _("Nouvelle séquence IA…"), _("Repartir d'une histoire vide (les séquences précédentes restent dans le projet)."),
              lambda: self._ed(lambda ed: ed.sequence_ia(nouvelle=True)))
+        actf(icone("musique"), _("Fabrique musique : créer une musique par IA (sur ce poste)…"),
+             _("Une fiche musicale (style, ambiance, tempo, tonalité, instruments, voix) devient une consigne solide, améliorable par "
+               "l'IA ; s'inspirer d'un morceau ; créé sur ce poste, gratuitement."), lambda: self._ed(lambda ed: ed.fabrique_musique()))
+        actf(None, _("Musique en ligne (YouTube Music, YouTube, archives libres)…"),
+             _("Chercher, écouter et télécharger le son d'un titre, avec ce qui est permis expliqué."), lambda: self.musique_en_ligne())
+        actf(None, _("Créations à refaire ou à calculer…"),
+             _("Les créations IA demandées sur un autre appareil, ou dont le fichier manque : les calculer ici gratuitement ou les "
+               "refaire, comparer avant / après, sans jamais payer deux fois."), lambda: self._ed(lambda ed: self.creations_a_traiter(ed)))
         actf(None, _("Mes plans IA déjà fabriqués (dossier)…"),
              _("Les plans vidéo générés (Gemini, Kling…) et les logos fabriqués sont gardés dans ce dossier, même s'ils ne sont "
                "plus dans un projet : on les ouvre ou on les glisse dans les médias."),
@@ -409,6 +417,15 @@ class Fenetre(QMainWindow):
                 ed.encart.suivre_message(texte, (_("Où sont-ils ?…"), lambda: self.medias_introuvables(ed)), 30000)
             elif r["trouves"]:
                 ed.encart.message(_("{n} média(s) retrouvé(s) à un autre emplacement sur ce poste.", n=len(r["trouves"])), 6000)
+            try:                                       # créations IA à calculer ou à refaire : proposées, jamais lancées seules
+                from . import recettes_ia
+                n_rec = len(recettes_ia.a_traiter(p, self.params))
+            except Exception:      # noqa: BLE001
+                n_rec = 0
+            if n_rec:
+                QTimer.singleShot(1500, lambda: ed.encart.suivre_message(
+                    _("{n} création(s) IA à refaire ou à calculer sur ce poste.", n=n_rec),
+                    (_("Voir la liste…"), lambda: self.creations_a_traiter(ed)), 30000))
             if getattr(p, "plus_recent", False):
                 QMessageBox.information(self, _("Ouvrir"), _("Ce projet a été enregistré par une version plus récente de PhilCut (un autre "
                                                               "appareil à jour). Il s'ouvre ; ce que cette version ne connaît pas est "
@@ -932,9 +949,22 @@ class Fenetre(QMainWindow):
         m.addAction(icone("importer", ac), _("Importer une musique…"), lambda: ed.importer())
         m.addAction(icone("musique", ac), _("Mes musiques (chercher, écouter, poser)…"), lambda: self.mes_musiques(ed))
         m.addAction(icone("telecharger", ac), _("Bibliothèque musicale libre (chercher, écouter, télécharger)…"), lambda: self.bibliotheque_musicale(ed))
-        m.addAction(icone("ia", ac), _("Créer une musique par IA (sur ce poste)…"), lambda: ed.atelier_ia("musique"))
+        m.addAction(icone("telecharger", ac), _("Musique en ligne (YouTube Music, YouTube, archives libres)…"), lambda: self.musique_en_ligne(ed))
+        m.addAction(icone("ia", ac), _("Fabrique musique : créer une musique par IA (sur ce poste)…"), lambda: ed.fabrique_musique())
         from .widgets import fenetre_choix
         fenetre_choix(self, m, _("Musique"), _("D'où vient la musique ? Elle est posée sur la piste Musique, sous la vidéo."))
+
+    def creations_a_traiter(self, ed=None):
+        ed = ed or self.editeur_courant()
+        if ed:
+            from .dialogues_recettes import DialogueCreations
+            DialogueCreations(ed).exec()
+
+    def musique_en_ligne(self, ed=None):
+        """Chercher, écouter, télécharger un son (YouTube Music, YouTube, archives libres) ; le poser dans le film."""
+        ed = ed or self._editeur_ou_nouveau()
+        from .dialogues_musique_ia import DialogueMusiqueEnLigne
+        DialogueMusiqueEnLigne(self, self.params, poser=lambda chemin: self._poser_musique(ed, chemin)).exec()
 
     def mes_musiques(self, ed=None):
         """Mon dossier de musiques et les musiques libres téléchargées, dans une fenêtre (recherche, classement, écoute)."""

@@ -165,7 +165,8 @@ class ItemClip(QGraphicsRectItem):
             p.drawRoundedRect(r, 5, 5)
             p.setPen(QColor("#ffb0b0"))
             p.drawText(QRectF(r.x() + 6, r.y() + 16, r.width() - 12, max(14.0, r.height() - 18)), Qt.AlignCenter,
-                       QFontMetrics(f).elidedText(_("Introuvable ici"), Qt.ElideRight, int(r.width() - 12)))
+                       QFontMetrics(f).elidedText(_("A calculer") if (self.media or {}).get("a_calculer") else _("Introuvable ici"),
+                                                  Qt.ElideRight, int(r.width() - 12)))
         elif self.media and self.media.get("copie_legere") and r.width() > 40:
             p.setPen(QColor("#9fd7ff"))
             p.drawText(QRectF(r.x() + 6, r.bottom() - 15, r.width() - 12, 14), Qt.AlignRight | Qt.AlignVCenter,
