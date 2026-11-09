@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.38 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.39 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.39
+- Mise a jour : la fenetre se reduit (bouton "Reduire" ou bouton de reduction) ; le telechargement se suit dans la barre du bas, avec "Afficher" pour la rouvrir et "Installer et redemarrer" a la fin. Plus d'estimation fantaisiste du temps restant pendant les premieres secondes.
 
 ### 0.9.38
 - Creations a refaire ou a calculer : les images retouchees, logos et repliques se refont aussi depuis la liste, sur ce poste (gratuit) ou avec Gemini (cout total annonce et confirme, "deja payee une fois" signale). L'image de depart est gardee avec la recette, la creation se refait donc sur un autre appareil.

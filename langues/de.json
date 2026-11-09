@@ -6530,5 +6530,10 @@
  "Total estimé : ≈ {t} €. Continuer ?": "Geschätzte Summe: ≈ {t} €. Fortfahren?",
  "déjà payée une fois": "bereits einmal bezahlt",
  "Ces créations seront refaites avec votre clef Gemini (payant) :": "Diese Kreationen werden mit Ihrem Gemini-Schlüssel neu erstellt (kostenpflichtig):",
- "Envoi à Gemini…": "Senden an Gemini…"
+ "Envoi à Gemini…": "Senden an Gemini…",
+ "Réduire (suivi dans la barre du bas)": "Minimieren (in der unteren Leiste verfolgen)",
+ "La fenêtre se range ; le téléchargement continue et se suit dans la barre du bas. Elle revient d'elle-même quand la mise à jour est prête, ou par « Afficher » dans la barre.": "Das Fenster wird weggelegt; der Download läuft weiter und lässt sich in der unteren Leiste verfolgen. Es kommt von selbst zurück, wenn das Update bereit ist, oder über « Anzeigen » in der Leiste.",
+ "{f} / {t} Mo": "{f} / {t} MB",
+ "{f} Mo reçus": "{f} MB empfangen",
+ "{f} / {t} Mo · mesure de la vitesse…": "{f} / {t} MB · Geschwindigkeit wird gemessen…"
 }

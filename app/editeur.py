@@ -45,8 +45,9 @@ class Encart(QFrame):
         self.hide()
         self.tache = None
 
-    def suivre(self, tache, texte, action=None):
-        """action : (libelle, fonction) proposee a la fin. La tâche est aussi inscrite au Centre d'activité."""
+    def suivre(self, tache, texte, action=None, pendant=None):
+        """action : (libelle, fonction) proposee a la fin ; pendant : (libelle, fonction) proposé pendant la tâche
+        (ex. « Afficher » une fenêtre réduite). La tâche est aussi inscrite au Centre d'activité."""
         from . import activite
         activite.centre().suivre(tache, texte)
         self.tache = tache
@@ -59,12 +60,21 @@ class Encart(QFrame):
         except (RuntimeError, TypeError):
             pass
         self.b_stop.clicked.connect(tache.stopper)
+        if pendant:
+            self.bouton.setText(pendant[0])
+            self.bouton.show()
+            try:
+                self.bouton.clicked.disconnect()
+            except (RuntimeError, TypeError):
+                pass
+            self.bouton.clicked.connect(pendant[1])
         tache.progression.connect(lambda f, t: (self.barre.setValue(int(f * 1000)), self.lbl.setText(texte + (" — " + t if t else ""))))
         tache.fini.connect(lambda r, e: self._fin(texte, e, action))
         self.show()
 
     def _fin(self, texte, erreur, action):
         self.b_stop.hide()
+        self.bouton.hide()
         if erreur:
             self.lbl.setText(_("✕ {t} : {e}", t=texte, e=str(erreur)[:180]))
             self.lbl.setToolTip(str(erreur))

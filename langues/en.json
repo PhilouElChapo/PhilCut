@@ -6539,5 +6539,10 @@
  "Total estimé : ≈ {t} €. Continuer ?": "Estimated total: ≈ €{t}. Continue?",
  "déjà payée une fois": "already paid once",
  "Ces créations seront refaites avec votre clef Gemini (payant) :": "These creations will be redone with your Gemini key (paid):",
- "Envoi à Gemini…": "Sending to Gemini…"
+ "Envoi à Gemini…": "Sending to Gemini…",
+ "Réduire (suivi dans la barre du bas)": "Minimise (follow in the bottom bar)",
+ "La fenêtre se range ; le téléchargement continue et se suit dans la barre du bas. Elle revient d'elle-même quand la mise à jour est prête, ou par « Afficher » dans la barre.": "The window tucks away; the download continues and can be followed in the bottom bar. It comes back by itself when the update is ready, or with « Show » in the bar.",
+ "{f} / {t} Mo": "{f} / {t} MB",
+ "{f} Mo reçus": "{f} MB received",
+ "{f} / {t} Mo · mesure de la vitesse…": "{f} / {t} MB · measuring speed…"
 }

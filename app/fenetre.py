@@ -1514,7 +1514,8 @@ class Fenetre(QMainWindow):
         t = d.demarrer()
         self.taches.append(t)
         try:
-            self.encart_global.suivre(t, _("Téléchargement de la mise à jour"))
+            self.encart_global.suivre(t, _("Téléchargement de la mise à jour"), action=(_("Installer et redémarrer"), d.installer),
+                                      pendant=(_("Afficher"), lambda: (d.showNormal(), d.raise_())))
             self.centre.suivre(t, _("Mise à jour de PhilCut"))
         except Exception:      # noqa: BLE001 : la fenêtre suffit
             pass

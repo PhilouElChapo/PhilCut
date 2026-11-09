@@ -24,6 +24,7 @@ class DialogueMaj(QDialog):
         self.setWindowTitle(_("Mise à jour de PhilCut"))
         self.setMinimumWidth(560)
         self.setModal(False)
+        self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint)       # réductible, comme une vraie fenêtre
         v = QVBoxLayout(self)
         titre = QLabel(_("Téléchargement de PhilCut {v}", v=version))
         titre.setStyleSheet("font-size:16px;font-weight:600")
@@ -40,6 +41,11 @@ class DialogueMaj(QDialog):
         aide.setStyleSheet("color:#9aa4b2")
         v.addWidget(aide)
         h = QHBoxLayout()
+        self.b_reduire = QPushButton(_("Réduire (suivi dans la barre du bas)"))
+        self.b_reduire.setToolTip(_("La fenêtre se range ; le téléchargement continue et se suit dans la barre du bas. Elle revient d'elle-même "
+                                    "quand la mise à jour est prête, ou par « Afficher » dans la barre."))
+        self.b_reduire.clicked.connect(self.hide)
+        h.addWidget(self.b_reduire)
         h.addStretch(1)
         self.b_installer = QPushButton(_("Installer et redémarrer"))
         self.b_installer.setStyleSheet("font-weight:600;padding:6px 14px")
@@ -56,10 +62,11 @@ class DialogueMaj(QDialog):
         self.tache.progression.connect(self._progression, Qt.QueuedConnection)
         self.tache.fini.connect(self._fini, Qt.QueuedConnection)
 
-    @staticmethod
-    def _progression_fond(t):
+    def _progression_fond(self, t):
         def suivre(fait, total=0):
-            t.avancer(fait / total if total else 0.0, f"{fait}|{total}")
+            self._fait, self._total = fait, total
+            t.avancer(fait / total if total else 0.0,
+                      _("{f} / {t} Mo", f=round(fait / 1e6), t=round(total / 1e6)) if total else _("{f} Mo reçus", f=round(fait / 1e6)))
         return suivre
 
     def demarrer(self):
@@ -69,15 +76,15 @@ class DialogueMaj(QDialog):
         return self.tache
 
     def _progression(self, f, texte):
-        try:
-            fait, total = (int(x) for x in texte.split("|"))
-        except ValueError:
-            return
+        fait, total = getattr(self, "_fait", 0), getattr(self, "_total", 0)
         ecoule = max(0.1, time.monotonic() - self._t0)
         vitesse = fait / ecoule
         if total:
             self.barre.setRange(0, 1000)
             self.barre.setValue(int(fait / total * 1000))
+            if ecoule < 3 and fait < 20e6:               # pas d'estimation fantaisiste dans les premières secondes
+                self.detail.setText(_("{f} / {t} Mo · mesure de la vitesse…", f=round(fait / 1e6), t=round(total / 1e6)))
+                return
             reste = (total - fait) / vitesse if vitesse > 0 else 0
             self.detail.setText(_("{f} / {t} Mo · {v:.1f} Mo/s · encore environ {r}", f=round(fait / 1e6), t=round(total / 1e6),
                                   v=vitesse / 1e6, r=_duree(reste)))
@@ -103,6 +110,7 @@ class DialogueMaj(QDialog):
         self.detail.setText(_("✓ Mise à jour téléchargée en {d}. Enregistrez vos projets, puis « Installer et redémarrer ».",
                               d=_duree(time.monotonic() - self._t0)))
         self.b_installer.show()
+        self.b_reduire.hide()
         self.b_arreter.setText(_("Plus tard"))
         self.show()
         self.raise_()
