@@ -22,7 +22,8 @@ COMMUNS = ["auteur", "langue", "outils_epingles", "barre_rapide", "volet", "ia_m
            "export_destination", "assistant_niveau", "ia_consignes_recette", "effets_coches", "goodies_coches", "effets_favoris", "effets_recents", "effets_familles_ouvertes",
            "musiques_dossier", "chaine_nom", "fabrique_style", "veo_actif", "ia_confirmer_cout", "modeles_video_perso",
            "tampons_guetter", "tampons_classement", "tampons_placement", "ytdlp_accord", "ytdlp_hauteur", "ytdlp_son_seul", "ytdlp_resultats", "tampons_langue_recherche",
-           "musiques_classement", "styles_perso", "creations_purge_jours", "secours_minutes", "secours_versions", "export_autres", "nouveautes_vues", "lecture_effets"]
+           "musiques_classement", "styles_perso", "creations_purge_jours", "secours_minutes", "secours_versions", "export_autres", "nouveautes_vues", "lecture_effets",
+           "proposer_copie_legere", "creations_drive", "drive_purge_jours", "superpositions_alpha"]
 POSTE = ["secrets_refuses", "disposition_vue", "volet_largeur", "biblio_replies", "sessions_vues", "synchro_etat",
          "machine", "zoom", "racines", "nas", "dernier_dossier", "drive", "drive_compte", "association_video",
          "recherche_racines", "proxys", "ia_locale", "ia_poste_leger", "ia_gpu", "ia_locale_modeles", "dossier_flow", "dossier_proxys", "encodeur", "apercu_images", "ajout_auto", "dernier_dossier_export", "barre_taille", "dossier_images", "tailles_vue", "apercu_fidele", "preparation_auto", "secrets_empreinte", "dossier_rushes", "fenetre_geometrie", "fenetre_maximisee", "dossier_musique_import", "dossier_telechargements", "dossier_documents",
@@ -356,13 +357,16 @@ def libelle_commun(k):
             "ia_consignes_recette": _("Consignes personnelles pour l'assistant"), "effets_coches": _("Effets téléchargés"),
             "goodies_coches": _("Goodies téléchargés"), "musiques_dossier": _("Dossier de musiques personnel"),
             "chaine_nom": _("Nom de la chaîne / signature des vidéos"), "fabrique_style": _("Style de la Fabrique"),
-            "veo_actif": _("Génération Veo par l'API (payante)")}.get(k, k)
+            "veo_actif": _("Génération Veo par l'API (payante)"),
+            "proposer_copie_legere": _("Proposer la copie légère sur le Drive"), "creations_drive": _("Créations IA déposées sur le Drive"),
+            "drive_purge_jours": _("Nettoyage de l'espace PhilCut sur le Drive"), "superpositions_alpha": _("Superpositions avec transparence")}.get(k, k)
 
 
 # valeur utilisee quand le reglage n'a jamais ete touche sur un poste (absent = cette valeur)
 DEFAUTS_COMMUNS = {"comptes_icone": "photo", "barre_style": "auto", "ia_consignes_recette": "",
                    "export_destination": "youtube", "assistant_niveau": "recettes", "effets_coches": [], "goodies_coches": [],
-                   "musiques_dossier": "", "chaine_nom": "", "fabrique_style": "", "veo_actif": False}
+                   "musiques_dossier": "", "chaine_nom": "", "fabrique_style": "", "veo_actif": False,
+                   "proposer_copie_legere": True, "creations_drive": "demander", "drive_purge_jours": 90, "superpositions_alpha": True}
 
 
 def _effectif(params, k):

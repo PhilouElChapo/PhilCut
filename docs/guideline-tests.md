@@ -157,6 +157,18 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T52 — 0.9.35 : nouveaux effets et projets entre appareils
+
+1. **Effets** : un plan, Effets : familles Rétro, Glitch, Lentille, Ouvertures, Cinématique, Mouvement, Lumières. Cliquer « Super 8 », « Ouvrir en cercle », « Lucioles », « Néon rose » : l'aperçu tourne. **Attendu** : effet visible, ouverture qui progresse sur la durée du plan.
+2. **Export** : poser 2 effets de familles différentes, exporter : la barre avance, le film les montre. Le journal indique « carte graphique » ou « version simplifiée ».
+3. **Lueur** : sur une vidéo sombre, effet Lueur : **Attendu** : plus de noirs violets.
+4. **Média déplacé** : enregistrer un projet, renommer le dossier d'un rush, rouvrir. **Attendu** : message « introuvable(s) », plan grisé « Introuvable ici » ; « Où sont-ils ? » › « Où est ce fichier ? » : le plan revient, les autres du même dossier aussi.
+5. **Autre poste** : copier le projet sur un autre PC où les rushs sont dans Vidéos ou Téléchargements : **Attendu** : retrouvés sans rien faire.
+6. **Conflit** : ouvrir le même projet (dossier synchronisé) sur deux postes, enregistrer sur l'un puis sur l'autre. **Attendu** : message « modifié aussi sur … », « Voir les versions » montre l'autre.
+7. **Drive** : lieu de synchronisation choisi, enregistrer : fenêtre « Retrouver ce projet sur vos autres appareils » ; cocher la copie légère : la barre avance, `PhilCut/Medias/…_720p.mp4` apparaît.
+8. **Espace Drive** : Fichier › « Espace PhilCut sur le Drive… » : catégories, cases pré-cochées pour ce qui est ancien ou plus utilisé, réglages jamais cochés ; décocher, « Supprimer la sélection » : confirmation, puis suppression.
+9. **Préférences** : Comptes et synchro › Projets entre vos appareils : les 4 réglages, note orange sur la transparence.
+
 ## T51 — 0.9.33 : séquence IA
 
 1. **Ouvrir** : Fabrique › « Séquence IA… » (ou Fabrique › Plan généré par IA › « Plusieurs plans… »). **Attendu** : trois onglets Histoire, Personnages et lieux, Plans.

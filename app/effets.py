@@ -260,7 +260,9 @@ def filtre(effet, ctx=None):
         return "eq=brightness=0.05:contrast=1.02:saturation=0.95,curves=lighter"
     if i == "glow":
         r, a = f("rayon"), f("intensite")
-        return f"split[g0][g1];[g1]gblur=sigma={r:.1f}[g1];[g0][g1]blend=all_mode=screen:all_opacity={a:.2f}"
+        n = _etiquette()           # mélange « écran » en RVB : en YUV il teintait les noirs en violet (corrigé en 0.9.35)
+        return (f"format=gbrp,split[{n}a][{n}b];[{n}b]gblur=sigma={r:.1f}[{n}c];[{n}a][{n}c]blend=all_mode=screen:all_opacity={a:.2f},"
+                f"format=yuv420p")
     if i == "glitch":
         s = f("force")
         return f"rgbashift=rh={int(6 * s)}:bh={int(-6 * s)}:gv={int(2 * s)},noise=alls={int(18 * s)}:allf=t+u,tblend=all_mode=lighten:all_opacity=0.25"
@@ -418,6 +420,12 @@ def catalogue_en_ligne(delai=10, reseau=True):
     from .catalogue_ligne import charger, localise
     d = charger("effets.json", reseau, delai)
     n = 0
+    try:
+        avant = len(GL)
+        integrer_gl(reseau)
+        n += len(GL) - avant
+    except Exception:      # noqa: BLE001 : jamais bloquant
+        pass
     familles = {k for k, _l in FAMILLES} - {"transition", "personne"}
     for k, e in (d.get("effets") or {}).items():
         if k not in CATALOGUE and isinstance(e, dict) and e.get("ffmpeg") and e.get("famille", "wahou") in familles:
@@ -432,9 +440,37 @@ def catalogue_en_ligne(delai=10, reseau=True):
 _EN_LIGNE = {}
 
 
+def integrer_gl(reseau=False):
+    """Effets GL (shaders communs PC / Android, catalogue/effets_gl.json) : ajoutés au catalogue comme les autres, avec
+    leurs familles (Rétro, Glitch, Lentille…). Renvoie le nombre d'effets GL connus."""
+    from . import moteur_gl as G
+    from .catalogue_ligne import localise
+    cat = G.charger(reseau)
+    connues = {f for f, _n in FAMILLES}
+    for f in cat.get("familles") or []:
+        if f.get("id") and f["id"] not in connues:
+            FAMILLES.append((f["id"], localise(f.get("nom")) or f["id"]))
+            connues.add(f["id"])
+    for ident, e in cat["effets"].items():
+        sh = cat["shaders"].get(e["shader"], {})
+        CATALOGUE[ident] = (e.get("famille", "wahou"), localise(e.get("nom")) or ident,
+                            localise(e.get("description") or sh.get("description")) or "", G.parametres(ident), None)
+        GL.add(ident)
+    return len(cat["effets"])
+
+
+GL = set()            # identifiants des effets calculés par le moteur GL
+
+
 def filtre_en_ligne(ident, ctx=None):
     """Chaîne FFmpeg d'un effet du catalogue en ligne ; {largeur} et {hauteur} = taille de l'image du projet."""
     f = _EN_LIGNE.get(ident)
     if f and ctx:
         f = f.replace("{largeur}", str(int(ctx.get("largeur") or 1920))).replace("{hauteur}", str(int(ctx.get("hauteur") or 1080)))
     return f
+
+
+try:                     # effets GL connus dès l'import (export sans fenêtre, tests) ; noms remis dans la langue au démarrage
+    integrer_gl(False)
+except Exception:        # noqa: BLE001
+    pass

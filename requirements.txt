@@ -6,3 +6,4 @@ Pillow
 keyring
 cryptography
 truststore
+moderngl

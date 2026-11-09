@@ -1,0 +1,1978 @@
+{
+ "version": 1,
+ "note": "Shaders GLSL communs PC (OpenGL 3.3) et Android (OpenGL ES 3.0) ; voir app/moteur_gl.py",
+ "familles": [
+  {
+   "id": "retro",
+   "nom": {
+    "fr": "Rétro",
+    "en": "Retro",
+    "de": "Retro",
+    "es": "Retro",
+    "it": "Retrò"
+   }
+  },
+  {
+   "id": "glitch",
+   "nom": {
+    "fr": "Glitch",
+    "en": "Glitch",
+    "de": "Glitch",
+    "es": "Glitch",
+    "it": "Glitch"
+   }
+  },
+  {
+   "id": "lentille",
+   "nom": {
+    "fr": "Lentille",
+    "en": "Lens",
+    "de": "Objektiv",
+    "es": "Lente",
+    "it": "Obiettivo"
+   }
+  },
+  {
+   "id": "ouverture",
+   "nom": {
+    "fr": "Ouverture et fermeture",
+    "en": "Open and close",
+    "de": "Öffnen und Schließen",
+    "es": "Apertura y cierre",
+    "it": "Apertura e chiusura"
+   }
+  },
+  {
+   "id": "cinematique",
+   "nom": {
+    "fr": "Cinématique",
+    "en": "Cinematic",
+    "de": "Kino",
+    "es": "Cinemático",
+    "it": "Cinematografico"
+   }
+  },
+  {
+   "id": "motion",
+   "nom": {
+    "fr": "Motion et beat",
+    "en": "Motion and beat",
+    "de": "Bewegung und Beat",
+    "es": "Movimiento y ritmo",
+    "it": "Movimento e ritmo"
+   }
+  },
+  {
+   "id": "lumieres",
+   "nom": {
+    "fr": "Lumières et particules",
+    "en": "Lights and particles",
+    "de": "Lichter und Partikel",
+    "es": "Luces y partículas",
+    "it": "Luci e particelle"
+   }
+  }
+ ],
+ "shaders": {
+  "retro": {
+   "description": {
+    "fr": "Film ancien : grain, rayures, poussières, couleurs passées, image qui tremble.",
+    "en": "Old film: grain, scratches, dust, faded colours, gate weave.",
+    "de": "Alter Film: Körnung, Kratzer, Staub, verblasste Farben, Bildstandzittern.",
+    "es": "Película antigua: grano, rayas, polvo, colores desvaídos, imagen temblorosa.",
+    "it": "Pellicola d'epoca: grana, graffi, polvere, colori sbiaditi, immagine tremolante."
+   },
+   "parametres": [
+    {
+     "cle": "grain",
+     "nom": {
+      "fr": "Grain",
+      "en": "Grain",
+      "de": "Körnung",
+      "es": "Grano",
+      "it": "Grana"
+     },
+     "defaut": 0.35,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "rayures",
+     "nom": {
+      "fr": "Rayures et poussières",
+      "en": "Scratches and dust",
+      "de": "Kratzer und Staub",
+      "es": "Rayas y polvo",
+      "it": "Graffi e polvere"
+     },
+     "defaut": 0.4,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "delave",
+     "nom": {
+      "fr": "Couleurs délavées",
+      "en": "Faded colours",
+      "de": "Verblasste Farben",
+      "es": "Colores desvaídos",
+      "it": "Colori sbiaditi"
+     },
+     "defaut": 0.5,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "sepia",
+     "nom": {
+      "fr": "Sépia",
+      "en": "Sepia",
+      "de": "Sepia",
+      "es": "Sepia",
+      "it": "Seppia"
+     },
+     "defaut": 0.0,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "vignette",
+     "nom": {
+      "fr": "Vignettage",
+      "en": "Vignette",
+      "de": "Vignette",
+      "es": "Viñeta",
+      "it": "Vignettatura"
+     },
+     "defaut": 0.5,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "tremble",
+     "nom": {
+      "fr": "Image qui tremble",
+      "en": "Gate weave",
+      "de": "Bildstand-Zittern",
+      "es": "Imagen temblorosa",
+      "it": "Immagine tremolante"
+     },
+     "defaut": 0.3,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "chaleur",
+     "nom": {
+      "fr": "Chaleur",
+      "en": "Warmth",
+      "de": "Wärme",
+      "es": "Calidez",
+      "it": "Calore"
+     },
+     "defaut": 0.2,
+     "min": -1.0,
+     "max": 1.0,
+     "type": "float"
+    }
+   ],
+   "ffmpeg": "curves=preset=vintage,noise=alls=10:allf=t,vignette=PI/4",
+   "glsl": "\nvoid main() {\n    float j = floor(temps * 12.0);\n    vec2 p = uv + vec2((hash(vec2(j, 2.0)) - 0.5) * 0.002, (hash(vec2(j, 1.0)) - 0.5) * 0.004) * p_tremble;\n    vec3 c = lire(p).rgb;\n    float l = lum(c);\n    c = mix(c, vec3(l), p_delave * 0.6);\n    c = mix(c, vec3(l) * vec3(1.07, 0.95, 0.78), p_sepia);\n    c += vec3(0.06, 0.03, -0.03) * p_chaleur;\n    c = mix(vec3(0.08), c, 1.0 - 0.25 * p_delave);\n    c += (hash(uv * taille * 0.5 + vec2(j * 13.1, j * 7.7)) - 0.5) * 0.18 * p_grain;\n    float x = uv.x * taille.x;\n    for (int k = 0; k < 3; k++) {\n        float fk = float(k);\n        float xr = hash(vec2(j, fk)) * taille.x;\n        float vis = step(0.6, hash(vec2(j, fk + 9.0)));\n        c -= vis * p_rayures * 0.35 * smoothstep(1.5, 0.0, abs(x - xr));\n    }\n    float d = hash(floor(uv * taille / 3.0) + vec2(j * 3.0, j));\n    c = mix(c, vec3(0.05), step(0.9993, d) * p_rayures);\n    c *= 1.0 - p_vignette * smoothstep(0.35, 0.8, distance(uv, vec2(0.5)));\n    couleur = vec4(clamp(c, 0.0, 1.0), 1.0);\n}"
+  },
+  "vhs": {
+   "description": {
+    "fr": "Cassette vidéo : couleurs qui bavent, lignes, bande de défilement.",
+    "en": "Video tape: colour bleed, scan lines, tracking band.",
+    "de": "Videokassette: Farbverlauf, Zeilen, Spurband.",
+    "es": "Cinta de vídeo: color corrido, líneas, banda de arrastre.",
+    "it": "Videocassetta: colori che sbavano, linee, banda di tracking."
+   },
+   "parametres": [
+    {
+     "cle": "force",
+     "nom": {
+      "fr": "Force",
+      "en": "Strength",
+      "de": "Stärke",
+      "es": "Fuerza",
+      "it": "Intensità"
+     },
+     "defaut": 0.6,
+     "min": 0.0,
+     "max": 1.5,
+     "type": "float"
+    },
+    {
+     "cle": "lignes",
+     "nom": {
+      "fr": "Lignes de balayage",
+      "en": "Scan lines",
+      "de": "Zeilen",
+      "es": "Líneas de barrido",
+      "it": "Linee di scansione"
+     },
+     "defaut": 0.5,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "bavure",
+     "nom": {
+      "fr": "Couleurs qui bavent",
+      "en": "Colour bleed",
+      "de": "Farbverlauf",
+      "es": "Sangrado de color",
+      "it": "Sbavatura colori"
+     },
+     "defaut": 0.5,
+     "min": 0.0,
+     "max": 1.5,
+     "type": "float"
+    },
+    {
+     "cle": "bande",
+     "nom": {
+      "fr": "Bande de défilement",
+      "en": "Tracking band",
+      "de": "Spurband",
+      "es": "Banda de arrastre",
+      "it": "Banda di tracking"
+     },
+     "defaut": 0.5,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    }
+   ],
+   "ffmpeg": "rgbashift=rh=3:bh=-3,noise=alls=14:allf=t,eq=saturation=1.15",
+   "glsl": "\nvoid main() {\n    float yb = fract(temps * 0.15);\n    float dans = smoothstep(0.06, 0.0, abs(uv.y - yb));\n    vec2 p = uv;\n    p.x += dans * p_bande * 0.03 * (hash(vec2(floor(uv.y * taille.y), floor(temps * 30.0))) - 0.5);\n    p.x += (bruit(vec2(uv.y * 40.0, temps * 2.0)) - 0.5) * 0.004 * p_force;\n    float o = 0.004 * p_bavure;\n    vec3 c = vec3(lire(p + vec2(o, 0.0)).r, lire(p).g, lire(p - vec2(o, 0.0)).b);\n    vec3 fl = (lire(p + vec2(2.0 * o, 0.0)).rgb + lire(p - vec2(2.0 * o, 0.0)).rgb) * 0.5;\n    c = vec3(lum(c)) + (mix(c, fl, 0.5 * p_bavure) - vec3(lum(fl))) * 1.1;\n    c *= 1.0 - p_lignes * 0.18 * step(0.5, fract(uv.y * taille.y * 0.5));\n    c += (hash(uv * taille + temps) - 0.5) * 0.08 * p_force;\n    c += dans * p_bande * 0.15 * hash(vec2(uv.x * taille.x, floor(temps * 30.0)));\n    c *= vec3(1.03, 1.0, 1.06);\n    couleur = vec4(clamp(c, 0.0, 1.0), 1.0);\n}"
+  },
+  "rvb": {
+   "description": {
+    "fr": "Les trois couleurs se décalent, fixes ou au rythme.",
+    "en": "The three colours shift, steady or on the beat.",
+    "de": "Die drei Farben verschieben sich, fest oder im Takt.",
+    "es": "Los tres colores se desplazan, fijos o al ritmo.",
+    "it": "I tre colori si spostano, fissi o a ritmo."
+   },
+   "parametres": [
+    {
+     "cle": "force",
+     "nom": {
+      "fr": "Force",
+      "en": "Strength",
+      "de": "Stärke",
+      "es": "Fuerza",
+      "it": "Intensità"
+     },
+     "defaut": 0.6,
+     "min": 0.0,
+     "max": 2.0,
+     "type": "float"
+    },
+    {
+     "cle": "angle",
+     "nom": {
+      "fr": "Direction (°)",
+      "en": "Direction (°)",
+      "de": "Richtung (°)",
+      "es": "Dirección (°)",
+      "it": "Direzione (°)"
+     },
+     "defaut": 0.0,
+     "min": -180.0,
+     "max": 180.0,
+     "type": "float"
+    },
+    {
+     "cle": "rythme",
+     "nom": {
+      "fr": "Pulsations par seconde (0 = fixe)",
+      "en": "Pulses per second (0 = steady)",
+      "de": "Pulse pro Sekunde (0 = fest)",
+      "es": "Pulsos por segundo (0 = fijo)",
+      "it": "Pulsazioni al secondo (0 = fisso)"
+     },
+     "defaut": 0.0,
+     "min": 0.0,
+     "max": 4.0,
+     "type": "float"
+    }
+   ],
+   "ffmpeg": "rgbashift=rh=8:bh=-8",
+   "glsl": "\nvoid main() {\n    float a = radians(p_angle);\n    float pul = p_rythme > 0.0 ? pow(max(0.0, 1.0 - fract(temps * p_rythme) * 3.0), 2.0) : 1.0;\n    vec2 d = vec2(cos(a), sin(a)) * 0.012 * p_force * pul;\n    couleur = vec4(lire(uv + d).r, lire(uv).g, lire(uv - d).b, 1.0);\n}"
+  },
+  "glitch": {
+   "description": {
+    "fr": "Interférences numériques : bandes décalées, blocs, bruit.",
+    "en": "Digital interference: shifted bands, blocks, noise.",
+    "de": "Digitale Störungen: versetzte Streifen, Blöcke, Rauschen.",
+    "es": "Interferencias digitales: bandas desplazadas, bloques, ruido.",
+    "it": "Interferenze digitali: bande sfalsate, blocchi, rumore."
+   },
+   "parametres": [
+    {
+     "cle": "force",
+     "nom": {
+      "fr": "Force",
+      "en": "Strength",
+      "de": "Stärke",
+      "es": "Fuerza",
+      "it": "Intensità"
+     },
+     "defaut": 0.6,
+     "min": 0.0,
+     "max": 1.5,
+     "type": "float"
+    },
+    {
+     "cle": "frequence",
+     "nom": {
+      "fr": "Fréquence",
+      "en": "Frequency",
+      "de": "Häufigkeit",
+      "es": "Frecuencia",
+      "it": "Frequenza"
+     },
+     "defaut": 0.5,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "blocs",
+     "nom": {
+      "fr": "Blocs",
+      "en": "Blocks",
+      "de": "Blöcke",
+      "es": "Bloques",
+      "it": "Blocchi"
+     },
+     "defaut": 0.5,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    }
+   ],
+   "ffmpeg": "rgbashift=rh=6:bh=-6:gv=2,noise=alls=18:allf=t+u",
+   "glsl": "\nvoid main() {\n    float t = floor(temps * 15.0);\n    float actif = step(1.0 - p_frequence * 0.7, hash(vec2(t, 3.1)));\n    vec2 p = uv;\n    float bande = floor(uv.y * mix(8.0, 40.0, hash(vec2(t, 5.0))));\n    p.x += (hash(vec2(bande, t)) - 0.5) * 0.12 * p_force * actif * step(0.55, hash(vec2(bande, t + 1.0)));\n    vec2 bloc = floor(uv * vec2(16.0, 9.0));\n    float b = step(1.0 - 0.15 * p_blocs * actif, hash(bloc + t));\n    p = mix(p, p + (vec2(hash(bloc + t + 2.0), hash(bloc + t + 4.0)) - 0.5) * 0.1, b);\n    float o = 0.01 * p_force * actif;\n    vec3 c = vec3(lire(p + vec2(o, 0.0)).r, lire(p).g, lire(p - vec2(o, 0.0)).b);\n    c = mix(c, vec3(hash(uv * taille + t)), 0.25 * b);\n    couleur = vec4(c, 1.0);\n}"
+  },
+  "lentille": {
+   "description": {
+    "fr": "Effets d'objectif : vignettage, lampe de poche, flou de bord, fish-eye.",
+    "en": "Lens effects: vignette, flashlight, edge blur, fish-eye.",
+    "de": "Objektiveffekte: Vignette, Taschenlampe, Randunschärfe, Fischauge.",
+    "es": "Efectos de objetivo: viñeta, linterna, desenfoque de bordes, ojo de pez.",
+    "it": "Effetti obiettivo: vignettatura, torcia, sfocatura ai bordi, fish-eye."
+   },
+   "parametres": [
+    {
+     "cle": "mode",
+     "nom": {
+      "fr": "Genre",
+      "en": "Kind",
+      "de": "Art",
+      "es": "Tipo",
+      "it": "Tipo"
+     },
+     "type": "choix",
+     "defaut": 0,
+     "choix": [
+      {
+       "fr": "Vignettage",
+       "en": "Vignette",
+       "de": "Vignette",
+       "es": "Viñeta",
+       "it": "Vignettatura"
+      },
+      {
+       "fr": "Lampe de poche",
+       "en": "Flashlight",
+       "de": "Taschenlampe",
+       "es": "Linterna",
+       "it": "Torcia"
+      },
+      {
+       "fr": "Flou de bord",
+       "en": "Edge blur",
+       "de": "Randunschärfe",
+       "es": "Desenfoque de bordes",
+       "it": "Sfocatura ai bordi"
+      },
+      {
+       "fr": "Flou granuleux",
+       "en": "Grainy blur",
+       "de": "Körnige Unschärfe",
+       "es": "Desenfoque granulado",
+       "it": "Sfocatura granulosa"
+      },
+      {
+       "fr": "Grand angle (fish-eye)",
+       "en": "Fish-eye",
+       "de": "Fischauge",
+       "es": "Ojo de pez",
+       "it": "Fish-eye"
+      }
+     ]
+    },
+    {
+     "cle": "force",
+     "nom": {
+      "fr": "Force",
+      "en": "Strength",
+      "de": "Stärke",
+      "es": "Fuerza",
+      "it": "Intensità"
+     },
+     "defaut": 0.6,
+     "min": 0.0,
+     "max": 1.5,
+     "type": "float"
+    },
+    {
+     "cle": "taille",
+     "nom": {
+      "fr": "Taille",
+      "en": "Size",
+      "de": "Größe",
+      "es": "Tamaño",
+      "it": "Dimensione"
+     },
+     "defaut": 0.35,
+     "min": 0.05,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "mouvement",
+     "nom": {
+      "fr": "Mouvement",
+      "en": "Movement",
+      "de": "Bewegung",
+      "es": "Movimiento",
+      "it": "Movimento"
+     },
+     "defaut": 0.3,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    }
+   ],
+   "ffmpeg": "vignette=PI/4",
+   "glsl": "\nvec3 flou(vec2 p, float r) {\n    vec3 s = vec3(0.0);\n    for (int i = -3; i <= 3; i++) { for (int j = -3; j <= 3; j++) { s += lire(p + vec2(float(i), float(j)) * r / taille).rgb; } }\n    return s / 49.0;\n}\nvoid main() {\n    int m = int(p_mode + 0.5);\n    vec3 c = lire(uv).rgb;\n    vec2 centre = vec2(0.5) + p_mouvement * 0.25 * vec2(sin(temps * 0.7), cos(temps * 0.53));\n    float d = length((uv - centre) * vec2(taille.x / taille.y, 1.0));\n    if (m == 0) { c *= 1.0 - p_force * smoothstep(p_taille * 0.8, p_taille * 0.8 + 0.6, d); }\n    else if (m == 1) { c *= mix(1.0 - 0.9 * min(1.0, p_force), 1.15, smoothstep(p_taille, p_taille * 0.6, d)); }\n    else if (m == 2) { c = mix(c, flou(uv, 6.0 * p_force), smoothstep(p_taille * 0.6, p_taille * 0.6 + 0.4, abs(uv.y - 0.5) * 2.0)); }\n    else if (m == 3) {\n        vec2 j = (vec2(hash(uv * taille + temps), hash(uv * taille - temps)) - 0.5) * 0.03 * p_force;\n        c = lire(uv + j).rgb + (hash(uv * taille * 0.7 + temps) - 0.5) * 0.12 * p_force;\n    } else {\n        vec2 q = uv - 0.5;\n        c = lire(0.5 + q * (1.0 - p_force * dot(q, q))).rgb;\n        c *= 1.0 - smoothstep(0.45, 0.75, length(q) * 1.4) * p_force * 0.5;\n    }\n    couleur = vec4(clamp(c, 0.0, 1.0), 1.0);\n}"
+  },
+  "ouverture": {
+   "description": {
+    "fr": "Le plan s'ouvre ou se ferme par une forme : cercle, cœur, losange, rideau…",
+    "en": "The shot opens or closes through a shape: circle, heart, diamond, curtain…",
+    "de": "Die Einstellung öffnet oder schließt sich durch eine Form: Kreis, Herz, Raute, Vorhang…",
+    "es": "El plano se abre o se cierra con una forma: círculo, corazón, rombo, telón…",
+    "it": "L'inquadratura si apre o si chiude con una forma: cerchio, cuore, rombo, sipario…"
+   },
+   "parametres": [
+    {
+     "cle": "forme",
+     "nom": {
+      "fr": "Forme",
+      "en": "Shape",
+      "de": "Form",
+      "es": "Forma",
+      "it": "Forma"
+     },
+     "type": "choix",
+     "defaut": 0,
+     "choix": [
+      {
+       "fr": "Cercle",
+       "en": "Circle",
+       "de": "Kreis",
+       "es": "Círculo",
+       "it": "Cerchio"
+      },
+      {
+       "fr": "Vertical",
+       "en": "Vertical",
+       "de": "Vertikal",
+       "es": "Vertical",
+       "it": "Verticale"
+      },
+      {
+       "fr": "Horizontal",
+       "en": "Horizontal",
+       "de": "Horizontal",
+       "es": "Horizontal",
+       "it": "Orizzontale"
+      },
+      {
+       "fr": "Losange",
+       "en": "Diamond",
+       "de": "Raute",
+       "es": "Rombo",
+       "it": "Rombo"
+      },
+      {
+       "fr": "Cœur",
+       "en": "Heart",
+       "de": "Herz",
+       "es": "Corazón",
+       "it": "Cuore"
+      },
+      {
+       "fr": "Rideau",
+       "en": "Curtain",
+       "de": "Vorhang",
+       "es": "Telón",
+       "it": "Sipario"
+      }
+     ]
+    },
+    {
+     "cle": "sens",
+     "nom": {
+      "fr": "Quand",
+      "en": "When",
+      "de": "Wann",
+      "es": "Cuándo",
+      "it": "Quando"
+     },
+     "type": "choix",
+     "defaut": 0,
+     "choix": [
+      {
+       "fr": "S'ouvre au début",
+       "en": "Opens at the start",
+       "de": "Öffnet am Anfang",
+       "es": "Se abre al principio",
+       "it": "Si apre all'inizio"
+      },
+      {
+       "fr": "Se ferme à la fin",
+       "en": "Closes at the end",
+       "de": "Schließt am Ende",
+       "es": "Se cierra al final",
+       "it": "Si chiude alla fine"
+      },
+      {
+       "fr": "Les deux",
+       "en": "Both",
+       "de": "Beides",
+       "es": "Ambos",
+       "it": "Entrambi"
+      }
+     ]
+    },
+    {
+     "cle": "duree",
+     "nom": {
+      "fr": "Durée (s)",
+      "en": "Duration (s)",
+      "de": "Dauer (s)",
+      "es": "Duración (s)",
+      "it": "Durata (s)"
+     },
+     "defaut": 0.8,
+     "min": 0.1,
+     "max": 3.0,
+     "type": "float"
+    },
+    {
+     "cle": "adouci",
+     "nom": {
+      "fr": "Bord adouci",
+      "en": "Soft edge",
+      "de": "Weiche Kante",
+      "es": "Borde suave",
+      "it": "Bordo morbido"
+     },
+     "defaut": 0.02,
+     "min": 0.0,
+     "max": 0.3,
+     "type": "float"
+    }
+   ],
+   "ffmpeg": "fade=t=in:st=0:d={duree}",
+   "glsl": "\nfloat forme(vec2 q, int f) {\n    if (f == 0) return length(q);\n    if (f == 1) return abs(q.x);\n    if (f == 2) return abs(q.y);\n    if (f == 3) return (abs(q.x) + abs(q.y)) * 0.75;\n    if (f == 4) {\n        vec2 h = vec2(q.x, -q.y) * 2.0;\n        h.y -= 0.25;\n        float a = atan(h.x, h.y) / 3.141593;\n        float hh = abs(a);\n        float dd = (13.0 * hh - 22.0 * hh * hh + 10.0 * hh * hh * hh) / (6.0 - 5.0 * hh);\n        return length(h) / max(0.05, dd) * 0.5;\n    }\n    return 1.0 - (q.x + 0.5);\n}\nvoid main() {\n    int f = int(p_forme + 0.5);\n    float ar = taille.x / taille.y;\n    vec2 q = (uv - 0.5) * vec2(ar, 1.0);\n    if (f == 5) q = uv - 0.5;\n    int s = int(p_sens + 0.5);\n    float d = max(0.05, p_duree);\n    float o = 1.0;\n    if (s != 1) o = min(o, clamp(temps / d, 0.0, 1.0));\n    if (s != 0) o = min(o, clamp((duree - temps) / d, 0.0, 1.0));\n    o = o * o * (3.0 - 2.0 * o);\n    float rmax = f == 0 ? length(vec2(ar * 0.5, 0.5)) : f == 1 ? ar * 0.5 : f == 2 ? 0.5 : f == 3 ? (ar * 0.5 + 0.5) * 0.75 : f == 4 ? 1.3 * ar : 1.0;\n    rmax += p_adouci + 0.01;\n    float masque = 1.0 - smoothstep(o * rmax - p_adouci - 0.001, o * rmax, forme(q, f));\n    couleur = vec4(lire(uv).rgb * masque, 1.0);\n}"
+  },
+  "flash": {
+   "description": {
+    "fr": "Flashs, zoom, stroboscope ou secousse calés sur un rythme (coups par seconde).",
+    "en": "Flashes, zoom, strobe or shake on a beat (beats per second).",
+    "de": "Blitze, Zoom, Stroboskop oder Wackeln im Takt (Schläge pro Sekunde).",
+    "es": "Destellos, zoom, estroboscopio o sacudida al ritmo (golpes por segundo).",
+    "it": "Flash, zoom, stroboscopio o scossa a ritmo (colpi al secondo)."
+   },
+   "parametres": [
+    {
+     "cle": "mode",
+     "nom": {
+      "fr": "Genre",
+      "en": "Kind",
+      "de": "Art",
+      "es": "Tipo",
+      "it": "Tipo"
+     },
+     "type": "choix",
+     "defaut": 0,
+     "choix": [
+      {
+       "fr": "Flash noir",
+       "en": "Black flash",
+       "de": "Schwarzer Blitz",
+       "es": "Destello negro",
+       "it": "Flash nero"
+      },
+      {
+       "fr": "Flash blanc",
+       "en": "White flash",
+       "de": "Weißer Blitz",
+       "es": "Destello blanco",
+       "it": "Flash bianco"
+      },
+      {
+       "fr": "Zoom pulsé",
+       "en": "Zoom pulse",
+       "de": "Zoom-Puls",
+       "es": "Zoom pulsado",
+       "it": "Zoom pulsante"
+      },
+      {
+       "fr": "Stroboscope",
+       "en": "Strobe",
+       "de": "Stroboskop",
+       "es": "Estroboscopio",
+       "it": "Stroboscopio"
+      },
+      {
+       "fr": "Secousse",
+       "en": "Shake",
+       "de": "Wackeln",
+       "es": "Sacudida",
+       "it": "Scossa"
+      }
+     ]
+    },
+    {
+     "cle": "rythme",
+     "nom": {
+      "fr": "Coups par seconde",
+      "en": "Beats per second",
+      "de": "Schläge pro Sekunde",
+      "es": "Golpes por segundo",
+      "it": "Colpi al secondo"
+     },
+     "defaut": 2.0,
+     "min": 0.25,
+     "max": 6.0,
+     "type": "float"
+    },
+    {
+     "cle": "force",
+     "nom": {
+      "fr": "Force",
+      "en": "Strength",
+      "de": "Stärke",
+      "es": "Fuerza",
+      "it": "Intensità"
+     },
+     "defaut": 0.7,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "decalage",
+     "nom": {
+      "fr": "Décalage du temps",
+      "en": "Beat offset",
+      "de": "Taktversatz",
+      "es": "Desfase",
+      "it": "Sfasamento"
+     },
+     "defaut": 0.0,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    }
+   ],
+   "glsl": "\nvoid main() {\n    int m = int(p_mode + 0.5);\n    float ph = fract(temps * p_rythme + p_decalage);\n    float coup = pow(max(0.0, 1.0 - ph * 4.0), 2.0);\n    vec3 c;\n    if (m == 2) { float z = 1.0 + 0.12 * p_force * coup; c = lire(0.5 + (uv - 0.5) / z).rgb + 0.15 * coup * p_force; }\n    else if (m == 4) { vec2 s = vec2(sin(temps * 53.0), cos(temps * 47.0)) * 0.02 * p_force * coup; c = lire(0.5 + (uv - 0.5) * 0.96 + s).rgb; }\n    else { c = lire(uv).rgb; }\n    if (m == 0) c = mix(c, vec3(0.0), coup * p_force);\n    if (m == 1) c = mix(c, vec3(1.0), coup * p_force);\n    if (m == 3) c = mix(c, vec3(1.0) - c * 0.2, step(0.5, fract(temps * p_rythme * 2.0)) * p_force * 0.8);\n    couleur = vec4(clamp(c, 0.0, 1.0), 1.0);\n}"
+  },
+  "zoom": {
+   "description": {
+    "fr": "Mouvements de caméra calculés : zoom progressif, tourbillon, flou de zoom.",
+    "en": "Computed camera moves: slow zoom, swirl, zoom blur.",
+    "de": "Berechnete Kamerabewegungen: langsamer Zoom, Wirbel, Zoom-Unschärfe.",
+    "es": "Movimientos de cámara calculados: zoom lento, remolino, desenfoque de zoom.",
+    "it": "Movimenti di camera calcolati: zoom lento, vortice, sfocatura zoom."
+   },
+   "parametres": [
+    {
+     "cle": "mode",
+     "nom": {
+      "fr": "Genre",
+      "en": "Kind",
+      "de": "Art",
+      "es": "Tipo",
+      "it": "Tipo"
+     },
+     "type": "choix",
+     "defaut": 0,
+     "choix": [
+      {
+       "fr": "Zoom avant progressif",
+       "en": "Slow zoom in",
+       "de": "Langsamer Zoom hinein",
+       "es": "Zoom de acercamiento",
+       "it": "Zoom in progressivo"
+      },
+      {
+       "fr": "Zoom arrière progressif",
+       "en": "Slow zoom out",
+       "de": "Langsamer Zoom heraus",
+       "es": "Zoom de alejamiento",
+       "it": "Zoom out progressivo"
+      },
+      {
+       "fr": "Tourbillon",
+       "en": "Swirl",
+       "de": "Wirbel",
+       "es": "Remolino",
+       "it": "Vortice"
+      },
+      {
+       "fr": "Flou de zoom",
+       "en": "Zoom blur",
+       "de": "Zoom-Unschärfe",
+       "es": "Desenfoque de zoom",
+       "it": "Sfocatura zoom"
+      }
+     ]
+    },
+    {
+     "cle": "force",
+     "nom": {
+      "fr": "Force",
+      "en": "Strength",
+      "de": "Stärke",
+      "es": "Fuerza",
+      "it": "Intensità"
+     },
+     "defaut": 0.6,
+     "min": 0.0,
+     "max": 1.5,
+     "type": "float"
+    }
+   ],
+   "glsl": "\nvoid main() {\n    int m = int(p_mode + 0.5);\n    vec2 q = uv - 0.5;\n    vec3 c;\n    if (m == 0) { c = lire(0.5 + q / (1.0 + p_force * 0.5 * progres)).rgb; }\n    else if (m == 1) { c = lire(0.5 + q / (1.0 + p_force * 0.5 * (1.0 - progres))).rgb; }\n    else if (m == 2) {\n        float a = p_force * 3.0 * (1.0 - progres) * smoothstep(0.6, 0.0, length(q));\n        float s = sin(a); float co = cos(a);\n        c = lire(0.5 + vec2(co * q.x - s * q.y, s * q.x + co * q.y)).rgb;\n    } else {\n        vec3 s = vec3(0.0);\n        for (int i = 0; i < 12; i++) { s += lire(0.5 + q * (1.0 - float(i) * 0.012 * p_force)).rgb; }\n        c = s / 12.0;\n    }\n    couleur = vec4(c, 1.0);\n}"
+  },
+  "cinema": {
+   "description": {
+    "fr": "Allure de film : bandes noires, bleu et orange, noir et blanc, projecteur.",
+    "en": "Film look: black bars, teal and orange, black and white, projector.",
+    "de": "Kinolook: schwarze Balken, Blau-Orange, Schwarzweiß, Projektor.",
+    "es": "Aspecto de cine: bandas negras, azul y naranja, blanco y negro, proyector.",
+    "it": "Aspetto cinema: bande nere, blu e arancio, bianco e nero, proiettore."
+   },
+   "parametres": [
+    {
+     "cle": "mode",
+     "nom": {
+      "fr": "Genre",
+      "en": "Kind",
+      "de": "Art",
+      "es": "Tipo",
+      "it": "Tipo"
+     },
+     "type": "choix",
+     "defaut": 0,
+     "choix": [
+      {
+       "fr": "Bandes qui entrent",
+       "en": "Sliding bars",
+       "de": "Einfahrende Balken",
+       "es": "Bandas que entran",
+       "it": "Bande che entrano"
+      },
+      {
+       "fr": "Bleu-orange (teal & orange)",
+       "en": "Teal & orange",
+       "de": "Blau-Orange",
+       "es": "Azul y naranja",
+       "it": "Blu e arancio"
+      },
+      {
+       "fr": "Film noir et blanc",
+       "en": "Black & white film",
+       "de": "Schwarzweißfilm",
+       "es": "Película en blanco y negro",
+       "it": "Film in bianco e nero"
+      },
+      {
+       "fr": "Projecteur",
+       "en": "Projector",
+       "de": "Projektor",
+       "es": "Proyector",
+       "it": "Proiettore"
+      }
+     ]
+    },
+    {
+     "cle": "force",
+     "nom": {
+      "fr": "Force",
+      "en": "Strength",
+      "de": "Stärke",
+      "es": "Fuerza",
+      "it": "Intensità"
+     },
+     "defaut": 0.7,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "bandes",
+     "nom": {
+      "fr": "Bandes noires",
+      "en": "Black bars",
+      "de": "Schwarze Balken",
+      "es": "Bandas negras",
+      "it": "Bande nere"
+     },
+     "defaut": 0.12,
+     "min": 0.0,
+     "max": 0.3,
+     "type": "float"
+    }
+   ],
+   "glsl": "\nvoid main() {\n    int m = int(p_mode + 0.5);\n    vec3 c = lire(uv).rgb;\n    float l = lum(c);\n    if (m == 1) { vec3 g = mix(vec3(0.0, 0.45, 0.55), vec3(1.0, 0.6, 0.3), smoothstep(0.2, 0.8, l)); c = mix(c, c * 0.6 + g * l * 0.8, 0.6 * p_force); }\n    if (m == 2) { c = vec3(smoothstep(0.05, 0.95, l)) + (hash(uv * taille + temps) - 0.5) * 0.06 * p_force; }\n    if (m == 3) {\n        c *= mix(1.0, 0.92 + 0.08 * hash(vec2(floor(temps * 24.0), 1.0)), p_force);\n        c *= 1.0 - p_force * 0.5 * smoothstep(0.3, 0.75, distance(uv, vec2(0.5)));\n        c += vec3(0.04, 0.03, 0.0) * p_force;\n    }\n    float b = p_bandes;\n    if (m == 0) b *= smoothstep(0.0, 1.0, clamp(temps / 0.8, 0.0, 1.0));\n    if (uv.y < b || uv.y > 1.0 - b) c = vec3(0.0);\n    couleur = vec4(clamp(c, 0.0, 1.0), 1.0);\n}"
+  },
+  "neon": {
+   "description": {
+    "fr": "Les contours de l'image s'allument comme des néons.",
+    "en": "The edges of the image light up like neon tubes.",
+    "de": "Die Konturen des Bildes leuchten wie Neonröhren.",
+    "es": "Los contornos de la imagen se encienden como neones.",
+    "it": "I contorni dell'immagine si accendono come neon."
+   },
+   "parametres": [
+    {
+     "cle": "couleur",
+     "nom": {
+      "fr": "Couleur",
+      "en": "Colour",
+      "de": "Farbe",
+      "es": "Color",
+      "it": "Colore"
+     },
+     "type": "choix",
+     "defaut": 0,
+     "choix": [
+      {
+       "fr": "Rose",
+       "en": "Pink",
+       "de": "Rosa",
+       "es": "Rosa",
+       "it": "Rosa"
+      },
+      {
+       "fr": "Bleu",
+       "en": "Blue",
+       "de": "Blau",
+       "es": "Azul",
+       "it": "Blu"
+      },
+      {
+       "fr": "Vert",
+       "en": "Green",
+       "de": "Grün",
+       "es": "Verde",
+       "it": "Verde"
+      },
+      {
+       "fr": "Or",
+       "en": "Gold",
+       "de": "Gold",
+       "es": "Oro",
+       "it": "Oro"
+      },
+      {
+       "fr": "Couleurs de l'image",
+       "en": "Image colours",
+       "de": "Bildfarben",
+       "es": "Colores de la imagen",
+       "it": "Colori dell'immagine"
+      }
+     ]
+    },
+    {
+     "cle": "force",
+     "nom": {
+      "fr": "Force",
+      "en": "Strength",
+      "de": "Stärke",
+      "es": "Fuerza",
+      "it": "Intensità"
+     },
+     "defaut": 0.8,
+     "min": 0.1,
+     "max": 2.0,
+     "type": "float"
+    },
+    {
+     "cle": "garder",
+     "nom": {
+      "fr": "Image d'origine",
+      "en": "Original image",
+      "de": "Originalbild",
+      "es": "Imagen original",
+      "it": "Immagine originale"
+     },
+     "defaut": 0.3,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    }
+   ],
+   "glsl": "\nvoid main() {\n    vec2 px = 1.0 / taille;\n    float tl = lum(lire(uv + px * vec2(-1.0, -1.0)).rgb); float t = lum(lire(uv + px * vec2(0.0, -1.0)).rgb); float tr = lum(lire(uv + px * vec2(1.0, -1.0)).rgb);\n    float ml = lum(lire(uv + px * vec2(-1.0, 0.0)).rgb); float mr = lum(lire(uv + px * vec2(1.0, 0.0)).rgb);\n    float bl = lum(lire(uv + px * vec2(-1.0, 1.0)).rgb); float b = lum(lire(uv + px * vec2(0.0, 1.0)).rgb); float br = lum(lire(uv + px * vec2(1.0, 1.0)).rgb);\n    float gx = -tl - 2.0 * ml - bl + tr + 2.0 * mr + br;\n    float gy = -tl - 2.0 * t - tr + bl + 2.0 * b + br;\n    float e = clamp(length(vec2(gx, gy)) * 2.0 * p_force, 0.0, 1.0);\n    int k = int(p_couleur + 0.5);\n    vec3 col = k == 0 ? vec3(1.0, 0.2, 0.7) : k == 1 ? vec3(0.2, 0.7, 1.0) : k == 2 ? vec3(0.3, 1.0, 0.4) : k == 3 ? vec3(1.0, 0.8, 0.3) : lire(uv).rgb * 1.5;\n    float pul = 0.85 + 0.15 * sin(temps * 6.0);\n    couleur = vec4(clamp(lire(uv).rgb * p_garder + col * e * pul, 0.0, 1.0), 1.0);\n}"
+  },
+  "pixels": {
+   "description": {
+    "fr": "L'image en gros pixels ou en trame de points façon bande dessinée.",
+    "en": "The image in big pixels or comic-style halftone dots.",
+    "de": "Das Bild in großen Pixeln oder als Comic-Rasterpunkte.",
+    "es": "La imagen en píxeles grandes o en trama de puntos tipo cómic.",
+    "it": "L'immagine a grandi pixel o con retino a punti stile fumetto."
+   },
+   "parametres": [
+    {
+     "cle": "mode",
+     "nom": {
+      "fr": "Genre",
+      "en": "Kind",
+      "de": "Art",
+      "es": "Tipo",
+      "it": "Tipo"
+     },
+     "type": "choix",
+     "defaut": 0,
+     "choix": [
+      {
+       "fr": "Pixels",
+       "en": "Pixels",
+       "de": "Pixel",
+       "es": "Píxeles",
+       "it": "Pixel"
+      },
+      {
+       "fr": "Trame de points",
+       "en": "Halftone dots",
+       "de": "Rasterpunkte",
+       "es": "Trama de puntos",
+       "it": "Retino a punti"
+      }
+     ]
+    },
+    {
+     "cle": "taille",
+     "nom": {
+      "fr": "Taille (pixels)",
+      "en": "Size (pixels)",
+      "de": "Größe (Pixel)",
+      "es": "Tamaño (píxeles)",
+      "it": "Dimensione (pixel)"
+     },
+     "defaut": 24.0,
+     "min": 2.0,
+     "max": 120.0,
+     "type": "float"
+    },
+    {
+     "cle": "animer",
+     "nom": {
+      "fr": "Animé",
+      "en": "Animated",
+      "de": "Animiert",
+      "es": "Animado",
+      "it": "Animato"
+     },
+     "type": "bool",
+     "defaut": 0.0,
+     "min": 0.0,
+     "max": 1.0
+    }
+   ],
+   "ffmpeg": "scale=iw/{taille}:-1:flags=neighbor,scale=iw*{taille}:-1:flags=neighbor",
+   "glsl": "\nvoid main() {\n    float s = max(2.0, p_taille * (p_animer > 0.5 ? (0.6 + 0.4 * sin(temps * 3.0)) : 1.0));\n    vec2 cell = s / taille;\n    vec2 c0 = (floor(uv / cell) + 0.5) * cell;\n    vec3 c = lire(c0).rgb;\n    if (int(p_mode + 0.5) == 1) { c *= step(length((uv - c0) / cell), 0.55 * sqrt(lum(c)) + 0.05); }\n    couleur = vec4(c, 1.0);\n}"
+  },
+  "particules": {
+   "description": {
+    "fr": "Particules calculées sur l'image : étoiles, lucioles, poussière dorée, neige, confettis (sans fichier à télécharger).",
+    "en": "Particles computed over the image: stars, fireflies, golden dust, snow, confetti (no file to download).",
+    "de": "Über dem Bild berechnete Partikel: Sterne, Glühwürmchen, Goldstaub, Schnee, Konfetti (ohne Download).",
+    "es": "Partículas calculadas sobre la imagen: estrellas, luciérnagas, polvo dorado, nieve, confeti (sin descarga).",
+    "it": "Particelle calcolate sull'immagine: stelle, lucciole, polvere dorata, neve, coriandoli (senza download)."
+   },
+   "parametres": [
+    {
+     "cle": "genre",
+     "nom": {
+      "fr": "Genre",
+      "en": "Kind",
+      "de": "Art",
+      "es": "Tipo",
+      "it": "Tipo"
+     },
+     "type": "choix",
+     "defaut": 0,
+     "choix": [
+      {
+       "fr": "Étoiles scintillantes",
+       "en": "Twinkling stars",
+       "de": "Funkelnde Sterne",
+       "es": "Estrellas centelleantes",
+       "it": "Stelle scintillanti"
+      },
+      {
+       "fr": "Lucioles",
+       "en": "Fireflies",
+       "de": "Glühwürmchen",
+       "es": "Luciérnagas",
+       "it": "Lucciole"
+      },
+      {
+       "fr": "Poussière dorée",
+       "en": "Golden dust",
+       "de": "Goldstaub",
+       "es": "Polvo dorado",
+       "it": "Polvere dorata"
+      },
+      {
+       "fr": "Neige",
+       "en": "Snow",
+       "de": "Schnee",
+       "es": "Nieve",
+       "it": "Neve"
+      },
+      {
+       "fr": "Confettis",
+       "en": "Confetti",
+       "de": "Konfetti",
+       "es": "Confeti",
+       "it": "Coriandoli"
+      }
+     ]
+    },
+    {
+     "cle": "quantite",
+     "nom": {
+      "fr": "Quantité",
+      "en": "Amount",
+      "de": "Menge",
+      "es": "Cantidad",
+      "it": "Quantità"
+     },
+     "defaut": 0.5,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "taille",
+     "nom": {
+      "fr": "Taille",
+      "en": "Size",
+      "de": "Größe",
+      "es": "Tamaño",
+      "it": "Dimensione"
+     },
+     "defaut": 1.0,
+     "min": 0.3,
+     "max": 3.0,
+     "type": "float"
+    }
+   ],
+   "glsl": "\nvec3 couche(vec2 p, float t, float k, int g) {\n    float n = mix(4.0, 14.0, p_quantite) * (1.0 + k * 0.5);\n    vec2 q = p * vec2(taille.x / taille.y, 1.0) * n;\n    if (g == 3) q.y -= t * (1.0 + k * 0.4) * n * 0.08;\n    if (g == 4) q.y -= t * (1.2 + k * 0.4) * n * 0.1;\n    if (g == 1) q += vec2(sin(t * 0.5 + k), cos(t * 0.4 + k * 2.0)) * 0.6;\n    if (g == 2) q.y += t * 0.015 * n;\n    vec2 id = floor(q);\n    vec2 f = fract(q) - 0.5;\n    float h = hash(id + k * 17.0);\n    vec2 o = (vec2(hash(id + 3.1 + k), hash(id + 7.7 + k)) - 0.5) * 0.7;\n    if (g == 3 || g == 4) o.x += sin(t * 1.5 + h * 6.0) * 0.15;\n    float d = length(f - o);\n    float r = 0.07 * p_taille * (0.5 + h) * (1.0 + k * 0.3);\n    float l = smoothstep(r, 0.0, d);\n    if (g == 1 || g == 2) l += smoothstep(min(r * 4.0, 0.5 - length(o) * 0.7), 0.0, d) * 0.35;\n    if (g == 0) {\n        float tw = 0.5 + 0.5 * sin(t * (2.0 + h * 4.0) + h * 30.0);\n        l += (smoothstep(0.015 * p_taille, 0.0, abs(f.x - o.x)) * smoothstep(r * 4.0, 0.0, abs(f.y - o.y))\n            + smoothstep(0.015 * p_taille, 0.0, abs(f.y - o.y)) * smoothstep(r * 4.0, 0.0, abs(f.x - o.x))) * 0.7;\n        l += smoothstep(r * 3.0, 0.0, d) * 0.25;\n        l *= tw;\n    }\n    if (g == 1) l *= 0.5 + 0.5 * sin(t * 1.5 + h * 20.0);\n    if (g == 4) { vec2 e = abs(f - o); l = step(e.x, r * 0.9) * step(e.y, r * 0.45); }\n    vec3 col = g == 0 ? vec3(1.0, 0.97, 0.85) : g == 1 ? vec3(0.75, 1.0, 0.3) : g == 2 ? vec3(1.0, 0.8, 0.35) : g == 3 ? vec3(1.0) :\n               vec3(hash(id + 1.0), hash(id + 2.0), hash(id + 3.0)) * 0.8 + 0.2;\n    return col * l * step(0.55, h);\n}\nvoid main() {\n    int g = int(p_genre + 0.5);\n    vec3 c = lire(uv).rgb;\n    vec3 a = vec3(0.0);\n    for (int k = 0; k < 3; k++) { a += couche(uv, temps, float(k), g); }\n    if (g == 4) c = mix(c, a, clamp(max(a.r, max(a.g, a.b)) * 3.0, 0.0, 1.0));\n    else c += clamp(a, 0.0, 1.5);\n    couleur = vec4(clamp(c, 0.0, 1.0), 1.0);\n}"
+  },
+  "fuite": {
+   "description": {
+    "fr": "Un voile de lumière colorée traverse l'image.",
+    "en": "A veil of coloured light drifts across the image.",
+    "de": "Ein farbiger Lichtschleier zieht über das Bild.",
+    "es": "Un velo de luz de color atraviesa la imagen.",
+    "it": "Un velo di luce colorata attraversa l'immagine."
+   },
+   "parametres": [
+    {
+     "cle": "couleur",
+     "nom": {
+      "fr": "Couleur",
+      "en": "Colour",
+      "de": "Farbe",
+      "es": "Color",
+      "it": "Colore"
+     },
+     "type": "choix",
+     "defaut": 0,
+     "choix": [
+      {
+       "fr": "Chaude",
+       "en": "Warm",
+       "de": "Warm",
+       "es": "Cálida",
+       "it": "Calda"
+      },
+      {
+       "fr": "Rose",
+       "en": "Pink",
+       "de": "Rosa",
+       "es": "Rosa",
+       "it": "Rosa"
+      },
+      {
+       "fr": "Bleue",
+       "en": "Blue",
+       "de": "Blau",
+       "es": "Azul",
+       "it": "Blu"
+      }
+     ]
+    },
+    {
+     "cle": "force",
+     "nom": {
+      "fr": "Force",
+      "en": "Strength",
+      "de": "Stärke",
+      "es": "Fuerza",
+      "it": "Intensità"
+     },
+     "defaut": 0.6,
+     "min": 0.0,
+     "max": 1.0,
+     "type": "float"
+    },
+    {
+     "cle": "vitesse",
+     "nom": {
+      "fr": "Vitesse",
+      "en": "Speed",
+      "de": "Geschwindigkeit",
+      "es": "Velocidad",
+      "it": "Velocità"
+     },
+     "defaut": 1.0,
+     "min": 0.2,
+     "max": 4.0,
+     "type": "float"
+    }
+   ],
+   "glsl": "\nvoid main() {\n    vec3 c = lire(uv).rgb;\n    int k = int(p_couleur + 0.5);\n    vec3 col = k == 0 ? vec3(1.0, 0.55, 0.2) : k == 1 ? vec3(1.0, 0.3, 0.6) : vec3(0.3, 0.6, 1.0);\n    float t = temps * p_vitesse;\n    vec2 cen = vec2(-0.2 + fract(t * 0.08) * 1.4, 0.3 + 0.2 * sin(t * 0.3));\n    float l = smoothstep(0.9, 0.0, length((uv - cen) * vec2(0.7, 1.2))) * (0.6 + 0.4 * bruit(uv * 3.0 + t * 0.2));\n    couleur = vec4(clamp(1.0 - (1.0 - c) * (1.0 - col * l * p_force), 0.0, 1.0), 1.0);\n}"
+  }
+ },
+ "effets": [
+  {
+   "id": "gl_retro_8mm",
+   "famille": "retro",
+   "shader": "retro",
+   "nom": {
+    "fr": "Film 8 mm",
+    "en": "8 mm film",
+    "de": "8-mm-Film",
+    "es": "Película de 8 mm",
+    "it": "Pellicola 8 mm"
+   },
+   "reglages": {}
+  },
+  {
+   "id": "gl_retro_super8",
+   "famille": "retro",
+   "shader": "retro",
+   "nom": {
+    "fr": "Super 8 chaud",
+    "en": "Warm Super 8",
+    "de": "Warmer Super 8",
+    "es": "Super 8 cálido",
+    "it": "Super 8 caldo"
+   },
+   "reglages": {
+    "chaleur": 0.7,
+    "delave": 0.3,
+    "grain": 0.45
+   }
+  },
+  {
+   "id": "gl_retro_sepia",
+   "famille": "retro",
+   "shader": "retro",
+   "nom": {
+    "fr": "Sépia ancien",
+    "en": "Old sepia",
+    "de": "Altes Sepia",
+    "es": "Sepia antiguo",
+    "it": "Seppia antico"
+   },
+   "reglages": {
+    "sepia": 1.0,
+    "delave": 0.8,
+    "rayures": 0.6
+   }
+  },
+  {
+   "id": "gl_retro_delave",
+   "famille": "retro",
+   "shader": "retro",
+   "nom": {
+    "fr": "Couleurs délavées",
+    "en": "Faded colours",
+    "de": "Verblasste Farben",
+    "es": "Colores desvaídos",
+    "it": "Colori sbiaditi"
+   },
+   "reglages": {
+    "delave": 0.9,
+    "rayures": 0.0,
+    "grain": 0.2,
+    "tremble": 0.0
+   }
+  },
+  {
+   "id": "gl_retro_raye",
+   "famille": "retro",
+   "shader": "retro",
+   "nom": {
+    "fr": "Film abîmé",
+    "en": "Damaged film",
+    "de": "Beschädigter Film",
+    "es": "Película dañada",
+    "it": "Pellicola rovinata"
+   },
+   "reglages": {
+    "rayures": 1.0,
+    "grain": 0.6,
+    "tremble": 0.7
+   }
+  },
+  {
+   "id": "gl_vhs",
+   "famille": "retro",
+   "shader": "vhs",
+   "nom": {
+    "fr": "VHS",
+    "en": "VHS",
+    "de": "VHS",
+    "es": "VHS",
+    "it": "VHS"
+   },
+   "reglages": {}
+  },
+  {
+   "id": "gl_vhs_abime",
+   "famille": "retro",
+   "shader": "vhs",
+   "nom": {
+    "fr": "VHS abîmée",
+    "en": "Worn VHS",
+    "de": "Abgenutzte VHS",
+    "es": "VHS gastada",
+    "it": "VHS rovinata"
+   },
+   "reglages": {
+    "force": 1.2,
+    "bande": 1.0,
+    "bavure": 1.0
+   }
+  },
+  {
+   "id": "gl_camescope",
+   "famille": "retro",
+   "shader": "vhs",
+   "nom": {
+    "fr": "Caméscope (DV)",
+    "en": "Camcorder (DV)",
+    "de": "Camcorder (DV)",
+    "es": "Videocámara (DV)",
+    "it": "Videocamera (DV)"
+   },
+   "reglages": {
+    "force": 0.3,
+    "bande": 0.0,
+    "lignes": 0.3,
+    "bavure": 0.3
+   }
+  },
+  {
+   "id": "gl_rvb",
+   "famille": "glitch",
+   "shader": "rvb",
+   "nom": {
+    "fr": "Séparation RVB",
+    "en": "RGB split",
+    "de": "RGB-Trennung",
+    "es": "Separación RGB",
+    "it": "Separazione RGB"
+   },
+   "reglages": {}
+  },
+  {
+   "id": "gl_rvb_pulse",
+   "famille": "glitch",
+   "shader": "rvb",
+   "nom": {
+    "fr": "RVB pulsé",
+    "en": "Pulsing RGB",
+    "de": "Pulsierendes RGB",
+    "es": "RGB pulsado",
+    "it": "RGB pulsante"
+   },
+   "reglages": {
+    "force": 1.2,
+    "rythme": 2.0
+   }
+  },
+  {
+   "id": "gl_rvb_vertical",
+   "famille": "glitch",
+   "shader": "rvb",
+   "nom": {
+    "fr": "RVB vertical",
+    "en": "Vertical RGB",
+    "de": "Vertikales RGB",
+    "es": "RGB vertical",
+    "it": "RGB verticale"
+   },
+   "reglages": {
+    "angle": 90.0
+   }
+  },
+  {
+   "id": "gl_glitch_bandes",
+   "famille": "glitch",
+   "shader": "glitch",
+   "nom": {
+    "fr": "Glitch bandes",
+    "en": "Glitch bands",
+    "de": "Glitch-Streifen",
+    "es": "Glitch de bandas",
+    "it": "Glitch a bande"
+   },
+   "reglages": {
+    "blocs": 0.0
+   }
+  },
+  {
+   "id": "gl_glitch_blocs",
+   "famille": "glitch",
+   "shader": "glitch",
+   "nom": {
+    "fr": "Glitch blocs",
+    "en": "Glitch blocks",
+    "de": "Glitch-Blöcke",
+    "es": "Glitch de bloques",
+    "it": "Glitch a blocchi"
+   },
+   "reglages": {
+    "blocs": 1.0,
+    "force": 0.4
+   }
+  },
+  {
+   "id": "gl_glitch_fort",
+   "famille": "glitch",
+   "shader": "glitch",
+   "nom": {
+    "fr": "Glitch fort",
+    "en": "Heavy glitch",
+    "de": "Starker Glitch",
+    "es": "Glitch fuerte",
+    "it": "Glitch forte"
+   },
+   "reglages": {
+    "force": 1.3,
+    "frequence": 0.9,
+    "blocs": 0.8
+   }
+  },
+  {
+   "id": "gl_vignette",
+   "famille": "lentille",
+   "shader": "lentille",
+   "nom": {
+    "fr": "Vignettage doux",
+    "en": "Soft vignette",
+    "de": "Weiche Vignette",
+    "es": "Viñeta suave",
+    "it": "Vignettatura morbida"
+   },
+   "reglages": {
+    "mode": 0,
+    "mouvement": 0.0
+   }
+  },
+  {
+   "id": "gl_lampe",
+   "famille": "lentille",
+   "shader": "lentille",
+   "nom": {
+    "fr": "Lampe de poche",
+    "en": "Flashlight",
+    "de": "Taschenlampe",
+    "es": "Linterna",
+    "it": "Torcia"
+   },
+   "reglages": {
+    "mode": 1,
+    "mouvement": 0.5
+   }
+  },
+  {
+   "id": "gl_flou_bord",
+   "famille": "lentille",
+   "shader": "lentille",
+   "nom": {
+    "fr": "Flou de bord (maquette)",
+    "en": "Edge blur (miniature)",
+    "de": "Randunschärfe (Miniatur)",
+    "es": "Desenfoque de bordes (maqueta)",
+    "it": "Sfocatura ai bordi (miniatura)"
+   },
+   "reglages": {
+    "mode": 2,
+    "taille": 0.5
+   }
+  },
+  {
+   "id": "gl_flou_granuleux",
+   "famille": "lentille",
+   "shader": "lentille",
+   "nom": {
+    "fr": "Flou granuleux",
+    "en": "Grainy blur",
+    "de": "Körnige Unschärfe",
+    "es": "Desenfoque granulado",
+    "it": "Sfocatura granulosa"
+   },
+   "reglages": {
+    "mode": 3
+   }
+  },
+  {
+   "id": "gl_fisheye",
+   "famille": "lentille",
+   "shader": "lentille",
+   "nom": {
+    "fr": "Grand angle (fish-eye)",
+    "en": "Fish-eye",
+    "de": "Fischauge",
+    "es": "Ojo de pez",
+    "it": "Fish-eye"
+   },
+   "reglages": {
+    "mode": 4,
+    "force": 0.8
+   }
+  },
+  {
+   "id": "gl_ouvrir_cercle",
+   "famille": "ouverture",
+   "shader": "ouverture",
+   "nom": {
+    "fr": "Cercle qui s'ouvre",
+    "en": "Circle open",
+    "de": "Kreis öffnet",
+    "es": "Círculo que se abre",
+    "it": "Cerchio che si apre"
+   },
+   "reglages": {
+    "forme": 0,
+    "sens": 0
+   }
+  },
+  {
+   "id": "gl_fermer_cercle",
+   "famille": "ouverture",
+   "shader": "ouverture",
+   "nom": {
+    "fr": "Cercle qui se ferme",
+    "en": "Circle close",
+    "de": "Kreis schließt",
+    "es": "Círculo que se cierra",
+    "it": "Cerchio che si chiude"
+   },
+   "reglages": {
+    "forme": 0,
+    "sens": 1
+   }
+  },
+  {
+   "id": "gl_ouvrir_vertical",
+   "famille": "ouverture",
+   "shader": "ouverture",
+   "nom": {
+    "fr": "Ouverture verticale",
+    "en": "Vertical open",
+    "de": "Vertikal öffnen",
+    "es": "Apertura vertical",
+    "it": "Apertura verticale"
+   },
+   "reglages": {
+    "forme": 1,
+    "sens": 0
+   }
+  },
+  {
+   "id": "gl_ouvrir_horizontal",
+   "famille": "ouverture",
+   "shader": "ouverture",
+   "nom": {
+    "fr": "Ouverture horizontale",
+    "en": "Horizontal open",
+    "de": "Horizontal öffnen",
+    "es": "Apertura horizontal",
+    "it": "Apertura orizzontale"
+   },
+   "reglages": {
+    "forme": 2,
+    "sens": 0
+   }
+  },
+  {
+   "id": "gl_ouvrir_losange",
+   "famille": "ouverture",
+   "shader": "ouverture",
+   "nom": {
+    "fr": "Losange",
+    "en": "Diamond",
+    "de": "Raute",
+    "es": "Rombo",
+    "it": "Rombo"
+   },
+   "reglages": {
+    "forme": 3,
+    "sens": 2
+   }
+  },
+  {
+   "id": "gl_ouvrir_coeur",
+   "famille": "ouverture",
+   "shader": "ouverture",
+   "nom": {
+    "fr": "Cœur qui s'ouvre",
+    "en": "Heart open",
+    "de": "Herz öffnet",
+    "es": "Corazón que se abre",
+    "it": "Cuore che si apre"
+   },
+   "reglages": {
+    "forme": 4,
+    "sens": 0,
+    "duree": 1.2
+   }
+  },
+  {
+   "id": "gl_rideau",
+   "famille": "ouverture",
+   "shader": "ouverture",
+   "nom": {
+    "fr": "Rideau",
+    "en": "Curtain",
+    "de": "Vorhang",
+    "es": "Telón",
+    "it": "Sipario"
+   },
+   "reglages": {
+    "forme": 5,
+    "sens": 0,
+    "adouci": 0.05
+   }
+  },
+  {
+   "id": "gl_bandes_cinema",
+   "famille": "cinematique",
+   "shader": "cinema",
+   "nom": {
+    "fr": "Bandes cinéma qui entrent",
+    "en": "Sliding cinema bars",
+    "de": "Einfahrende Kinobalken",
+    "es": "Bandas de cine que entran",
+    "it": "Bande cinema che entrano"
+   },
+   "reglages": {
+    "mode": 0
+   }
+  },
+  {
+   "id": "gl_teal_orange",
+   "famille": "cinematique",
+   "shader": "cinema",
+   "nom": {
+    "fr": "Bleu et orange (blockbuster)",
+    "en": "Teal & orange (blockbuster)",
+    "de": "Blau-Orange (Blockbuster)",
+    "es": "Azul y naranja (taquillazo)",
+    "it": "Blu e arancio (blockbuster)"
+   },
+   "reglages": {
+    "mode": 1,
+    "bandes": 0.0
+   }
+  },
+  {
+   "id": "gl_film_nb",
+   "famille": "cinematique",
+   "shader": "cinema",
+   "nom": {
+    "fr": "Film noir et blanc",
+    "en": "Black & white film",
+    "de": "Schwarzweißfilm",
+    "es": "Película en blanco y negro",
+    "it": "Film in bianco e nero"
+   },
+   "reglages": {
+    "mode": 2,
+    "bandes": 0.1
+   }
+  },
+  {
+   "id": "gl_projecteur",
+   "famille": "cinematique",
+   "shader": "cinema",
+   "nom": {
+    "fr": "Projecteur",
+    "en": "Projector",
+    "de": "Projektor",
+    "es": "Proyector",
+    "it": "Proiettore"
+   },
+   "reglages": {
+    "mode": 3,
+    "bandes": 0.0
+   }
+  },
+  {
+   "id": "gl_flash_noir",
+   "famille": "motion",
+   "shader": "flash",
+   "nom": {
+    "fr": "Flash noir au rythme",
+    "en": "Black flash on the beat",
+    "de": "Schwarzer Blitz im Takt",
+    "es": "Destello negro al ritmo",
+    "it": "Flash nero a ritmo"
+   },
+   "reglages": {
+    "mode": 0
+   }
+  },
+  {
+   "id": "gl_flash_blanc",
+   "famille": "motion",
+   "shader": "flash",
+   "nom": {
+    "fr": "Flash blanc au rythme",
+    "en": "White flash on the beat",
+    "de": "Weißer Blitz im Takt",
+    "es": "Destello blanco al ritmo",
+    "it": "Flash bianco a ritmo"
+   },
+   "reglages": {
+    "mode": 1
+   }
+  },
+  {
+   "id": "gl_zoom_pulse",
+   "famille": "motion",
+   "shader": "flash",
+   "nom": {
+    "fr": "Zoom pulsé (beat)",
+    "en": "Zoom pulse (beat)",
+    "de": "Zoom-Puls (Beat)",
+    "es": "Zoom pulsado (ritmo)",
+    "it": "Zoom pulsante (ritmo)"
+   },
+   "reglages": {
+    "mode": 2
+   }
+  },
+  {
+   "id": "gl_strobe",
+   "famille": "motion",
+   "shader": "flash",
+   "nom": {
+    "fr": "Stroboscope",
+    "en": "Strobe",
+    "de": "Stroboskop",
+    "es": "Estroboscopio",
+    "it": "Stroboscopio"
+   },
+   "reglages": {
+    "mode": 3,
+    "rythme": 4.0,
+    "force": 0.5
+   }
+  },
+  {
+   "id": "gl_secousse",
+   "famille": "motion",
+   "shader": "flash",
+   "nom": {
+    "fr": "Secousse au rythme",
+    "en": "Shake on the beat",
+    "de": "Wackeln im Takt",
+    "es": "Sacudida al ritmo",
+    "it": "Scossa a ritmo"
+   },
+   "reglages": {
+    "mode": 4
+   }
+  },
+  {
+   "id": "gl_zoom_avant",
+   "famille": "motion",
+   "shader": "zoom",
+   "nom": {
+    "fr": "Zoom avant progressif",
+    "en": "Slow zoom in",
+    "de": "Langsamer Zoom hinein",
+    "es": "Zoom de acercamiento",
+    "it": "Zoom in progressivo"
+   },
+   "reglages": {
+    "mode": 0
+   }
+  },
+  {
+   "id": "gl_zoom_arriere",
+   "famille": "motion",
+   "shader": "zoom",
+   "nom": {
+    "fr": "Zoom arrière progressif",
+    "en": "Slow zoom out",
+    "de": "Langsamer Zoom heraus",
+    "es": "Zoom de alejamiento",
+    "it": "Zoom out progressivo"
+   },
+   "reglages": {
+    "mode": 1
+   }
+  },
+  {
+   "id": "gl_tourbillon",
+   "famille": "motion",
+   "shader": "zoom",
+   "nom": {
+    "fr": "Tourbillon d'entrée",
+    "en": "Swirl in",
+    "de": "Wirbel hinein",
+    "es": "Remolino de entrada",
+    "it": "Vortice d'ingresso"
+   },
+   "reglages": {
+    "mode": 2
+   }
+  },
+  {
+   "id": "gl_flou_zoom",
+   "famille": "motion",
+   "shader": "zoom",
+   "nom": {
+    "fr": "Flou de zoom",
+    "en": "Zoom blur",
+    "de": "Zoom-Unschärfe",
+    "es": "Desenfoque de zoom",
+    "it": "Sfocatura zoom"
+   },
+   "reglages": {
+    "mode": 3
+   }
+  },
+  {
+   "id": "gl_neon_rose",
+   "famille": "glitch",
+   "shader": "neon",
+   "nom": {
+    "fr": "Néon rose",
+    "en": "Pink neon",
+    "de": "Rosa Neon",
+    "es": "Neón rosa",
+    "it": "Neon rosa"
+   },
+   "reglages": {
+    "couleur": 0
+   }
+  },
+  {
+   "id": "gl_neon_bleu",
+   "famille": "glitch",
+   "shader": "neon",
+   "nom": {
+    "fr": "Néon bleu",
+    "en": "Blue neon",
+    "de": "Blaues Neon",
+    "es": "Neón azul",
+    "it": "Neon blu"
+   },
+   "reglages": {
+    "couleur": 1
+   }
+  },
+  {
+   "id": "gl_contours",
+   "famille": "glitch",
+   "shader": "neon",
+   "nom": {
+    "fr": "Contours lumineux",
+    "en": "Glowing edges",
+    "de": "Leuchtende Kanten",
+    "es": "Contornos luminosos",
+    "it": "Contorni luminosi"
+   },
+   "reglages": {
+    "couleur": 4,
+    "garder": 0.0
+   }
+  },
+  {
+   "id": "gl_pixels",
+   "famille": "glitch",
+   "shader": "pixels",
+   "nom": {
+    "fr": "Pixels",
+    "en": "Pixels",
+    "de": "Pixel",
+    "es": "Píxeles",
+    "it": "Pixel"
+   },
+   "reglages": {}
+  },
+  {
+   "id": "gl_trame",
+   "famille": "glitch",
+   "shader": "pixels",
+   "nom": {
+    "fr": "Trame de points (BD)",
+    "en": "Halftone (comic)",
+    "de": "Rasterpunkte (Comic)",
+    "es": "Trama (cómic)",
+    "it": "Retino (fumetto)"
+   },
+   "reglages": {
+    "mode": 1,
+    "taille": 12.0
+   }
+  },
+  {
+   "id": "gl_etoiles",
+   "famille": "lumieres",
+   "shader": "particules",
+   "nom": {
+    "fr": "Étoiles scintillantes",
+    "en": "Twinkling stars",
+    "de": "Funkelnde Sterne",
+    "es": "Estrellas centelleantes",
+    "it": "Stelle scintillanti"
+   },
+   "reglages": {
+    "genre": 0
+   }
+  },
+  {
+   "id": "gl_lucioles",
+   "famille": "lumieres",
+   "shader": "particules",
+   "nom": {
+    "fr": "Lucioles",
+    "en": "Fireflies",
+    "de": "Glühwürmchen",
+    "es": "Luciérnagas",
+    "it": "Lucciole"
+   },
+   "reglages": {
+    "genre": 1
+   }
+  },
+  {
+   "id": "gl_poussiere",
+   "famille": "lumieres",
+   "shader": "particules",
+   "nom": {
+    "fr": "Poussière dorée",
+    "en": "Golden dust",
+    "de": "Goldstaub",
+    "es": "Polvo dorado",
+    "it": "Polvere dorata"
+   },
+   "reglages": {
+    "genre": 2,
+    "taille": 0.7
+   }
+  },
+  {
+   "id": "gl_neige",
+   "famille": "lumieres",
+   "shader": "particules",
+   "nom": {
+    "fr": "Neige",
+    "en": "Snow",
+    "de": "Schnee",
+    "es": "Nieve",
+    "it": "Neve"
+   },
+   "reglages": {
+    "genre": 3
+   }
+  },
+  {
+   "id": "gl_confettis",
+   "famille": "lumieres",
+   "shader": "particules",
+   "nom": {
+    "fr": "Confettis",
+    "en": "Confetti",
+    "de": "Konfetti",
+    "es": "Confeti",
+    "it": "Coriandoli"
+   },
+   "reglages": {
+    "genre": 4,
+    "quantite": 0.6
+   }
+  },
+  {
+   "id": "gl_fuite_chaude",
+   "famille": "lumieres",
+   "shader": "fuite",
+   "nom": {
+    "fr": "Fuite de lumière chaude",
+    "en": "Warm light leak",
+    "de": "Warmes Lichtleck",
+    "es": "Fuga de luz cálida",
+    "it": "Fuga di luce calda"
+   },
+   "reglages": {
+    "couleur": 0
+   }
+  },
+  {
+   "id": "gl_fuite_rose",
+   "famille": "lumieres",
+   "shader": "fuite",
+   "nom": {
+    "fr": "Fuite de lumière rose",
+    "en": "Pink light leak",
+    "de": "Rosa Lichtleck",
+    "es": "Fuga de luz rosa",
+    "it": "Fuga di luce rosa"
+   },
+   "reglages": {
+    "couleur": 1
+   }
+  }
+ ]
+}

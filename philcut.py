@@ -38,6 +38,15 @@ def verifier(sortie):
         ok = ok and f["duree"] > 1.5
     except Exception as e:
         lignes.append(f"moteur export: ERREUR {e}")
+    try:                                         # moteur d'effets GL : embarqué ; la carte graphique peut manquer (machine de fabrication)
+        import moderngl  # noqa: F401
+        from app import moteur_gl
+        n = len(moteur_gl.charger()["effets"])
+        lignes.append(f"moteur GL: {n} effets, contexte : {moteur_gl.raison() if moteur_gl.disponible() else 'indisponible ici (' + moteur_gl.raison() + ')'}")
+        ok = ok and n > 0
+    except Exception as e:
+        lignes.append(f"moteur GL: ERREUR {e}")
+        ok = False
         ok = False
     lignes.append("langues: " + ", ".join(c for c, _n in langue.disponibles()))
     try:

@@ -11,7 +11,10 @@ import copy, json, os, time, uuid
 
 from .config import EXTENSION_PROJET, est_video, est_audio, est_image
 
-VERSION_FORMAT = 1
+VERSION_FORMAT = 2
+# 2 (0.9.35) : révision et appareil, emplacements des médias par appareil (liens virtuels), copie légère sur le Drive ;
+# tout ce que cette version ne connaît pas est gardé tel quel et réécrit à l'identique.
+PARAMS = None              # réglages de l'appli (machine, Drive), donnés par la fenêtre au démarrage
 FORMATS = {"16:9": (1920, 1080), "9:16": (1080, 1920), "1:1": (1080, 1080), "4:5": (1080, 1350)}
 
 
@@ -427,9 +430,18 @@ class Projet:
         if not chemin.lower().endswith(EXTENSION_PROJET):
             chemin += EXTENSION_PROJET
         self.d["modifie"] = time.strftime("%Y-%m-%dT%H:%M:%S")
+        self.d["version"] = max(VERSION_FORMAT, int(self.d.get("version") or 0))
+        self.conflit = self._garder_version_ailleurs(chemin)
+        from . import liens
+        liens.noter(self.d, PARAMS)
+        self._revision_lue = self.d.get("revision", 0)
         base = os.path.dirname(os.path.abspath(chemin))
         d = copy.deepcopy(self.d)
         for m in d["medias"]:                      # chemin relatif en plus, pour un dossier deplace d'un bloc
+            if m.get("copie_legere") and m.get("original"):
+                m["chemin"] = m["original"]        # la copie légère du Drive ne remplace jamais l'original dans le fichier
+            m.pop("copie_legere", None)
+            m.pop("original", None)
             try:
                 m["relatif"] = os.path.relpath(m["chemin"], base)
             except ValueError:
@@ -443,14 +455,45 @@ class Projet:
         self.modifie = False
         return chemin
 
+    def _garder_version_ailleurs(self, chemin):
+        """Le fichier a été enregistré par un autre appareil depuis qu'on l'a ouvert : on enregistre quand même (la
+        version la plus récente gagne) mais l'autre version est rangée dans les versions du projet, jamais perdue.
+        Renvoie {appareil, quand, copie} ou None."""
+        if not os.path.exists(chemin):
+            return None
+        try:
+            with open(chemin, encoding="utf-8") as f:
+                disque = json.load(f)
+        except (OSError, ValueError):
+            return None
+        from . import liens
+        ici = liens.machine(PARAMS)
+        if int(disque.get("revision") or 0) <= int(getattr(self, "_revision_lue", self.d.get("revision", 0)) or 0):
+            return None
+        if (disque.get("appareil") or ici) == ici:
+            return None
+        try:
+            from . import secours
+            k = secours.cle(self)
+            copie = os.path.join(secours.dossier(), f"{k}_{time.strftime('%Y%m%d_%H%M%S')}_autre.philcut")
+            disque["_secours"] = {"origine": chemin, "nom": disque.get("nom", ""), "quand": disque.get("modifie", ""),
+                                  "poste": disque.get("appareil", ""), "autre": True}
+            with open(copie, "w", encoding="utf-8") as f:
+                json.dump(disque, f, ensure_ascii=False)
+        except OSError:
+            copie = ""
+        return {"appareil": disque.get("appareil", "?"), "quand": disque.get("modifie", ""), "copie": copie}
+
     @classmethod
     def ouvrir(cls, chemin):
         with open(chemin, encoding="utf-8") as f:
             d = json.load(f)
-        if d.get("version", 0) > VERSION_FORMAT:
-            raise ValueError("Ce projet vient d'une version plus récente de PhilCut.")
         p = cls()
+        # projet d'une version plus récente (autre appareil à jour) : ouvert quand même ; ce qui n'est pas compris
+        # reste dans le document et sera réécrit à l'identique
+        p.plus_recent = int(d.get("version") or 0) > VERSION_FORMAT
         p.d.update(d)
+        p._revision_lue = d.get("revision", 0)
         p.chemin = chemin
         base = os.path.dirname(os.path.abspath(chemin))
         for m in p.medias:                         # retrouver les rushes qui ont bouge
@@ -464,6 +507,11 @@ class Projet:
 
     def manquants(self):
         return [m for m in self.medias if not os.path.exists(m["chemin"])]
+
+    def retrouver_medias(self, chercher_disque=False, arret=lambda: False):
+        """Liens virtuels : rattache les médias absents (voir liens.retrouver)."""
+        from . import liens
+        return liens.retrouver(self, PARAMS, chercher_disque, arret)
 
 
 # ------------------------------------------------------------------ fonctions sur les clips

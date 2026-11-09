@@ -6,7 +6,7 @@ Tout est ecrit dans un dossier temporaire ; progression et arret possibles.
 """
 import os, shutil, tempfile
 
-from . import effets as E, generateurs as G, goodies as GO, moteur, titres as T
+from . import effets as E, generateurs as G, goodies as GO, moteur, moteur_gl, titres as T
 from .projet import duree_clip, fin_clip
 
 # effets audio d'un plan (menu Voix et son)
@@ -93,6 +93,14 @@ class Exportateur:
     def __init__(self, projet, sortie, destination="youtube", qualite=None, encodeur=None, params=None, dossier_tmp=None):
         from .projet import decouper_effets_partiels
         self.p = decouper_effets_partiels(projet)      # effet sur une partie du plan : le plan est coupé à ses bornes
+        # média introuvable sur ce poste (liens virtuels) : son plan est laissé vide (noir / silence) au lieu d'échouer
+        absents = {m["id"] for m in self.p.medias if not os.path.exists(m.get("chemin") or "")}
+        self.absents = [c.get("nom", "") for c in self.p.clips if c.get("media") in absents]
+        if absents:
+            if self.p is projet:
+                import copy
+                self.p = copy.deepcopy(projet)
+            self.p.d["clips"] = [c for c in self.p.clips if c.get("media") not in absents]
         self.sortie = sortie
         self.dest = destination
         self.params = params or {}
@@ -212,21 +220,36 @@ class Exportateur:
         v = fiche.get("video") or {}
         d = duree_clip(c)
         if m["genre"] == "image":
-            k = self._entree("-loop", "1", "-framerate", str(self.cad), "-t", f"{d + ext:.3f}", "-i", m["chemin"])
-            chaine = [f"[{k}:v]format=yuv420p,setpts=PTS-STARTPTS"]
+            entree = ["-loop", "1", "-framerate", str(self.cad), "-t", f"{d + ext:.3f}", "-i", m["chemin"]]
+            tete = ["format=yuv420p", "setpts=PTS-STARTPTS"]
         else:
-            k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']) + ext * c.get('vitesse', 1.0):.3f}", "-i", m["chemin"])
-            chaine = [f"[{k}:v]setpts=(PTS-STARTPTS)/{c.get('vitesse', 1.0):.4f}"]
+            entree = ["-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']) + ext * c.get('vitesse', 1.0):.3f}", "-i", m["chemin"]]
+            tete = [f"setpts=(PTS-STARTPTS)/{c.get('vitesse', 1.0):.4f}"]
             if v.get("hdr"):
-                chaine.append("zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=hable,zscale=t=bt709:m=bt709:r=tv,format=yuv420p")
-        chaine.append(f"fps={self.cad}")
-        chaine.append(self._cadrage(c, m))
-        chaine.append("format=yuv420p")
+                tete.append("zscale=t=linear:npl=100,format=gbrpf32le,zscale=p=bt709,tonemap=hable,zscale=t=bt709:m=bt709:r=tv,format=yuv420p")
+        tete.append(f"fps={self.cad}")
+        tete.append(self._cadrage(c, m))
+        tete.append("format=yuv420p")
         ctx = {"cadence": self.cad, "largeur": self.L, "hauteur": self.H, "duree": d, "debut": c["debut"]}
         avance = float(c.get("_avance") or 0.0)     # extrait (aperçu) : les effets gardent l'horloge du plan entier
+        gl = self._rendu_gl(c, m, entree, tete, d + ext, avance)
+        if gl:                                       # effets GL déjà appliqués dans un fichier intermédiaire
+            k = self._entree("-i", gl)
+            chaine = [f"[{k}:v]setpts=PTS-STARTPTS"]
+        else:
+            k = self._entree(*entree)
+            chaine = [f"[{k}:v]" + tete[0]] + tete[1:]
         if avance > 0:
             chaine.append(f"setpts=PTS+{avance:.3f}/TB")
         for e in E.actifs(c):
+            if e["id"] in E.GL:
+                if not gl:                           # pas de carte graphique utilisable : approximation FFmpeg
+                    f = moteur_gl.filtre_secours(e["id"], e.get("params"))
+                    if f:
+                        chaine.append(f)
+                    else:
+                        self.journal.append(f"effet « {e['id']} » non appliqué : {moteur_gl.raison()}")
+                continue
             f = E.filtre(e, ctx) or E.filtre_en_ligne(e["id"], ctx)
             if f:
                 chaine.append(f)
@@ -255,6 +278,26 @@ class Exportateur:
         nom = self._nom("v")
         self.filtres.append(",".join(chaine) + f"[{nom}]")
         return nom
+
+    def _rendu_gl(self, c, m, entree, tete, duree, avance):
+        """Effets GL du plan (moteur_gl) : le plan cadré passe image par image dans la carte graphique et va dans un
+        fichier intermédiaire (gardé en cache tant que rien ne change). None s'il n'y a pas d'effet GL ou pas de GL."""
+        effets = [e for e in E.actifs(c) if e["id"] in E.GL]
+        if not effets or not moteur_gl.disponible():
+            return None
+        cle = moteur_gl.cle_cache(m.get("empreinte") or m["chemin"], entree, tete, self.L, self.H, self.cad, round(duree, 3), round(avance, 3),
+                                  [(e["id"], moteur_gl.valeurs(e["id"], e.get("params"))) for e in effets], duree_clip(c))
+        sortie = os.path.join(moteur_gl.dossier_cache(), cle + ".mp4")
+        if os.path.exists(sortie):
+            return sortie
+        prog = getattr(self, "progression_gl", None)
+        arret = getattr(self, "arret", None) or (lambda: False)
+        try:
+            return moteur_gl.rendre(entree, tete, effets, self.L, self.H, self.cad, duree, sortie, avance=avance,
+                                    progression=prog, arret=arret, duree_plan=duree_clip(c))
+        except Exception as e:      # noqa: BLE001
+            self.journal.append(f"effets GL non appliqués ({e})")
+            return None
 
     def _detourage(self, chaine, e, c, d):
         """Changer le fond : masque de la personne (segmentation.py) ; nouveau fond = média du projet, fond flouté ou couleur."""
@@ -304,7 +347,10 @@ class Exportateur:
         out = self._nom("mix")
         if e["id"] == "double_exposition":
             op = float((e.get("params") or {}).get("opacite", 0.5))
-            self.filtres.append(f"[{a}][{b}]blend=all_mode=screen:all_opacity={op:.2f}[{out}]")
+            ga, gb = self._nom("pga"), self._nom("pgb")      # mélange en RVB (en YUV, les noirs viraient au violet)
+            self.filtres.append(f"[{a}]format=gbrp[{ga}]")
+            self.filtres.append(f"[{b}]format=gbrp[{gb}]")
+            self.filtres.append(f"[{ga}][{gb}]blend=all_mode=screen:all_opacity={op:.2f},format=yuv420p[{out}]")
         elif e["id"] == "avant_apres":
             pa = dict(E.defauts("avant_apres"))
             pa.update(e.get("params") or {})
@@ -666,6 +712,9 @@ class Exportateur:
         return args
 
     def lancer(self, progression=None, arret=lambda: False, sous_titres=()):
+        self.arret = arret
+        if progression:                     # rendu préalable des effets GL : la barre avance aussi pendant ce temps
+            self.progression_gl = lambda f: progression(0.0)
         args = self.commande(sous_titres)
         try:
             moteur.lancer(args, progression=progression, duree=self.duree, arret=arret)

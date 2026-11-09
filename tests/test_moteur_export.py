@@ -137,7 +137,7 @@ class TestMoteur(unittest.TestCase):
         for k in effets.CATALOGUE:
             e = {"id": k, "params": effets.defauts(k)}
             f = effets.filtre(e, ctx)
-            if k in effets.GENERES or k in effets.XFADE:
+            if k in effets.GENERES or k in effets.XFADE or k in effets.GL:     # GL : rendu par moteur_gl, pas par un filtre
                 self.assertIsNone(f, k)
             elif k not in ("double_exposition", "chroma_key", "detourage", "avant_apres", "lut"):     # second média ou fichier à choisir
                 self.assertTrue(f, k)

@@ -158,6 +158,10 @@ class Emplacement:
         """Cree les dossiers parents de chemin s'ils manquent (avant un envoi)."""
         pass
 
+    def supprimer(self, chemin):
+        """Supprime un fichier (0.9.35, nettoyage de l'espace PhilCut). Les Drives le mettent à la corbeille."""
+        raise ErreurDistant(_("La suppression n'est pas disponible sur ce type d'emplacement."))
+
 
 # ---------------------------------------------------------------------------------- dossier reseau
 class Reseau(Emplacement):
@@ -193,6 +197,12 @@ class Reseau(Emplacement):
         import shutil
         os.makedirs(os.path.dirname(self._local(chemin)), exist_ok=True)
         shutil.copy2(local, self._local(chemin))
+
+    def supprimer(self, chemin):
+        try:
+            os.remove(self._local(chemin))
+        except FileNotFoundError:
+            pass
 
 
 # ---------------------------------------------------------------------------------- HTTP commun
@@ -296,6 +306,9 @@ class WebDAV(_Http):
         self.creer_dossiers(chemin)
         with open(local, "rb") as f:
             self._req("PUT", chemin, f.read(), {"Content-Type": type_mime(chemin)}).close()
+
+    def supprimer(self, chemin):
+        self._req("DELETE", chemin).close()
 
     def creer_dossiers(self, chemin):
         parties = [x for x in posixpath.dirname(chemin).split("/") if x]
@@ -414,6 +427,14 @@ class FTP(Emplacement):
     def envoyer(self, local, chemin):
         with self._capture():
             return self._envoyer(local, chemin)
+
+    def supprimer(self, chemin):
+        with self._capture():
+            f = self._connexion()
+            try:
+                f.delete(chemin)
+            finally:
+                f.close()
 
 
 # ---------------------------------------------------------------------------------- Synology File Station
@@ -706,6 +727,13 @@ class GoogleDrive(_DriveOAuth):
                         {"Content-Type": f"multipart/related; boundary={bord}"})
         self._ids["/" + "/".join(p for p in chemin.split("/") if p)] = d["id"]
 
+    def supprimer(self, chemin):
+        i = self._id(chemin)
+        if i:                                   # à la corbeille du Drive (récupérable 30 jours)
+            self._appel("PATCH", f"{DRIVE_API}/files/{i}", json.dumps({"trashed": True}).encode(),
+                        {"Content-Type": "application/json"})
+            self._ids.pop(self._cle(chemin), None)
+
     def modifies(self, dossier):
         """{nom: (taille, date ISO)} des fichiers d'un dossier (pour le miroir)."""
         i = self._id(dossier)
@@ -781,6 +809,9 @@ class OneDrive(_DriveOAuth):
             r.add_header("Content-Range", f"bytes {debut}-{debut + len(bout) - 1}/{len(contenu)}")
             self._ouvrir(r).close()
 
+    def supprimer(self, chemin):
+        self._appel("DELETE", self._url(chemin), brut=True)       # corbeille OneDrive
+
     def qui(self):
         u = self._appel("GET", f"{GRAPH}/me?$select=userPrincipalName,mail,displayName")
         return u.get("mail") or u.get("userPrincipalName") or u.get("displayName") or "?"
@@ -836,6 +867,9 @@ class Dropbox(_DriveOAuth):
         with open(local, "rb") as f:
             self._appel("POST", f"{DROPBOX_CONTENU}/files/upload", f.read(),
                         {"Dropbox-API-Arg": arg, "Content-Type": "application/octet-stream"})
+
+    def supprimer(self, chemin):
+        self._json(f"{DROPBOX_API}/files/delete_v2", {"path": self._cle(chemin)})
 
     def qui(self):
         u = self._appel("POST", f"{DROPBOX_API}/users/get_current_account", None)
@@ -923,6 +957,11 @@ class Box(_DriveOAuth):
         d = self._appel("POST", url, corps, {"Content-Type": f"multipart/form-data; boundary={bord}"})
         for x in d.get("entries", []):
             self._ids[self._cle(chemin)] = x["id"]
+
+    def supprimer(self, chemin):
+        i = self._id(chemin, type_="file")
+        if i:
+            self._appel("DELETE", f"{BOX_API}/files/{i}", brut=True)      # corbeille Box
 
     def qui(self):
         u = self._appel("GET", f"{BOX_API}/users/me?fields=login,name")

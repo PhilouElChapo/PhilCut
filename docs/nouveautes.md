@@ -4,7 +4,16 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.34 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.35 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.35
+- 51 nouveaux effets, en 7 familles (Effets du plan) : Retro (8 mm, Super 8, sepia, delave, raye), VHS et camescope, RVB decale, Glitch, Lentille (vignette, lampe, flou du bord, fisheye), Ouvertures (cercle, rideau, losange, coeur...), Cinematique (bandes, teal & orange, noir et blanc, projecteur), Mouvement (flash, zoom pulse, secousse, tourbillon), Lumieres (neon, contours, etoiles, lucioles, poussiere, neige, confettis, fuites de lumiere). Ils sont calcules par la carte graphique ; sans carte graphique, une version simplifiee est utilisee. Le catalogue se met a jour tout seul depuis Internet.
+- Le "Lueur" ne rend plus les noirs violets.
+- Projets entre vos appareils : un projet retrouve ses videos tout seul sur un autre poste (meme dossier, Telechargements, Drive...). Fichier > "Medias introuvables sur ce poste..." : on indique ou est un fichier, les autres du meme dossier suivent. Un media absent reste a sa place, grise ("Introuvable ici") : rien n'est supprime.
+- Si un projet a ete modifie sur un autre appareil, votre version est enregistree et l'autre gardee dans les sauvegardes automatiques.
+- A l'enregistrement, PhilCut peut proposer une copie legere 720p des videos et deposer les creations IA sur le Drive (jamais d'office) : on monte ailleurs sans l'original, et une creation IA n'est pas payee deux fois.
+- Fichier > "Espace PhilCut sur le Drive..." : liste ce qui prend de la place, cases pre-cochees pour ce qui ne sert plus, suppression apres votre clic.
+- Preferences > Comptes et synchro : copie legere, depot des creations, delai de nettoyage, superpositions avec transparence (attention : mal lues par certains telephones Android).
 
 ### 0.9.34
 - Montage > Atelier IA : l'entree video s'appelle "Video IA sur la partie en jaune (animer l'image, dessin anime, ralenti...)" et "Sequence IA..." y est aussi, en plus du menu Fabrique.

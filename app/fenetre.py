@@ -49,6 +49,8 @@ class Fenetre(QMainWindow):
     def __init__(self, fichiers=()):
         super().__init__()
         self.params = Parametres()
+        from . import projet as _projet_mod
+        _projet_mod.PARAMS = self.params          # appareil et Drive pour les liens virtuels (0.9.35)
         self.setWindowTitle("PhilCut")
         self.setWindowIcon(logo(64))
         self.setAcceptDrops(True)
@@ -141,6 +143,10 @@ class Fenetre(QMainWindow):
         m.addAction(icone("enregistrer"), _("Enregistrer"), self.enregistrer, QKeySequence.Save)
         m.addAction(_("Enregistrer sous…"), lambda: self.enregistrer(sous=True), "Ctrl+Shift+S")
         m.addAction(_("Revenir à une sauvegarde automatique…"), self.revenir_sauvegarde)
+        m.addSeparator()
+        m.addAction(_("Médias introuvables sur ce poste…"), lambda: self.medias_introuvables())
+        m.addAction(_("Retrouver ce projet sur mes autres appareils (Drive)…"), self.preparer_appareils)
+        m.addAction(_("Espace PhilCut sur le Drive…"), self.espace_drive)
         m.addSeparator()
         m.addAction(icone("exporter"), _("Exporter la vidéo…"), self.exporter, "Ctrl+E")
         m.addSeparator()
@@ -388,10 +394,25 @@ class Fenetre(QMainWindow):
                 return None
             self.params.ajouter_recent(chemin)
             self.params["dernier_dossier"] = os.path.dirname(chemin)
+            try:                                   # liens virtuels : même fichier ailleurs sur ce poste, ou copie légère du Drive
+                r = p.retrouver_medias()
+            except Exception:    # noqa: BLE001
+                r = {"trouves": [], "copies": [], "manquants": p.manquants()}
             ed = self.ajouter_onglet(p)
-            manquants = p.manquants()
-            if manquants:
-                ed.encart.message(_("{n} rush(es) introuvable(s) : {l}", n=len(manquants), l=", ".join(m["nom"] for m in manquants[:4])), 15000)
+            if r["trouves"] or r["copies"]:
+                p.modifie = True
+            if r["manquants"] or r["copies"]:
+                n = len(r["manquants"])
+                texte = (_("{n} média(s) introuvable(s) sur ce poste ; ils restent dans le projet, grisés.", n=n) if n else "")
+                if r["copies"]:
+                    texte += (" " if texte else "") + _("{c} vidéo(s) montée(s) sur leur copie légère du Drive.", c=len(r["copies"]))
+                ed.encart.suivre_message(texte, (_("Où sont-ils ?…"), lambda: self.medias_introuvables(ed)), 30000)
+            elif r["trouves"]:
+                ed.encart.message(_("{n} média(s) retrouvé(s) à un autre emplacement sur ce poste.", n=len(r["trouves"])), 6000)
+            if getattr(p, "plus_recent", False):
+                QMessageBox.information(self, _("Ouvrir"), _("Ce projet a été enregistré par une version plus récente de PhilCut (un autre "
+                                                              "appareil à jour). Il s'ouvre ; ce que cette version ne connaît pas est "
+                                                              "gardé tel quel et sera réécrit à l'identique. Pensez à mettre PhilCut à jour."))
             # proxys et vignettes manquants : refaits en arriere-plan
             for m in p.medias:
                 if m.get("genre") == "video" and os.path.exists(m["chemin"]) and (not m.get("vignettes") or not os.path.exists(m.get("vignettes") or "")):
@@ -445,6 +466,11 @@ class Fenetre(QMainWindow):
         except OSError as e:
             QMessageBox.warning(self, _("Enregistrer"), str(e))
             return False
+        if getattr(p, "conflit", None):
+            c = p.conflit
+            ed.encart.suivre_message(_("Ce projet avait aussi été modifié sur {a} ({q}). Votre version, la plus récente, est enregistrée ; "
+                                       "l'autre est gardée dans Fichier › Revenir à une sauvegarde automatique.", a=c["appareil"], q=c["quand"].replace("T", " ")),
+                                     (_("Voir les versions"), self.revenir_sauvegarde), 30000)
         # vignette du projet pour l'Accueil
         try:
             png = ed.apercu.image_courante(320)
@@ -462,7 +488,40 @@ class Fenetre(QMainWindow):
         self._maj_titre(ed)
         self.accueil.rafraichir()
         self.ecrire_session()
+        if not getattr(self, "_sans_proposition_drive", False):
+            try:
+                from .dialogues_drive import proposer_apres_enregistrement
+                proposer_apres_enregistrement(ed)
+            except Exception as e:    # noqa: BLE001
+                ed.encart.message(_("Dépôt sur le Drive non proposé : {e}", e=e), 6000)
         return True
+
+    def medias_introuvables(self, ed=None):
+        ed = ed or self.editeur_courant()
+        if ed:
+            from .dialogues_drive import DialogueManquants
+            DialogueManquants(ed).exec()
+
+    def espace_drive(self):
+        from .dialogues_drive import DialogueEspaceDrive
+        utilises = {m.get("copie_drive") for ed in self.editeurs() for m in ed.projet.medias if m.get("copie_drive")}
+        DialogueEspaceDrive(self, self.params, frozenset(utilises)).exec()
+
+    def preparer_appareils(self):
+        ed = self.editeur_courant()
+        if not ed:
+            return
+        ed.projet.d.pop("appareils_preparer", None)
+        from .dialogues_drive import proposer_apres_enregistrement
+        from . import drive_philcut as DP
+        if not DP.disponible(self.params):
+            QMessageBox.information(self, _("Drive"), _("Choisissez d'abord un lieu de synchronisation : Préférences › Comptes et synchro."))
+            return
+        avant = (DP.a_copier(ed.projet), [m for m in ed.projet.medias if os.path.exists((m.get("chemin") or "") + ".ia.json") and not m.get("copie_drive")])
+        if not avant[0] and not avant[1]:
+            ed.encart.message(_("Tout est déjà prêt : les vidéos ont leur copie légère et les créations sont déposées."), 6000)
+            return
+        proposer_apres_enregistrement(ed)
 
     def fermer_onglet(self, i):
         w = self.onglets.widget(i)
@@ -656,6 +715,22 @@ class Fenetre(QMainWindow):
         if not ed or not ed.projet.clips:
             QMessageBox.information(self, _("Exporter"), _("Rien à exporter : posez des plans dans la timeline."))
             return
+        utilises = {c["media"] for c in ed.projet.clips}
+        absents = [m for m in ed.projet.medias if m["id"] in utilises and not os.path.exists(m.get("chemin") or "")]
+        legeres = [m for m in ed.projet.medias if m["id"] in utilises and m.get("copie_legere")]
+        if absents:
+            b = QMessageBox.question(self, _("Exporter"), _("{n} média(s) utilisé(s) dans le film sont introuvables sur ce poste : {l}.\n\n"
+                                                            "Les rattacher d'abord (recommandé) ?", n=len(absents),
+                                                            l=", ".join(m.get("nom", "") for m in absents[:5])),
+                                     QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel)
+            if b == QMessageBox.Cancel:
+                return
+            if b == QMessageBox.Yes:
+                self.medias_introuvables(ed)
+                return
+        if legeres:
+            QMessageBox.information(self, _("Exporter"), _("{n} vidéo(s) seront exportées depuis leur copie légère 720p (l'original n'est "
+                                                           "pas sur ce poste) : la qualité de ces passages sera réduite.", n=len(legeres)))
         from .dialogues_video import DialogueExport
         from . import export, titres
         d = DialogueExport(self, ed.projet, self.params)
@@ -1423,7 +1498,8 @@ class Fenetre(QMainWindow):
         NV.integrer(reseau=False)
         if os.environ.get("PHILCUT_SANS_RESEAU") or not self.params.get("effets_en_ligne", True):
             return
-        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_ia.json", NV.FICHIER)], daemon=True)
+        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_gl.json", "effets_ia.json", NV.FICHIER)],
+                               daemon=True)
         fil.start()
 
         def fusion():
@@ -1818,7 +1894,8 @@ class DialogueVersions(QDialog):
         v.addWidget(t)
         self.liste = QListWidget()
         for r in versions:
-            it = QListWidgetItem(_("{q} — {p} plan(s)", q=secours.depuis(r["quand"]), p=r["plans"]))
+            it = QListWidgetItem(_("{q} — {p} plan(s) — version enregistrée sur {a}", q=secours.depuis(r["quand"]), p=r["plans"], a=r["poste"] or "?")
+                                 if r.get("autre") else _("{q} — {p} plan(s)", q=secours.depuis(r["quand"]), p=r["plans"]))
             it.setData(Qt.UserRole, r)
             self.liste.addItem(it)
         self.liste.setCurrentRow(0)

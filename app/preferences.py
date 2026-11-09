@@ -734,6 +734,46 @@ class DialoguePreferences(QDialog):
         h.addWidget(bi)
         h.addStretch(1)
         f.addRow(h)
+        f.addRow(self._groupe_appareils())
+
+    def _groupe_appareils(self):
+        """Projets entre vos appareils (0.9.35) : copies légères, créations IA déposées, espace PhilCut, transparence."""
+        g = QGroupBox(_("Projets entre vos appareils (PC, téléphone, tablette)"))
+        fg = QFormLayout(g)
+        intro = QLabel(_("Un projet ne contient que des liens vers vos vidéos : chaque appareil les retrouve tout seul (même dossier, "
+                         "Téléchargements, Drive…). Pour monter ailleurs sans l'original, PhilCut peut déposer une copie légère "
+                         "(720p) sur le Drive ; il le propose, il ne le fait jamais d'office."))
+        intro.setWordWrap(True)
+        fg.addRow(intro)
+        self.proposer_copie = QCheckBox(_("Proposer la copie légère 720p sur le Drive à l'enregistrement d'un projet"))
+        self.proposer_copie.setChecked(self.params.get("proposer_copie_legere", True))
+        fg.addRow(self.proposer_copie)
+        self.creations_drive = QComboBox()
+        for k, lib in (("demander", _("Demander à l'enregistrement du projet")), ("toujours", _("Toujours (sans demander)")),
+                       ("jamais", _("Jamais"))):
+            self.creations_drive.addItem(lib, k)
+        self.creations_drive.setCurrentIndex(max(0, self.creations_drive.findData(self.params.get("creations_drive", "demander"))))
+        self.creations_drive.setToolTip(_("Une création IA déposée sur le Drive se reprend sur vos autres appareils sans être "
+                                          "refaite ni payée une deuxième fois."))
+        fg.addRow(_("Déposer les créations IA sur le Drive"), self.creations_drive)
+        self.drive_jours = QComboBox()
+        for j in (30, 90, 365):
+            self.drive_jours.addItem(_("Proposer de supprimer ce qui n'a pas servi depuis {d}", d={30: _("30 jours"), 90: _("90 jours"),
+                                                                                                   365: _("1 an")}[j]), j)
+        self.drive_jours.setCurrentIndex(max(0, self.drive_jours.findData(int(self.params.get("drive_purge_jours", 90) or 90))))
+        fg.addRow(_("Espace PhilCut sur le Drive"), self.drive_jours)
+        b = QPushButton(_("Analyser l'espace PhilCut sur le Drive…"))
+        b.clicked.connect(lambda: self.fenetre.espace_drive())
+        fg.addRow(a_gauche(b))
+        self.alpha = QCheckBox(_("Superpositions avec transparence (vidéos alpha : lucioles, feux d'artifice, cadres animés…)"))
+        self.alpha.setChecked(self.params.get("superpositions_alpha", True))
+        fg.addRow(self.alpha)
+        note = QLabel(_("<span style='color:#c98a00'>Attention : certains téléphones Android lisent mal ces vidéos (fond noir, saccades). "
+                        "Décochée, PhilCut n'utilise que les superpositions dessinées ou calculées : quelques effets ne sont alors "
+                        "pas proposés. Ce réglage suit sur tous vos appareils.</span>"))
+        note.setWordWrap(True)
+        fg.addRow(note)
+        return g
 
     # ---------------------------------------------------------------- Mises a jour
     def _maj(self):
@@ -772,6 +812,10 @@ class DialoguePreferences(QDialog):
     def valider(self):
         p = self.params
         p["creations_purge_jours"] = self.purge.currentData() or 0
+        p["proposer_copie_legere"] = self.proposer_copie.isChecked()
+        p["creations_drive"] = self.creations_drive.currentData()
+        p["drive_purge_jours"] = self.drive_jours.currentData() or 90
+        p["superpositions_alpha"] = self.alpha.isChecked()
         p["secours_minutes"] = self.secours_minutes.currentData() or 0
         p["secours_versions"] = self.secours_versions.value()
         if hasattr(self.fenetre, "regler_sauvegarde_auto"):

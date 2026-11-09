@@ -50,7 +50,7 @@ def sauver(projet, versions=VERSIONS_DEFAUT, poste=""):
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(d, f, ensure_ascii=False)
     os.replace(tmp, chemin)
-    anciennes = sorted(glob.glob(os.path.join(dossier(), f"{k}_*.philcut")))
+    anciennes = sorted(a for a in glob.glob(os.path.join(dossier(), f"{k}_*.philcut")) if not a.endswith("_autre.philcut"))
     for a in anciennes[:-max(1, int(versions))]:
         try:
             os.remove(a)
@@ -66,6 +66,8 @@ def effacer(projet):
         return 0
     n = 0
     for a in glob.glob(os.path.join(dossier(), f"{k}_*.philcut")):
+        if a.endswith("_autre.philcut"):
+            continue                       # version d'un autre appareil : gardée (voir Projet._garder_version_ailleurs)
         try:
             os.remove(a)
             n += 1
@@ -91,7 +93,7 @@ def versions(k):
             continue
         s = d.get("_secours") or {}
         out.append({"chemin": a, "quand": s.get("quand", ""), "nom": s.get("nom") or d.get("nom", ""), "origine": s.get("origine", ""),
-                    "plans": len(d.get("clips") or []), "cle": k})
+                    "plans": len(d.get("clips") or []), "cle": k, "autre": bool(s.get("autre")), "poste": s.get("poste", "")})
     return out
 
 

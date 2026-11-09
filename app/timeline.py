@@ -5,6 +5,7 @@ rogner, couper au curseur (C), supprimer (Suppr), zoomer (molette + Ctrl). Un ai
 et au curseur. La timeline lit et ecrit directement le projet (app/projet.py) et previent la fenetre par signaux.
 """
 import math
+import os
 from PySide6.QtCore import Qt, QRectF, QPointF, Signal, QMimeData, QLineF
 from PySide6.QtGui import QPainter, QColor, QPen, QBrush, QFont, QPixmap, QLinearGradient, QCursor, QFontMetrics, QPolygonF
 from PySide6.QtWidgets import (QGraphicsView, QGraphicsScene, QGraphicsItem, QGraphicsRectItem, QGraphicsLineItem, QMenu,
@@ -62,6 +63,7 @@ class ItemClip(QGraphicsRectItem):
         self.vignette = None
         m = timeline.projet.media(clip["media"]) if timeline.projet else None
         self.media = m
+        self.absent = bool(m) and not os.path.exists(m.get("chemin") or "")
         if m and m.get("vignettes"):
             px = QPixmap(m["vignettes"])
             if not px.isNull():
@@ -156,6 +158,18 @@ class ItemClip(QGraphicsRectItem):
         p.drawText(QRectF(r.x() + 6 + decal, r.y() + 1, r.width() - 10 - decal, 15), Qt.AlignLeft | Qt.AlignVCenter,
                    QFontMetrics(f).elidedText(texte, Qt.ElideRight, int(r.width() - 12 - decal)))
         self._dessiner_chips(p, r)
+        if self.absent:
+            # média introuvable sur ce poste (liens virtuels, 0.9.35) : grisé et hachuré, gardé à sa place
+            p.setBrush(QBrush(QColor(40, 40, 40, 170), Qt.BDiagPattern))
+            p.setPen(Qt.NoPen)
+            p.drawRoundedRect(r, 5, 5)
+            p.setPen(QColor("#ffb0b0"))
+            p.drawText(QRectF(r.x() + 6, r.y() + 16, r.width() - 12, max(14.0, r.height() - 18)), Qt.AlignCenter,
+                       QFontMetrics(f).elidedText(_("Introuvable ici"), Qt.ElideRight, int(r.width() - 12)))
+        elif self.media and self.media.get("copie_legere") and r.width() > 40:
+            p.setPen(QColor("#9fd7ff"))
+            p.drawText(QRectF(r.x() + 6, r.bottom() - 15, r.width() - 12, 14), Qt.AlignRight | Qt.AlignVCenter,
+                       QFontMetrics(f).elidedText(_("copie légère"), Qt.ElideRight, int(r.width() - 12)))
         self.losanges = _losanges(p, self.clip, r.x(), r.y() + 22, self.tl.pps) if self.clip.get("cles") else []
         # contour (selection)
         if self.isSelected():
