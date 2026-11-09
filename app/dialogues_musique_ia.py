@@ -733,6 +733,25 @@ class DialogueMusiqueEnLigne(QDialog):
         self.liste.setWordWrap(True)
         self.liste.itemDoubleClicked.connect(lambda _it: self.ecouter())
         v.addWidget(self.liste, 1)
+        # lecture : ce qui est lu, où on en est, et choisir le passage
+        self.lu = QLabel("")
+        self.lu.setWordWrap(True)
+        self.lu.setStyleSheet("color:#9ad0ff")
+        v.addWidget(self.lu)
+        hl = QHBoxLayout()
+        self.position = QSlider(Qt.Horizontal)
+        self.position.setRange(0, 0)
+        self.position.setEnabled(False)
+        self.position.sliderMoved.connect(lambda ms: self.lecteur and self.lecteur.setPosition(ms))
+        hl.addWidget(self.position, 1)
+        self.temps = QLabel("0:00 / 0:00")
+        hl.addWidget(self.temps)
+        v.addLayout(hl)
+        self.avert = QLabel("")
+        self.avert.setWordWrap(True)
+        self.avert.setStyleSheet("color:#c98a00")
+        self.avert.hide()
+        v.addWidget(self.avert)
         self.libre = QCheckBox(_("Ce morceau est libre de droits (domaine public, licence libre ou accord) : je pourrai aussi le réorchestrer"))
         v.addWidget(self.libre)
         self.dossier = musiques.dossier(params)
@@ -753,6 +772,11 @@ class DialogueMusiqueEnLigne(QDialog):
         self.b_installer = QPushButton(_("Installer yt-dlp (programme officiel)…"))
         self.b_installer.clicked.connect(self.installer)
         hb.addWidget(self.b_installer)
+        self.b_maj = QPushButton(_("Mettre à jour yt-dlp"))
+        self.b_maj.setToolTip(_("Télécharge la dernière version de yt-dlp et de Deno (programmes officiels) : à faire quand YouTube refuse "
+                                "la lecture ou le téléchargement."))
+        self.b_maj.clicked.connect(self.installer)
+        hb.addWidget(self.b_maj)
         self.b_ecouter = QPushButton("▶ " + _("Écouter"))
         self.b_ecouter.clicked.connect(self.ecouter)
         hb.addWidget(self.b_ecouter)
@@ -782,6 +806,7 @@ class DialogueMusiqueEnLigne(QDialog):
         self.params["musique_en_ligne_source"] = src
         besoin = src != "archive" and not self._ytdlp()
         self.b_installer.setVisible(besoin)
+        self.b_maj.setVisible(src != "archive" and not besoin)
         if besoin:
             self.info.setText(_("YouTube et YouTube Music passent par yt-dlp, le programme officiel : « Installer yt-dlp » le télécharge "
                                 "depuis son dépôt GitHub (une fois)."))
@@ -845,15 +870,33 @@ class DialogueMusiqueEnLigne(QDialog):
             for x in self.resultats:
                 d = int(x.get("duree") or 0)
                 duree = f"{d // 60}:{d % 60:02d}" if d else ""
-                lic = (" · " + _("libre : {l}", l=x["licence"][:60])) if x.get("libre") else (" · " + x["licence"][:60] if x.get("licence") else "")
-                it = QListWidgetItem(f"{x.get('titre', '')}\n{x.get('artiste', '')}  {x.get('annee', '')}  {duree}{lic}")
+                lic = (" · " + _("licence annoncée : {l}", l=x["licence"][:60])) if x.get("licence") else ""
+                details = "  ·  ".join(y for y in (x.get("artiste", ""), x.get("album", ""), x.get("annee", ""), duree) if y)
+                it = QListWidgetItem(f"{x.get('titre', '')}\n{details or _('(artiste inconnu)')}{lic}")
                 self.liste.addItem(it)
-            self.info.setText(_("{n} résultat(s). Double-clic pour écouter.", n=len(self.resultats)) if self.resultats else _("Aucun résultat."))
+            if self.resultats:
+                info = _("{n} résultat(s). Double-clic pour écouter.", n=len(self.resultats))
+                if src == "archive":
+                    info += " " + _("Les archives libres ne montrent que les enregistrements dont la licence est indiquée : il y en a peu pour "
+                                    "un morceau récent, c'est normal.")
+            else:
+                info = _("Aucun résultat.")
+            self.info.setText(info)
         self._lancer(lambda t: ML.chercher(texte, src), _("Recherche"), _("Recherche « {t} »", t=texte), fin)
 
     def _choisi(self, i):
         x = self.resultats[i] if 0 <= i < len(self.resultats) else None
-        self.libre.setChecked(bool(x and x.get("libre")))
+        self.libre.setChecked(False)              # jamais coché d'office : c'est vous qui le déclarez
+        if x and x.get("source") == "archive" and x.get("licence"):
+            self.avert.setText(_("Licence annoncée par la personne qui a déposé ce fichier : {l}. Vérifiez qu'elle en avait le droit : un "
+                                 "extrait ou une reprise d'un morceau connu n'est pas libre pour autant.", l=x["licence"]))
+            self.avert.show()
+        else:
+            self.avert.hide()
+        # changer de morceau arrête l'écoute en cours : le bouton dit de nouveau « Écouter »
+        if self.lecteur is not None and getattr(self, "_ecoute", None) != (x or {}).get("page"):
+            self.lecteur.stop()
+            self.b_ecouter.setText("▶ " + _("Écouter"))
 
     def _courant(self):
         i = self.liste.currentRow()
@@ -868,9 +911,15 @@ class DialogueMusiqueEnLigne(QDialog):
         if self.lecteur is None:
             self.lecteur, self._sortie = QMediaPlayer(self), QAudioOutput(self)
             self.lecteur.setAudioOutput(self._sortie)
-        if self.lecteur.playbackState() == QMediaPlayer.PlayingState and getattr(self, "_ecoute", None) == x.get("page"):
-            self.lecteur.pause()
-            self.b_ecouter.setText("▶ " + _("Écouter"))
+            self.lecteur.durationChanged.connect(lambda ms: (self.position.setRange(0, int(ms)), self.position.setEnabled(ms > 0)))
+            self.lecteur.positionChanged.connect(self._avance)
+            self.lecteur.playbackStateChanged.connect(
+                lambda e: self.b_ecouter.setText(("⏸ " + _("Pause")) if e == QMediaPlayer.PlayingState else ("▶ " + _("Écouter"))))
+        if getattr(self, "_ecoute", None) == x.get("page") and self.lecteur.source().isValid():
+            if self.lecteur.playbackState() == QMediaPlayer.PlayingState:
+                self.lecteur.pause()
+            else:
+                self.lecteur.play()                # reprend où il en était
             return
         self._ecoute = x.get("page")
 
@@ -886,8 +935,16 @@ class DialogueMusiqueEnLigne(QDialog):
                 return
             self.lecteur.setSource(QUrl(url))
             self.lecteur.play()
-            self.b_ecouter.setText("⏸ " + _("Pause"))
+            self.lu.setText(_("Lecture : {t} — {a}. Glissez le curseur pour aller au passage voulu.", t=x.get("titre", ""),
+                              a=x.get("artiste", "") or _("artiste inconnu")))
         self._lancer(adresse, _("Ecoute"), _("Préparation de l'écoute"), fin)
+
+    def _avance(self, ms):
+        if not self.position.isSliderDown():
+            self.position.setValue(int(ms))
+        tot = self.position.maximum()
+        f = lambda v: f"{int(v // 60000)}:{int(v // 1000) % 60:02d}"
+        self.temps.setText(f"{f(ms)} / {f(tot)}")
 
     def telecharger(self):
         x = self._courant()

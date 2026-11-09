@@ -1095,14 +1095,21 @@ class DialogueFabrique(QDialog):
         self.voie_flow.setChecked(True)
         self.aide_flow = QLabel(_(
             "<b>Comment ça marche ?</b> Flow est le site de Google qui fabrique des vidéos par IA ; PhilCut ne peut pas "
-            "s'y connecter à votre place, il vous mâche le travail :<br>"
+            "s'y connecter à votre place, il vous mâche le travail (essai du 9 novembre 2026) :<br>"
             "1. « Fabriquer » : PhilCut met la consigne (en anglais) dans le presse-papiers et ouvre Flow dans votre navigateur.<br>"
-            "2. Dans Flow : « Nouveau projet », cliquez dans la zone de texte, <b>Ctrl+V</b> pour coller, puis la flèche pour générer "
-            "(une à quelques minutes).<br>"
-            "3. Sur la vidéo qui vous plaît : bouton <b>Télécharger</b> (MP4). Le fichier arrive dans le dossier surveillé ci-dessous "
+            "2. Dans Flow : « + Nouveau projet ». La première fois, l'icône des réglages (à gauche de la flèche, en bas à droite) : "
+            "laissez « Confirmer avant de générer : Toujours », vidéo 16:9, <b>x1</b> (x2 coûte le double), modèle "
+            "<b>Veo 3.1 – Lite</b> (le moins cher), puis « Enregistrer ».<br>"
+            "3. Dans « Que voulez-vous créer ? » : <b>Ctrl+V</b> pour coller, puis la flèche. Flow annonce le prix en crédits "
+            "(Veo 3.1 Lite : 10 crédits pour 8 s, sa seule durée) : « Approuver » (jamais « Toujours approuver »). Selon "
+            "l'affluence, le plan attend dans une file d'attente quelques minutes.<br>"
+            "4. Crédits : cliquez sur votre photo en haut à droite ; Flow en offre <b>50 par jour</b> (environ 5 plans Lite), "
+            "remis à zéro chaque soir.<br>"
+            "5. Sur la vidéo : bouton <b>Télécharger</b> (MP4 720p). Le fichier arrive dans le dossier surveillé ci-dessous "
             "(vos Téléchargements en général).<br>"
-            "4. PhilCut attend ce fichier (barre du bas, avec le temps écoulé et « Arrêter »), puis vous le montre : vous le "
-            "regardez, et vous choisissez de l'insérer à la ligne rouge, de le garder dans les médias ou de le jeter."))
+            "6. PhilCut attend ce fichier (barre du bas, avec le temps écoulé et « Arrêter »), puis vous le montre : vous le "
+            "regardez, et vous choisissez de l'insérer à la ligne rouge, de le garder dans les médias ou de le jeter. Ses réglages "
+            "sont gardés : clic droit sur le plan › « Reprendre la création »."))
         self.aide_flow.setWordWrap(True)
         self.aide_flow.setTextFormat(Qt.RichText)
         self.aide_flow.setStyleSheet("padding:6px 8px;border:1px solid palette(mid);border-radius:6px")

@@ -157,6 +157,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T56 — 0.9.40 : retours des essais du 9 novembre
+
+1. **Fenêtres** : Atelier IA › Dessin animé (vidéo) sur un plan, « Créer » : à l'arrivée du résultat, la fenêtre reste dans l'écran (le contenu défile).
+2. **Plan IA cloud** : Fabrique › plan vidéo, Gemini Omni Flash 360p : pendant l'attente, « … calcule le plan : N s écoulées » ; à la fin, message « Plan IA rangé dans … Vidéos\PhilCut\Plans IA » et « Ouvrir le dossier ». Clic droit sur le plan › « Reprendre la création » : la Fabrique se rouvre avec la consigne, la durée et le modèle.
+3. **Omni 1.2** : modèle « Gemini Omni 1.2 Flash 720p (nouveau) » : le plan arrive (avec la 1.1 si la 1.2 n'est pas ouverte à votre clef).
+4. **Aide Flow** : Fabrique › plan vidéo › Google Flow : l'aide décrit les réglages, les crédits et l'« Approuver ».
+5. **Musique en ligne** : bouton « Mettre à jour yt-dlp » ; YouTube Music : artiste et durée sous chaque titre ; écouter : « Lecture : … » et un curseur pour aller au passage voulu ; changer de morceau : le bouton redevient « Écouter ». Archives libres : la case « libre » reste décochée, avertissement orange sur la licence annoncée.
+
 ## T55 — 0.9.38 : recettes refaites avec Gemini, Claude pour écrire
 
 1. **Image** : Atelier IA › un style d'image sur la ligne rouge, poser. Renommer le fichier créé (dossier des créations), rouvrir le projet : message « création(s) IA à refaire ». Liste : « Sur ce poste (gratuit) » et « Gemini (votre clef, payant) » ; choisir Gemini : fenêtre « Créations payantes » avec le total ; puis avant / après.

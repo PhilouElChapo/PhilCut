@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.39 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.40 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.40 (retours des essais du 9 novembre)
+- Aucune fenetre ne depasse plus l'ecran, meme quand elle grandit apres coup (apercu d'un resultat, liste qui s'allonge) : son contenu defile.
+- Plan video IA (Gemini, Kling...) : range dans Videos > PhilCut > Plans IA, avec un bouton "Ouvrir le dossier" ; pendant l'attente, le temps ecoule et une explication (le service ne donne pas son avancement) ; ses reglages sont gardes : clic droit > "Reprendre la creation" rouvre la Fabrique remplie. Meme chose pour un plan recu de Flow.
+- Nouveau modele "Gemini Omni 1.2 Flash 720p" (avec repli automatique sur la 1.1 si votre clef n'y a pas encore acces).
+- Aide Flow refaite d'apres notre essai : reglages a choisir, 50 credits par jour, Veo 3.1 Lite (10 credits pour 8 s), file d'attente, telechargement.
+- Musique en ligne : bouton "Mettre a jour yt-dlp" ; artiste, album, annee et duree des titres YouTube Music ; curseur pour aller au passage voulu, ce qui est lu est affiche ; "Pause" ne reste plus affiche en changeant de morceau ; la case "libre de droits" n'est jamais cochee d'office, et la licence d'archive.org est signalee comme annoncee par la personne qui a depose le fichier.
+- Menu Fabrique : l'IA locale est presentee pour ce qu'elle fait (effet ou image animee a partir du film).
 
 ### 0.9.39
 - Mise a jour : la fenetre se reduit (bouton "Reduire" ou bouton de reduction) ; le telechargement se suit dans la barre du bas, avec "Afficher" pour la rouvrir et "Installer et redemarrer" a la fin. Plus d'estimation fantaisiste du temps restant pendant les premieres secondes.

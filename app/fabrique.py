@@ -424,3 +424,27 @@ def generer_veo(params, consigne, sortie, modele="gemini-omni-1.1-flash@720p", d
         f.write(r.read())
     progression and progression(1.0)
     return sortie
+
+
+def dossier_plans():
+    """Les plans vidéo IA (Gemini, Kling, Flow…) sont rangés là où on les cherche : Vidéos › PhilCut › Plans IA
+    (0.9.40 ; avant : le dossier de données de PhilCut, caché par Windows)."""
+    try:
+        from PySide6.QtCore import QStandardPaths
+        base = QStandardPaths.writableLocation(QStandardPaths.MoviesLocation)
+    except Exception:      # noqa: BLE001
+        base = ""
+    base = base or os.path.join(os.path.expanduser("~"), "Videos")
+    d = os.path.join(base, "PhilCut", "Plans IA")
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def recette_plan(d, consigne, voie, modele="", fmt="16:9"):
+    """Ce qui a servi à créer un plan de la Fabrique : pour le reprendre avec les mêmes réglages, ou le refaire ailleurs."""
+    import time
+    return {"famille": "video", "intention": "plan_ia", "outil": "fabrique", "voie": voie, "modele": modele,
+            "sujet": d.sujet.toPlainText().strip(), "style": d.style.currentText().strip(), "duree": d.duree_ia.value(),
+            "consigne": consigne, "prompt": d.sujet.toPlainText().strip() or consigne, "anglais": consigne, "format": fmt,
+            "date": time.strftime("%Y-%m-%d %H:%M"), "moteur": f"{voie}:{modele}" if modele else voie}
+

@@ -51,7 +51,7 @@ def _lignes_json(lignes):
                 continue
 
 
-def chercher(texte, source="ytmusic", n=25):
+def chercher(texte, source="ytmusic", n=30):
     """Résultats : titre, artiste, durée, page, source, licence, libre (licence libre annoncée par la source)."""
     texte = (texte or "").strip()
     if not texte:
@@ -77,7 +77,34 @@ def chercher(texte, source="ytmusic", n=25):
                     "duree": float(d.get("duration") or 0), "page": f"https://music.youtube.com/watch?v={ident}", "id": ident,
                     "source": "ytmusic", "licence": d.get("license") or "", "album": d.get("album") or "",
                     "vignette": f"https://i.ytimg.com/vi/{ident}/mqdefault.jpg", "libre": False})
+    completer(out[:12])
     return out
+
+
+def completer(resultats):
+    """La recherche rapide de YouTube Music ne donne souvent que le titre : on demande la fiche des premiers titres
+    (artiste, album, année, durée) en une fois. Sans réseau ou en cas d'échec, les résultats restent tels quels."""
+    manquants = [r for r in resultats if not r.get("artiste") or not r.get("duree")]
+    if not manquants:
+        return resultats
+    from . import videos_en_ligne as VL
+    try:
+        lignes = VL._lancer_ytdlp(["--skip-download", "--dump-json", "--no-warnings", "--ignore-errors", "--xff", VL.pays()]
+                                  + [r["page"] for r in manquants])
+    except Exception:      # noqa: BLE001
+        return resultats
+    fiches = {d.get("id"): d for d in _lignes_json(lignes)}
+    for r in manquants:
+        d = fiches.get(r.get("id"))
+        if not d:
+            continue
+        artistes = d.get("artists") or ([d["artist"]] if d.get("artist") else [])
+        r["artiste"] = r.get("artiste") or (", ".join(artistes) if artistes else _net_artiste(d.get("channel") or d.get("uploader")))
+        r["duree"] = r.get("duree") or float(d.get("duration") or 0)
+        r["album"] = r.get("album") or d.get("album") or ""
+        r["annee"] = r.get("annee") or str(d.get("release_year") or (d.get("upload_date") or "")[:4] or "")
+        r["licence"] = r.get("licence") or d.get("license") or ""
+    return resultats
 
 
 ARCHIVE_API = "https://archive.org/advancedsearch.php"
@@ -99,8 +126,9 @@ def chercher_archive(texte, n=25):
         lic = doc.get("licenseurl") or ""
         out.append({"titre": doc.get("title") or ident, "artiste": c if isinstance(c, str) else ", ".join(c), "duree": 0.0,
                     "annee": str(doc.get("year") or doc.get("date") or "")[:4], "page": f"https://archive.org/details/{ident}", "id": ident,
-                    "source": "archive", "licence": lic, "libre": bool(re.search(r"publicdomain|creativecommons\.org/(licenses/by|publicdomain)", lic)
-                                                                         and "-nc" not in lic.lower() and "-nd" not in lic.lower())})
+                    "source": "archive", "licence": lic, "licence_libre": bool(re.search(r"publicdomain|creativecommons\.org/(licenses/by|publicdomain)", lic)
+                                                                                   and "-nc" not in lic.lower() and "-nd" not in lic.lower()),
+                    "libre": False})        # licence ANNONCÉE par la personne qui a déposé le fichier : à vérifier, jamais cochée d'office
     return out
 
 

@@ -63,13 +63,44 @@ def ajuster(w):
 
 class _Filtre(QObject):
     def eventFilter(self, obj, ev):
-        if ev.type() == QEvent.Show and isinstance(obj, (QDialog, QMainWindow)) and obj.isWindow():
+        t = ev.type()
+        if t == QEvent.Show and isinstance(obj, (QDialog, QMainWindow)) and obj.isWindow():
             try:
                 ajuster(obj)
                 QTimer.singleShot(0, lambda o=obj: _encore(o))
             except RuntimeError:
                 pass
+        elif t in (QEvent.Resize, QEvent.LayoutRequest) and isinstance(obj, QDialog) and obj.isWindow() and obj.isVisible():
+            # 0.9.40 : une fenêtre qui grandit après coup (aperçu du résultat, liste qui s'allonge) ne dépasse jamais
+            # l'écran : son contenu passe dans une zone qui défile.
+            try:
+                dispo = place(obj)
+                if dispo is not None and not getattr(obj, "_ajustement_prevu", False) and \
+                        (obj.height() > dispo.height() * 0.94 or obj.minimumSizeHint().height() > dispo.height() * 0.94):
+                    obj._ajustement_prevu = True
+                    QTimer.singleShot(0, lambda o=obj: _reprendre(o))
+            except RuntimeError:
+                pass
         return False
+
+
+def _reprendre(o):
+    try:
+        o._ajustement_prevu = False
+        dispo = place(o)
+        if dispo is not None and (o.height() > dispo.height() * 0.94 or o.minimumSizeHint().height() > dispo.height() * 0.94):
+            if not getattr(o, "_defilant", False):
+                _defilant(o, dispo)
+            ajuster(o)
+            maxh = int(dispo.height() * 0.94)
+            if o.height() > maxh:
+                o.setMinimumHeight(0)
+                o.resize(o.width(), maxh)
+                g = o.frameGeometry()
+                g.moveCenter(dispo.center())
+                o.move(max(dispo.left(), g.left()), max(dispo.top(), g.top()))
+    except RuntimeError:
+        pass
 
 
 def _encore(o):

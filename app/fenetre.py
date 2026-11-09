@@ -277,8 +277,9 @@ class Fenetre(QMainWindow):
         actf(icone("assistant"), _("Logo, intro ou miniature par IA locale (sur ce poste, gratuit)…"),
              _("Une image dessinée par l'IA de ce poste à partir d'une phrase : rien n'est envoyé, rien n'est payé ; plus lent sans carte graphique."),
              lambda: self._ed(lambda ed: ed.atelier_ia("logo")))
-        actf(None, _("Plan ou effet vidéo par IA locale (sur ce poste)…"),
-             _("Un clip créé par l'IA de ce poste (long : plusieurs minutes), regardé puis posé si vous le gardez."),
+        actf(None, _("Effet vidéo ou image animée par IA locale, à partir du film (sur ce poste)…"),
+             _("A partir d'une image ou d'une partie du film : dessin animé, ralenti fluide, agrandir, photo 3D, animer l'image. "
+               "L'IA de ce poste ne crée pas encore un plan à partir d'une phrase seule : pour cela, Flow ou le plan vidéo IA cloud."),
              lambda: self._ed(lambda ed: ed.atelier_ia("video")))
         fb.addSeparator()
         actf(icone("image"), _("Vignette YouTube composée (sur ce poste)…"),
@@ -833,10 +834,24 @@ class Fenetre(QMainWindow):
         if d.exec() == QDialog.Accepted and d.png:
             self.fabrique(image=d.png, texte=d.logo.get("nom"))
 
-    def fabrique(self, image=None, texte=None):
+    def fabrique(self, image=None, texte=None, recette=None):
         ed = self._editeur_ou_nouveau()
         from .dialogues_video import DialogueFabrique
         d = DialogueFabrique(self, ed.projet, self.params)
+        if recette:                                    # 0.9.40 : reprendre un plan IA avec ses réglages d'origine
+            d.onglets.setCurrentIndex(1)
+            d.sujet.setPlainText(recette.get("sujet") or "")
+            if recette.get("style"):
+                d.style.setCurrentText(recette["style"])
+            d.duree_ia.setValue(int(recette.get("duree") or 8))
+            d.consigne.setPlainText(recette.get("consigne") or "")
+            if recette.get("voie") == "cloud" and d.voie_veo.isEnabled():
+                d.voie_veo.setChecked(True)
+                i = d.modele_veo.findData(recette.get("modele"))
+                if i >= 0:
+                    d.modele_veo.setCurrentIndex(i)
+            else:
+                d.voie_flow.setChecked(True)
         if image:
             d.image.setText(image)
             d.onglets.setCurrentIndex(0)
@@ -885,17 +900,47 @@ class Fenetre(QMainWindow):
                 if QMessageBox.question(self, _("Plan IA"), _("Générer ce plan avec {m} pour au plus {p} $ environ (facturé sur votre clef {f}) ?",
                                                              m=mo["nom"], p=prix, f=fourn)) != QMessageBox.Yes:
                     return
-                dossier = os.path.join(dossier_donnees(), "fabrique")
-                os.makedirs(dossier, exist_ok=True)
+                dossier = FAB.dossier_plans()
                 sortie = os.path.join(dossier, f"plan_ia_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4")
-                t = Tache(lambda tache: GV.generer(self.params, modele, consigne, sortie, d.duree_ia.value(), ed.projet.format, progression=tache.avancer, arret=lambda: tache.arret), _("Plan IA"))
+                rec = FAB.recette_plan(d, consigne, "cloud", modele, ed.projet.format)
+                rec.update(paye=True, cout_max=prix)
+                params, duree_ia, fmt = self.params, d.duree_ia.value(), ed.projet.format
+
+                def travail(tache):
+                    # Google ne dit pas où il en est : PhilCut montre le temps écoulé et une barre estimée (pas un faux « 2 % »)
+                    import threading
+                    import time as _t
+                    fin = threading.Event()
+                    t0 = _t.monotonic()
+
+                    def battement():
+                        while not fin.wait(1.0):
+                            e = int(_t.monotonic() - t0)
+                            tache.avancer(min(0.95, e / 150.0), _("{m} calcule le plan : {e} s écoulées. D'habitude 1 à 3 min ; la barre est une "
+                                                                  "estimation, le service ne donne pas son avancement.", m=fourn, e=e))
+                    threading.Thread(target=battement, daemon=True).start()
+                    try:
+                        return GV.generer(params, modele, consigne, sortie, duree_ia, fmt, progression=None, arret=lambda: tache.arret)
+                    finally:
+                        fin.set()
+
+                def fini(r, e):
+                    if e:
+                        QMessageBox.warning(self, _("Plan IA"), str(e))
+                        return
+                    from . import creations
+                    creations.ecrire(sortie, rec)
+                    ed.importer([sortie])
+                    ed.encart.suivre_message(_("Plan IA rangé dans {d} ; il est dans les médias du projet.", d=dossier),
+                                             (_("Ouvrir le dossier"), lambda: self._ouvrir_dans_systeme(dossier)), 30000)
+                t = Tache(travail, _("Plan IA"))
                 self.taches.append(t)
-                ed.encart.suivre(t, _("Génération du plan par IA (1 à 6 min)"))
-                t.fini.connect(lambda r, e: ed.importer([sortie]) if not e else QMessageBox.warning(self, _("Plan IA"), str(e)))
+                ed.encart.suivre(t, _("Génération du plan par IA"))
+                t.fini.connect(fini, Qt.QueuedConnection)
                 t.start()
             else:
                 avant = FAB.preparer_flow(consigne, d.dossier.text().strip())
-                self._surveiller_flow(ed, d.dossier.text().strip(), avant)
+                self._surveiller_flow(ed, d.dossier.text().strip(), avant, FAB.recette_plan(d, consigne, "flow", "", ed.projet.format))
 
     def _logo_pret(self, ed, sortie, usage, erreur):
         if erreur:
@@ -924,7 +969,7 @@ class Fenetre(QMainWindow):
                 ed.rafraichir()
             QTimer.singleShot(1500, placer)
 
-    def _surveiller_flow(self, ed, dossier, avant):
+    def _surveiller_flow(self, ed, dossier, avant, recette=None):
         """Attente du clip téléchargé depuis Flow : tâche suivie dans la barre du bas (étape, temps écoulé, Arrêter),
         puis aperçu avant intégration."""
         def travail(tache):
@@ -937,7 +982,10 @@ class Fenetre(QMainWindow):
             if e or not r:
                 return
             from .dialogues_video import DialogueClipRecu
+            from . import creations
             for chemin in r:
+                if recette:                            # la recette suit le clip : « Reprendre la création » rouvre la Fabrique remplie
+                    creations.ecrire(chemin, recette)
                 DialogueClipRecu(ed, chemin, _("Clip reçu de Flow")).exec()
         t.fini.connect(fini, Qt.QueuedConnection)
         t.start()
@@ -1451,9 +1499,12 @@ class Fenetre(QMainWindow):
         d.exec()
 
     def _dossier_fabrique(self):
-        d = os.path.join(dossier_donnees(), "fabrique")
-        os.makedirs(d, exist_ok=True)
+        """Vidéos › PhilCut › Plans IA ; les plans et logos d'avant 0.9.40 restent dans l'ancien dossier, ouvert aussi s'il en a."""
+        d = FAB.dossier_plans()
         self._ouvrir_dans_systeme(d)
+        ancien = os.path.join(dossier_donnees(), "fabrique")
+        if os.path.isdir(ancien) and os.listdir(ancien):
+            self._ouvrir_dans_systeme(ancien)
 
     def _ouvrir_dans_systeme(self, chemin):
         from PySide6.QtCore import QUrl

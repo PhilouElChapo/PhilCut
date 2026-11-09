@@ -191,8 +191,9 @@ class TestEnLigne(unittest.TestCase):
         urllib.request.urlopen = ouvrir
         try:
             res = ML.chercher("requiem", "archive")
-            self.assertEqual([r["libre"] for r in res], [True, False])
-            f = ML.telecharger(res[0], d)
+            self.assertEqual([r["licence_libre"] for r in res], [True, False])
+            self.assertEqual([r["libre"] for r in res], [False, False])     # jamais déclaré libre d'office
+            f = ML.telecharger(res[0], d, libre=True)
         finally:
             urllib.request.urlopen = ancien
         self.assertTrue(f.endswith("Orchestre - Requiem.mp3"))

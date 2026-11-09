@@ -28,6 +28,9 @@ MODELES = [
      "resolution": "360p", "prix_s": 0.035, "duree_auto": True, "note": _("le moins cher, pour essayer une idée")},
     {"id": "omni-720p", "fournisseur": "google", "nom": "Gemini Omni Flash 720p", "modele": "gemini-omni-1.1-flash",
      "resolution": "720p", "prix_s": 0.10, "duree_auto": True, "note": _("bon compromis")},
+    {"id": "omni12-720p", "fournisseur": "google", "nom": "Gemini Omni 1.2 Flash 720p (nouveau)", "modele": "gemini-omni-1.2-flash",
+     "repli": "gemini-omni-1.1-flash", "resolution": "720p", "prix_s": 0.10, "duree_auto": True,
+     "note": _("version de novembre 2026 : personnages plus stables ; prix indicatif à confirmer au premier essai")},
     {"id": "omni-1080p", "fournisseur": "google", "nom": "Gemini Omni Flash 1080p", "modele": "gemini-omni-1.1-flash",
      "resolution": "1080p", "prix_s": 0.10, "duree_auto": True, "note": _("720p agrandi par Google")},
     {"id": "kling-3-pro", "fournisseur": "fal", "nom": "Kling 3.0 Pro (fal)", "modele": "fal-ai/kling-video/v3/pro/text-to-video",
@@ -118,7 +121,14 @@ def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None
         raise ErreurGenerateur(_("Clef {f} absente : Préférences › IA › Connecter une IA.", f=FOURNISSEURS[m["fournisseur"]]["nom"]))
     if m["fournisseur"] == "google":
         from .fabrique import generer_omni
-        return generer_omni(k, consigne, sortie, m["modele"], duree, format_, image, m.get("resolution", "720p"), progression, arret)
+        try:
+            return generer_omni(k, consigne, sortie, m["modele"], duree, format_, image, m.get("resolution", "720p"), progression, arret)
+        except InterruptedError:
+            raise
+        except Exception as e:                    # noqa: BLE001 : modèle pas encore ouvert à cette clef : la version précédente, éprouvée
+            if m.get("repli") and (getattr(e, "code", None) == 404 or any(x in str(e) for x in ("404", "NOT_FOUND", "not found", "not supported"))):
+                return generer_omni(k, consigne, sortie, m["repli"], duree, format_, image, m.get("resolution", "720p"), progression, arret)
+            raise
     return generer_fal(k, m, consigne, sortie, duree, format_, image, progression, arret)
 
 

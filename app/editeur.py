@@ -2626,6 +2626,8 @@ class Editeur(QWidget):
             return
         if c is None:
             c = next((x for x in self.projet.clips if x["media"] == m.get("id")), None)
+        if rec.get("outil") == "fabrique":                         # 0.9.40 : plan IA de la Fabrique (cloud ou Flow), réglages d'origine
+            return self.window().fabrique(recette=rec)
         if (rec.get("famille") or "musique") == "musique":          # 0.9.37 : la fabrique musique, avec la fiche d'origine
             fiche = rec.get("fiche") or {"phrase": rec.get("prompt") or "", "duree": rec.get("duree") or 60,
                                          "instrumental": rec.get("instrumental", True), "paroles": rec.get("paroles") or "",
