@@ -1,7 +1,9 @@
 {
- "ffmpeg": "",
- "pyside6": "",
- "opencv": "",
- "llama.cpp": "",
- "whisper.cpp": ""
+ "ffmpeg": "2026-11-09",
+ "pyside6": "6.12.0",
+ "opencv": "5.0.0.93",
+ "llama.cpp": "b12224",
+ "whisper.cpp": "v1.9.5",
+ "stable-diffusion.cpp": "master-1068-fc350be",
+ "acestep.cpp": "07abf07da3a9"
 }
