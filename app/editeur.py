@@ -2524,7 +2524,10 @@ class Editeur(QWidget):
         """Séquence IA : histoire en plusieurs plans (personnages constants, répliques, musique) ; reprend la dernière du projet."""
         from .dialogues_sequence import DialogueSequence
         anciennes = self.projet.d.get("sequences_ia") or []
-        DialogueSequence(self, None if nouvelle or not anciennes else anciennes[-1]).exec()
+        d = DialogueSequence(self, None if nouvelle or not anciennes else anciennes[-1])
+        d.exec()
+        if getattr(d, "nouvelle_demandee", False):           # « Nouvelle histoire » dans la fenêtre
+            self.sequence_ia(nouvelle=True)
 
     def vignette_composee(self, usage="vignette", recette_id=None, clip_id=None):
         """Vignette YouTube ou image fixe composée à partir d'une image du film (zones de couleur, kit de style)."""

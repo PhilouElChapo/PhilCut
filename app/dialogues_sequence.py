@@ -37,11 +37,15 @@ class DialogueSequence(QDialog):
         self.taches, self._courant = [], -1
         self.setWindowTitle(_("Séquence IA : une histoire en plusieurs plans"))
         self.resize(1080, 760)
+        # 0.9.43 : plus lisible (texte un peu plus grand, l'essentiel en gras)
+        taille = QApplication.font().pointSizeF() + 1.5
+        self.setStyleSheet(f"QWidget{{font-size:{taille:.1f}pt}} QGroupBox{{font-weight:600}} QTabBar::tab{{font-weight:600}}")
         v = QVBoxLayout(self)
-        intro = QLabel(_("Racontez une petite histoire ; PhilCut la découpe en plans, garde les mêmes personnages d'un plan à "
-                         "l'autre (description constante et images de référence), fait dire les répliques avec la manière de parler "
-                         "de chacun, puis monte le tout avec une musique. « A la manière de » décrit un style (allure, jeu, voix "
-                         "posée), jamais un visage ni une voix copiée."))
+        intro = QLabel(_("<b>Racontez une petite histoire</b> ; PhilCut la découpe en plans, garde <b>les mêmes personnages</b> d'un "
+                         "plan à l'autre (description constante et images de référence), fait dire <b>les répliques</b> avec la "
+                         "manière de parler de chacun, puis monte le tout avec <b>une musique</b>. « A la manière de » décrit un "
+                         "style (allure, jeu, voix posée), jamais un visage ni une voix copiée."))
+        intro.setTextFormat(Qt.RichText)
         intro.setWordWrap(True)
         v.addWidget(intro)
         self.onglets = QTabWidget()
@@ -52,27 +56,28 @@ class DialogueSequence(QDialog):
         # ---- bas : moteurs, musique, actions
         g = QGroupBox(_("Fabrication"))
         f = QFormLayout(g)
-        self.moteur = QComboBox()
-        self.moteur.addItem(_("Google Flow (votre abonnement, pas à pas)"), "flow")
+        self.moteur = QComboBox()                      # ordre : ce poste (gratuit), Gemini, autres clefs, Flow en dernier
         self.moteur.addItem(_("IA de ce poste (gratuite ; plans courts, lents à calculer)"), "locale")
         from . import generateurs_video as GV
         dispo = {m["id"] for m in GV.disponibles(self.params)}
-        for m in GV.modeles(self.params):
+        modeles = sorted(GV.modeles(self.params), key=lambda m: (m.get("fournisseur") != "google", m["id"] not in dispo))
+        for m in modeles:
             lib = _("Cloud : {n} — {p:.2f} $/s (votre clef)", n=m["nom"], p=m.get("prix_s", 0))
             self.moteur.addItem(lib, m["id"])
             if m["id"] not in dispo:
                 self.moteur.model().item(self.moteur.count() - 1).setEnabled(False)
                 self.moteur.setItemData(self.moteur.count() - 1, _("Clef à saisir : Fabrique › Plan généré par IA › Connecter une IA"),
                                         Qt.ToolTipRole)
+        self.moteur.addItem(_("Google Flow (votre abonnement, pas à pas)"), "flow")
         i = self.moteur.findData(self.seq.get("moteur"))
         self.moteur.setCurrentIndex(max(0, i))
         self.moteur.currentIndexChanged.connect(self._maj_moteur)
-        f.addRow(_("Vidéo"), self.moteur)
+        f.addRow(self._gras(_("Vidéo")), self.moteur)
         self.voix = QComboBox()
         self.voix.addItem(_("Voix de ce poste (gratuite)"), "local")
         self.voix.addItem(_("Voix Gemini (joue vraiment la phrase ; votre clef, payant)"), "gemini")
         self.voix.setCurrentIndex(max(0, self.voix.findData(self.seq.get("voix", "local"))))
-        f.addRow(_("Répliques"), self.voix)
+        f.addRow(self._gras(_("Répliques")), self.voix)
         hm = QHBoxLayout()
         self.musique = QCheckBox(_("Musique sous la séquence (IA de ce poste)"))
         self.musique.setChecked(bool(self.seq["musique"].get("active", True)))
@@ -80,7 +85,7 @@ class DialogueSequence(QDialog):
         self.phrase_musique = QLineEdit(self.seq["musique"].get("phrase", ""))
         self.phrase_musique.setPlaceholderText(_("ex. : jazz léger des années 60, guitare et cuivres"))
         hm.addWidget(self.phrase_musique, 1)
-        f.addRow(_("Musique"), hm)
+        f.addRow(self._gras(_("Musique")), hm)
         self.prix = QLabel("")
         f.addRow(self.prix)
         v.addWidget(g)
@@ -90,6 +95,10 @@ class DialogueSequence(QDialog):
         self.etat.setWordWrap(True)
         v.addWidget(self.etat)
         hb = QHBoxLayout()
+        b_nv = QPushButton(_("Nouvelle histoire…"))
+        b_nv.setToolTip(_("Repartir d'une histoire vide ; les séquences déjà montées restent dans le projet."))
+        b_nv.clicked.connect(self._nouvelle)
+        hb.addWidget(b_nv)
         self.b_tout = QPushButton(_("Fabriquer les plans manquants"))
         self.b_tout.setToolTip(_("Chaque plan sans vidéo est fabriqué l'un après l'autre ; vous les regardez ensuite dans l'onglet Plans"))
         self.b_tout.clicked.connect(self.fabriquer_tout)
@@ -99,6 +108,8 @@ class DialogueSequence(QDialog):
                                    "piste Voix et la musique ; Ctrl+Z revient"))
         self.b_monter.clicked.connect(self.monter)
         hb.addWidget(self.b_monter)
+        for b in (self.b_tout, self.b_monter):
+            b.setStyleSheet("font-weight:600")
         hb.addStretch(1)
         b_f = QPushButton(_("Fermer"))
         b_f.clicked.connect(self.reject)
@@ -109,6 +120,20 @@ class DialogueSequence(QDialog):
         self._maj_moteur()
         if self.seq["plans"]:
             self.onglets.setCurrentIndex(2)
+
+    @staticmethod
+    def _gras(texte):
+        lb = QLabel(f"<b>{texte}</b>")
+        lb.setTextFormat(Qt.RichText)
+        return lb
+
+    def _nouvelle(self):
+        if (self.seq.get("histoire") or self.seq.get("plans")) and QMessageBox.question(
+                self, _("Nouvelle histoire"), _("Repartir d'une histoire vide ? L'histoire en cours reste dans le projet "
+                                                "(elle n'est pas effacée).")) != QMessageBox.Yes:
+            return
+        self.nouvelle_demandee = True
+        self.reject()
 
     # ------------------------------------------------------------------ onglet 1 : histoire
     def _onglet_histoire(self):

@@ -256,52 +256,76 @@ class Fenetre(QMainWindow):
         fb = mb.addMenu(_("Fa&brique"))
         fb.setToolTipsVisible(True)
 
-        def actf(ic, lib, aide, fonction, raccourci=None):
-            a_ = fb.addAction(ic, lib, fonction) if ic is not None else fb.addAction(lib, fonction)
+        def groupe(ic, titre, explication):
+            """Sous-menu d'un domaine, avec en tête une phrase qui dit ce qu'on y trouve (0.9.43)."""
+            sm = fb.addMenu(ic, titre) if ic is not None else fb.addMenu(titre)
+            sm.setToolTipsVisible(True)
+            from PySide6.QtWidgets import QWidgetAction
+            lb = QLabel(explication)
+            lb.setWordWrap(True)
+            lb.setFixedWidth(430)
+            lb.setStyleSheet("color:palette(placeholder-text);padding:6px 12px 8px 12px;font-style:italic")
+            wa = QWidgetAction(sm)
+            wa.setDefaultWidget(lb)
+            wa.setEnabled(False)
+            sm.addAction(wa)
+            sm.addSeparator()
+            return sm
+
+        def actf(menu, ic, lib, aide, fonction, raccourci=None):
+            a_ = menu.addAction(ic, lib, fonction) if ic is not None else menu.addAction(lib, fonction)
             if raccourci:
                 a_.setShortcut(raccourci)
             a_.setToolTip(aide)
             a_.setStatusTip(aide)
             return a_
-        actf(icone("fabrique"), _("Logo animé, intro, fin (sur ce poste) · plan vidéo (IA cloud)…"),
-             _("Logos, intros et fins animés : dessinés sur ce poste, gratuits. Les plans vidéo générés passent par Flow ou Veo "
-               "(IA cloud, votre compte, prix affiché avant)."), self.fabrique, "Ctrl+Shift+F")
-        actf(icone("ia"), _("Séquence IA : une histoire en plusieurs plans (personnages, répliques, musique)…"),
-             _("Plusieurs plans qui se suivent avec les mêmes personnages (style « à la manière de », images de référence), "
-               "leurs répliques et une musique ; vidéo par l'IA de ce poste, un générateur cloud ou Google Flow."),
+        fv = groupe(icone("camera"), _("Vidéo"), _("Créer des plans qui manquent au film : à partir d'une phrase, d'une histoire "
+                                                    "ou d'une image du film. D'abord l'IA de ce poste (gratuite), puis Gemini "
+                                                    "(votre clef, prix annoncé), puis Google Flow."))
+        actf(fv, icone("ia"), _("Plan vidéo à partir d'une phrase…"),
+             _("Décrivez le plan (« survol de collines au lever du soleil ») : IA de ce poste, Gemini ou Flow."),
+             lambda: self.fabrique(onglet=1))
+        actf(fv, None, _("Histoire en plusieurs plans (Séquence IA)…"),
+             _("Plusieurs plans qui se suivent avec les mêmes personnages, leurs répliques et une musique. Reprend votre dernière "
+               "histoire ; « Nouvelle histoire » dans la fenêtre pour repartir de zéro."),
              lambda: self._ed(lambda ed: ed.sequence_ia()))
-        actf(None, _("Nouvelle séquence IA…"), _("Repartir d'une histoire vide (les séquences précédentes restent dans le projet)."),
-             lambda: self._ed(lambda ed: ed.sequence_ia(nouvelle=True)))
-        actf(icone("musique"), _("Fabrique musique : créer une musique par IA (sur ce poste)…"),
-             _("Une fiche musicale (style, ambiance, tempo, tonalité, instruments, voix) devient une consigne solide, améliorable par "
-               "l'IA ; s'inspirer d'un morceau ; créé sur ce poste, gratuitement."), lambda: self._ed(lambda ed: ed.fabrique_musique()))
-        actf(None, _("Musique en ligne (YouTube Music, YouTube, archives libres)…"),
-             _("Chercher, écouter et télécharger le son d'un titre, avec ce qui est permis expliqué."), lambda: self.musique_en_ligne())
-        actf(None, _("Créations à refaire ou à calculer…"),
-             _("Les créations IA demandées sur un autre appareil, ou dont le fichier manque : les calculer ici gratuitement ou les "
-               "refaire, comparer avant / après, sans jamais payer deux fois."), lambda: self._ed(lambda ed: self.creations_a_traiter(ed)))
-        actf(None, _("Mes plans IA déjà fabriqués (dossier)…"),
-             _("Les plans vidéo générés (Gemini, Kling…) et les logos fabriqués sont gardés dans ce dossier, même s'ils ne sont "
-               "plus dans un projet : on les ouvre ou on les glisse dans les médias."),
-             self._dossier_fabrique)
-        actf(None, _("Atelier de logo (sur ce poste) · idées par l'IA cloud…"),
-             _("Créer et modifier un logo sur ce poste ; le bouton « Idées par l'IA » demande des propositions à l'IA cloud (votre clef)."),
-             self.atelier_logo)
-        fb.addSeparator()
-        actf(icone("assistant"), _("Logo, intro ou miniature par IA locale (sur ce poste, gratuit)…"),
-             _("Une image dessinée par l'IA de ce poste à partir d'une phrase : rien n'est envoyé, rien n'est payé ; plus lent sans carte graphique."),
-             lambda: self._ed(lambda ed: ed.atelier_ia("logo")))
-        actf(None, _("Effet vidéo ou image animée par IA locale, à partir du film (sur ce poste)…"),
-             _("A partir d'une image ou d'une partie du film : dessin animé, ralenti fluide, agrandir, photo 3D, animer l'image. "
-               "L'IA de ce poste ne crée pas encore un plan à partir d'une phrase seule : pour cela, Flow ou le plan vidéo IA cloud."),
+        actf(fv, None, _("Effet IA sur le film (dessin animé, ralenti, agrandir, photo 3D…)…"),
+             _("A partir d'une image ou d'une partie du film, sur ce poste, gratuitement."),
              lambda: self._ed(lambda ed: ed.atelier_ia("video")))
-        fb.addSeparator()
-        actf(icone("image"), _("Vignette YouTube composée (sur ce poste)…"),
-             _("Zones de couleur, titre, flèche, pastilles, composées sur ce poste ; propositions par l'IA locale ou cloud, au choix."),
+        fv.addSeparator()
+        actf(fv, None, _("Mes plans IA déjà fabriqués (dossier)…"),
+             _("Les plans vidéo générés et les logos fabriqués sont gardés dans ce dossier, même s'ils ne sont plus dans un projet."),
+             self._dossier_fabrique)
+        fm = groupe(icone("musique"), _("Musique"), _("Créer une musique sur ce poste (gratuit) ou en chercher une en ligne, avec "
+                                                       "ce qui est permis expliqué."))
+        actf(fm, icone("ia"), _("Créer une musique par IA (Fabrique musique)…"),
+             _("Style, ambiance, tempo, instruments, voix : une consigne solide, améliorable par l'IA ; créée sur ce poste, gratuitement."),
+             lambda: self._ed(lambda ed: ed.fabrique_musique()))
+        actf(fm, icone("telecharger"), _("Chercher une musique en ligne (YouTube Music, YouTube, archives libres)…"),
+             _("Chercher, écouter et télécharger le son d'un titre."), lambda: self.musique_en_ligne())
+        fl = groupe(icone("image"), _("Logo, intro et vignette"), _("Habiller le film : logo animé, intro ou fin, vignette "
+                                                                     "YouTube, image fixe. Tout se fait sur ce poste ; l'IA peut "
+                                                                     "proposer des idées."))
+        actf(fl, icone("fabrique"), _("Logo animé, intro ou fin de vidéo…"),
+             _("Des modèles animés avec votre texte ou votre logo, posés au début ou à la fin du film."),
+             lambda: self.fabrique(onglet=0), "Ctrl+Shift+F")
+        actf(fl, None, _("Dessiner un logo (Atelier de logo)…"),
+             _("Gabarits, textes et formes à la souris ; « Idées par l'IA » demande des propositions à l'IA cloud (votre clef)."),
+             self.atelier_logo)
+        actf(fl, None, _("Logo, intro ou miniature dessinés par l'IA de ce poste…"),
+             _("Une image dessinée à partir d'une phrase : rien n'est envoyé, rien n'est payé ; plus lent sans carte graphique."),
+             lambda: self._ed(lambda ed: ed.atelier_ia("logo")))
+        fl.addSeparator()
+        actf(fl, None, _("Vignette YouTube…"),
+             _("Zones de couleur, titre, flèche, pastilles ; propositions par l'IA locale ou cloud, au choix."),
              lambda: self._ed(lambda ed: ed.vignette_composee("vignette")))
-        actf(None, _("Image fixe composée à poser dans le film (sur ce poste)…"),
+        actf(fl, None, _("Image fixe à poser dans le film…"),
              _("Même fenêtre que la vignette, au format du film, posée au-dessus à la ligne rouge."),
              lambda: self._ed(lambda ed: ed.vignette_composee("image")))
+        fb.addSeparator()
+        actf(fb, None, _("Créations à refaire ou à calculer…"),
+             _("Les créations IA demandées sur un autre appareil, ou dont le fichier manque : les calculer ici gratuitement ou les "
+               "refaire, comparer avant / après, sans jamais payer deux fois."), lambda: self._ed(lambda ed: self.creations_a_traiter(ed)))
         ou = mb.addMenu(_("&Outils"))
         ou.addAction(_("Publier (YouTube, Instagram, TikTok…)…"), self.publier)
         ou.addAction(icone("nuage"), _("Déposer l'export sur le Drive / NAS…"), self.partager)
@@ -311,7 +335,6 @@ class Fenetre(QMainWindow):
         ou.addAction(_("Ouvrir le dossier des données"), lambda: self.ouvrir_externe(dossier_donnees()))
         ai = mb.addMenu(_("&Aide"))
         ai.addAction(_("Raccourcis clavier"), self.raccourcis)
-        ai.addAction(_("Guide de test de la première version"), lambda: webbrowser.open("https://github.com/PhilouElChapo/PhilCut/blob/main/docs/guideline-tests.md"))
         ai.addAction(_("Vérifier les mises à jour…"), lambda: self.verifier_maj(silencieux=False))
         ai.addAction(_("Nouveautés du catalogue (Goodies, modèles, styles)…"), self.voir_nouveautes)
         ai.addAction(_("Site du projet (GitHub)"), lambda: webbrowser.open("https://github.com/PhilouElChapo/PhilCut"))
@@ -866,10 +889,12 @@ class Fenetre(QMainWindow):
         if d.exec() == QDialog.Accepted and d.png:
             self.fabrique(image=d.png, texte=d.logo.get("nom"))
 
-    def fabrique(self, image=None, texte=None, recette=None):
+    def fabrique(self, image=None, texte=None, recette=None, onglet=None):
         ed = self._editeur_ou_nouveau()
         from .dialogues_video import DialogueFabrique
         d = DialogueFabrique(self, ed.projet, self.params)
+        if onglet is not None:
+            d.onglets.setCurrentIndex(onglet)
         if recette:                                    # 0.9.40 : reprendre un plan IA avec ses réglages d'origine
             d.onglets.setCurrentIndex(1)
             d.sujet.setPlainText(recette.get("sujet") or "")
@@ -877,7 +902,9 @@ class Fenetre(QMainWindow):
                 d.style.setCurrentText(recette["style"])
             d.duree_ia.setValue(int(recette.get("duree") or 8))
             d.consigne.setPlainText(recette.get("consigne") or "")
-            if recette.get("voie") == "cloud" and d.voie_veo.isEnabled():
+            if recette.get("voie") == "locale" and d.voie_locale.isEnabled():
+                d.voie_locale.setChecked(True)
+            elif recette.get("voie") == "cloud" and d.voie_veo.isEnabled():
                 d.voie_veo.setChecked(True)
                 i = d.modele_veo.findData(recette.get("modele"))
                 if i >= 0:
@@ -921,6 +948,9 @@ class Fenetre(QMainWindow):
             self.params["fabrique_style"] = d.style.currentText().strip()
             self.params["dossier_flow"] = d.dossier.text().strip()
             self.params.enregistrer()
+            if d.voie_locale.isChecked():
+                self._plan_local(ed, d, consigne)
+                return
             if d.voie_veo.isChecked():
                 from . import generateurs_video as GV
                 modele = d.modele_veo.currentData()
@@ -973,6 +1003,36 @@ class Fenetre(QMainWindow):
             else:
                 avant = FAB.preparer_flow(consigne, d.dossier.text().strip())
                 self._surveiller_flow(ed, d.dossier.text().strip(), avant, FAB.recette_plan(d, consigne, "flow", "", ed.projet.format))
+
+    def _plan_local(self, ed, d, consigne):
+        """Plan vidéo par l'IA de ce poste (Wan) à partir de la phrase : gratuit, rien n'est envoyé ; on le regarde avant de
+        l'intégrer (insérer, garder dans les médias ou jeter)."""
+        from . import creatif
+        dossier = FAB.dossier_plans()
+        sortie = os.path.join(dossier, f"plan_local_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.mp4")
+        rec = FAB.recette_plan(d, consigne, "locale", "", ed.projet.format)
+        secondes = min(5.0, float(d.duree_ia.value()))
+        L, H = (272, 480) if ed.projet.format == "9:16" else (480, 272)
+        params = self.params
+
+        def travail(tache):
+            return creatif.video(consigne, sortie, params, secondes=secondes, largeur=L, hauteur=H,
+                                 progression=lambda f, t="": tache.avancer(f, t or _("L'IA de ce poste calcule le plan…")),
+                                 arret=lambda: tache.arret)
+
+        def fini(r, e):
+            if e:
+                QMessageBox.warning(self, _("Plan IA"), str(e))
+                return
+            from . import creations
+            from .dialogues_video import DialogueClipRecu
+            creations.ecrire(sortie, rec)
+            DialogueClipRecu(ed, sortie, _("Plan calculé sur ce poste")).exec()
+        t = Tache(travail, _("Plan IA"))
+        self.taches.append(t)
+        ed.encart.suivre(t, _("Plan vidéo par l'IA de ce poste ({s} s)", s=int(secondes)))
+        t.fini.connect(fini, Qt.QueuedConnection)
+        t.start()
 
     def _logo_pret(self, ed, sortie, usage, erreur):
         if erreur:

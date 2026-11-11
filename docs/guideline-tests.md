@@ -157,6 +157,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T59 — 0.9.43 : Fabrique rangée, plan par ce poste, pCloud par WebDAV
+
+1. Menu Fabrique : trois sous-menus (Vidéo, Musique, Logo, intro et vignette), chacun avec une phrase d'explication en tête, puis « Créations à refaire ou à calculer… ». Menu Aide : plus de « Guide de test ».
+2. Fabrique › Vidéo › Plan vidéo à partir d'une phrase : le premier choix est « IA de ce poste » (coché si le modèle vidéo est installé), puis Gemini, puis Google Flow. Sujet, « Fabriquer » : la barre du bas suit le calcul ; à la fin, le plan s'affiche pour être regardé, puis inséré, gardé ou jeté.
+3. Fabrique › Vidéo › Histoire en plusieurs plans : texte plus grand, l'essentiel en gras ; « Vidéo » propose d'abord ce poste, Gemini, puis Flow en dernier ; « Nouvelle histoire… » en bas à gauche.
+4. Atelier IA (Effet IA sur le film) : liste de gauche par ordre alphabétique, noms longs à la ligne, pas de barre de défilement horizontale.
+5. Préférences › Comptes et emplacements › Ajouter › pCloud (WebDAV) : adresse déjà remplie (https://ewebdav.pcloud.com), adresse e-mail et mot de passe pCloud, « Tester la connexion ». Puis, dans Projets entre vos appareils, choisir ce compte pour les rushes et son dossier d'échange (T58, étapes 3 à 6).
+
 ## T58 — 0.9.42 : pCloud, kDrive et lieu d'échange des rushes
 
 1. Préférences › Comptes et emplacements › Ajouter › pCloud : « Autoriser l'accès à pCloud… ». Le navigateur s'ouvre sur pCloud ; après « Allow », la page PhilCut dit « C'est fait » et PhilCut annonce « Connexion réussie : PhilCut accède au pCloud de … ».

@@ -9,7 +9,7 @@ from .icones import icone
 from . import distant, coffre, avatars
 
 ICONES = {"reseau": "ouvrir", "synology": "archiver", "webdav": "lot", "ftp": "exporter", "gdrive": "synchro",
-          "onedrive": "synchro", "dropbox": "synchro", "box": "synchro", "pcloud": "synchro", "kdrive": "synchro"}
+          "onedrive": "synchro", "dropbox": "synchro", "box": "synchro", "pcloud": "synchro", "pcloud_dav": "lot", "kdrive": "synchro"}
 AIDE = {
     "reseau": _("Un dossier partagé déjà accessible depuis ce PC : \\\\NAS\\partage, une lettre de lecteur (Z:\\) ou /mnt/nas."),
     "synology": _("L'adresse de votre Synology dans le navigateur : http://nas:5000, https://nas:5001 ou une adresse "
@@ -26,6 +26,9 @@ AIDE = {
     "box": _("Box en direct : votre navigateur s'ouvre, vous autorisez PhilCut, c'est tout."),
     "pcloud": _("pCloud en direct : votre navigateur s'ouvre, vous autorisez PhilCut, c'est tout. Pratique pour envoyer "
                 "les rushes (copies légères) si votre espace pCloud est grand."),
+    "pcloud_dav": _("pCloud par WebDAV : l'adresse e-mail et le mot de passe de votre compte pCloud, rangé dans le coffre "
+                    "du système. Serveur européen https://ewebdav.pcloud.com (compte américain : https://webdav.pcloud.com). "
+                    "Pratique pour les rushes : grand espace, gros fichiers envoyés en flux."),
     "kdrive": _("kDrive d'Infomaniak : collez l'adresse de votre kDrive dans le navigateur (ou seulement son numéro, "
                 "…/drive/123456/…) et un jeton d'API créé dans le Manager Infomaniak (Développeur › Jetons d'API, "
                 "portée « drive »). Le jeton est rangé dans le coffre du système. Sans compte payant, la connexion WebDAV "
@@ -199,7 +202,7 @@ def autoriser_compte(parent, compte):
 # ------------------------------------------------------------------------------------------- compte
 PORTS = {"synology": _("par défaut : 5000 en http, 5001 en https"), "webdav": _("Synology : 5005 en http, 5006 en https"),
          "ftp": _("par défaut : 21")}
-EXEMPLES = {"kdrive": "https://ksuite.infomaniak.com/kdrive/app/drive/123456/files", "reseau": r"\\NAS\partage", "synology": "http://monnas.exemple.org:5000", "webdav": "https://monnas.exemple.org:5006",
+EXEMPLES = {"pcloud_dav": "https://ewebdav.pcloud.com", "kdrive": "https://ksuite.infomaniak.com/kdrive/app/drive/123456/files", "reseau": r"\\NAS\partage", "synology": "http://monnas.exemple.org:5000", "webdav": "https://monnas.exemple.org:5006",
             "ftp": "ftp.exemple.org"}
 
 
@@ -411,14 +414,17 @@ class DialogueCompte(QDialog):
         self.c["type"] = t
         self.aide.setText(AIDE[t])
         self.adresse.setPlaceholderText(EXEMPLES.get(t, ""))
-        serveur = t in ("synology", "webdav", "ftp")
+        serveur = t in ("synology", "webdav", "ftp", "pcloud_dav")
         kd = t == "kdrive"
-        for w, vis in ((self.adresse.parentWidget(), t not in distant.NUAGES), (self.port, serveur),
+        if t == "pcloud_dav" and not self.adresse.text().strip():
+            self.adresse.setText("https://ewebdav.pcloud.com")
+        for w, vis in ((self.adresse.parentWidget(), t not in distant.NUAGES), (self.port, serveur and t != "pcloud_dav"),
                        (self.utilisateur, serveur), (self.mdp, serveur or kd), (self.chiffrement, t == "ftp"),
-                       (self.dossier, serveur), (self.libre, serveur), (self.note, serveur or kd),
+                       (self.dossier, serveur), (self.libre, serveur and t != "pcloud_dav"), (self.note, serveur or kd),
                        (self.b_autoriser.parentWidget(), t in distant.NUAGES), (self.complet, t == "gdrive")):
             self.f.setRowVisible(w, vis)
         for w, texte in ((self.adresse.parentWidget(), _("kDrive (adresse ou numéro)") if kd else _("Adresse")),
+                         (self.utilisateur, _("Adresse e-mail") if t == "pcloud_dav" else _("Utilisateur")),
                          (self.mdp, _("Jeton d'API") if kd else _("Mot de passe"))):
             lab = self.f.labelForField(w)
             if lab is not None:
@@ -484,7 +490,7 @@ class DialogueCompte(QDialog):
 
     def accept(self):
         self.compte()
-        if self.c["type"] in ("synology", "webdav", "ftp", "kdrive"):
+        if self.c["type"] in ("synology", "webdav", "ftp", "kdrive", "pcloud_dav"):
             coffre.enregistrer(self.c["id"], self.mdp.text())
         super().accept()
 

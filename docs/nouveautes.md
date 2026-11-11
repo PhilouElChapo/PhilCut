@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.42 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.43 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.43 (retours d'ergonomie du 11 novembre)
+- Menu Fabrique range en trois sous-menus, chacun avec une phrase d'explication : Video, Musique, Logo intro et vignette ; noms plus clairs ; une seule entree pour la Sequence IA ("Nouvelle histoire..." est dans sa fenetre).
+- Plan video a partir d'une phrase : l'IA de ce poste est proposee en premier (gratuite, 5 s au plus), puis Gemini, puis Google Flow ; le plan calcule se regarde avant d'etre integre.
+- Sequence IA : texte plus grand, l'essentiel en gras ; video par ce poste d'abord, Gemini ensuite, Flow en dernier.
+- Atelier IA : effets par ordre alphabetique, noms longs a la ligne (plus de defilement horizontal).
+- pCloud par WebDAV (adresse e-mail et mot de passe, dans le coffre du systeme) : sans application a declarer chez pCloud. Envois et receptions WebDAV en flux (gros rushes).
+- Menu Aide : "Guide de test de la premiere version" retire.
 
 ### 0.9.42
 - pCloud en direct : autorisation dans le navigateur (aucun mot de passe donne a PhilCut), envoi des gros fichiers en flux.

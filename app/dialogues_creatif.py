@@ -49,6 +49,10 @@ class DialogueAtelierIA(QDialog):
         self.cherche.textChanged.connect(self._remplir)
         vg.addWidget(self.cherche)
         self.liste = QListWidget()
+        self.liste.setWordWrap(True)                  # noms longs à la ligne : jamais de défilement horizontal
+        self.liste.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.liste.setTextElideMode(Qt.ElideNone)
+        self.liste.setResizeMode(QListWidget.Adjust)
         self.liste.currentItemChanged.connect(self._choisi)
         vg.addWidget(self.liste, 1)
         sp.addWidget(gauche)
@@ -261,7 +265,12 @@ class DialogueAtelierIA(QDialog):
         txt = self.cherche.text().strip().lower()
         self.liste.blockSignals(True)
         self.liste.clear()
-        for e in EI.tous(self.ed.params):
+        import unicodedata
+
+        def cle(e):                                   # ordre alphabétique (accents ignorés), vos effets ★ d'abord
+            n = unicodedata.normalize("NFD", e["nom"]).encode("ascii", "ignore").decode().lower()
+            return (not e.get("perso"), n)
+        for e in sorted(EI.tous(self.ed.params), key=cle):
             if e["famille"] != fam or (txt and txt not in e["nom"].lower() and txt not in e.get("prompt", "").lower()):
                 continue
             ok, _m = EI.disponible(e, self.ed.params)

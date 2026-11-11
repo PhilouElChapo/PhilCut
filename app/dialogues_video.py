@@ -1091,8 +1091,14 @@ class DialogueFabrique(QDialog):
         b_seq.setToolTip(_("Une histoire découpée en plans, les mêmes personnages d'un plan à l'autre, leurs répliques et une musique"))
         b_seq.clicked.connect(self._vers_sequence)
         f2.addRow(b_seq)
+        from . import packs_ia as _P
+        cle_v = _P.modele_actif("video", params)
+        local_pret = bool(cle_v and _P.installe(cle_v))
+        self.voie_locale = QRadioButton(_("IA de ce poste (gratuite, rien n'est envoyé) : 5 s au plus, plus lent sans carte graphique")
+                                        if local_pret else
+                                        _("IA de ce poste (gratuite) : modèle vidéo à installer dans Edition › Préférences › IA locale"))
+        self.voie_locale.setEnabled(local_pret)
         self.voie_flow = QRadioButton(_("Google Flow, avec votre abonnement Google (sans clef, sans frais en plus)"))
-        self.voie_flow.setChecked(True)
         self.aide_flow = QLabel(_(
             "<b>Comment ça marche ?</b> Flow est le site de Google qui fabrique des vidéos par IA ; PhilCut ne peut pas "
             "s'y connecter à votre place, il vous mâche le travail (essai du 9 novembre 2026) :<br>"
@@ -1114,13 +1120,14 @@ class DialogueFabrique(QDialog):
         self.aide_flow.setTextFormat(Qt.RichText)
         self.aide_flow.setStyleSheet("padding:6px 8px;border:1px solid palette(mid);border-radius:6px")
         self.voie_flow.toggled.connect(self.aide_flow.setVisible)
-        self.voie_veo = QRadioButton(_("Générateur IA payant avec votre clef (Google, fal.ai : Kling, Seedance…)"))
+        self.voie_veo = QRadioButton(_("Gemini ou un autre générateur payant avec votre clef (fal.ai : Kling, Seedance…)"))
         from . import generateurs_video as GV
         dispo = {m["id"] for m in GV.disponibles(params)}
         self.voie_veo.setEnabled(bool(params.get("veo_actif")) and bool(dispo))
-        f2.addRow(self.voie_flow)
-        f2.addRow(self.aide_flow)
-        f2.addRow(self.voie_veo)
+        # ordre : ce poste d'abord (gratuit), puis Gemini (votre clef, prix annoncé), Flow en dernier (pas à pas)
+        (self.voie_locale if local_pret else self.voie_veo if self.voie_veo.isEnabled() else self.voie_flow).setChecked(True)
+        self.aide_flow.setVisible(self.voie_flow.isChecked())
+        f2.addRow(self.voie_locale)
         self.modele_veo = QComboBox()
         for m in GV.modeles(params):
             lib = f"{m['nom']} — {m.get('prix_s', 0):.2f} $/s ({m.get('note', '')})"
@@ -1136,9 +1143,12 @@ class DialogueFabrique(QDialog):
         b_conn = QPushButton(_("Connecter une IA…"))
         b_conn.clicked.connect(self._connecter)
         hm.addWidget(b_conn)
+        f2.addRow(self.voie_veo)
         f2.addRow(_("Modèle"), hm)
         self.prix = QLabel("")
         f2.addRow(self.prix)
+        f2.addRow(self.voie_flow)
+        f2.addRow(self.aide_flow)
         self.modele_veo.currentIndexChanged.connect(self._prix)
         self.duree_ia.valueChanged.connect(self._prix)
         self._prix()

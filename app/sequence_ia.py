@@ -26,7 +26,7 @@ DUREE_PLAN = 6
 
 
 def nouvelle(format_="16:9"):
-    return {"version": VERSION, "titre": "", "histoire": "", "format": format_, "moteur": "flow", "voix": "local",
+    return {"version": VERSION, "titre": "", "histoire": "", "format": format_, "moteur": "locale", "voix": "local",
             "musique": {"active": True, "phrase": ""}, "personnages": [], "lieux": [], "plans": [], "cree": time.time()}
 
 

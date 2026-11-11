@@ -27,6 +27,7 @@ TYPES = {
     "dropbox": "Dropbox",
     "box": "Box",
     "pcloud": "pCloud",
+    "pcloud_dav": "pCloud (WebDAV)",
     "kdrive": "kDrive (Infomaniak)",
 }
 DELAI = 20
@@ -66,6 +67,8 @@ def _joindre(dossier, nom):
 
 
 def nouveau_compte(genre):
+    if genre == "pcloud_dav":
+        return dict(nouveau_compte("webdav"), type=genre, nom=_(TYPES[genre]), adresse=PCloudDAV.SERVEURS[0])
     return {"id": uuid.uuid4().hex[:10], "type": genre, "nom": _(TYPES[genre]), "adresse": "", "port": 0,
             "utilisateur": "", "dossier": "/", "chiffrement": "tls" if genre == "ftp" else "", "certificat_libre": False}
 
@@ -262,6 +265,33 @@ class _Http(Emplacement):
             raise ErreurDistant(_("Serveur injoignable : {raison}", raison=raison))
 
 
+# ---------------------------------------------------------------------------------- envoi en flux (gros fichiers)
+class _Flux:
+    """Fichier envoyé par morceaux lus au fil de l'envoi (rushes de plusieurs centaines de Mo) ; `progression(fait, total)`."""
+
+    def __init__(self, chemin, debut=0, taille=None, progression=None):
+        self.f = open(chemin, "rb")
+        self.f.seek(debut)
+        self.reste = (os.path.getsize(chemin) - debut) if taille is None else taille
+        self.total, self.fait, self.progression = self.reste, 0, progression
+
+    def __len__(self):
+        return self.total
+
+    def read(self, n=-1):
+        if self.reste <= 0:
+            return b""
+        b = self.f.read(min(self.reste, 1 << 20 if n is None or n < 0 else n))
+        self.reste -= len(b)
+        self.fait += len(b)
+        if self.progression:
+            self.progression(self.fait, self.total)
+        return b
+
+    def close(self):
+        self.f.close()
+
+
 # ---------------------------------------------------------------------------------- WebDAV
 class WebDAV(_Http):
     def _url(self, chemin):
@@ -305,13 +335,22 @@ class WebDAV(_Http):
         return sorted(out, key=lambda e: (not e.dossier, e.nom.lower()))
 
     def telecharger(self, chemin, local):
-        with self._req("GET", chemin) as f, open(local, "wb") as g:
-            g.write(f.read())
+        tmp = local + ".part"
+        with self._req("GET", chemin) as f, open(tmp, "wb") as g:
+            while True:                                # par morceaux : un rush de plusieurs centaines de Mo ne remplit pas la mémoire
+                b = f.read(1 << 20)
+                if not b:
+                    break
+                g.write(b)
+        os.replace(tmp, local)
 
-    def envoyer(self, local, chemin):
+    def envoyer(self, local, chemin, progression=None):
         self.creer_dossiers(chemin)
-        with open(local, "rb") as f:
-            self._req("PUT", chemin, f.read(), {"Content-Type": type_mime(chemin)}).close()
+        flux = _Flux(local, progression=progression)
+        try:
+            self._req("PUT", chemin, flux, {"Content-Type": type_mime(chemin), "Content-Length": str(len(flux))}).close()
+        finally:
+            flux.close()
 
     def supprimer(self, chemin):
         self._req("DELETE", chemin).close()
@@ -980,33 +1019,6 @@ class Box(_DriveOAuth):
         return _("Connexion réussie au Box de {qui} : {n} élément(s) à la racine.", qui=self.qui(), n=len(self.lister("/")))
 
 
-# ---------------------------------------------------------------------------------- envoi en flux (gros fichiers)
-class _Flux:
-    """Fichier envoyé par morceaux lus au fil de l'envoi (rushes de plusieurs centaines de Mo) ; `progression(fait, total)`."""
-
-    def __init__(self, chemin, debut=0, taille=None, progression=None):
-        self.f = open(chemin, "rb")
-        self.f.seek(debut)
-        self.reste = (os.path.getsize(chemin) - debut) if taille is None else taille
-        self.total, self.fait, self.progression = self.reste, 0, progression
-
-    def __len__(self):
-        return self.total
-
-    def read(self, n=-1):
-        if self.reste <= 0:
-            return b""
-        b = self.f.read(min(self.reste, 1 << 20 if n is None or n < 0 else n))
-        self.reste -= len(b)
-        self.fait += len(b)
-        if self.progression:
-            self.progression(self.fait, self.total)
-        return b
-
-    def close(self):
-        self.f.close()
-
-
 # ---------------------------------------------------------------------------------- pCloud (0.9.42)
 class PCloud(_DriveOAuth):
     """pCloud en direct : autorisation dans le navigateur, jeton d'accès durable dans le coffre (pas de renouvellement).
@@ -1119,6 +1131,20 @@ class PCloud(_DriveOAuth):
         qui = self.qui()
         n = len(self.lister("/"))
         return _("Connexion réussie au pCloud de {qui} : {n} élément(s) à la racine.", qui=qui, n=n)
+
+
+class PCloudDAV(WebDAV):
+    """pCloud par WebDAV (0.9.43) : adresse e-mail et mot de passe du compte pCloud (dans le coffre), serveur européen
+    ewebdav.pcloud.com par défaut (webdav.pcloud.com pour un compte américain). Sans application à déclarer chez pCloud."""
+    SERVEURS = ("https://ewebdav.pcloud.com", "https://webdav.pcloud.com")
+
+    def _base(self):
+        a = (self.c.get("adresse") or "").strip().rstrip("/")
+        return a if a else self.SERVEURS[0]
+
+    def tester(self):
+        n = len(self.lister("/"))
+        return _("Connexion réussie au pCloud de {qui} : {n} élément(s) à la racine.", qui=self.c.get("utilisateur") or "?", n=n)
 
 
 # ---------------------------------------------------------------------------------- kDrive d'Infomaniak (0.9.42)
@@ -1299,7 +1325,7 @@ class KDrive(_Http):
 
 
 CLASSES = {"reseau": Reseau, "synology": Synology, "webdav": WebDAV, "ftp": FTP, "gdrive": GoogleDrive,
-           "onedrive": OneDrive, "dropbox": Dropbox, "box": Box, "pcloud": PCloud, "kdrive": KDrive}
+           "onedrive": OneDrive, "dropbox": Dropbox, "box": Box, "pcloud": PCloud, "pcloud_dav": PCloudDAV, "kdrive": KDrive}
 
 
 def emplacement(compte, mot_de_passe=None, code=None):
