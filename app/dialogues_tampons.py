@@ -698,6 +698,14 @@ class DialogueTampons(QDialog):
         self.resultats.currentItemChanged.connect(lambda *_a: self._resultat_choisi())
         self.resultats.itemDoubleClicked.connect(lambda _i: self.ajouter_resultat(True))
         v.addWidget(self.resultats, 1)
+        # 0.9.45 : comme la page de YouTube, la suite arrive quand on descend en bas (ou par le bouton)
+        self._yt, self._plus_en_cours, self._garder_defilement = None, False, None
+        self.b_plus = QPushButton(_("30 résultats de plus"))
+        self.b_plus.setToolTip(_("La suite de la recherche YouTube ; elle arrive aussi toute seule quand vous descendez en bas de la liste."))
+        self.b_plus.clicked.connect(self.plus_de_resultats)
+        self.b_plus.hide()
+        v.addWidget(self.b_plus, 0, Qt.AlignLeft)
+        self.resultats.verticalScrollBar().valueChanged.connect(self._bas_atteint)
         h = QHBoxLayout()
         self.info_res = QLabel(_("Seuls les clips dont la licence autorise une vidéo publiée sont proposés. Les extraits de films ou "
                                  "d'émissions connus ne sont pas libres : ils ne se trouvent pas ici."))
@@ -818,6 +826,8 @@ class DialogueTampons(QDialog):
             self.question.setFocus()
             return
         s = self.source.currentData()
+        self._yt, self._nb_avant, self._garder_defilement = None, 0, None      # nouvelle recherche
+        self.b_plus.hide()
         if texte.startswith(("http://", "https://")) and s != "ytdlp":
             # un lien collé (YouTube, Vimeo, Dailymotion, fichier .mp4…) : il se lit par yt-dlp, quelle que soit la source choisie
             self.source.setCurrentIndex(self.source.findData("ytdlp"))
@@ -854,6 +864,7 @@ class DialogueTampons(QDialog):
             url = texte.startswith(("http://", "https://"))
             self.etat.setText(_("Lecture de la vidéo…") if url else _("Recherche sur YouTube…"))
             n, genre = int(self.params.get("ytdlp_resultats") or 30), self.genre_yt.currentData()
+            self._yt = None if url else {"texte": texte, "genre": genre, "n": n}        # pour « 30 de plus »
             dv = os.path.join(tempfile.gettempdir(), "philcut-tampons", "youtube")
             self._lancer(lambda t: [dict(VL.infos(texte), source="youtube")] if url else
                          VL.vignettes(VL.chercher_youtube(texte, n, genre), dv, t.arret_demande), None, fin=self._resultats_recus)
@@ -1024,7 +1035,27 @@ class DialogueTampons(QDialog):
                 r["_vignette"] = f
         return res
 
+    def _bas_atteint(self, v):
+        sb = self.resultats.verticalScrollBar()
+        if self._yt and sb.maximum() > 0 and v >= sb.maximum() and not self._plus_en_cours:
+            self.plus_de_resultats()
+
+    def plus_de_resultats(self):
+        """La même recherche, 30 résultats plus loin ; la liste garde l'endroit où vous étiez."""
+        if not self._yt or self._plus_en_cours:
+            return
+        from . import videos_en_ligne as VL
+        self._plus_en_cours = True
+        self._yt["n"] += 30
+        self._garder_defilement = self.resultats.verticalScrollBar().value()
+        y = dict(self._yt)
+        self.etat.setText(_("Recherche de la suite sur YouTube…"))
+        dv = os.path.join(tempfile.gettempdir(), "philcut-tampons", "youtube")
+        self._lancer(lambda t: VL.vignettes(VL.chercher_youtube(y["texte"], y["n"], y["genre"]), dv, t.arret_demande), None,
+                     fin=self._resultats_recus)
+
     def _resultats_recus(self, res, err):
+        self._plus_en_cours = False
         if err:
             self.etat.setText("✕ " + str(err))
             return
@@ -1072,7 +1103,16 @@ class DialogueTampons(QDialog):
             it.setToolTip(f"{r['titre']}\n{r.get('licence', '')}")
             self.resultats.addItem(it)
         self.resultats.doItemsLayout()
-        self.resultats.scrollToTop()
+        if self._garder_defilement is not None:
+            self.resultats.verticalScrollBar().setValue(self._garder_defilement)
+            self._garder_defilement = None
+        else:
+            self.resultats.scrollToTop()
+        avant = getattr(self, "_nb_avant", 0)
+        self._nb_avant = len(res)
+        if self._yt and avant and len(res) <= avant:      # YouTube n'a rien de plus
+            self._yt = None
+        self.b_plus.setVisible(bool(self._yt) and bool(res) and self.source.currentData() == "ytdlp")
         shorts = sum(1 for r in res if r.get("short"))
         if en_ligne and shorts and shorts < len(res):
             compte = _("{n} résultats : {v} vidéo(s), puis {s} Short(s) à la fin.", n=len(res), v=len(res) - shorts, s=shorts)

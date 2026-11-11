@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.44 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.45 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.45
+- Tampons video > Chercher en ligne (YouTube) : comme sur le site, la suite arrive quand on descend en bas de la liste, ou par "30 resultats de plus" ; la liste garde l'endroit ou vous etiez.
 
 ### 0.9.44 (retours du 11 novembre, fin de soiree)
 - Fenetre de mise a jour comme PhilPDF : plus de bouton de reduction de Windows ; "Reduire" la range dans la barre du bas, la croix et Echap aussi tant que le telechargement continue.

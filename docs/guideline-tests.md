@@ -157,6 +157,12 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T61 — 0.9.45 : la suite des résultats YouTube
+
+1. Tampons vidéo › Chercher en ligne, YouTube, une recherche : 30 résultats.
+2. Descendre en bas de la liste : « Recherche de la suite sur YouTube… », puis 30 de plus ; la liste reste à l'endroit où vous étiez. Le bouton « 30 résultats de plus » fait la même chose.
+3. Quand YouTube n'a plus rien, le bouton disparaît.
+
 ## T60 — 0.9.44 : mise à jour comme PhilPDF, recherche exacte, musique, logo et vignette
 
 1. Mise à jour : la fenêtre n'a plus le bouton de réduction de Windows ; « Réduire », la croix ou Echap la rangent dans la barre du bas, le téléchargement continue ; « Afficher » la rouvre.

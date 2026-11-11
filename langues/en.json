@@ -6665,5 +6665,8 @@
  "L'image qu'on voit sur YouTube avant de cliquer : à partir d'une image du film, avec titre, flèche et votre logo ; elle part avec l'export et la publication.": "The image people see on YouTube before clicking: from a frame of the film, with title, arrow and your logo; it goes with the export and the publication.",
  "Voix seule d'un morceau (voix de référence de la musique, expérimental)": "Voice only from a track (reference voice for music, experimental)",
  "pas de vignette choisie": "no thumbnail chosen",
- "YouTube n'accepte les vignettes personnalisées qu'après validation de la chaîne par téléphone (youtube.com/verify) : posez-la dans YouTube Studio": "YouTube only accepts custom thumbnails once the channel is verified by phone (youtube.com/verify): set it in YouTube Studio"
+ "YouTube n'accepte les vignettes personnalisées qu'après validation de la chaîne par téléphone (youtube.com/verify) : posez-la dans YouTube Studio": "YouTube only accepts custom thumbnails once the channel is verified by phone (youtube.com/verify): set it in YouTube Studio",
+ "30 résultats de plus": "30 more results",
+ "La suite de la recherche YouTube ; elle arrive aussi toute seule quand vous descendez en bas de la liste.": "The rest of the YouTube search; it also arrives by itself when you scroll to the bottom of the list.",
+ "Recherche de la suite sur YouTube…": "Searching YouTube for more…"
 }
