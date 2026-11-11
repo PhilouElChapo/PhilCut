@@ -291,8 +291,9 @@ class DialogueEspaceDrive(QDialog):
             racine.setFirstColumnSpanned(False)
             self.arbre.addTopLevelItem(racine)
             for e in es:
-                it = QTreeWidgetItem([e["rel"], DP.taille_lisible(e["taille"]), e["raison"]])
-                it.setData(0, Qt.UserRole, e["rel"])
+                it = QTreeWidgetItem([e["rel"] + (f"  ({e['lieu']})" if e.get("lieu") else ""), DP.taille_lisible(e["taille"]),
+                                      e["raison"]])
+                it.setData(0, Qt.UserRole, e["chemin"])
                 it.setData(1, Qt.UserRole, e["taille"])
                 if cat != "reglages":
                     it.setFlags(it.flags() | Qt.ItemIsUserCheckable)

@@ -32,9 +32,43 @@ def disponible(params):
     return bool(racine(params))
 
 
+def compte_rushs(params):
+    """Compte choisi pour les copies légères des rushes (Préférences › Comptes et synchro), s'il est différent du lieu
+    de synchronisation (0.9.42 : par exemple pCloud pour les rushes, Google Drive pour les réglages)."""
+    params = params or {}
+    cid = params.get("rushs_compte") or ""
+    if not cid or cid == params.get("drive_compte"):
+        return None
+    c = next((c for c in params.get("comptes", []) if c.get("id") == cid), None)
+    if c is None:
+        return None
+    # toujours le dossier d'échange désigné (réglage commun à tous les postes), « /PhilCut » par défaut
+    return dict(c, _racine=dossier_rushs(params))
+
+
+def dossier_rushs(params):
+    """Dossier d'échange des rushes sur leur compte (ex. « /Rushes PhilCut ») : Medias y est rangé."""
+    d = "/" + "/".join(p for p in str((params or {}).get("rushs_dossier") or "/PhilCut").split("/") if p)
+    return d if d != "/" else "/PhilCut"
+
+
+def racine_rushs(params):
+    """Dossier PhilCut (copie locale) qui reçoit les copies légères : celui du compte des rushes, sinon le lieu de synchro."""
+    c = compte_rushs(params)
+    if c:
+        from . import miroir
+        return os.path.join(miroir.dossier_miroir(c), "Rushes")
+    return racine(params)
+
+
+def dossier_medias(params):
+    r = racine_rushs(params)
+    return os.path.join(r, "Medias") if r else None
+
+
 def _index_chemin(params):
-    r = racine(params)
-    return os.path.join(r, "Medias", "index.json") if r else None
+    d = dossier_medias(params)
+    return os.path.join(d, "index.json") if d else None
 
 
 def lire_index(params):
@@ -87,10 +121,9 @@ def estimer(medias):
 def copier_leger(params, m, progression=None, arret=lambda: False):
     """Fabrique la copie légère 720p d'un média dans PhilCut/Medias ; renvoie son nom (rangé dans m["copie_drive"])."""
     from .moteur import ffmpeg as ffmpeg_bin, _sans_console
-    r = racine(params)
-    if not r:
+    d = dossier_medias(params)
+    if not d:
         raise RuntimeError(_("Aucun lieu de synchronisation : Préférences › Comptes et synchro."))
-    d = os.path.join(r, "Medias")
     os.makedirs(d, exist_ok=True)
     nom = f"{(m.get('empreinte') or m['id'])[:24]}_720p.mp4"
     sortie = os.path.join(d, nom)
@@ -171,78 +204,109 @@ def _age_jours(date_iso, mtime):
     return max(0, int((time.time() - t) / 86400))
 
 
+def _fichiers(params):
+    """(chemin, rel, nom) de tout ce qu'il y a dans le dossier PhilCut ; si les rushes ont leur propre compte, leurs
+    Medias viennent de lui (et ceux du lieu de synchro, s'il en reste, sont aussi montrés)."""
+    r, rr = racine(params), racine_rushs(params)
+    lieux = []
+    if r:
+        lieux.append((r, None))
+    if rr and rr != r:
+        lieux.append((rr, "Medias"))
+    for base, seul in lieux:
+        for dossier, _sous, fichiers in os.walk(base):
+            rel_d = os.path.relpath(dossier, base).replace("\\", "/")
+            if seul and rel_d.split("/")[0] != seul:
+                continue
+            for f in fichiers:
+                chemin = os.path.join(dossier, f)
+                yield chemin, os.path.relpath(chemin, base).replace("\\", "/"), f
+
+
+def lieu_de(params, chemin):
+    """(compte, racine locale) du fichier local `chemin` de l'espace PhilCut."""
+    from . import miroir
+    rc = compte_rushs(params)
+    rr = racine_rushs(params)
+    if rc and rr and os.path.abspath(chemin).startswith(os.path.abspath(rr) + os.sep):
+        return rc, rr
+    return miroir.compte_drive(params or {}), racine(params)
+
+
 def analyser(params, utilises=frozenset(), jours=None):
     """Tout ce qu'il y a dans le dossier PhilCut du lieu de synchronisation :
     [{rel, chemin, taille, categorie, age, raison, proposer}] ; « proposer » = case pré-cochée.
     utilises : noms de copies / créations utilisées par les projets ouverts (jamais proposées)."""
     r = racine(params)
-    if not r:
+    rr = racine_rushs(params)
+    if not r and not rr:
         return []
     jours = int(jours if jours is not None else (params or {}).get("drive_purge_jours", JOURS_DEFAUT) or JOURS_DEFAUT)
     idx = lire_index(params)
     out = []
-    for dossier, _sous, fichiers in os.walk(r):
-        for f in fichiers:
-            chemin = os.path.join(dossier, f)
-            rel = os.path.relpath(chemin, r).replace("\\", "/")
-            try:
-                st = os.stat(chemin)
-            except OSError:
-                continue
-            tete = rel.split("/")[0]
-            e = {"rel": rel, "chemin": chemin, "taille": st.st_size, "categorie": "autres", "age": 0, "raison": "", "proposer": False}
-            if f.endswith((".tmp", ".part", ".distant", ".part.mp4")):
-                e.update(categorie="temporaires", proposer=True, raison=_("transfert interrompu"))
-            elif tete in GARDES or rel in GARDES or f in ("index.json",):
-                e.update(categorie="reglages", raison=_("indispensable à la synchronisation"))
-            elif tete in ("Medias", "Creations"):
-                nom = f[:-len(".ia.json")] if f.endswith(".ia.json") else f
-                info = idx.get(nom, {})
-                e["categorie"] = "medias" if tete == "Medias" else "creations"
-                e["age"] = _age_jours(info.get("utilise") or info.get("depose"), st.st_mtime)
-                if nom in utilises:
-                    e["raison"] = _("utilisé par un projet ouvert")
-                elif not info:
-                    e.update(proposer=True, raison=_("plus référencé par aucun projet"))
-                elif e["age"] >= jours:
-                    e.update(proposer=True, raison=_("pas utilisé depuis {n} jours", n=e["age"]))
-                else:
-                    e["raison"] = _("utilisé il y a {n} jour(s)", n=e["age"]) if e["age"] else _("utilisé aujourd'hui")
-                if info.get("projet"):
-                    e["raison"] += " — " + info["projet"]
-            elif f.endswith(".philcut") or tete in ("Projets", "secours"):
-                e["categorie"] = "projets"
-                e["age"] = _age_jours("", st.st_mtime)
-                e["raison"] = _("modifié il y a {n} jour(s)", n=e["age"])
+    for chemin, rel, f in _fichiers(params):
+        try:
+            st = os.stat(chemin)
+        except OSError:
+            continue
+        tete = rel.split("/")[0]
+        e = {"rel": rel, "chemin": chemin, "taille": st.st_size, "categorie": "autres", "age": 0, "raison": "", "proposer": False}
+        if rr and rr != r and os.path.abspath(chemin).startswith(os.path.abspath(rr) + os.sep):
+            from . import distant
+            e["lieu"] = distant.libelle(compte_rushs(params))
+        if f.endswith((".tmp", ".part", ".distant", ".part.mp4")):
+            e.update(categorie="temporaires", proposer=True, raison=_("transfert interrompu"))
+        elif tete in GARDES or rel in GARDES or f in ("index.json",):
+            e.update(categorie="reglages", raison=_("indispensable à la synchronisation"))
+        elif tete in ("Medias", "Creations"):
+            nom = f[:-len(".ia.json")] if f.endswith(".ia.json") else f
+            info = idx.get(nom, {})
+            e["categorie"] = "medias" if tete == "Medias" else "creations"
+            e["age"] = _age_jours(info.get("utilise") or info.get("depose"), st.st_mtime)
+            if nom in utilises:
+                e["raison"] = _("utilisé par un projet ouvert")
+            elif not info:
+                e.update(proposer=True, raison=_("plus référencé par aucun projet"))
+            elif e["age"] >= jours:
+                e.update(proposer=True, raison=_("pas utilisé depuis {n} jours", n=e["age"]))
             else:
-                e["age"] = _age_jours("", st.st_mtime)
-            out.append(e)
+                e["raison"] = _("utilisé il y a {n} jour(s)", n=e["age"]) if e["age"] else _("utilisé aujourd'hui")
+            if info.get("projet"):
+                e["raison"] += " — " + info["projet"]
+        elif f.endswith(".philcut") or tete in ("Projets", "secours"):
+            e["categorie"] = "projets"
+            e["age"] = _age_jours("", st.st_mtime)
+            e["raison"] = _("modifié il y a {n} jour(s)", n=e["age"])
+        else:
+            e["age"] = _age_jours("", st.st_mtime)
+        out.append(e)
     return sorted(out, key=lambda e: (list(CATEGORIES).index(e["categorie"]), -e["taille"]))
 
 
 def supprimer(params, rels, progression=None):
-    """Supprime ces fichiers du dossier PhilCut, ici ET sur le Drive (Drive en direct, NAS, FTP : à la corbeille quand
-    le service en a une). Renvoie (supprimés, octets, erreurs)."""
-    r = racine(params)
-    if not r:
+    """Supprime ces fichiers de l'espace PhilCut, ici ET sur le Drive (Drive en direct, NAS, FTP, pCloud, kDrive : à
+    la corbeille quand le service en a une). `rels` : chemins relatifs, ou chemins locaux (analyse avec un compte
+    des rushes à part). Renvoie (supprimés, octets, erreurs)."""
+    from . import miroir, distant
+    if not racine(params) and not racine_rushs(params):
         return 0, 0, []
-    from . import miroir
-    compte = miroir.compte_drive(params or {})
-    emplacement = None
-    if compte:
-        from . import distant
-        emplacement = distant.emplacement(compte)
     n, octets, erreurs = 0, 0, []
     idx = lire_index(params)
+    emplacements, oublis = {}, {}
     for i, rel in enumerate(rels):
-        local = os.path.join(r, *rel.split("/"))
+        local = rel if os.path.isabs(rel) else os.path.join(racine(params) or racine_rushs(params), *rel.split("/"))
+        compte, base = lieu_de(params, local)
+        rel_c = os.path.relpath(local, base).replace("\\", "/")
         try:
             taille = os.path.getsize(local) if os.path.exists(local) else 0
-            if emplacement is not None:
-                emplacement.supprimer(miroir.racine_distante(compte).rstrip("/") + "/" + rel)
+            if compte:
+                if compte["id"] not in emplacements:
+                    emplacements[compte["id"]] = distant.emplacement(compte)
+                emplacements[compte["id"]].supprimer(miroir.racine_distante(compte).rstrip("/") + "/" + rel_c)
+                oublis.setdefault(compte["id"], (compte, []))[1].append((rel_c, local))
             if os.path.exists(local):
                 os.remove(local)
-            idx.pop(os.path.basename(rel), None)
+            idx.pop(os.path.basename(rel_c), None)
             n += 1
             octets += taille
         except Exception as e:      # noqa: BLE001
@@ -250,14 +314,18 @@ def supprimer(params, rels, progression=None):
         if progression:
             progression((i + 1) / max(1, len(rels)))
     _ecrire_index(params, idx)
-    if compte:                                       # le miroir oublie ces fichiers : ni renvoyés, ni redemandés
+    for compte, liste in oublis.values():           # le miroir oublie ces fichiers : ni renvoyés, ni redemandés
         etat_p = os.path.join(miroir.dossier_miroir(compte), "etat.json")
+        if compte.get("_racine"):
+            import hashlib
+            etat_p = os.path.join(miroir.dossier_miroir(compte),
+                                  "etat_" + hashlib.sha1(miroir.racine_distante(compte).encode()).hexdigest()[:10] + ".json")
         try:
             with open(etat_p, encoding="utf-8") as f:
                 etat = json.load(f)
-            for rel in rels:
-                if not os.path.exists(os.path.join(r, *rel.split("/"))):
-                    etat.pop(rel, None)
+            for rel_c, local in liste:
+                if not os.path.exists(local):
+                    etat.pop(rel_c, None)
             with open(etat_p, "w", encoding="utf-8") as f:
                 json.dump(etat, f, indent=1)
         except (OSError, ValueError):

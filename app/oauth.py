@@ -64,6 +64,17 @@ FOURNISSEURS = {
         "retour": "http://localhost:{port}/",
         "ports": PORTS_FIXES,
     },
+    "pcloud": {            # 0.9.42 : pas de jeton de renouvellement, le jeton d'accès dure jusqu'à son retrait
+        "nom": "pCloud",
+        "auth": "https://my.pcloud.com/oauth2/authorize",
+        "jeton": "https://{hote}/oauth2_token",
+        "portee": "",
+        "extra": {},
+        "env": ("PHILCUT_PCLOUD_ID", "PHILCUT_PCLOUD_SECRET"),
+        "retour": "http://localhost:{port}/",          # adresse a declarer dans l'application pCloud
+        "ports": PORTS_FIXES,
+        "durable": True,
+    },
 }
 
 
@@ -107,6 +118,11 @@ def identifiants(fournisseur):
 def disponible(fournisseur):
     return identifiants(fournisseur)[0] is not None
 
+
+RELAIS = """<!doctype html><html><head><meta charset="utf-8"><title>PhilCut</title></head><body><script>
+var h = location.hash.replace(/^#/, "");
+location.replace("/?" + (h || "error=pas_de_jeton"));
+</script></body></html>"""
 
 PAGE = """<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>PhilCut</title>
 <style>body{{font:16px "Segoe UI",system-ui,sans-serif;background:#f6f6f4;color:#1f1f1f;display:flex;align-items:center;
@@ -162,7 +178,15 @@ def autoriser(fournisseur, ouvrir=webbrowser.open, delai=300, arret=lambda: Fals
 
         def do_GET(self):
             q = dict(urllib.parse.parse_qsl(urllib.parse.urlsplit(self.path).query))
-            if "code" not in q and "error" not in q:
+            if "code" not in q and "error" not in q and "access_token" not in q:
+                if jeton_direct and urllib.parse.urlsplit(self.path).path in ("", "/"):
+                    corps = RELAIS.encode()           # jeton dans le fragment (#) : la page le renvoie en clair a PhilCut
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.send_header("Content-Length", str(len(corps)))
+                    self.end_headers()
+                    self.wfile.write(corps)
+                    return
                 self.send_response(404)
                 self.end_headers()
                 return
@@ -171,8 +195,9 @@ def autoriser(fournisseur, ouvrir=webbrowser.open, delai=300, arret=lambda: Fals
             else:
                 recu.update(q)
                 if journal:
-                    journal("← retour du navigateur : " + ("code d'autorisation reçu" if "code" in q else f"refus ({q.get('error')})"))
-            ok = "code" in q and q.get("state") == etat
+                    journal("← retour du navigateur : " + ("code d'autorisation reçu" if "code" in q else
+                                                           "jeton reçu" if "access_token" in q else f"refus ({q.get('error')})"))
+            ok = ("code" in q or "access_token" in q) and q.get("state") == etat
             texte = (_("C'est fait : PhilCut peut maintenant utiliser votre {nom}. Vous pouvez fermer cette page.", nom=f["nom"])
                      if ok else _("Autorisation refusée ou annulée. Vous pouvez fermer cette page."))
             corps = PAGE.format(texte=html.escape(texte)).encode()
@@ -186,6 +211,7 @@ def autoriser(fournisseur, ouvrir=webbrowser.open, delai=300, arret=lambda: Fals
     class Serveur(http.server.ThreadingHTTPServer):
         daemon_threads = True
 
+    jeton_direct = bool(f.get("durable")) and not sec      # pCloud sans secret : jeton rendu directement (flux « token »)
     serveur = None
     for port in f.get("ports") or [0]:
         try:
@@ -197,8 +223,12 @@ def autoriser(fournisseur, ouvrir=webbrowser.open, delai=300, arret=lambda: Fals
         raise ErreurAutorisation(_("Les ports {ports} sont occupés : fermez l'application qui les utilise.",
                                    ports=", ".join(map(str, f.get("ports", [])))))
     redirection = f.get("retour", "http://127.0.0.1:{port}").format(port=serveur.server_port)
-    params = {"client_id": cid, "redirect_uri": redirection, "response_type": "code",
-              "code_challenge": defi, "code_challenge_method": "S256", "state": etat, **f["extra"]}
+    if f.get("durable"):
+        params = {"client_id": cid, "redirect_uri": redirection, "response_type": "token" if jeton_direct else "code",
+                  "state": etat, **f["extra"]}
+    else:
+        params = {"client_id": cid, "redirect_uri": redirection, "response_type": "code",
+                  "code_challenge": defi, "code_challenge_method": "S256", "state": etat, **f["extra"]}
     portee = PORTEE_COMPLETE.get(fournisseur) if complet and fournisseur in PORTEE_COMPLETE else f["portee"]
     if portee:
         params["scope"] = portee
@@ -218,8 +248,10 @@ def autoriser(fournisseur, ouvrir=webbrowser.open, delai=300, arret=lambda: Fals
         serveur.server_close()
     if not recu:
         raise ErreurAutorisation(_("Pas de réponse du navigateur (délai dépassé ou annulé)."))
-    if recu.get("state") != etat or "code" not in recu:
+    if recu.get("state") != etat or ("code" not in recu and "access_token" not in recu):
         raise ErreurAutorisation(_("Autorisation refusée : {raison}", raison=recu.get("error", "?")))
+    if f.get("durable"):
+        return _jeton_durable(f, cid, sec, recu, journal)
     champs = {"client_id": cid, "code": recu["code"], "code_verifier": verif, "grant_type": "authorization_code",
               "redirect_uri": redirection}
     if sec:
@@ -235,6 +267,29 @@ def autoriser(fournisseur, ouvrir=webbrowser.open, delai=300, arret=lambda: Fals
         journal("✓ jeton durable reçu")
     jetons["expire"] = time.time() + int(jetons.get("expires_in", 3000)) - 60
     return jetons
+
+
+def _jeton_durable(f, cid, sec, recu, journal):
+    """pCloud : le jeton d'accès n'expire pas ; il est rangé dans le coffre à la place du jeton de renouvellement.
+    « hote » : serveur du compte (api.pcloud.com aux Etats-Unis, eapi.pcloud.com en Europe)."""
+    hote = recu.get("hostname") or ("eapi.pcloud.com" if str(recu.get("locationid")) == "2" else "api.pcloud.com")
+    if "access_token" in recu:
+        jeton = recu["access_token"]
+    else:
+        url = f["jeton"].format(hote=hote) + "?" + urllib.parse.urlencode({"client_id": cid, "client_secret": sec or "", "code": recu["code"]})
+        if journal:
+            journal(f"→ échange du code contre le jeton ({hote})")
+        try:
+            with urllib.request.urlopen(url, timeout=30) as r:
+                rep = json.load(r)
+        except (urllib.error.URLError, OSError, ValueError) as e:
+            raise ErreurAutorisation(_("Serveur injoignable : {raison}", raison=getattr(e, "reason", e)))
+        if rep.get("result") or not rep.get("access_token"):
+            raise ErreurAutorisation(rep.get("error") or _("Le fournisseur n'a pas donné de jeton durable."))
+        jeton = rep["access_token"]
+    if journal:
+        journal(f"✓ jeton reçu (serveur {hote})")
+    return {"refresh_token": jeton, "access_token": jeton, "hote": hote, "expire": time.time() + 10 * 365 * 86400}
 
 
 def rafraichir(fournisseur, refresh_token, journal=None):

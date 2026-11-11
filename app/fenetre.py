@@ -1817,7 +1817,17 @@ class Fenetre(QMainWindow):
 
         def travail(t):
             t.avancer(0.2, _("Synchronisation avec {l} : envoi et réception…", l=lieu))
-            return miroir.synchroniser(self.params, compte, choix=choix, sens=sens)
+            r = miroir.synchroniser(self.params, compte, choix=choix, sens=sens)
+            from . import drive_philcut as DP
+            rc = DP.compte_rushs(self.params)
+            if rc is not None and (sens is None or "envoyer" in sens):     # copies légères des rushes, sur leur propre compte
+                t.avancer(0.6, _("Copies légères des rushes avec {l} : envoi et réception…", l=miroir.libelle_compte(rc)))
+                try:
+                    r2 = miroir.synchroniser(self.params, rc, sens=None if sens is None else {"envoyer", "recevoir"})
+                    r = (r[0] + r2[0], r[1] + r2[1])
+                except Exception as e:      # noqa: BLE001 : le lieu de synchro principal a bien été traité
+                    miroir.journal(f"rushes {miroir.libelle_compte(rc)} : {e}")
+            return r
         t = Tache(travail, _("Synchronisation"))
         self._tache_synchro = t
         self.taches.append(t)

@@ -5,7 +5,8 @@ Types de comptes (Preferences > Comptes et emplacements) :
   synology  NAS Synology par son adresse web (File Station) : http(s)://nas:5000, monnas.exemple.org...
   webdav    WebDAV en http ou https (paquet WebDAV Server du Synology, Nextcloud...)
   ftp       FTP en clair ou FTPS (chiffre)
-  gdrive / onedrive   en direct par autorisation (identifiants d'application a venir)
+  gdrive / onedrive / dropbox / box / pcloud   en direct par autorisation dans le navigateur (OAuth)
+  kdrive    kDrive d'Infomaniak par son API : numero du kDrive et jeton d'API (range dans le coffre)
 
 Chaque emplacement offre : lister(dossier), telecharger(chemin, fichier_local), envoyer(fichier_local, chemin),
 tester(). Les chemins distants s'ecrivent toujours avec des / et commencent par /.
@@ -25,9 +26,11 @@ TYPES = {
     "onedrive": "OneDrive",
     "dropbox": "Dropbox",
     "box": "Box",
+    "pcloud": "pCloud",
+    "kdrive": "kDrive (Infomaniak)",
 }
 DELAI = 20
-NUAGES = ("gdrive", "onedrive", "dropbox", "box")       # Drives « en direct », autorises par OAuth
+NUAGES = ("gdrive", "onedrive", "dropbox", "box", "pcloud")       # Drives « en direct », autorises par OAuth
 
 
 def type_mime_de(nom):
@@ -229,8 +232,11 @@ class _Http(Emplacement):
         for k, v in req.header_items():
             if k.lower() in ("authorization", "depth", "content-type"):
                 self.log(f"   {k}: {v}")
-        if req.data:
-            self.log(f"   ({len(req.data)} octets envoyés)")
+        if req.data is not None:
+            try:
+                self.log(f"   ({len(req.data)} octets envoyés)")
+            except TypeError:
+                pass
         try:
             r = urllib.request.urlopen(req, timeout=DELAI, context=self._contexte())
             self.log(f"← {r.status} {r.reason}  {r.headers.get('Content-Type', '')}  {r.headers.get('Server', '')}")
@@ -974,8 +980,326 @@ class Box(_DriveOAuth):
         return _("Connexion réussie au Box de {qui} : {n} élément(s) à la racine.", qui=self.qui(), n=len(self.lister("/")))
 
 
+# ---------------------------------------------------------------------------------- envoi en flux (gros fichiers)
+class _Flux:
+    """Fichier envoyé par morceaux lus au fil de l'envoi (rushes de plusieurs centaines de Mo) ; `progression(fait, total)`."""
+
+    def __init__(self, chemin, debut=0, taille=None, progression=None):
+        self.f = open(chemin, "rb")
+        self.f.seek(debut)
+        self.reste = (os.path.getsize(chemin) - debut) if taille is None else taille
+        self.total, self.fait, self.progression = self.reste, 0, progression
+
+    def __len__(self):
+        return self.total
+
+    def read(self, n=-1):
+        if self.reste <= 0:
+            return b""
+        b = self.f.read(min(self.reste, 1 << 20 if n is None or n < 0 else n))
+        self.reste -= len(b)
+        self.fait += len(b)
+        if self.progression:
+            self.progression(self.fait, self.total)
+        return b
+
+    def close(self):
+        self.f.close()
+
+
+# ---------------------------------------------------------------------------------- pCloud (0.9.42)
+class PCloud(_DriveOAuth):
+    """pCloud en direct : autorisation dans le navigateur, jeton d'accès durable dans le coffre (pas de renouvellement).
+    Le serveur dépend de la région du compte (Europe : eapi.pcloud.com) ; il est noté dans le compte."""
+    HOTES = ("eapi.pcloud.com", "api.pcloud.com")
+    INTROUVABLE = (2002, 2005, 2009, 2010, 2055)
+
+    def _acces(self):
+        rt = coffre.lire(self.c["id"] + ".jeton")
+        if not rt:
+            raise ErreurDistant(_("{nom} n'est pas encore autorisé : cliquez sur « Autoriser l'accès » dans le compte.", nom="pCloud"))
+        return rt
+
+    def _hote(self):
+        return self.c.get("hote") or self.HOTES[0]
+
+    def _api(self, methode, http="GET", donnees=None, entetes=None, brut=False, **params):
+        params["access_token"] = self._acces()
+        for essai in range(2):
+            url = f"https://{self._hote()}/{methode}?" + urllib.parse.urlencode(params)
+            r = urllib.request.Request(url, data=donnees, method=http)
+            for k, v in (entetes or {}).items():
+                r.add_header(k, v)
+            with self._ouvrir(r) as f:
+                contenu = f.read()
+            if brut:
+                return contenu
+            d = json.loads(contenu or b"{}")
+            res = int(d.get("result") or 0)
+            if res in (1000, 2000, 2094) and essai == 0 and not self.c.get("hote_verifie"):
+                # jeton d'une autre région : on essaie l'autre serveur et on le retient
+                self.c["hote"] = self.HOTES[1] if self._hote() == self.HOTES[0] else self.HOTES[0]
+                continue
+            if res:
+                err = ErreurDistant(_("pCloud a répondu : {e} ({n})", e=d.get("error") or "?", n=res))
+                err.code_pcloud = res
+                raise err
+            self.c["hote_verifie"] = True
+            return d
+
+    def lister(self, dossier):
+        try:
+            d = self._api("listfolder", path=self._cle(dossier))
+        except ErreurDistant as e:
+            if getattr(e, "code_pcloud", 0) in self.INTROUVABLE:
+                raise ErreurDistant(_("Dossier inaccessible : {dossier}", dossier=dossier))
+            raise
+        out = []
+        for x in (d.get("metadata") or {}).get("contents") or []:
+            out.append(Element(x["name"], _joindre(dossier, x["name"]), bool(x.get("isfolder")), int(x.get("size") or 0),
+                               x.get("modified") or ""))
+        return sorted(out, key=lambda e: (not e.dossier, e.nom.lower()))
+
+    def modifies(self, dossier):
+        try:
+            elems = self.lister(dossier)
+        except ErreurDistant:
+            return {}
+        return {e.nom: (e.taille, f"{e.date}|{e.taille}", e.dossier) for e in elems}
+
+    def creer_dossiers(self, chemin):
+        fait = ""
+        for p in [p for p in self._cle(chemin).split("/") if p]:
+            fait += "/" + p
+            self._api("createfolderifnotexists", path=fait)
+
+    def telecharger(self, chemin, local):
+        try:
+            d = self._api("getfilelink", path=self._cle(chemin))
+        except ErreurDistant as e:
+            if getattr(e, "code_pcloud", 0) in self.INTROUVABLE:
+                raise ErreurDistant(_("Fichier ou dossier introuvable sur le Drive : {chemin}", chemin=chemin))
+            raise
+        url = f"https://{(d.get('hosts') or [self._hote()])[0]}{d.get('path', '')}"
+        tmp = local + ".part"
+        with self._ouvrir(urllib.request.Request(url)) as r, open(tmp, "wb") as g:
+            while True:
+                b = r.read(1 << 20)
+                if not b:
+                    break
+                g.write(b)
+        os.replace(tmp, local)
+
+    def envoyer(self, local, chemin, progression=None):
+        dossier, nom = posixpath.split(self._cle(chemin))
+        self.creer_dossiers(dossier)
+        flux = _Flux(local, progression=progression)
+        try:                                              # remplace le fichier existant (pCloud garde l'ancien en révision)
+            self._api("uploadfile", http="PUT", donnees=flux, entetes={"Content-Type": "application/octet-stream",
+                                                                     "Content-Length": str(len(flux))},
+                      path=dossier or "/", filename=nom, nopartial=1, mtime=int(os.path.getmtime(local)))
+        finally:
+            flux.close()
+
+    def supprimer(self, chemin):
+        try:
+            self._api("deletefile", path=self._cle(chemin))       # dans la corbeille de pCloud
+        except ErreurDistant as e:
+            if getattr(e, "code_pcloud", 0) not in self.INTROUVABLE:
+                raise
+
+    def qui(self):
+        return self._api("userinfo").get("email") or "?"
+
+    def libre(self):
+        d = self._api("userinfo")
+        return int(d.get("quota") or 0) - int(d.get("usedquota") or 0)
+
+    def tester(self):
+        qui = self.qui()
+        n = len(self.lister("/"))
+        return _("Connexion réussie au pCloud de {qui} : {n} élément(s) à la racine.", qui=qui, n=n)
+
+
+# ---------------------------------------------------------------------------------- kDrive d'Infomaniak (0.9.42)
+KDRIVE_API = "https://api.infomaniak.com"
+
+
+class KDrive(_Http):
+    """kDrive par l'API d'Infomaniak : « adresse » = numéro du kDrive (visible dans son adresse web :
+    …/kdrive/app/drive/123456/…), mot de passe = jeton d'API créé dans le Manager (portée « drive »), rangé dans le
+    coffre. Les chemins sont résolus par nom à partir du dossier « Private » (ou de la racine s'il n'existe pas)."""
+    MORCEAU = 16 * 1024 * 1024
+    PETIT = 20 * 1024 * 1024
+
+    def __init__(self, compte, mot_de_passe=None, code=None):
+        super().__init__(compte, mot_de_passe, code)
+        self._ids = {}
+
+    def _drive(self):
+        a = str(self.c.get("adresse") or "")
+        m = re.search(r"drive/(\d+)", a)
+        d = m.group(1) if m else re.sub(r"\D", "", a)
+        if not d:
+            raise ErreurDistant(_("Indiquez le numéro de votre kDrive (il figure dans son adresse : …/drive/123456/…)."))
+        return d
+
+    def _appel(self, methode, chemin, donnees=None, entetes=None, brut=False, base=KDRIVE_API, **params):
+        if not self.mdp:
+            raise ErreurDistant(_("Indiquez le jeton d'API de votre kDrive (Manager Infomaniak › Développeur › Jetons d'API)."))
+        url = base + chemin.format(d=self._drive()) + ("?" + urllib.parse.urlencode(params) if params else "")
+        r = urllib.request.Request(url, data=donnees, method=methode)
+        r.add_header("Authorization", "Bearer " + self.mdp)
+        for k, v in (entetes or {}).items():
+            r.add_header(k, v)
+        with self._ouvrir(r) as f:
+            contenu = f.read()
+        if brut:
+            return contenu
+        rep = json.loads(contenu or b"{}")
+        if rep.get("result") not in (None, "success"):
+            err = rep.get("error") or {}
+            raise ErreurDistant(_("kDrive a répondu : {e}", e=err.get("description") or err.get("code") or rep.get("result")))
+        return rep
+
+    def _enfants(self, ident):
+        out, curseur = [], None
+        while True:
+            p = {"limit": 1000}
+            if curseur:
+                p["cursor"] = curseur
+            rep = self._appel("GET", f"/3/drive/{{d}}/files/{ident}/files", **p)
+            out += rep.get("data") or []
+            if not rep.get("has_more") or not rep.get("cursor"):
+                return out
+            curseur = rep["cursor"]
+
+    def _racine_id(self):
+        if "/" not in self._ids:
+            prive = [x for x in self._enfants(1) if x.get("type") == "dir" and x.get("name") in ("Private", "Privé")]
+            self._ids["/"] = prive[0]["id"] if prive else 1
+        return self._ids["/"]
+
+    def _id(self, chemin, creer=False):
+        c = "/" + "/".join(p for p in chemin.split("/") if p)
+        if c == "/":
+            return self._racine_id()
+        if c in self._ids:
+            return self._ids[c]
+        parent_c, nom = posixpath.split(c)
+        parent = self._id(parent_c, creer)
+        if parent is None:
+            return None
+        for x in self._enfants(parent):
+            self._ids[_joindre(parent_c, x["name"])] = x["id"]
+        if c in self._ids:
+            return self._ids[c]
+        if not creer:
+            return None
+        d = self._appel("POST", f"/3/drive/{{d}}/files/{parent}/directory", json.dumps({"name": nom}).encode(),
+                        {"Content-Type": "application/json"}).get("data") or {}
+        self._ids[c] = d.get("id")
+        return d.get("id")
+
+    def lister(self, dossier):
+        i = self._id(dossier)
+        if i is None:
+            raise ErreurDistant(_("Dossier inaccessible : {dossier}", dossier=dossier))
+        out = []
+        for x in self._enfants(i):
+            ch = _joindre(dossier, x["name"])
+            self._ids["/" + "/".join(p for p in ch.split("/") if p)] = x["id"]
+            out.append(Element(x["name"], ch, x.get("type") == "dir", int(x.get("size") or 0),
+                               x.get("last_modified_at") or x.get("updated_at") or 0))
+        return sorted(out, key=lambda e: (not e.dossier, e.nom.lower()))
+
+    def modifies(self, dossier):
+        try:
+            elems = self.lister(dossier)
+        except ErreurDistant:
+            return {}
+        return {e.nom: (e.taille, f"{e.date}|{e.taille}", e.dossier) for e in elems}
+
+    def creer_dossiers(self, chemin):
+        self._id(chemin, creer=True)
+
+    def telecharger(self, chemin, local):
+        i = self._id(chemin)
+        if i is None:
+            raise ErreurDistant(_("Fichier ou dossier introuvable sur le Drive : {chemin}", chemin=chemin))
+        r = urllib.request.Request(KDRIVE_API + f"/2/drive/{self._drive()}/files/{i}/download")
+        r.add_header("Authorization", "Bearer " + (self.mdp or ""))
+        tmp = local + ".part"
+        with self._ouvrir(r) as f, open(tmp, "wb") as g:
+            while True:
+                b = f.read(1 << 20)
+                if not b:
+                    break
+                g.write(b)
+        os.replace(tmp, local)
+
+    def envoyer(self, local, chemin, progression=None):
+        dossier, nom = posixpath.split("/" + "/".join(p for p in chemin.split("/") if p))
+        parent = self._id(dossier, creer=True)
+        taille = os.path.getsize(local)
+        mtime = int(os.path.getmtime(local))
+        if taille <= self.PETIT:                              # envoi direct ; « version » : remplace en gardant l'ancien
+            flux = _Flux(local, progression=progression)
+            try:
+                d = self._appel("POST", "/3/drive/{d}/upload", flux, {"Content-Type": "application/octet-stream",
+                                                                       "Content-Length": str(taille)},
+                                file_name=nom, directory_id=parent, total_size=taille, last_modified_at=mtime, conflict="version")
+            finally:
+                flux.close()
+        else:                                                 # gros fichier : session par morceaux
+            n = (taille + self.MORCEAU - 1) // self.MORCEAU
+            s = self._appel("POST", "/3/drive/{d}/upload/session/start",
+                            json.dumps({"conflict": "version", "directory_id": parent, "file_name": nom, "total_chunks": n,
+                                        "total_size": taille, "last_modified_at": mtime}).encode(),
+                            {"Content-Type": "application/json"}).get("data") or {}
+            jeton, base = s.get("token"), (s.get("upload_url") or KDRIVE_API).rstrip("/")
+            try:
+                for k in range(n):
+                    debut = k * self.MORCEAU
+                    t = min(self.MORCEAU, taille - debut)
+                    flux = _Flux(local, debut, t, (lambda f_, _t, d0=debut: progression(d0 + f_, taille)) if progression else None)
+                    try:
+                        self._appel("POST", f"/3/drive/{{d}}/upload/session/{jeton}/chunk", flux,
+                                    {"Content-Type": "application/octet-stream", "Content-Length": str(t)}, base=base,
+                                    chunk_number=k + 1, chunk_size=t)
+                    finally:
+                        flux.close()
+                d = self._appel("POST", f"/3/drive/{{d}}/upload/session/{jeton}/finish", b"{}", {"Content-Type": "application/json"})
+            except Exception:
+                try:
+                    self._appel("DELETE", f"/2/drive/{{d}}/upload/session/{jeton}")
+                except Exception:      # noqa: BLE001
+                    pass
+                raise
+        f = (d.get("data") or {}).get("file") or d.get("data") or {}
+        if isinstance(f, dict) and f.get("id"):
+            self._ids["/" + "/".join(p for p in chemin.split("/") if p)] = f["id"]
+
+    def supprimer(self, chemin):
+        i = self._id(chemin)
+        if i:                                                 # dans la corbeille du kDrive
+            self._appel("DELETE", f"/2/drive/{{d}}/files/{i}")
+            self._ids.pop("/" + "/".join(p for p in chemin.split("/") if p), None)
+
+    def qui(self):
+        try:
+            p = self._appel("GET", "/2/profile").get("data") or {}
+            return p.get("email") or p.get("display_name") or f"kDrive {self._drive()}"
+        except ErreurDistant:
+            return f"kDrive {self._drive()}"
+
+    def tester(self):
+        n = len(self.lister("/"))
+        return _("Connexion réussie au kDrive {d} : {n} élément(s) dans votre dossier.", d=self._drive(), n=n)
+
+
 CLASSES = {"reseau": Reseau, "synology": Synology, "webdav": WebDAV, "ftp": FTP, "gdrive": GoogleDrive,
-           "onedrive": OneDrive, "dropbox": Dropbox, "box": Box}
+           "onedrive": OneDrive, "dropbox": Dropbox, "box": Box, "pcloud": PCloud, "kdrive": KDrive}
 
 
 def emplacement(compte, mot_de_passe=None, code=None):

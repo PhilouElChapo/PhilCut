@@ -9,7 +9,7 @@ from .icones import icone
 from . import distant, coffre, avatars
 
 ICONES = {"reseau": "ouvrir", "synology": "archiver", "webdav": "lot", "ftp": "exporter", "gdrive": "synchro",
-          "onedrive": "synchro", "dropbox": "synchro", "box": "synchro"}
+          "onedrive": "synchro", "dropbox": "synchro", "box": "synchro", "pcloud": "synchro", "kdrive": "synchro"}
 AIDE = {
     "reseau": _("Un dossier partagé déjà accessible depuis ce PC : \\\\NAS\\partage, une lettre de lecteur (Z:\\) ou /mnt/nas."),
     "synology": _("L'adresse de votre Synology dans le navigateur : http://nas:5000, https://nas:5001 ou une adresse "
@@ -24,6 +24,12 @@ AIDE = {
                   "c'est tout."),
     "dropbox": _("Dropbox en direct : votre navigateur s'ouvre, vous autorisez PhilCut, c'est tout."),
     "box": _("Box en direct : votre navigateur s'ouvre, vous autorisez PhilCut, c'est tout."),
+    "pcloud": _("pCloud en direct : votre navigateur s'ouvre, vous autorisez PhilCut, c'est tout. Pratique pour envoyer "
+                "les rushes (copies légères) si votre espace pCloud est grand."),
+    "kdrive": _("kDrive d'Infomaniak : collez l'adresse de votre kDrive dans le navigateur (ou seulement son numéro, "
+                "…/drive/123456/…) et un jeton d'API créé dans le Manager Infomaniak (Développeur › Jetons d'API, "
+                "portée « drive »). Le jeton est rangé dans le coffre du système. Sans compte payant, la connexion WebDAV "
+                "n'est pas offerte : PhilCut passe par l'API."),
 }
 
 
@@ -158,6 +164,9 @@ def autoriser_compte(parent, compte):
     dlg.close()
     if res.get("j"):
         coffre.enregistrer(compte["id"] + ".jeton", res["j"]["refresh_token"])
+        if res["j"].get("hote"):                          # pCloud : serveur de la région du compte
+            compte["hote"] = res["j"]["hote"]
+            compte.pop("hote_verifie", None)
         distant._JETONS.pop(compte["id"], None)          # la nouvelle autorisation (et sa portee) sert tout de suite
         distant._PORTEES.pop(compte["id"], None)
         if coffre.lire(compte["id"] + ".jeton") != res["j"]["refresh_token"]:
@@ -190,7 +199,7 @@ def autoriser_compte(parent, compte):
 # ------------------------------------------------------------------------------------------- compte
 PORTS = {"synology": _("par défaut : 5000 en http, 5001 en https"), "webdav": _("Synology : 5005 en http, 5006 en https"),
          "ftp": _("par défaut : 21")}
-EXEMPLES = {"reseau": r"\\NAS\partage", "synology": "http://monnas.exemple.org:5000", "webdav": "https://monnas.exemple.org:5006",
+EXEMPLES = {"kdrive": "https://ksuite.infomaniak.com/kdrive/app/drive/123456/files", "reseau": r"\\NAS\partage", "synology": "http://monnas.exemple.org:5000", "webdav": "https://monnas.exemple.org:5006",
             "ftp": "ftp.exemple.org"}
 
 
@@ -403,11 +412,19 @@ class DialogueCompte(QDialog):
         self.aide.setText(AIDE[t])
         self.adresse.setPlaceholderText(EXEMPLES.get(t, ""))
         serveur = t in ("synology", "webdav", "ftp")
+        kd = t == "kdrive"
         for w, vis in ((self.adresse.parentWidget(), t not in distant.NUAGES), (self.port, serveur),
-                       (self.utilisateur, serveur), (self.mdp, serveur), (self.chiffrement, t == "ftp"),
-                       (self.dossier, serveur), (self.libre, serveur), (self.note, serveur),
+                       (self.utilisateur, serveur), (self.mdp, serveur or kd), (self.chiffrement, t == "ftp"),
+                       (self.dossier, serveur), (self.libre, serveur), (self.note, serveur or kd),
                        (self.b_autoriser.parentWidget(), t in distant.NUAGES), (self.complet, t == "gdrive")):
             self.f.setRowVisible(w, vis)
+        for w, texte in ((self.adresse.parentWidget(), _("kDrive (adresse ou numéro)") if kd else _("Adresse")),
+                         (self.mdp, _("Jeton d'API") if kd else _("Mot de passe"))):
+            lab = self.f.labelForField(w)
+            if lab is not None:
+                lab.setText(texte)
+        self.note.setText(_("Le jeton est rangé dans le coffre de Windows (ou de Linux), jamais en clair.") if kd else
+                          _("Le mot de passe est rangé dans le coffre de Windows (ou de Linux), jamais en clair."))
         if t in distant.NUAGES:
             self._maj_auth()
         self._maj_icone()
@@ -467,7 +484,7 @@ class DialogueCompte(QDialog):
 
     def accept(self):
         self.compte()
-        if self.c["type"] in ("synology", "webdav", "ftp"):
+        if self.c["type"] in ("synology", "webdav", "ftp", "kdrive"):
             coffre.enregistrer(self.c["id"], self.mdp.text())
         super().accept()
 
@@ -608,7 +625,8 @@ class DialogueParcourir(QDialog):
     def __init__(self, parent, params, mode="ouvrir", nom="", compte_id=None):
         super().__init__(parent)
         self.params, self.mode = params, mode
-        self.setWindowTitle(_("Ouvrir depuis un emplacement") if mode == "ouvrir" else _("Enregistrer vers un emplacement"))
+        self.setWindowTitle(_("Ouvrir depuis un emplacement") if mode == "ouvrir" else _("Choisir un dossier") if mode == "dossier"
+                            else _("Enregistrer vers un emplacement"))
         self.resize(760, 520)
         v = QVBoxLayout(self)
         h = QHBoxLayout()
@@ -648,7 +666,8 @@ class DialogueParcourir(QDialog):
             hn.addWidget(self.nom, 1)
             v.addLayout(hn)
         bb = QDialogButtonBox()
-        self.b_ok = bb.addButton(_("Ouvrir") if mode == "ouvrir" else _("Enregistrer"), QDialogButtonBox.AcceptRole)
+        self.b_ok = bb.addButton(_("Ouvrir") if mode == "ouvrir" else _("Choisir ce dossier") if mode == "dossier" else _("Enregistrer"),
+                                 QDialogButtonBox.AcceptRole)
         self.b_ok.setDefault(True)
         bb.addButton(_("Annuler"), QDialogButtonBox.RejectRole)
         bb.accepted.connect(self._valider)
@@ -752,6 +771,12 @@ class DialogueParcourir(QDialog):
 
     def _valider(self):
         if not self.e:
+            return
+        if self.mode == "dossier":                  # le dossier affiché, ou le sous-dossier sélectionné
+            it = self.liste.currentItem()
+            x = it.data(Qt.UserRole) if it else None
+            self.choisi = x.chemin if x and x != ".." and x.dossier else self.dossier
+            self.accept()
             return
         if self.mode == "ouvrir":
             it = self.liste.currentItem()

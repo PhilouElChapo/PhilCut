@@ -1,12 +1,12 @@
 """Fabrication GitHub : ecrit app/identifiants.py a partir des secrets du depot PhilCut (jamais dans le code public).
 
 Secrets attendus (Settings > Secrets and variables > Actions du depot PhilouElChapo/PhilCut) :
-GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ONEDRIVE_CLIENT_ID, DROPBOX_CLIENT_ID, BOX_CLIENT_ID, BOX_CLIENT_SECRET.
+GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, ONEDRIVE_CLIENT_ID, DROPBOX_CLIENT_ID, BOX_CLIENT_ID, BOX_CLIENT_SECRET, PCLOUD_CLIENT_ID (et PCLOUD_CLIENT_SECRET, facultatif).
 Un secret absent = ce Drive n'est pas propose « en direct » (le dossier du Drive de bureau reste utilisable)."""
 import os
 
 ids = {}
-for cle, env in (("gdrive", "GOOGLE"), ("onedrive", "ONEDRIVE"), ("dropbox", "DROPBOX"), ("box", "BOX")):
+for cle, env in (("gdrive", "GOOGLE"), ("onedrive", "ONEDRIVE"), ("dropbox", "DROPBOX"), ("box", "BOX"), ("pcloud", "PCLOUD")):
     i = "".join(os.environ.get(env + "_CLIENT_ID", "").split())
     s = "".join(os.environ.get(env + "_CLIENT_SECRET", "").split())
     if i:

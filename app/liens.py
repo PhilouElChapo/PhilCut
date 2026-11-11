@@ -73,11 +73,11 @@ def copie_drive(params, m):
     if not nom:
         return None
     from .bibliotheque import dossier_philcut_drive
+    from .drive_philcut import dossier_medias
     base = dossier_philcut_drive(params or {})
-    if not base:
-        return None
-    for sous in ("Medias", "Creations"):
-        p = os.path.join(base, sous, nom)
+    lieux = [dossier_medias(params or {})] + ([os.path.join(base, "Medias"), os.path.join(base, "Creations")] if base else [])
+    for d in filter(None, lieux):
+        p = os.path.join(d, nom)
         if os.path.isfile(p):
             return p
     return None

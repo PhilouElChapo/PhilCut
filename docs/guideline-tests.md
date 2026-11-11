@@ -157,6 +157,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T58 — 0.9.42 : pCloud, kDrive et lieu d'échange des rushes
+
+1. Préférences › Comptes et emplacements › Ajouter › pCloud : « Autoriser l'accès à pCloud… ». Le navigateur s'ouvre sur pCloud ; après « Allow », la page PhilCut dit « C'est fait » et PhilCut annonce « Connexion réussie : PhilCut accède au pCloud de … ».
+2. « Tester la connexion » : nombre d'éléments à la racine de votre pCloud.
+3. Préférences › Comptes et synchro › Projets entre vos appareils : « Envoyer les copies légères des rushes sur » = le compte pCloud ; « Dossier d'échange des rushes » › « Choisir… » : parcourir pCloud, choisir (ou taper) un dossier, par exemple /Rushes PhilCut.
+4. Enregistrer un projet et accepter la copie légère d'une vidéo : la barre du bas montre « Copies légères des rushes avec pCloud : envoi et réception… » ; dans pCloud, le fichier apparaît dans /Rushes PhilCut/Medias.
+5. Sur un autre poste avec les mêmes réglages : la copie arrive, et le projet s'ouvre avec elle si l'original manque.
+6. Fichier › Espace PhilCut sur le Drive : la copie est listée avec « (pCloud) » ; la supprimer la met dans la corbeille de pCloud.
+7. kDrive (sans compte payant, à valider plus tard) : ajouter un compte kDrive, coller l'adresse du kDrive et un jeton d'API (Manager › Développeur › Jetons d'API, portée drive), « Tester la connexion ».
+
 ## T57 — 0.9.41 : mise à jour sans plantage
 
 1. Avec un projet modifié non enregistré, lancer la mise à jour suivante puis « Installer et redémarrer » : PhilCut demande s'il faut enregistrer ; « Annuler » laisse PhilCut ouvert et la fenêtre de mise à jour revient.

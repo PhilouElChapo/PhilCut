@@ -40,6 +40,8 @@ def journal(texte):
 
 
 def racine_distante(compte):
+    if compte.get("_racine"):                          # compte des rushes : le dossier d'échange choisi (0.9.42)
+        return "/" + "/".join(p for p in compte["_racine"].split("/") if p)
     return posixpath.join(compte.get("dossier") or "/", "PhilCut")
 
 
@@ -219,8 +221,11 @@ def expliquer(rel):
 def _synchroniser_vrai(params, compte, emplacement, choix, sens, plan):
     e = emplacement or distant.emplacement(compte)
     base = dossier_miroir(compte)
-    local_racine = os.path.join(base, "PhilCut")
+    local_racine = os.path.join(base, "Rushes" if compte.get("_racine") else "PhilCut")   # rushes : copie locale à part
     chemin_etat = os.path.join(base, "etat.json")
+    if compte.get("_racine"):                          # un état par dossier d'échange : changer de dossier repart de zéro
+        import hashlib
+        chemin_etat = os.path.join(base, "etat_" + hashlib.sha1(racine_distante(compte).encode()).hexdigest()[:10] + ".json")
     try:
         with open(chemin_etat, encoding="utf-8") as f:
             etat = json.load(f)

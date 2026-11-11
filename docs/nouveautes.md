@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.41 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.42 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.42
+- pCloud en direct : autorisation dans le navigateur (aucun mot de passe donne a PhilCut), envoi des gros fichiers en flux.
+- kDrive d'Infomaniak par son API : adresse ou numero du kDrive et jeton d'API (range dans le coffre du systeme), envoi par morceaux des gros fichiers.
+- Preferences > Comptes et synchro > Projets entre vos appareils : choix du compte qui recoit les copies legeres des rushes (par exemple pCloud, et Google Drive pour les reglages) et du dossier d'echange des rushes sur ce compte (bouton "Choisir..."), le meme pour tous vos postes.
 
 ### 0.9.41
 - Mise a jour et relance (theme, langue) : PhilCut se ferme proprement avant l'installation (memes questions qu'a la fermeture, arret des taches et du son), l'installation attend qu'il soit ferme puis le relance. Windows ne signale plus de "plantage" de PhilCut.exe au redemarrage.
