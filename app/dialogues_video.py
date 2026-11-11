@@ -956,7 +956,7 @@ class DialogueFabrique(QDialog):
         intro = QLabel(_("<b>La Fabrique</b> crée ce que vos rushes n'ont pas : un <b>logo animé</b> ou une <b>intro</b> / <b>fin</b> de vidéo "
                          "(onglet 1), ou un <b>plan généré par IA</b> à partir d'une phrase, par exemple « survol de collines au "
                          "lever du soleil » (onglet 2). Le résultat arrive dans les médias du projet, prêt à poser sur la timeline. "
-                         "Pour dessiner votre logo lui-même : Fabrique › Atelier de logo."))
+                         "Pour dessiner votre logo lui-même : Fabrique IA › Logo, intro et vignette › Mon logo."))
         intro.setWordWrap(True)
         v.addWidget(intro)
         self.onglets = QTabWidget()

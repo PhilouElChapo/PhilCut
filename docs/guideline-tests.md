@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T62 — 0.9.46 : menus rangés, IA partagées entre logiciels PhilFactory
+
+1. Menu Montage : cinq sous-menus (Image du plan, Montage automatique, Pistes et passage choisi (partie jaune), Son, Textes et habillage), entrées par ordre alphabétique ; plus d'« Atelier IA » ici.
+2. Menu Fabrique IA : Image, Logo intro et vignette, Musique, Vidéo, puis « Créations à refaire ou à calculer… ». Clic droit sur l'aperçu › Fabrique IA : le même menu. Bouton Musique › « Fabrique IA › Musique… » : le sous-menu Musique.
+3. Au démarrage, si vous avez déjà des IA locales : l'Accueil propose « Choisir le dossier commun… ». Fenêtre : explication, dossier proposé (à côté des portables : C:\Prog\Windows\IA PhilFactory), case « Partager mes IA… ». « Ranger mes IA ici » : progression, puis le bilan (fichiers rangés, doubles libérés).
+4. Vérifier dans l'Explorateur : les modèles sont dans « IA PhilFactory\modeles », le fichier « philfactory-ia.json » à sa racine ; le dossier « ia\modeles » de PhilCut est vide. La musique et les effets IA marchent comme avant.
+5. Préférences › IA locale : la ligne dit où sont rangés les modèles ; « Dossier commun des IA PhilFactory… » rouvre la fenêtre.
+6. Débrancher le disque du dossier commun (ou le renommer), relancer : l'Accueil le dit et propose « Le retrouver… ».
+
 ## T61 — 0.9.45 : la suite des résultats YouTube
 
 1. Tampons vidéo › Chercher en ligne, YouTube, une recherche : 30 résultats.

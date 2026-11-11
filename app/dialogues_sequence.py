@@ -66,7 +66,7 @@ class DialogueSequence(QDialog):
             self.moteur.addItem(lib, m["id"])
             if m["id"] not in dispo:
                 self.moteur.model().item(self.moteur.count() - 1).setEnabled(False)
-                self.moteur.setItemData(self.moteur.count() - 1, _("Clef à saisir : Fabrique › Plan généré par IA › Connecter une IA"),
+                self.moteur.setItemData(self.moteur.count() - 1, _("Clef à saisir : Fabrique IA › Vidéo › Plan vidéo à partir d'une phrase › Connecter une IA"),
                                         Qt.ToolTipRole)
         self.moteur.addItem(_("Google Flow (votre abonnement, pas à pas)"), "flow")
         i = self.moteur.findData(self.seq.get("moteur"))

@@ -445,6 +445,13 @@ class DialoguePreferences(QDialog):
         t.fini.connect(fin, Qt.QueuedConnection)
         t.start()
 
+    def _ia_commune(self):
+        from .dialogues_ia_partagee import DialogueIACommune
+        DialogueIACommune(self, self.params).exec()
+        commun = packs_ia.dossier_commun()
+        if commun:
+            self.lbl_commun.setText(_("Modèles rangés dans le dossier commun des IA PhilFactory : {d}", d=commun))
+
     # ---------------------------------------------------------------- IA locale (portable)
     def _ia_locale(self):
         f = self._page(_("IA locale"))
@@ -552,6 +559,17 @@ class DialoguePreferences(QDialog):
         h.addWidget(bt)
         h.addWidget(bo)
         f.addRow(h)
+        hc = QHBoxLayout()                                # 0.9.46 : dossier commun à tous les logiciels PhilFactory
+        commun = packs_ia.dossier_commun()
+        self.lbl_commun = QLabel(_("Modèles rangés dans le dossier commun des IA PhilFactory : {d}", d=commun) if commun else
+                                 _("Modèles rangés dans le dossier de PhilCut (pas encore de dossier commun PhilFactory)."))
+        self.lbl_commun.setWordWrap(True)
+        hc.addWidget(self.lbl_commun, 1)
+        bc = QPushButton(_("Dossier commun des IA PhilFactory…"))
+        bc.setToolTip(_("Un modèle n'est téléchargé qu'une fois pour PhilCut, PhilMusic, PhilPic… : vous choisissez où il est rangé."))
+        bc.clicked.connect(self._ia_commune)
+        hc.addWidget(bc)
+        f.addRow(hc)
         g2 = QGroupBox(_("Test de ce poste"))
         fl = QFormLayout(g2)
         self.lbl_locale = QLabel(etat.get("avis") or _("Pas encore testé. Le test regarde le matériel, démarre le moteur, chronomètre une petite question, puis l'arrête."))

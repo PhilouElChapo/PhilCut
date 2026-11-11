@@ -59,6 +59,12 @@ def sortie_directe(code=0):
         return
     os._exit(code)
 
+def alpha(texte):
+    """Clef de l'ordre alphabétique (accents et casse ignorés) : toute liste présentée est rangée ainsi."""
+    import unicodedata
+    return unicodedata.normalize("NFD", texte or "").encode("ascii", "ignore").decode().lower().lstrip("« ").strip()
+
+
 class Fenetre(QMainWindow):
     def __init__(self, fichiers=()):
         super().__init__()
@@ -118,6 +124,15 @@ class Fenetre(QMainWindow):
                                                                                                    self.voir_telechargements())), 30000)
         for f in fichiers:
             self.ouvrir(f)
+        if not os.environ.get("PHILCUT_SANS_IA_COMMUNE"):
+            def _ia_commune():
+                try:
+                    from .dialogues_ia_partagee import demarrage
+                    demarrage(self, self.params)
+                except Exception as e:      # noqa: BLE001 : jamais bloquant
+                    from .journal import ecrire
+                    ecrire("ia locale", f"dossier commun : {e}")
+            QTimer.singleShot(1200, _ia_commune)
         if not moteur.disponible():
             QTimer.singleShot(800, lambda: self.accueil.proposer(_("FFmpeg est introuvable : PhilCut en a besoin pour lire et fabriquer les vidéos. "
                                                                    "Le paquet tout-en-un l'embarque dans le dossier « bin » ; sinon installez-le et relancez."), _("Voir comment"),
@@ -203,131 +218,77 @@ class Fenetre(QMainWindow):
             a_.setToolTip(aide)
             a_.setStatusTip(aide)
             return a_
-        for oid in ("vitesse", "recadrer", "stabiliser", "texte", "effets", "goodies", "zone", "sous_titres", "musique", "voix"):
+        # 0.9.46 : cinq sous-menus par ordre alphabétique, entrées par ordre alphabétique (accents ignorés)
+        def outil(oid, lib=None):
             o = O.outil(oid)
-            mo.addAction(icone(o[2]), o[3], lambda _c=False, oid=oid: self._editeur_ou_nouveau().outil(oid))
-            # outils voisins, rangés avec leur famille (plus de menu à part)
-        act(None, _("Figer l'image…"), _("Le film s'arrête sur l'image de la ligne rouge, avec un cadre photo et une légende, puis reprend"),
-            lambda: self._ed(lambda ed: ed.figer_image()))
-        sm_ia = mo.addMenu(icone("assistant"), _("Atelier IA (sur ce poste)"))
-        for fam, lib in (("image", _("Retoucher l'image du film (cartoon, 3D, peinture…)…")),
-                         ("video", _("Vidéo IA sur la partie en jaune (animer l'image, dessin animé, ralenti…)…")),
-                         ("logo", _("Logo, intro ou miniature par IA…")), ("musique", _("Créer une musique par IA…"))):
-            sm_ia.addAction(lib, lambda fam=fam: self._ed(lambda ed: ed.atelier_ia(fam)))
-        sm_ia.addSeparator()
-        sm_ia.addAction(_("Séquence IA : une histoire en plusieurs plans (personnages, répliques, musique)…"),
-                        lambda: self._ed(lambda ed: ed.sequence_ia()))
-        act(icone("effets"), _("Étalonnage du plan…"), _("Couleurs et lumière du plan à la ligne rouge : roues de couleur, avant / après, "
-                                                          "auto, accorder sur un autre plan"), lambda: self._ed(lambda ed: ed.etalonner()), "Ctrl+Shift+E")
-        act(icone("image"), _("Présentation de photos animée…"), _("Lancer de cartes, explosion en particules, puzzle, mur de photos, "
-                                                                     "carrousel 3D, éventail, polaroïds sur une corde"),
-            lambda: self._editeur_ou_nouveau().presentation_photos())
-        act(icone("clap"), _("Modèles de montage…"), _("Vlog voyage 30 s, Short dynamique, Vol en avion, Souvenirs de famille… : vos rushes "
-                                                         "montés à la façon du modèle"), lambda: self._editeur_ou_nouveau().modeles_montage())
-        act(icone("sous_titres"), _("Monter par le texte…"), _("Le texte de ce qui est dit : effacer une phrase coupe la vidéo ; « euh » et "
-                                                                 "silences enlevés d'un clic"), lambda: self._ed(lambda ed: ed.monter_par_texte()), "Ctrl+T")
-        act(icone("assistant"), _("Dites-le en clair…"), _("Une phrase (« coupe les silences et mets une musique calme ») devient des actions"),
-            lambda: self._ed(lambda ed: ed.dites_le()))
-        act(icone("effets"), _("Transitions automatiques…"), _("A chaque coupe, la transition qui va avec les images et la musique"),
-            lambda: self._ed(lambda ed: ed.transitions_auto()))
-        act(icone("musique"), _("Bruitages…"), _("Whoosh, impact, déclic, bip… fabriqués sur ce poste, libres de droits"), lambda: self._ed(lambda ed: ed.bruitage()))
-        act(icone("clap"), _("Tampons vidéo…"), _("Petites séquences toutes faites (rembobinage, « tadaa », bip…), vos clips, extraits YouTube "
-                                                 "et Internet Archive"), lambda: self._ed(lambda ed: ed.tampons()))
-        mo.addSeparator()
-        act(None, _("Ajouter une piste vidéo"), _("Une piste au-dessus du film : incrustation, image dans l'image, logo"),
-            lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("video")))
-        act(None, _("Ajouter une piste de sons"), _("Une piste de plus pour une musique, une voix ou des bruitages"),
-            lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("audio")))
-        mo.addSeparator()
-        act(None, _("Début de la partie jaune ici"), _("La partie jaune commence à la ligne rouge (ou double-clic sur la règle des temps)"),
-            lambda: self._ed(lambda ed: ed.timeline.marquer_zone(0)), "I")
-        act(None, _("Fin de la partie jaune ici"), _("La partie jaune finit à la ligne rouge (ou second double-clic sur la règle)"),
-            lambda: self._ed(lambda ed: ed.timeline.marquer_zone(1)), "O")
-        act(None, _("Supprimer la partie jaune"), _("Elle est retirée et la suite se recolle"), lambda: self._ed(lambda ed: ed.partie(False)))
-        act(None, _("Garder seulement la partie jaune"), _("Tout le reste est retiré"), lambda: self._ed(lambda ed: ed.partie(True)))
-        mo.addSeparator()
-        act(None, _("Caler les coupes sur le rythme"), _("Chaque coupe tombe sur un temps de la musique"), lambda: self._ed(lambda ed: ed.caler_rythme(False)))
-        act(None, _("Caler les coupes sur les mesures"), _("Coupes sur les débuts de mesure : plus posé"), lambda: self._ed(lambda ed: ed.caler_rythme(True)))
+            return (icone(o[2]), lib or o[3], o[4], lambda: self._editeur_ou_nouveau().outil(oid), None)
+        groupes = [
+            (icone("recadrer"), _("Image du plan"), [
+                outil("recadrer"), outil("effets"),
+                (icone("effets"), _("Étalonnage du plan…"), _("Couleurs et lumière du plan à la ligne rouge : roues de couleur, avant / "
+                                                              "après, auto, accorder sur un autre plan"), lambda: self._ed(lambda ed: ed.etalonner()),
+                 "Ctrl+Shift+E"),
+                (None, _("Figer l'image…"), _("Le film s'arrête sur l'image de la ligne rouge, avec un cadre photo et une légende, puis reprend"),
+                 lambda: self._ed(lambda ed: ed.figer_image()), None),
+                outil("stabiliser"), outil("vitesse"), outil("zone", _("Zone à flouter, pixelliser ou cacher"))]),
+            (icone("assistant"), _("Montage automatique"), [
+                (icone("assistant"), _("Dites-le en clair…"), _("Une phrase (« coupe les silences et mets une musique calme ») devient des "
+                                                                 "actions"), lambda: self._ed(lambda ed: ed.dites_le()), None),
+                (icone("clap"), _("Modèles de montage…"), _("Vlog voyage 30 s, Short dynamique, Vol en avion, Souvenirs de famille… : vos "
+                                                             "rushes montés à la façon du modèle"), lambda: self._editeur_ou_nouveau().modeles_montage(), None),
+                (icone("sous_titres"), _("Couper en supprimant des phrases (texte de ce qui est dit)…"),
+                 _("PhilCut écrit ce qui est dit dans la vidéo : effacer une phrase coupe la vidéo à cet endroit ; « euh » et silences "
+                   "enlevés d'un clic"), lambda: self._ed(lambda ed: ed.monter_par_texte()), "Ctrl+T"),
+                (icone("image"), _("Présentation de photos animée…"), _("Lancer de cartes, explosion en particules, puzzle, mur de photos, "
+                                                                         "carrousel 3D, éventail, polaroïds sur une corde"),
+                 lambda: self._editeur_ou_nouveau().presentation_photos(), None),
+                (icone("effets"), _("Transitions automatiques…"), _("A chaque coupe, la transition qui va avec les images et la musique"),
+                 lambda: self._ed(lambda ed: ed.transitions_auto()), None)]),
+            (icone("piste_video"), _("Pistes et passage choisi (partie jaune)"), [
+                (None, _("Ajouter une piste de sons"), _("Une piste de plus pour une musique, une voix ou des bruitages"),
+                 lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("audio")), None),
+                (None, _("Ajouter une piste vidéo"), _("Une piste au-dessus du film : incrustation, image dans l'image, logo"),
+                 lambda: self._ed(lambda ed: ed.timeline._ajouter_piste("video")), None),
+                (None, _("Caler les coupes sur le rythme de la musique"), _("Chaque coupe tombe sur un temps de la musique"),
+                 lambda: self._ed(lambda ed: ed.caler_rythme(False)), None),
+                (None, _("Caler les coupes sur les mesures de la musique"), _("Coupes sur les débuts de mesure : plus posé"),
+                 lambda: self._ed(lambda ed: ed.caler_rythme(True)), None),
+                (None, _("Partie jaune : la faire commencer à la ligne rouge"),
+                 _("La partie jaune est le passage que vous choisissez sur la timeline (surligné en jaune) ; elle commence ici "
+                   "(ou double-clic sur la règle des temps)"), lambda: self._ed(lambda ed: ed.timeline.marquer_zone(0)), "I"),
+                (None, _("Partie jaune : la faire finir à la ligne rouge"),
+                 _("Le passage choisi (surligné en jaune) finit ici (ou second double-clic sur la règle)"),
+                 lambda: self._ed(lambda ed: ed.timeline.marquer_zone(1)), "O"),
+                (None, _("Partie jaune : garder seulement ce passage"), _("Tout le reste du film est retiré"),
+                 lambda: self._ed(lambda ed: ed.partie(True)), None),
+                (None, _("Partie jaune : supprimer ce passage"), _("Le passage choisi est retiré et la suite se recolle"),
+                 lambda: self._ed(lambda ed: ed.partie(False)), None)]),
+            (icone("musique"), _("Son"), [
+                (icone("musique"), _("Bruitages…"), _("Whoosh, impact, déclic, bip… fabriqués sur ce poste, libres de droits"),
+                 lambda: self._ed(lambda ed: ed.bruitage()), None),
+                outil("musique"), outil("voix")]),
+            (icone("texte"), _("Textes et habillage"), [
+                outil("goodies"), outil("sous_titres"),
+                (icone("clap"), _("Tampons vidéo…"), _("Petites séquences toutes faites (rembobinage, « tadaa », bip…), vos clips, extraits "
+                                                       "YouTube et Internet Archive"), lambda: self._ed(lambda ed: ed.tampons()), None),
+                outil("texte")]),
+        ]
+        for ic, titre, entrees in sorted(groupes, key=lambda g: alpha(g[1])):
+            sm = mo.addMenu(ic, titre)
+            sm.setToolTipsVisible(True)
+            for ic_, lib, aide, fonction, raccourci in sorted(entrees, key=lambda e: alpha(e[1])):
+                a_ = sm.addAction(ic_, lib, fonction) if ic_ is not None else sm.addAction(lib, fonction)
+                if raccourci:
+                    a_.setShortcut(raccourci)
+                a_.setToolTip(aide)
+                a_.setStatusTip(aide)
         asst = mb.addMenu(_("A&ssistant"))
         asst.addAction(icone("assistant"), _("Analyser et proposer un montage"), lambda: self._editeur_ou_nouveau().outil("assistant"), "Ctrl+Shift+A")
         asst.addAction(icone("info"), _("Fiche vidéo du plan sélectionné"), lambda: self._ed(lambda ed: ed.outil("fiche")))
         asst.addAction(_("Changer le niveau (sans IA, locale, cloud)…"), lambda: self.preferences("Assistant"))
         asst.addAction(_("Connecter une IA (obtenir et tester ma clef)…"), self.connecter_ia)
-        fb = mb.addMenu(_("Fa&brique"))
-        fb.setToolTipsVisible(True)
-
-        def groupe(ic, titre, explication):
-            """Sous-menu d'un domaine, avec en tête une phrase qui dit ce qu'on y trouve (0.9.43)."""
-            sm = fb.addMenu(ic, titre) if ic is not None else fb.addMenu(titre)
-            sm.setToolTipsVisible(True)
-            from PySide6.QtWidgets import QWidgetAction
-            lb = QLabel(explication)
-            lb.setWordWrap(True)
-            lb.setFixedWidth(430)
-            lb.setStyleSheet("color:palette(placeholder-text);padding:6px 12px 8px 12px;font-style:italic")
-            wa = QWidgetAction(sm)
-            wa.setDefaultWidget(lb)
-            wa.setEnabled(False)
-            sm.addAction(wa)
-            sm.addSeparator()
-            return sm
-
-        def actf(menu, ic, lib, aide, fonction, raccourci=None):
-            a_ = menu.addAction(ic, lib, fonction) if ic is not None else menu.addAction(lib, fonction)
-            if raccourci:
-                a_.setShortcut(raccourci)
-            a_.setToolTip(aide)
-            a_.setStatusTip(aide)
-            return a_
-        fv = groupe(icone("camera"), _("Vidéo"), _("Créer des plans qui manquent au film : à partir d'une phrase, d'une histoire "
-                                                    "ou d'une image du film. D'abord l'IA de ce poste (gratuite), puis Gemini "
-                                                    "(votre clef, prix annoncé), puis Google Flow."))
-        actf(fv, icone("ia"), _("Plan vidéo à partir d'une phrase…"),
-             _("Décrivez le plan (« survol de collines au lever du soleil ») : IA de ce poste, Gemini ou Flow."),
-             lambda: self.fabrique(onglet=1))
-        actf(fv, None, _("Histoire en plusieurs plans (Séquence IA)…"),
-             _("Plusieurs plans qui se suivent avec les mêmes personnages, leurs répliques et une musique. Reprend votre dernière "
-               "histoire ; « Nouvelle histoire » dans la fenêtre pour repartir de zéro."),
-             lambda: self._ed(lambda ed: ed.sequence_ia()))
-        actf(fv, None, _("Effet IA sur le film (dessin animé, ralenti, agrandir, photo 3D…)…"),
-             _("A partir d'une image ou d'une partie du film, sur ce poste, gratuitement."),
-             lambda: self._ed(lambda ed: ed.atelier_ia("video")))
-        fv.addSeparator()
-        actf(fv, None, _("Mes plans IA déjà fabriqués (dossier)…"),
-             _("Les plans vidéo générés et les logos fabriqués sont gardés dans ce dossier, même s'ils ne sont plus dans un projet."),
-             self._dossier_fabrique)
-        fm = groupe(icone("musique"), _("Musique"), _("Créer une musique sur ce poste (gratuit) ou en chercher une en ligne, avec "
-                                                       "ce qui est permis expliqué."))
-        actf(fm, icone("ia"), _("Créer une musique par IA (Fabrique musique)…"),
-             _("Style, ambiance, tempo, instruments, voix : une consigne solide, améliorable par l'IA ; créée sur ce poste, gratuitement."),
-             lambda: self._ed(lambda ed: ed.fabrique_musique()))
-        actf(fm, icone("telecharger"), _("Chercher une musique en ligne (YouTube Music, YouTube, archives libres)…"),
-             _("Chercher, écouter et télécharger le son d'un titre."), lambda: self.musique_en_ligne())
-        fl = groupe(icone("logo"), _("Logo, intro et vignette"), _("Votre logo, puis ce qui l'utilise : logo animé, intro ou fin, "
-                                                                    "vignette de la vidéo pour YouTube, image fixe. Tout se fait sur "
-                                                                    "ce poste ; l'IA peut proposer des idées."))
-        actf(fl, icone("logo"), _("Mon logo : le dessiner ou le modifier (Atelier de logo)…"),
-             _("Gabarits, textes et formes à la souris ; « Idées par l'IA » demande des propositions à l'IA cloud (votre clef). "
-               "Votre logo est ensuite proposé dans la Fabrique (logo animé) et dans la vignette de la vidéo."),
-             self.atelier_logo)
-        actf(fl, icone("fabrique"), _("Logo animé, intro ou fin de vidéo…"),
-             _("Des modèles animés avec votre texte ou votre logo, posés au début ou à la fin du film."),
-             lambda: self.fabrique(onglet=0), "Ctrl+Shift+F")
-        actf(fl, None, _("Logo, intro ou miniature dessinés par l'IA de ce poste…"),
-             _("Une image dessinée à partir d'une phrase : rien n'est envoyé, rien n'est payé ; plus lent sans carte graphique."),
-             lambda: self._ed(lambda ed: ed.atelier_ia("logo")))
-        fl.addSeparator()
-        actf(fl, icone("image"), _("Vignette de la vidéo (miniature YouTube)…"),
-             _("L'image qu'on voit sur YouTube avant de cliquer : à partir d'une image du film, avec titre, flèche et votre logo ; "
-               "elle part avec l'export et la publication."),
-             lambda: self._ed(lambda ed: ed.vignette_composee("vignette")))
-        actf(fl, None, _("Image fixe à poser dans le film…"),
-             _("Même fenêtre que la vignette, au format du film, posée au-dessus à la ligne rouge."),
-             lambda: self._ed(lambda ed: ed.vignette_composee("image")))
-        fb.addSeparator()
-        actf(fb, None, _("Créations à refaire ou à calculer…"),
-             _("Les créations IA demandées sur un autre appareil, ou dont le fichier manque : les calculer ici gratuitement ou les "
-               "refaire, comparer avant / après, sans jamais payer deux fois."), lambda: self._ed(lambda ed: self.creations_a_traiter(ed)))
+        fb = mb.addMenu(_("Fa&brique IA"))
+        self.remplir_fabrique(fb)
         ou = mb.addMenu(_("&Outils"))
         ou.addAction(_("Publier (YouTube, Instagram, TikTok…)…"), self.publier)
         ou.addAction(_("Vignette de la vidéo (miniature YouTube)…"), lambda: self._ed(lambda ed: ed.vignette_composee("vignette")))
@@ -892,6 +853,82 @@ class Fenetre(QMainWindow):
         if d.exec() == QDialog.Accepted and d.png:
             self.fabrique(image=d.png, texte=d.logo.get("nom"))
 
+    def remplir_fabrique(self, fb, ed=None):
+        """Le menu Fabrique IA (0.9.46) : le seul endroit où l'on crée vidéo, musique, image et logo. Le même menu sert à la
+        barre de menus et aux clics droits (« Fabrique IA › ») : un seul endroit à apprendre. Sous-menus et entrées par
+        ordre alphabétique (accents ignorés)."""
+        from PySide6.QtWidgets import QWidgetAction
+        fb.setToolTipsVisible(True)
+        quand = (lambda f: (lambda: f(ed))) if ed is not None else (lambda f: (lambda: self._ed(f)))
+
+        def ent(ic, lib, aide, fonction, raccourci=None):
+            return (ic, lib, aide, fonction, raccourci)
+        groupes = [
+            (icone("image"), _("Image"), _("Retoucher une image du film par l'IA de ce poste (gratuite) : dessin animé, 3D, peinture…"), [
+                ent(icone("ia"), _("Retoucher l'image du film (dessin animé, 3D, peinture…)…"),
+                    _("A partir de l'image à la ligne rouge, sur ce poste, gratuitement."), quand(lambda e: e.atelier_ia("image")))]),
+            (icone("logo"), _("Logo, intro et vignette"), _("Votre logo, puis ce qui l'utilise : logo animé, intro ou fin, vignette de la "
+                                                               "vidéo pour YouTube, image fixe. L'IA peut proposer des idées."), [
+                ent(icone("assistant"), _("Image ou logo dessiné par l'IA de ce poste…"),
+                    _("Une image dessinée à partir d'une phrase : rien n'est envoyé, rien n'est payé ; plus lent sans carte graphique."),
+                    quand(lambda e: e.atelier_ia("logo"))),
+                ent(None, _("Image fixe à poser dans le film…"), _("Une image composée au format du film, posée au-dessus à la ligne rouge."),
+                    quand(lambda e: e.vignette_composee("image"))),
+                ent(icone("fabrique"), _("Logo animé, intro ou fin de vidéo…"),
+                    _("Des modèles animés avec votre texte ou votre logo, posés au début ou à la fin du film."),
+                    lambda: self.fabrique(onglet=0), "Ctrl+Shift+F" if ed is None else None),
+                ent(icone("logo"), _("Mon logo : le dessiner ou le modifier (Atelier de logo)…"),
+                    _("Gabarits, textes et formes à la souris ; « Idées par l'IA » demande des propositions à l'IA cloud (votre clef). "
+                      "Votre logo est ensuite proposé dans la Fabrique (logo animé) et dans la vignette de la vidéo."), self.atelier_logo),
+                ent(icone("image"), _("Vignette de la vidéo (miniature YouTube)…"),
+                    _("L'image qu'on voit sur YouTube avant de cliquer : à partir d'une image du film, avec titre, flèche et votre logo ; "
+                      "elle part avec l'export et la publication."), quand(lambda e: e.vignette_composee("vignette")))]),
+            (icone("musique"), _("Musique"), _("Créer une musique sur ce poste (gratuit) ou en chercher une en ligne, avec ce qui est "
+                                                 "permis expliqué."), [
+                ent(icone("telecharger"), _("Chercher une musique en ligne (YouTube Music, YouTube, archives libres)…"),
+                    _("Chercher, écouter et télécharger le son d'un titre."), (lambda: self.musique_en_ligne(ed))),
+                ent(icone("ia"), _("Créer une musique par IA (Fabrique musique)…"),
+                    _("Style, ambiance, tempo, instruments, voix : une consigne solide, améliorable par l'IA ; créée sur ce poste, gratuitement."),
+                    quand(lambda e: e.fabrique_musique()))]),
+            (icone("camera"), _("Vidéo"), _("Créer des plans qui manquent au film : à partir d'une phrase, d'une histoire ou d'une image du "
+                                              "film. D'abord l'IA de ce poste (gratuite), puis Gemini (votre clef, prix annoncé), puis Google Flow."), [
+                ent(None, _("Effet IA sur le film (dessin animé, ralenti, agrandir, photo 3D…)…"),
+                    _("A partir d'une image ou d'une partie du film, sur ce poste, gratuitement."), quand(lambda e: e.atelier_ia("video"))),
+                ent(None, _("Histoire en plusieurs plans (Séquence IA)…"),
+                    _("Plusieurs plans qui se suivent avec les mêmes personnages, leurs répliques et une musique. Reprend votre dernière "
+                      "histoire ; « Nouvelle histoire » dans la fenêtre pour repartir de zéro."), quand(lambda e: e.sequence_ia())),
+                ent(None, _("Mes plans IA déjà fabriqués (dossier)…"),
+                    _("Les plans vidéo générés et les logos fabriqués sont gardés dans ce dossier, même s'ils ne sont plus dans un projet."),
+                    self._dossier_fabrique),
+                ent(icone("ia"), _("Plan vidéo à partir d'une phrase…"),
+                    _("Décrivez le plan (« survol de collines au lever du soleil ») : IA de ce poste, Gemini ou Flow."),
+                    lambda: self.fabrique(onglet=1))]),
+        ]
+        for ic, titre, explication, entrees in sorted(groupes, key=lambda g: alpha(g[1])):
+            sm = fb.addMenu(ic, titre)
+            sm.setToolTipsVisible(True)
+            lb = QLabel(explication)
+            lb.setWordWrap(True)
+            lb.setFixedWidth(430)
+            lb.setStyleSheet("color:palette(placeholder-text);padding:6px 12px 8px 12px;font-style:italic")
+            wa = QWidgetAction(sm)
+            wa.setDefaultWidget(lb)
+            wa.setEnabled(False)
+            sm.addAction(wa)
+            sm.addSeparator()
+            for ic_, lib, aide, fonction, raccourci in sorted(entrees, key=lambda e: alpha(e[1])):
+                a_ = sm.addAction(ic_, lib, fonction) if ic_ is not None else sm.addAction(lib, fonction)
+                if raccourci:
+                    a_.setShortcut(raccourci)
+                a_.setToolTip(aide)
+                a_.setStatusTip(aide)
+        fb.addSeparator()
+        a_ = fb.addAction(_("Créations à refaire ou à calculer…"),
+                          (lambda: self.creations_a_traiter(ed)) if ed is not None else (lambda: self._ed(lambda e: self.creations_a_traiter(e))))
+        a_.setToolTip(_("Les créations IA demandées sur un autre appareil, ou dont le fichier manque : les calculer ici gratuitement ou "
+                        "les refaire, comparer avant / après, sans jamais payer deux fois."))
+        return fb
+
     def fabrique(self, image=None, texte=None, recette=None, onglet=None):
         ed = self._editeur_ou_nouveau()
         from .dialogues_video import DialogueFabrique
@@ -1092,10 +1129,19 @@ class Fenetre(QMainWindow):
         m.addAction(icone("importer", ac), _("Importer une musique…"), lambda: ed.importer())
         m.addAction(icone("musique", ac), _("Mes musiques (chercher, écouter, poser)…"), lambda: self.mes_musiques(ed))
         m.addAction(icone("telecharger", ac), _("Bibliothèque musicale libre (chercher, écouter, télécharger)…"), lambda: self.bibliotheque_musicale(ed))
-        m.addAction(icone("telecharger", ac), _("Musique en ligne (YouTube Music, YouTube, archives libres)…"), lambda: self.musique_en_ligne(ed))
-        m.addAction(icone("ia", ac), _("Fabrique musique : créer une musique par IA (sur ce poste)…"), lambda: ed.fabrique_musique())
+        m.addAction(icone("fabrique", ac), _("Fabrique IA › Musique : créer par IA, chercher en ligne…"), lambda: self.menu_fabrique(ed, _("Musique")))
         from .widgets import fenetre_choix
         fenetre_choix(self, m, _("Musique"), _("D'où vient la musique ? Elle est posée sur la piste Musique, sous la vidéo."))
+
+    def menu_fabrique(self, ed=None, domaine=None):
+        """Ouvre le menu Fabrique IA (ou un de ses sous-menus) sous la souris : le même que dans la barre de menus."""
+        from PySide6.QtGui import QCursor
+        m = self.remplir_fabrique(QMenu(self), ed)
+        if domaine:
+            sm = next((a.menu() for a in m.actions() if a.menu() and a.text() == domaine), None)
+            if sm is not None:
+                m = sm
+        m.exec(QCursor.pos())
 
     def creations_a_traiter(self, ed=None):
         ed = ed or self.editeur_courant()
@@ -1452,7 +1498,13 @@ class Fenetre(QMainWindow):
             self.encart_global.message(_("✕ Téléchargement de {c} : {e}", c=cle, e=str(erreur)[:160]), 15000)
 
     def installer_ia(self, cles):
-        """Télécharge des modèles d'IA locale (et leur moteur) dans le dossier de PhilCut : file d'attente visible."""
+        """Télécharge des modèles d'IA locale (et leur moteur) : file d'attente visible. La première fois, PhilCut demande où
+        ranger les IA, dans un dossier commun à tous les logiciels PhilFactory (0.9.46)."""
+        if not self.params.get("ia_dossier_commun") and not self.params.get("ia_commun_propose") and not os.environ.get("PHILCUT_SANS_IA_COMMUNE"):
+            from .dialogues_ia_partagee import DialogueIACommune
+            DialogueIACommune(self, self.params).exec()
+            self.params["ia_commun_propose"] = True
+            self.params.enregistrer()
         self.telechargements.ajouter(cles)
         self.voir_telechargements()
 

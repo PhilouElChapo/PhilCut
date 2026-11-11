@@ -15,7 +15,7 @@ class TestMenus(unittest.TestCase):
         mb = f.menuBar()
         fb = [a.menu() for a in mb.actions() if a.menu() and "brique" in a.text()][0]
         sous = [a.text() for a in fb.actions() if a.menu()]
-        self.assertEqual(sous, ["Vidéo", "Musique", "Logo, intro et vignette"])
+        self.assertEqual(sous, ["Image", "Logo, intro et vignette", "Musique", "Vidéo"])          # 0.9.46 : ordre alphabétique
         ai = [a.menu() for a in mb.actions() if a.menu() and "Aide" in a.text()][0]
         self.assertFalse(any("Guide de test" in a.text() for a in ai.actions()))
         tous = [a.text() for m in [a.menu() for a in fb.actions() if a.menu()] for a in m.actions()]

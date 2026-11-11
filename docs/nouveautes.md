@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.45 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.46 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.46 (menus ranges, IA partagees entre logiciels PhilFactory)
+- Menu Montage en cinq sous-menus : Image du plan, Montage automatique, Pistes et passage choisi (partie jaune), Son, Textes et habillage ; tout par ordre alphabetique ; "Monter par le texte" devient "Couper en supprimant des phrases (texte de ce qui est dit)" ; la partie jaune est expliquee.
+- Menu "Fabrique IA" : le seul endroit ou l'on cree (Image, Logo intro et vignette, Musique, Video), par ordre alphabetique ; le clic droit sur l'apercu et le bouton Musique ouvrent le meme menu.
+- IA locale partagee entre les logiciels PhilFactory : dossier commun "IA PhilFactory" choisi par vous ; les modeles deja telecharges y sont ranges (deplaces sur le meme disque, sinon copies et verifies) ; un modele deja telecharge par un autre logiciel (dossier commun, portable range a cote, donnees d'un autre logiciel Phil...) est repris sans retelechargement ; un modele encore utilise par un autre logiciel n'est jamais efface. Preferences > IA locale > "Dossier commun des IA PhilFactory...".
 
 ### 0.9.45
 - Tampons video > Chercher en ligne (YouTube) : comme sur le site, la suite arrive quand on descend en bas de la liste, ou par "30 resultats de plus" ; la liste garde l'endroit ou vous etiez.

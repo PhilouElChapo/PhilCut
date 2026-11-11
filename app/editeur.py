@@ -503,7 +503,7 @@ class VoletProposition(QWidget):
         for i, g in enumerate(recette.get("goodies") or []):
             ligne(f"goodie:{i}", _("Goodie {g}", g=g.get("genre", "")), _("{a} → {b} s", a=g.get("debut"), b=g.get("fin")), g.get("pourquoi", ""))
         for i, pg in enumerate(recette.get("plans_a_generer") or []):
-            lb = QLabel(_("<b>Plan à générer ({u}, {d} s)</b> : {c}<br><span style='color:#999'>Fabrique › Plan généré par IA</span>", u=pg.get("usage", ""), d=pg.get("duree", 8), c=pg.get("consigne", "")))
+            lb = QLabel(_("<b>Plan à générer ({u}, {d} s)</b> : {c}<br><span style='color:#999'>Fabrique IA › Vidéo › Plan vidéo à partir d'une phrase</span>", u=pg.get("usage", ""), d=pg.get("duree", 8), c=pg.get("consigne", "")))
             lb.setWordWrap(True)
             self.vc.addWidget(lb)
         pub = recette.get("publication") or {}
@@ -1048,8 +1048,10 @@ class Editeur(QWidget):
         m.addAction(_("Figer l'image ici (cadre photo, légende)…"), self.figer_image)
         m.addAction(_("Bruitage ici…"), self.bruitage)
         m.addAction(_("Tampon vidéo à cet instant…"), self.tampons)
-        m.addAction(_("Vignette de la vidéo (miniature YouTube) depuis cette image…"), lambda: self.vignette_composee("vignette"))
-        m.addAction(_("Image fixe composée depuis cette image…"), lambda: self.vignette_composee("image"))
+        m.addSeparator()
+        fen = self.window()
+        if hasattr(fen, "remplir_fabrique"):                  # le même menu que la barre : un seul endroit à apprendre
+            fen.remplir_fabrique(m.addMenu(icone("fabrique", theme.COULEURS["texte"]), _("Fabrique IA")), self)
         m.addSeparator()
         m.addAction(icone("goodies", theme.COULEURS["texte"]), _("Goodies (instruments, carte du trajet, vent, compteurs…)…"),
                     lambda: self.outil("goodies"))

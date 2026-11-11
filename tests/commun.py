@@ -5,6 +5,7 @@ os.environ.setdefault("PHILCUT_SANS_MULTIMEDIA", "1")
 os.environ.setdefault("PHILCUT_APERCU_FIDELE", "0")
 os.environ.setdefault("PHILCUT_LANGUE", "fr")                 # les tests lisent les textes en français
 os.environ.setdefault("PHILCUT_SANS_RESEAU", "1")         # pas de catalogue en ligne pendant les tests
+os.environ.setdefault("PHILCUT_SANS_IA_COMMUNE", "1")     # pas de question sur le dossier commun des IA pendant les tests
 os.environ.setdefault("PHILCUT_PREPARATION", "0")        # ni préparation automatique      # pas de rendu en arrière-plan pendant les tests (sauf demande explicite)
 RACINE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, RACINE)

@@ -133,8 +133,50 @@ def gpu_voulu(params=None):
     return bool(carte_graphique()) and bool(moteur_info("vision_gpu"))
 
 
+# 0.9.46 : modèles rangés dans le dossier commun « IA PhilFactory » quand il est choisi (ia_partagee.py) ; les moteurs,
+# petits et dont la version peut différer d'un logiciel à l'autre, restent dans le dossier de chaque logiciel
+LOGICIEL = "PhilCut"
+_COMMUN = None
+
+
+def regler_commun(chemin):
+    """Dossier commun des modèles (ou None : le dossier « ia » de PhilCut)."""
+    global _COMMUN
+    _COMMUN = chemin or None
+    if _COMMUN:
+        from . import ia_partagee as IP
+        IP.preparer(_COMMUN, LOGICIEL)
+
+
+def dossier_commun():
+    return _COMMUN
+
+
+def dossier_modeles():
+    return os.path.join(_COMMUN, "modeles") if _COMMUN else os.path.join(dossier(), "modeles")
+
+
+def dossier_modeles_propre():
+    return os.path.join(dossier(), "modeles")
+
+
 def dossier_modele(cle):
-    return os.path.join(dossier(), "modeles", cle)
+    return os.path.join(dossier_modeles(), cle)
+
+
+def _racines_autres():
+    from . import ia_partagee as IP
+    from .config import dossier_programme
+    return IP.racines_modeles(dossier_programme(), _COMMUN, propre=dossier_modeles())
+
+
+def deja_ailleurs(f, verifier=False):
+    """Un fichier de modèle déjà téléchargé par un logiciel PhilFactory (ou par PhilCut avant le dossier commun)."""
+    from . import ia_partagee as IP
+    try:
+        return IP.chercher_fichier(f["nom"], f.get("taille", 0), f.get("sha256", ""), _racines_autres(), verifier=verifier)
+    except Exception:      # noqa: BLE001 : la recherche ne doit jamais empêcher un téléchargement
+        return None
 
 
 # ------------------------------------------------------------------ catalogue
@@ -291,7 +333,11 @@ def taille_texte(octets):
 def a_telecharger(cle):
     """Octets à télécharger pour installer ce modèle (moteur compris s'il manque)."""
     m = modeles(avec_essai=True).get(cle) or {}
-    total = 0 if installe(cle) else m.get("taille", 0)
+    total = 0
+    if not installe(cle):
+        for f in m.get("fichiers") or []:
+            if not os.path.exists(os.path.join(dossier_modele(cle), f["nom"])) and not deja_ailleurs(f):
+                total += f.get("taille", 0)
     mg, mgpu = moteur_du_modele(m), moteur_gpu_du_modele(m)
     if mg and not moteur_installe(mg):
         total += (moteur_info(mg) or {}).get("taille", 0)
@@ -497,22 +543,61 @@ def installer(cle, progression=None, arret=lambda: False):
             ecrire("ia locale", f"moteur carte graphique non installé : {e}")
         fait[0] += t
     noms = []
+    from . import ia_partagee as IP
     for f in m["fichiers"]:
         cible = os.path.join(dossier_modele(cle), f["nom"])
         if not os.path.exists(cible):
-            _telecharger(f["url"], cible, f.get("taille", 0), f.get("sha256", ""), prog_part(f.get("taille", 0), m["nom"]), arret)
-        fait[0] += f.get("taille", 0)
+            src = deja_ailleurs(f, verifier=True)          # déjà téléchargé par un logiciel PhilFactory : repris, pas retéléchargé
+            if src:
+                progression and progression(min(0.99, fait[0] / total), _("Repris de {d} (déjà téléchargé)", d=os.path.dirname(os.path.dirname(src))))
+                IP.placer(src, cible, None, arret)
+            else:
+                _telecharger(f["url"], cible, f.get("taille", 0), f.get("sha256", ""), prog_part(f.get("taille", 0), m["nom"]), arret)
+                fait[0] += f.get("taille", 0)
         noms.append(f["nom"])
+    if _COMMUN:
+        IP.noter(_COMMUN, cle, LOGICIEL, [{"nom": f["nom"], "taille": f.get("taille", 0), "sha256": f.get("sha256", "")} for f in m["fichiers"]])
     _noter(cle, {"genre": g, "nom": m["nom"], "fichiers": noms, "roles": {f["role"]: f["nom"] for f in m["fichiers"]},
                  "taille": m.get("taille", 0), "date": time.strftime("%Y-%m-%d")})
     progression and progression(1.0, m["nom"])
     return True
 
 
+def adopter():
+    """Modèles déjà présents dans le dossier commun (téléchargés par un autre logiciel PhilFactory) : notés installés
+    ici quand leur moteur l'est aussi. Renvoie les clefs reprises."""
+    if not _COMMUN:
+        return []
+    pris = []
+    for cle, m in modeles(avec_essai=True).items():
+        if installe(cle) or not m.get("fichiers"):
+            continue
+        d = dossier_modele(cle)
+        if not all(os.path.isfile(os.path.join(d, f["nom"])) and (not f.get("taille") or os.path.getsize(os.path.join(d, f["nom"])) == f["taille"])
+                   for f in m["fichiers"]):
+            continue
+        mg = moteur_du_modele(m)
+        if mg and not moteur_installe(mg):
+            continue
+        _noter(cle, {"genre": m["genre"], "nom": m["nom"], "fichiers": [f["nom"] for f in m["fichiers"]],
+                     "roles": {f["role"]: f["nom"] for f in m["fichiers"]}, "taille": m.get("taille", 0),
+                     "date": time.strftime("%Y-%m-%d"), "repris": True})
+        from . import ia_partagee as IP
+        IP.noter(_COMMUN, cle, LOGICIEL)
+        pris.append(cle)
+    return pris
+
+
 def supprimer(cle):
     """Retire un modèle ; quand plus aucun modèle d'un genre ne reste, son moteur part aussi."""
     e = etat().get(cle) or {}
-    shutil.rmtree(dossier_modele(cle), ignore_errors=True)
+    autres = []
+    if _COMMUN:                                        # dossier commun : jamais effacé sous les pieds d'un autre logiciel
+        from . import ia_partagee as IP
+        IP.noter(_COMMUN, cle, LOGICIEL, utilise=False)
+        autres = IP.autres_utilisateurs(_COMMUN, cle, LOGICIEL)
+    if not autres:
+        shutil.rmtree(dossier_modele(cle), ignore_errors=True)
     _noter(cle, None)
     info = modeles(avec_essai=True).get(cle) or {"genre": e.get("genre")}
     mg, mgpu = moteur_du_modele(info), moteur_gpu_du_modele(info)
