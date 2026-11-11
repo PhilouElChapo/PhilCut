@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T57 — 0.9.41 : mise à jour sans plantage
+
+1. Avec un projet modifié non enregistré, lancer la mise à jour suivante puis « Installer et redémarrer » : PhilCut demande s'il faut enregistrer ; « Annuler » laisse PhilCut ouvert et la fenêtre de mise à jour revient.
+2. Recommencer et accepter : PhilCut se ferme, l'installation se fait, PhilCut redémarre seul dans la nouvelle version.
+3. Ouvrir l'Observateur d'événements de Windows (ou « Historique de fiabilité ») : aucun nouveau « APPCRASH PhilCut.exe ».
+4. Préférences : changer le thème, accepter de relancer : même fermeture propre, PhilCut revient avec le nouveau thème.
+
 ## T56 — 0.9.40 : retours des essais du 9 novembre
 
 1. **Fenêtres** : Atelier IA › Dessin animé (vidéo) sur un plan, « Créer » : à l'arrivée du résultat, la fenêtre reste dans l'écran (le contenu défile).

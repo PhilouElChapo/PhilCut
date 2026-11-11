@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.40 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.41 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.41
+- Mise a jour et relance (theme, langue) : PhilCut se ferme proprement avant l'installation (memes questions qu'a la fermeture, arret des taches et du son), l'installation attend qu'il soit ferme puis le relance. Windows ne signale plus de "plantage" de PhilCut.exe au redemarrage.
 
 ### 0.9.40 (retours des essais du 9 novembre)
 - Aucune fenetre ne depasse plus l'ecran, meme quand elle grandit apres coup (apercu d'un resultat, liste qui s'allonge) : son contenu defile.

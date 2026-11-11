@@ -123,14 +123,16 @@ class DialogueMaj(QDialog):
             self.close()
 
     def installer(self):
+        """Ferme PhilCut proprement (questions d'enregistrement, arrêt des tâches et du son), lance l'installation, qui
+        attend la fin de PhilCut avant de remplacer ses fichiers, puis le relance."""
         if not self.fichier:
             return
         p = self.parent()
-        if p is not None and hasattr(p, "tout_enregistrer"):
-            try:
-                p.tout_enregistrer()
-            except Exception:      # noqa: BLE001
-                pass
+        self.hide()
+        if p is not None and hasattr(p, "quitter_pour_maj"):
+            if not p.quitter_pour_maj(lambda: mise_a_jour.appliquer(self.fichier)):
+                self.show()
+            return
         mise_a_jour.appliquer(self.fichier)
         from PySide6.QtWidgets import QApplication
         QApplication.quit()

@@ -150,18 +150,24 @@ def appliquer(fichier):
     """Lance la mise a jour a partir du paquet deja telecharge ; PhilCut doit se fermer juste apres."""
     if not possible():
         return False
+    prog = dossier_programme()
+    attente = (f":attente\r\ntasklist /FI \"PID eq {os.getpid()}\" | find \"{os.getpid()}\" >nul && (timeout /t 1 >nul & goto attente)\r\n")
     if fichier.lower().endswith(".exe"):
-        subprocess.Popen([fichier, "/SILENT", "/CLOSEAPPLICATIONS", "/RESTARTAPPLICATIONS"], close_fds=True)
+        # L'installateur attend que PhilCut soit fermé (plus de fermeture forcée par Windows pendant l'arrêt), puis on relance.
+        script = os.path.join(tempfile.mkdtemp(), "maj_philcut.bat")
+        with open(script, "w", encoding="mbcs") as f:
+            f.write("@echo off\r\n" + attente
+                    + f'start "" /wait "{fichier}" /SILENT /SUPPRESSMSGBOXES /NORESTART\r\n'
+                    + f'start "" "{os.path.join(prog, "PhilCut.exe")}"\r\n')
+        subprocess.Popen(["cmd", "/c", script], creationflags=0x08000000, close_fds=True)
         return True
     tmp = tempfile.mkdtemp()
     with zipfile.ZipFile(fichier) as z:
         z.extractall(tmp)
-    prog = dossier_programme()
     script = os.path.join(tmp, "maj_philcut.bat")
     with open(script, "w", encoding="mbcs") as f:
         f.write("@echo off\r\n"
-                f"echo Mise a jour de PhilCut...\r\n"
-                f":attente\r\ntasklist /FI \"PID eq {os.getpid()}\" | find \"{os.getpid()}\" >nul && (timeout /t 1 >nul & goto attente)\r\n"
+                "echo Mise a jour de PhilCut...\r\n" + attente +
                 f'robocopy "{tmp}" "{prog}" /E /R:5 /W:1 /XD donnees /XF portable.txt maj_philcut.bat >nul\r\n'
                 f'start "" "{os.path.join(prog, "PhilCut.exe")}"\r\n')
     subprocess.Popen(["cmd", "/c", script], creationflags=0x08000000, close_fds=True)

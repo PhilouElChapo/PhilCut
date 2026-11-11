@@ -45,6 +45,20 @@ def progression_maj(tache):
     return suivre
 
 
+
+def sortie_directe(code=0):
+    """Sortie sans destruction des objets par Python et Qt (voir philcut.sortir)."""
+    import sys as _s
+    try:
+        _s.stdout.flush()
+        _s.stderr.flush()
+    except Exception:       # noqa: BLE001
+        pass
+    if os.environ.get("PHILCUT_TEST_SORTIE"):          # les tests vérifient l'appel sans quitter
+        os.environ["PHILCUT_TEST_SORTIE"] = "appelee"
+        return
+    os._exit(code)
+
 class Fenetre(QMainWindow):
     def __init__(self, fichiers=()):
         super().__init__()
@@ -626,15 +640,18 @@ class Fenetre(QMainWindow):
                 r = question_fr(self, _("Quitter"), _("Enregistrer les modifications de « {n} » ?", n=ed.projet.nom),
                                          QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
                 if r == QMessageBox.Cancel:
+                    self._apres_fermeture = None
                     e.ignore()
                     return
                 if r == QMessageBox.Save and not self.enregistrer():
+                    self._apres_fermeture = None
                     e.ignore()
                     return
         en_cours = [t for t in self.taches + sum((ed.taches for ed in self.editeurs()), []) if t.isRunning()]
         if self.telechargements.tache is not None:
             en_cours.append(self.telechargements.tache)
         if en_cours and not self._quitter_malgre(en_cours):
+            self._apres_fermeture = None
             e.ignore()
             return
         for t in en_cours:
@@ -655,6 +672,21 @@ class Fenetre(QMainWindow):
             secours.effacer(ed.projet)
         self.attendre_taches(3000)
         e.accept()
+        lancer = getattr(self, "_apres_fermeture", None)
+        if lancer is not None:                     # mise à jour : tout est enregistré et arrêté, on lance l'installation
+            try:                                   # puis on sort tout de suite, sans laisser Qt détruire les objets
+                lancer()                           # (plantage pyside6.abi3.dll signalé par Windows au redémarrage)
+            finally:
+                sortie_directe(0)
+
+    def quitter_pour_maj(self, lancer):
+        """Fermeture pour installer une mise à jour : mêmes questions qu'à la fermeture (enregistrer, opérations en
+        cours), puis `lancer()` et sortie directe. Renvoie False si la personne a annulé."""
+        self._apres_fermeture = lancer
+        self.close()
+        ok = getattr(self, "_apres_fermeture", None) is not None
+        self._apres_fermeture = None
+        return ok
 
     @staticmethod
     def arreter_sons():
@@ -1327,12 +1359,9 @@ class Fenetre(QMainWindow):
         DialogueConnexionIA(self, self.params).exec()
 
     def redemarrer(self):
-        self.close()
-        if getattr(sys, "frozen", False):
-            subprocess.Popen([sys.executable])
-        else:
-            subprocess.Popen([sys.executable, os.path.abspath(sys.argv[0])])
-        QApplication.quit()
+        """Relance PhilCut : fermeture normale (questions comprises), nouveau PhilCut lancé, sortie directe."""
+        cmd = [sys.executable] if getattr(sys, "frozen", False) else [sys.executable, os.path.abspath(sys.argv[0])]
+        self.quitter_pour_maj(lambda: subprocess.Popen(cmd))
 
     def suivre_tache(self, t, texte, action=None):
         """Progression d'une tâche : dans l'encart du projet ouvert, sinon dans la barre du bas de la fenêtre."""
