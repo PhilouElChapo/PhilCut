@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T60 — 0.9.44 : mise à jour comme PhilPDF, recherche exacte, musique, logo et vignette
+
+1. Mise à jour : la fenêtre n'a plus le bouton de réduction de Windows ; « Réduire », la croix ou Echap la rangent dans la barre du bas, le téléchargement continue ; « Afficher » la rouvre.
+2. Tampons vidéo › Chercher en ligne : « tonton flingur » ; les résultats suivent vos mots exacts. « Vidéos et Shorts » : 30 résultats (20 vidéos puis 10 Shorts), le message le dit ; « Vidéos » : 30 vidéos.
+3. Fabrique musique › « Choisir un morceau… » › « Chercher en ligne… » : chercher, télécharger, « S'inspirer de ce morceau » : la fenêtre se ferme et l'analyse du morceau démarre.
+4. Fabrique musique › Voix de référence › « Garder seulement la voix d'un morceau de ce poste… » : question « De qui est cette voix ? », puis séparation (modèle « Voix seule d'un morceau » à installer d'abord, sinon PhilCut dit où). Ecouter le fichier « _voix.wav » obtenu avant de créer.
+5. Fabrique › Logo, intro et vignette : « Mon logo… » en premier ; « Vignette de la vidéo (miniature YouTube)… » : explication en haut, « Votre logo » (choisir, Atelier de logo…, coin), bouton principal « Utiliser comme vignette de la vidéo ».
+6. Outils › Publier : la vignette est montrée, « Composer la vignette… » ; à l'envoi, la vignette part avec la vidéo (ou le message dit pourquoi YouTube la refuse).
+
 ## T59 — 0.9.43 : Fabrique rangée, plan par ce poste, pCloud par WebDAV
 
 1. Menu Fabrique : trois sous-menus (Vidéo, Musique, Logo, intro et vignette), chacun avec une phrase d'explication en tête, puis « Créations à refaire ou à calculer… ». Menu Aide : plus de « Guide de test ».

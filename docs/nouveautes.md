@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.43 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.44 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.44 (retours du 11 novembre, fin de soiree)
+- Fenetre de mise a jour comme PhilPDF : plus de bouton de reduction de Windows ; "Reduire" la range dans la barre du bas, la croix et Echap aussi tant que le telechargement continue.
+- Recherche YouTube (tampons video, musique en ligne) : vos mots exacts, YouTube ne les corrige plus ("tonton flingur" reste "tonton flingur") ; toujours 30 resultats en tout (20 videos puis 10 Shorts, ou 30 videos, ou 30 Shorts).
+- Fabrique musique : "Choisir un morceau..." propose un fichier ou la recherche en ligne (archives libres, YouTube Music, YouTube) ; voix de reference : un enregistrement, la voix seule d'un morceau de ce poste ou trouve en ligne (separee sur ce poste, experimental, modele "Voix seule d'un morceau" a installer), toujours seulement votre voix ou celle d'une personne d'accord.
+- Atelier de logo : en tete du menu Logo, intro et vignette ; votre logo se pose dans la vignette (coin au choix).
+- Vignette de la video (miniature YouTube) : nom et explication clairs, bouton principal "Utiliser comme vignette de la video", aussi dans Outils et dans Publier, ou elle est envoyee a YouTube avec la video (si la chaine est validee par telephone).
 
 ### 0.9.43 (retours d'ergonomie du 11 novembre)
 - Menu Fabrique range en trois sous-menus, chacun avec une phrase d'explication : Video, Musique, Logo intro et vignette ; noms plus clairs ; une seule entree pour la Sequence IA ("Nouvelle histoire..." est dans sa fenetre).

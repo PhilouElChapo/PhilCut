@@ -164,9 +164,22 @@ def _langue():
         return "fr"
 
 
-def _recherche_brute(requete, n):
-    lignes = _lancer_ytdlp(["--flat-playlist", "--dump-json", "--xff", pays(), "--extractor-args", f"youtube:lang={_langue()}",
-                            f"ytsearch{int(n)}:{requete}"])
+# 0.9.44 : « orthographe exacte » de la page de recherche de YouTube (son lien « Rechercher plutôt … ») : vos mots tels que
+# tapés, sans que YouTube les corrige (« tonton flingur » ne devient pas « tontons flingueurs »)
+SP_EXACT = "QgIIAQ=="
+
+
+def _recherche_brute(requete, n, exact=True):
+    base = ["--flat-playlist", "--dump-json", "--xff", pays(), "--extractor-args", f"youtube:lang={_langue()}"]
+    lignes = []
+    if exact:
+        url = "https://www.youtube.com/results?" + urllib.parse.urlencode({"search_query": requete, "sp": SP_EXACT})
+        try:
+            lignes = _lancer_ytdlp(base + ["--playlist-end", str(int(n)), url])
+        except Exception:      # noqa: BLE001 : page de recherche refusée : recherche ordinaire
+            lignes = []
+    if not any(l.startswith("{") for l in lignes):
+        lignes = _lancer_ytdlp(base + [f"ytsearch{int(n)}:{requete}"])
     out = []
     for l in lignes:
         if not l.startswith("{"):
@@ -202,11 +215,13 @@ def chercher_youtube(texte, n=30, genre="tout"):
             vus.add(r["id"])
             out.append(r)
             k += 1
+    # toujours n résultats en tout : « tout » = deux tiers de vidéos puis un tiers de Shorts (30 = 20 + 10)
+    n_shorts = n if genre == "shorts" else (n // 3 if genre == "tout" else 0)
+    n_videos = n - n_shorts
     if genre in ("tout", "videos"):
-        ajouter(_recherche_brute(texte, n * (2 if genre == "videos" else 1)), (lambda r: not r["short"]) if genre == "videos" else
-                (lambda r: True), n)
+        ajouter(_recherche_brute(texte, n_videos * 2), lambda r: not r["short"], n_videos)
     if genre in ("tout", "shorts"):
-        quota = n if genre == "shorts" else max(10, n // 2)
+        quota = n_shorts + (n_videos - len(out) if genre == "tout" else 0)      # moins de vidéos trouvées : plus de Shorts
         brut = _recherche_brute(f"{texte} #shorts", quota * 2)
         for r in brut:                                    # une vidéo très courte trouvée par « #shorts » est un Short
             r["short"] = r["short"] or 0 < r["duree"] <= 180

@@ -1,0 +1,33 @@
+# 0.9.44 : ajoute ou met à jour des modèles dans le catalogue moteurs-creatifs.json de la release « moteurs-ia », sans
+# refaire les moteurs (ex. « voix_seule » : voix seule d'un morceau, modèle de base d'ACE-Step 1.5).
+name: Mettre a jour les modeles creatifs
+
+on:
+  push:
+    paths:
+      - .github/workflows/maj_modeles_creatifs.yml
+  workflow_dispatch:
+    inputs:
+      cles:
+        description: "Modeles a ajouter ou mettre a jour (separes par des espaces)"
+        default: "voix_seule"
+
+permissions:
+  contents: write
+
+jobs:
+  modeles:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Catalogue
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh release download moteurs-ia -p moteurs-creatifs.json -D dist
+          python outils_dev/moteurs_creatifs.py maj_modeles dist ${{ github.event.inputs.cles || 'voix_seule' }}
+      - name: Publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload moteurs-ia dist/moteurs-creatifs.json --clobber

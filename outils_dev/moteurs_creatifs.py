@@ -49,6 +49,15 @@ MODELES = {
                          ("lm", "Serveurperso/ACE-Step-1.5-GGUF", ["acestep-5Hz-lm-1.7B-Q8_0.gguf"]),
                          ("dit", "Serveurperso/ACE-Step-1.5-GGUF", ["acestep-v15-turbo-Q8_0.gguf"])],
                         {"qualite": 5, "memoire_go": 8, "note": "Meilleure musique et meilleures paroles ; carte graphique de 8 Go conseillée."}),
+    # 0.9.44 : voix seule d'un morceau (tâche « extract » d'acestep.cpp, modèle de base exigé, pas « turbo »)
+    "voix_seule": ("Voix seule d'un morceau (ACE-Step 1.5 base, expérimental)", "separation",
+                   [("vae", "Serveurperso/ACE-Step-1.5-GGUF", ["vae-BF16.gguf"]),
+                    ("texte", "Serveurperso/ACE-Step-1.5-GGUF", ["Qwen3-Embedding-0.6B-Q8_0.gguf"]),
+                    ("dit", "Serveurperso/ACE-Step-1.5-GGUF", ["acestep-v15-base-Q4_K_M.gguf", "acestep-v15-base-Q6_K.gguf",
+                                                               "acestep-v15-base-Q8_0.gguf", "acestep-v15-sft-Q4_K_M.gguf",
+                                                               "acestep-v15-sft-Q8_0.gguf", "gguf:base-Q4,base-Q8,sft-Q4,sft-Q8"])],
+                   {"qualite": 3, "memoire_go": 6, "note": "Garde seulement la voix d'un morceau, pour la voix de référence de la "
+                                                           "Fabrique musique (licence MIT). Expérimental."}),
     "profondeur": ("Profondeur (Depth Anything V2 small)", "profondeur",
                    [("modele", "onnx-community/depth-anything-v2-small", ["onnx/model.onnx", "onnx/model_fp16.onnx"])],
                    {"qualite": 4, "memoire_go": 2, "note": "Photo 3D, flou d'arrière-plan, brume : sur le processeur, rapide (Apache 2.0)."}),
@@ -87,7 +96,14 @@ def versions():
 
 def _choisir(fichiers, voeu):
     if isinstance(voeu, list):
-        return next((f for f in voeu if f in fichiers), None)
+        trouve = next((f for f in voeu if not f.startswith("gguf:") and f in fichiers), None)
+        if trouve:
+            return trouve
+        motif = next((f for f in voeu if f.startswith("gguf:")), None)
+        if not motif:
+            return None
+        ggufs = [f for f in fichiers if f.endswith(".gguf")]      # dans une liste : jamais « le premier venu » (turbo…)
+        return next((f for q in motif[5:].split(",") for f in ggufs if q in f), None)
     if voeu.startswith("gguf:"):
         ggufs = [f for f in fichiers if f.endswith(".gguf")]
         for q in voeu[5:].split(","):
@@ -125,7 +141,7 @@ def modeles(sortie):
         e.update({k: v for k, v in opts.items()})
         if genre in ("image", "video"):
             e["moteur"], e["moteur_gpu"] = "image", "image_gpu"
-        elif genre == "musique":
+        elif genre in ("musique", "separation"):
             e["moteur"], e["moteur_gpu"] = "musique", "musique_gpu"
         cat[cle] = e
         print(f"::notice title={cle}::{', '.join(x['nom'] for x in liste)} ({e['taille'] / 1e9:.2f} Go)")
@@ -245,6 +261,33 @@ def assembler(dossier):
     return 0
 
 
+def maj_modeles(dossier, *cles):
+    """Ajoute ou met à jour dans moteurs-creatifs.json les modèles demandés, sans refaire les moteurs (0.9.44)."""
+    import tempfile
+    p = os.path.join(dossier, "moteurs-creatifs.json")
+    man = json.load(open(p, encoding="utf-8"))
+    tmp = os.path.join(tempfile.mkdtemp(), "m.json")
+    garde = dict(MODELES)
+    try:
+        if cles:
+            MODELES.clear()
+            MODELES.update({k: v for k, v in garde.items() if k in cles})
+        modeles(tmp)
+    finally:
+        MODELES.clear()
+        MODELES.update(garde)
+    nouveaux = json.load(open(tmp, encoding="utf-8"))
+    nouveaux = {k: v for k, v in nouveaux.items() if not cles or k in cles}
+    if not nouveaux:
+        print("::error::aucun modèle trouvé")
+        return 1
+    man.setdefault("modeles", {}).update(nouveaux)
+    man["date"] = time.strftime("%Y-%m-%d")
+    json.dump(man, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+    print(json.dumps(nouveaux, ensure_ascii=False, indent=1)[:3000])
+    return 0
+
+
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else ""
     if cmd == "versions":
@@ -260,6 +303,8 @@ if __name__ == "__main__":
         sys.exit(repaquer_esrgan(sys.argv[2], sys.argv[3]))
     if cmd == "corriger_moteur":
         sys.exit(corriger_moteur(sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5] if len(sys.argv) > 5 else ""))
+    if cmd == "maj_modeles":
+        sys.exit(maj_modeles(sys.argv[2], *sys.argv[3:]))
     if cmd == "corriger_catalogue":
         sys.exit(corriger_catalogue(sys.argv[2]))
     print(__doc__)

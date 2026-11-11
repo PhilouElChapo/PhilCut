@@ -675,10 +675,32 @@ def composer(recette, img, img2=None, L=1280, H=720, progression=None):
             _fleche(p, dep, arr, kit, pal, epaisseur, courbe=0.22 if (graine + i) % 2 == 0 else -0.22)
             if (z.get("texte") or "").strip():
                 _etiquette(p, z["texte"].strip(), dep, kit, pal, L, H)
+    _logo(p, recette, L, H)
     p.end()
     infos = {"taille_titre": taille_titre, "palette": pal, "avertissements": lisibilite(recette, taille_titre, L, H)}
     av(1.0, _("Vignette prête."))
     return q, infos
+
+
+def _logo(p, recette, L, H):
+    """Votre logo (Atelier de logo, PNG transparent) dans un coin, environ un cinquième de la largeur (0.9.44)."""
+    from PySide6.QtCore import Qt
+    from PySide6.QtGui import QImage
+    chemin = recette.get("logo") or ""
+    if not chemin or not os.path.exists(chemin):
+        return
+    img = QImage(chemin)
+    if img.isNull():
+        return
+    largeur = L * float(recette.get("logo_taille") or 0.2)
+    img = img.scaledToWidth(max(8, int(largeur)), Qt.SmoothTransformation)
+    if img.height() > H * 0.3:
+        img = img.scaledToHeight(int(H * 0.3), Qt.SmoothTransformation)
+    marge = int(min(L, H) * 0.035)
+    coin = recette.get("logo_coin") or "haut_droite"
+    x = L - img.width() - marge if coin.endswith("droite") else marge
+    y = marge if coin.startswith("haut") else H - img.height() - marge
+    p.drawImage(int(x), int(y), img)
 
 
 def _etiquette(p, texte, point, kit, pal, L, H):

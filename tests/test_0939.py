@@ -14,7 +14,7 @@ class TestMaj(unittest.TestCase):
         from PySide6.QtWidgets import QWidget
         w = QWidget()
         d = DialogueMaj(w, "v9", {})
-        self.assertTrue(d.windowFlags() & Qt.WindowMinimizeButtonHint)
+        self.assertFalse(d.windowFlags() & Qt.WindowMinimizeButtonHint)        # 0.9.44 : comme PhilPDF
         d.show()
         d.b_reduire.click()
         self.assertFalse(d.isVisible())

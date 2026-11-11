@@ -22,7 +22,8 @@ GENRES = {"vision": _("Vision (idées de montage)"), "whisper": _("Voix (sous-ti
           "voix": _("Voix de synthèse (voix off, doublage)"), "image": _("Images IA (retouche par une phrase, logos, miniatures)"),
           "video": _("Vidéo IA (animer une image, expérimental)"), "musique": _("Musique IA (morceau selon un style)"),
           "anime": _("Effet dessin animé (vidéo)"), "profondeur": _("Profondeur (photo 3D, flou d'arrière-plan)"),
-          "upscale": _("Agrandissement IA (vidéo, image)"), "interpolation": _("Ralenti fluide IA")}
+          "upscale": _("Agrandissement IA (vidéo, image)"), "interpolation": _("Ralenti fluide IA"),
+          "separation": _("Voix seule d'un morceau (voix de référence de la musique, expérimental)")}
 DEFAUT = {"vision": "vision_leger", "whisper": "whisper_leger", "detourage": "detourage_leger", "voix": "voix_fr_femme"}
 MOTEURS_GENRE = ("vision", "whisper", "voix")          # genres qui ont un programme à télécharger
 UA = {"User-Agent": "PhilCut"}

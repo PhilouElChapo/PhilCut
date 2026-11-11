@@ -8,7 +8,7 @@
   l'application par chaque réseau. En attendant : publication assistée — le bon fichier (format du réseau) est prêt,
   la légende est copiée, la page d'envoi du réseau s'ouvre, il reste à glisser le fichier.
 """
-import json, os, time, urllib.error, urllib.request
+import json, os, time, urllib.error, urllib.parse, urllib.request
 
 from .langue import _
 
@@ -72,6 +72,32 @@ def _acces(journal=None):
 
 # ------------------------------------------------------------------ envoi YouTube
 URL_ENVOI = "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status"
+
+
+URL_VIGNETTE = "https://www.googleapis.com/upload/youtube/v3/thumbnails/set"
+
+
+def envoyer_vignette(id_video, image):
+    """La vignette de la vidéo (JPG ou PNG, moins de 2 Mo) ; YouTube peut la refuser tant que la chaîne n'est pas validée
+    par téléphone : on le dit, la vidéo reste envoyée. Renvoie None si c'est fait, sinon la raison."""
+    if not (id_video and image and os.path.exists(image)):
+        return _("pas de vignette choisie")
+    with open(image, "rb") as f:
+        donnees = f.read()
+    type_ = "image/png" if image.lower().endswith(".png") else "image/jpeg"
+    req = urllib.request.Request(URL_VIGNETTE + "?" + urllib.parse.urlencode({"videoId": id_video}), data=donnees, method="POST",
+                                 headers={"Authorization": f"Bearer {_acces()}", "Content-Type": type_, "Content-Length": str(len(donnees))})
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            r.read()
+        return None
+    except urllib.error.HTTPError as e:
+        if e.code == 403:
+            return _("YouTube n'accepte les vignettes personnalisées qu'après validation de la chaîne par téléphone "
+                     "(youtube.com/verify) : posez-la dans YouTube Studio")
+        return _expliquer(e)
+    except (urllib.error.URLError, OSError) as e:
+        return str(getattr(e, "reason", e))
 
 
 def envoyer_youtube(chemin, titre, description="", mots_clefs=(), visibilite="private", categorie="19", enfants=False,

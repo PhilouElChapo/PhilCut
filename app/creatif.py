@@ -314,6 +314,45 @@ def _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, p
     return sortie
 
 
+def separation_manquante(params=None):
+    """Texte à montrer si la voix seule ne peut pas être séparée sur ce poste, sinon None."""
+    cle = P.modele_actif("separation", params)
+    if not cle or not P.installe(cle):
+        return _("Pour garder seulement la voix d'un morceau, installez le modèle « Voix seule d'un morceau » : Edition › Préférences "
+                 "› IA locale (environ 2 Go, gratuit, sur ce poste). C'est expérimental : écoutez le résultat avant de vous en servir.")
+    if not (P.moteur_installe("musique") or P.moteur_installe("musique_gpu")):
+        return _("Le moteur de musique de ce poste n'est pas installé : Edition › Préférences › IA locale › Musique.")
+    return None
+
+
+def extraire_voix(source, sortie, params=None, progression=None, arret=lambda: False, duree=60.0):
+    """La voix seule d'un morceau (tâche « extract » d'acestep.cpp, piste « vocals », modèle de base) : WAV en sortie.
+    Seulement pour une voix dont la personne a donné son accord (vérifié par la Fabrique musique avant)."""
+    cle = P.modele_actif("separation", params)
+    if not cle or not P.installe(cle):
+        raise ErreurCreatif(separation_manquante(params) or _("Modèle de séparation absent."))
+    m = P.modeles(avec_essai=True).get(cle) or {}
+    e = P.etat().get(cle) or {}
+    genre = _moteur("musique", m.get("moteur_gpu", "musique_gpu"), params, progression)
+    d = tempfile.mkdtemp(prefix="philcut-voix-")
+    src = _extrait_wav(source, duree, d)
+    roles = e.get("roles") or {}
+    req = {"caption": "isolated lead vocals, a cappella", "lyrics": "", "task_type": "extract", "track": "vocals",
+           "inference_steps": 50, "guidance_scale": 1.0, "shift": 1.0, "synth_model": roles.get("dit", ""),
+           "seed": random.randint(1, 2 ** 31 - 1), "output_format": "wav"}
+    chemin = os.path.join(d, "demande.json")
+    with open(chemin, "w", encoding="utf-8") as f:
+        json.dump(req, f, ensure_ascii=False)
+    _lancer(genre, ["--models", P.dossier_modele(cle), "--src-audio", src, "--request", chemin, "--wav"], progression, arret,
+            journal="voix_seule", etape=_("Séparation de la voix"))
+    sons = [f for f in os.listdir(d) if f.lower().endswith((".wav", ".mp3")) and f != "source.wav"]
+    if not sons:
+        raise ErreurCreatif(_("Le moteur n'a pas produit de son."))
+    from . import moteur
+    moteur.lancer(["-y", "-i", os.path.join(d, sorted(sons)[0]), "-ac", "1", "-ar", "48000", sortie])
+    return sortie
+
+
 # ------------------------------------------------------------------ agrandissement et ralenti (ncnn)
 def _images_video(video, dossier, debut=0.0, duree=None, ips=None):
     from . import moteur

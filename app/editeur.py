@@ -1048,7 +1048,7 @@ class Editeur(QWidget):
         m.addAction(_("Figer l'image ici (cadre photo, légende)…"), self.figer_image)
         m.addAction(_("Bruitage ici…"), self.bruitage)
         m.addAction(_("Tampon vidéo à cet instant…"), self.tampons)
-        m.addAction(_("Vignette YouTube depuis cette image (zones, titre, flèche)…"), lambda: self.vignette_composee("vignette"))
+        m.addAction(_("Vignette de la vidéo (miniature YouTube) depuis cette image…"), lambda: self.vignette_composee("vignette"))
         m.addAction(_("Image fixe composée depuis cette image…"), lambda: self.vignette_composee("image"))
         m.addSeparator()
         m.addAction(icone("goodies", theme.COULEURS["texte"]), _("Goodies (instruments, carte du trajet, vent, compteurs…)…"),

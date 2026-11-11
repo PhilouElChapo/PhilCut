@@ -9,7 +9,7 @@ import time
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QFileDialog, QFormLayout, QGroupBox, QHBoxLayout, QLabel,
                                QLineEdit, QListWidget, QListWidgetItem, QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QScrollArea,
-                               QSlider, QSpinBox, QVBoxLayout, QWidget)
+                               QMenu, QSlider, QSpinBox, QVBoxLayout, QWidget)
 
 from . import musique_ia as MI
 from .langue import _
@@ -162,7 +162,10 @@ class DialogueFabriqueMusique(QDialog):
         vi = QVBoxLayout(g)
         hi = QHBoxLayout()
         b = QPushButton(_("Choisir un morceau…"))
-        b.clicked.connect(self._choisir_inspiration)
+        mi = QMenu(b)
+        mi.addAction(_("Un fichier de ce poste…"), self._choisir_inspiration)
+        mi.addAction(_("Chercher en ligne : archives libres, YouTube Music, YouTube…"), self._inspiration_en_ligne)
+        b.setMenu(mi)
         hi.addWidget(b)
         self.b_sans_insp = QPushButton(_("Ne plus s'en inspirer"))
         self.b_sans_insp.clicked.connect(self._sans_inspiration)
@@ -209,7 +212,11 @@ class DialogueFabriqueMusique(QDialog):
         vr.addWidget(t)
         hr = QHBoxLayout()
         b = QPushButton(_("Choisir l'enregistrement…"))
-        b.clicked.connect(self._choisir_reference)
+        mr = QMenu(b)
+        mr.addAction(_("Un enregistrement de la voix seule (fichier de ce poste)…"), self._choisir_reference)
+        mr.addAction(_("Garder seulement la voix d'un morceau de ce poste…"), lambda: self._voix_d_un_morceau(None))
+        mr.addAction(_("Chercher en ligne, puis garder seulement la voix…"), self._voix_en_ligne)
+        b.setMenu(mr)
         hr.addWidget(b)
         self.b_sans_ref = QPushButton(_("Sans voix de référence"))
         self.b_sans_ref.clicked.connect(lambda: (setattr(self, "reference", None), self._maj()))
@@ -475,10 +482,77 @@ class DialogueFabriqueMusique(QDialog):
                      _("IA locale : le modèle démarre d'abord, puis écrit.") if niveau == "locale" else _("IA cloud : quelques secondes."), fin)
 
     # ---- inspiration
-    def _choisir_inspiration(self):
+    def _inspiration_en_ligne(self):
+        """Même recherche que « Musique en ligne » : le morceau téléchargé devient celui dont on s'inspire (0.9.44)."""
+        DialogueMusiqueEnLigne(self, self.params, utiliser=lambda ch: self._choisir_inspiration(ch),
+                               libelle_utiliser=_("S'inspirer de ce morceau"),
+                               aide=_("<b>Choisissez le morceau dont la Fabrique s'inspire</b> : cherchez, écoutez, téléchargez, puis "
+                                      "« S'inspirer de ce morceau ». Un morceau protégé sert seulement de modèle de style.")).exec()
+
+    def _voix_en_ligne(self):
+        DialogueMusiqueEnLigne(self, self.params, utiliser=lambda ch: self._voix_d_un_morceau(ch),
+                               libelle_utiliser=_("Garder seulement la voix"),
+                               aide=_("<b>Voix de référence</b> : seulement <b>votre voix, ou celle d'une personne qui vous a donné son "
+                                      "accord</b> (votre chaîne, un ami qui a publié son enregistrement). Jamais un chanteur ou une "
+                                      "personne connue : pour cela, décrivez sa manière de chanter (« à la manière de »).")).exec()
+
+    def _voix_d_un_morceau(self, ch=None):
+        """La voix seule d'un morceau (séparée sur ce poste), puis la même question : de qui est cette voix ?"""
         from .widgets import ouvrir_fichier
-        ch = ouvrir_fichier(self, _("Morceau dont s'inspirer"), _("Sons") + " (*.mp3 *.wav *.flac *.ogg *.m4a *.aac *.opus *.mp4 *.mkv *.webm)",
-                            "musique", self.params)
+        if not ch:
+            ch = ouvrir_fichier(self, _("Morceau dont garder la voix"), _("Sons") + " (*.mp3 *.wav *.flac *.ogg *.m4a *.aac *.opus *.mp4 *.mkv *.webm)",
+                                "musique", self.params)
+        if not ch:
+            return
+        if not self._accord_voix(ch):
+            return
+        from . import creatif
+        manque = creatif.separation_manquante(self.params)
+        if manque:
+            QMessageBox.information(self, _("Voix de référence"), manque)
+            return
+        sortie = os.path.join(_dossier_sorties(), os.path.splitext(os.path.basename(ch))[0][:60] + "_voix.wav")
+        params = self.params
+
+        def fin(r, err):
+            if err:
+                if not isinstance(err, InterruptedError):
+                    self.info.setText(_("✕ Séparation de la voix impossible : {e}", e=str(err)[:300]))
+                return
+            MI.declarer(r, **{k: v for k, v in MI.droits(ch).items() if k in ("voix_a_moi", "voix_accord")})
+            self.reference = r
+            self._maj()
+            self.info.setText(_("✓ Voix gardée : {f}. Ecoutez-la dans votre dossier avant de créer.", f=os.path.basename(r)))
+        self._lancer(lambda t: creatif.extraire_voix(ch, sortie, params, t.avancer, lambda: t.arret), _("Voix seule"),
+                     _("Séparation de la voix de « {n} » sur ce poste", n=os.path.basename(ch)),
+                     _("Expérimental : de une à plusieurs minutes selon la carte graphique ; seule la voix est gardée."), fin)
+
+    def _accord_voix(self, ch):
+        """De qui est cette voix ? Seulement la vôtre, ou celle d'une personne d'accord (noté à côté du fichier)."""
+        d = MI.droits(ch)
+        if d.get("voix_a_moi") or d.get("voix_accord"):
+            return True
+        m = QMessageBox(self)
+        m.setWindowTitle(_("Voix de référence"))
+        m.setText(_("De qui est cette voix ? PhilCut ne reproduit que votre voix, ou celle d'une personne qui vous a donné son accord. "
+                    "Jamais un chanteur ou une personne connue : pour cela, décrivez sa manière de chanter (« à la manière de »)."))
+        b_moi = m.addButton(_("C'est ma voix"), QMessageBox.AcceptRole)
+        b_acc = m.addButton(_("Une personne d'accord"), QMessageBox.AcceptRole)
+        m.addButton(_("Annuler"), QMessageBox.RejectRole)
+        m.exec()
+        if m.clickedButton() is b_moi:
+            MI.declarer(ch, voix_a_moi=True)
+        elif m.clickedButton() is b_acc:
+            MI.declarer(ch, voix_accord=True)
+        else:
+            return False
+        return True
+
+    def _choisir_inspiration(self, ch=None):
+        from .widgets import ouvrir_fichier
+        if not ch:
+            ch = ouvrir_fichier(self, _("Morceau dont s'inspirer"), _("Sons") + " (*.mp3 *.wav *.flac *.ogg *.m4a *.aac *.opus *.mp4 *.mkv *.webm)",
+                                "musique", self.params)
         if not ch:
             return
         params = self.params
@@ -545,24 +619,8 @@ class DialogueFabriqueMusique(QDialog):
     def _choisir_reference(self):
         from .widgets import ouvrir_fichier
         ch = ouvrir_fichier(self, _("Enregistrement de la voix"), _("Sons") + " (*.mp3 *.wav *.flac *.ogg *.m4a)", "musique", self.params)
-        if not ch:
+        if not ch or not self._accord_voix(ch):
             return
-        d = MI.droits(ch)
-        if not (d.get("voix_a_moi") or d.get("voix_accord")):
-            m = QMessageBox(self)
-            m.setWindowTitle(_("Voix de référence"))
-            m.setText(_("De qui est cette voix ? PhilCut ne reproduit que votre voix, ou celle d'une personne qui vous a donné son accord. "
-                        "Jamais un chanteur ou une personne connue : pour cela, décrivez sa manière de chanter (« à la manière de »)."))
-            b_moi = m.addButton(_("C'est ma voix"), QMessageBox.AcceptRole)
-            b_acc = m.addButton(_("Une personne d'accord"), QMessageBox.AcceptRole)
-            m.addButton(_("Annuler"), QMessageBox.RejectRole)
-            m.exec()
-            if m.clickedButton() is b_moi:
-                MI.declarer(ch, voix_a_moi=True)
-            elif m.clickedButton() is b_acc:
-                MI.declarer(ch, voix_accord=True)
-            else:
-                return
         self.reference = ch
         self._maj()
 
@@ -702,14 +760,20 @@ def _hms(s):
 class DialogueMusiqueEnLigne(QDialog):
     """Chercher, écouter, télécharger un son (YouTube Music, YouTube, archives libres), avec ce qui est permis expliqué."""
 
-    def __init__(self, parent, params, poser=None):
+    def __init__(self, parent, params, poser=None, utiliser=None, libelle_utiliser=None, aide=None):
         super().__init__(parent)
         from . import musique_en_ligne as ML, musiques
         self.params, self.poser, self.ML = params, poser, ML
+        self.utiliser = utiliser             # 0.9.44 : choisi depuis la Fabrique musique (s'inspirer, voix de référence)
         self.resultats, self._taches, self.lecteur, self.dernier = [], [], None, None
         self.setWindowTitle(_("Musique en ligne"))
         self.resize(940, 680)
         v = QVBoxLayout(self)
+        if aide:
+            lb_aide = QLabel(aide)
+            lb_aide.setWordWrap(True)
+            lb_aide.setTextFormat(Qt.RichText)
+            v.addWidget(lb_aide)
         legal = QLabel(ML.LEGAL_MUSIQUE)
         legal.setWordWrap(True)
         legal.setTextFormat(Qt.RichText)
@@ -788,6 +852,12 @@ class DialogueMusiqueEnLigne(QDialog):
         self.b_poser.setVisible(poser is not None)
         self.b_poser.setEnabled(False)
         hb.addWidget(self.b_poser)
+        self.b_utiliser = QPushButton(libelle_utiliser or _("Utiliser ce morceau"))
+        self.b_utiliser.setStyleSheet("font-weight:600")
+        self.b_utiliser.clicked.connect(self._utiliser)
+        self.b_utiliser.setVisible(utiliser is not None)
+        self.b_utiliser.setEnabled(False)
+        hb.addWidget(self.b_utiliser)
         hb.addStretch(1)
         b = QPushButton(_("Fermer"))
         b.clicked.connect(self.reject)
@@ -959,10 +1029,17 @@ class DialogueMusiqueEnLigne(QDialog):
                 return
             self.dernier = r
             self.b_poser.setEnabled(True)
+            self.b_utiliser.setEnabled(True)
             self.info.setText(_("✓ Téléchargé : {f}", f=r) + ("\n" + _("Déclaré libre : la Fabrique musique pourra le réorchestrer.") if libre else
                                                               "\n" + _("Non déclaré libre : la Fabrique musique pourra seulement s'en inspirer.")))
         self._lancer(lambda t: ML.telecharger(x, dossier, libre, t.avancer, lambda: t.arret), _("Téléchargement"),
                      _("Téléchargement de « {t} »", t=x.get("titre", "")), fin, barre=True)
+
+    def _utiliser(self):
+        if self.dernier and self.utiliser:
+            ch = self.dernier
+            self.accept()
+            self.utiliser(ch)
 
     def done(self, r):
         if self.lecteur is not None:

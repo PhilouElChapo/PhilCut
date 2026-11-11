@@ -250,7 +250,8 @@ class Test099(unittest.TestCase):
         VL._lancer_ytdlp = lambda args, *a, **k: (vu.setdefault("args", args), lignes)[1]
         try:
             self.assertEqual([r["titre"] for r in VL.chercher_youtube("planète interdite", 10, "shorts")], ["Court"])
-            self.assertIn("planète interdite #shorts", vu["args"][-1])
+            import urllib.parse
+            self.assertIn("planète interdite #shorts", urllib.parse.unquote_plus(vu["args"][-1]))      # 0.9.44 : mots exacts
             self.assertIn("--xff", vu["args"])                                 # le YouTube du pays
             self.assertEqual([r["titre"] for r in VL.chercher_youtube("x", 10, "videos")], ["Long"])
             self.assertEqual(len(VL.chercher_youtube("x", 10)), 2)

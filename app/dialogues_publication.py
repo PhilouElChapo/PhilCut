@@ -64,6 +64,19 @@ class DialoguePublier(QDialog):
                        ("24", _("Divertissement")), ("28", _("Science et technologie"))):
             self.cat.addItem(lib, k)
         fy.addRow(_("Catégorie"), self.cat)
+        hv = QHBoxLayout()                                 # 0.9.44 : la vignette de la vidéo, envoyée avec elle
+        self.vignette = QLabel()
+        self.vignette.setFixedSize(160, 90)
+        self.vignette.setAlignment(Qt.AlignCenter)
+        self.vignette.setStyleSheet("background:#111;border-radius:4px;color:#999")
+        hv.addWidget(self.vignette)
+        bv = QPushButton(_("Composer la vignette…"))
+        bv.setToolTip(_("L'image qu'on voit sur YouTube avant de cliquer : à partir d'une image du film, avec titre et logo."))
+        bv.clicked.connect(self._composer_vignette)
+        hv.addWidget(bv)
+        hv.addStretch(1)
+        fy.addRow(_("Vignette"), hv)
+        self._montrer_vignette()
         note = QLabel(_("<span style='color:#999'>Tant que PhilCut n'a pas passé l'audit YouTube de Google, la vidéo arrive en « privé » : "
                         "passez-la en public d'un clic dans YouTube Studio.</span>"))
         note.setWordWrap(True)
@@ -144,11 +157,35 @@ class DialoguePublier(QDialog):
             return
         self.b_ok.setEnabled(False)
         args = (chemin, self.titre.text().strip(), self.desc.toPlainText().strip(), self._mots(), self.visi.currentData(), self.cat.currentData())
-        t = Tache(lambda tache: P.envoyer_youtube(*args, progression=lambda f: tache.avancer(f), arret=lambda: tache.arret), _("YouTube"))
+        vignette = self.projet.d.get("vignette_image") or ""
+
+        def travail(tache):
+            url = P.envoyer_youtube(*args, progression=lambda f: tache.avancer(f), arret=lambda: tache.arret)
+            self._note_vignette = None
+            if url and vignette and os.path.exists(vignette):
+                tache.avancer(1.0, _("Envoi de la vignette…"))
+                self._note_vignette = P.envoyer_vignette(url.rsplit("/", 1)[-1], vignette)
+            return url
+        t = Tache(travail, _("YouTube"))
         self.taches.append(t)
         t.progression.connect(lambda f, _t: self.etat.setText(_("Envoi sur YouTube : {p} %", p=int(f * 100))))
         t.fini.connect(self._fini)
         t.start()
+
+    def _montrer_vignette(self):
+        from PySide6.QtGui import QPixmap
+        ch = self.projet.d.get("vignette_image") or ""
+        if ch and os.path.exists(ch):
+            self.vignette.setPixmap(QPixmap(ch).scaled(160, 90, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        else:
+            self.vignette.setText(_("aucune"))
+
+    def _composer_vignette(self):
+        ed = self.parent().editeur_courant() if hasattr(self.parent(), "editeur_courant") else None
+        if ed is None:
+            return
+        ed.vignette_composee("vignette")
+        self._montrer_vignette()
 
     def _fini(self, url, err):
         self.b_ok.setEnabled(True)
@@ -158,7 +195,13 @@ class DialoguePublier(QDialog):
         pub = self.projet.d.setdefault("publications", [])
         pub.append({"reseau": "youtube", "url": url, "titre": self.titre.text().strip(), "date": __import__("time").strftime("%Y-%m-%d %H:%M")})
         self.projet.modifie = True
-        self.etat.setText(_("✓ Envoyée : <a href='{u}'>{u}</a> — vérifiez la visibilité dans YouTube Studio.", u=url))
+        texte = _("✓ Envoyée : <a href='{u}'>{u}</a> — vérifiez la visibilité dans YouTube Studio.", u=url)
+        note = getattr(self, "_note_vignette", None)
+        if (self.projet.d.get("vignette_image") or "") and note:
+            texte += "<br>" + _("Vignette non envoyée : {r}.", r=note)
+        elif self.projet.d.get("vignette_image"):
+            texte += "<br>" + _("✓ Vignette envoyée.")
+        self.etat.setText(texte)
 
     def done(self, r):
         for t in self.taches:

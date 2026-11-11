@@ -24,7 +24,10 @@ class DialogueMaj(QDialog):
         self.setWindowTitle(_("Mise à jour de PhilCut"))
         self.setMinimumWidth(560)
         self.setModal(False)
-        self.setWindowFlags(self.windowFlags() | Qt.WindowMinimizeButtonHint)       # réductible, comme une vraie fenêtre
+        # comme PhilPDF (0.9.44) : pas de bouton de réduction de Windows ; « Réduire » range la fenêtre dans la barre du bas,
+        # la croix et Echap aussi tant que le téléchargement continue (rien ne s'arrête en cachette)
+        self.setWindowFlags((self.windowFlags() | Qt.WindowCloseButtonHint) & ~Qt.WindowMinimizeButtonHint
+                            & ~Qt.WindowMaximizeButtonHint & ~Qt.WindowContextHelpButtonHint)
         v = QVBoxLayout(self)
         titre = QLabel(_("Téléchargement de PhilCut {v}", v=version))
         titre.setStyleSheet("font-size:16px;font-weight:600")
@@ -41,10 +44,10 @@ class DialogueMaj(QDialog):
         aide.setStyleSheet("color:#9aa4b2")
         v.addWidget(aide)
         h = QHBoxLayout()
-        self.b_reduire = QPushButton(_("Réduire (suivi dans la barre du bas)"))
+        self.b_reduire = QPushButton(_("Réduire"))
         self.b_reduire.setToolTip(_("La fenêtre se range ; le téléchargement continue et se suit dans la barre du bas. Elle revient d'elle-même "
                                     "quand la mise à jour est prête, ou par « Afficher » dans la barre."))
-        self.b_reduire.clicked.connect(self.hide)
+        self.b_reduire.clicked.connect(self.reduire)
         h.addWidget(self.b_reduire)
         h.addStretch(1)
         self.b_installer = QPushButton(_("Installer et redémarrer"))
@@ -121,6 +124,29 @@ class DialogueMaj(QDialog):
             self.detail.setText(_("Arrêt du téléchargement…"))
         else:
             self.close()
+
+    def reduire(self):
+        """Rangée dans la barre du bas (« Afficher » la rouvre) ; le téléchargement continue."""
+        self.hide()
+        p = self.parent()
+        if p is not None and hasattr(p, "statusBar"):
+            try:
+                p.statusBar().showMessage(_("Mise à jour : le téléchargement continue (barre du bas, « Afficher » pour revoir la fenêtre)."), 6000)
+            except RuntimeError:
+                pass
+
+    def closeEvent(self, e):
+        if self.tache.isRunning():                      # la croix range la fenêtre, le téléchargement continue
+            e.ignore()
+            self.reduire()
+            return
+        super().closeEvent(e)
+
+    def reject(self):                                   # Echap : pareil que la croix
+        if self.tache.isRunning():
+            self.reduire()
+            return
+        super().reject()
 
     def installer(self):
         """Ferme PhilCut proprement (questions d'enregistrement, arrêt des tâches et du son), lance l'installation, qui

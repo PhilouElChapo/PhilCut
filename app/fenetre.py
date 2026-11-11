@@ -303,21 +303,23 @@ class Fenetre(QMainWindow):
              lambda: self._ed(lambda ed: ed.fabrique_musique()))
         actf(fm, icone("telecharger"), _("Chercher une musique en ligne (YouTube Music, YouTube, archives libres)…"),
              _("Chercher, écouter et télécharger le son d'un titre."), lambda: self.musique_en_ligne())
-        fl = groupe(icone("image"), _("Logo, intro et vignette"), _("Habiller le film : logo animé, intro ou fin, vignette "
-                                                                     "YouTube, image fixe. Tout se fait sur ce poste ; l'IA peut "
-                                                                     "proposer des idées."))
+        fl = groupe(icone("logo"), _("Logo, intro et vignette"), _("Votre logo, puis ce qui l'utilise : logo animé, intro ou fin, "
+                                                                    "vignette de la vidéo pour YouTube, image fixe. Tout se fait sur "
+                                                                    "ce poste ; l'IA peut proposer des idées."))
+        actf(fl, icone("logo"), _("Mon logo : le dessiner ou le modifier (Atelier de logo)…"),
+             _("Gabarits, textes et formes à la souris ; « Idées par l'IA » demande des propositions à l'IA cloud (votre clef). "
+               "Votre logo est ensuite proposé dans la Fabrique (logo animé) et dans la vignette de la vidéo."),
+             self.atelier_logo)
         actf(fl, icone("fabrique"), _("Logo animé, intro ou fin de vidéo…"),
              _("Des modèles animés avec votre texte ou votre logo, posés au début ou à la fin du film."),
              lambda: self.fabrique(onglet=0), "Ctrl+Shift+F")
-        actf(fl, None, _("Dessiner un logo (Atelier de logo)…"),
-             _("Gabarits, textes et formes à la souris ; « Idées par l'IA » demande des propositions à l'IA cloud (votre clef)."),
-             self.atelier_logo)
         actf(fl, None, _("Logo, intro ou miniature dessinés par l'IA de ce poste…"),
              _("Une image dessinée à partir d'une phrase : rien n'est envoyé, rien n'est payé ; plus lent sans carte graphique."),
              lambda: self._ed(lambda ed: ed.atelier_ia("logo")))
         fl.addSeparator()
-        actf(fl, None, _("Vignette YouTube…"),
-             _("Zones de couleur, titre, flèche, pastilles ; propositions par l'IA locale ou cloud, au choix."),
+        actf(fl, icone("image"), _("Vignette de la vidéo (miniature YouTube)…"),
+             _("L'image qu'on voit sur YouTube avant de cliquer : à partir d'une image du film, avec titre, flèche et votre logo ; "
+               "elle part avec l'export et la publication."),
              lambda: self._ed(lambda ed: ed.vignette_composee("vignette")))
         actf(fl, None, _("Image fixe à poser dans le film…"),
              _("Même fenêtre que la vignette, au format du film, posée au-dessus à la ligne rouge."),
@@ -328,6 +330,7 @@ class Fenetre(QMainWindow):
                "refaire, comparer avant / après, sans jamais payer deux fois."), lambda: self._ed(lambda ed: self.creations_a_traiter(ed)))
         ou = mb.addMenu(_("&Outils"))
         ou.addAction(_("Publier (YouTube, Instagram, TikTok…)…"), self.publier)
+        ou.addAction(_("Vignette de la vidéo (miniature YouTube)…"), lambda: self._ed(lambda ed: ed.vignette_composee("vignette")))
         ou.addAction(icone("nuage"), _("Déposer l'export sur le Drive / NAS…"), self.partager)
         ou.addAction(_("Synchroniser maintenant"), self.synchro_demarrage)
         ou.addAction(_("Centre d'activité (tâches en cours, téléchargements)…"), self.voir_activite)

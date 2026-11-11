@@ -1074,8 +1074,15 @@ class DialogueTampons(QDialog):
         self.resultats.doItemsLayout()
         self.resultats.scrollToTop()
         shorts = sum(1 for r in res if r.get("short"))
-        detail = _("{v} vidéo(s) et {s} Short(s), les Shorts à la fin. ", v=len(res) - shorts, s=shorts) if shorts and en_ligne else ""
-        self.etat.setText((_("{n} clip(s) trouvé(s). Double-clic : ajouter à la bibliothèque et insérer.", n=len(res)) + " " + detail if res else
+        if en_ligne and shorts and shorts < len(res):
+            compte = _("{n} résultats : {v} vidéo(s), puis {s} Short(s) à la fin.", n=len(res), v=len(res) - shorts, s=shorts)
+        elif en_ligne and shorts:
+            compte = _("{n} Short(s) trouvé(s).", n=shorts)
+        elif en_ligne:
+            compte = _("{n} vidéo(s) trouvée(s).", n=len(res))
+        else:
+            compte = _("{n} clip(s) trouvé(s).", n=len(res))
+        self.etat.setText((compte + " " + _("Double-clic : ajouter à la bibliothèque et insérer.") if res else
                            _("Rien trouvé : essayez d'autres mots, ou une autre langue de recherche.")) + ("  " + note if note else ""))
 
     def coller_lien(self):

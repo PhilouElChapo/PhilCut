@@ -172,9 +172,18 @@ class DialogueVignette(QDialog):
         self._images = {}              # instant -> image BGR du film
         self._gen = 0
         self.tache = None
-        self.setWindowTitle(_("Vignette et image fixe composées"))
+        vignette = usage == "vignette"
+        self.setWindowTitle(_("Vignette de la vidéo (miniature YouTube)") if vignette else _("Image fixe à poser dans le film"))
         self.resize(1360, 860)
         racine = QVBoxLayout(self)
+        intro = QLabel(_("<b>La vignette, c'est l'image qu'on voit sur YouTube avant de cliquer sur la vidéo.</b> Partez d'une image du "
+                         "film, entourez ce qui compte, ajoutez un titre et votre logo, puis « Utiliser comme vignette de la vidéo » : "
+                         "elle part avec l'export et la publication.") if vignette else
+                       _("<b>Une image fixe composée</b> (titre, flèche, pastilles, logo) à partir d'une image du film, posée au-dessus du "
+                         "film à la ligne rouge."))
+        intro.setWordWrap(True)
+        intro.setTextFormat(Qt.RichText)
+        racine.addWidget(intro)
         corps = QHBoxLayout()
         racine.addLayout(corps, 1)
         # ---- colonne de gauche : réglages (défile)
@@ -226,6 +235,27 @@ class DialogueVignette(QDialog):
         self._f1 = f1
         f1.setRowVisible(self.lig_apres, self.avant_apres.isChecked())
         vg.addWidget(g1)
+        # ---- votre logo (0.9.44 : l'Atelier de logo servi ici aussi)
+        gl = QGroupBox(_("Votre logo"))
+        fl = QFormLayout(gl)
+        self.logo = QComboBox()
+        self._remplir_logos()
+        self.logo.currentIndexChanged.connect(lambda: self._regle("logo", self.logo.currentData() or ""))
+        b_at = QPushButton(_("Atelier de logo…"))
+        b_at.setToolTip(_("Créer ou modifier votre logo ; il est ensuite proposé ici et dans la Fabrique."))
+        b_at.clicked.connect(self._atelier_logo)
+        hl = QHBoxLayout()
+        hl.addWidget(self.logo, 1)
+        hl.addWidget(b_at)
+        fl.addRow(_("Logo"), hl)
+        self.logo_coin = QComboBox()
+        for k, lib in (("haut_droite", _("En haut à droite")), ("haut_gauche", _("En haut à gauche")), ("bas_droite", _("En bas à droite")),
+                       ("bas_gauche", _("En bas à gauche"))):
+            self.logo_coin.addItem(lib, k)
+        self.logo_coin.setCurrentIndex(max(0, self.logo_coin.findData(self.recette.get("logo_coin") or "haut_droite")))
+        self.logo_coin.currentIndexChanged.connect(lambda: self._regle("logo_coin", self.logo_coin.currentData()))
+        fl.addRow(_("Place"), self.logo_coin)
+        vg.addWidget(gl)
         g2 = QGroupBox(_("Zones : entourez à la souris sur l'image"))
         v2 = QVBoxLayout(g2)
         self.groupe_couleurs = QButtonGroup(self)
@@ -413,12 +443,14 @@ class DialogueVignette(QDialog):
         b1 = QPushButton(_("Enregistrer l'image…"))
         b1.clicked.connect(self.enregistrer_sous)
         hb.addWidget(b1)
-        b2 = QPushButton(_("Miniature YouTube de l'export"))
-        b2.setToolTip(_("A l'export, cette image est intégrée au MP4 et enregistrée à côté en JPG pour YouTube"))
+        b2 = QPushButton(_("Utiliser comme vignette de la vidéo"))
+        b2.setToolTip(_("A l'export, cette image est jointe au MP4 et enregistrée à côté en JPG ; la publication sur YouTube l'envoie "
+                        "comme vignette."))
         b2.clicked.connect(self.miniature)
         hb.addWidget(b2)
         hb.addStretch(1)
-        hb.addWidget(QLabel(_("Durée dans le film")))
+        lb_duree = QLabel(_("Durée dans le film"))
+        hb.addWidget(lb_duree)
         self.duree_pose = QDoubleSpinBox()
         self.duree_pose.setRange(0.5, 60)
         self.duree_pose.setValue(float(self.recette.get("duree_pose", 6.0)))
@@ -432,6 +464,12 @@ class DialogueVignette(QDialog):
         bf.clicked.connect(self.reject)
         hb.addWidget(bf)
         racine.addLayout(hb)
+        if vignette:                                  # la vignette sert à YouTube : c'est le bouton principal
+            b2.setStyleSheet("font-weight:600;padding:6px 14px")
+            for w in (lb_duree, self.duree_pose, self.b_poser):
+                w.hide()
+        else:
+            b2.hide()
         self._delai = QTimer(self)
         self._delai.setSingleShot(True)
         self._delai.setInterval(250)
@@ -698,6 +736,32 @@ class DialogueVignette(QDialog):
         self.recomposer()
 
     # ---- résultats
+    def _remplir_logos(self):
+        from . import logo as LG
+        actuel = self.recette.get("logo") or ""
+        self.logo.blockSignals(True)
+        self.logo.clear()
+        self.logo.addItem(_("Sans logo"), "")
+        for lg in LG.liste():
+            png = LG._fichier(lg.get("nom") or "logo") + ".png"
+            if os.path.exists(png):
+                from PySide6.QtGui import QIcon
+                self.logo.addItem(QIcon(png), lg.get("nom") or os.path.basename(png), png)
+        if actuel and self.logo.findData(actuel) < 0 and os.path.exists(actuel):
+            self.logo.addItem(os.path.basename(actuel), actuel)
+        self.logo.setCurrentIndex(max(0, self.logo.findData(actuel)))
+        self.logo.blockSignals(False)
+
+    def _atelier_logo(self):
+        from .dialogues_logo import DialogueLogo
+        d = DialogueLogo(self, self.params)
+        d.exec()
+        png = getattr(d, "png", None)
+        if png:
+            self.recette["logo"] = png
+        self._remplir_logos()
+        self.recomposer()
+
     def _garder_recette(self):
         """La recette est gardée dans le projet : la vignette se rouvre et se modifie."""
         p = getattr(self.ed, "projet", None)
@@ -739,7 +803,8 @@ class DialogueVignette(QDialog):
         self.ed.projet.marquer()
         self.ed.projet.d["vignette_image"] = chemin
         self._garder_recette()
-        self.etat.setText(_("Miniature choisie : à l'export, elle est intégrée au MP4 et enregistrée à côté en JPG pour YouTube."))
+        self.etat.setText(_("✓ C'est la vignette de la vidéo : à l'export, elle est jointe au MP4 et enregistrée à côté en JPG ; la "
+                            "publication sur YouTube l'envoie."))
 
     def poser(self):
         if self.resultat is None:
