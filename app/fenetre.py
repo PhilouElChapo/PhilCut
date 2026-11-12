@@ -262,7 +262,10 @@ class Fenetre(QMainWindow):
                 (None, _("Partie jaune : garder seulement ce passage"), _("Tout le reste du film est retiré"),
                  lambda: self._ed(lambda ed: ed.partie(True)), None),
                 (None, _("Partie jaune : supprimer ce passage"), _("Le passage choisi est retiré et la suite se recolle"),
-                 lambda: self._ed(lambda ed: ed.partie(False)), None)]),
+                 lambda: self._ed(lambda ed: ed.partie(False)), None),
+                (None, _("Poser un marqueur à la ligne rouge"), _("Un repère sur la règle des temps : clic dessus pour y revenir, clic droit "
+                                                                 "pour le nommer ou le supprimer"),
+                 lambda: self._ed(lambda ed: ed.timeline.poser_marqueur()), "M")]),
             (icone("musique"), _("Son"), [
                 (icone("musique"), _("Bruitages…"), _("Whoosh, impact, déclic, bip… fabriqués sur ce poste, libres de droits"),
                  lambda: self._ed(lambda ed: ed.bruitage()), None),

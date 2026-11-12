@@ -901,6 +901,17 @@ class Timeline(QGraphicsView):
             p.drawText(rc, Qt.AlignCenter, info[1])
             p.setPen(QPen(QColor("#ffd24a"), 1))
             p.drawLine(QLineF(x, H_REGLE, x, self.hauteur_totale()))
+        for mq in (self.projet.marqueurs if self.projet else []):     # marqueurs : fanion sur la règle, trait fin sur les pistes
+            x = MARGE_G + mq["t"] * self.pps
+            if x < r.left() - 20 or x > r.right() + 20:
+                continue
+            col = QColor(mq.get("couleur") or "#5ad1ff")
+            p.setPen(QPen(col, 1, Qt.DotLine))
+            p.drawLine(QLineF(x, H_REGLE, x, self.hauteur_totale()))
+            p.setPen(Qt.NoPen)
+            p.setBrush(col)
+            p.drawPolygon(QPolygonF([QPointF(x - 5, H_REGLE - 12), QPointF(x + 5, H_REGLE - 12), QPointF(x + 5, H_REGLE - 5),
+                                     QPointF(x, H_REGLE), QPointF(x - 5, H_REGLE - 5)]))
         vt = (self.projet.d.get("vignette_t") if self.projet else None)
         if vt is not None:                           # image choisie comme vignette du fichier : petit cadre sur la règle
             x = MARGE_G + float(vt) * self.pps
@@ -1071,11 +1082,24 @@ class Timeline(QGraphicsView):
                     return nom, quoi, aide, actif
         return None
 
+    def marqueur_a(self, sp):
+        """Le marqueur sous la souris (sur la règle, à 6 pixels près), ou None."""
+        if not self.projet or sp.y() >= H_REGLE:
+            return None
+        proches = [(abs(sp.x() - (MARGE_G + m["t"] * self.pps)), m) for m in self.projet.marqueurs]
+        proches = [x for x in proches if x[0] <= 6]
+        return min(proches, key=lambda x: x[0])[1] if proches else None
+
     def event(self, e):
         from PySide6.QtCore import QEvent
         if e.type() == QEvent.ToolTip:
             b = self._bouton_piste_a(self.mapToScene(e.pos()))
             from PySide6.QtWidgets import QToolTip
+            mq = self.marqueur_a(self.mapToScene(e.pos()))
+            if mq:
+                QToolTip.showText(e.globalPos(), (mq.get("texte") or _("Marqueur")) + f" — {_tc(mq['t'])}\n" +
+                                  _("Clic : y aller ; clic droit : renommer ou supprimer"), self)
+                return True
             if b:
                 QToolTip.showText(e.globalPos(), b[2] + (_(" — actif") if b[3] else _(" — clic pour activer")), self)
                 return True
@@ -1092,6 +1116,31 @@ class Timeline(QGraphicsView):
                 self._renommer_piste(piste)
                 return
         super().mouseDoubleClickEvent(e)
+
+    def poser_marqueur(self, t=None, texte=""):
+        """Un marqueur à la ligne rouge (touche M) ; renommable et supprimable par clic droit sur son fanion."""
+        if not self.projet:
+            return None
+        self.projet.marquer()
+        m = self.projet.ajouter_marqueur(self.position if t is None else t, texte)
+        self.modifie.emit()
+        self.viewport().update()
+        return m
+
+    def _renommer_marqueur(self, mq):
+        from PySide6.QtWidgets import QInputDialog
+        texte, ok = QInputDialog.getText(self, _("Marqueur"), _("Nom du marqueur à {t} :", t=_tc(mq["t"])), text=mq.get("texte", ""))
+        if ok:
+            self.projet.marquer()
+            mq["texte"] = texte.strip()
+            self.modifie.emit()
+            self.viewport().update()
+
+    def _retirer_marqueur(self, ident):
+        self.projet.marquer()
+        self.projet.retirer_marqueur(ident)
+        self.modifie.emit()
+        self.viewport().update()
 
     def _renommer_piste(self, piste):
         from PySide6.QtWidgets import QInputDialog
@@ -1140,7 +1189,8 @@ class Timeline(QGraphicsView):
             self.balayage.emit(True)
             maj = bool(e.modifiers() & Qt.ShiftModifier)
             self._depart_regle = (e.pos().x(), (sp.x() - MARGE_G) / self.pps) if sp.y() < H_REGLE and maj else None
-            self.aller_a((sp.x() - MARGE_G) / self.pps)
+            mq = self.marqueur_a(sp)
+            self.aller_a(mq["t"] if mq else (sp.x() - MARGE_G) / self.pps)
             if self.itemAt(e.pos()) is None:
                 self._scene.clearSelection()
             return
@@ -1215,6 +1265,14 @@ class Timeline(QGraphicsView):
             super().contextMenuEvent(e)
             return
         sp = self.mapToScene(e.pos())
+        mq = self.marqueur_a(sp)
+        if mq:
+            m = QMenu()
+            m.addAction(_("Renommer le marqueur…"), lambda: self._renommer_marqueur(mq))
+            m.addAction(_("Supprimer ce marqueur"), lambda: self._retirer_marqueur(mq["id"]))
+            m.addAction(_("Supprimer tous les marqueurs"), lambda: self._retirer_marqueur(None))
+            m.exec(e.globalPos())
+            return
         piste = self.piste_a(sp.y())
         if sp.x() < MARGE_G:
             m = QMenu()

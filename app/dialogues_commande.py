@@ -12,6 +12,18 @@ EXEMPLES = [_("mets une musique calme et coupe-la à la fin de la vidéo"), _("t
             _("effet vintage sur tous les plans"), _("ralenti sur le plan 2"), _("une flèche rouge courbe à 5 s"),
             _("fondu de la musique 2 s et 4 s"), _("baisse la musique")]
 
+# 0.9.48 : actions d'un clic (la phrase, en français car les règles sans IA la lisent ainsi, est écrite pour vous, le plan montré, rien n'est fait avant « Faire ») ; ordre alphabétique
+RAPIDES = sorted([
+    (_("Étalonnage auto de toute la séquence"), "étalonnage auto sur toute la séquence"),
+    (_("Mêmes couleurs partout (comme le plan 1)"), "mêmes couleurs partout comme le plan 1"),
+    (_("Toute la séquence un peu plus chaude"), "toute la séquence un peu plus chaude"),
+    (_("Effet vintage sur toute la séquence"), "effet vintage sur tous les plans"),
+    (_("Ranger les rushes par date"), "range les rushes par date"),
+    (_("Ranger les rushes par type"), "range les rushes par type"),
+    (_("Un marqueur à chaque plan"), "un marqueur à chaque plan"),
+    (_("Marqueurs sur les temps forts de la musique"), "marqueurs sur les temps forts de la musique"),
+], key=lambda x: __import__("unicodedata").normalize("NFD", x[0]).encode("ascii", "ignore").decode().lower())
+
 
 class DialogueCommande(QDialog):
     def __init__(self, ed, phrase=""):
@@ -33,6 +45,16 @@ class DialogueCommande(QDialog):
         ex = QLabel(_("<small>Exemples : {e}</small>", e=" · ".join(f"« {x} »" for x in EXEMPLES[1:])))
         ex.setWordWrap(True)
         v.addWidget(ex)
+        from .widgets import FluxLayout
+        zr = QWidget()
+        fr = FluxLayout(zr, marge=0, espace=4)
+        for lib, phrase_r in RAPIDES:
+            b = QPushButton(lib)
+            b.setToolTip(_("Écrit « {p} » et montre ce que PhilCut va faire", p=phrase_r))
+            b.clicked.connect(lambda _c=False, p_=phrase_r: (self.phrase.setText(p_), self.comprendre()))
+            fr.addWidget(b)
+        v.addWidget(zr)
+        self.rapides = zr
         h = QHBoxLayout()
         self.niveau = QComboBox()
         for k, lib in (("recettes", _("Sans IA (gratuit, instantané)")), ("locale", _("IA locale (sur ce poste)")),
@@ -128,7 +150,35 @@ class DialogueCommande(QDialog):
         if not acts:
             self.reject()
             return
+        if C.a_preparer(acts) and not all("_par_plan" in a for a in C.a_preparer(acts)):
+            # étalonnage auto ou accordé : une image de chaque plan est lue d'abord, avec la progression
+            ed = self.ed
+            sel = ed._clip_selectionne() if hasattr(ed, "_clip_selectionne") else None
+            projet, t0 = ed.projet, ed.timeline.position
+            self.b_faire.setEnabled(False)
+            self.b_comprendre.setEnabled(False)
+            self.etat.setText(_("Lecture d'une image de chaque plan…"))
+            self.tache = Tache(lambda t: C.preparer(acts, projet, sel, t0, lambda f, nom="": t.avancer(f, nom), lambda: t.arret),
+                               _("Étalonnage de la séquence"))
+            self.tache.progression.connect(lambda f, txt: self.etat.setText(_("Lecture des plans : {p} % — {n}", p=int(f * 100), n=txt)),
+                                           Qt.QueuedConnection)
+            self.tache.fini.connect(lambda r, e: self._prepare(acts, e), Qt.QueuedConnection)
+            self.tache.start()
+            return
+        self._faire(acts)
+
+    def _prepare(self, acts, err):
+        self.b_comprendre.setEnabled(True)
+        if err:
+            self.b_faire.setEnabled(True)
+            self.etat.setText(_("✕ {e}", e=err))
+            return
+        self._faire(acts)
+
+    def _faire(self, acts):
         n = C.appliquer(acts, self.ed)
+        if any(a.get("action") == "ranger_rushes" for a in acts) and hasattr(self.ed, "biblio"):
+            self.ed.biblio.remplir(self.ed.projet)
         self.ed.rafraichir()
         self.ed.encart.message(_("{n} action(s) faite(s). Edition › Annuler défait tout d'un coup.", n=n), 8000)
         self.accept()

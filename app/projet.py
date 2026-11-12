@@ -77,6 +77,51 @@ class Projet:
     def goodies(self):
         return self.d["goodies"]
 
+    # ---------------------------------------------------------------- marqueurs (0.9.48)
+    @property
+    def marqueurs(self):
+        """Repères posés sur la règle : {id, t, texte, couleur}, triés par temps."""
+        return self.d.setdefault("marqueurs", [])
+
+    def ajouter_marqueur(self, t, texte="", couleur="#5ad1ff"):
+        t = round(max(0.0, float(t)), 3)
+        for m in self.marqueurs:                       # deux repères au même endroit n'en font qu'un
+            if abs(m["t"] - t) < 0.05:
+                if texte:
+                    m["texte"] = texte
+                return m
+        m = {"id": _id(), "t": t, "texte": texte or "", "couleur": couleur}
+        self.marqueurs.append(m)
+        self.marqueurs.sort(key=lambda x: x["t"])
+        return m
+
+    def retirer_marqueur(self, ident=None):
+        """Retire un marqueur (ou tous, sans identifiant)."""
+        self.d["marqueurs"] = [m for m in self.marqueurs if ident is not None and m["id"] != ident]
+
+    def ranger_medias(self, par="date"):
+        """Range les médias du projet (date de prise de vue, nom, type, durée) ; l'ordre de la bibliothèque suit."""
+        import unicodedata
+
+        def nom(m):
+            return unicodedata.normalize("NFD", m.get("nom", "")).encode("ascii", "ignore").decode().lower()
+
+        def date(m):
+            d = (m.get("fiche") or {}).get("date") or ""
+            if not d:
+                try:
+                    d = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(os.path.getmtime(m["chemin"])))
+                except OSError:
+                    d = "9999"
+            return d
+        ordre = {"video": 0, "image": 1, "audio": 2}
+        cle = {"nom": lambda m: nom(m), "type": lambda m: (ordre.get(m.get("genre"), 3), nom(m)),
+               "duree": lambda m: (-float((m.get("fiche") or {}).get("duree") or 0), nom(m)),
+               "date": lambda m: (date(m), nom(m))}.get(par)
+        if cle:
+            self.d["medias"] = sorted(self.medias, key=cle)
+        return self.medias
+
     def media(self, ident):
         for m in self.medias:
             if m["id"] == ident:

@@ -16,6 +16,7 @@ ACTIONS = {
     "musique": _("Musique"), "couper_musique": _("Couper la musique à la fin de la vidéo"), "fondus_musique": _("Fondus de la musique"),
     "volume": _("Volume"), "effet": _("Effet"), "transition": _("Transition"), "vitesse": _("Vitesse"), "texte": _("Texte"),
     "fleche": _("Flèche"), "goodie": _("Goodie"), "couper": _("Couper"), "look": _("Look"),
+    "etalonnage": _("Étalonnage"), "ranger_rushes": _("Ranger les rushes"), "marqueur": _("Marqueur"),
 }
 
 CONSIGNE = """Tu traduis une demande de montage vidéo en actions pour le logiciel PhilCut. Réponds UNIQUEMENT en JSON :
@@ -32,6 +33,10 @@ CONSIGNE = """Tu traduis une demande de montage vidéo en actions pour le logici
 - "goodie" {"genre": identifiant, "debut": s, "fin": s}
 - "couper" {"t": s}
 - "look" {"id": identifiant d'effet de look}
+- "etalonnage" {"mode": "auto"|"accorder"|"reglages", "plans": "tous"|"selection"|[numéros], "reference": numéro de plan (accorder),
+  et pour "reglages" des écarts de -1 à 1 parmi "exposition", "contraste", "saturation", "temperature" (+ = plus chaud), "teinte"}
+- "ranger_rushes" {"par": "date"|"nom"|"type"|"duree"} (ordre des médias du projet)
+- "marqueur" {"t": s | "plans" (un à chaque début de plan) | "musique" (sur les temps forts de la musique), "texte": "..."}
 Utilise seulement les identifiants listés plus bas. N'invente pas d'action. Si un temps n'est pas dit, laisse-le absent."""
 
 
@@ -80,6 +85,17 @@ def regles(phrase):
     for brut in [m for m in morceaux if m and m.strip()]:
         t = _sans_accents(brut)
         tm = _temps(t)
+        if re.search(r"\bmarqueurs?\b|\brepere", t):
+            q = re.search(r"[«\"“]\s*(.+?)\s*[»\"”]", brut)
+            a = {"action": "marqueur", "texte": q.group(1) if q else ""}
+            if re.search(r"chaque plan|chaque changement|tous les plans|debut de chaque|chaque coupe", t):
+                a["t"] = "plans"
+            elif re.search(r"musique|rythme|temps forts?|battement|beat", t):
+                a["t"] = "musique"
+            elif tm is not None:
+                a["t"] = tm
+            out.append(a)
+            continue
         if re.search(r"\b(musique|son de fond|bande son|morceau)\b", t):
             if re.search(r"coupe|arrete|termine|finir|fin de la video|raccourci", t):
                 out.append({"action": "couper_musique"})
@@ -101,6 +117,38 @@ def regles(phrase):
             continue
         if re.search(r"coupe|arrete|termine", t) and re.search(r"fin de la video|fin du montage|a la fin", t):
             out.append({"action": "couper_musique"})
+            continue
+        if re.search(r"\b(rushes?|rush|medias?|bibliotheque)\b", t) and re.search(r"range|trie|classe|ordonne|organise", t):
+            par = "nom" if re.search(r"\bnom|alphab", t) else "type" if re.search(r"\btype|genre|sorte", t) else \
+                "duree" if re.search(r"duree|longueur|long", t) else "date"
+            out.append({"action": "ranger_rushes", "par": par})
+            continue
+        if re.search(r"etalonn|couleurs?|lumiere|lumineu|sombre|chaud|froid|contraste|sature|desature|terne|delave", t) and \
+                not re.search(r"\bfleche|\btitre|\btexte|noir et blanc", t):
+            plans = _plans(t)
+            if re.search(r"tout|toute|partout|sequence|film|montage|video", t) and plans == "selection":
+                plans = "tous"
+            if re.search(r"meme|pareil|accord|harmonis|uniform|identique|raccord", t):
+                ref = re.search(r"(?:sur|comme)\s+(?:le\s+)?plan\s+(\d+)", t)
+                out.append({"action": "etalonnage", "mode": "accorder", "plans": "tous" if plans == "selection" else plans,
+                            "reference": int(ref.group(1)) if ref else 1})
+                continue
+            r = {}
+            fort = 0.35 if re.search(r"\bun peu\b|legere|leger|legerement", t) else 0.6 if re.search(r"beaucoup|tres|bien", t) else 0.45
+            for mots, cle, signe in (("plus chaud|rechauff|chaleur|chaude", "temperature", 1), ("plus froid|refroid|froide", "temperature", -1),
+                                     ("plus lumineu|eclairci|plus clair|lumiere|trop sombre", "exposition", 1),
+                                     ("plus sombre|assombri|trop clair|trop lumineu", "exposition", -1),
+                                     ("plus de contraste|plus contraste|contraste", "contraste", 1), ("moins de contraste|moins contraste", "contraste", -1),
+                                     ("plus de couleur|plus sature|sature|vif|vive|terne|delave", "saturation", 1),
+                                     ("moins de couleur|desature|moins sature|noir et blanc", "saturation", -1)):
+                if re.search(mots, t):
+                    r[cle] = (-1.0 if "noir et blanc" in t and cle == "saturation" else signe * fort)
+            if "moins de contraste" in t or "moins contraste" in t:
+                r["contraste"] = -fort
+            if "desature" in t or "moins de couleur" in t:
+                r["saturation"] = -1.0 if "noir et blanc" in t else -fort
+            out.append({"action": "etalonnage", "mode": "reglages", "plans": plans, **r} if r else
+                       {"action": "etalonnage", "mode": "auto", "plans": plans})
             continue
         if re.search(r"\bfleche", t):
             couleur = next((v for k, v in _COULEURS.items() if re.search(rf"\b{k}\b", t)), "#ff3030")
@@ -233,7 +281,93 @@ def decrire(a):
         return _("Goodie « {g} »", g=a.get("genre", ""))
     if k == "couper":
         return _("Couper la vidéo à {t} s", t=a.get("t"))
+    if k == "etalonnage":
+        mode = a.get("mode") or "auto"
+        if mode == "accorder":
+            return _("Étalonnage : donner à {q} la lumière et les couleurs du plan {r}", q=qui, r=a.get("reference", 1))
+        if mode == "reglages":
+            noms = {"exposition": _("lumière"), "contraste": _("contraste"), "saturation": _("couleurs"), "temperature": _("chaleur"),
+                    "teinte": _("teinte")}
+            ecarts = [f"{noms[c]} {'+' if float(a[c]) > 0 else '−'}{int(abs(float(a[c])) * 100)} %" for c in noms if a.get(c)]
+            return _("Étalonnage sur {q} : {e} (ajouté aux réglages déjà faits)", q=qui, e=", ".join(ecarts) or "—")
+        return _("Étalonnage automatique sur {q} (dominante de couleur retirée, niveaux étirés), calculé sur une image de chaque plan", q=qui)
+    if k == "ranger_rushes":
+        par = {"date": _("date de prise de vue"), "nom": _("nom (ordre alphabétique)"), "type": _("type (vidéos, photos, sons)"),
+               "duree": _("durée (les plus longs d'abord)")}.get(a.get("par"), a.get("par", ""))
+        return _("Ranger les rushes de la bibliothèque par {p}", p=par)
+    if k == "marqueur":
+        t = a.get("t")
+        o = _(" « {t} »", t=a["texte"]) if a.get("texte") else ""
+        if t == "plans":
+            return _("Un marqueur{o} au début de chaque plan", o=o)
+        if t == "musique":
+            return _("Un marqueur{o} sur chaque temps fort de la musique", o=o)
+        return _("Un marqueur{o} à {s} s", o=o, s=t) if t is not None else _("Un marqueur{o} à la ligne rouge", o=o)
     return k
+
+
+def a_preparer(actions):
+    """Les actions qui demandent un calcul avant d'être faites (images des plans à lire) : montré avec sa progression."""
+    return [a for a in actions if a.get("action") == "etalonnage" and (a.get("mode") or "auto") in ("auto", "accorder")]
+
+
+def _image_plan(projet, c):
+    from . import moteur
+    import numpy as np
+    from PySide6.QtGui import QImage
+    m = projet.media(c["media"]) or {}
+    if m.get("genre") == "image":
+        q = QImage(m.get("chemin", ""))
+    else:
+        t = (float(c["src_debut"]) + float(c["src_fin"])) / 2
+        q = QImage.fromData(moteur.image(m.get("chemin", ""), t, 320, m.get("fiche")))
+    if q.isNull():
+        return None
+    q = q.convertToFormat(QImage.Format_RGB888)
+    w, h, bpl = q.width(), q.height(), q.bytesPerLine()
+    return np.frombuffer(bytes(q.constBits())[: bpl * h], dtype=np.uint8).reshape(h, bpl)[:, : w * 3].reshape(h, w, 3).copy()
+
+
+def _cibles(projet, plans, sel=None, t0=0.0):
+    videos = sorted(projet.clips_piste("video"), key=lambda c: c["debut"])
+    if plans == "tous":
+        return videos
+    if isinstance(plans, list):
+        return [videos[i - 1] for i in plans if isinstance(i, int) and 1 <= i <= len(videos)]
+    c = sel if sel and sel["piste"].startswith("video") else (projet.clip_a(t0) or (videos[0] if videos else None))
+    return [c] if c else []
+
+
+def preparer(actions, projet, sel=None, t0=0.0, progression=None, arret=lambda: False):
+    """Calcule à l'avance les réglages d'étalonnage auto / accordé de chaque plan (dans une tâche, avec sa progression)."""
+    from . import etalonnage as ET
+    travail = a_preparer(actions)
+    total = sum(len(_cibles(projet, a.get("plans") or "tous", sel, t0)) for a in travail) or 1
+    fait = 0
+    for a in travail:
+        ref = None
+        if a.get("mode") == "accorder":
+            videos = sorted(projet.clips_piste("video"), key=lambda c: c["debut"])
+            i = int(a.get("reference") or 1)
+            if 1 <= i <= len(videos):
+                ref = _image_plan(projet, videos[i - 1])
+        par_plan = {}
+        for c in _cibles(projet, a.get("plans") or "tous", sel, t0):
+            if arret():
+                raise InterruptedError()
+            img = _image_plan(projet, c)
+            fait += 1
+            if progression:
+                progression(fait / total, c.get("nom", ""))
+            if img is None:
+                continue
+            if a.get("mode") == "accorder":
+                if ref is not None:
+                    par_plan[c["id"]] = ET.accorder(img, ref)
+            else:
+                par_plan[c["id"]] = ET.auto(img)
+        a["_par_plan"] = par_plan
+    return actions
 
 
 def appliquer(actions, ed):
@@ -316,6 +450,34 @@ def appliquer(actions, ed):
                 faits += 1
             elif k == "couper" and a.get("t") is not None:
                 projet.couper_a(float(a["t"]))
+                faits += 1
+            elif k == "etalonnage":
+                from . import etalonnage as ET
+                mode = a.get("mode") or "auto"
+                for c in cibles(a.get("plans") or "selection"):
+                    if mode == "reglages":
+                        r = ET.reglages_de(c)
+                        for cle in ("exposition", "contraste", "saturation", "temperature", "teinte"):
+                            if a.get(cle):
+                                r[cle] = round(max(-1.0, min(1.0, r[cle] + float(a[cle]))), 3)
+                        ET.appliquer(c, r)
+                    elif c["id"] in (a.get("_par_plan") or {}):
+                        ET.appliquer(c, a["_par_plan"][c["id"]])
+                faits += 1
+            elif k == "ranger_rushes":
+                projet.ranger_medias(a.get("par") or "date")
+                faits += 1
+            elif k == "marqueur":
+                t = a.get("t")
+                if t == "plans":
+                    temps = [c["debut"] for c in videos]
+                elif t == "musique":
+                    from . import transitions_auto as TA
+                    temps = TA.temps_forts(projet)
+                else:
+                    temps = [float(t) if t not in (None, "") else t0]
+                for i, x in enumerate(temps):
+                    projet.ajouter_marqueur(x, a.get("texte") or (str(i + 1) if t in ("plans", "musique") else ""))
                 faits += 1
         except Exception as e:       # noqa: BLE001 : une action ratée n'empêche pas les autres
             from .journal import ecrire

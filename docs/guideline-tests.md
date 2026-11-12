@@ -157,6 +157,17 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T64 — 0.9.48 : bouton IA, Dites-le en clair élargi, marqueurs
+
+1. Ouvrir un projet avec quelques plans. A droite de la barre d'outils, à côté de « Volet » : le bouton « IA ». Clic droit sur la barre › Personnaliser la barre : même en retirant des boutons, « IA » reste.
+2. Clic sur « IA » : la fenêtre « Dites-le en clair » montre des boutons d'actions (ordre alphabétique). « Étalonnage auto de toute la séquence » : la phrase s'écrit, le plan s'affiche avec une case ; rien n'a changé dans le film.
+3. « Faire » : « Lecture des plans : … % » défile, puis les plans sont étalonnés. Clic droit sur un plan › Étalonnage : les réglages sont là. Edition › Annuler : tout revient d'un coup.
+4. « Mêmes couleurs partout (comme le plan 1) », puis « Toute la séquence un peu plus chaude » : même chose.
+5. « Ranger les rushes par date », « par type » : l'ordre des médias à gauche change ; Annuler le remet.
+6. « Un marqueur à chaque plan » : des fanions bleus sur la règle, numérotés au survol. Avec une musique : « Marqueurs sur les temps forts de la musique ».
+7. Touche M : un marqueur à la ligne rouge. Clic sur un fanion : la ligne rouge y va. Clic droit : Renommer, Supprimer, Supprimer tous.
+8. Écrire soi-même : « marqueur « discours » à 12 s », « plus lumineux sur le plan 3 », « range les rushes par nom ».
+
 ## T63 — 0.9.47 : musiques libres d'Audionautix
 
 1. Bouton Musique › Chercher en ligne : la liste des sources est par ordre alphabétique et contient « Audionautix : musiques libres de Jason Shaw (crédit à citer) ». Aucun bouton yt-dlp pour cette source.

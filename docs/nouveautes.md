@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.47 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.48 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.48 (bouton IA, marqueurs)
+- Bouton "IA" toujours visible a droite de la barre d'outils : il ouvre "Dites-le en clair", avec des actions d'un clic (par ordre alphabetique). Le plan est toujours montre, case par case, avant d'agir ; tout se defait d'un coup.
+- Nouvelles actions : etalonnage de toute la sequence (auto, "memes couleurs partout comme le plan 2", "un peu plus chaude / lumineuse / contrastee"), ranger les rushes de la bibliotheque (date de prise de vue, nom, type, duree), poser des marqueurs (a chaque plan, sur les temps forts de la musique, a un instant, avec un nom).
+- Marqueurs : touche M (Montage > Pistes et passage choisi > Poser un marqueur a la ligne rouge) ; fanion sur la regle, clic pour y revenir, clic droit pour le nommer ou le supprimer.
 
 ### 0.9.47 (Audionautix)
 - Musique en ligne : nouvelle source "Audionautix : musiques libres de Jason Shaw". Licence Creative Commons BY 4.0 donnee par l'auteur : utilisable meme dans une video monetisee, a condition de citer "Music by audionautix.com". PhilCut lit le catalogue du site (garde une semaine), cherche par titre ou genre (jazz, piano, calm...), telecharge sans yt-dlp, garde le credit avec le fichier et l'ajoute a la description quand vous publiez. Les sources sont classees par ordre alphabetique.

@@ -800,6 +800,14 @@ class Editeur(QWidget):
                 if w is not None:
                     w.setParent(None)
                     w.deleteLater()
+        # 0.9.48 : le bouton IA est toujours là, à droite (il ne se retire pas de la barre)
+        ia_ = self._bouton("ia", _("IA"), lambda: self.dites_le(),
+                           _("Dites-le en clair : écrivez ce que vous voulez (« étalonnage auto sur toute la séquence », « range les "
+                             "rushes par date », « un marqueur à chaque plan »…) ; PhilCut vous montre son plan et n'agit "
+                             "qu'après votre clic."))
+        ia_.setObjectName("bouton_ia")
+        ia_.setStyleSheet("QToolButton#bouton_ia{font-weight:700;color:%s}" % theme.COULEURS["accent"])
+        self.coin_droit.addWidget(ia_)
         for cle in self.params.get("barre") or O.BARRE_DEFAUT:
             if cle == "|":
                 s = QFrame()
