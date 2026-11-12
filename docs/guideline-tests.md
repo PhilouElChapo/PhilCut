@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T63 — 0.9.47 : musiques libres d'Audionautix
+
+1. Bouton Musique › Chercher en ligne : la liste des sources est par ordre alphabétique et contient « Audionautix : musiques libres de Jason Shaw (crédit à citer) ». Aucun bouton yt-dlp pour cette source.
+2. Chercher « jazz », puis « piano », puis « calm » : des titres de Jason Shaw, le genre en album. La première recherche lit le site (quelques secondes), les suivantes sont immédiates. Si rien n'arrive alors que le site marche dans le navigateur : me le dire (la page du site a changé).
+3. Choisir un titre : la note orange parle de la licence CC BY 4.0 et du crédit ; la case « libre de droits » est cochée. Écouter, puis télécharger : le MP3 arrive avec, à côté, un fichier « .credit.txt ».
+4. Poser ce morceau dans un film, puis Publier : la description contient « … — Music by audionautix.com (Jason Shaw), CC BY 4.0 ».
+
 ## T62 — 0.9.46 : menus rangés, IA partagées entre logiciels PhilFactory
 
 1. Menu Montage : cinq sous-menus (Image du plan, Montage automatique, Pistes et passage choisi (partie jaune), Son, Textes et habillage), entrées par ordre alphabétique ; plus d'« Atelier IA » ici.

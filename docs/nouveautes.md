@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.46 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.47 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.47 (Audionautix)
+- Musique en ligne : nouvelle source "Audionautix : musiques libres de Jason Shaw". Licence Creative Commons BY 4.0 donnee par l'auteur : utilisable meme dans une video monetisee, a condition de citer "Music by audionautix.com". PhilCut lit le catalogue du site (garde une semaine), cherche par titre ou genre (jazz, piano, calm...), telecharge sans yt-dlp, garde le credit avec le fichier et l'ajoute a la description quand vous publiez. Les sources sont classees par ordre alphabetique.
 
 ### 0.9.46 (menus ranges, IA partagees entre logiciels PhilFactory)
 - Menu Montage en cinq sous-menus : Image du plan, Montage automatique, Pistes et passage choisi (partie jaune), Son, Textes et habillage ; tout par ordre alphabetique ; "Monter par le texte" devient "Couper en supprimant des phrases (texte de ce qui est dit)" ; la partie jaune est expliquee.

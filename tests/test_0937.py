@@ -323,7 +323,7 @@ class TestRecettes(unittest.TestCase):
         self.assertTrue(any(fm.actions.itemAt(i).widget().text() == "Poser sous la vidéo" for i in range(fm.actions.count())))
         fm.done(0)
         ml = DialogueMusiqueEnLigne(f, f.params, poser=lambda c: None)
-        self.assertEqual(ml.source.count(), 3)
+        self.assertEqual(ml.source.count(), 4)              # 0.9.47 : + Audionautix
         ml.done(0)
         ed.projet.modifie = False
         f.close()

@@ -781,7 +781,8 @@ class DialogueMusiqueEnLigne(QDialog):
         v.addWidget(legal)
         h = QHBoxLayout()
         self.source = QComboBox()
-        for k, lib in ML.SOURCES:
+        import unicodedata
+        for k, lib in sorted(ML.SOURCES, key=lambda x: unicodedata.normalize("NFD", x[1]).encode("ascii", "ignore").decode().lower()):
             self.source.addItem(lib, k)
         self.source.setCurrentIndex(max(0, self.source.findData(params.get("musique_en_ligne_source") or "ytmusic")))
         h.addWidget(self.source)
@@ -874,9 +875,9 @@ class DialogueMusiqueEnLigne(QDialog):
     def _maj(self, *_a):
         src = self.source.currentData()
         self.params["musique_en_ligne_source"] = src
-        besoin = src != "archive" and not self._ytdlp()
+        besoin = src not in self.ML.SANS_YTDLP and not self._ytdlp()
         self.b_installer.setVisible(besoin)
-        self.b_maj.setVisible(src != "archive" and not besoin)
+        self.b_maj.setVisible(src not in self.ML.SANS_YTDLP and not besoin)
         if besoin:
             self.info.setText(_("YouTube et YouTube Music passent par yt-dlp, le programme officiel : « Installer yt-dlp » le télécharge "
                                 "depuis son dépôt GitHub (une fois)."))
@@ -926,7 +927,7 @@ class DialogueMusiqueEnLigne(QDialog):
         if not texte:
             return
         src = self.source.currentData()
-        if src != "archive" and not self._ytdlp():
+        if src not in self.ML.SANS_YTDLP and not self._ytdlp():
             self._maj()
             return
         ML = self.ML
@@ -946,6 +947,9 @@ class DialogueMusiqueEnLigne(QDialog):
                 self.liste.addItem(it)
             if self.resultats:
                 info = _("{n} résultat(s). Double-clic pour écouter.", n=len(self.resultats))
+                if src == "audionautix":
+                    info += " " + _("Licence CC BY 4.0 : utilisables même dans une vidéo monétisée, en citant « Music by audionautix.com » ; "
+                                    "PhilCut l'ajoute à la description quand vous publiez.")
                 if src == "archive":
                     info += " " + _("Les archives libres ne montrent que les enregistrements dont la licence est indiquée : il y en a peu pour "
                                     "un morceau récent, c'est normal.")
@@ -956,8 +960,13 @@ class DialogueMusiqueEnLigne(QDialog):
 
     def _choisi(self, i):
         x = self.resultats[i] if 0 <= i < len(self.resultats) else None
-        self.libre.setChecked(False)              # jamais coché d'office : c'est vous qui le déclarez
-        if x and x.get("source") == "archive" and x.get("licence"):
+        self.libre.setChecked(bool(x and x.get("source") == "audionautix"))   # licence donnée par l'auteur lui-même ; sinon jamais d'office
+        if x and x.get("source") == "audionautix":
+            self.avert.setText(_("Musique de Jason Shaw sous licence Creative Commons BY 4.0, donnée par l'auteur sur son site : libre, "
+                                 "même pour une vidéo monétisée, à condition de citer « Music by audionautix.com ». Le crédit est gardé "
+                                 "avec le fichier et proposé dans la description à la publication."))
+            self.avert.show()
+        elif x and x.get("source") == "archive" and x.get("licence"):
             self.avert.setText(_("Licence annoncée par la personne qui a déposé ce fichier : {l}. Vérifiez qu'elle en avait le droit : un "
                                  "extrait ou une reprise d'un morceau connu n'est pas libre pour autant.", l=x["licence"]))
             self.avert.show()
@@ -996,6 +1005,8 @@ class DialogueMusiqueEnLigne(QDialog):
         def adresse(t):
             if x.get("source") == "archive":
                 return self.ML._fichier_archive(x["id"])[0]
+            if x.get("source") == "audionautix":
+                return x["id"]
             from . import videos_en_ligne as VL
             return VL.flux_lecture(x["page"])
 

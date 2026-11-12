@@ -14,7 +14,17 @@ import urllib.request
 
 from .langue import _
 
-SOURCES = [("ytmusic", _("YouTube Music (titres)")), ("youtube", _("YouTube (vidéos)")), ("archive", _("Archives libres (archive.org)"))]
+SOURCES = [("ytmusic", _("YouTube Music (titres)")), ("youtube", _("YouTube (vidéos)")), ("archive", _("Archives libres (archive.org)")),
+           ("audionautix", _("Audionautix : musiques libres de Jason Shaw (crédit à citer)"))]
+SANS_YTDLP = ("archive", "audionautix")          # sources lues directement, sans yt-dlp
+
+# 0.9.47 : Audionautix (audionautix.com) : toute la musique de Jason Shaw est sous licence Creative Commons Attribution 4.0,
+# utilisable même commercialement, à condition de citer « music by audionautix.com » (ou un lien vers le site) ; pas de
+# revente telle quelle, seulement dans une œuvre (vidéo, podcast…). Le site n'a pas d'API : PhilCut lit ses pages de genres
+# (agent PhilCut déclaré, jamais déguisé), garde le catalogue une semaine et cherche dedans.
+AUDIONAUTIX = "https://audionautix.com"
+AUDIONAUTIX_LICENCE = "CC BY 4.0 — https://creativecommons.org/licenses/by/4.0/"
+AUDIONAUTIX_CREDIT = "Music by audionautix.com (Jason Shaw), CC BY 4.0"
 
 LEGAL_MUSIQUE = _(
     "<b>Une musique a deux sortes de droits.</b> <b>L'œuvre</b> (la composition, les paroles) est libre 70 ans après la mort de son "
@@ -58,6 +68,8 @@ def chercher(texte, source="ytmusic", n=30):
         return []
     if source == "archive":
         return chercher_archive(texte, n)
+    if source == "audionautix":
+        return chercher_audionautix(texte, n)
     from . import videos_en_ligne as VL
     if source == "youtube":
         out = VL._recherche_brute(texte, n)
@@ -132,6 +144,80 @@ def chercher_archive(texte, n=25):
     return out
 
 
+def _page(url):
+    with urllib.request.urlopen(urllib.request.Request(url, headers=_agent()), timeout=25) as r:
+        return r.read().decode("utf-8", "replace")
+
+
+def _titre_fichier(url):
+    """« JasonShaw-AUDIONAUTIX-COM_Morning-Walk.mp3 » → « Morning Walk »."""
+    n = urllib.parse.unquote(url.rsplit("/", 1)[-1])
+    n = re.sub(r"\.mp3$", "", n, flags=re.I)
+    n = re.sub(r"(?i)^(jason[ _-]*shaw[ _-]*)?(audionautix[ _.-]*(com)?[ _-]*)?", "", n)
+    n = re.sub(r"[_-]+", " ", n)
+    n = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", n)
+    return re.sub(r"\s+", " ", n).strip().title() or "?"
+
+
+def catalogue_audionautix(rafraichir=False):
+    """Toutes les musiques d'Audionautix (titre, genre, adresse du MP3), gardées une semaine sur ce poste."""
+    import time
+    from .config import dossier_donnees
+    cache = os.path.join(dossier_donnees(), "cache", "audionautix.json")
+    try:
+        if not rafraichir and time.time() - os.path.getmtime(cache) < 7 * 86400:
+            with open(cache, encoding="utf-8") as f:
+                return json.load(f)
+    except (OSError, ValueError):
+        pass
+    accueil = _page(AUDIONAUTIX + "/")
+    genres = []
+    for m in re.finditer(r'href=["\'](?:https?://(?:www\.)?audionautix\.com)?(/free-music/[^"\'#?]+)["\']', accueil, re.I):
+        g = m.group(1).rstrip("/")
+        if g not in genres:
+            genres.append(g)
+    pistes, vues = [], set()
+    for g in [""] + genres:
+        try:
+            html = accueil if not g else _page(AUDIONAUTIX + g)
+        except Exception:      # noqa: BLE001 : une page de genre absente n'empêche pas les autres
+            continue
+        nom_genre = urllib.parse.unquote(g.rsplit("/", 1)[-1]).replace("-", " ").title() if g else ""
+        for m in re.finditer(r'["\'(]((?:https?:)?//[^"\'()\s]+?\.mp3|/[^"\'()\s]+?\.mp3)["\')]', html, re.I):
+            u = m.group(1)
+            u = ("https:" + u) if u.startswith("//") else (AUDIONAUTIX + u if u.startswith("/") else u)
+            if u in vues:
+                continue
+            vues.add(u)
+            pistes.append({"titre": _titre_fichier(u), "genre": nom_genre, "url": u})
+    if not pistes:
+        raise RuntimeError(_("Audionautix n'a renvoyé aucune musique : le site a peut-être changé. Essayez les archives libres."))
+    os.makedirs(os.path.dirname(cache), exist_ok=True)
+    with open(cache, "w", encoding="utf-8") as f:
+        json.dump(pistes, f, ensure_ascii=False)
+    return pistes
+
+
+def _sans_accents(t):
+    import unicodedata
+    return unicodedata.normalize("NFD", t or "").encode("ascii", "ignore").decode().lower()
+
+
+def chercher_audionautix(texte, n=30):
+    """Les musiques d'Audionautix dont le titre ou le genre contient vos mots (ex. « jazz », « calm », « piano »)."""
+    mots = [m for m in _sans_accents(texte).split() if m]
+    out = []
+    for p in catalogue_audionautix():
+        cible = _sans_accents(p["titre"] + " " + p.get("genre", ""))
+        if all(m in cible for m in mots):
+            out.append({"titre": p["titre"], "artiste": "Jason Shaw (Audionautix)", "album": p.get("genre", ""), "duree": 0.0,
+                        "page": p["url"], "id": p["url"], "source": "audionautix", "licence": AUDIONAUTIX_LICENCE,
+                        "credit": AUDIONAUTIX_CREDIT, "libre": True})
+        if len(out) >= n:
+            break
+    return out
+
+
 def _fichier_archive(ident):
     """Le meilleur fichier son d'un enregistrement d'archive.org (MP3 de préférence)."""
     url = f"https://archive.org/metadata/{urllib.parse.quote(ident)}"
@@ -164,8 +250,8 @@ def telecharger(r, dossier, libre=None, progression=None, arret=lambda: False):
     nom, titre, artiste = nom_propre(r)
     cible = os.path.join(dossier, nom + ".mp3")
     brut = None
-    if r.get("source") == "archive":
-        url, _f = _fichier_archive(r["id"])
+    if r.get("source") in SANS_YTDLP:
+        url, _f = _fichier_archive(r["id"]) if r.get("source") == "archive" else (r["id"], r["id"].rsplit("/", 1)[-1])
         brut = os.path.join(dossier, nom + ".telechargement" + os.path.splitext(_f)[1])
         with urllib.request.urlopen(urllib.request.Request(url, headers=_agent()), timeout=120) as rep, open(brut + ".part", "wb") as f:
             total, fait = int(rep.headers.get("Content-Length") or 0), 0
@@ -192,7 +278,8 @@ def telecharger(r, dossier, libre=None, progression=None, arret=lambda: False):
         brut = fichiers[-1]
     if progression:
         progression(0.95, _("Etiquettes (titre, artiste, source)…"))
-    commentaire = _("Source : {p}", p=r.get("page", "")) + (f" — {r['licence']}" if r.get("licence") else "")
+    commentaire = _("Source : {p}", p=r.get("page", "")) + (f" — {r['licence']}" if r.get("licence") else "") + \
+        (f" — {r['credit']}" if r.get("credit") else "")
     meta = ["-metadata", f"title={titre}", "-metadata", f"artist={artiste}", "-metadata", f"comment={commentaire}"]
     if r.get("album"):
         meta += ["-metadata", f"album={r['album']}"]
@@ -205,8 +292,15 @@ def telecharger(r, dossier, libre=None, progression=None, arret=lambda: False):
         os.remove(brut)
     except OSError:
         pass
+    infos = {"credit": r["credit"]} if r.get("credit") else {}
     MI.declarer(cible, origine=r.get("page", ""), source=r.get("source", ""), licence=r.get("licence", ""),
-                libre=bool(r.get("libre") if libre is None else libre), titre=titre, artiste=artiste)
+                libre=bool(r.get("libre") if libre is None else libre), titre=titre, artiste=artiste, **infos)
+    if r.get("credit"):                                # crédit CC BY repris dans la description à la publication
+        try:
+            with open(os.path.splitext(cible)[0] + ".credit.txt", "w", encoding="utf-8") as f:
+                f.write(f"{titre} — {r['credit']}")
+        except OSError:
+            pass
     if progression:
         progression(1.0, _("Téléchargé."))
     return cible
