@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T65 — 0.9.49 : tri des rushes
+
+1. Importer quelques vrais rushes, dont si possible : une copie d'un même fichier (renommée), un plan flou, un plan pris en marchant, un plan venté, un plan avec un long silence. A la fin de l'import, la barre du bas propose « Trier les rushes » (30 s) ; rien n'est calculé avant votre clic.
+2. « Trier les rushes » : progression dans la barre du bas, puis « N rush(es) à revoir… ». Pastilles en haut à gauche des vignettes : D doublon, F flou, T tremblé, S son raté, … silences. Survoler une vignette : la phrase explique chaque pastille.
+3. « Ne montrer qu'eux » : la recherche des médias se remplit avec « à revoir ». Essayer aussi « flou », « doublon », « son ».
+4. Un panoramique régulier ne doit pas être marqué T ; un plan net ne doit pas être marqué F. Me dire chaque erreur (nom du rush, ce qui est faux) : je règlerai les seuils.
+5. Relancer le tri : il est immédiat (déjà fait). Préférences › Import › Tri des rushes : « Le faire tout seul » puis importer : le tri part seul. « Ne pas le proposer » : plus de question.
+6. Clic droit sur les médias › « Trier les rushes… », bouton IA › « Trier les rushes (doublons, flou, tremblé, son) », et la phrase « repère les rushes ratés » : même chose.
+
 ## T64 — 0.9.48 : bouton IA, Dites-le en clair élargi, marqueurs
 
 1. Ouvrir un projet avec quelques plans. A droite de la barre d'outils, à côté de « Volet » : le bouton « IA ». Clic droit sur la barre › Personnaliser la barre : même en retirant des boutons, « IA » reste.

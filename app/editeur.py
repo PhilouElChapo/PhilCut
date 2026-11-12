@@ -44,10 +44,14 @@ class Encart(QFrame):
         h.addWidget(self.b_stop)
         self.hide()
         self.tache = None
+        self._minuteur = QTimer(self)            # un seul minuteur : un ancien message ne cache plus le nouveau
+        self._minuteur.setSingleShot(True)
+        self._minuteur.timeout.connect(self.hide)
 
     def suivre(self, tache, texte, action=None, pendant=None):
         """action : (libelle, fonction) proposee a la fin ; pendant : (libelle, fonction) proposé pendant la tâche
         (ex. « Afficher » une fenêtre réduite). La tâche est aussi inscrite au Centre d'activité."""
+        self._minuteur.stop()
         from . import activite
         activite.centre().suivre(tache, texte)
         self.tache = tache
@@ -96,9 +100,9 @@ class Encart(QFrame):
             except (RuntimeError, TypeError):
                 pass
             self.bouton.clicked.connect(lambda: (action[1](), self.hide()))
-            QTimer.singleShot(60000, self.hide)
+            self._minuteur.start(60000)
         else:
-            QTimer.singleShot(4000, self.hide)
+            self._minuteur.start(4000)
 
     def suivre_message(self, texte, action, duree=20000):
         """Message avec un bouton d'action (ex. « Voir l'aperçu rendu »)."""
@@ -118,7 +122,7 @@ class Encart(QFrame):
         self.b_stop.hide()
         self.bouton.hide()
         self.show()
-        QTimer.singleShot(duree, self.hide)
+        self._minuteur.start(duree)
 
 
 class Bibliotheque(QListWidget):
@@ -148,6 +152,7 @@ class Bibliotheque(QListWidget):
         self.projet = None
 
     analyser = Signal(object)              # liste d'ids à analyser avec l'IA locale (vide = tous)
+    trier = Signal(object)                 # 0.9.49 : liste d'ids à trier (doublons, flou, tremblé, son ; vide = tous)
     etiquette = Signal(str, str)           # media_id, texte lu : poser une étiquette
 
     def filtrer(self, texte):
@@ -165,10 +170,13 @@ class Bibliotheque(QListWidget):
             a = m.get("ia_locale") or {}
             it = QListWidgetItem(m["nom"] + (f"\n{a['nom']}" if a.get("nom") else ""))
             it.setData(Qt.UserRole, m["id"])
-            it.setIcon(QIcon(vignette_media(m)))
+            from . import tri_rushes as TR
+            it.setIcon(QIcon(TR.dessiner(vignette_media(m), m)))
             res = a.get("resume") or (m.get("analyse") or {}).get("resume") or moteur.resume_fiche(m.get("fiche"))
             if a.get("textes"):
                 res += "\n" + _("Textes lus : {t}", t=", ".join(a["textes"]))
+            if TR.texte(m):
+                res += "\n" + _("A revoir :") + "\n" + TR.texte(m)
             it.setToolTip(f"{m['chemin']}\n{res}" + ("" if os.path.exists(m["chemin"]) else "\n" + _("INTROUVABLE")))
             if not os.path.exists(m["chemin"]):
                 it.setForeground(QColor("#ff5c5c"))
@@ -207,6 +215,10 @@ class Bibliotheque(QListWidget):
             m.addSeparator()
             m.addAction(icone("supprimer"), _("Retirer du projet"), lambda: self.retirer.emit(ident))
         m.addAction(icone("ia"), _("Analyser tous les rushes avec l'IA locale"), lambda: self.analyser.emit([]))
+        sel = [x.data(Qt.UserRole) for x in self.selectedItems()]
+        if len(sel) > 1:
+            m.addAction(_("Trier ces {n} rushes (doublons, flou, tremblé, son, silences)", n=len(sel)), lambda: self.trier.emit(sel))
+        m.addAction(_("Trier les rushes (doublons, flou, tremblé, son, silences)"), lambda: self.trier.emit([]))
         m.exec(self.mapToGlobal(pos))
 
 
@@ -561,13 +573,15 @@ class Editeur(QWidget):
         aide.setStyleSheet("color:%s;font-size:11px" % theme.COULEURS["texte2"])
         vg.addWidget(aide)
         self.recherche_medias = QLineEdit()
-        self.recherche_medias.setPlaceholderText(_("Rechercher : nom, lieu, objet, texte lu…"))
+        self.recherche_medias.setPlaceholderText(_("Rechercher : nom, lieu, objet, texte lu, à revoir…"))
         self.recherche_medias.setClearButtonEnabled(True)
-        self.recherche_medias.setToolTip(_("Cherche dans les noms et dans ce que l'IA locale a vu dans chaque rush (clic droit › Analyser)."))
+        self.recherche_medias.setToolTip(_("Cherche dans les noms, dans ce que l'IA locale a vu dans chaque rush (clic droit › Analyser) et dans le tri "
+                                                 "des rushes (« à revoir », « flou », « doublon », « son »…)"))
         vg.addWidget(self.recherche_medias)
         self.biblio = Bibliotheque()
         self.recherche_medias.textChanged.connect(self.biblio.filtrer)
         self.biblio.analyser.connect(self.analyser_rushes)
+        self.biblio.trier.connect(lambda ids: self.trier_rushes(ids or None))
         self.biblio.etiquette.connect(self._etiquette_texte_lu)
         self.biblio.ajouter.connect(lambda i: self.ajouter_a_la_timeline(i))
         self.biblio.fiche.connect(self.montrer_fiche)
@@ -1444,6 +1458,7 @@ class Editeur(QWidget):
 
     def _importer_suivant(self):
         if not self._file_import:
+            self._fin_import()
             return
         chemin = self._file_import.pop(0)
         if not os.path.exists(chemin):
@@ -1465,6 +1480,8 @@ class Editeur(QWidget):
             self.projet.marquer()
             m = self.projet.ajouter_media(chemin, r["fiche"])
             m.update(proxy=r.get("proxy", ""), vignettes=r.get("vignettes", ""), onde=r.get("onde") or [], niveaux=r.get("niveaux"))
+            if m.get("genre") in ("video", "image", "audio"):
+                self.__dict__.setdefault("_importes", []).append(m["id"])
             self.biblio.remplir(self.projet)
             depot = getattr(self, "_piste_depot", None)
             self._piste_depot = None
@@ -1481,6 +1498,19 @@ class Editeur(QWidget):
                 self.ajouter_a_la_timeline(m["id"])
             self._modifie()
         self._importer_suivant()
+
+    def _fin_import(self):
+        """Fin d'un import : tri des rushes proposé (ou fait, ou rien, selon Préférences › Import) ; calculé sur ce poste."""
+        ids, self._importes = list(getattr(self, "_importes", []) or []), []
+        mode = self.params.get("tri_import", "proposer")
+        if not ids or mode == "jamais":
+            return
+        if mode == "toujours":
+            self.trier_rushes(ids)
+            return
+        self.encart.suivre_message(_("{n} rush(es) importé(s). Les trier ? PhilCut repère doublons, plans flous ou tremblés, son raté et "
+                                     "silences, sur ce poste (rien n'est envoyé ni retiré).", n=len(ids)),
+                                   (_("Trier les rushes"), lambda: self.trier_rushes(ids)), 30000)
 
     def ajouter_a_la_timeline(self, ident, piste=None, debut=None):
         m = self.projet.media(ident)
@@ -2164,6 +2194,51 @@ class Editeur(QWidget):
                               a=_tc(g["debut"]), b=_tc(g["fin"])))
 
     # ---------------------------------------------------------------- IA locale sur les rushes
+    def trier_rushes(self, ids=None):
+        """Tri des rushes sur ce poste (0.9.49) : pastilles sur les médias (doublon, flou, tremblé, son raté, silences)."""
+        from . import tri_rushes as TR
+        ids = list(ids) if ids else None
+        n = len([m for m in self.projet.medias if (ids is None or m["id"] in ids) and m.get("genre") in ("video", "image", "audio")])
+        if not n:
+            self.encart.message(_("Aucun rush à trier : importez d'abord des vidéos, des photos ou des sons."), 6000)
+            return None
+        projet = self.projet
+        t = Tache(lambda tache: TR.trier(projet, ids, lambda f, nom="": tache.avancer(f, nom), lambda: tache.arret),
+                  _("Tri des rushes"))
+        self.taches.append(t)
+        self.encart.suivre(t, _("Tri de {n} rush(es) sur ce poste (doublons, flou, tremblé, son, silences)", n=n))
+
+        def fini(r, err):
+            if t in self.taches:
+                self.taches.remove(t)
+            if err or not isinstance(r, dict):
+                return
+            self.projet.modifie = True
+            self.biblio.remplir(self.projet)
+            self.titre_change.emit()
+            signales = [k for k, v in r.items() if v]
+            if signales:
+                comptes = {}
+                for v in r.values():
+                    for k in v:
+                        comptes[k] = comptes.get(k, 0) + 1
+                detail = ", ".join(f"{TR.PASTILLES[k][2].lower()} {c}" for k, c in sorted(comptes.items()))
+                self.encart.suivre_message(_("{n} rush(es) à revoir sur {t} ({d}) : pastilles sur les vignettes, détail au survol.",
+                                             n=len(signales), t=len(r), d=detail),
+                                           (_("Ne montrer qu'eux"), lambda: self._filtre_biblio(_("à revoir"))), 20000)
+            else:
+                self.encart.message(_("✓ {t} rush(es) triés : rien à signaler.", t=len(r)), 8000)
+        t.fini.connect(fini)
+        t.start()
+        return t
+
+    def _filtre_biblio(self, texte):
+        champ = getattr(self, "recherche_medias", None)
+        if champ is not None:
+            champ.setText(texte)
+        else:
+            self.biblio.filtrer(texte)
+
     def analyser_rushes(self, ids):
         """Analyse des rushes par le modèle de vision local, en arrière-plan, un par un (rien n'est envoyé)."""
         from . import analyse_locale as AL

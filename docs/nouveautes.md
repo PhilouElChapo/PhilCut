@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.48 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.49 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.49 (tri des rushes)
+- Tri des rushes, calcule sur ce poste (sans IA, rien n'est envoye ni retire) : pastilles sur les vignettes des medias. D = doublon (meme fichier, ou memes images et meme duree), F = flou, T = tremble (un panoramique regulier n'est pas signale), S = son rate (sature, tres faible, vent probable), ... = silences (le tiers du rush, ou un blanc de plus de 5 s). Detail au survol ; "a revoir", "flou", "doublon"... dans la recherche des medias.
+- Propose a la fin de chaque import (Preferences > Import > Tri des rushes : proposer, toujours, jamais), clic droit sur les medias > Trier, bouton IA > "Trier les rushes", ou "trie les rushes" dans Dites-le en clair.
+- La barre du bas ne cache plus un message tout juste affiche (un seul minuteur).
 
 ### 0.9.48 (bouton IA, marqueurs)
 - Bouton "IA" toujours visible a droite de la barre d'outils : il ouvre "Dites-le en clair", avec des actions d'un clic (par ordre alphabetique). Le plan est toujours montre, case par case, avant d'agir ; tout se defait d'un coup.

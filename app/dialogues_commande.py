@@ -21,6 +21,7 @@ RAPIDES = sorted([
     (_("Ranger les rushes par date"), "range les rushes par date"),
     (_("Ranger les rushes par type"), "range les rushes par type"),
     (_("Un marqueur à chaque plan"), "un marqueur à chaque plan"),
+    (_("Trier les rushes (doublons, flou, tremblé, son)"), "trie les rushes"),
     (_("Marqueurs sur les temps forts de la musique"), "marqueurs sur les temps forts de la musique"),
 ], key=lambda x: __import__("unicodedata").normalize("NFD", x[0]).encode("ascii", "ignore").decode().lower())
 

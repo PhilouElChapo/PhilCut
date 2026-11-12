@@ -87,6 +87,13 @@ class DialoguePreferences(QDialog):
         self.ajout_auto = QCheckBox(_("Poser automatiquement le premier rush importé dans la timeline"))
         self.ajout_auto.setChecked(self.params.get("ajout_auto", True))
         f.addRow(self.ajout_auto)
+        self.tri_import = QComboBox()                  # 0.9.49 : tri des rushes à l'import
+        for k, lib in (("proposer", _("Le proposer après chaque import")), ("toujours", _("Le faire tout seul après chaque import")),
+                       ("jamais", _("Ne pas le proposer (clic droit sur les médias › Trier)"))):
+            self.tri_import.addItem(lib, k)
+        self.tri_import.setCurrentIndex(max(0, self.tri_import.findData(self.params.get("tri_import", "proposer"))))
+        self.tri_import.setToolTip(_("Doublons, plans flous ou tremblés, son raté, silences : calculé sur ce poste, rien n'est envoyé ni retiré"))
+        f.addRow(_("Tri des rushes"), self.tri_import)
         self.assoc = QCheckBox(_("Ouvrir les fichiers .philcut avec PhilCut (Windows) — les vidéos ne sont jamais associées"))
         self.assoc.setChecked(self.params.get("association_video", False))
         self.assoc.setEnabled(sys.platform == "win32")
@@ -900,6 +907,7 @@ class DialoguePreferences(QDialog):
         p["proxys"] = self.proxys.isChecked()
         p["dossier_proxys"] = self.dossier_proxys.text().strip()
         p["ajout_auto"] = self.ajout_auto.isChecked()
+        p["tri_import"] = self.tri_import.currentData()
         if self.assoc.isChecked() != p.get("association_video", False):
             from .config import associer_projets
             try:

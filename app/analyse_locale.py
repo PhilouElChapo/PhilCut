@@ -74,6 +74,10 @@ def texte_cherchable(media):
     a = media.get("ia_locale") or {}
     morceaux = [media.get("nom", ""), a.get("nom", ""), a.get("resume", "")] + list(a.get("lieux_objets") or []) + list(a.get("textes") or [])
     morceaux.append(((media.get("analyse") or {}).get("resume")) or "")
+    from . import tri_rushes as TR                     # « flou », « doublon », « son »… trouvent les rushes signalés
+    morceaux.append(TR.texte(media))
+    if TR.pastilles(media):
+        morceaux.append(_("à revoir"))
     return _sans_accents(" ".join(morceaux))
 
 

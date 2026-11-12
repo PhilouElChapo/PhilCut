@@ -17,6 +17,7 @@ ACTIONS = {
     "volume": _("Volume"), "effet": _("Effet"), "transition": _("Transition"), "vitesse": _("Vitesse"), "texte": _("Texte"),
     "fleche": _("Flèche"), "goodie": _("Goodie"), "couper": _("Couper"), "look": _("Look"),
     "etalonnage": _("Étalonnage"), "ranger_rushes": _("Ranger les rushes"), "marqueur": _("Marqueur"),
+    "trier_rushes": _("Trier les rushes"),
 }
 
 CONSIGNE = """Tu traduis une demande de montage vidéo en actions pour le logiciel PhilCut. Réponds UNIQUEMENT en JSON :
@@ -36,6 +37,7 @@ CONSIGNE = """Tu traduis une demande de montage vidéo en actions pour le logici
 - "etalonnage" {"mode": "auto"|"accorder"|"reglages", "plans": "tous"|"selection"|[numéros], "reference": numéro de plan (accorder),
   et pour "reglages" des écarts de -1 à 1 parmi "exposition", "contraste", "saturation", "temperature" (+ = plus chaud), "teinte"}
 - "ranger_rushes" {"par": "date"|"nom"|"type"|"duree"} (ordre des médias du projet)
+- "trier_rushes" {} (repérer doublons, plans flous ou tremblés, son raté, silences : des pastilles sur les médias)
 - "marqueur" {"t": s | "plans" (un à chaque début de plan) | "musique" (sur les temps forts de la musique), "texte": "..."}
 Utilise seulement les identifiants listés plus bas. N'invente pas d'action. Si un temps n'est pas dit, laisse-le absent."""
 
@@ -85,6 +87,11 @@ def regles(phrase):
     for brut in [m for m in morceaux if m and m.strip()]:
         t = _sans_accents(brut)
         tm = _temps(t)
+        if re.search(r"\b(rushes?|rush|medias?|bibliotheque|les plans|quels plans)\b", t) and not re.search(r"plans? \d|\beffet|\bsur (?:le|les|tous)\b", t) and (
+                re.search(r"rate|flou|tremb|doublon|defaut|a revoir|mauvais|probleme", t) or
+                (re.search(r"\btrie|\btri\b", t) and not re.search(r"\bpar\b", t))):
+            out.append({"action": "trier_rushes"})
+            continue
         if re.search(r"\bmarqueurs?\b|\brepere", t):
             q = re.search(r"[«\"“]\s*(.+?)\s*[»\"”]", brut)
             a = {"action": "marqueur", "texte": q.group(1) if q else ""}
@@ -291,6 +298,9 @@ def decrire(a):
             ecarts = [f"{noms[c]} {'+' if float(a[c]) > 0 else '−'}{int(abs(float(a[c])) * 100)} %" for c in noms if a.get(c)]
             return _("Étalonnage sur {q} : {e} (ajouté aux réglages déjà faits)", q=qui, e=", ".join(ecarts) or "—")
         return _("Étalonnage automatique sur {q} (dominante de couleur retirée, niveaux étirés), calculé sur une image de chaque plan", q=qui)
+    if k == "trier_rushes":
+        return _("Trier les rushes sur ce poste : pastilles sur les doublons, les plans flous ou tremblés, le son raté et les silences "
+                 "(rien n'est retiré)")
     if k == "ranger_rushes":
         par = {"date": _("date de prise de vue"), "nom": _("nom (ordre alphabétique)"), "type": _("type (vidéos, photos, sons)"),
                "duree": _("durée (les plus longs d'abord)")}.get(a.get("par"), a.get("par", ""))
@@ -463,6 +473,10 @@ def appliquer(actions, ed):
                         ET.appliquer(c, r)
                     elif c["id"] in (a.get("_par_plan") or {}):
                         ET.appliquer(c, a["_par_plan"][c["id"]])
+                faits += 1
+            elif k == "trier_rushes":
+                if hasattr(ed, "trier_rushes"):
+                    ed.trier_rushes()              # calcul en arrière-plan, avec sa progression dans la barre du bas
                 faits += 1
             elif k == "ranger_rushes":
                 projet.ranger_medias(a.get("par") or "date")
