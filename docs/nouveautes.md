@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.50 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.51 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.51 (correction d'un plantage)
+- Plantage corrige : dans "Dites-le en clair" avec l'IA locale, cliquer sur une autre action pendant que l'IA reflechissait encore faisait fermer PhilCut d'un coup (Windows : Qt6Core.dll, code 0xc0000409). Une tache relancee avant la fin de la precedente ne peut plus faire planter PhilCut, partout dans le logiciel. Dans Dites-le, les boutons d'actions attendent la reponse, et seule la derniere demande compte.
 
 ### 0.9.50 (plusieurs chaines YouTube, effets sur une image d'exemple)
 - Publier : plusieurs chaines YouTube reliees. Liste "Chaine", bouton "Ajouter une chaine..." (le navigateur demande quel compte ou quelle chaine de marque), "Delier" ne delie que la chaine choisie. La confirmation rappelle la chaine qui recoit la video. Une chaine deja reliee est reprise telle quelle.

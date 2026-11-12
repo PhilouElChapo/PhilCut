@@ -7,6 +7,9 @@ import traceback
 from PySide6.QtCore import QThread, Signal
 
 
+_EN_COURS = set()          # 0.9.51 : toute tâche lancée est gardée ici jusqu'à sa vraie fin
+
+
 class Tache(QThread):
     progression = Signal(float, str)       # 0..1, texte
     fini = Signal(object, object)          # resultat, erreur (None si tout va bien)
@@ -24,6 +27,19 @@ class Tache(QThread):
         f = max(0.0, min(1.0, float(fraction)))
         self.dernier = (f, texte or self.dernier[1])
         self.progression.emit(f, texte)
+
+    def start(self, *a):
+        """Une tâche n'est jamais détruite en plein travail : sinon Qt arrête tout PhilCut (« QThread: Destroyed while
+        thread is still running », code 0xc0000409 dans Qt6Core.dll), par exemple quand une fenêtre relance une tâche
+        alors que la précédente tourne encore."""
+        if self not in _EN_COURS:
+            _EN_COURS.add(self)
+            self.finished.connect(self._liberer)
+        super().start(*a)
+
+    def _liberer(self):
+        self.wait(5000)
+        _EN_COURS.discard(self)
 
     def stopper(self):
         self.arret = True

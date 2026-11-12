@@ -157,6 +157,12 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T67 — 0.9.51 : plus de plantage dans Dites-le en clair
+
+1. Niveau « IA de ce poste » dans Dites-le en clair. Cliquer sur une action : pendant « Je lis votre demande… », les autres boutons sont grisés.
+2. Ecrire une phrase et cliquer plusieurs fois très vite sur « Comprendre », fermer la fenêtre pendant que l'IA réfléchit, la rouvrir : PhilCut ne doit jamais se fermer.
+3. Outils › Journal des plantages et erreurs : pas de ligne « Fatal » ni « ERREUR » liée à ces essais.
+
 ## T66 — 0.9.50 : plusieurs chaînes YouTube, effets sur une image d'exemple
 
 1. Nouveau projet vide, volet Effets : « Préparation d'une image d'exemple… », puis les vignettes s'animent sur un paysage (soleil, montagnes, mer). Le texte sous la grille dit que c'est un exemple.

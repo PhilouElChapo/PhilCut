@@ -103,13 +103,30 @@ class DialogueCommande(QDialog):
                 return
         self.etat.setText(_("Je lis votre demande…"))
         self.b_comprendre.setEnabled(False)
+        self._occupe(True)
         projet, params = self.ed.projet, self.ed.params
+        self._demande = getattr(self, "_demande", 0) + 1     # seule la dernière demande compte
+        n = self._demande
         self.tache = Tache(lambda t: C.comprendre(phrase, projet, params, niv), _("Dites-le en clair"))
-        self.tache.fini.connect(self._compris)
+        self.tache.fini.connect(lambda r, e, n=n: self._si_ouvert(n, r, e))
         self.tache.start()
+
+    def _si_ouvert(self, n, r, e):
+        if n != self._demande:
+            return
+        try:
+            self._compris(r, e)
+        except RuntimeError:          # fenêtre déjà fermée pendant que l'IA réfléchissait : rien à afficher
+            pass
+
+    def _occupe(self, oui):
+        """Pendant que l'IA lit la demande, les boutons d'actions attendent (un clic à la fois)."""
+        if getattr(self, "rapides", None) is not None:
+            self.rapides.setEnabled(not oui)
 
     def _compris(self, r, err):
         self.b_comprendre.setEnabled(True)
+        self._occupe(False)
         while self.vc.count():
             it = self.vc.takeAt(0)
             if it.widget():
