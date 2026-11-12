@@ -22,8 +22,12 @@ def _dossier_sorties():
 
 
 class DialogueAtelierIA(QDialog):
+    """Non bloquante (0.9.51) : on continue à travailler dans le film pendant le calcul ; la fermer pendant un calcul la
+    range seulement (« Afficher l'Atelier » dans la barre du bas)."""
+
     def __init__(self, ed, famille="image"):
         super().__init__(ed)
+        self.setModal(False)
         self.ed = ed
         self.setWindowTitle(_("Atelier IA (sur ce poste)"))
         self.resize(1040, 680)
@@ -644,6 +648,27 @@ class DialogueAtelierIA(QDialog):
         t.start()
 
     # ---- création
+    def _reafficher(self):
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+    def _en_calcul(self):
+        return self.tache is not None and self.tache.isRunning()
+
+    def reject(self):
+        if self._en_calcul():
+            self.hide()                     # le calcul continue ; la barre du bas le suit et la rouvre
+            return
+        super().reject()
+
+    def closeEvent(self, ev):
+        if self._en_calcul():
+            ev.ignore()
+            self.hide()
+            return
+        super().closeEvent(ev)
+
     def creer(self):
         e = self.effet()
         if not e:
@@ -775,7 +800,7 @@ class DialogueAtelierIA(QDialog):
         self.info.setStyleSheet("")
         self.tache = Tache(travail, _("Atelier IA"))
         self.ed.taches.append(self.tache)
-        self.ed.encart.suivre(self.tache, _("IA locale : {n}", n=e["nom"]))
+        self.ed.encart.suivre(self.tache, _("IA locale : {n}", n=e["nom"]), pendant=(_("Afficher l'Atelier"), self._reafficher))
         self.tache.progression.connect(self._progression, Qt.QueuedConnection)
         self.tache.fini.connect(lambda r, err, e=e: self._fini(e, r, err), Qt.QueuedConnection)
         self.b_creer.setEnabled(False)
@@ -817,9 +842,14 @@ class DialogueAtelierIA(QDialog):
             # le calcul est fini (100 %) mais le moteur travaille encore : décodage du son, écriture du fichier
             self.barre.setRange(0, 0)                         # barre animée : ça bouge, ça ne plante pas
             self.barre.setFormat("")
-            self.etape.setText(_("Finition : le moteur transforme le calcul en son et écrit le fichier (souvent 1 à 3 minutes pour un "
-                                 "long morceau). Toujours en cours : {t} depuis la fin du calcul, {e} en tout.", t=mm(maintenant - fin_calcul),
-                                 e=mm(ecoule)))
+            fam = (self.effet() or {}).get("famille") if hasattr(self, "effet") else None
+            if fam == "musique":
+                self.etape.setText(_("Finition : le moteur transforme le calcul en son et écrit le fichier (souvent 1 à 3 minutes pour un "
+                                     "long morceau). Toujours en cours : {t} depuis la fin du calcul, {e} en tout.", t=mm(maintenant - fin_calcul),
+                                     e=mm(ecoule)))
+            else:
+                self.etape.setText(_("Finition : le moteur assemble les images et écrit le fichier. Toujours en cours : {t} depuis la fin "
+                                     "du calcul, {e} en tout.", t=mm(maintenant - fin_calcul), e=mm(ecoule)))
             return
         self.barre.setRange(0, 1000)
         self.barre.setValue(int(f * 1000))
@@ -878,7 +908,8 @@ class DialogueAtelierIA(QDialog):
                 genre = (moteur_err or "").replace("_gpu", "") or {"logo": "image"}.get(e["famille"], e["famille"])
                 self.diagnostic.montrer(str(err), genre, getattr(err, "journal", None), moteur_err)
             else:
-                self.info.setText(_("✕ La création n'a pas abouti : {e}", e=str(err)[:700]))
+                from .taches import texte_erreur
+                self.info.setText(_("✕ La création n'a pas abouti : {e}", e=texte_erreur(err)[:700]))
             self._action(_("Réessayer"), self.creer)
             return
         self.info.setStyleSheet("")

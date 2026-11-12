@@ -93,7 +93,8 @@ class DialogueLogo(QDialog):
             self.logo["nom"] = nom
         self.courant = None
         self.png = None
-        self.taches = []
+        from .taches import ListeTaches
+        self.taches = ListeTaches(self)
         v = QVBoxLayout(self)
         # ---- barre du haut
         h = QHBoxLayout()

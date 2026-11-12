@@ -109,6 +109,7 @@ class DialogueCommande(QDialog):
         n = self._demande
         self.tache = Tache(lambda t: C.comprendre(phrase, projet, params, niv), _("Dites-le en clair"))
         self.tache.fini.connect(lambda r, e, n=n: self._si_ouvert(n, r, e))
+        self.tache.lier(self)
         self.tache.start()
 
     def _si_ouvert(self, n, r, e):

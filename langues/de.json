@@ -6811,5 +6811,17 @@
  "Journal des plantages et erreurs…": "Absturz- und Fehlerprotokoll…",
  "Journal des plantages et erreurs": "Absturz- und Fehlerprotokoll",
  "Aucun plantage ni erreur noté pour l'instant.": "Noch kein Absturz und kein Fehler protokolliert.",
- "Voir le journal des plantages (à copier pour le signaler)…": "Absturzprotokoll ansehen (zum Kopieren und Melden)…"
+ "Voir le journal des plantages (à copier pour le signaler)…": "Absturzprotokoll ansehen (zum Kopieren und Melden)…",
+ "Mesures : {m}": "Messwerte: {m}",
+ "A revoir — {l}. Pastille sur la vignette dans « Médias du projet » et ⚠ sur le plan.": "Zu prüfen — {l}. Plakette auf dem Vorschaubild in « Projektmedien » und ⚠ auf dem Clip.",
+ "« {n} » : {r}": "« {n} »: {r}",
+ "tremblement {v} (seuil {s})": "Verwacklung {v} (Schwelle {s})",
+ "netteté {v} (seuil {s})": "Schärfe {v} (Schwelle {s})",
+ "son muet": "Ton stumm",
+ "son {d} dB, écrêté {e} ‰, grave {g} %": "Ton {d} dB, übersteuert {e} ‰, Tiefen {g} %",
+ "Afficher l'Atelier": "Werkstatt anzeigen",
+ "Finition : le moteur assemble les images et écrit le fichier. Toujours en cours : {t} depuis la fin du calcul, {e} en tout.": "Abschluss: Die Engine setzt die Bilder zusammen und schreibt die Datei. Läuft noch: {t} seit dem Ende der Berechnung, {e} insgesamt.",
+ "erreur {n} sans message (détail : Outils › Journal des plantages et erreurs)": "Fehler {n} ohne Meldung (Details: Werkzeuge › Absturz- und Fehlerprotokoll)",
+ "Refermer ce vide ({d} s) : recoller les plans": "Diese Lücke schließen ({d} s): Clips aneinanderfügen",
+ "Les plans qui suivent avancent pour se coller au précédent": "Die folgenden Clips rücken nach, bis sie den vorherigen berühren"
 }

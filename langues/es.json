@@ -6811,5 +6811,17 @@
  "Journal des plantages et erreurs…": "Registro de cierres inesperados y errores…",
  "Journal des plantages et erreurs": "Registro de cierres inesperados y errores",
  "Aucun plantage ni erreur noté pour l'instant.": "Ningún cierre inesperado ni error registrado por ahora.",
- "Voir le journal des plantages (à copier pour le signaler)…": "Ver el registro de cierres inesperados (para copiarlo y avisar)…"
+ "Voir le journal des plantages (à copier pour le signaler)…": "Ver el registro de cierres inesperados (para copiarlo y avisar)…",
+ "Mesures : {m}": "Medidas: {m}",
+ "A revoir — {l}. Pastille sur la vignette dans « Médias du projet » et ⚠ sur le plan.": "A revisar — {l}. Pastilla en la miniatura en « Medios del proyecto » y ⚠ en el plano.",
+ "« {n} » : {r}": "« {n} »: {r}",
+ "tremblement {v} (seuil {s})": "temblor {v} (umbral {s})",
+ "netteté {v} (seuil {s})": "nitidez {v} (umbral {s})",
+ "son muet": "sonido mudo",
+ "son {d} dB, écrêté {e} ‰, grave {g} %": "sonido {d} dB, saturado {e} ‰, graves {g} %",
+ "Afficher l'Atelier": "Mostrar el Taller",
+ "Finition : le moteur assemble les images et écrit le fichier. Toujours en cours : {t} depuis la fin du calcul, {e} en tout.": "Acabado: el motor ensambla las imágenes y escribe el archivo. Sigue en curso: {t} desde el final del cálculo, {e} en total.",
+ "erreur {n} sans message (détail : Outils › Journal des plantages et erreurs)": "error {n} sin mensaje (detalle: Herramientas › Registro de cierres inesperados y errores)",
+ "Refermer ce vide ({d} s) : recoller les plans": "Cerrar este hueco ({d} s): juntar los planos",
+ "Les plans qui suivent avancent pour se coller au précédent": "Los planos siguientes avanzan hasta tocar el anterior"
 }

@@ -20,7 +20,8 @@ class DialogueManquants(QDialog):
     def __init__(self, ed, media=None):
         super().__init__(ed)
         self.ed, self.params = ed, ed.params
-        self.taches = []
+        from .taches import ListeTaches
+        self.taches = ListeTaches(self)
         self.media_choisi = media
         self.setWindowTitle(_("Médias introuvables sur ce poste"))
         self.resize(900, 520)
@@ -230,7 +231,8 @@ class DialogueEspaceDrive(QDialog):
     def __init__(self, fenetre, params, utilises=frozenset()):
         super().__init__(fenetre)
         self.params, self.utilises = params, utilises
-        self.taches = []
+        from .taches import ListeTaches
+        self.taches = ListeTaches(self)
         self.setWindowTitle(_("Espace PhilCut sur le Drive"))
         self.resize(940, 620)
         v = QVBoxLayout(self)

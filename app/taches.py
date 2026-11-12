@@ -38,8 +38,27 @@ class Tache(QThread):
         super().start(*a)
 
     def _liberer(self):
+        # jamais détruite pendant l'appel de son propre signal « finished » (plantage) : relâchée au tour suivant
         self.wait(5000)
-        _EN_COURS.discard(self)
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(0, lambda t=self: _EN_COURS.discard(t))
+
+    def lier(self, objet):
+        """La tâche appartient à cet objet (fenêtre, volet, barre du bas) : s'il disparaît, elle est arrêtée et ne prévient
+        plus personne (sinon sa fin appellerait un objet détruit)."""
+        try:
+            objet.destroyed.connect(self._orpheline)
+        except (AttributeError, RuntimeError):
+            pass
+        return self
+
+    def _orpheline(self, *_a):
+        self.arret = True
+        for sig in (self.fini, self.progression):
+            try:
+                sig.disconnect()
+            except (RuntimeError, TypeError):
+                pass
 
     def stopper(self):
         self.arret = True
@@ -53,7 +72,34 @@ class Tache(QThread):
         except Exception as e:          # noqa: BLE001 : l'erreur remonte a l'interface
             self.erreur = e
             self.trace = traceback.format_exc()
+            if not isinstance(e, InterruptedError):        # 0.9.51 : le détail va au journal des plantages et erreurs
+                try:
+                    from .journal import _ecrire_plantage
+                    import time as _t
+                    _ecrire_plantage(f"{_t.strftime('%Y-%m-%d %H:%M:%S')}  ERREUR dans « {self.titre} »\n{self.trace}")
+                except Exception:   # noqa: BLE001
+                    pass
         self.fini.emit(self.resultat, self.erreur)
+
+
+class ListeTaches(list):
+    """Liste des tâches d'une fenêtre : chaque tâche ajoutée lui est liée (fenêtre détruite → tâche arrêtée, débranchée)."""
+
+    def __init__(self, proprietaire):
+        super().__init__()
+        self._proprio = proprietaire
+
+    def append(self, t):
+        if hasattr(t, "lier"):
+            t.lier(self._proprio)
+        super().append(t)
+
+
+def texte_erreur(e):
+    """Le message d'une erreur, jamais vide (certaines erreurs n'ont pas de texte : on dit au moins leur nature)."""
+    from .langue import _
+    t = str(e or "").strip()
+    return t or _("erreur {n} sans message (détail : Outils › Journal des plantages et erreurs)", n=type(e).__name__)
 
 
 def importer_media(tache, chemin, params, avec_proxy=True):

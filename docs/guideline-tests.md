@@ -162,6 +162,9 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 1. Niveau « IA de ce poste » dans Dites-le en clair. Cliquer sur une action : pendant « Je lis votre demande… », les autres boutons sont grisés.
 2. Ecrire une phrase et cliquer plusieurs fois très vite sur « Comprendre », fermer la fenêtre pendant que l'IA réfléchit, la rouvrir : PhilCut ne doit jamais se fermer.
 3. Outils › Journal des plantages et erreurs : pas de ligne « Fatal » ni « ERREUR » liée à ces essais.
+4. Deux plans séparés par un vide : clic droit dans le vide › « Refermer ce vide » : le second plan se colle au premier ; Edition › Annuler le remet.
+5. Atelier IA (Fabrique IA › Vidéo, ou effet sur la partie en jaune) : « Créer », puis cliquer dans la timeline, déplacer la ligne rouge : tout répond. Fermer l'Atelier pendant le calcul : la barre du bas propose « Afficher l'Atelier ».
+6. Refaire le tri sur le rush filmé en marchant (clic droit sur sa vignette › Trier) : pastille T attendue ; survol : ligne « Mesures ». Me donner les chiffres de « tremblement » d'un plan stable et d'un plan en marchant.
 
 ## T66 — 0.9.50 : plusieurs chaînes YouTube, effets sur une image d'exemple
 

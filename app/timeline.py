@@ -151,6 +151,11 @@ class ItemClip(QGraphicsRectItem):
             extra.append(f"×{self.clip['vitesse']:g}")
         if self.clip.get("muet"):
             extra.append("🔇")
+        if self.media:                                    # 0.9.51 : tri des rushes, aussi sur le plan dans la timeline
+            from . import tri_rushes as TR
+            pt = TR.pastilles(self.media)
+            if pt:
+                extra.append("⚠ " + ", ".join(TR.PASTILLES[k][2].lower() for k in sorted(pt) if k in TR.PASTILLES))
         texte = nom + ("  " + " ".join(extra) if extra else "")
         decal = self._dessiner_transition(p, r)
         p.setPen(QColor(255, 255, 255, 230))
@@ -1281,7 +1286,13 @@ class Timeline(QGraphicsView):
             return
         t = max(0.0, (sp.x() - MARGE_G) / self.pps)
         m = QMenu()
-        if clip["piste"].startswith("video"):
+        vide = self.projet.vide_a(t, piste) if (self.projet and piste) else None
+        if vide:                                          # 0.9.51 : un vide entre deux plans se referme d'un clic
+            a = m.addAction(_("Refermer ce vide ({d} s) : recoller les plans", d=f"{vide[1] - vide[0]:.1f}"), lambda: self._refermer(t, piste))
+            a.setToolTip(_("Les plans qui suivent avancent pour se coller au précédent"))
+            m.addSeparator()
+        clip = self.projet.clip_a(t, piste) if (self.projet and piste) else None
+        if clip and clip["piste"].startswith("video"):
             m.addAction(_("Étalonnage (couleurs, avant / après)…"), lambda: self.demande_menu.emit(clip["id"], "etalonner"))
             m.addAction(_("Prolonger ce plan (image tenue, ralenti ou IA)…"), lambda: self.demande_menu.emit(clip["id"], "prolonger"))
         m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
@@ -1291,6 +1302,12 @@ class Timeline(QGraphicsView):
         self._menu_partie(m, t)
         self._menu_zoom(m)
         m.exec(e.globalPos())
+
+    def _refermer(self, t, piste):
+        self.projet.marquer()
+        if self.projet.refermer_vide(t, piste):
+            self.modifie.emit()
+            self.reconstruire()
 
     def _menu_pistes(self, m, piste):
         """Ajouter ou retirer des pistes : une vidéo au-dessus (B-roll, image dans l'image), une musique de plus."""

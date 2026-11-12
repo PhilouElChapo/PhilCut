@@ -36,6 +36,9 @@ class Encart(QFrame):
         self.barre = QProgressBar()
         self.barre.setMaximumWidth(260)
         self.barre.setRange(0, 1000)
+        sp = self.barre.sizePolicy()                 # cachée, elle garde sa place : pas de remise en page (plantait en
+        sp.setRetainSizeWhenHidden(True)             # concurrence avec le dessin des vignettes d'effets, 0.9.51)
+        self.barre.setSizePolicy(sp)
         h.addWidget(self.barre)
         self.bouton = QPushButton("")
         self.bouton.hide()
@@ -54,9 +57,12 @@ class Encart(QFrame):
         self._minuteur.stop()
         from . import activite
         activite.centre().suivre(tache, texte)
+        if hasattr(tache, "lier"):
+            tache.lier(self)                         # barre du bas détruite (onglet fermé) : la tâche s'arrête sans prévenir
         self.tache = tache
         self.lbl.setText(texte)
         self.barre.setValue(0)
+        self.barre.show()
         self.bouton.hide()
         self.b_stop.show()
         try:
@@ -80,8 +86,10 @@ class Encart(QFrame):
         self.b_stop.hide()
         self.bouton.hide()
         if erreur:
-            self.lbl.setText(_("✕ {t} : {e}", t=texte, e=str(erreur)[:180]))
-            self.lbl.setToolTip(str(erreur))
+            from .taches import texte_erreur
+            self.lbl.setText(_("✕ {t} : {e}", t=texte, e=texte_erreur(erreur)[:180]))
+            self.lbl.setToolTip(texte_erreur(erreur))
+            self.barre.hide()
             self.bouton.setText(_("Fermer"))
             self.bouton.show()
             try:
@@ -91,6 +99,7 @@ class Encart(QFrame):
             self.bouton.clicked.connect(self.hide)
             return
         self.barre.setValue(1000)
+        self.barre.hide()
         self.lbl.setText(_("✓ {t}", t=texte))
         if action:
             self.bouton.setText(action[0])
@@ -118,7 +127,7 @@ class Encart(QFrame):
     def message(self, texte, duree=5000):
         self.tache = None
         self.lbl.setText(texte)
-        self.barre.setValue(1000)
+        self.barre.hide()                        # un message n'a pas de progression (barre pleine vide : trompeuse)
         self.b_stop.hide()
         self.bouton.hide()
         self.show()
@@ -177,6 +186,8 @@ class Bibliotheque(QListWidget):
                 res += "\n" + _("Textes lus : {t}", t=", ".join(a["textes"]))
             if TR.texte(m):
                 res += "\n" + _("A revoir :") + "\n" + TR.texte(m)
+            if TR.mesures_lisibles(m):
+                res += "\n" + _("Mesures : {m}", m=TR.mesures_lisibles(m))
             it.setToolTip(f"{m['chemin']}\n{res}" + ("" if os.path.exists(m["chemin"]) else "\n" + _("INTROUVABLE")))
             if not os.path.exists(m["chemin"]):
                 it.setForeground(QColor("#ff5c5c"))
@@ -539,7 +550,8 @@ class Editeur(QWidget):
         self.fenetre = fenetre
         self.projet = projet
         self.params = params
-        self.taches = []
+        from .taches import ListeTaches
+        self.taches = ListeTaches(self)
         v = QVBoxLayout(self)
         v.setContentsMargins(0, 0, 0, 0)
         v.setSpacing(0)
@@ -2217,12 +2229,22 @@ class Editeur(QWidget):
             self.biblio.remplir(self.projet)
             self.titre_change.emit()
             signales = [k for k, v in r.items() if v]
-            if signales:
+            if signales and len(signales) <= 2:            # peu de rushes : on dit tout de suite quoi et pourquoi
+                lignes = []
+                for k in signales:
+                    m = self.projet.media(k) or {}
+                    lignes.append(_("« {n} » : {r}", n=m.get("nom", ""), r=" ; ".join(r[k].values())))
+                self.encart.suivre_message(_("A revoir — {l}. Pastille sur la vignette dans « Médias du projet » et ⚠ sur le plan.",
+                                             l=" | ".join(lignes)),
+                                           (_("Ne montrer qu'eux"), lambda: self._filtre_biblio(_("à revoir"))), 30000)
+                self.timeline.reconstruire() if hasattr(self.timeline, "reconstruire") else None
+            elif signales:
                 comptes = {}
                 for v in r.values():
                     for k in v:
                         comptes[k] = comptes.get(k, 0) + 1
                 detail = ", ".join(f"{TR.PASTILLES[k][2].lower()} {c}" for k, c in sorted(comptes.items()))
+                self.timeline.reconstruire() if hasattr(self.timeline, "reconstruire") else None
                 self.encart.suivre_message(_("{n} rush(es) à revoir sur {t} ({d}) : pastilles sur les vignettes, détail au survol.",
                                              n=len(signales), t=len(r), d=detail),
                                            (_("Ne montrer qu'eux"), lambda: self._filtre_biblio(_("à revoir"))), 20000)
@@ -2683,7 +2705,23 @@ class Editeur(QWidget):
         if famille == "musique":
             return self.fabrique_musique()
         from .dialogues_creatif import DialogueAtelierIA
-        DialogueAtelierIA(self, famille).exec()
+        self._ouvrir_atelier(DialogueAtelierIA(self, famille))
+
+    def _ouvrir_atelier(self, d):
+        """L'Atelier IA reste ouvert à côté du film (non bloquant) : on continue à travailler pendant le calcul."""
+        anc = getattr(self, "_atelier", None)
+        if anc is not None:
+            try:
+                if anc._en_calcul():               # un calcul tourne déjà : on le montre plutôt que d'en ouvrir un second
+                    anc._reafficher()
+                    d.deleteLater()
+                    return anc
+            except RuntimeError:
+                pass
+        self._atelier = d
+        d.show()
+        d.raise_()
+        return d
 
     def fabrique_musique(self, fiche=None, remplace=None):
         """Fabrique musique (brique commune avec PhilMusic) : PhilCut lui donne de quoi poser le morceau dans le film."""
@@ -2724,7 +2762,7 @@ class Editeur(QWidget):
             return self.fabrique_musique(fiche, c["id"] if c else None)
         d = DialogueAtelierIA(self, rec.get("famille") or "musique")
         d.reprendre(rec, c["id"] if c else None)
-        d.exec()
+        self._ouvrir_atelier(d)
 
     def remplacer_media_clip(self, clip_id, chemin, reglages=None):
         """Le plan garde sa place et ses réglages ; il utilise le nouveau fichier (le morceau gardé dans l'aperçu). Annulable."""

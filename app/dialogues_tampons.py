@@ -48,7 +48,8 @@ class DialogueTampons(QDialog):
         bb.button(QDialogButtonBox.Close).setText(_("Fermer"))
         bb.rejected.connect(self.reject)
         v.addWidget(bb)
-        self.taches = []
+        from .taches import ListeTaches
+        self.taches = ListeTaches(self)
         self._frames, self._image_n = [], 0
         self.minuterie = QTimer(self)
         self.minuterie.timeout.connect(self._animer)

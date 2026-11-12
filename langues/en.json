@@ -6820,5 +6820,17 @@
  "Journal des plantages et erreurs…": "Crash and error log…",
  "Journal des plantages et erreurs": "Crash and error log",
  "Aucun plantage ni erreur noté pour l'instant.": "No crash or error recorded yet.",
- "Voir le journal des plantages (à copier pour le signaler)…": "See the crash log (to copy and report it)…"
+ "Voir le journal des plantages (à copier pour le signaler)…": "See the crash log (to copy and report it)…",
+ "Mesures : {m}": "Measurements: {m}",
+ "A revoir — {l}. Pastille sur la vignette dans « Médias du projet » et ⚠ sur le plan.": "To review — {l}. Badge on the thumbnail in « Project media » and ⚠ on the clip.",
+ "« {n} » : {r}": "« {n} »: {r}",
+ "tremblement {v} (seuil {s})": "shake {v} (threshold {s})",
+ "netteté {v} (seuil {s})": "sharpness {v} (threshold {s})",
+ "son muet": "silent sound",
+ "son {d} dB, écrêté {e} ‰, grave {g} %": "sound {d} dB, clipped {e} ‰, low {g} %",
+ "Afficher l'Atelier": "Show the Workshop",
+ "Finition : le moteur assemble les images et écrit le fichier. Toujours en cours : {t} depuis la fin du calcul, {e} en tout.": "Finishing: the engine assembles the frames and writes the file. Still running: {t} since the end of the computation, {e} in total.",
+ "erreur {n} sans message (détail : Outils › Journal des plantages et erreurs)": "{n} error with no message (details: Tools › Crash and error log)",
+ "Refermer ce vide ({d} s) : recoller les plans": "Close this gap ({d} s): join the clips",
+ "Les plans qui suivent avancent pour se coller au précédent": "The following clips move forward to touch the previous one"
 }

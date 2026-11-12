@@ -96,7 +96,8 @@ class Fenetre(QMainWindow):
         self.onglets.addTab(self.accueil, icone("ouvrir", theme.COULEURS["texte2"]), _("Accueil"))
         self.onglets.tabBar().setTabButton(0, self.onglets.tabBar().ButtonPosition.RightSide, None)
         self.setCentralWidget(self.onglets)
-        self.taches = []
+        from .taches import ListeTaches
+        self.taches = ListeTaches(self)
         self.encart_global = Encart(self)          # progression visible même sans projet ouvert (téléchargements…)
         self.statusBar().addPermanentWidget(self.encart_global, 1)
         from .telechargements import GestionTelechargements

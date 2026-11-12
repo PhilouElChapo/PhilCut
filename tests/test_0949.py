@@ -20,19 +20,22 @@ def _f(nom, *args):
 
 
 def fichiers():
-    net = _f("net.mp4", "-f", "lavfi", "-i", "testsrc2=s=640x360:r=25:d=6", "-f", "lavfi", "-i", "sine=f=440:d=6",
-             "-af", "volume=0.3", "-shortest", "-pix_fmt", "yuv420p")
-    flou = _f("flou.mp4", "-i", net, "-vf", "boxblur=6:2", "-c:a", "copy")
-    tremble = _f("tremble.mp4", "-f", "lavfi", "-i", "testsrc2=s=800x500:r=25:d=6", "-an",
-                 "-vf", "crop=640:360:'80+40*sin(n*1.7)+30*sin(n*0.9)':'70+35*sin(n*2.3)'", "-pix_fmt", "yuv420p")
-    pano = _f("pano.mp4", "-f", "lavfi", "-i", "testsrc2=s=1200x360:r=25:d=6", "-an", "-vf", "crop=640:360:'n*2':0", "-pix_fmt", "yuv420p")
+    fond = _f("fond.png", "-f", "lavfi", "-i", "testsrc2=s=1000x560,noise=alls=40:allf=u", "-frames:v", "1")   # image fixe texturée
+    net = _f("net2.mp4", "-loop", "1", "-i", fond, "-f", "lavfi", "-i", "sine=f=440:d=6", "-t", "6", "-r", "25",
+             "-af", "volume=0.3", "-vf", "crop=640:360:150:80,format=yuv420p")
+    flou = _f("flou2.mp4", "-i", net, "-vf", "boxblur=6:2", "-c:a", "copy")
+    tremble = _f("tremble.mp4", "-loop", "1", "-i", fond, "-t", "6", "-r", "25", "-an",
+                 "-vf", "crop=640:360:'150+13*sin(n*1.7)+9*sin(n*0.9)':'80+10*sin(n*2.3)',format=yuv420p")
+    pano = _f("pano.mp4", "-loop", "1", "-i", fond, "-t", "6", "-r", "25", "-an", "-vf", "crop=640:360:'20+t*30':80,format=yuv420p")
+    _f("marche_douce.mp4", "-loop", "1", "-i", fond, "-t", "6", "-r", "25", "-an",
+       "-vf", "crop=640:360:'20+t*20':'80+2.5*sin(2*PI*1.8*t)',format=yuv420p")
     sature = _f("sature.wav", "-f", "lavfi", "-i", "sine=f=440:d=6", "-af", "volume=30")
     vent = _f("vent.wav", "-f", "lavfi", "-i", "anoisesrc=c=brown:a=0.5:d=6", "-af", "lowpass=f=100")
     sil = _f("silences.wav", "-f", "lavfi", "-i", "sine=f=440:d=10", "-af", "volume=enable='between(t,1,8)':volume=0")
-    copie = os.path.join(D, "copie.mp4")
+    copie = os.path.join(D, "copie2.mp4")
     if not os.path.exists(copie):
         moteur.lancer(["-y", "-i", net, "-c:v", "libx264", "-crf", "30", "-c:a", "aac", copie])
-    return dict(net=net, flou=flou, tremble=tremble, pano=pano, sature=sature, vent=vent, silences=sil, copie=copie)
+    return dict(net=net, flou=flou, tremble=tremble, pano=pano, marche_douce=os.path.join(D, "marche_douce.mp4"), sature=sature, vent=vent, silences=sil, copie=copie)
 
 
 class TestMesures(unittest.TestCase):
@@ -45,12 +48,12 @@ class TestMesures(unittest.TestCase):
         vus = []
         r = TR.trier(p, progression=lambda x, n="": vus.append(x))
         self.assertEqual(vus[-1], 1.0)
-        attendu = {"net": set(), "flou": {"flou"}, "tremble": {"tremble"}, "pano": set(), "sature": {"son"}, "vent": {"son"},
+        attendu = {"net": set(), "flou": {"flou"}, "tremble": {"tremble"}, "pano": set(), "marche_douce": set(), "sature": {"son"}, "vent": {"son"},
                    "silences": {"silences"}, "copie": {"doublon"}}
         for k, ident in ids.items():
             self.assertEqual(set(r[ident]), attendu[k], k)
         self.assertIn("vent", r[ids["vent"]]["son"])
-        self.assertIn("net.mp4", r[ids["copie"]]["doublon"])
+        self.assertIn("net2.mp4", r[ids["copie"]]["doublon"])
         self.assertEqual(TR.a_trier(p), [])                      # déjà fait : rien à refaire
         m = p.media(ids["flou"])
         from app import analyse_locale as AL
@@ -85,7 +88,7 @@ class TestEditeur(unittest.TestCase):
         t.wait(60000)
         app.processEvents()
         self.assertTrue(all(m.get("tri") for m in ed.projet.medias))
-        self.assertIn("à revoir", ed.encart.lbl.text())
+        self.assertIn("revoir", ed.encart.lbl.text().lower())
         self.assertEqual(C.regles("trie les rushes"), [{"action": "trier_rushes"}])
         self.assertEqual(C.regles("range les rushes par date")[0]["action"], "ranger_rushes")
         self.assertNotEqual(C.regles("effet flou sur tous les plans")[:1], [{"action": "trier_rushes"}])

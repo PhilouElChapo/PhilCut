@@ -6,8 +6,12 @@ Guide de test : docs/guideline-tests.md
 
 ## Nouveautes de 0.9.51 (comprend tout ce qui est sorti depuis la 0.4.4)
 
-### 0.9.51 (correction d'un plantage)
+### 0.9.51 (corrections apres les essais du 12/11 au soir)
 - Plantage corrige : dans "Dites-le en clair" avec l'IA locale, cliquer sur une autre action pendant que l'IA reflechissait encore faisait fermer PhilCut d'un coup (Windows : Qt6Core.dll, code 0xc0000409). Une tache relancee avant la fin de la precedente ne peut plus faire planter PhilCut, partout dans le logiciel. Dans Dites-le, les boutons d'actions attendent la reponse, et seule la derniere demande compte.
+- Timeline : le clic droit sur un endroit vide ne faisait rien (erreur). Il ouvre de nouveau son menu, et sur un vide entre deux plans propose "Refermer ce vide : recoller les plans" (annulable).
+- Atelier IA non bloquant : on continue a travailler dans le film pendant le calcul. Le fermer pendant un calcul le range seulement ; "Afficher l'Atelier" dans la barre du bas le rouvre.
+- Une erreur sans texte dit au moins sa nature, et son detail va au journal des plantages et erreurs.
+- Tri des rushes : tremble mesure comme un stabilisateur (points suivis), la marche qui secoue est reperee ; le message nomme le rush et la raison ; le plan dans la timeline affiche aussi "⚠" et le probleme ; au survol de la vignette, une ligne "Mesures" donne les chiffres. La barre de progression vide ne reste plus affichee a cote des messages.
 
 ### 0.9.50 (plusieurs chaines YouTube, effets sur une image d'exemple)
 - Publier : plusieurs chaines YouTube reliees. Liste "Chaine", bouton "Ajouter une chaine..." (le navigateur demande quel compte ou quelle chaine de marque), "Delier" ne delie que la chaine choisie. La confirmation rappelle la chaine qui recoit la video. Une chaine deja reliee est reprise telle quelle.

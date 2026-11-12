@@ -18,7 +18,8 @@ class DialogueMusiques(QDialog):
         self.setWindowTitle(_("Bibliothèque musicale libre"))
         self.resize(860, 560)
         self.params = params
-        self.taches = []
+        from .taches import ListeTaches
+        self.taches = ListeTaches(self)
         self.chemin = None
         self.morceau = None
         self.lecteur = None

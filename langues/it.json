@@ -6811,5 +6811,17 @@
  "Journal des plantages et erreurs…": "Registro dei crash e degli errori…",
  "Journal des plantages et erreurs": "Registro dei crash e degli errori",
  "Aucun plantage ni erreur noté pour l'instant.": "Nessun crash né errore registrato per ora.",
- "Voir le journal des plantages (à copier pour le signaler)…": "Vedere il registro dei crash (da copiare per segnalarlo)…"
+ "Voir le journal des plantages (à copier pour le signaler)…": "Vedere il registro dei crash (da copiare per segnalarlo)…",
+ "Mesures : {m}": "Misure: {m}",
+ "A revoir — {l}. Pastille sur la vignette dans « Médias du projet » et ⚠ sur le plan.": "Da rivedere — {l}. Bollino sulla miniatura in « Media del progetto » e ⚠ sulla clip.",
+ "« {n} » : {r}": "« {n} »: {r}",
+ "tremblement {v} (seuil {s})": "tremolio {v} (soglia {s})",
+ "netteté {v} (seuil {s})": "nitidezza {v} (soglia {s})",
+ "son muet": "audio muto",
+ "son {d} dB, écrêté {e} ‰, grave {g} %": "audio {d} dB, saturato {e} ‰, gravi {g} %",
+ "Afficher l'Atelier": "Mostra il Laboratorio",
+ "Finition : le moteur assemble les images et écrit le fichier. Toujours en cours : {t} depuis la fin du calcul, {e} en tout.": "Finitura: il motore assembla le immagini e scrive il file. Ancora in corso: {t} dalla fine del calcolo, {e} in tutto.",
+ "erreur {n} sans message (détail : Outils › Journal des plantages et erreurs)": "errore {n} senza messaggio (dettagli: Strumenti › Registro dei crash e degli errori)",
+ "Refermer ce vide ({d} s) : recoller les plans": "Chiudere questo vuoto ({d} s): riunire le clip",
+ "Les plans qui suivent avancent pour se coller au précédent": "Le clip seguenti avanzano fino a toccare la precedente"
 }

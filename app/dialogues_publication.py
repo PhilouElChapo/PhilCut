@@ -18,7 +18,8 @@ class DialoguePublier(QDialog):
         self.setWindowTitle(_("Publier"))
         self.resize(640, 600)
         self.projet, self.params = projet, params
-        self.taches = []
+        from .taches import ListeTaches
+        self.taches = ListeTaches(self)
         pub = (projet.d.get("recette") or {}).get("publication") or {}
         v = QVBoxLayout(self)
         f = QFormLayout()

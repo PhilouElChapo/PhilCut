@@ -442,6 +442,27 @@ class Projet:
                 return c
         return self.clip_a(t, "video")
 
+    def vide_a(self, t, piste="video"):
+        """(début, fin) du vide entre deux plans de cette piste à l'instant t, ou None (0.9.51)."""
+        cs = sorted(self.clips_piste(piste), key=lambda c: c["debut"])
+        avant = [fin_clip(c) for c in cs if fin_clip(c) <= t + 1e-6]
+        apres = [c["debut"] for c in cs if c["debut"] >= t - 1e-6]
+        if not apres or any(c["debut"] < t < fin_clip(c) for c in cs):
+            return None
+        a, b = (max(avant) if avant else 0.0), min(apres)
+        return (a, b) if b - a > 0.01 else None
+
+    def refermer_vide(self, t, piste="video"):
+        """Recolle les plans : ceux qui suivent le vide (sur cette piste) avancent de sa longueur. Renvoie la durée retirée."""
+        v = self.vide_a(t, piste)
+        if not v:
+            return 0.0
+        a, b = v
+        for c in self.clips_piste(piste):
+            if c["debut"] >= b - 1e-6:
+                c["debut"] = round(c["debut"] - (b - a), 4)
+        return b - a
+
     def clip_a(self, t, piste="video"):
         for c in self.clips_piste(piste):
             if c["debut"] <= t < fin_clip(c):

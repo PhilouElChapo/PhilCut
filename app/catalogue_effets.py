@@ -165,6 +165,7 @@ class Fabrique(QObject):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.images = {}            # eid -> [octets jpeg]
+        self.prets = []             # vignettes finies, pas encore montrées
         self.cle = None             # (media, instant) : le plan qui sert d'exemple
         self._file = []
         self._fil = None
@@ -177,6 +178,7 @@ class Fabrique(QObject):
                 self.cle = cle
                 self.images = {}
                 self._file = []
+                self.prets = []
 
     def demander(self, projet, clip, eids, params):
         with self._verrou:
@@ -206,7 +208,7 @@ class Fabrique(QObject):
                 if cle != self.cle:
                     continue
                 self.images[eid] = imgs
-            self.prete.emit(eid)
+                self.prets.append(eid)      # 0.9.51 : relevé par le minuteur du volet (le fil ne touche jamais à Qt)
 
 
 class ListeEffets(QListWidget):
@@ -284,6 +286,7 @@ class CatalogueEffets(QWidget):
         v.addWidget(self.info)
         self.fabrique = Fabrique(self)
         self.fabrique.prete.connect(self._prete)
+        self.destroyed.connect(self.fabrique.arreter)          # 0.9.51 : volet détruit → le fil s'arrête avant d'écrire
         self._pixmaps = {}          # eid -> [QPixmap]
         self._tic = 0
         self.minuteur = QTimer(self)
@@ -399,6 +402,10 @@ class CatalogueEffets(QWidget):
         return _("Effets montrés sur une image d'exemple. Mettez un plan vidéo dans la timeline : les vignettes les montreront sur vos images.")
 
     def _animer(self):
+        with self.fabrique._verrou:
+            prets, self.fabrique.prets = self.fabrique.prets, []
+        for eid in prets:
+            self._prete(eid)
         if not self.isVisible():
             self.minuteur.stop()
             return

@@ -14,7 +14,7 @@ import os
 from . import moteur
 from .langue import _
 
-VERSION_TRI = 1
+VERSION_TRI = 2                          # 2 : tremblement par flux optique (0.9.51)
 # pastille → (lettre, couleur, libellé) ; la lettre se lit sur la vignette, le libellé dans l'info-bulle
 PASTILLES = {
     "doublon": ("D", "#a56bff", _("Doublon")),
@@ -42,24 +42,38 @@ def _images_grises(chemin, duree, n_max=120, cadence=8.0, largeur=LARG, hauteur=
     return [np.frombuffer(brut[i * t:(i + 1) * t], dtype=np.uint8).reshape(hauteur, largeur).astype("float32") for i in range(n)]
 
 
-def tremblement(images):
-    """Secousses du cadre : écart-type de l'accélération du déplacement (en part de la largeur). Un panoramique régulier
-    a une vitesse constante, donc une accélération nulle ; une main qui tremble, non."""
+def tremblement(images, cadence=12.0):
+    """Secousses du cadre, en part de la largeur : déplacement global entre deux images (flux optique, médiane), cumulé
+    en trajectoire ; on mesure l'écart entre cette trajectoire et la même lissée sur une demi-seconde. Un panoramique
+    ou une marche régulière suit la trajectoire lissée ; une main qui tremble ou le pas qui secoue s'en écarte."""
     import cv2
     import numpy as np
     pas = []
     for a, b in zip(images, images[1:]):
-        if float(a.std()) < 6 or float(b.std()) < 6:
+        if float(a.std()) < 4 or float(b.std()) < 4:
+            pas.append((0.0, 0.0))
             continue
-        (dx, dy), r = cv2.phaseCorrelate(a, b)
-        if r < 0.1:
-            continue
+        a8, b8 = a.astype(np.uint8), b.astype(np.uint8)
+        dx = dy = None
+        pts = cv2.goodFeaturesToTrack(a8, 120, 0.01, 6)      # points suivis d'une image à l'autre (comme un stabilisateur)
+        if pts is not None and len(pts) >= 8:
+            nouv, ok, _e = cv2.calcOpticalFlowPyrLK(a8, b8, pts, None, winSize=(21, 21), maxLevel=3)
+            ok = ok.reshape(-1).astype(bool)
+            if ok.sum() >= 8:
+                m, _in = cv2.estimateAffinePartial2D(pts[ok], nouv[ok], method=cv2.RANSAC, ransacReprojThreshold=2.0)
+                if m is not None:
+                    dx, dy = float(m[0, 2]), float(m[1, 2])
+        if dx is None:
+            (dx, dy), _r = cv2.phaseCorrelate(a, b)
         pas.append((dx / a.shape[1], dy / a.shape[1]))
-    if len(pas) < 4:
+    if len(pas) < 8:
         return 0.0
-    v = np.array(pas)
-    acc = np.diff(v, axis=0)
-    return float(np.sqrt((acc ** 2).sum(axis=1)).mean())
+    chemin = np.cumsum(np.array(pas), axis=0)
+    n = max(3, int(cadence / 2) | 1)
+    noyau = np.ones(n) / n
+    lisse = np.stack([np.convolve(np.pad(chemin[:, i], (n // 2, n // 2), mode="edge"), noyau, mode="valid") for i in (0, 1)], axis=1)
+    ecart = chemin - lisse
+    return float(np.sqrt((ecart ** 2).sum(axis=1)).mean())
 
 
 def nettete(chemin, duree, fiche=None, n=5):
@@ -130,7 +144,7 @@ def son(chemin):
 
 
 # ---------------------------------------------------------------- verdicts
-SEUIL_TREMBLE = 0.035      # accélération moyenne du cadre (part de la largeur par image à 8 i/s)
+SEUIL_TREMBLE = 0.006      # écart moyen à la trajectoire lissée (part de la largeur) ; marche douce ≈ 0,003, pas qui secoue ≈ 0,015
 SEUIL_FLOU = 45.0          # variance du laplacien (640 px)
 SEUIL_ECRETE = 0.0002      # 0,02 % d'échantillons pris dans un plateau écrêté
 SEUIL_FAIBLE = -45.0       # dB
@@ -172,7 +186,7 @@ def mesurer(media, arret=lambda: False):
     genre = media.get("genre")
     out = {"version": VERSION_TRI, "duree": duree}
     if genre == "video":
-        imgs = _images_grises(chemin, duree, debut=min(1.0, duree * 0.05))
+        imgs = _images_grises(chemin, duree, n_max=180, cadence=12.0, debut=min(1.0, duree * 0.05))
         if arret():
             raise InterruptedError()
         out["tremblement"] = round(tremblement(imgs), 4)
@@ -237,7 +251,9 @@ def trier(projet, ids=None, progression=None, arret=lambda: False):
             meme_nettete = not (n1 and n2) or max(n1, n2) / max(1e-3, min(n1, n2)) < 3      # une version floue n'est pas une copie
             s1, s2 = mes.get("son") or {}, mo.get("son") or {}
             meme_son = not (s1.get("db") is not None and s2.get("db") is not None) or abs(s1["db"] - s2["db"]) < 6
-            if meme_fichier or (mes.get("visuel") and meme_duree and meme_nettete and meme_son
+            t1, t2 = mes.get("tremblement") or 0, mo.get("tremblement") or 0
+            meme_mouvement = abs(t1 - t2) < SEUIL_TREMBLE / 2       # une prise tremblée n'est pas la copie d'une prise stable
+            if meme_fichier or (mes.get("visuel") and meme_duree and meme_nettete and meme_son and meme_mouvement
                                 and _distance(mes.get("visuel"), mo.get("visuel")) <= 12):
                 mes["doublon_de"], mes["doublon_nom"] = autre, o.get("nom", "")
                 break
@@ -264,6 +280,23 @@ def pastilles(media):
 def texte(media):
     """Le résumé lisible (info-bulle, recherche) : « Flou : …  ·  Son raté : … »."""
     return "\n".join(f"{PASTILLES[k][2]} : {v}" for k, v in sorted(pastilles(media).items()) if k in PASTILLES)
+
+
+def mesures_lisibles(media):
+    """Les chiffres mesurés (pour régler les seuils sur de vrais rushes) : tremblement, netteté, son."""
+    m = (media.get("tri") or {}).get("mesures") or {}
+    out = []
+    if m.get("tremblement") is not None:
+        out.append(_("tremblement {v} (seuil {s})", v=f"{m['tremblement'] * 1000:.1f}", s=f"{SEUIL_TREMBLE * 1000:.1f}"))
+    if m.get("nettete") is not None:
+        out.append(_("netteté {v} (seuil {s})", v=int(m["nettete"]), s=int(SEUIL_FLOU)))
+    so = m.get("son") or {}
+    if so.get("muet"):
+        out.append(_("son muet"))
+    elif so:
+        out.append(_("son {d} dB, écrêté {e} ‰, grave {g} %", d=so.get("db"), e=f"{so.get('ecretes', 0) * 1000:.2f}",
+                     g=int(so.get("grave", 0) * 100)))
+    return " · ".join(out)
 
 
 def dessiner(pixmap, media):
