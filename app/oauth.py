@@ -29,8 +29,9 @@ FOURNISSEURS = {
         "nom": "YouTube",
         "auth": "https://accounts.google.com/o/oauth2/v2/auth",
         "jeton": "https://oauth2.googleapis.com/token",
-        "portee": "https://www.googleapis.com/auth/youtube.upload",
-        "extra": {"access_type": "offline", "prompt": "consent"},
+        # 0.9.50 : + lecture seule de la chaîne, pour afficher son nom (plusieurs chaînes reliées) ; choix du compte forcé
+        "portee": "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly",
+        "extra": {"access_type": "offline", "prompt": "select_account consent"},
         "env": ("PHILCUT_GOOGLE_ID", "PHILCUT_GOOGLE_SECRET"),
         "retour": "http://127.0.0.1:{port}",
         "meme_que": "gdrive",

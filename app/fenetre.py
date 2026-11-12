@@ -50,6 +50,11 @@ def sortie_directe(code=0):
     """Sortie sans destruction des objets par Python et Qt (voir philcut.sortir)."""
     import sys as _s
     try:
+        from .journal import fin_normale
+        fin_normale()
+    except Exception:       # noqa: BLE001
+        pass
+    try:
         _s.stdout.flush()
         _s.stderr.flush()
     except Exception:       # noqa: BLE001
@@ -299,6 +304,7 @@ class Fenetre(QMainWindow):
         ou.addAction(_("Synchroniser maintenant"), self.synchro_demarrage)
         ou.addAction(_("Centre d'activité (tâches en cours, téléchargements)…"), self.voir_activite)
         ou.addAction(_("Journal des échanges (Drives, IA)…"), self.journal_echanges)
+        ou.addAction(_("Journal des plantages et erreurs…"), self.journal_plantages)
         ou.addAction(_("Ouvrir le dossier des données"), lambda: self.ouvrir_externe(dossier_donnees()))
         ai = mb.addMenu(_("&Aide"))
         ai.addAction(_("Raccourcis clavier"), self.raccourcis)
@@ -1609,10 +1615,17 @@ class Fenetre(QMainWindow):
         self.reconstruire_barres()
         QMessageBox.information(self, _("Préférences"), _("Préférences importées."))
 
-    def journal_echanges(self):
-        from .journal import chemin
+    def journal_plantages(self):
+        from .journal import chemin_plantages
+        self.journal_echanges(chemin_plantages(), _("Journal des plantages et erreurs"),
+                              _("Aucun plantage ni erreur noté pour l'instant."))
+
+    def journal_echanges(self, fichier=None, titre=None, vide=None):
+        from .journal import chemin as _chemin_echanges
+        fichier = fichier or _chemin_echanges()
+        chemin = lambda: fichier                       # noqa: E731
         d = QDialog(self)
-        d.setWindowTitle(_("Journal des échanges"))
+        d.setWindowTitle(titre or _("Journal des échanges"))
         d.resize(820, 520)
         v = QVBoxLayout(d)
         t = QPlainTextEdit()
@@ -1621,7 +1634,7 @@ class Fenetre(QMainWindow):
             with open(chemin(), encoding="utf-8", errors="replace") as f:
                 t.setPlainText(f.read()[-200000:])
         except OSError:
-            t.setPlainText(_("Aucun échange noté pour l'instant."))
+            t.setPlainText(vide or _("Aucun échange noté pour l'instant."))
         t.moveCursor(t.textCursor().MoveOperation.End)
         v.addWidget(t)
         h = QHBoxLayout()
@@ -2064,6 +2077,11 @@ class DialogueRecuperation(QDialog):
                      "Ces projets ont des modifications qui n'étaient pas enregistrées ; la sauvegarde automatique les a gardées."))
         t.setWordWrap(True)
         v.addWidget(t)
+        from .journal import chemin_plantages
+        if os.path.exists(chemin_plantages()):             # 0.9.50 : ce qui s'est passé, à transmettre
+            bj = QPushButton(_("Voir le journal des plantages (à copier pour le signaler)…"))
+            bj.clicked.connect(fenetre.journal_plantages)
+            v.addWidget(bj)
         self.liste = QListWidget()
         for r in liste:
             ou = r["origine"] or _("jamais enregistré")

@@ -176,7 +176,7 @@ class TestPublication(unittest.TestCase):
             def read(self):
                 return b"{}"
         anc = (urllib.request.urlopen, P._acces)
-        P._acces = lambda journal=None: "jeton"
+        P._acces = lambda journal=None, compte=None: "jeton"
         urllib.request.urlopen = lambda req, timeout=None: (vu.update(url=req.full_url, n=len(req.data)), Rep())[1]
         try:
             img = os.path.join(os.environ["APPDATA"], "v.jpg")

@@ -94,6 +94,8 @@ def main():
     app.setApplicationName("PhilCut")
     app.setOrganizationName("PhilouElChapo")
     from app.config import VERSION
+    from app.journal import surveiller_plantages
+    surveiller_plantages(VERSION)                 # 0.9.50 : journaux/plantages.log (Outils › Journal des plantages)
     from app.demarrage import EcranDemarrage
     lancement = EcranDemarrage(VERSION)
     base = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.abspath(__file__))

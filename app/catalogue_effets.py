@@ -21,6 +21,74 @@ L_VIGNETTE, H_VIGNETTE = 128, 72
 IPS = 8                     # images par seconde des vignettes
 
 
+def _paysage(larg=2560, haut=720):
+    """Un paysage dessiné par PhilCut (ciel, soleil, montagnes, mer) : neutre et libre, pour montrer les effets avant
+    qu'un plan soit dans la timeline. Aucune image d'autrui."""
+    import numpy as np
+    y = np.linspace(0, 1, haut)[:, None]
+    x = np.linspace(0, 1, larg)[None, :]
+    img = np.zeros((haut, larg, 3), np.float32)
+    ciel = np.array([[70, 140, 225]], np.float32) * (1 - y) + np.array([[250, 190, 140]], np.float32) * y      # bleu → orangé
+    img[:] = ciel[:, None, :] if ciel.ndim == 2 else ciel
+    img[:] = (np.array([70, 140, 225], np.float32) * (1 - y[..., None]) + np.array([250, 190, 140], np.float32) * y[..., None])
+    # soleil et halo
+    sx, sy, r = 0.32 * larg, 0.42 * haut, 0.06 * haut
+    yy, xx = np.mgrid[0:haut, 0:larg]
+    d = np.sqrt((xx - sx) ** 2 + (yy - sy) ** 2)
+    halo = np.clip(1 - d / (r * 5), 0, 1)[..., None] ** 2
+    img = img * (1 - 0.5 * halo) + np.array([255, 230, 170], np.float32) * 0.5 * halo
+    img[d < r] = (255, 245, 210)
+    # nuages
+    for cx, cy, w in ((0.15, 0.18, 0.09), (0.55, 0.12, 0.12), (0.8, 0.22, 0.08), (0.95, 0.15, 0.1)):
+        dn = ((xx - cx * larg) / (w * larg)) ** 2 + ((yy - cy * haut) / (0.035 * haut)) ** 2
+        a = np.clip(1 - dn, 0, 1)[..., None] ** 0.7 * 0.85
+        img = img * (1 - a) + 255 * a
+    # trois chaînes de montagnes, de plus en plus sombres
+    rng = np.random.default_rng(7)
+    for k, (base, amp, coul) in enumerate(((0.55, 0.16, (120, 125, 160)), (0.63, 0.13, (75, 95, 110)), (0.70, 0.10, (40, 70, 55)))):
+        crete = base + sum(amp / (i + 1) * np.sin(2 * np.pi * (x[0] * (i + 1) * (2 + k) + rng.random())) for i in range(5)) * 0.5
+        masque = (y >= crete[None, :]) & (y < 0.74)
+        img[masque] = np.array(coul, np.float32) * (0.85 + 0.3 * y.repeat(larg, 1)[masque, None] - 0.15)
+    # mer avec reflets
+    mer = (y >= 0.74).repeat(larg, 1)
+    vague = (np.sin(xx * 0.05 + yy * 0.9) * 0.5 + 0.5)
+    img[mer] = (np.array([30, 80, 130], np.float32) * (0.8 + 0.25 * vague[mer, None]))
+    refl = mer & (np.abs(xx - sx) < 60 * (0.5 + y.repeat(larg, 1))) & (vague > 0.6)
+    img[refl] = (250, 210, 150)
+    return np.clip(img, 0, 255).astype(np.uint8)
+
+
+def exemple_video():
+    """La vidéo d'exemple des vignettes d'effets (6 s, lent travelling sur le paysage), fabriquée une fois sur ce poste."""
+    import cv2
+    from . import moteur
+    from .config import dossier_donnees
+    d = os.path.join(dossier_donnees(), "cache")
+    sortie = os.path.join(d, "exemple_effets_v1.mp4")
+    if os.path.exists(sortie):
+        return sortie
+    os.makedirs(d, exist_ok=True)
+    png = os.path.join(d, "exemple_effets_v1.png")
+    cv2.imwrite(png, cv2.cvtColor(_paysage(), cv2.COLOR_RGB2BGR))
+    tmp = sortie + ".part.mp4"
+    moteur.lancer(["-y", "-loop", "1", "-i", png, "-t", "6", "-r", "25",
+                   "-vf", "crop=1280:720:'(iw-1280)*t/6':0,format=yuv420p", "-c:v", "libx264", "-preset", "veryfast", "-crf", "23", tmp])
+    os.replace(tmp, sortie)
+    return sortie
+
+
+def projet_exemple():
+    """Un projet d'un plan (la vidéo d'exemple) pour les vignettes quand la timeline est vide."""
+    from . import moteur
+    from .projet import Projet
+    v = exemple_video()
+    p = Projet()
+    m = p.ajouter_media(v, moteur.sonder(v))
+    m["nom"] = _("Exemple")
+    c = p.ajouter_clip(m["id"])
+    return p, c
+
+
 def projet_essai(projet, clip, eid):
     """Mini-projet d'une seconde et demie (deux plans pour une transition) qui montre l'effet sur ce plan."""
     from .projet import Projet
@@ -272,12 +340,21 @@ class CatalogueEffets(QWidget):
         """A appeler quand le volet devient visible ou que la ligne rouge change de plan : vignettes à fabriquer."""
         if not self.isVisible():
             return
-        c = self.ed.projet.clip_a(self.ed.timeline.position, "video") or next(iter(self.ed.projet.clips_piste("video")), None)
-        m = self.ed.projet.media(c["media"]) if c else None
-        if not c or not m or m.get("genre") != "video":
-            self.info.setText(_("Mettez un plan vidéo dans la timeline : les vignettes montreront les effets sur lui."))
-            return
-        cle = (c["media"], round(c["src_debut"], 1), round(c["src_fin"], 1))
+        projet = self.ed.projet
+        c = projet.clip_a(self.ed.timeline.position, "video") or next(iter(projet.clips_piste("video")), None)
+        m = projet.media(c["media"]) if c else None
+        exemple = not c or not m or m.get("genre") != "video"
+        if exemple:                                    # 0.9.50 : timeline vide → les effets sur un paysage d'exemple
+            if getattr(self, "_exemple", None) is None:
+                if getattr(self, "_tache_exemple", None) is None:  # fabriquée une fois, hors de l'interface
+                    from .taches import Tache
+                    self._tache_exemple = Tache(lambda t: projet_exemple(), _("Exemple des effets"))
+                    self._tache_exemple.fini.connect(self._exemple_pret)
+                    self._tache_exemple.start()
+                self.info.setText(_("Préparation d'une image d'exemple pour montrer les effets…"))
+                return
+            projet, c = self._exemple
+        cle = ("exemple",) if exemple else (c["media"], round(c["src_debut"], 1), round(c["src_fin"], 1))
         if cle != self.fabrique.cle:
             self.fabrique.changer_exemple(cle)
             self._pixmaps = {}
@@ -286,10 +363,14 @@ class CatalogueEffets(QWidget):
                 it.setIcon(self._icone_fixe(it.data(Qt.UserRole)))
         a_faire = [k for k in self._cles() if not (E.fiche(k)["pack"] and not E.pack_pret(E.fiche(k)["pack"], self.params))]
         manquent = [k for k in a_faire if k not in self.fabrique.images]
+        self._sur_exemple = exemple
         if manquent:
-            self.info.setText(_("Vignettes en préparation sur « {n} » : {k} sur {t}…", n=c.get("nom", ""), k=len(a_faire) - len(manquent), t=len(a_faire)))
-        if manquent:
-            self.fabrique.demander(self.ed.projet, c, manquent, self.params)
+            self.info.setText(_("Vignettes en préparation sur une image d'exemple : {k} sur {t}…", k=len(a_faire) - len(manquent), t=len(a_faire))
+                              if exemple else
+                              _("Vignettes en préparation sur « {n} » : {k} sur {t}…", n=c.get("nom", ""), k=len(a_faire) - len(manquent), t=len(a_faire)))
+            self.fabrique.demander(projet, c, manquent, self.params)
+        elif exemple:
+            self.info.setText(self._texte_exemple())
         self.minuteur.start()
 
     def _prete(self, eid):
@@ -304,7 +385,18 @@ class CatalogueEffets(QWidget):
         a_faire = [k for k in self._cles() if not (E.fiche(k)["pack"] and not E.pack_pret(E.fiche(k)["pack"], self.params))]
         prets = len([k for k in a_faire if k in self.fabrique.images])
         self.info.setText(_("Vignettes prêtes : {k} sur {t}.", k=prets, t=len(a_faire)) if prets < len(a_faire) else
+                          self._texte_exemple() if getattr(self, "_sur_exemple", False) else
                           _("Survolez une vignette pour lire sa description ; glissez-la sur un plan pour la poser."))
+
+    def _exemple_pret(self, r, err):
+        if err or not r:
+            self.info.setText(_("Mettez un plan vidéo dans la timeline : les vignettes montreront les effets sur lui."))
+            return
+        self._exemple = r
+        self.actualiser()
+
+    def _texte_exemple(self):
+        return _("Effets montrés sur une image d'exemple. Mettez un plan vidéo dans la timeline : les vignettes les montreront sur vos images.")
 
     def _animer(self):
         if not self.isVisible():

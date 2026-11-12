@@ -27,46 +27,118 @@ class ErreurPublication(Exception):
     pass
 
 
-# ------------------------------------------------------------------ compte YouTube
-def _jetons():
+# ------------------------------------------------------------------ comptes YouTube (0.9.50 : plusieurs chaînes)
+# Dans le coffre du système, sous « publication:youtube » : {"comptes": {id_chaine: {refresh_token, access_token, expire,
+# nom}}, "actif": id_chaine}. L'ancien format (un seul jeu de jetons) est repris tel quel comme premier compte.
+def _magasin():
     from . import coffre
     try:
-        return json.loads(coffre.lire("publication:youtube") or "{}")
+        d = json.loads(coffre.lire("publication:youtube") or "{}")
     except ValueError:
-        return {}
+        d = {}
+    if d.get("refresh_token"):                                   # ancien format : un seul compte
+        d = {"comptes": {"ancien": dict(d, nom=_("Ma chaîne"))}, "actif": "ancien"}
+    d.setdefault("comptes", {})
+    if d.get("actif") not in d["comptes"]:
+        d["actif"] = next(iter(sorted(d["comptes"])), None)
+    return d
 
 
-def _garder(j):
+def _ranger(d):
     from . import coffre
-    coffre.enregistrer("publication:youtube", json.dumps(j))
+    if d.get("comptes"):
+        coffre.enregistrer("publication:youtube", json.dumps(d))
+    else:
+        coffre.supprimer("publication:youtube")
 
 
-def youtube_relie():
-    return bool(_jetons().get("refresh_token"))
+def comptes_youtube():
+    """[(id, nom de la chaîne)], par ordre alphabétique (accents ignorés)."""
+    import unicodedata
+    d = _magasin()
+    return sorted(((k, v.get("nom") or k) for k, v in d["comptes"].items()),
+                  key=lambda x: unicodedata.normalize("NFD", x[1]).encode("ascii", "ignore").decode().lower())
+
+
+def compte_actif():
+    return _magasin().get("actif")
+
+
+def choisir_compte(ident):
+    d = _magasin()
+    if ident in d["comptes"]:
+        d["actif"] = ident
+        _ranger(d)
+
+
+def youtube_relie(compte=None):
+    d = _magasin()
+    return bool((d["comptes"].get(compte) if compte else d["comptes"]) )
+
+
+def _chaine(jeton):
+    """(id, nom) de la chaîne YouTube du compte qui vient d'être relié."""
+    req = urllib.request.Request("https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true",
+                                 headers={"Authorization": f"Bearer {jeton}"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            items = json.loads(r.read().decode("utf-8")).get("items") or []
+    except (urllib.error.URLError, OSError, ValueError):
+        items = []
+    if not items:
+        return None, None
+    return items[0].get("id"), (items[0].get("snippet") or {}).get("title")
 
 
 def relier_youtube(journal=None, arret=lambda: False):
+    """Relie une chaîne de plus (ou met à jour celle qui l'est déjà) ; elle devient la chaîne choisie. Renvoie son nom."""
     from . import oauth
     j = oauth.autoriser("youtube", journal=journal, arret=arret)
-    _garder(j)
-    return True
+    ident, nom = _chaine(j.get("access_token", ""))
+    d = _magasin()
+    trouve = bool(nom)
+    ident = ident or f"compte{len(d['comptes']) + 1}"
+    nom = nom or _("Chaîne {n}", n=len(d["comptes"]) + 1)
+    d["comptes"][ident] = dict(j, nom=nom)
+    d["actif"] = ident
+    _ranger(d)
+    return {"id": ident, "nom": nom, "nom_trouve": trouve}
 
 
-def delier_youtube():
-    from . import coffre
-    coffre.supprimer("publication:youtube")
+def renommer_compte(ident, nom):
+    d = _magasin()
+    if ident in d["comptes"] and nom.strip():
+        d["comptes"][ident]["nom"] = nom.strip()
+        _ranger(d)
 
 
-def _acces(journal=None):
+def delier_youtube(compte=None):
+    """Délie une chaîne (la chaîne choisie par défaut) ; les autres restent reliées."""
+    d = _magasin()
+    d["comptes"].pop(compte or d.get("actif"), None)
+    d["actif"] = None
+    _ranger(_magasin_apres(d))
+
+
+def _magasin_apres(d):
+    if d.get("actif") not in d["comptes"]:
+        d["actif"] = next(iter(sorted(d["comptes"])), None)
+    return d
+
+
+def _acces(journal=None, compte=None):
     from . import oauth
-    j = _jetons()
+    d = _magasin()
+    cle = compte or d.get("actif")
+    j = d["comptes"].get(cle) or {}
     if not j.get("refresh_token"):
         raise ErreurPublication(_("Compte YouTube non relié : bouton « Relier mon compte YouTube »."))
     if j.get("access_token") and j.get("expire", 0) > time.time():
         return j["access_token"]
     n = oauth.rafraichir("youtube", j["refresh_token"], journal)
     j.update(access_token=n["access_token"], expire=n["expire"])
-    _garder(j)
+    d["comptes"][cle] = j
+    _ranger(d)
     return j["access_token"]
 
 
@@ -77,7 +149,7 @@ URL_ENVOI = "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resu
 URL_VIGNETTE = "https://www.googleapis.com/upload/youtube/v3/thumbnails/set"
 
 
-def envoyer_vignette(id_video, image):
+def envoyer_vignette(id_video, image, compte=None):
     """La vignette de la vidéo (JPG ou PNG, moins de 2 Mo) ; YouTube peut la refuser tant que la chaîne n'est pas validée
     par téléphone : on le dit, la vidéo reste envoyée. Renvoie None si c'est fait, sinon la raison."""
     if not (id_video and image and os.path.exists(image)):
@@ -86,7 +158,7 @@ def envoyer_vignette(id_video, image):
         donnees = f.read()
     type_ = "image/png" if image.lower().endswith(".png") else "image/jpeg"
     req = urllib.request.Request(URL_VIGNETTE + "?" + urllib.parse.urlencode({"videoId": id_video}), data=donnees, method="POST",
-                                 headers={"Authorization": f"Bearer {_acces()}", "Content-Type": type_, "Content-Length": str(len(donnees))})
+                                 headers={"Authorization": f"Bearer {_acces(compte=compte)}", "Content-Type": type_, "Content-Length": str(len(donnees))})
     try:
         with urllib.request.urlopen(req, timeout=120) as r:
             r.read()
@@ -101,13 +173,13 @@ def envoyer_vignette(id_video, image):
 
 
 def envoyer_youtube(chemin, titre, description="", mots_clefs=(), visibilite="private", categorie="19", enfants=False,
-                    progression=None, arret=lambda: False, morceau=8 * 1024 * 1024):
+                    progression=None, arret=lambda: False, morceau=8 * 1024 * 1024, compte=None):
     """Envoie la vidéo ; renvoie l'adresse de la vidéo sur YouTube. Reprend un morceau qui a échoué (réseau instable)."""
     taille = os.path.getsize(chemin)
     meta = {"snippet": {"title": (titre or os.path.splitext(os.path.basename(chemin))[0])[:100], "description": (description or "")[:4900],
                         "tags": [m for m in mots_clefs if m][:30], "categoryId": str(categorie)},
             "status": {"privacyStatus": visibilite, "selfDeclaredMadeForKids": bool(enfants)}}
-    jeton = _acces()
+    jeton = _acces(compte=compte)
     req = urllib.request.Request(URL_ENVOI, data=json.dumps(meta).encode("utf-8"), method="POST",
                                  headers={"Authorization": f"Bearer {jeton}", "Content-Type": "application/json; charset=UTF-8",
                                           "X-Upload-Content-Type": "video/mp4", "X-Upload-Content-Length": str(taille)})

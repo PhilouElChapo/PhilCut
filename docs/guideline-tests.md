@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T66 — 0.9.50 : plusieurs chaînes YouTube, effets sur une image d'exemple
+
+1. Nouveau projet vide, volet Effets : « Préparation d'une image d'exemple… », puis les vignettes s'animent sur un paysage (soleil, montagnes, mer). Le texte sous la grille dit que c'est un exemple.
+2. Glisser un plan vidéo dans la timeline : les vignettes se refont sur ce plan.
+3. Exporter › Publier : la chaîne déjà reliée apparaît dans la liste « Chaîne ». « Ajouter une chaîne… » : le navigateur demande le compte (et, pour un compte avec chaîne de marque, la chaîne). Accepter : la nouvelle chaîne apparaît, choisie.
+4. Si le navigateur affiche une alerte sur une autorisation « voir votre compte YouTube » : c'est la lecture du nom de la chaîne, ajoutée en 0.9.50. Si Google la refuse, PhilCut demande le nom de la chaîne à la main.
+5. Choisir une chaîne puis « Publier sur YouTube » : la confirmation nomme la chaîne. « Délier » ne retire que la chaîne choisie.
+6. Outils › « Journal des plantages et erreurs… » : la fenêtre s'ouvre (au moins les lignes « démarrage »). Après un plantage, le relancer : la fenêtre de récupération propose « Voir le journal des plantages » ; « Copier » puis me le coller.
+
 ## T65 — 0.9.49 : tri des rushes
 
 1. Importer quelques vrais rushes, dont si possible : une copie d'un même fichier (renommée), un plan flou, un plan pris en marchant, un plan venté, un plan avec un long silence. A la fin de l'import, la barre du bas propose « Trier les rushes » (30 s) ; rien n'est calculé avant votre clic.

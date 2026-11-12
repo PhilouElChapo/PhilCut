@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.49 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.50 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.50 (plusieurs chaines YouTube, effets sur une image d'exemple)
+- Publier : plusieurs chaines YouTube reliees. Liste "Chaine", bouton "Ajouter une chaine..." (le navigateur demande quel compte ou quelle chaine de marque), "Delier" ne delie que la chaine choisie. La confirmation rappelle la chaine qui recoit la video. Une chaine deja reliee est reprise telle quelle.
+- Journal des plantages : Outils > Journal des plantages et erreurs. PhilCut y note les erreurs (avec le detail technique) et, en cas de plantage brutal, l'endroit ou il s'est arrete. Rien n'est envoye : c'est a copier pour me le transmettre. La fenetre de recuperation apres plantage propose de l'ouvrir.
+- Volet Effets : sans plan video dans la timeline, les vignettes montrent chaque effet sur un paysage d'exemple dessine par PhilCut (fabrique une fois sur ce poste). Des qu'un plan est pose, elles le montrent sur vos images.
 
 ### 0.9.49 (tri des rushes)
 - Tri des rushes, calcule sur ce poste (sans IA, rien n'est envoye ni retire) : pastilles sur les vignettes des medias. D = doublon (meme fichier, ou memes images et meme duree), F = flou, T = tremble (un panoramique regulier n'est pas signale), S = son rate (sature, tres faible, vent probable), ... = silences (le tiers du rush, ou un blanc de plus de 5 s). Detail au survol ; "a revoir", "flou", "doublon"... dans la recherche des medias.

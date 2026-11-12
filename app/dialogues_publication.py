@@ -48,12 +48,20 @@ class DialoguePublier(QDialog):
         fy = QFormLayout(gy)
         self.yt = QCheckBox(_("Envoyer sur ma chaîne YouTube"))
         fy.addRow(self.yt)
-        hy = QHBoxLayout()
+        hy = QHBoxLayout()                                  # 0.9.50 : plusieurs chaînes reliées, on choisit la chaîne
         self.etat_yt = QLabel()
+        self.chaine = QComboBox()
+        self.chaine.setToolTip(_("La chaîne qui reçoit la vidéo"))
+        self.chaine.activated.connect(lambda _i: P.choisir_compte(self.chaine.currentData()))
         self.b_relier = QPushButton()
         self.b_relier.clicked.connect(self._relier)
-        hy.addWidget(self.etat_yt, 1)
+        self.b_delier = QPushButton(_("Délier"))
+        self.b_delier.setToolTip(_("Délie la chaîne choisie ; les autres restent reliées"))
+        self.b_delier.clicked.connect(self._delier)
+        hy.addWidget(self.etat_yt)
+        hy.addWidget(self.chaine, 1)
         hy.addWidget(self.b_relier)
+        hy.addWidget(self.b_delier)
         fy.addRow(hy)
         self.visi = QComboBox()
         for k, lib in P.VISIBILITES:
@@ -118,23 +126,52 @@ class DialoguePublier(QDialog):
 
     def _etat_youtube(self):
         from . import oauth
-        relie = P.youtube_relie()
-        self.etat_yt.setText(_("✓ Compte YouTube relié") if relie else _("Compte YouTube pas encore relié"))
-        self.b_relier.setText(_("Délier") if relie else _("Relier mon compte YouTube…"))
+        comptes = P.comptes_youtube()
+        relie = bool(comptes)
+        self.chaine.clear()
+        for k, nom in comptes:
+            self.chaine.addItem("✓ " + nom, k)
+        i = self.chaine.findData(P.compte_actif())
+        if i >= 0:
+            self.chaine.setCurrentIndex(i)
+        self.chaine.setVisible(relie)
+        self.b_delier.setVisible(relie)
+        self.etat_yt.setText(_("Chaîne :") if relie else _("Compte YouTube pas encore relié"))
+        self.b_relier.setText(_("Ajouter une chaîne…") if relie else _("Relier mon compte YouTube…"))
+        self.b_relier.setToolTip(_("Relier une autre chaîne (autre compte Google, ou chaîne de marque) : le navigateur demande "
+                                   "laquelle") if relie else "")
         self.b_relier.setEnabled(oauth.disponible("youtube"))
         self.yt.setChecked(relie)
         self.b_ok.setEnabled(relie)
 
-    def _relier(self):
-        if P.youtube_relie():
-            P.delier_youtube()
-            self._etat_youtube()
+    def _delier(self):
+        nom = self.chaine.currentText().lstrip("✓ ")
+        if QMessageBox.question(self, _("Délier"), _("Délier la chaîne « {n} » de PhilCut ? Les autres restent reliées.", n=nom)) \
+                != QMessageBox.Yes:
             return
+        P.delier_youtube(self.chaine.currentData())
+        self._etat_youtube()
+
+    def _relier(self):
         self.etat.setText(_("Le navigateur s'ouvre : choisissez le compte Google de votre chaîne et acceptez « Gérer vos vidéos YouTube »."))
         t = Tache(lambda tache: P.relier_youtube(arret=lambda: tache.arret), _("YouTube"))
         self.taches.append(t)
-        t.fini.connect(lambda r, e: (self.etat.setText(_("✕ {e}", e=e) if e else _("✓ Compte relié.")), self._etat_youtube()))
+        t.fini.connect(self._relie)
         t.start()
+
+    def _relie(self, r, e):
+        if e or not r:
+            self.etat.setText(_("✕ {e}", e=e))
+            self._etat_youtube()
+            return
+        if not r.get("nom_trouve"):                    # YouTube n'a pas donné le nom : on le demande, pour s'y retrouver
+            from PySide6.QtWidgets import QInputDialog
+            nom, ok = QInputDialog.getText(self, _("Nom de la chaîne"), _("Comment s'appelle cette chaîne ?"), text=r["nom"])
+            if ok and nom.strip():
+                P.renommer_compte(r["id"], nom)
+                r["nom"] = nom.strip()
+        self.etat.setText(_("✓ Chaîne « {n} » reliée.", n=r["nom"]))
+        self._etat_youtube()
 
     def _assiste(self, reseau):
         chemin = self.fichier.text().strip()
@@ -152,19 +189,21 @@ class DialoguePublier(QDialog):
         if not os.path.exists(chemin):
             QMessageBox.information(self, _("Publier"), _("Choisissez d'abord la vidéo exportée."))
             return
-        if QMessageBox.question(self, _("Publier sur YouTube"), _("Envoyer « {t} » sur votre chaîne, en « {v} » ?",
-                                t=self.titre.text().strip(), v=self.visi.currentText())) != QMessageBox.Yes:
+        compte = self.chaine.currentData()
+        if QMessageBox.question(self, _("Publier sur YouTube"), _("Envoyer « {t} » sur la chaîne « {c} », en « {v} » ?",
+                                t=self.titre.text().strip(), c=self.chaine.currentText().lstrip("✓ "),
+                                v=self.visi.currentText())) != QMessageBox.Yes:
             return
         self.b_ok.setEnabled(False)
         args = (chemin, self.titre.text().strip(), self.desc.toPlainText().strip(), self._mots(), self.visi.currentData(), self.cat.currentData())
         vignette = self.projet.d.get("vignette_image") or ""
 
         def travail(tache):
-            url = P.envoyer_youtube(*args, progression=lambda f: tache.avancer(f), arret=lambda: tache.arret)
+            url = P.envoyer_youtube(*args, progression=lambda f: tache.avancer(f), arret=lambda: tache.arret, compte=compte)
             self._note_vignette = None
             if url and vignette and os.path.exists(vignette):
                 tache.avancer(1.0, _("Envoi de la vignette…"))
-                self._note_vignette = P.envoyer_vignette(url.rsplit("/", 1)[-1], vignette)
+                self._note_vignette = P.envoyer_vignette(url.rsplit("/", 1)[-1], vignette, compte=compte)
             return url
         t = Tache(travail, _("YouTube"))
         self.taches.append(t)
