@@ -157,6 +157,18 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T72 — 0.9.57 : continuer avec ma voix
+
+1. Edition › Préférences › IA locale : installer « Continuer avec ma voix » (environ 1,6 Go). La progression s'affiche dans la barre du bas.
+2. Mettre un rush où vous parlez. Placer la ligne rouge juste après une de vos phrases. Clic droit sur le plan › « Continuer avec cette voix… » : la fenêtre ne bloque pas ; l'extrait proposé = les 12 dernières secondes avant la ligne rouge. « ▶ Ecouter l'extrait » : est-ce bien votre voix, sans trop de bruit ?
+3. Sans cocher l'accord, « Fabriquer la voix » reste grisé. Cocher, écrire « Et maintenant, passons à autre chose. », Fabriquer : la barre avance phrase par phrase. Noter le temps de calcul.
+4. « ▶ Ecouter » : me dire si la voix vous ressemble (timbre, accent, débit), et si le niveau est le même que l'extrait.
+5. Essayer l'expressivité plus haute, et une ponctuation différente (« Et maintenant… passons à autre chose ! ») : la voix change-t-elle ?
+6. Rush avec musique derrière : cocher « Isoler d'abord la voix » (si la séparation est installée) et comparer.
+7. « Poser dans le film » : la phrase est sur la piste Voix à la ligne rouge ; Edition › Annuler la retire d'un coup.
+8. Après un plan de liaison (T71) : bouton « Une phrase avec ma voix sur ce plan… » : la voix est posée au début du plan de liaison.
+9. Aide › Comment faire… › « Continuer un commentaire avec la même voix » : ✓ faisable, « Montrez-moi » ouvre le clic droit sur la bonne ligne.
+
 ## T71 — 0.9.56 : plan de liaison intelligent
 
 1. Deux rushes de lieux différents l'un après l'autre dans la timeline. Clic droit sur le premier › « Plan de liaison avec le plan suivant… » : la fenêtre ne bloque pas le film ; les deux images (dernière de A, première de B) s'affichent avec la ligne des mesures.

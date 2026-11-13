@@ -279,6 +279,9 @@ class Fenetre(QMainWindow):
             (icone("musique"), _("Son"), [
                 (icone("musique"), _("Bruitages…"), _("Whoosh, impact, déclic, bip… fabriqués sur ce poste, libres de droits"),
                  lambda: self._ed(lambda ed: ed.bruitage()), None),
+                (icone("ia"), _("Continuer avec ma voix…"),
+                 _("Une nouvelle phrase dite avec votre voix (ou celle d'une personne d'accord), à partir d'un extrait du film"),
+                 lambda: self._ed(lambda ed: ed.continuer_voix()), None),
                 outil("musique"), outil("voix")]),
             (icone("texte"), _("Textes et habillage"), [
                 outil("goodies"), outil("sous_titres"),
@@ -911,6 +914,10 @@ class Fenetre(QMainWindow):
                                                  "permis expliqué."), [
                 ent(icone("telecharger"), _("Chercher une musique en ligne (YouTube Music, YouTube, archives libres)…"),
                     _("Chercher, écouter et télécharger le son d'un titre."), (lambda: self.musique_en_ligne(ed))),
+                ent(icone("ia"), _("Continuer avec ma voix…"),
+                    _("Une nouvelle phrase dite avec la voix d'un plan du film (la vôtre, ou celle d'une personne d'accord) : pour "
+                      "continuer un commentaire sans tout réenregistrer. Sur ce poste, gratuit."),
+                    quand(lambda e: e.continuer_voix())),
                 ent(icone("ia"), _("Créer une musique par IA (Fabrique musique)…"),
                     _("Style, ambiance, tempo, instruments, voix : une consigne solide, améliorable par l'IA ; créée sur ce poste, gratuitement."),
                     quand(lambda e: e.fabrique_musique())),
@@ -1266,6 +1273,7 @@ class Fenetre(QMainWindow):
         from .export import VOIX
         m.addAction(_("Enregistrer une voix off au micro…"), self.enregistrer_voix)
         m.addAction(_("Voix off lue par une voix de synthèse…"), self.voix_synthese)
+        m.addAction(_("Continuer avec ma voix…"), lambda: ed.continuer_voix(c))
         m.addAction(_("Doubler la vidéo dans une autre langue…"), self.doubler)
         if c:
             m.addAction(_("Autotune : corriger la justesse du chant de ce plan…"), lambda: ed.autotune(c))

@@ -4,7 +4,17 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.56 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.57 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.57 (continuer avec ma voix)
+- Continuer avec ma voix : PhilCut fait dire une nouvelle phrase avec la voix d'un extrait de 5 a 15 secondes du film, pour continuer un commentaire ("Et maintenant, passons a autre chose...") sans tout reenregistrer. Clic droit sur le plan qui porte la voix > "Continuer avec cette voix...", Montage > Son, Fabrique IA > Musique, ou le bouton "Une phrase avec ma voix sur ce plan..." apres la pose d'un plan de liaison.
+- L'extrait propose : les dernieres secondes de voix avant la ligne rouge (ou un fichier : un enregistrement de votre voix). "Isoler d'abord la voix" retire la musique derriere (si "Separer voix, musique et bruits" est installe).
+- Uniquement votre voix ou celle d'une personne qui vous a donne son accord : case a cocher obligatoire qui engage l'auteur, jamais la voix d'une personne connue.
+- Tout se fait sur ce poste, gratuitement : modele Chatterbox multilingue de Resemble AI (licence MIT, 17 langues proposees dont le francais, environ 1,6 Go a installer une fois dans Preferences > IA locale). Environ 4 secondes de calcul par seconde de voix sur un processeur ordinaire.
+- La voix est posee sur la piste Voix, au meme niveau sonore que l'extrait ; le fichier porte la mention "voix fabriquee par IA". Un seul Annuler.
+- Guide "Continuer un commentaire avec la meme voix" : faisable, avec "Montrez-moi".
+
+## Nouveautes de 0.9.56
 
 ### 0.9.56 (plan de liaison intelligent)
 - Plan de liaison : un plan qui part de la derniere image d'un rush et arrive a la premiere image du suivant, pour passer d'un lieu a l'autre sans coupe seche. Clic droit sur le premier plan > "Plan de liaison avec le plan suivant...", clic droit dans un vide > "Remplir ce vide par un plan de liaison...", Montage > Pistes et passage choisi, ou Fabrique IA > Video.

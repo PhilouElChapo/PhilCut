@@ -76,6 +76,14 @@ def verifier(sortie):
     except Exception as e:
         lignes.append(f"ia locale: onnxruntime ERREUR {e}")
         ok = False
+    try:   # 0.9.57 : decoupeur de texte de « Continuer avec ma voix »
+        from tokenizers import Tokenizer
+        t = Tokenizer.from_str('{"version":"1.0","model":{"type":"WordLevel","vocab":{"a":0,"[UNK]":1},"unk_token":"[UNK]"},'
+                               '"pre_tokenizer":{"type":"Whitespace"}}')
+        lignes.append(f"voix continuee: tokenizers ok ({t.encode('a b').ids})")
+    except Exception as e:
+        lignes.append(f"voix continuee: tokenizers ERREUR {e}")
+        ok = False
     lignes.append("RESULTAT: " + ("OK" if ok else "ECHEC"))
     with open(sortie, "w", encoding="utf-8") as f:
         f.write("\n".join(lignes) + "\n")

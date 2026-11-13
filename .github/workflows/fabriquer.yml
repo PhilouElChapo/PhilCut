@@ -96,7 +96,7 @@ jobs:
           pyinstaller --noconfirm --clean --windowed --name PhilCut --icon philcut.ico
           --add-data "fonts;fonts" --add-data "langues;langues" --add-data "catalogue;catalogue"
           --add-binary "bin\ffmpeg.exe;bin" --add-binary "bin\ffprobe.exe;bin"
-          --collect-submodules app --collect-submodules keyring --collect-submodules truststore --collect-binaries onnxruntime
+          --collect-submodules app --collect-submodules keyring --collect-submodules truststore --collect-binaries onnxruntime --collect-all tokenizers
           --collect-submodules moderngl --collect-submodules glcontext --collect-binaries glcontext --collect-all rlottie_python
           --hidden-import PySide6.QtNetwork --hidden-import PySide6.QtMultimedia --hidden-import PySide6.QtMultimediaWidgets
           --hidden-import win32ctypes.core --hidden-import sqlite3
@@ -173,7 +173,7 @@ jobs:
         run: >
           pyinstaller --noconfirm --clean --windowed --name PhilCut
           --add-data "fonts:fonts" --add-data "langues:langues" --add-data "catalogue:catalogue"
-          --collect-submodules app --collect-submodules keyring --collect-submodules truststore --collect-binaries onnxruntime
+          --collect-submodules app --collect-submodules keyring --collect-submodules truststore --collect-binaries onnxruntime --collect-all tokenizers
           --collect-submodules moderngl --collect-submodules glcontext --collect-binaries glcontext --collect-all rlottie_python
           --hidden-import PySide6.QtNetwork --hidden-import PySide6.QtMultimedia --hidden-import PySide6.QtMultimediaWidgets --hidden-import sqlite3
           --exclude-module scipy --exclude-module matplotlib --exclude-module pandas --exclude-module tkinter

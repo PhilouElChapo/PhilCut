@@ -8,3 +8,4 @@ cryptography
 truststore
 moderngl
 rlottie-python
+tokenizers

@@ -188,12 +188,14 @@ class G7RienDeTronque(unittest.TestCase):
         from app.dialogues_sequence import DialogueSequence
         from app.dialogues_vignette import DialogueVignette
         from app.dialogues_liaison import DialogueLiaison
+        from app.dialogues_voix_suite import DialogueVoixSuite
         c2 = ed.projet.clips_piste("video")[1]
         fen = [("PhilCut", f), ("Préférences", DialoguePreferences(f, f.params)), ("Dites-le", DialogueCommande(ed)),
                ("Guides", DialogueGuides(f)), ("Séparation", DialogueSeparation(ed, c)),
                ("Publier", DialoguePublier(f, ed.projet, f.params)), ("Atelier IA", DialogueAtelierIA(ed, "video")),
                ("Fabrique musique", DialogueFabriqueMusique(ed, f.params)), ("Séquence IA", DialogueSequence(ed, None)),
-               ("Vignette", DialogueVignette(ed, None, "vignette")), ("Plan de liaison", DialogueLiaison(ed, c, c2))]
+               ("Vignette", DialogueVignette(ed, None, "vignette")), ("Plan de liaison", DialogueLiaison(ed, c, c2)),
+               ("Continuer avec ma voix", DialogueVoixSuite(ed, c))]
         fautes = []
         for nom, d in fen:
             d.show()

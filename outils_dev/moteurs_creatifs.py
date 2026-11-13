@@ -63,6 +63,17 @@ MODELES = {
                         [("modele", "adowu/htdemucs-onnx", ["htdemucs_fp16weights.onnx", "htdemucs.onnx"])],
                         {"qualite": 4, "memoire_go": 2, "note": "Voix, musique et bruits d'un plan ou d'une chanson, sur le processeur "
                                                                 "(licence MIT). Environ 170 Mo."}),
+    # 0.9.57 : continuer avec ma voix (Chatterbox Multilingual de Resemble AI, licence MIT, export ONNX de onnx-community)
+    "voix_clone": ("Continuer avec ma voix (Chatterbox multilingue)", "voix_clone",
+                   [(r, "onnx-community/chatterbox-multilingual-ONNX", [f]) for r, f in (
+                       ("encodeur", "onnx/speech_encoder.onnx"), ("encodeur_donnees", "onnx/speech_encoder.onnx_data"),
+                       ("jetons", "onnx/embed_tokens.onnx"), ("jetons_donnees", "onnx/embed_tokens.onnx_data"),
+                       ("langage", "onnx/language_model_q4.onnx"), ("langage_donnees", "onnx/language_model_q4.onnx_data"),
+                       ("decodeur", "onnx/conditional_decoder.onnx"), ("decodeur_donnees", "onnx/conditional_decoder.onnx_data"),
+                       ("tokenizer", "tokenizer.json"))],
+                   {"qualite": 4, "memoire_go": 4, "note": "Une phrase dite avec votre voix (ou celle d'une personne d'accord) à partir "
+                                                           "d'un extrait de 5 à 15 s, 23 langues, sur le processeur (licence MIT). "
+                                                           "Environ 1,6 Go."}),
     "profondeur": ("Profondeur (Depth Anything V2 small)", "profondeur",
                    [("modele", "onnx-community/depth-anything-v2-small", ["onnx/model.onnx", "onnx/model_fp16.onnx"])],
                    {"qualite": 4, "memoire_go": 2, "note": "Photo 3D, flou d'arrière-plan, brume : sur le processeur, rapide (Apache 2.0)."}),

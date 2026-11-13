@@ -1822,6 +1822,8 @@ class Editeur(QWidget):
             self.separer_sons(self.projet.clip(ident))
         elif quoi == "liaison":
             self.plan_liaison(self.projet.clip(ident))
+        elif quoi == "voix_suite":
+            self.continuer_voix(self.projet.clip(ident))
         elif quoi == "whoosh":
             c = self.projet.clip(ident)
             if c:
@@ -2726,6 +2728,18 @@ class Editeur(QWidget):
                                   "puis recommencez : le plan de liaison va de ce plan au suivant."))
             return None
         d = DialogueLiaison(self, a, b)
+        d.show()
+        return d
+
+    def continuer_voix(self, clip=None, debut=None, sur_liaison=None):
+        """« Continuer avec ma voix » (0.9.57) : la voix du plan donné (ou du plan sous la ligne rouge, piste Voix ou plan
+        vidéo qui a du son) dit une nouvelle phrase. Fenêtre non bloquante."""
+        from .dialogues_voix_suite import DialogueVoixSuite
+        if clip is None:
+            t = self.timeline.position
+            clip = next((c for p in ["voix"] + self.projet.pistes_audio() + ["video"]
+                         for c in [self.projet.clip_a(max(0.0, t - 0.05), p)] if c), None)
+        d = DialogueVoixSuite(self, clip, debut, sur_liaison)
         d.show()
         return d
 

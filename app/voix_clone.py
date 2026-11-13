@@ -89,7 +89,7 @@ def normaliser(texte):
     """Ponctuation propre (la reprise du modèle d'origine) : espaces, guillemets et tirets typographiques, une majuscule au
     début, un point à la fin."""
     t = " ".join((texte or "").split())
-    for a, b in (("“", '"'), ("”", '"'), ("«", '"'), ("»", '"'), ("‘", "'"), ("’", "'"), ("—", "-"), ("–", "-"), ("…", "..."),
+    for a, b in (("« ", '"'), (" »", '"'), ("“", '"'), ("”", '"'), ("«", '"'), ("»", '"'), ("‘", "'"), ("’", "'"), ("—", "-"), ("–", "-"), ("…", "..."),
                  (" ,", ","), (" .", "."), (" ", " ")):
         t = t.replace(a, b)
     t = re.sub(r'\s+([?!:;])', r'\1', t).strip()
@@ -259,7 +259,8 @@ def decoder(s, jetons, emp):
     _cond, jt_ref, timbre, traits = emp
     tous = np.concatenate([jt_ref, jetons], axis=1).astype(np.int64)
     son = s["decodeur"].run(None, {"speech_tokens": tous, "speaker_embeddings": timbre, "speaker_features": traits})[0]
-    # le décodeur ne rend que la suite (l'extrait sert de modèle, comme dans S3Gen d'origine : vérifié par l'essai réel)
+    # le décodeur ne rend que la suite (l'extrait sert de modèle, comme dans S3Gen d'origine) : vérifié par l'essai réel du
+    # 13/11/2026, 60 jetons -> 2,44 s (2,40 attendus)
     return np.squeeze(son, axis=0)
 
 
@@ -284,6 +285,8 @@ def dire(texte, reference, sortie, langue="fr", expressivite=0.5, params=None, p
         j = parole(s, ids, emp, expressivite, jetons_attendus(m), prog, arret)
         if j.shape[1] == 0:
             continue
+        if progression:                                   # la mise en son est l'étape la plus longue (≈ 4 s par seconde de voix)
+            progression(0.03 + 0.92 * (k + 0.6) / n, _("Voix : phrase {i} sur {n}, mise en son…", i=k + 1, n=n))
         sons += [decoder(s, j, emp), blanc]
     if not sons:
         raise ErreurVoix(_("Le modèle n'a rien prononcé : reformulez le texte."))
@@ -313,3 +316,42 @@ def langue_defaut(params=None):
     from .langue import LANGUE
     l = (LANGUE or "fr")[:2]
     return l if l in LANGUES_SIMPLES else "fr"
+
+
+# ---------------------------------------------------------------- pose dans le film
+def poser(projet, chemin, debut, fiche=None, sur_liaison=None):
+    """Pose la voix fabriquée à `debut` : sur la piste Voix si elle est libre à cet endroit, sinon sur une piste de sons
+    libre (ajoutée s'il le faut). Un seul Annuler. Renvoie le plan posé."""
+    from . import moteur
+    from .dialogues_separation import _libre
+    fiche = fiche or moteur.sonder(chemin)
+    duree = float(fiche.get("duree") or 0)
+    if duree <= 0:
+        raise ErreurVoix(_("La voix fabriquée est vide."))
+    projet.marquer()
+    m = projet.ajouter_media(chemin, fiche)
+    m["nom"] = _("Voix continuée — {d}", d=os.path.splitext(os.path.basename(chemin))[0][-8:])
+    a, b = float(debut), float(debut) + duree
+    piste = next((x for x in ["voix"] + projet.pistes_audio() if _libre(projet, x, a, b)), None)
+    if piste is None:
+        piste = projet.ajouter_piste("audio")
+    c = projet.ajouter_clip(m["id"], piste=piste, debut=a, src_debut=0.0, src_fin=duree)
+    c["voix_ia"] = True                                   # fabriquée par IA : le montage le sait
+    if sur_liaison:
+        c["sur_liaison"] = sur_liaison
+    projet.modifie = True
+    return c
+
+
+def extrait_par_defaut(clip, position=None):
+    """(début dans la source, durée) : les dernières secondes de voix du plan avant la ligne rouge (12 s au plus), sinon la
+    fin du plan : c'est la voix qui doit continuer."""
+    v = float(clip.get("vitesse") or 1.0)
+    s0, s1 = float(clip["src_debut"]), float(clip["src_fin"])
+    fin = s1
+    if position is not None and clip["debut"] < position < clip["debut"] + (s1 - s0) / v:
+        fin = s0 + (position - clip["debut"]) * v
+    if fin - s0 < REF_MIN + 0.5:
+        fin = s1
+    debut = max(s0, fin - 12.0)
+    return round(debut, 2), round(fin - debut, 2)

@@ -159,6 +159,12 @@ class DialogueLiaison(QDialog):
         self.b_poser.setEnabled(False)
         self.b_poser.clicked.connect(self.poser)
         hb.addWidget(self.b_poser)
+        self.b_voix = QPushButton(_("Une phrase avec ma voix sur ce plan…"))
+        self.b_voix.setToolTip(_("« Et maintenant, passons à autre chose… » : dite avec la voix du premier plan, posée au début du "
+                                 "plan de liaison"))
+        self.b_voix.hide()
+        self.b_voix.clicked.connect(self.voix_sur_liaison)
+        hb.addWidget(self.b_voix)
         self.b_fermer = QPushButton(_("Fermer"))
         self.b_fermer.clicked.connect(self.close)
         hb.addWidget(self.b_fermer)
@@ -341,6 +347,15 @@ class DialogueLiaison(QDialog):
         self.b_poser.setEnabled(False)
         self.etat.setText(_("✓ Plan de liaison posé entre les deux plans ({d:.1f} s). Edition › Annuler pour revenir.",
                             d=c["src_fin"] - c["src_debut"]))
+        self.pose = c
+        self.b_voix.show()
+
+    def voix_sur_liaison(self):
+        """« Continuer avec ma voix » au début du plan de liaison, avec la voix du premier plan (0.9.57)."""
+        c = getattr(self, "pose", None)
+        if c is None or self.ed.projet.clip(c["id"]) is None:
+            return None
+        return self.ed.continuer_voix(self.a, debut=c["debut"], sur_liaison=c["id"])
 
     # ------------------------------------------------------------------ outils
     def _lancer(self, fonction, titre, fin):

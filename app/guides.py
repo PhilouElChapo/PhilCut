@@ -86,16 +86,23 @@ def _guides_integres():
               "montrer": {"menu": [_("Fabrique IA"), _("Vidéo"), _("Effet IA sur le film (dessin animé, ralenti, agrandir, photo 3D…)…")]},
               "fait": "fenetre:DialogueAtelierIA"},
          ]},
-        {"id": "suite_voix", "etat": "a_venir",
+        {"id": "suite_voix", "etat": "ok",
          "titre": _("Continuer un commentaire avec la même voix"),
-         "mots": "voix commentaire continuer suite clone ma voix narration",
-         "intro": _("Pas encore dans PhilCut : « Continuer avec ma voix » est prévu (votre voix ou celle d'une personne d'accord, "
-                    "case à cocher). En attendant : enregistrez la suite au micro, ou faites-la lire par une voix de synthèse."),
+         "mots": "voix commentaire continuer suite clone ma voix narration phrase dire",
+         "intro": _("PhilCut fait dire une nouvelle phrase avec la voix d'un extrait de 5 à 15 secondes du film : votre voix, ou "
+                    "celle d'une personne qui vous a donné son accord (case à cocher), jamais une personne connue. Tout se fait sur "
+                    "ce poste, gratuitement (modèle d'environ 1,6 Go à installer une fois)."),
          "etapes": [
-             {"texte": _("Placez la ligne rouge là où le commentaire doit reprendre.")},
-             {"texte": _("Montage › Son › Voix et son › « Enregistrer une voix off au micro… » (votre vraie voix), ou « Voix off lue "
-                         "par une voix de synthèse… »."),
-              "montrer": {"menu": [_("Montage"), _("Son"), _("Voix et son")]}},
+             {"texte": _("Placez la ligne rouge là où le commentaire doit reprendre (juste après la voix à continuer).")},
+             {"texte": _("Clic droit sur le plan qui porte la voix › « Continuer avec cette voix… » (ou Montage › Son › « Continuer "
+                         "avec ma voix… »)."),
+              "montrer": {"clic_droit": [_("Continuer avec cette voix…")]}, "fait": "fenetre:DialogueVoixSuite"},
+             {"texte": _("Ecoutez l'extrait proposé (les dernières secondes de voix avant la ligne rouge) ; déplacez-le si besoin. "
+                         "Musique derrière ? Cochez « Isoler d'abord la voix ».")},
+             {"texte": _("Cochez l'accord, écrivez la phrase (ex. : « Et maintenant, passons à autre chose. »), puis « Fabriquer la "
+                         "voix ». Ecoutez ; refabriquez en changeant la ponctuation ou l'expressivité si besoin.")},
+             {"texte": _("« Poser dans le film » : la phrase va sur la piste Voix à la ligne rouge. Après un plan de liaison, le bouton "
+                         "« Une phrase avec ma voix sur ce plan… » la pose au début du plan de liaison."), "fait": "voix_ia"},
          ]},
         {"id": "couper", "etat": "ok",
          "titre": _("Couper des images dans un rush"),
@@ -336,6 +343,8 @@ def est_fait(cond, ed):
             return bool(ed.timeline.zone_valide())
         if cond == "separe":
             return any(c.get("separe_de") for c in ed.projet.clips)
+        if cond == "voix_ia":
+            return any(c.get("voix_ia") for c in ed.projet.clips)
         if cond == "liaison":
             return any(c.get("liaison") for c in ed.projet.clips)
         if cond == "suivi":
