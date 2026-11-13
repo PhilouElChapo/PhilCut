@@ -7161,5 +7161,18 @@
  "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Descarga del modelo en curso: el progreso está en la barra inferior (Herramientas › Centro de actividad). Esta ventana se actualiza sola al final.",
  "Police du titre": "Fuente del título",
  "La police du titre ; « celle du kit » suit le kit choisi au-dessus": "La fuente del título; «la del kit» sigue el kit elegido arriba",
- "Celle du kit ({p})": "La del kit ({p})"
+ "Celle du kit ({p})": "La del kit ({p})",
+ "Dans votre langue :": "En su idioma:",
+ "En anglais, envoyé au moteur (corrigez la traduction si besoin) :": "En inglés, enviado al motor (corrija la traducción si hace falta):",
+ "Traduction corrigée à la main : c'est elle qui part au moteur.": "Traducción corregida a mano: es la que se envía al motor.",
+ "Traduction en anglais…": "Traduciendo al inglés…",
+ "Pas de traduction pour « {m} » : écrivez ces mots en anglais ci-dessus.": "Sin traducción para «{m}»: escriba estas palabras en inglés arriba.",
+ "Traduction dans votre langue…": "Traduciendo a su idioma…",
+ "Pas de traduction pour « {m} » : écrivez ces mots en anglais ci-dessous.": "Sin traducción para «{m}»: escriba estas palabras en inglés abajo.",
+ "✓ Traduit en anglais.": "✓ Traducido al inglés.",
+ "Traduction dans votre langue impossible (pas de réseau ?) : la consigne anglaise reste utilisable.": "Traducción a su idioma imposible (¿sin red?): la consigna en inglés sigue siendo utilizable.",
+ "Ex. : la caméra s'élève au-dessus du village puis redescend vers la plage.": "Ej.: la cámara se eleva sobre el pueblo y luego baja hacia la playa.",
+ "<b>Consigne pour le générateur vidéo</b>": "<b>Consigna para el generador de vídeo</b>",
+ "La consigne, sans aucun nom de célébrité ; ou « Rédiger la consigne »": "La consigna, sin ningún nombre de famoso; o «Redactar la instrucción»",
+ "Ce que l'IA dessine : écrit dans votre langue, traduit en anglais (la langue que les moteurs comprennent) ; la traduction reste modifiable": "Lo que dibuja la IA: escrito en su idioma, traducido al inglés (el idioma que entienden los motores); la traducción sigue siendo modificable"
 }

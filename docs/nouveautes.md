@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.60 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.61 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.61 (consignes en anglais : on ecrit dans sa langue, on voit les deux)
+- Partout ou une consigne doit partir en anglais (plan de liaison, sequence de personnages, tampons IA, musique IA) : une case "Dans votre langue", traduite en direct dans une case "En anglais, envoye au moteur". La traduction reste modifiable pour l'ameliorer ; corrigee a la main, c'est elle qui part.
+- Une consigne redigee en anglais par l'IA (ou par "Rediger la consigne", ou une proposition du plan de liaison) est traduite dans votre langue pour que vous la lisiez.
+- Fabrique : sous la phrase, l'anglais qui partira au moteur s'affiche en direct (avec la description du style "a la maniere de") ; corrige a la main, c'est lui qui part.
+- Mots sans traduction : signales, a ecrire en anglais ; PhilCut en anglais : une seule case.
+
+## Nouveautes de 0.9.60
 
 ### 0.9.60 (police du titre des vignettes)
 - Vignette : nouvelle liste "Police du titre" dans le groupe Style. Par defaut "Celle du kit" (Anton pour Punchy, Bebas Neue pour Documentaire et Aviation, Poppins pour Editorial et Tech) ; sinon les polices livrees avec PhilCut, puis celles de l'ordinateur, chaque nom ecrit dans sa propre police. Le reste du style (contour, ombre, couleurs) ne change pas ; le choix reste modifiable en rouvrant la vignette.

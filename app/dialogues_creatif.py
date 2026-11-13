@@ -83,6 +83,10 @@ class DialogueAtelierIA(QDialog):
         self.b_styles.clicked.connect(self._choisir_style)
         hp_.addWidget(self.b_styles, 0, Qt.AlignTop)
         vd.addLayout(hp_)
+        # 0.9.61 : l'anglais envoyé au moteur, visible et modifiable pendant qu'on écrit (règle : on voit les deux)
+        from .consigne_bilingue import AnglaisEnDirect
+        self.prompt_en = AnglaisEnDirect(self.prompt, self._anglais_de)
+        vd.addWidget(self.prompt_en)
         self.envoye = QLabel("")
         self.envoye.setWordWrap(True)
         self.envoye.setStyleSheet("color:#9aa4b2")
@@ -302,6 +306,7 @@ class DialogueAtelierIA(QDialog):
         self.etat_modele.setStyleSheet("color:#7fd18b" if ok else "color:#ffb347")
         avec_phrase = e["moteur"] in ("image", "video", "musique")
         self.prompt.setVisible(avec_phrase)
+        self.prompt_en.setVisible(avec_phrase and (e["famille"] in ("musique", "image", "logo") or e["moteur"] == "video"))
         self.lbl_prompt.setVisible(avec_phrase)
         self.b_styles.setVisible(avec_phrase)
         self.prompt.setPlainText(e.get("prompt", ""))
@@ -596,6 +601,15 @@ class DialogueAtelierIA(QDialog):
             p = self.prompt.toPlainText().rstrip(" ,")
             self.prompt.setPlainText((p + ", " if p else "") + f"{lien} {nom}")
 
+    def _anglais_de(self, _texte):
+        """L'anglais qui partira au moteur : la phrase traduite, plus la description du style « à la manière de »."""
+        from . import traduction_recherche as TR
+        tr = self._transposition()
+        en, _c, manque = TR.phrase_en_anglais(tr["texte"]) if tr["texte"] else ("", "deja", [])
+        if tr.get("ajout"):
+            en = ", ".join(x for x in (en, tr["ajout"]) if x)
+        return en, list(dict.fromkeys(manque))
+
     def _transposition(self):
         from . import styles_ia as S
         e = self.effet() or {}
@@ -754,8 +768,13 @@ class DialogueAtelierIA(QDialog):
         a_traduire = bool(prompt) and (e["famille"] in ("musique", "image", "logo") or m == "video")
         base = travail
 
+        en_main = self.prompt_en.texte() if (a_traduire and self.prompt_en.retouche()) else ""
+
         def travail(t, base=base):
-            if a_traduire:                       # les moteurs ne comprennent bien que l'anglais
+            if a_traduire and en_main:           # traduction corrigée à la main : c'est elle qui part
+                ph.update(en=en_main, comment="main")
+                t.avancer(0.0, _("Phrase envoyée au moteur, en anglais : « {t} »", t=en_main[:160]))
+            elif a_traduire:                     # les moteurs ne comprennent bien que l'anglais
                 t.avancer(0.0, _("Traduction de la phrase en anglais…"))
                 en, comment, manque = TR.phrase_en_anglais(tr["texte"]) if tr["texte"] else ("", "deja", [])
                 if manque and comment != "service":

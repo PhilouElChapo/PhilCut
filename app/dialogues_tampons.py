@@ -397,9 +397,10 @@ class DialogueTampons(QDialog):
         self.ia_nom = QLineEdit()
         f.addRow(_("Nom"), self.ia_nom)
         from PySide6.QtWidgets import QPlainTextEdit, QDoubleSpinBox
-        self.ia_consigne = QPlainTextEdit()
-        self.ia_consigne.setMaximumHeight(80)
-        self.ia_consigne.setToolTip(_("Ce que l'IA dessine (en anglais, la langue que les moteurs comprennent ; le français est traduit)"))
+        from .consigne_bilingue import ConsigneBilingue
+        self.ia_consigne = ConsigneBilingue(48)                  # votre langue + l'anglais envoyé, les deux visibles
+        self.ia_consigne.setToolTip(_("Ce que l'IA dessine : écrit dans votre langue, traduit en anglais (la langue que les moteurs "
+                                      "comprennent) ; la traduction reste modifiable"))
         f.addRow(_("Image (phrase pour l'IA)"), self.ia_consigne)
         self.ia_mouvement = QComboBox()
         for k, lib in TI.MOUVEMENTS.items():

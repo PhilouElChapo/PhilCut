@@ -157,6 +157,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T76 — 0.9.61 : consignes écrites dans votre langue, anglais visible
+
+1. Plan de liaison (clic droit sur un plan › Plan de liaison avec le plan suivant…) : choisir une proposition ; la consigne anglaise apparaît en bas et sa traduction française au-dessus (quelques secondes).
+2. Ecrire dans la case du haut : « la caméra s'élève au-dessus du village » : l'anglais se met à jour tout seul ; « ✓ Traduit en anglais ».
+3. Corriger un mot de l'anglais à la main : « Traduction corrigée à la main » ; fabriquer : c'est votre anglais qui part.
+4. Séquence de personnages : « Rédiger la consigne » : l'anglais et sa traduction ; écrire en français, l'anglais suit.
+5. Fabrique › Image : taper une phrase en français : l'anglais s'affiche dessous en direct ; avec « à la manière de … », la description du style y est ajoutée.
+6. Tampons IA et Musique IA (« Améliorer avec l'IA ») : les deux cases.
+
 ## T75 — 0.9.60 : police du titre de la vignette
 
 1. Outils › Vignette de la vidéo : groupe Style › « Police du titre » : « Celle du kit (Anton) », puis Anton, Bebas Neue, Nunito, Poppins, un trait, puis les polices de votre PC ; chaque nom est écrit dans sa police.

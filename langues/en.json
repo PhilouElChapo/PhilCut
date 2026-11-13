@@ -7170,5 +7170,18 @@
  "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Model download in progress: the progress is in the bottom bar (Tools › Activity centre). This window updates by itself at the end.",
  "Police du titre": "Title font",
  "La police du titre ; « celle du kit » suit le kit choisi au-dessus": "The title font; “the kit's one” follows the kit chosen above",
- "Celle du kit ({p})": "The kit's one ({p})"
+ "Celle du kit ({p})": "The kit's one ({p})",
+ "Dans votre langue :": "In your language:",
+ "En anglais, envoyé au moteur (corrigez la traduction si besoin) :": "In English, sent to the engine (correct the translation if needed):",
+ "Traduction corrigée à la main : c'est elle qui part au moteur.": "Translation corrected by hand: this is what goes to the engine.",
+ "Traduction en anglais…": "Translating into English…",
+ "Pas de traduction pour « {m} » : écrivez ces mots en anglais ci-dessus.": "No translation for “{m}”: write these words in English above.",
+ "Traduction dans votre langue…": "Translating into your language…",
+ "Pas de traduction pour « {m} » : écrivez ces mots en anglais ci-dessous.": "No translation for “{m}”: write these words in English below.",
+ "✓ Traduit en anglais.": "✓ Translated into English.",
+ "Traduction dans votre langue impossible (pas de réseau ?) : la consigne anglaise reste utilisable.": "Translation into your language impossible (no network?): the English prompt can still be used.",
+ "Ex. : la caméra s'élève au-dessus du village puis redescend vers la plage.": "E.g.: the camera rises above the village, then comes down towards the beach.",
+ "<b>Consigne pour le générateur vidéo</b>": "<b>Prompt for the video generator</b>",
+ "La consigne, sans aucun nom de célébrité ; ou « Rédiger la consigne »": "The prompt, without any celebrity name; or “Write the prompt”",
+ "Ce que l'IA dessine : écrit dans votre langue, traduit en anglais (la langue que les moteurs comprennent) ; la traduction reste modifiable": "What the AI draws: written in your language, translated into English (the language the engines understand); the translation can be edited"
 }

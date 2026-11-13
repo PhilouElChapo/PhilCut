@@ -413,9 +413,10 @@ class DialogueSequence(QDialog):
         self.p_repliques.setMaximumHeight(70)
         self.p_repliques.setPlaceholderText(_("Une réplique par ligne : « Nom : texte ». ex. :\nMarc : On y va.\nPaul : Après vous, mon cher."))
         f.addRow(_("Répliques"), self.p_repliques)
-        self.p_consigne = QPlainTextEdit()
+        from .consigne_bilingue import ConsigneBilingue
+        self.p_consigne = ConsigneBilingue(60)                   # votre langue + l'anglais envoyé, les deux visibles
         self.p_consigne.setMaximumHeight(110)
-        self.p_consigne.setPlaceholderText(_("La consigne envoyée au moteur (en anglais, sans aucun nom de célébrité) : « Rédiger »"))
+        self.p_consigne.setPlaceholderText(_("La consigne, sans aucun nom de célébrité ; ou « Rédiger la consigne »"))
         f.addRow(_("Consigne"), self.p_consigne)
         hc = QHBoxLayout()
         for lib, fn, aide in ((_("Rédiger la consigne"), self._rediger, _("Construite à partir du plan, des personnages et du lieu")),

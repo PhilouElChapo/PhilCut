@@ -7161,5 +7161,18 @@
  "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Das Modell wird heruntergeladen: Der Fortschritt steht in der unteren Leiste (Werkzeuge › Aktivitätszentrum). Dieses Fenster aktualisiert sich am Ende von selbst.",
  "Police du titre": "Schrift des Titels",
  "La police du titre ; « celle du kit » suit le kit choisi au-dessus": "Die Schrift des Titels; „die des Kits“ folgt dem oben gewählten Kit",
- "Celle du kit ({p})": "Die des Kits ({p})"
+ "Celle du kit ({p})": "Die des Kits ({p})",
+ "Dans votre langue :": "In Ihrer Sprache:",
+ "En anglais, envoyé au moteur (corrigez la traduction si besoin) :": "Auf Englisch, an die Engine gesendet (Übersetzung bei Bedarf korrigieren):",
+ "Traduction corrigée à la main : c'est elle qui part au moteur.": "Übersetzung von Hand korrigiert: Sie geht an die Engine.",
+ "Traduction en anglais…": "Übersetzung ins Englische…",
+ "Pas de traduction pour « {m} » : écrivez ces mots en anglais ci-dessus.": "Keine Übersetzung für „{m}“: Schreiben Sie diese Wörter oben auf Englisch.",
+ "Traduction dans votre langue…": "Übersetzung in Ihre Sprache…",
+ "Pas de traduction pour « {m} » : écrivez ces mots en anglais ci-dessous.": "Keine Übersetzung für „{m}“: Schreiben Sie diese Wörter unten auf Englisch.",
+ "✓ Traduit en anglais.": "✓ Ins Englische übersetzt.",
+ "Traduction dans votre langue impossible (pas de réseau ?) : la consigne anglaise reste utilisable.": "Übersetzung in Ihre Sprache nicht möglich (kein Netz?): Die englische Anweisung bleibt nutzbar.",
+ "Ex. : la caméra s'élève au-dessus du village puis redescend vers la plage.": "Z. B.: Die Kamera steigt über das Dorf auf und senkt sich dann zum Strand.",
+ "<b>Consigne pour le générateur vidéo</b>": "<b>Anweisung für den Videogenerator</b>",
+ "La consigne, sans aucun nom de célébrité ; ou « Rédiger la consigne »": "Die Anweisung, ohne den Namen einer berühmten Person; oder „Anweisung verfassen“",
+ "Ce que l'IA dessine : écrit dans votre langue, traduit en anglais (la langue que les moteurs comprennent) ; la traduction reste modifiable": "Was die KI zeichnet: in Ihrer Sprache geschrieben, ins Englische übersetzt (die Sprache, die die Engines verstehen); die Übersetzung bleibt änderbar"
 }

@@ -100,10 +100,9 @@ class DialogueLiaison(QDialog):
         v.addLayout(self.boite_props)
         self.groupe = QButtonGroup(self)
         self.props = []
-        v.addWidget(QLabel(_("Consigne pour le générateur vidéo (en anglais, modifiable) :")))
-        self.consigne = QTextEdit()
-        self.consigne.setAcceptRichText(False)
-        self.consigne.setFixedHeight(76)
+        v.addWidget(QLabel(_("<b>Consigne pour le générateur vidéo</b>")))
+        from .consigne_bilingue import ConsigneBilingue          # votre langue + l'anglais envoyé, les deux visibles
+        self.consigne = ConsigneBilingue(56, _("Ex. : la caméra s'élève au-dessus du village puis redescend vers la plage."))
         v.addWidget(self.consigne)
         hd = QHBoxLayout()
         hd.addWidget(QLabel(_("Durée")))

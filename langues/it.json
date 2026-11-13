@@ -7161,5 +7161,18 @@
  "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Download del modello in corso: l'avanzamento è nella barra in basso (Strumenti › Centro attività). Questa finestra si aggiorna da sola alla fine.",
  "Police du titre": "Carattere del titolo",
  "La police du titre ; « celle du kit » suit le kit choisi au-dessus": "Il carattere del titolo; «quello del kit» segue il kit scelto sopra",
- "Celle du kit ({p})": "Quello del kit ({p})"
+ "Celle du kit ({p})": "Quello del kit ({p})",
+ "Dans votre langue :": "Nella vostra lingua:",
+ "En anglais, envoyé au moteur (corrigez la traduction si besoin) :": "In inglese, inviato al motore (correggete la traduzione se serve):",
+ "Traduction corrigée à la main : c'est elle qui part au moteur.": "Traduzione corretta a mano: è lei che va al motore.",
+ "Traduction en anglais…": "Traduzione in inglese…",
+ "Pas de traduction pour « {m} » : écrivez ces mots en anglais ci-dessus.": "Nessuna traduzione per «{m}»: scrivete queste parole in inglese qui sopra.",
+ "Traduction dans votre langue…": "Traduzione nella vostra lingua…",
+ "Pas de traduction pour « {m} » : écrivez ces mots en anglais ci-dessous.": "Nessuna traduzione per «{m}»: scrivete queste parole in inglese qui sotto.",
+ "✓ Traduit en anglais.": "✓ Tradotto in inglese.",
+ "Traduction dans votre langue impossible (pas de réseau ?) : la consigne anglaise reste utilisable.": "Traduzione nella vostra lingua impossibile (niente rete?): la richiesta in inglese resta utilizzabile.",
+ "Ex. : la caméra s'élève au-dessus du village puis redescend vers la plage.": "Es.: la telecamera sale sopra il villaggio poi scende verso la spiaggia.",
+ "<b>Consigne pour le générateur vidéo</b>": "<b>Richiesta per il generatore video</b>",
+ "La consigne, sans aucun nom de célébrité ; ou « Rédiger la consigne »": "La richiesta, senza alcun nome di persone famose; oppure «Scrivi l'istruzione»",
+ "Ce que l'IA dessine : écrit dans votre langue, traduit en anglais (la langue que les moteurs comprennent) ; la traduction reste modifiable": "Ciò che l'IA disegna: scritto nella vostra lingua, tradotto in inglese (la lingua che i motori capiscono); la traduzione resta modificabile"
 }

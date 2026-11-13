@@ -251,8 +251,8 @@ class DialogueFabriqueMusique(QDialog):
         self.utiliser_ia.hide()
         self.utiliser_ia.toggled.connect(self._maj)
         vg.addWidget(self.utiliser_ia)
-        self.consigne_ia = QPlainTextEdit()
-        self.consigne_ia.setMaximumHeight(90)
+        from .consigne_bilingue import ConsigneBilingue
+        self.consigne_ia = ConsigneBilingue(60)                  # votre langue + l'anglais envoyé, les deux visibles
         self.consigne_ia.hide()
         self.consigne_ia.textChanged.connect(self._maj)
         vg.addWidget(self.consigne_ia)
