@@ -157,6 +157,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T78 — 0.9.63 : Fabrique musique, « à la manière de », voix, passage
+
+1. Fabrique IA › Musique › Fabrique musique, ligne Phrase › « Style « à la manière de »… » : taper « metallic » : Metallica, Iron Maiden, Gojira… apparaissent. Famille « Musiques de film, de série, de jeu » : Einaudi, Göransson, Hans Zimmer… Taper un nom absent : « Utiliser « … » » l'ajoute à la phrase.
+2. Ligne Voix › « À la manière de… » › « Chanter à la manière d'un chanteur, d'un groupe… » : « chanté à la manière de … » s'ajoute ; la consigne anglaise ne contient que la description de la voix.
+3. Ligne Voix › « Décrire la voix d'un morceau de ce poste… » : une chanson avec musique ; choisir 20 à 30 s où l'on chante, « Garder ce passage » ; après la séparation, la ligne bleue « Voix décrite d'après … » (ex. voix de femme, léger vibrato) ; la consigne anglaise la reprend ; « Ne plus utiliser cette voix décrite » la retire.
+4. S'inspirer d'un morceau › Chercher en ligne : Audionautix, « calm » : 30 résultats, puis « Plus de résultats » : 60. Choisir un morceau sans le télécharger : « S'inspirer de ce morceau » est actif ; cliquer : il se télécharge puis la fenêtre du passage s'ouvre.
+5. Garder un passage (ex. 0:30 à 1:10) : l'analyse dit « (de 0:30 à 1:10) » ; morceau libre : « Partir de ce morceau » réorchestre ce passage.
+
 ## T77 — 0.9.62 : dossiers des projets et des rushes sur le cloud
 
 1. Préférences › Comptes et synchro › Rôle de chaque compte : « Dossier des projets » › Choisir… : la fenêtre est centrée et entière ; elle s'ouvre dans /PhilCut avec le bandeau « Le dossier /PhilCut/Projets n'existe pas encore… Le créer maintenant ». Cliquer : il est créé et ouvert.

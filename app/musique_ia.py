@@ -110,7 +110,7 @@ def voix_disponibles():
 def fiche_vide():
     return {"style": "pop_aerienne", "ambiance": "", "phrase": "", "tempo": 0, "tonalite": "", "mesure": "", "instruments": "",
             "structure": "", "voix": "auto", "epoque": "", "duree": 60.0, "instrumental": True, "paroles": "", "langue": "fr",
-            "inspiration": None, "consigne_ia": "", "utiliser_ia": False, "source": None, "voix_reference": None}
+            "inspiration": None, "consigne_ia": "", "utiliser_ia": False, "source": None, "voix_reference": None, "voix_decrite": None}
 
 
 # ------------------------------------------------------------------ consigne
@@ -145,7 +145,8 @@ def consigne(fiche, params=None, traduire=None):
     if tr["ajout"]:
         parties.append(tr["ajout"])
     if not f.get("instrumental"):
-        v = voix_disponibles().get(f.get("voix") or "auto", ("", ""))[1]
+        vd = (f.get("voix_decrite") or {}).get("en")
+        v = vd or voix_disponibles().get(f.get("voix") or "auto", ("", ""))[1]      # la voix décrite d'un morceau passe avant
         if v:
             parties.append(v)
     else:
@@ -460,6 +461,132 @@ def analyser(chemin, params=None, progression=None, arret=lambda: False, ecouter
     if progression:
         progression(1.0, _("Analyse terminée."))
     return res
+
+
+# ------------------------------------------------------------------ passage, voix d'un morceau (0.9.63)
+def extraire_passage(chemin, debut, fin, sortie=None):
+    """Le passage choisi d'un morceau (WAV), pour s'en inspirer ou en décrire la voix ; la déclaration de droits suit.
+    Tout le morceau : le fichier d'origine, sans copie."""
+    from . import moteur
+    duree = float((moteur.sonder(chemin) or {}).get("duree") or 0)
+    debut, fin = max(0.0, float(debut or 0)), float(fin or 0)
+    if debut < 0.2 and (not fin or (duree and fin >= duree - 0.2)):
+        return chemin
+    if fin <= debut + 2:
+        raise RuntimeError(_("Passage trop court : gardez au moins quelques secondes."))
+    if not sortie:
+        base = os.path.splitext(os.path.basename(chemin))[0][:60]
+        sortie = os.path.join(tempfile.gettempdir(), "philcut-passages", f"{base}_{int(debut)}-{int(fin)}s.wav")
+    os.makedirs(os.path.dirname(sortie), exist_ok=True)
+    cmd = [moteur.ffmpeg(), "-v", "error", "-y", "-ss", f"{debut:.2f}", "-t", f"{fin - debut:.2f}", "-i", chemin, "-vn", "-ac", "2",
+           "-ar", "44100", sortie]
+    try:
+        from .packs_ia import _options_processus
+        opts = {k: v for k, v in _options_processus().items() if k != "preexec_fn"}
+    except Exception:      # noqa: BLE001
+        opts = {}
+    r = subprocess.run(cmd, capture_output=True, timeout=300, **opts)
+    if r.returncode != 0 or not os.path.exists(sortie):
+        raise RuntimeError(_("Passage non extrait : {e}", e=r.stderr.decode("utf-8", "replace")[-200:]))
+    d = droits(chemin)
+    if d:
+        declarer(sortie, **{k: v for k, v in d.items() if k != "declare_le"})
+    return sortie
+
+
+def mesurer_voix(x, sr):
+    """Mesures d'une voix seule : hauteur médiane, étendue, vibrato, brillance, souffle, grain. Rien n'est gardé de la
+    mélodie ni des paroles : seulement la manière de chanter."""
+    import numpy as np
+    n, hop = 2048, 256
+    if len(x) < n * 8:
+        raise RuntimeError(_("Passage trop court pour décrire la voix."))
+    nb = 1 + (len(x) - n) // hop
+    idx = np.arange(n)[None, :] + hop * np.arange(nb)[:, None]
+    tr = x[idx] * np.hanning(n).astype(np.float32)
+    rms = np.sqrt((tr ** 2).mean(axis=1)) + 1e-9
+    db = 20 * np.log10(rms / rms.max())
+    actives = db > -30
+    F = np.fft.rfft(tr, 2 * n, axis=1)
+    ac = np.fft.irfft(np.abs(F) ** 2, axis=1)[:, :n]
+    ac = ac / (ac[:, :1] + 1e-12)
+    lmin, lmax = int(sr / 1000), int(sr / 70)
+    lag = lmin + np.argmax(ac[:, lmin:lmax], axis=1)
+    force = ac[np.arange(nb), lag]
+    voisees = actives & (force > 0.45)
+    if voisees.sum() < 20:
+        raise RuntimeError(_("Pas assez de chant dans ce passage : choisissez un passage où la voix chante."))
+    f0 = sr / lag[voisees].astype(np.float32)
+    cents = 1200 * np.log2(f0 / 440.0)
+    med = float(np.median(f0))
+    p10, p90 = np.percentile(f0, [10, 90])
+    etendue = float(12 * np.log2(p90 / p10))
+    # vibrato : petites oscillations autour de la note tenue (écart à la médiane glissante, 0,3 s)
+    k = max(3, int(0.3 * sr / hop) | 1)
+    pad = np.pad(cents, k // 2, mode="edge")
+    lisse = np.array([np.median(pad[i:i + k]) for i in range(len(cents))])
+    ecart = np.abs(cents - lisse)
+    vibrato = float(np.median(ecart[ecart < 150])) if (ecart < 150).any() else 0.0
+    S = np.abs(np.fft.rfft(tr[actives], axis=1)) ** 2
+    fr = np.fft.rfftfreq(n, 1.0 / sr)
+    p = S.sum(axis=1) + 1e-12
+    centroide = float((S @ fr / p).mean())
+    souffle = float((S[:, fr > 4000].sum(axis=1) / p).mean())
+    return {"f0": round(med, 1), "etendue": round(etendue, 1), "vibrato": round(vibrato, 1), "brillance": int(centroide),
+            "souffle": round(souffle, 3), "nettete": round(float(np.median(force[voisees])), 2)}
+
+
+def decrire_voix_mesures(m):
+    """Mesures → (description anglaise pour le moteur, résumé dans la langue de PhilCut)."""
+    en, fr = [], []
+    f0 = m["f0"]
+    if f0 < 130:
+        en.append("deep low male vocals"); fr.append(_("voix d'homme grave"))
+    elif f0 < 175:
+        en.append("male vocals, tenor range"); fr.append(_("voix d'homme, registre de ténor"))
+    elif f0 < 210:
+        en.append("androgynous mid-range vocals"); fr.append(_("voix médium, entre homme et femme"))
+    elif f0 < 300:
+        en.append("female vocals, alto to mezzo range"); fr.append(_("voix de femme, registre d'alto"))
+    else:
+        en.append("high female vocals, soprano range"); fr.append(_("voix de femme aiguë, registre de soprano"))
+    if m["etendue"] > 14:
+        en.append("wide vocal range with big leaps"); fr.append(_("grande étendue, grands sauts"))
+    elif m["etendue"] < 6:
+        en.append("narrow melody close to speech"); fr.append(_("mélodie resserrée, proche de la parole"))
+    if m["vibrato"] > 25:
+        en.append("pronounced vibrato"); fr.append(_("vibrato marqué"))
+    elif m["vibrato"] > 10:
+        en.append("light vibrato"); fr.append(_("léger vibrato"))
+    else:
+        en.append("straight tone"); fr.append(_("voix droite, sans vibrato"))
+    if m["brillance"] > 2600:
+        en.append("bright clear timbre"); fr.append(_("timbre clair et brillant"))
+    elif m["brillance"] < 1500:
+        en.append("warm dark timbre"); fr.append(_("timbre chaud et sombre"))
+    if m["souffle"] > 0.12:
+        en.append("airy breathy delivery"); fr.append(_("voix soufflée"))
+    if m["nettete"] < 0.6:
+        en.append("raspy gritty tone"); fr.append(_("grain rauque"))
+    elif m["nettete"] > 0.85:
+        en.append("smooth clean tone"); fr.append(_("son lisse et net"))
+    return ", ".join(en), ", ".join(fr)
+
+
+def decrire_voix(chemin_voix, progression=None, arret=lambda: False):
+    """Description de la manière de chanter d'une voix SEULE (déjà séparée de la musique) ; jamais un clone."""
+    if progression:
+        progression(0.1, _("Lecture de la voix…"))
+    x, sr = _lire_audio(chemin_voix, sr=16000, max_s=120)
+    if arret():
+        raise InterruptedError()
+    if progression:
+        progression(0.4, _("Mesure de la hauteur, de l'étendue, du vibrato et du timbre…"))
+    m = mesurer_voix(x, sr)
+    en, fr = decrire_voix_mesures(m)
+    if progression:
+        progression(1.0, _("Voix décrite."))
+    return {"en": en, "fr": fr, "mesures": m}
 
 
 # ------------------------------------------------------------------ création

@@ -2001,7 +2001,7 @@ class Fenetre(QMainWindow):
         NV.integrer(reseau=False)
         if os.environ.get("PHILCUT_SANS_RESEAU") or not self.params.get("effets_en_ligne", True):
             return
-        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_gl.json", "effets_ia.json", NV.FICHIER, "elements.json", "guides.json")],
+        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_gl.json", "effets_ia.json", NV.FICHIER, "elements.json", "guides.json", "styles.json")] + [__import__("app.styles_ia", fromlist=["x"]).recharger_catalogue()],
                                daemon=True)
         fil.start()
 

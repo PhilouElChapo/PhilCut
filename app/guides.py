@@ -165,6 +165,25 @@ def _guides_integres():
              {"texte": _("« Poser entre les deux plans » : la suite du film se décale d'autant. Edition › Annuler revient en arrière."),
               "fait": "liaison"},
          ]},
+        {"id": "musique_maniere", "etat": "ok",
+         "titre": _("Créer une musique à la manière de… (style, voix, passage d'un morceau)"),
+         "mots": "musique maniere style comme metal compositeur groupe chanteur voix chanter inspirer passage refrain morceau decrire",
+         "intro": _("La Fabrique musique crée sur ce poste, gratuitement. « À la manière de » décrit un style ou une manière de "
+                    "chanter, jamais un nom ni une voix copiée ; la liste s'enrichit en ligne. On peut aussi s'inspirer d'un passage "
+                    "d'un morceau, ou décrire la voix d'une chanson."),
+         "etapes": [
+             {"texte": _("Fabrique IA › Musique › « Créer une musique par IA (Fabrique musique)… »."),
+              "montrer": {"menu": [_("Fabrique IA"), _("Musique"), _("Créer une musique par IA (Fabrique musique)…")]},
+              "fait": "fenetre:DialogueFabriqueMusique"},
+             {"texte": _("Ligne Phrase › « Style « à la manière de »… » : choisissez une famille ou tapez (« metal », « Einaudi »…), "
+                         "double-cliquez un nom. Absent de la liste ? « Utiliser », puis « Améliorer avec l'IA ».")},
+             {"texte": _("Ligne Voix › « À la manière de… » : une manière de chanter connue, ou « Décrire la voix d'un morceau » : "
+                         "choisissez le passage où la voix chante, PhilCut l'isole de la musique et la décrit (registre, vibrato, "
+                         "timbre).")},
+             {"texte": _("« S'inspirer d'un morceau » › Choisir un morceau : un fichier, ou en ligne (« S'inspirer de ce morceau » "
+                         "télécharge tout seul ; « Plus de résultats » si besoin). Gardez tout le morceau ou seulement un passage.")},
+             {"texte": _("Relisez la consigne anglaise en bas, puis « Créer la musique ».")},
+         ]},
         {"id": "voix_musique", "etat": "ok",
          "titre": _("Retirer la voix d'une musique (garder la musique)"),
          "mots": "retirer enlever voix chant musique instrumental karaoke separer bruit vent ambiance isoler",

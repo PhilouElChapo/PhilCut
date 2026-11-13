@@ -313,7 +313,7 @@ class DialoguePreferences(QDialog):
         l = QLabel(_("Dans l'Atelier IA, écrivez « chanté à la manière de … », « un cow-boy à la … », « look de … » : PhilCut remplace le "
                      "nom par la description du style (voix, orchestre, époque, image, jeu d'acteur), car les moteurs ne connaissent pas les noms "
                      "et ne doivent pas copier une personne. {n} références connues ; celles que l'IA a transposées pour vous sont ici, "
-                     "modifiables (une par ligne : nom = description en anglais).", n=len(S.REFERENCES)))
+                     "modifiables (une par ligne : nom = description en anglais).", n=len({v[0] for v in S._toutes().values()})))
         l.setWordWrap(True)
         fg.addRow(l)
         self.styles_perso = QPlainTextEdit("\n".join(f"{k} = {v}" for k, v in (self.params.get("styles_perso") or {}).items()))

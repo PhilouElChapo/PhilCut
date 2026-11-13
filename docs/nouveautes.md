@@ -4,7 +4,19 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.62 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.63 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.63 (Fabrique musique : a la maniere de, voix, passage)
+- "A la maniere de" : la liste passe de 74 a plus de 250 references (rock, metal, pop, chanson, rap, electro, jazz, musiques de film et compositeurs d'aujourd'hui, classique, musiques du monde). Elle vient aussi du catalogue en ligne : elle s'enrichit et suit la mode sans nouvelle version.
+- Fenetre "a la maniere de" : filtre par famille, recherche tolerante ("metallic" trouve Metallica et tout le metal ; une faute de frappe passe), liste alphabetique. Un nom absent : "Utiliser", l'IA le decrira sur votre clic.
+- Ligne Voix, bouton "A la maniere de..." : chanter a la maniere d'un chanteur ou d'un groupe ; ou "Decrire la voix d'un morceau" (de ce poste ou en ligne) : on choisit le passage ou la voix chante, PhilCut l'isole de la musique, mesure registre, etendue, vibrato, timbre, et l'ecrit dans la consigne. La voix n'est jamais copiee.
+- S'inspirer d'un morceau : on choisit le passage (tout le morceau, un refrain, une intro) ; seul ce passage est analyse, et reorchestre si le morceau est libre.
+- Musique en ligne : "Plus de resultats" (30 de plus a chaque clic, jusqu'a 300). "S'inspirer de ce morceau" (et "Poser dans le film") sont actifs des qu'un morceau est choisi : le clic telecharge puis continue tout seul.
+- Le bouton "Style a la maniere de" de la ligne Phrase decrit maintenant l'orchestre ET la voix ; celui de la ligne Voix, la voix seule.
+- Nouveau guide : "Creer une musique a la maniere de...".
+
+## Nouveautes de 0.9.62
+
 
 ### 0.9.62 (dossiers des clouds)
 - Dossier des projets (ou des rushes) pas encore cree sur le cloud : la fenetre "Choisir un dossier" s'ouvre dans le dossier parent et le dit, avec "Le creer maintenant".

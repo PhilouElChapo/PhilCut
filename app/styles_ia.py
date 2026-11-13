@@ -165,8 +165,94 @@ def _net(t):
     return unicodedata.normalize("NFKD", t.lower()).encode("ascii", "ignore").decode()
 
 
+# 0.9.63 : familles pour ranger et filtrer la liste (ordre de sens : annoncé tel quel dans la fenêtre)
+GENRES = {"chanson": _("Chanson française"), "classique": _("Classique"), "cinema": _("Cinéma : acteurs, films (image, vidéo)"),
+          "electro": _("Electro"), "film": _("Musiques de film, de série, de jeu"), "folk_country": _("Folk, country"),
+          "jazz_soul": _("Jazz, soul, funk, blues"), "monde": _("Musiques du monde"), "pop": _("Pop"), "rap": _("Rap"),
+          "rock_metal": _("Rock, metal, punk"), "chant": _("Chanteurs d'hier")}
+_GENRE_R = {"hans zimmer": "film", "john williams": "film", "ennio morricone": "film", "vangelis": "film", "jean-michel jarre": "electro",
+            "mozart": "classique", "vivaldi": "classique", "daft punk": "electro", "ac/dc": "rock_metal", "pink floyd": "rock_metal",
+            "nirvana": "rock_metal", "queen": "rock_metal", "beatles": "rock_metal", "abba": "pop", "bob marley": "monde",
+            "david bowie": "rock_metal", "freddie mercury": "rock_metal", "madonna": "pop", "michael jackson": "pop",
+            "whitney houston": "pop", "adele": "pop", "amy winehouse": "jazz_soul", "ray charles": "jazz_soul",
+            "louis armstrong": "jazz_soul", "ella fitzgerald": "jazz_soul", "johnny cash": "folk_country", "elvis": "rock_metal",
+            "edith piaf": "chanson", "jacques brel": "chanson", "aznavour": "chanson", "gainsbourg": "chanson", "johnny hallyday": "chanson",
+            "sinatra": "jazz_soul", "liza minnelli": "jazz_soul"}
+_CATALOGUE = {"refs": None, "genres": {}, "nouveaux": set()}
+
+
+def genre(nom):
+    """Famille d'une référence (pour le filtre de la fenêtre)."""
+    n = _net(nom)
+    _catalogue()
+    if n in _CATALOGUE["genres"]:
+        return _CATALOGUE["genres"][n]
+    if n in _GENRE_R:
+        return _GENRE_R[n]
+    d = REFERENCES.get(n, ("", {}))[1]
+    return "cinema" if not (d.get("voix") or d.get("musique")) else "chant"
+
+
+def mots_cles(nom):
+    _catalogue()
+    return _CATALOGUE.get("mots", {}).get(_net(nom), "")
+
+
+def _catalogue():
+    """Références du catalogue en ligne (catalogue/styles.json, 0.9.63) : la liste s'enrichit et suit la mode sans nouvelle
+    version de PhilCut. Même règle que la liste livrée : des descriptions de style, jamais de nom ni de visage."""
+    if _CATALOGUE["refs"] is not None:
+        return _CATALOGUE["refs"]
+    refs, genres, mots = {}, {}, {}
+    try:
+        from . import catalogue_ligne as CL
+        lst = CL.charger("styles.json").get("styles") or []
+    except Exception:      # noqa: BLE001
+        lst = []
+    for e in lst:
+        try:
+            noms = [str(n).lower() for n in e.get("noms") or [] if n]
+            d = {k: str(e[k]) for k in ("voix", "musique", "image", "jeu") if e.get(k)}
+            if not noms or not d:
+                continue
+            principal = noms[0].rstrip("*")
+            for n in noms:
+                if n.endswith("*"):
+                    n = n[:-1]
+                    AVEC_LIEN.add(_net(n))
+                refs[_net(n)] = (principal, d)
+            genres[_net(principal)] = e.get("genre") if e.get("genre") in GENRES else "chant"
+            mots[_net(principal)] = str(e.get("mots") or "")
+        except (TypeError, AttributeError):
+            continue                                   # une entrée mal formée ne gêne pas les autres
+    _CATALOGUE.update(refs=refs, genres=genres, mots=mots)
+    return refs
+
+
+def recharger_catalogue():
+    _CATALOGUE["refs"] = None
+
+
+def correspond(requete, texte):
+    """Recherche tolérante (0.9.63) : chaque mot tapé doit se retrouver, entier, par son début (« metallic » trouve
+    « Metallica », « metal »), ou à une lettre près ; sans accents ni majuscules."""
+    import difflib
+    cible = _net(texte)
+    mots_c = re.findall(r"[\w/&'-]+", cible)
+    for m in _net(requete).split():
+        if m in cible:
+            continue
+        if len(m) >= 4 and any(w.startswith(m) or (len(w) >= 4 and m.startswith(w)) for w in mots_c):
+            continue
+        if len(m) >= 4 and difflib.get_close_matches(m, mots_c, 1, 0.8):
+            continue
+        return False
+    return True
+
+
 def _toutes(params=None):
-    refs = dict(REFERENCES)
+    refs = dict(_catalogue())
+    refs.update(REFERENCES)                            # la liste livrée garde la main sur ses propres noms
     for k, v in ((params or {}).get("styles_perso") or {}).items():
         refs[_net(k).strip()] = (k, {"perso": v})
     return refs

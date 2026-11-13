@@ -1333,44 +1333,83 @@ def enregistrer_copie(parent, chemin, params=None):
 
 
 def choisir_style(parent, params, fam="video", bouton=None):
-    """Fenêtre des styles « à la manière de » (chanteurs, acteurs, films…) avec ce que reçoit le moteur ; renvoie le nom choisi."""
+    """Fenêtre des styles « à la manière de » (chanteurs, groupes, compositeurs, acteurs, films…) avec ce que reçoit le
+    moteur ; renvoie le nom choisi. fam="voix" : seulement les références qui décrivent une manière de chanter (0.9.63)."""
     from PySide6.QtWidgets import QDialog, QLineEdit, QTreeWidget, QTreeWidgetItem
     from . import styles_ia as S
     d = QDialog(parent)
-    d.setWindowTitle(_("Style « à la manière de »"))
-    d.resize(760, 560)
+    d.setWindowTitle(_("Voix « à la manière de »") if fam == "voix" else _("Style « à la manière de »"))
+    d.resize(780, 580)
     v = QVBoxLayout(d)
-    t = QLabel(_("Double-cliquez sur un nom : « à la manière de … » est ajouté à votre phrase. Le moteur ne reçoit jamais le nom, "
-                 "seulement la description du style (à droite). Un nom absent de la liste marche aussi : écrivez-le, puis « Transposer ce "
-                 "style avec l'IA »."))
+    t = QLabel((_("Double-cliquez sur un nom : « chanté à la manière de … » est ajouté à votre phrase. Le moteur ne reçoit jamais le nom "
+                  "ni la voix de la personne, seulement la description de sa manière de chanter (à droite).") if fam == "voix" else
+                _("Double-cliquez sur un nom : « à la manière de … » est ajouté à votre phrase. Le moteur ne reçoit jamais le nom, "
+                  "seulement la description du style (à droite).")) + " " +
+               _("La liste s'enrichit en ligne, sans nouvelle version. Un nom absent marche aussi : tapez-le, puis « Utiliser » ; "
+                 "l'IA le transposera sur votre clic."))
     t.setWordWrap(True)
     v.addWidget(t)
-    cherche = QLineEdit()
-    cherche.setPlaceholderText(_("Chercher : Sinatra, western, Delon, Star Wars…"))
-    v.addWidget(cherche)
-    arbre = QTreeWidget()
-    arbre.setHeaderLabels([_("Nom"), _("Ce que reçoit le moteur")])
-    arbre.setColumnWidth(0, 200)
-    arbre.setWordWrap(True)
-    vus = set()
-    for cle, (nom, asp) in sorted(S._toutes(params).items(), key=lambda kv: kv[1][0]):
+    hc = QHBoxLayout()
+    genre = QComboBox()
+    genre.addItem(_("Toutes les familles"), "")
+    asp_fam = "musique" if fam == "voix" else fam
+    refs = S._toutes(params)
+    lignes, vus = [], set()
+    for cle, (nom, asp) in refs.items():
         if nom in vus:
             continue
         vus.add(nom)
-        desc = S._description(asp, fam)
+        desc = asp.get("voix", "") if fam == "voix" and "perso" not in asp else S._description(asp, asp_fam)
         if not desc:
             continue
-        it = QTreeWidgetItem([nom.title() if nom.islower() else nom, desc])
+        lignes.append((nom.title() if nom.islower() else nom, desc, S.genre(nom) if "perso" not in asp else "perso", S.mots_cles(nom)))
+    presents = {g for _n, _d, g, _m in lignes}
+    for k, lib in sorted(S.GENRES.items(), key=lambda kv: S._net(kv[1])):
+        if k in presents:
+            genre.addItem(lib, k)
+    if "perso" in presents:
+        genre.addItem(_("Mes styles"), "perso")
+    hc.addWidget(genre)
+    cherche = QLineEdit()
+    cherche.setPlaceholderText(_("Chercher : metal, Einaudi, western, piano, années 80…"))
+    hc.addWidget(cherche, 1)
+    v.addLayout(hc)
+    arbre = QTreeWidget()
+    arbre.setHeaderLabels([_("Nom"), _("Ce que reçoit le moteur")])
+    arbre.setColumnWidth(0, 210)
+    arbre.setWordWrap(True)
+    for nom, desc, g, mots in sorted(lignes, key=lambda x: S._net(x[0])):
+        it = QTreeWidgetItem([nom, desc])
         it.setToolTip(1, desc)
+        it.setData(0, Qt.UserRole, g)
+        it.setData(1, Qt.UserRole, mots)
         arbre.addTopLevelItem(it)
     v.addWidget(arbre, 1)
+    vide = QLabel("")
+    vide.setWordWrap(True)
+    vide.setStyleSheet("color:#c98a00")
+    vide.hide()
+    v.addWidget(vide)
+    compte = QLabel("")
+    compte.setStyleSheet("color:#9aa4b2")
+    v.addWidget(compte)
 
-    def filtrer(txt):
-        txt = S._net(txt)
+    def filtrer(*_a):
+        txt, g = cherche.text().strip(), genre.currentData()
+        n = 0
         for i in range(arbre.topLevelItemCount()):
             it = arbre.topLevelItem(i)
-            it.setHidden(bool(txt) and txt not in S._net(it.text(0) + " " + it.text(1)))
-    cherche.textChanged.connect(filtrer)
+            ok = (not g or it.data(0, Qt.UserRole) == g) and (not txt or S.correspond(txt, it.text(0) + " " + it.text(1) + " " +
+                                                                                          (it.data(1, Qt.UserRole) or "")))
+            it.setHidden(not ok)
+            n += ok
+        compte.setText(_("{n} référence(s).", n=n))
+        vide.setVisible(n == 0 and bool(txt))
+        b_nom.setVisible(bool(txt))
+        b_nom.setText(_("Utiliser « {t} »", t=txt[:40]))
+        if n == 0 and txt:
+            vide.setText(_("« {t} » n'est pas dans la liste. « Utiliser » l'ajoute quand même à votre phrase : l'IA décrira ce style "
+                           "sur votre clic (« Améliorer avec l'IA »), sans jamais envoyer le nom au moteur.", t=txt))
     choix = []
 
     def prendre(it, _c=0):
@@ -1378,13 +1417,24 @@ def choisir_style(parent, params, fam="video", bouton=None):
         d.accept()
     arbre.itemDoubleClicked.connect(prendre)
     h = QHBoxLayout()
+    b_nom = QPushButton("")
+    b_nom.clicked.connect(lambda: (choix.append(cherche.text().strip()), d.accept()))
+    b_nom.hide()
+    h.addWidget(b_nom)
     h.addStretch(1)
     b_ok = QPushButton(bouton or _("Ajouter à la phrase"))
-    b_ok.clicked.connect(lambda: arbre.currentItem() and prendre(arbre.currentItem()))
+    b_ok.clicked.connect(lambda: arbre.currentItem() and not arbre.currentItem().isHidden() and prendre(arbre.currentItem()))
     h.addWidget(b_ok)
     b_f = QPushButton(_("Fermer"))
     b_f.clicked.connect(d.reject)
     h.addWidget(b_f)
     v.addLayout(h)
+    cherche.textChanged.connect(filtrer)
+    genre.currentIndexChanged.connect(filtrer)
+    filtrer()
+    d._cherche, d._arbre, d._genre, d._b_nom = cherche, arbre, genre, b_nom       # tests
+    if getattr(parent, "_test_style", None):
+        parent._test_style(d)
+        return choix[0] if choix else None
     d.exec()
     return choix[0] if choix else None

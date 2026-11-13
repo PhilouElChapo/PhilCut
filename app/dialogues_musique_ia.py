@@ -138,7 +138,28 @@ class DialogueFabriqueMusique(QDialog):
         hv.addWidget(self.instrumental)
         hv.addWidget(self.voix, 1)
         hv.addWidget(self.langue)
+        self.b_voix_style = QPushButton(_("À la manière de…"))
+        self.b_voix_style.setToolTip(_("Une manière de chanter connue, ou celle d'un morceau : décrite au moteur, jamais copiée"))
+        mv = QMenu(self.b_voix_style)
+        mv.addAction(_("Chanter à la manière d'un chanteur, d'un groupe…"), self._voix_a_la_maniere)
+        mv.addAction(_("Décrire la voix d'un morceau de ce poste…"), lambda: self._decrire_voix(None))
+        mv.addAction(_("Décrire la voix d'un morceau en ligne…"), self._decrire_voix_en_ligne)
+        self.b_voix_style.setMenu(mv)
+        hv.addWidget(self.b_voix_style)
         f.addRow(_("Voix"), hv)
+        self.voix_decrite = None
+        self.voix_decrite_info = QLabel("")
+        self.voix_decrite_info.setWordWrap(True)
+        self.voix_decrite_info.setStyleSheet("color:#9ad0ff")
+        self.b_sans_voix_decrite = QPushButton(_("Ne plus utiliser cette voix décrite"))
+        self.b_sans_voix_decrite.clicked.connect(self._sans_voix_decrite)
+        self.boite_voix_decrite = QWidget()
+        bvd = QVBoxLayout(self.boite_voix_decrite)
+        bvd.setContentsMargins(0, 0, 0, 0)
+        bvd.addWidget(self.voix_decrite_info)
+        bvd.addWidget(self.b_sans_voix_decrite, 0, Qt.AlignLeft)
+        self.boite_voix_decrite.hide()
+        f.addRow(self.boite_voix_decrite)
         self.paroles = QPlainTextEdit()
         self.paroles.setMaximumHeight(110)
         self.paroles.setPlaceholderText(_("Paroles : tapez-les, ou seulement le début, puis « Écrire les paroles par l'IA ». Balises "
@@ -341,8 +362,9 @@ class DialogueFabriqueMusique(QDialog):
 
     def _bascule_paroles(self, sans):
         self.boite_paroles.setVisible(not sans)
-        self.voix.setEnabled(not sans)
+        self.voix.setEnabled(not sans and not self.voix_decrite)
         self.langue.setEnabled(not sans)
+        self.b_voix_style.setEnabled(not sans)
 
     def fiche(self):
         f = MI.fiche_vide()
@@ -356,6 +378,8 @@ class DialogueFabriqueMusique(QDialog):
             f["source"] = {"chemin": self.inspiration.get("chemin"), "force": self.proximite.value() / 100, "fidele": self.fidele.isChecked()}
         if self.reference:
             f["voix_reference"] = {"chemin": self.reference}
+        if self.voix_decrite:
+            f["voix_decrite"] = dict(self.voix_decrite)
         return f
 
     def appliquer_fiche(self, f):
@@ -381,6 +405,8 @@ class DialogueFabriqueMusique(QDialog):
             self.utiliser_ia.setChecked(bool(f.get("utiliser_ia")))
         if f.get("inspiration"):
             self._montrer_inspiration(dict(f["inspiration"]))
+        if f.get("voix_decrite"):
+            self._poser_voix_decrite(dict(f["voix_decrite"]))
 
     def _maj(self, *_a):
         f = self.fiche()
@@ -412,7 +438,77 @@ class DialogueFabriqueMusique(QDialog):
         nom = choisir_style(self, self.params, "musique")
         if nom:
             p = self.phrase.toPlainText().rstrip(" ,")
+            self.phrase.setPlainText((p + ", " if p else "") + _("à la manière de") + " " + nom)
+
+    # ---- voix « à la manière de », voix décrite d'un morceau (0.9.63)
+    def _voix_a_la_maniere(self):
+        from .dialogues_creatif import choisir_style
+        nom = choisir_style(self, self.params, "voix")
+        if nom:
+            self.instrumental.setChecked(False)
+            p = self.phrase.toPlainText().rstrip(" ,")
             self.phrase.setPlainText((p + ", " if p else "") + _("chanté à la manière de") + " " + nom)
+
+    def _decrire_voix_en_ligne(self):
+        DialogueMusiqueEnLigne(self, self.params, utiliser=lambda ch: self._decrire_voix(ch),
+                               libelle_utiliser=_("Décrire sa voix"),
+                               aide=_("<b>Décrire la voix d'un morceau</b> : PhilCut isole la voix sur ce poste, mesure sa manière de chanter "
+                                      "(registre, étendue, vibrato, timbre) et l'écrit dans la consigne. La voix n'est jamais copiée : "
+                                      "le moteur chante avec une autre voix, de la même manière.")).exec()
+
+    def _decrire_voix(self, ch=None):
+        """La voix d'un morceau (même mélangée à la musique) : passage choisi, voix isolée sur ce poste, puis DÉCRITE."""
+        from .widgets import ouvrir_fichier
+        if not ch:
+            ch = ouvrir_fichier(self, _("Morceau dont décrire la voix"), _("Sons") + " (*.mp3 *.wav *.flac *.ogg *.m4a *.aac *.opus *.mp4 *.mkv *.webm)",
+                                "musique", self.params)
+        if not ch:
+            return
+        passage = choisir_passage(self, ch, _("Passage où la voix chante"),
+                                  _("Choisissez 15 à 40 secondes où l'on entend bien la voix : c'est ce passage qui est écouté."))
+        if not passage:
+            return
+        from . import creatif
+        manque = creatif.separation_manquante(self.params)
+        if manque:
+            QMessageBox.information(self, _("Décrire la voix"), manque)
+            return
+        params = self.params
+
+        def travail(t):
+            t.avancer(0.02, _("Extraction du passage…"))
+            p = MI.extraire_passage(ch, *passage)
+            base = os.path.splitext(os.path.basename(p))[0][:60]
+            voix = creatif.extraire_voix(p, os.path.join(_dossier_sorties(), base + "_voix_mesuree.wav"), params,
+                                         lambda f, x="": t.avancer(0.05 + 0.8 * f, x), lambda: t.arret)
+            r = MI.decrire_voix(voix, lambda f, x="": t.avancer(0.85 + 0.15 * f, x), lambda: t.arret)
+            r["fichier"] = os.path.basename(ch)
+            return r
+
+        def fin(r, err):
+            if err:
+                if not isinstance(err, InterruptedError):
+                    self.info.setText(_("✕ Voix non décrite : {e}", e=texte_erreur(err)[:300]))
+                return
+            self._poser_voix_decrite(r)
+            self.info.setText(_("✓ Voix décrite : relisez la description, la consigne en anglais suit."))
+        self._lancer(travail, _("Voix décrite"), _("La voix de « {n} » est isolée puis décrite sur ce poste", n=os.path.basename(ch)),
+                     _("D'une à plusieurs minutes : la voix est d'abord séparée de la musique."), fin)
+
+    def _poser_voix_decrite(self, r):
+        self.voix_decrite = {k: r[k] for k in ("en", "fr", "fichier") if k in r}
+        self.instrumental.setChecked(False)
+        self.voix.setEnabled(False)
+        self.voix_decrite_info.setText(_("🎤 Voix décrite d'après « {f} » : {d}. Le moteur chante avec une autre voix, de cette manière.",
+                                         f=r.get("fichier", ""), d=r.get("fr", "")))
+        self.boite_voix_decrite.show()
+        self._maj()
+
+    def _sans_voix_decrite(self):
+        self.voix_decrite = None
+        self.boite_voix_decrite.hide()
+        self.voix.setEnabled(not self.instrumental.isChecked())
+        self._maj()
 
     # ---- tâches courtes (suivi d'attente)
     def _lancer(self, travail, titre, quoi, conseil, fin):
@@ -556,6 +652,11 @@ class DialogueFabriqueMusique(QDialog):
                                 "musique", self.params)
         if not ch:
             return
+        passage = choisir_passage(self, ch, _("Passage dont s'inspirer"),
+                                  _("Gardez tout le morceau, ou seulement le passage qui vous plaît (un refrain, une intro) : seul ce passage "
+                                    "est analysé, et réorchestré si le morceau est libre."))
+        if not passage:
+            return
         params = self.params
 
         def fin(r, err):
@@ -563,9 +664,15 @@ class DialogueFabriqueMusique(QDialog):
                 if not isinstance(err, InterruptedError):
                     self.info.setText(_("✕ Analyse impossible : {e}", e=texte_erreur(err)[:300]))
                 return
-            r["chemin"] = ch
             self._montrer_inspiration(r, appliquer=True)
-        self._lancer(lambda t: MI.analyser(ch, params, t.avancer, lambda: t.arret), _("Analyse"),
+
+        def travail(t):
+            p = MI.extraire_passage(ch, *passage)
+            r = MI.analyser(p, params, t.avancer, lambda: t.arret)
+            r["chemin"] = p
+            r["fichier"] = os.path.basename(ch) + (_(" (de {a} à {b})", a=_mmss(passage[0]), b=_mmss(passage[1])) if p != ch else "")
+            return r
+        self._lancer(travail, _("Analyse"),
                      _("Analyse de « {n} » sur ce poste", n=os.path.basename(ch)),
                      _("Quelques secondes ; plus si le moteur de musique écoute aussi le genre et les instruments."), fin)
 
@@ -752,12 +859,59 @@ def _avec_moteur(niveau, fn):
         ia.MOTEUR_FORCE = ancien
 
 
+def _mmss(s):
+    s = int(max(0, s))
+    return f"{s // 60}:{s % 60:02d}"
+
+
+def choisir_passage(parent, chemin, titre, conseil):
+    """Ecouter un morceau et choisir le passage voulu (0.9.63) ; (début, fin) en secondes, ou None si annulé."""
+    from .dialogues_creatif import ApercuCreation
+    d = QDialog(parent)
+    d.setWindowTitle(titre)
+    d.resize(640, 260)
+    v = QVBoxLayout(d)
+    lb = QLabel(conseil)
+    lb.setWordWrap(True)
+    v.addWidget(lb)
+    ap = ApercuCreation(d)
+    ap.charger(chemin, video=False)
+    ap.titre.setText(_("« {f} » : écoutez, puis « Début ici » et « Fin ici ».", f=os.path.basename(chemin)))
+    ap.fondu_e.hide()
+    ap.fondu_s.hide()
+    v.addWidget(ap)
+    h = QHBoxLayout()
+    b_tout = QPushButton(_("Tout le morceau"))
+    h.addWidget(b_tout)
+    h.addStretch(1)
+    b_ok = QPushButton(_("Garder ce passage"))
+    b_ok.setDefault(True)
+    h.addWidget(b_ok)
+    b_ann = QPushButton(_("Annuler"))
+    h.addWidget(b_ann)
+    v.addLayout(h)
+    r = []
+    b_tout.clicked.connect(lambda: (r.append((0.0, ap.duree)), d.accept()))
+    b_ok.clicked.connect(lambda: (r.append((ap.debut.value(), ap.fin.value())), d.accept()))
+    b_ann.clicked.connect(d.reject)
+    d._apercu, d._b_tout, d._b_ok = ap, b_tout, b_ok
+    if getattr(parent, "_test_passage", None):
+        parent._test_passage(d)
+    else:
+        d.exec()
+    ap.arreter()
+    return r[0] if r else None
+
+
 def _hms(s):
     s = int(max(0, s))
     return f"{s // 60} min {s % 60:02d} s" if s >= 60 else f"{s} s"
 
 
 # ------------------------------------------------------------------ musique en ligne
+PAR_PAGE, MAX_RESULTATS = 30, 300
+
+
 class DialogueMusiqueEnLigne(QDialog):
     """Chercher, écouter, télécharger un son (YouTube Music, YouTube, archives libres), avec ce qui est permis expliqué."""
 
@@ -767,6 +921,7 @@ class DialogueMusiqueEnLigne(QDialog):
         self.params, self.poser, self.ML = params, poser, ML
         self.utiliser = utiliser             # 0.9.44 : choisi depuis la Fabrique musique (s'inspirer, voix de référence)
         self.resultats, self._taches, self.lecteur, self.dernier = [], [], None, None
+        self.telecharges, self.nombre, self._recherche = {}, PAR_PAGE, None          # 0.9.63
         self.setWindowTitle(_("Musique en ligne"))
         self.resize(940, 680)
         v = QVBoxLayout(self)
@@ -799,6 +954,14 @@ class DialogueMusiqueEnLigne(QDialog):
         self.liste.setWordWrap(True)
         self.liste.itemDoubleClicked.connect(lambda _it: self.ecouter())
         v.addWidget(self.liste, 1)
+        hp = QHBoxLayout()
+        self.b_plus = QPushButton(_("Plus de résultats"))
+        self.b_plus.setToolTip(_("Montre {n} résultats de plus pour la même recherche", n=PAR_PAGE))
+        self.b_plus.clicked.connect(self.plus)
+        self.b_plus.hide()
+        hp.addWidget(self.b_plus)
+        hp.addStretch(1)
+        v.addLayout(hp)
         # lecture : ce qui est lu, où on en est, et choisir le passage
         self.lu = QLabel("")
         self.lu.setWordWrap(True)
@@ -850,13 +1013,13 @@ class DialogueMusiqueEnLigne(QDialog):
         self.b_telecharger.clicked.connect(self.telecharger)
         hb.addWidget(self.b_telecharger)
         self.b_poser = QPushButton(_("Poser dans le film"))
-        self.b_poser.clicked.connect(lambda: self.dernier and self.poser and self.poser(self.dernier))
+        self.b_poser.clicked.connect(lambda: self._puis(self.poser))
         self.b_poser.setVisible(poser is not None)
         self.b_poser.setEnabled(False)
         hb.addWidget(self.b_poser)
         self.b_utiliser = QPushButton(libelle_utiliser or _("Utiliser ce morceau"))
         self.b_utiliser.setStyleSheet("font-weight:600")
-        self.b_utiliser.clicked.connect(self._utiliser)
+        self.b_utiliser.clicked.connect(lambda: self._puis(self._utiliser))
         self.b_utiliser.setVisible(utiliser is not None)
         self.b_utiliser.setEnabled(False)
         hb.addWidget(self.b_utiliser)
@@ -923,20 +1086,39 @@ class DialogueMusiqueEnLigne(QDialog):
         self._lancer(travail, _("yt-dlp"), _("Installation de yt-dlp"), lambda r, e: (self.info.setText(("✕ " + texte_erreur(e)) if e else
                                                                                                        _("yt-dlp est installé.")), self._maj()), True)
 
-    def chercher(self):
-        texte = self.texte.text().strip()
+    def plus(self):
+        if self._recherche:
+            self.chercher(plus=True)
+
+    def chercher(self, plus=False):
+        texte = self.texte.text().strip() if not plus else self._recherche[0]
         if not texte:
             return
+        if plus:
+            self.nombre = min(MAX_RESULTATS, self.nombre + PAR_PAGE)
+        else:
+            self.nombre = PAR_PAGE
+        n = self.nombre
         src = self.source.currentData()
         if src not in self.ML.SANS_YTDLP and not self._ytdlp():
             self._maj()
             return
         ML = self.ML
 
+        if not plus:
+            src = self.source.currentData()
+        else:
+            src = self._recherche[1]
+        ancien = self.liste.currentRow() if plus else -1
+
         def fin(r, err):
             if err:
                 self.info.setText(_("✕ Recherche impossible : {e}", e=texte_erreur(err)[:300]))
                 return
+            if plus:                                   # les premiers gardent leur place, les nouveaux suivent
+                vus = {x.get("page") for x in self.resultats}
+                r = self.resultats + [x for x in (r or []) if x.get("page") not in vus]
+            self._recherche = (texte, src)
             self.resultats = r or []
             self.liste.clear()
             for x in self.resultats:
@@ -956,11 +1138,19 @@ class DialogueMusiqueEnLigne(QDialog):
                                     "un morceau récent, c'est normal.")
             else:
                 info = _("Aucun résultat.")
+            # « Plus de résultats » tant que la source en a donné autant que demandé
+            self.b_plus.setVisible(len(self.resultats) >= n * 0.8 and n < MAX_RESULTATS)
             self.info.setText(info)
-        self._lancer(lambda t: ML.chercher(texte, src), _("Recherche"), _("Recherche « {t} »", t=texte), fin)
+            if 0 <= ancien < self.liste.count():
+                self.liste.setCurrentRow(ancien)
+                self.liste.scrollToItem(self.liste.item(min(self.liste.count() - 1, ancien + 1)))
+        self._lancer(lambda t: ML.chercher(texte, src, n), _("Recherche"), _("Recherche « {t} »", t=texte), fin)
 
     def _choisi(self, i):
         x = self.resultats[i] if 0 <= i < len(self.resultats) else None
+        # 0.9.63 : actifs dès qu'un morceau est choisi ; le clic télécharge d'abord si besoin
+        self.b_utiliser.setEnabled(x is not None)
+        self.b_poser.setEnabled(x is not None)
         self.libre.setChecked(bool(x and x.get("source") == "audionautix"))   # licence donnée par l'auteur lui-même ; sinon jamais d'office
         if x and x.get("source") == "audionautix":
             self.avert.setText(_("Musique de Jason Shaw sous licence Creative Commons BY 4.0, donnée par l'auteur sur son site : libre, "
@@ -1028,7 +1218,7 @@ class DialogueMusiqueEnLigne(QDialog):
         f = lambda v: f"{int(v // 60000)}:{int(v // 1000) % 60:02d}"
         self.temps.setText(f"{f(ms)} / {f(tot)}")
 
-    def telecharger(self):
+    def telecharger(self, apres=None):
         x = self._courant()
         if not x or not self._accord():
             return
@@ -1040,16 +1230,32 @@ class DialogueMusiqueEnLigne(QDialog):
                     self.info.setText(_("✕ Téléchargement impossible : {e}", e=texte_erreur(err)[:300]))
                 return
             self.dernier = r
+            self.telecharges[x.get("page")] = r
             self.b_poser.setEnabled(True)
             self.b_utiliser.setEnabled(True)
+            if apres:
+                apres(r)
             self.info.setText(_("✓ Téléchargé : {f}", f=r) + ("\n" + _("Déclaré libre : la Fabrique musique pourra le réorchestrer.") if libre else
                                                               "\n" + _("Non déclaré libre : la Fabrique musique pourra seulement s'en inspirer.")))
         self._lancer(lambda t: ML.telecharger(x, dossier, libre, t.avancer, lambda: t.arret), _("Téléchargement"),
                      _("Téléchargement de « {t} »", t=x.get("titre", "")), fin, barre=True)
 
-    def _utiliser(self):
-        if self.dernier and self.utiliser:
-            ch = self.dernier
+    def _puis(self, action):
+        """Poser ou utiliser le morceau choisi : déjà téléchargé, tout de suite ; sinon il est téléchargé d'abord."""
+        if not action:
+            return
+        x = self._courant()
+        ch = self.telecharges.get((x or {}).get("page")) if x else self.dernier
+        if ch and os.path.exists(ch):
+            action(ch)
+            return
+        if x:
+            self.info.setText(_("Téléchargement de « {t} », puis la suite se fait seule…", t=x.get("titre", "")))
+            self.telecharger(apres=action)
+
+    def _utiliser(self, ch=None):
+        ch = ch or self.dernier
+        if ch and self.utiliser:
             self.accept()
             self.utiliser(ch)
 

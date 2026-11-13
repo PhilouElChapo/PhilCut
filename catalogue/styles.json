@@ -1,0 +1,1676 @@
+{
+"version": 1,
+"maj": "2026-11-14",
+"styles": [
+{
+"noms": [
+"metallica"
+],
+"genre": "rock_metal",
+"mots": "heavy metal thrash hard rock",
+"voix": "aggressive barked male metal vocals, gritty and rhythmic",
+"musique": "thrash metal, fast palm-muted downpicked riffs, double bass drums, galloping rhythms, epic clean intros turning heavy"
+},
+{
+"noms": [
+"iron maiden"
+],
+"genre": "rock_metal",
+"mots": "heavy metal nwobhm",
+"voix": "soaring operatic male heavy metal vocals, air-raid siren high notes",
+"musique": "classic British heavy metal, twin harmonized lead guitars, galloping bass, epic storytelling song structure"
+},
+{
+"noms": [
+"black sabbath"
+],
+"genre": "rock_metal",
+"mots": "doom metal heavy",
+"voix": "wailing nasal male vocals",
+"musique": "early doom heavy metal, slow crushing detuned riffs, tritone menace, bluesy jams"
+},
+{
+"noms": [
+"rammstein"
+],
+"genre": "rock_metal",
+"mots": "industrial metal neue deutsche harte",
+"voix": "deep rolling booming German male vocals, martial delivery",
+"musique": "industrial metal, massive chugging downtuned guitars, pounding mechanical drums, dark synths, martial stomp"
+},
+{
+"noms": [
+"gojira"
+],
+"genre": "rock_metal",
+"mots": "death metal progressive",
+"voix": "harsh roaring male vocals mixed with chanted clean lines",
+"musique": "progressive groove death metal, pick-scrape effects, polyrhythmic chugging, tribal drums, nature-themed epic heaviness"
+},
+{
+"noms": [
+"slipknot"
+],
+"genre": "rock_metal",
+"mots": "nu metal heavy",
+"voix": "screamed and growled male vocals alternating with melodic choruses",
+"musique": "nu metal, chaotic percussion layers, turntable scratches, heavy downtuned riffs, aggressive"
+},
+{
+"noms": [
+"linkin park"
+],
+"genre": "rock_metal",
+"mots": "nu metal rap rock",
+"voix": "male vocals alternating raw screams and melodic singing with rap verses",
+"musique": "2000s nu metal, crunchy guitars, electronic textures, piano hooks, DJ scratches, anthemic chorus"
+},
+{
+"noms": [
+"system of a down"
+],
+"genre": "rock_metal",
+"mots": "alternative metal",
+"voix": "erratic theatrical male vocals, rapid-fire then operatic",
+"musique": "alternative metal, abrupt tempo changes, Armenian folk-flavored melodies, frantic riffs"
+},
+{
+"noms": [
+"nightwish"
+],
+"genre": "rock_metal",
+"mots": "symphonic metal opera",
+"voix": "operatic soprano female vocals",
+"musique": "symphonic metal, choirs, full orchestra, heavy guitars, fantasy film grandeur"
+},
+{
+"noms": [
+"evanescence"
+],
+"genre": "rock_metal",
+"mots": "gothic metal",
+"voix": "haunting powerful female vocals, gothic and emotional",
+"musique": "gothic alternative metal, piano, strings, heavy guitars, dark cinematic"
+},
+{
+"noms": [
+"muse"
+],
+"genre": "rock_metal",
+"mots": "alternative rock",
+"voix": "falsetto-heavy dramatic male rock vocals",
+"musique": "space rock, fuzzed bass riffs, classical piano runs, arena synths, bombastic"
+},
+{
+"noms": [
+"foo fighters"
+],
+"genre": "rock_metal",
+"mots": "rock",
+"voix": "raw shouted male rock vocals with melodic hooks",
+"musique": "post-grunge arena rock, big distorted guitars, driving drums, loud anthemic chorus"
+},
+{
+"noms": [
+"red hot chili peppers",
+"chili peppers"
+],
+"genre": "rock_metal",
+"mots": "funk rock",
+"voix": "rhythmic half-rapped male vocals with melodic chorus",
+"musique": "funk rock, slap bass, funky clean guitar, energetic drums, California sunshine"
+},
+{
+"noms": [
+"led zeppelin"
+],
+"genre": "rock_metal",
+"mots": "hard rock blues 70s",
+"voix": "high wailing bluesy male rock vocals",
+"musique": "1970s blues-based hard rock, monster riffs, thunderous roomy drums, mystical folk interludes"
+},
+{
+"noms": [
+"deep purple"
+],
+"genre": "rock_metal",
+"mots": "hard rock 70s",
+"voix": "screaming high male hard rock vocals",
+"musique": "1970s hard rock, distorted Hammond organ, fast guitar solos"
+},
+{
+"noms": [
+"guns n roses",
+"guns n' roses",
+"guns and roses"
+],
+"genre": "rock_metal",
+"mots": "hard rock 80s",
+"voix": "raspy high screeching male rock vocals",
+"musique": "late 1980s hard rock, sleazy guitar riffs, lyrical guitar solos, swagger"
+},
+{
+"noms": [
+"bon jovi"
+],
+"genre": "rock_metal",
+"mots": "arena rock 80s",
+"voix": "big raspy male arena rock vocals",
+"musique": "1980s arena rock, talk-box guitar, keyboards, huge sing-along chorus"
+},
+{
+"noms": [
+"scorpions"
+],
+"genre": "rock_metal",
+"mots": "hard rock power ballad",
+"voix": "high melodic male rock vocals",
+"musique": "1980s melodic hard rock, power ballad, whistled intro feel, big guitar solos"
+},
+{
+"noms": [
+"u2"
+],
+"genre": "rock_metal",
+"mots": "stadium rock",
+"voix": "passionate soaring male rock vocals",
+"musique": "stadium rock, delay-drenched chiming guitar, driving bass, uplifting anthem"
+},
+{
+"noms": [
+"coldplay"
+],
+"genre": "pop",
+"mots": "pop rock stadium",
+"voix": "gentle falsetto-tinged male pop rock vocals",
+"musique": "anthemic piano pop rock, shimmering guitars, sing-along 'oh-oh' choruses, uplifting stadium build"
+},
+{
+"noms": [
+"radiohead"
+],
+"genre": "rock_metal",
+"mots": "alternative art rock",
+"voix": "fragile high plaintive male vocals",
+"musique": "art rock, melancholic arpeggiated guitars, glitchy electronics, odd meters, atmospheric"
+},
+{
+"noms": [
+"oasis"
+],
+"genre": "rock_metal",
+"mots": "britpop 90s",
+"voix": "nasal sneering male Britpop vocals",
+"musique": "1990s Britpop, wall of strummed guitars, Beatles-like melodies, swaggering"
+},
+{
+"noms": [
+"arctic monkeys"
+],
+"genre": "rock_metal",
+"mots": "indie rock",
+"voix": "cool laid-back male vocals with a British accent",
+"musique": "indie rock, tight riffs, swaggering groove, later lounge-y retro feel"
+},
+{
+"noms": [
+"the rolling stones",
+"rolling stones",
+"stones*"
+],
+"genre": "rock_metal",
+"mots": "rock blues 60s",
+"voix": "swaggering bluesy male rock vocals",
+"musique": "1960s-70s rock and roll, open-G guitar riffs, loose groove, blues roots"
+},
+{
+"noms": [
+"the doors",
+"doors*"
+],
+"genre": "rock_metal",
+"mots": "psychedelic 60s",
+"voix": "deep brooding baritone male vocals, poetic",
+"musique": "late 1960s psychedelic rock, swirling Vox Continental-style organ, hypnotic bass lines"
+},
+{
+"noms": [
+"the police",
+"police*"
+],
+"genre": "rock_metal",
+"mots": "new wave reggae rock",
+"voix": "high reedy male vocals",
+"musique": "reggae-tinged new wave rock, choppy guitar chords, crisp hi-hats, spacious"
+},
+{
+"noms": [
+"dire straits"
+],
+"genre": "rock_metal",
+"mots": "rock 80s guitar",
+"voix": "laid-back half-spoken male vocals",
+"musique": "1980s roots rock, fingerpicked clean Stratocaster leads, smooth and spacious"
+},
+{
+"noms": [
+"eagles"
+],
+"genre": "folk_country",
+"mots": "country rock 70s",
+"voix": "smooth male harmonies",
+"musique": "1970s West Coast country rock, twelve-string guitars, layered harmonies, long twin guitar solo"
+},
+{
+"noms": [
+"fleetwood mac"
+],
+"genre": "rock_metal",
+"mots": "soft rock 70s",
+"voix": "warm mixed male and female harmonies",
+"musique": "1970s soft rock, propulsive drums, layered harmonies, polished"
+},
+{
+"noms": [
+"kiss*"
+],
+"genre": "rock_metal",
+"mots": "glam rock",
+"voix": "shouted glam hard rock male vocals",
+"musique": "1970s glam hard rock, simple party anthems, fireworks energy"
+},
+{
+"noms": [
+"green day"
+],
+"genre": "rock_metal",
+"mots": "punk pop punk",
+"voix": "snotty energetic male punk vocals",
+"musique": "pop punk, fast power chords, catchy hooks, energetic drums"
+},
+{
+"noms": [
+"the clash",
+"clash*"
+],
+"genre": "rock_metal",
+"mots": "punk 70s",
+"voix": "shouted raw punk male vocals",
+"musique": "late 1970s punk rock with reggae touches, urgent and political energy"
+},
+{
+"noms": [
+"sex pistols"
+],
+"genre": "rock_metal",
+"mots": "punk",
+"voix": "sneering snarling punk male vocals",
+"musique": "1977 punk rock, raw distorted guitars, fast and rebellious"
+},
+{
+"noms": [
+"the white stripes",
+"white stripes"
+],
+"genre": "rock_metal",
+"mots": "garage rock",
+"voix": "yelping bluesy male vocals",
+"musique": "garage rock duo, fuzzed blues riffs, primitive pounding drums"
+},
+{
+"noms": [
+"the strokes",
+"strokes*"
+],
+"genre": "rock_metal",
+"mots": "indie garage",
+"voix": "detached distorted male vocals",
+"musique": "early 2000s garage rock revival, interlocking clean guitars, tight drums"
+},
+{
+"noms": [
+"tame impala"
+],
+"genre": "rock_metal",
+"mots": "psychedelic indie",
+"voix": "dreamy falsetto male vocals drenched in reverb",
+"musique": "neo-psychedelic pop, phased synths, fat compressed drums, groovy bass"
+},
+{
+"noms": [
+"imagine dragons"
+],
+"genre": "pop",
+"mots": "pop rock stadium",
+"voix": "powerful strained male pop rock vocals",
+"musique": "modern stadium pop rock, huge stomping drums, chant-like hooks, electronic bass"
+},
+{
+"noms": [
+"the cure",
+"cure*"
+],
+"genre": "rock_metal",
+"mots": "post punk goth new wave",
+"voix": "yearning melancholic male vocals",
+"musique": "1980s post-punk gothic pop, chorus-laden guitars, melodic bass, atmospheric"
+},
+{
+"noms": [
+"depeche mode"
+],
+"genre": "electro",
+"mots": "synthpop 80s",
+"voix": "deep baritone male vocals, brooding",
+"musique": "1980s dark synth-pop, industrial samples, minor-key synths"
+},
+{
+"noms": [
+"indochine"
+],
+"genre": "chanson",
+"mots": "new wave francais",
+"voix": "high nasal French male new wave vocals",
+"musique": "French new wave rock, synths, chorus guitars, melancholic and danceable"
+},
+{
+"noms": [
+"noir desir"
+],
+"genre": "chanson",
+"mots": "rock francais",
+"voix": "intense raspy French male rock vocals",
+"musique": "French alternative rock, tense guitars, poetic and dark"
+},
+{
+"noms": [
+"telephone*"
+],
+"genre": "chanson",
+"mots": "rock francais 80s",
+"voix": "energetic French male rock vocals",
+"musique": "1980s French rock, punchy guitars, simple energetic"
+},
+{
+"noms": [
+"toto*"
+],
+"genre": "rock_metal",
+"mots": "soft rock 80s",
+"voix": "smooth high male vocals",
+"musique": "late 1970s-80s polished soft rock, shuffle grooves, layered synths"
+},
+{
+"noms": [
+"billie eilish",
+"eilish"
+],
+"genre": "pop",
+"mots": "pop alternative",
+"voix": "whispered intimate breathy female vocals, close to the mic",
+"musique": "minimal dark pop, deep sub-bass, sparse beats, eerie textures"
+},
+{
+"noms": [
+"taylor swift",
+"swift*"
+],
+"genre": "pop",
+"mots": "pop country",
+"voix": "clear conversational female pop vocals, storytelling",
+"musique": "polished modern pop with acoustic country roots, catchy bridges"
+},
+{
+"noms": [
+"dua lipa"
+],
+"genre": "pop",
+"mots": "disco pop dance",
+"voix": "low smoky confident female pop vocals",
+"musique": "disco-pop revival, funky bass lines, four-on-the-floor, glossy strings"
+},
+{
+"noms": [
+"the weeknd",
+"weeknd"
+],
+"genre": "pop",
+"mots": "synthwave rnb pop",
+"voix": "airy high male R&B vocals with falsetto",
+"musique": "1980s-inspired synthwave pop, gated drums, neon synths, dark and moody"
+},
+{
+"noms": [
+"ed sheeran",
+"sheeran"
+],
+"genre": "pop",
+"mots": "pop acoustique",
+"voix": "warm male pop vocals, rhythmic",
+"musique": "acoustic loop pop, percussive guitar, simple beat"
+},
+{
+"noms": [
+"lady gaga",
+"gaga*"
+],
+"genre": "pop",
+"mots": "dance pop",
+"voix": "powerful theatrical female pop vocals",
+"musique": "electro dance pop, pounding synths, big chorus, theatrical"
+},
+{
+"noms": [
+"beyonce"
+],
+"genre": "pop",
+"mots": "rnb pop",
+"voix": "powerful agile female R&B vocals, commanding",
+"musique": "modern R&B and pop, heavy beats, brass stabs, confident"
+},
+{
+"noms": [
+"rihanna"
+],
+"genre": "pop",
+"mots": "pop rnb dancehall",
+"voix": "distinctive Caribbean-tinged female pop vocals",
+"musique": "dance pop and R&B, dancehall touches, strong hooks"
+},
+{
+"noms": [
+"bruno mars"
+],
+"genre": "pop",
+"mots": "funk pop",
+"voix": "smooth high male pop vocals, funky",
+"musique": "retro funk pop, horn section, slap bass, 1970s-80s groove"
+},
+{
+"noms": [
+"harry styles"
+],
+"genre": "pop",
+"mots": "pop rock",
+"voix": "warm male pop vocals, soft rock tone",
+"musique": "1970s-tinged soft pop rock, warm analog feel"
+},
+{
+"noms": [
+"olivia rodrigo"
+],
+"genre": "pop",
+"mots": "pop punk",
+"voix": "emotional young female vocals, confessional",
+"musique": "pop punk and piano ballads, angsty and raw"
+},
+{
+"noms": [
+"ariana grande"
+],
+"genre": "pop",
+"mots": "pop rnb",
+"voix": "light airy high female vocals, whistle notes, melismatic",
+"musique": "modern pop and R&B, trap hi-hats, layered harmonies"
+},
+{
+"noms": [
+"katy perry"
+],
+"genre": "pop",
+"mots": "pop",
+"voix": "bright punchy female pop vocals",
+"musique": "candy-coated dance pop, big hooks"
+},
+{
+"noms": [
+"sia*"
+],
+"genre": "pop",
+"mots": "pop",
+"voix": "raw cracking powerful female vocals",
+"musique": "emotional electro-pop power ballad"
+},
+{
+"noms": [
+"lana del rey"
+],
+"genre": "pop",
+"mots": "baroque pop",
+"voix": "languid low dreamy female vocals",
+"musique": "cinematic baroque pop, lush strings, slow reverb-drenched, retro Americana"
+},
+{
+"noms": [
+"justin bieber",
+"bieber"
+],
+"genre": "pop",
+"mots": "pop",
+"voix": "smooth light male pop vocals",
+"musique": "modern pop and R&B, minimal beats"
+},
+{
+"noms": [
+"shakira"
+],
+"genre": "pop",
+"mots": "latin pop",
+"voix": "distinctive yodel-like female vocals",
+"musique": "Latin pop, reggaeton beats, Andean and Middle Eastern touches"
+},
+{
+"noms": [
+"rosalia"
+],
+"genre": "pop",
+"mots": "flamenco pop",
+"voix": "flamenco-trained female vocals, melismatic",
+"musique": "experimental flamenco pop, handclaps, reggaeton and electronic"
+},
+{
+"noms": [
+"bad bunny"
+],
+"genre": "pop",
+"mots": "reggaeton",
+"voix": "deep laid-back male Latin vocals",
+"musique": "reggaeton and Latin trap, dembow rhythm, deep bass"
+},
+{
+"noms": [
+"bts"
+],
+"genre": "pop",
+"mots": "kpop",
+"voix": "polished male group vocals with rap parts",
+"musique": "Korean idol pop, genre-switching sections, crisp production, big dance chorus"
+},
+{
+"noms": [
+"k-pop",
+"kpop"
+],
+"genre": "pop",
+"mots": "coreen idol",
+"nature": "genre",
+"musique": "Korean idol pop, genre-switching sections, crisp production, synchronized dance chorus"
+},
+{
+"noms": [
+"blackpink"
+],
+"genre": "pop",
+"mots": "kpop",
+"voix": "confident female group vocals with rap parts",
+"musique": "Korean idol pop, trap drops, brass hooks, high energy"
+},
+{
+"noms": [
+"stromae"
+],
+"genre": "chanson",
+"mots": "electro chanson",
+"voix": "theatrical French male vocals, spoken-sung, melancholic",
+"musique": "Belgian electro chanson, house beats, dark lyrics over danceable rhythm"
+},
+{
+"noms": [
+"angele"
+],
+"genre": "chanson",
+"mots": "pop francaise",
+"voix": "light ironic French female pop vocals",
+"musique": "minimal French electro-pop, playful"
+},
+{
+"noms": [
+"aya nakamura"
+],
+"genre": "chanson",
+"mots": "afropop",
+"voix": "confident French female urban vocals",
+"musique": "Afro-pop and R&B, zouk rhythms, catchy hooks"
+},
+{
+"noms": [
+"christine and the queens",
+"chris*"
+],
+"genre": "chanson",
+"mots": "synthpop francais",
+"voix": "androgynous French vocals",
+"musique": "1980s-inspired synth-pop, choreographed groove"
+},
+{
+"noms": [
+"zaz"
+],
+"genre": "chanson",
+"mots": "chanson swing",
+"voix": "husky joyful French female vocals",
+"musique": "French manouche jazz-pop, acoustic guitar, upright bass"
+},
+{
+"noms": [
+"vianney"
+],
+"genre": "chanson",
+"mots": "pop francaise",
+"voix": "gentle French male vocals",
+"musique": "French acoustic pop, guitar, warm"
+},
+{
+"noms": [
+"clara luciani"
+],
+"genre": "chanson",
+"mots": "pop francaise",
+"voix": "low warm French female vocals",
+"musique": "French 1970s-inspired disco pop"
+},
+{
+"noms": [
+"mylene farmer"
+],
+"genre": "chanson",
+"mots": "pop francaise",
+"voix": "high breathy French female vocals",
+"musique": "dark French synth-pop, dramatic"
+},
+{
+"noms": [
+"jean-jacques goldman",
+"goldman*"
+],
+"genre": "chanson",
+"mots": "variete francaise",
+"voix": "high clear French male vocals",
+"musique": "1980s French pop rock, synths and guitars, sincere"
+},
+{
+"noms": [
+"celine dion"
+],
+"genre": "pop",
+"mots": "ballade",
+"voix": "powerful soaring female ballad vocals",
+"musique": "big power ballad, orchestral strings, key change finale"
+},
+{
+"noms": [
+"michel sardou",
+"sardou*"
+],
+"genre": "chanson",
+"mots": "variete francaise",
+"voix": "powerful dramatic French male vocals",
+"musique": "French variety, big orchestral arrangements"
+},
+{
+"noms": [
+"france gall"
+],
+"genre": "chanson",
+"mots": "variete francaise",
+"voix": "bright French female pop vocals",
+"musique": "1960s-80s French pop, piano-led"
+},
+{
+"noms": [
+"francis cabrel",
+"cabrel*"
+],
+"genre": "chanson",
+"mots": "chanson folk",
+"voix": "warm southern French male vocals, gentle",
+"musique": "French folk-rock, acoustic guitars"
+},
+{
+"noms": [
+"renaud*"
+],
+"genre": "chanson",
+"mots": "chanson",
+"voix": "nasal street-talk French male vocals",
+"musique": "French folk-rock, accordion and guitars, popular storytelling"
+},
+{
+"noms": [
+"julien dore"
+],
+"genre": "chanson",
+"mots": "pop francaise",
+"voix": "soft crooning French male vocals",
+"musique": "dreamy French pop"
+},
+{
+"noms": [
+"eminem"
+],
+"genre": "rap",
+"mots": "rap hip hop",
+"voix": "rapid aggressive male rap delivery, intense",
+"musique": "hip-hop, hard drums, dark piano loops"
+},
+{
+"noms": [
+"drake"
+],
+"genre": "rap",
+"mots": "rap",
+"voix": "melodic laid-back male rap and singing",
+"musique": "moody modern hip-hop, atmospheric pads, trap drums"
+},
+{
+"noms": [
+"kendrick lamar",
+"kendrick*"
+],
+"genre": "rap",
+"mots": "rap jazz",
+"voix": "versatile male rap, changing voices and flows",
+"musique": "jazz-tinged conscious hip-hop, live bass"
+},
+{
+"noms": [
+"kanye west",
+"kanye*"
+],
+"genre": "rap",
+"mots": "rap",
+"voix": "confident male rap, autotuned singing",
+"musique": "soul-sample hip-hop, gospel choirs, maximalist production"
+},
+{
+"noms": [
+"travis scott"
+],
+"genre": "rap",
+"mots": "trap",
+"voix": "heavily autotuned male vocals, ad-libs",
+"musique": "dark psychedelic trap, booming 808s"
+},
+{
+"noms": [
+"dr dre",
+"dre*"
+],
+"genre": "rap",
+"mots": "gfunk west coast",
+"voix": "commanding male rap",
+"musique": "West Coast G-funk, whiny synth lead, deep bass, laid-back groove"
+},
+{
+"noms": [
+"snoop dogg",
+"snoop*"
+],
+"genre": "rap",
+"mots": "gfunk",
+"voix": "laid-back drawling male rap",
+"musique": "West Coast G-funk, smooth groove"
+},
+{
+"noms": [
+"orelsan"
+],
+"genre": "rap",
+"mots": "rap francais",
+"voix": "conversational French male rap, ironic",
+"musique": "French hip-hop, electronic beats"
+},
+{
+"noms": [
+"nekfeu"
+],
+"genre": "rap",
+"mots": "rap francais",
+"voix": "technical fast French male rap",
+"musique": "French boom bap, jazzy samples"
+},
+{
+"noms": [
+"pnl"
+],
+"genre": "rap",
+"mots": "cloud rap",
+"voix": "autotuned melancholic French male vocals",
+"musique": "cloud rap, dreamy pads, slow trap"
+},
+{
+"noms": [
+"iam*"
+],
+"genre": "rap",
+"mots": "rap francais 90s",
+"voix": "storytelling French male rap",
+"musique": "1990s French boom bap, soul and Mediterranean samples"
+},
+{
+"noms": [
+"mc solaar",
+"solaar"
+],
+"genre": "rap",
+"mots": "rap jazz francais",
+"voix": "smooth poetic French male rap",
+"musique": "jazzy French hip-hop, mellow"
+},
+{
+"noms": [
+"jul*"
+],
+"genre": "rap",
+"mots": "rap",
+"voix": "autotuned melodic French male rap",
+"musique": "Marseille pop-rap, catchy synth loops"
+},
+{
+"noms": [
+"justice*"
+],
+"genre": "electro",
+"mots": "electro french touch",
+"musique": "French electro, distorted filtered bass, disco samples, rock energy"
+},
+{
+"noms": [
+"air*"
+],
+"genre": "electro",
+"mots": "downtempo french touch",
+"voix": "soft vocoder male vocals",
+"musique": "French downtempo, vintage synths, dreamy lounge"
+},
+{
+"noms": [
+"david guetta",
+"guetta*"
+],
+"genre": "electro",
+"mots": "edm",
+"musique": "festival EDM, big room build-ups and drops, piano house"
+},
+{
+"noms": [
+"avicii"
+],
+"genre": "electro",
+"mots": "edm house",
+"musique": "melodic progressive house, folk guitar meets EDM, euphoric"
+},
+{
+"noms": [
+"calvin harris"
+],
+"genre": "electro",
+"mots": "dance house",
+"musique": "polished dance pop house, summery"
+},
+{
+"noms": [
+"deadmau5"
+],
+"genre": "electro",
+"mots": "house progressive",
+"musique": "progressive house, long hypnotic builds"
+},
+{
+"noms": [
+"skrillex"
+],
+"genre": "electro",
+"mots": "dubstep",
+"musique": "brostep dubstep, aggressive wobbles, chopped vocals"
+},
+{
+"noms": [
+"kraftwerk"
+],
+"genre": "electro",
+"mots": "electro 70s",
+"voix": "robotic vocoder vocals",
+"musique": "1970s minimal electronic music, motorik sequencers, clean drum machines"
+},
+{
+"noms": [
+"moby"
+],
+"genre": "electro",
+"mots": "electronica",
+"musique": "1990s electronica, gospel and blues samples over breakbeats, piano"
+},
+{
+"noms": [
+"the chemical brothers",
+"chemical brothers"
+],
+"genre": "electro",
+"mots": "big beat",
+"musique": "big beat, huge breakbeats, acid squelches"
+},
+{
+"noms": [
+"the prodigy",
+"prodigy*"
+],
+"genre": "electro",
+"mots": "big beat rave",
+"voix": "shouted punk male vocals",
+"musique": "big beat rave, aggressive breakbeats, distorted synths"
+},
+{
+"noms": [
+"aphex twin"
+],
+"genre": "electro",
+"mots": "idm ambient",
+"musique": "experimental IDM, intricate glitchy drums, eerie ambient"
+},
+{
+"noms": [
+"massive attack"
+],
+"genre": "electro",
+"mots": "trip hop",
+"voix": "whispered male and female vocals",
+"musique": "trip-hop, slow heavy beats, deep dub bass, dark atmosphere"
+},
+{
+"noms": [
+"portishead"
+],
+"genre": "electro",
+"mots": "trip hop",
+"voix": "haunting fragile female vocals",
+"musique": "trip-hop, vinyl crackle, spy-movie samples, slow breakbeats"
+},
+{
+"noms": [
+"m83"
+],
+"genre": "electro",
+"mots": "synthpop dream",
+"musique": "dreamy cinematic synth-pop, shoegaze walls of synths, 1980s nostalgia"
+},
+{
+"noms": [
+"kavinsky"
+],
+"genre": "electro",
+"mots": "synthwave outrun",
+"musique": "synthwave, 1980s night-drive, gated drums, analog synth leads"
+},
+{
+"noms": [
+"carpenter brut"
+],
+"genre": "electro",
+"mots": "darksynth",
+"musique": "darksynth, aggressive retro synths, horror-movie mood"
+},
+{
+"noms": [
+"synthwave",
+"outrun"
+],
+"genre": "electro",
+"mots": "synthwave retro",
+"musique": "1980s retro synthwave, neon night drive, gated reverb drums, analog arpeggios",
+"nature": "genre"
+},
+{
+"noms": [
+"lofi",
+"lo-fi"
+],
+"genre": "electro",
+"mots": "lofi chill",
+"musique": "lo-fi hip-hop, dusty vinyl crackle, mellow jazzy chords, relaxed beat",
+"nature": "genre"
+},
+{
+"noms": [
+"bob sinclar",
+"sinclar*"
+],
+"genre": "electro",
+"mots": "house",
+"musique": "French house, funky disco samples, sunny"
+},
+{
+"noms": [
+"miles davis"
+],
+"genre": "jazz_soul",
+"mots": "jazz cool modal",
+"musique": "cool modal jazz, muted trumpet, sparse piano, brushed drums"
+},
+{
+"noms": [
+"john coltrane",
+"coltrane"
+],
+"genre": "jazz_soul",
+"mots": "jazz",
+"musique": "spiritual modal jazz, intense tenor saxophone, sheets of sound"
+},
+{
+"noms": [
+"nina simone"
+],
+"genre": "jazz_soul",
+"mots": "jazz soul",
+"voix": "deep androgynous female jazz vocals, intense",
+"musique": "soul jazz, classical-inflected piano"
+},
+{
+"noms": [
+"billie holiday"
+],
+"genre": "jazz_soul",
+"mots": "jazz 40s",
+"voix": "fragile behind-the-beat female jazz vocals",
+"musique": "1930s-40s small-band jazz ballad"
+},
+{
+"noms": [
+"stevie wonder"
+],
+"genre": "jazz_soul",
+"mots": "soul funk 70s",
+"voix": "joyful agile male soul vocals",
+"musique": "1970s funk soul, clavinet, harmonica, Rhodes"
+},
+{
+"noms": [
+"marvin gaye"
+],
+"genre": "jazz_soul",
+"mots": "soul motown",
+"voix": "smooth silky male soul vocals",
+"musique": "Motown soul, layered harmonies, groovy"
+},
+{
+"noms": [
+"aretha franklin",
+"aretha*"
+],
+"genre": "jazz_soul",
+"mots": "soul gospel",
+"voix": "powerful gospel female soul vocals",
+"musique": "1960s soul, gospel piano, horns"
+},
+{
+"noms": [
+"james brown"
+],
+"genre": "jazz_soul",
+"mots": "funk",
+"voix": "screaming energetic male funk vocals, grunts",
+"musique": "raw funk, tight horns, chicken-scratch guitar, on-the-one groove"
+},
+{
+"noms": [
+"prince*"
+],
+"genre": "jazz_soul",
+"mots": "funk pop 80s",
+"voix": "falsetto and shrieks, sensual male vocals",
+"musique": "Minneapolis funk pop, drum machines, synths, guitar solos"
+},
+{
+"noms": [
+"bb king",
+"b.b. king"
+],
+"genre": "jazz_soul",
+"mots": "blues",
+"voix": "warm shouting male blues vocals",
+"musique": "electric blues, vibrato-rich guitar lead, horns"
+},
+{
+"noms": [
+"norah jones"
+],
+"genre": "jazz_soul",
+"mots": "jazz pop",
+"voix": "soft smoky female vocals",
+"musique": "acoustic jazz pop, piano, brushes"
+},
+{
+"noms": [
+"django reinhardt",
+"django*"
+],
+"genre": "jazz_soul",
+"mots": "jazz manouche",
+"musique": "1930s gypsy jazz, fast acoustic guitar, violin, pompe rhythm"
+},
+{
+"noms": [
+"ludwig goransson",
+"goransson"
+],
+"genre": "film",
+"mots": "musique de film",
+"musique": "modern genre-blending film score, gritty synths, solo recorder or ethnic flute, propulsive"
+},
+{
+"noms": [
+"hildur gudnadottir",
+"gudnadottir"
+],
+"genre": "film",
+"mots": "musique de film cello",
+"musique": "dark minimalist film score, solo cello drones, unsettling textures"
+},
+{
+"noms": [
+"max richter",
+"richter*"
+],
+"genre": "film",
+"mots": "neo classique",
+"musique": "neo-classical, melancholic strings, slow repeating piano, minimalism"
+},
+{
+"noms": [
+"ludovico einaudi",
+"einaudi"
+],
+"genre": "film",
+"mots": "piano neo classique",
+"musique": "minimalist neo-classical piano, repeating arpeggios, gentle strings"
+},
+{
+"noms": [
+"yann tiersen",
+"tiersen"
+],
+"genre": "film",
+"mots": "piano valse",
+"musique": "whimsical French piano and accordion waltzes, toy instruments"
+},
+{
+"noms": [
+"joe hisaishi",
+"hisaishi"
+],
+"genre": "film",
+"mots": "musique de film anime",
+"musique": "tender orchestral anime film score, piano melody, nostalgic strings"
+},
+{
+"noms": [
+"ramin djawadi",
+"djawadi"
+],
+"genre": "film",
+"mots": "musique de serie",
+"musique": "epic TV fantasy score, cello ostinato, choirs, war drums"
+},
+{
+"noms": [
+"alexandre desplat",
+"desplat"
+],
+"genre": "film",
+"mots": "musique de film",
+"musique": "delicate quirky film score, plucked strings, celesta, woodwinds"
+},
+{
+"noms": [
+"howard shore"
+],
+"genre": "film",
+"mots": "musique de film fantasy",
+"musique": "epic high fantasy score, choirs, leitmotifs, Celtic touches"
+},
+{
+"noms": [
+"james horner",
+"horner*"
+],
+"genre": "film",
+"mots": "musique de film",
+"musique": "emotional sweeping film score, Celtic pipes, choirs"
+},
+{
+"noms": [
+"danny elfman",
+"elfman"
+],
+"genre": "film",
+"mots": "musique de film",
+"musique": "quirky gothic film score, choirs, waltzes, carnival brass"
+},
+{
+"noms": [
+"michael giacchino",
+"giacchino"
+],
+"genre": "film",
+"mots": "musique de film",
+"musique": "warm adventurous orchestral score, playful themes"
+},
+{
+"noms": [
+"john powell"
+],
+"genre": "film",
+"mots": "musique de film anime",
+"musique": "energetic animated adventure score, Celtic fiddles, percussion"
+},
+{
+"noms": [
+"thomas newman"
+],
+"genre": "film",
+"mots": "musique de film",
+"musique": "intimate textured score, marimba, piano, ethereal strings"
+},
+{
+"noms": [
+"johann johannsson",
+"johannsson"
+],
+"genre": "film",
+"mots": "musique de film ambient",
+"musique": "slow dark ambient orchestral score, drones, deep brass"
+},
+{
+"noms": [
+"olafur arnalds",
+"arnalds"
+],
+"genre": "film",
+"mots": "neo classique",
+"musique": "Icelandic neo-classical, piano and strings with subtle electronics"
+},
+{
+"noms": [
+"nils frahm",
+"frahm"
+],
+"genre": "film",
+"mots": "neo classique piano",
+"musique": "felt piano, analog synths, intimate looping"
+},
+{
+"noms": [
+"philip glass"
+],
+"genre": "classique",
+"mots": "minimalisme",
+"musique": "minimalist repetition, arpeggiated patterns, hypnotic"
+},
+{
+"noms": [
+"steve reich",
+"reich*"
+],
+"genre": "classique",
+"mots": "minimalisme",
+"musique": "minimalist phasing patterns, mallets, pulse"
+},
+{
+"noms": [
+"arvo part"
+],
+"genre": "classique",
+"mots": "sacre",
+"musique": "spiritual tintinnabuli, sparse sacred choir, bells"
+},
+{
+"noms": [
+"eric serra"
+],
+"genre": "film",
+"mots": "musique de film",
+"musique": "1990s French film score, ambient synths, deep percussion"
+},
+{
+"noms": [
+"vladimir cosma",
+"cosma*"
+],
+"genre": "film",
+"mots": "musique de film",
+"musique": "French comedy film score, catchy flutes and pan pipes, lyrical"
+},
+{
+"noms": [
+"michel legrand",
+"legrand*"
+],
+"genre": "film",
+"mots": "comedie musicale jazz",
+"musique": "1960s French jazz musical, lush orchestra, swirling melodies"
+},
+{
+"noms": [
+"francis lai"
+],
+"genre": "film",
+"mots": "musique de film",
+"musique": "1960s French romantic film score, accordion, wordless choir"
+},
+{
+"noms": [
+"gabriel yared",
+"yared*"
+],
+"genre": "film",
+"mots": "musique de film",
+"musique": "lyrical romantic film score, piano and strings"
+},
+{
+"noms": [
+"cliff martinez"
+],
+"genre": "film",
+"mots": "musique de film synth",
+"musique": "cold neon synth score, hypnotic pulses"
+},
+{
+"noms": [
+"trent reznor",
+"atticus ross",
+"reznor*"
+],
+"genre": "film",
+"mots": "musique de film industriel",
+"musique": "dark industrial ambient score, distorted textures, nervous piano"
+},
+{
+"noms": [
+"junkie xl",
+"tom holkenborg"
+],
+"genre": "film",
+"mots": "musique de film action",
+"musique": "relentless action score, pounding drums, distorted guitars, electronic"
+},
+{
+"noms": [
+"two steps from hell"
+],
+"genre": "film",
+"mots": "bande annonce epique",
+"musique": "epic trailer music, massive choirs, hybrid orchestra, heroic"
+},
+{
+"noms": [
+"nobuo uematsu",
+"uematsu"
+],
+"genre": "film",
+"mots": "jeu video",
+"musique": "Japanese RPG game score, heroic orchestral themes, battle music"
+},
+{
+"noms": [
+"koji kondo",
+"kondo*"
+],
+"genre": "film",
+"mots": "jeu video chiptune",
+"musique": "cheerful video game chiptune and orchestral adventure"
+},
+{
+"noms": [
+"gustavo santaolalla",
+"santaolalla"
+],
+"genre": "film",
+"mots": "musique de film",
+"musique": "sparse acoustic film score, ronroco guitar, desolate"
+},
+{
+"noms": [
+"ryuichi sakamoto",
+"sakamoto"
+],
+"genre": "film",
+"mots": "musique de film piano",
+"musique": "elegant piano and electronic film score, melancholic"
+},
+{
+"noms": [
+"vangelis*"
+],
+"genre": "film",
+"mots": "synth",
+"musique": "lush analog synth score, melancholic and epic"
+},
+{
+"noms": [
+"beethoven"
+],
+"genre": "classique",
+"mots": "classique symphonie",
+"musique": "Romantic-era symphonic, dramatic dynamics, heroic motifs"
+},
+{
+"noms": [
+"bach",
+"jean-sebastien bach",
+"js bach"
+],
+"genre": "classique",
+"mots": "baroque",
+"musique": "baroque counterpoint, pipe organ or harpsichord, fugue"
+},
+{
+"noms": [
+"chopin"
+],
+"genre": "classique",
+"mots": "piano romantique",
+"musique": "Romantic solo piano, nocturne, rubato, poetic"
+},
+{
+"noms": [
+"debussy"
+],
+"genre": "classique",
+"mots": "impressionnisme",
+"musique": "impressionist piano and orchestra, whole-tone harmonies, shimmering"
+},
+{
+"noms": [
+"ravel"
+],
+"genre": "classique",
+"mots": "impressionnisme",
+"musique": "impressionist orchestration, colorful woodwinds, building ostinato"
+},
+{
+"noms": [
+"erik satie",
+"satie"
+],
+"genre": "classique",
+"mots": "piano",
+"musique": "sparse gentle piano, slow and dreamy"
+},
+{
+"noms": [
+"tchaikovsky",
+"tchaikovski"
+],
+"genre": "classique",
+"mots": "ballet",
+"musique": "lush Romantic ballet orchestra, sweeping strings"
+},
+{
+"noms": [
+"wagner"
+],
+"genre": "classique",
+"mots": "opera",
+"musique": "massive Romantic opera orchestra, powerful brass, leitmotifs"
+},
+{
+"noms": [
+"puccini"
+],
+"genre": "classique",
+"mots": "opera",
+"voix": "operatic tenor or soprano",
+"musique": "Italian Romantic opera, lyrical arias"
+},
+{
+"noms": [
+"verdi"
+],
+"genre": "classique",
+"mots": "opera",
+"musique": "Italian opera, grand choruses, dramatic"
+},
+{
+"noms": [
+"buena vista social club",
+"buena vista"
+],
+"genre": "monde",
+"mots": "cubain",
+"voix": "warm elderly Cuban male vocals",
+"musique": "traditional Cuban son, tres guitar, trumpet, congas"
+},
+{
+"noms": [
+"cesaria evora",
+"evora"
+],
+"genre": "monde",
+"mots": "morna",
+"voix": "warm melancholic female vocals",
+"musique": "Cape Verdean morna, acoustic guitars, cavaquinho"
+},
+{
+"noms": [
+"fela kuti",
+"fela*"
+],
+"genre": "monde",
+"mots": "afrobeat",
+"voix": "call-and-response male vocals",
+"musique": "Afrobeat, long horn riffs, polyrhythmic drums"
+},
+{
+"noms": [
+"ravi shankar"
+],
+"genre": "monde",
+"mots": "indien",
+"musique": "Indian classical sitar raga, tabla, drone"
+},
+{
+"noms": [
+"gipsy kings"
+],
+"genre": "monde",
+"mots": "flamenco rumba",
+"voix": "raspy Spanish male vocals",
+"musique": "rumba flamenca, fast strummed guitars, handclaps"
+},
+{
+"noms": [
+"astor piazzolla",
+"piazzolla"
+],
+"genre": "monde",
+"mots": "tango",
+"musique": "nuevo tango, bandoneon, dramatic strings"
+},
+{
+"noms": [
+"khaled"
+],
+"genre": "monde",
+"mots": "rai",
+"voix": "soaring male rai vocals",
+"musique": "Algerian rai pop, synths, darbuka"
+},
+{
+"noms": [
+"ibrahim maalouf",
+"maalouf"
+],
+"genre": "monde",
+"mots": "jazz oriental",
+"musique": "jazz trumpet with Arabic quarter tones, epic grooves"
+},
+{
+"noms": [
+"manu chao"
+],
+"genre": "monde",
+"mots": "mestizo",
+"voix": "nasal multilingual male vocals",
+"musique": "mestizo folk reggae, simple loops, radio sounds"
+},
+{
+"noms": [
+"dolly parton",
+"dolly*"
+],
+"genre": "folk_country",
+"mots": "country",
+"voix": "bright high country female vocals",
+"musique": "classic country, banjo, fiddle"
+},
+{
+"noms": [
+"bob dylan",
+"dylan*"
+],
+"genre": "folk_country",
+"mots": "folk 60s",
+"voix": "nasal storytelling male vocals",
+"musique": "1960s folk, acoustic guitar and harmonica"
+},
+{
+"noms": [
+"simon and garfunkel",
+"simon & garfunkel"
+],
+"genre": "folk_country",
+"mots": "folk 60s",
+"voix": "close soft male harmonies",
+"musique": "1960s folk pop, fingerpicked acoustic guitar"
+},
+{
+"noms": [
+"neil young"
+],
+"genre": "folk_country",
+"mots": "folk rock",
+"voix": "high thin plaintive male vocals",
+"musique": "folk rock, harmonica, raw electric guitar"
+},
+{
+"noms": [
+"mumford and sons",
+"mumford & sons"
+],
+"genre": "folk_country",
+"mots": "folk",
+"voix": "passionate male folk vocals",
+"musique": "stomping folk rock, banjo, kick drum, gang vocals"
+},
+{
+"noms": [
+"leonard cohen",
+"cohen*"
+],
+"genre": "folk_country",
+"mots": "folk",
+"voix": "deep low murmuring male vocals",
+"musique": "spare poetic folk, female backing vocals"
+}
+]
+}
