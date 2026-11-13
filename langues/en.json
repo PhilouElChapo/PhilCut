@@ -7167,5 +7167,8 @@
  "aucun : chaque poste reste indépendant": "none: each computer stays independent",
  "Installer le modèle": "Install the model",
  "Le catalogue des modèles n'a pas pu être relu (connexion Internet ?). Réessayez dans un instant, ou Edition › Préférences › IA locale.": "The model catalogue could not be read again (Internet connection?). Try again in a moment, or Edit › Preferences › Local AI.",
- "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Model download in progress: the progress is in the bottom bar (Tools › Activity centre). This window updates by itself at the end."
+ "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Model download in progress: the progress is in the bottom bar (Tools › Activity centre). This window updates by itself at the end.",
+ "Police du titre": "Title font",
+ "La police du titre ; « celle du kit » suit le kit choisi au-dessus": "The title font; “the kit's one” follows the kit chosen above",
+ "Celle du kit ({p})": "The kit's one ({p})"
 }

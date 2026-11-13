@@ -279,6 +279,32 @@ def _qcolor(c, alpha=255):
     return q
 
 
+POLICES_LIVREES = {"Anton": 400, "Bebas Neue": 400, "Nunito": 900, "Poppins": 800}      # livrées avec PhilCut (licence OFL)
+
+
+def polices_proposees():
+    """Polices du titre (0.9.59) : celles livrées avec PhilCut, puis celles du système, par ordre alphabétique."""
+    _polices()
+    from PySide6.QtGui import QFontDatabase
+    import unicodedata
+    cle = lambda n: unicodedata.normalize("NFKD", n).encode("ascii", "ignore").decode().lower()
+    livrees = sorted(POLICES_LIVREES, key=cle)
+    systeme = sorted({f for f in QFontDatabase.families() if f not in POLICES_LIVREES and not f.startswith((".", "@"))
+                      and not QFontDatabase.isPrivateFamily(f)}, key=cle)
+    return livrees, systeme
+
+
+def kit_avec_police(kit, police=None):
+    """Le kit, ou une copie du kit avec la police choisie (le reste du style ne change pas)."""
+    base = KITS.get(kit) and kit or "punchy"
+    if not police or police == KITS[base]["police"]:
+        return base
+    cle = f"{base}|{police}"
+    if cle not in KITS:
+        KITS[cle] = dict(KITS[base], police=police, poids=POLICES_LIVREES.get(police, 700), _derive=True)
+    return cle
+
+
 def _police(kit, taille):
     from PySide6.QtGui import QFont
     k = KITS.get(kit, KITS["punchy"])
@@ -570,7 +596,7 @@ def composer(recette, img, img2=None, L=1280, H=720, progression=None):
         if progression:
             progression(f, t)
     _polices()
-    kit = recette.get("kit") or "punchy"
+    kit = kit_avec_police(recette.get("kit") or "punchy", recette.get("police"))
     k = KITS.get(kit, KITS["punchy"])
     graine = int(recette.get("graine") or 0)
     av(0.05, _("Cadrage de l'image du film…"))
@@ -747,12 +773,13 @@ def variantes(recette, n=3):
     """Variantes proposées d'un clic : autre couleur d'accent et côté de flèche, puis deux autres kits."""
     import copy
     out = []
-    kits = [k for k in KITS if k != recette.get("kit")]
+    kits = [k for k in KITS if k != recette.get("kit") and not KITS[k].get("_derive")]
     for i in range(n):
         r = copy.deepcopy(recette)
         r["graine"] = int(recette.get("graine") or 0) + i + 1
         if i:
             r["kit"] = kits[(i - 1 + int(recette.get("graine") or 0)) % len(kits)]
+            r.pop("police", None)                          # autre kit : sa propre police
         out.append(r)
     return out
 
@@ -808,7 +835,7 @@ def proposer_ia(recette, png, params, niveau="cloud", rapporter=None, contexte="
             out[c] = d[c].strip()
     if isinstance(d.get("elements"), list):
         out["elements"] = "\n".join(str(x) for x in d["elements"])
-    if d.get("kit") in KITS:
+    if d.get("kit") in KITS and not KITS[d["kit"]].get("_derive"):
         out["kit"] = d["kit"]
     if d.get("effet_rouge") in EFFETS_ROUGE:
         out["effet_rouge"] = d["effet_rouge"]

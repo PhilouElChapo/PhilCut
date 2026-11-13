@@ -7158,5 +7158,8 @@
  "aucun : chaque poste reste indépendant": "nessuna: ogni computer resta indipendente",
  "Installer le modèle": "Installare il modello",
  "Le catalogue des modèles n'a pas pu être relu (connexion Internet ?). Réessayez dans un instant, ou Edition › Préférences › IA locale.": "Non è stato possibile rileggere il catalogo dei modelli (connessione Internet?). Riprovate tra un momento, o Modifica › Preferenze › IA locale.",
- "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Download del modello in corso: l'avanzamento è nella barra in basso (Strumenti › Centro attività). Questa finestra si aggiorna da sola alla fine."
+ "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Download del modello in corso: l'avanzamento è nella barra in basso (Strumenti › Centro attività). Questa finestra si aggiorna da sola alla fine.",
+ "Police du titre": "Carattere del titolo",
+ "La police du titre ; « celle du kit » suit le kit choisi au-dessus": "Il carattere del titolo; «quello del kit» segue il kit scelto sopra",
+ "Celle du kit ({p})": "Quello del kit ({p})"
 }

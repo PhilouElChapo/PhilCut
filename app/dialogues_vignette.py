@@ -382,8 +382,11 @@ class DialogueVignette(QDialog):
         vg.addWidget(g4)
         g5 = QGroupBox(_("Style"))
         f5 = QFormLayout(g5)
-        self.kit = self._combo(V.KITS, "kit", lambda k: k["nom"])
+        self.kit = self._combo({k: v for k, v in V.KITS.items() if not v.get("_derive")}, "kit", lambda k: k["nom"])
         f5.addRow(_("Kit"), self.kit)
+        self.police = self._combo_polices()                 # 0.9.59 : police du titre, chaque nom dans sa police
+        f5.addRow(_("Police du titre"), self.police)
+        self.kit.currentIndexChanged.connect(lambda *_a: self._maj_police_kit())
         self.effet = self._combo(V.EFFETS_ROUGE, "effet_rouge")
         f5.addRow(_("Zone rouge"), self.effet)
         self.fleche = self._combo(V.FLECHES, "fleche")
@@ -523,6 +526,39 @@ class DialogueVignette(QDialog):
         c.setCurrentIndex(max(0, c.findData(self.recette.get(cle))))
         c.currentIndexChanged.connect(lambda: self._regle(cle, c.currentData()))
         return c
+
+    def _combo_polices(self):
+        """Police du titre : « celle du kit » d'abord, puis les polices livrées avec PhilCut, puis celles du système ;
+        chaque nom est écrit dans sa propre police (on voit ce qu'on choisit)."""
+        from PySide6.QtGui import QFont
+        c = QComboBox()
+        c.setMaxVisibleItems(18)
+        livrees, systeme = V.polices_proposees()
+        c.addItem("", "")                                   # « celle du kit (…) », texte posé par _maj_police_kit
+        for nom in livrees + systeme:
+            c.addItem(nom, nom)
+            f = QFont(nom)
+            f.setPointSize(11)
+            c.setItemData(c.count() - 1, f, Qt.FontRole)
+        if livrees and systeme:
+            c.insertSeparator(1 + len(livrees))
+        c.setCurrentIndex(max(0, c.findData(self.recette.get("police") or "")))
+        c.setToolTip(_("La police du titre ; « celle du kit » suit le kit choisi au-dessus"))
+        c.currentIndexChanged.connect(lambda *_a: self._regle("police", c.currentData() or None))
+        self._combo_police = c
+        self._maj_police_kit()
+        return c
+
+    def _maj_police_kit(self):
+        c = getattr(self, "_combo_police", None)
+        if c is None:
+            return
+        k = V.KITS.get(self.recette.get("kit") or "punchy", V.KITS["punchy"])
+        c.setItemText(0, _("Celle du kit ({p})", p=k["police"]))
+        from PySide6.QtGui import QFont
+        f = QFont(k["police"])
+        f.setPointSize(11)
+        c.setItemData(0, f, Qt.FontRole)
 
     def _regle(self, cle, valeur):
         self.recette[cle] = valeur

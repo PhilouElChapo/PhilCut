@@ -72,5 +72,48 @@ class TestBouton(unittest.TestCase):
             ed.projet.modifie = False
 
 
+class TestPoliceTitre(unittest.TestCase):
+    def test_police_choisie(self):
+        import numpy as np
+        from app import vignette as V
+        from PySide6.QtGui import QFont
+        from PySide6.QtCore import Qt
+        img = (np.random.default_rng(1).random((360, 640, 3)) * 255).astype(np.uint8)
+        livrees, systeme = V.polices_proposees()
+        self.assertEqual(livrees, ["Anton", "Bebas Neue", "Nunito", "Poppins"])
+        k = V.kit_avec_police("punchy", "Bebas Neue")
+        self.assertEqual(V.KITS[k]["police"], "Bebas Neue")
+        self.assertEqual(V.KITS[k]["contour"], V.KITS["punchy"]["contour"])            # le reste du style ne change pas
+        self.assertEqual(V.kit_avec_police("punchy", "Anton"), "punchy")
+        self.assertEqual(V.kit_avec_police("punchy", None), "punchy")
+        rec = dict(V.nouvelle_recette("youtube"), kit="punchy", titre="JE VAIS DÉCOLLER", graine=0)
+        rec["zones"] = [{"couleur": "bleu", "points": [[0.1, 0.05], [0.9, 0.05], [0.9, 0.3], [0.1, 0.3]], "texte": ""}]
+        a, _i = V.composer(dict(rec), img, L=640, H=360)
+        b, _i = V.composer(dict(rec, police="Bebas Neue"), img, L=640, H=360)
+        self.assertNotEqual(a.convertToFormat(a.Format.Format_RGB888).constBits().tobytes(),
+                            b.convertToFormat(b.Format.Format_RGB888).constBits().tobytes())
+        self.assertTrue(all(not v.get("_derive") or "|" in k for k, v in V.KITS.items()))
+        self.assertNotIn(k, [x["kit"] for x in V.variantes(dict(rec, police="Bebas Neue"))[1:]])
+
+    def test_fenetre(self):
+        from app.fenetre import Fenetre
+        from app.dialogues_vignette import DialogueVignette
+        from PySide6.QtCore import Qt
+        f = Fenetre([])
+        ed = f._editeur_ou_nouveau()
+        d = DialogueVignette(ed, None, "vignette")
+        self.assertTrue(d.police.itemText(0).startswith("Celle du kit"))
+        kits = [d.kit.itemData(i) for i in range(d.kit.count())]
+        self.assertFalse([k for k in kits if "|" in k])
+        i = d.police.findData("Bebas Neue")
+        self.assertEqual(d.police.itemData(i, Qt.FontRole).family(), "Bebas Neue")     # le nom est écrit dans sa police
+        d.police.setCurrentIndex(i)
+        self.assertEqual(d.recette.get("police"), "Bebas Neue")
+        d.police.setCurrentIndex(0)
+        self.assertIsNone(d.recette.get("police"))
+        d.close()
+        ed.projet.modifie = False
+
+
 if __name__ == "__main__":
     unittest.main()

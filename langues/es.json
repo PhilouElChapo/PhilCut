@@ -7158,5 +7158,8 @@
  "aucun : chaque poste reste indépendant": "ninguna: cada equipo sigue independiente",
  "Installer le modèle": "Instalar el modelo",
  "Le catalogue des modèles n'a pas pu être relu (connexion Internet ?). Réessayez dans un instant, ou Edition › Préférences › IA locale.": "No se ha podido volver a leer el catálogo de modelos (¿conexión a Internet?). Vuelva a intentarlo en un momento, o Edición › Preferencias › IA local.",
- "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Descarga del modelo en curso: el progreso está en la barra inferior (Herramientas › Centro de actividad). Esta ventana se actualiza sola al final."
+ "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Descarga del modelo en curso: el progreso está en la barra inferior (Herramientas › Centro de actividad). Esta ventana se actualiza sola al final.",
+ "Police du titre": "Fuente del título",
+ "La police du titre ; « celle du kit » suit le kit choisi au-dessus": "La fuente del título; «la del kit» sigue el kit elegido arriba",
+ "Celle du kit ({p})": "La del kit ({p})"
 }

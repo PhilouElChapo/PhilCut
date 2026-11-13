@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T75 — 0.9.60 : police du titre de la vignette
+
+1. Outils › Vignette de la vidéo : groupe Style › « Police du titre » : « Celle du kit (Anton) », puis Anton, Bebas Neue, Nunito, Poppins, un trait, puis les polices de votre PC ; chaque nom est écrit dans sa police.
+2. Choisir une autre police : le titre change aussitôt dans l'aperçu (contour et ombre gardés).
+3. Changer de kit : la première ligne indique la police du nouveau kit ; si une police est choisie, elle reste.
+4. Poser la vignette, la rouvrir : la police choisie est toujours là.
+
 ## T74 — 0.9.59 : modèle « Continuer avec ma voix » visible et installable
 
 1. Après la mise à jour, Edition › Préférences › IA locale : le groupe « Continuer avec ma voix » apparaît (environ 1,6 Go).

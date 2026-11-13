@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.59 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.60 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.60 (police du titre des vignettes)
+- Vignette : nouvelle liste "Police du titre" dans le groupe Style. Par defaut "Celle du kit" (Anton pour Punchy, Bebas Neue pour Documentaire et Aviation, Poppins pour Editorial et Tech) ; sinon les polices livrees avec PhilCut, puis celles de l'ordinateur, chaque nom ecrit dans sa propre police. Le reste du style (contour, ombre, couleurs) ne change pas ; le choix reste modifiable en rouvrant la vignette.
+
+## Nouveautes de 0.9.59
 
 ### 0.9.59 (correction)
 - Le modele "Continuer avec ma voix" n'apparaissait pas dans Preferences > IA locale : PhilCut ne relisait le catalogue des modeles qu'une fois par jour. Il le relit maintenant aussitot apres une mise a jour de PhilCut, et quand une fonction demande un modele qu'il ne connait pas encore.
