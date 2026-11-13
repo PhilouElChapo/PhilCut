@@ -327,17 +327,21 @@ def _trouver_video(d):
 
 
 def generer_omni(clef, consigne, sortie, modele=MODELE_VIDEO, duree=8, format_="16:9", image=None, resolution="720p",
-                 progression=None, arret=lambda: False):
-    """Plan vidéo par Gemini Omni Flash (Interactions API) : demande en tâche de fond, interrogée jusqu'à la fin."""
+                 progression=None, arret=lambda: False, texte_apres=False):
+    """Plan vidéo par Gemini Omni Flash (Interactions API) : demande en tâche de fond, interrogée jusqu'à la fin.
+    `image` : un chemin, ou une liste (première et dernière images d'un plan de liaison). Avec texte_apres, les images
+    passent avant le texte, comme le demande Google pour imposer la première et la dernière image."""
     import base64
     base = "https://generativelanguage.googleapis.com/v1beta"
     entete = {"Content-Type": "application/json", "x-goog-api-key": clef}
-    texte = consigne.strip() + f"\n\n(Durée souhaitée : environ {int(duree)} secondes.)"
+    texte = consigne.strip() if texte_apres else consigne.strip() + f"\n\n(Durée souhaitée : environ {int(duree)} secondes.)"
     if image:
-        with open(image, "rb") as f:
-            img = {"type": "image", "mime_type": "image/png" if image.lower().endswith(".png") else "image/jpeg",
-                   "data": base64.b64encode(f.read()).decode()}
-        entree = [{"type": "text", "text": texte}, img]
+        imgs = []
+        for chemin in ([image] if isinstance(image, str) else list(image)):
+            with open(chemin, "rb") as f:
+                imgs.append({"type": "image", "mime_type": "image/png" if chemin.lower().endswith(".png") else "image/jpeg",
+                             "data": base64.b64encode(f.read()).decode()})
+        entree = imgs + [{"type": "text", "text": texte}] if texte_apres else [{"type": "text", "text": texte}] + imgs
     else:
         entree = texte
     corps = {"model": modele, "input": entree, "background": True,

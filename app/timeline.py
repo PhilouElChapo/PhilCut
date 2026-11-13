@@ -1290,6 +1290,10 @@ class Timeline(QGraphicsView):
         if vide:                                          # 0.9.51 : un vide entre deux plans se referme d'un clic
             a = m.addAction(_("Refermer ce vide ({d} s) : recoller les plans", d=f"{vide[1] - vide[0]:.1f}"), lambda: self._refermer(t, piste))
             a.setToolTip(_("Les plans qui suivent avancent pour se coller au précédent"))
+            if piste.startswith("video") and self.projet.clip_a(max(0.0, vide[0] - 0.05), piste):        # 0.9.56
+                avant = self.projet.clip_a(max(0.0, vide[0] - 0.05), piste)
+                a = m.addAction(_("Remplir ce vide par un plan de liaison…"), lambda: self.demande_menu.emit(avant["id"], "liaison"))
+                a.setToolTip(_("Un plan qui part de la dernière image du plan d'avant et arrive à la première du plan d'après"))
             m.addSeparator()
         clip = self.projet.clip_a(t, piste) if (self.projet and piste) else None
         if clip and clip["piste"].startswith("video"):
@@ -1637,6 +1641,8 @@ class Timeline(QGraphicsView):
             a.setChecked(clip.get("ajustement") == "suivi")
             if clip.get("ajustement") == "suivi":
                 sm.addAction(_("Corriger le suivi à la ligne rouge…"), lambda: self.demande_menu.emit(clip["id"], "corriger"))
+            if self._plan_suivant(clip):                       # 0.9.56
+                m.addAction(_("Plan de liaison avec le plan suivant…"), lambda: self.demande_menu.emit(clip["id"], "liaison"))
         a = m.addAction(_("Muet"), lambda: self._muet(clip))
         a.setCheckable(True)
         a.setChecked(bool(clip.get("muet")))
@@ -1666,6 +1672,12 @@ class Timeline(QGraphicsView):
         m.addSeparator()
         m.addAction(_("Tous les effets et transitions (fenêtre)…"), lambda: self.proprietes.emit(clip["id"]))
         self._exec_menu(m, pos)
+
+    def _plan_suivant(self, clip):
+        if not self.projet:
+            return None
+        from .liaison import plans_voisins
+        return plans_voisins(self.projet, clip)[1]
 
     def _exec_menu(self, m, pos):
         """Ouvre le menu ; si le guide (« Montrez-moi ») l'a demandé, la bonne ligne est surlignée (0.9.52)."""

@@ -135,20 +135,28 @@ def _guides_integres():
              {"texte": _("Vérifiez chaque plan et ses répliques, choisissez le moteur (ce poste, Gemini, Flow), puis fabriquez : "
                          "chaque plan se regarde avant d'être posé.")},
          ]},
-        {"id": "liaison", "etat": "partiel",
+        {"id": "liaison", "etat": "ok",
          "titre": _("Lier deux rushes par un plan de passage"),
-         "mots": "liaison lier raccord passage transition entre deux rushes plans enchainer",
-         "intro": _("Le vrai plan de liaison (de la dernière image du premier rush à la première image du suivant) est prévu. "
-                    "Aujourd'hui : une transition 3D calculée sur ce poste, ou un plan inventé à partir d'une phrase."),
+         "mots": "liaison lier raccord passage transition entre deux rushes plans enchainer vide trou",
+         "intro": _("Un plan de liaison part de la dernière image du premier rush et arrive à la première image du suivant. "
+                    "PhilCut mesure les deux images et propose des passages ; une IA peut aussi les regarder pour proposer mieux. "
+                    "Trois façons de fabriquer : transition 3D (gratuite), IA de ce poste (gratuite), Gemini Omni (prix annoncé)."),
          "etapes": [
-             {"texte": _("Placez la ligne rouge près du raccord entre les deux plans.")},
-             {"texte": _("Fabrique IA › Vidéo › Effet IA sur le film… › « Transition 3D entre deux plans (raccord le plus proche) » › "
-                         "Créer, regarder, puis Poser."),
-              "montrer": {"menu": [_("Fabrique IA"), _("Vidéo"), _("Effet IA sur le film (dessin animé, ralenti, agrandir, photo 3D…)…")]},
-              "fait": "fenetre:DialogueAtelierIA"},
-             {"texte": _("Ou un plan inventé : Fabrique IA › Vidéo › « Plan vidéo à partir d'une phrase… » (décrivez le passage), "
-                         "puis posez-le entre les deux rushes."),
-              "montrer": {"menu": [_("Fabrique IA"), _("Vidéo"), _("Plan vidéo à partir d'une phrase…")]}},
+             {"texte": _("Cliquez le premier des deux plans dans la timeline (ou faites un clic droit dans le vide entre eux : "
+                         "« Remplir ce vide par un plan de liaison… »)."), "fait": "plan_choisi"},
+             {"texte": _("Clic droit sur ce plan › « Plan de liaison avec le plan suivant… ». La fenêtre montre les deux images "
+                         "du raccord et des propositions."),
+              "montrer": {"clic_droit": [_("Plan de liaison avec le plan suivant…")]}, "fait": "fenetre:DialogueLiaison"},
+             {"texte": _("Ou par le menu : Montage › Pistes et passage choisi › « Plan de liaison entre deux plans… » (la ligne "
+                         "rouge sur le premier plan)."),
+              "montrer": {"menu": [_("Montage"), _("Pistes et passage choisi (partie jaune)"), _("Plan de liaison entre deux plans…")]},
+              "fait": "fenetre:DialogueLiaison"},
+             {"texte": _("Choisissez une proposition, ou « Analyser avec l'IA de ce poste » pour des idées qui tiennent compte de ce "
+                         "que montrent les images. La consigne reste modifiable.")},
+             {"texte": _("Choisissez comment fabriquer, cochez l'accord des personnes visibles si c'est une IA, puis « Fabriquer le "
+                         "plan ». Regardez le résultat ; refabriquez si besoin.")},
+             {"texte": _("« Poser entre les deux plans » : la suite du film se décale d'autant. Edition › Annuler revient en arrière."),
+              "fait": "liaison"},
          ]},
         {"id": "voix_musique", "etat": "ok",
          "titre": _("Retirer la voix d'une musique (garder la musique)"),
@@ -328,6 +336,8 @@ def est_fait(cond, ed):
             return bool(ed.timeline.zone_valide())
         if cond == "separe":
             return any(c.get("separe_de") for c in ed.projet.clips)
+        if cond == "liaison":
+            return any(c.get("liaison") for c in ed.projet.clips)
         if cond == "suivi":
             return any(c.get("ajustement") == "suivi" for c in ed.projet.clips_piste("video"))
         if cond.startswith("effet:"):

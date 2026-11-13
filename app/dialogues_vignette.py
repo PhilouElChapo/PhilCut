@@ -279,7 +279,7 @@ class DialogueVignette(QDialog):
             b.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
             b.clicked.connect(lambda _c=False, c=c: setattr(self.toile, "couleur", c))
             self.groupe_couleurs.addButton(b)
-            (col1 if i % 2 == 0 else col2).addWidget(b)
+            col1.addWidget(b)                          # une seule colonne : les libellés tiennent en entier (0.9.56)
             if c == "rouge":
                 b.setChecked(True)
         col2.addStretch(1)

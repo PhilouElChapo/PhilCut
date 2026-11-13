@@ -15,6 +15,7 @@ def _fenetre_avec_plan():
     v = commun.video_test(os.environ["APPDATA"], "guide.mp4", duree=3)
     m = ed.projet.ajouter_media(v, {"duree": 3.0})
     ed.projet.ajouter_clip(m["id"])
+    ed.projet.ajouter_clip(m["id"])                    # deux plans : « Plan de liaison avec le plan suivant » existe
     ed.rafraichir()
     f.show()
     app.processEvents()

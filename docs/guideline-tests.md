@@ -157,6 +157,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T71 — 0.9.56 : plan de liaison intelligent
+
+1. Deux rushes de lieux différents l'un après l'autre dans la timeline. Clic droit sur le premier › « Plan de liaison avec le plan suivant… » : la fenêtre ne bloque pas le film ; les deux images (dernière de A, première de B) s'affichent avec la ligne des mesures.
+2. Lire les trois propositions ; en choisir une autre : la consigne change. Me dire si la direction de la caméra mesurée est juste.
+3. « Analyser avec l'IA de ce poste » (avec un modèle de vision installé) : trois propositions qui parlent de ce que montrent vraiment les images ? Puis « Analyser avec l'IA cloud… » : le coût est demandé avant.
+4. « Transition 3D (gratuite) » › Fabriquer le plan : la progression avance ; regarder le plan, puis « Poser entre les deux plans » : la suite du film recule d'autant, marqueurs et titres compris. Edition › Annuler : tout revient d'un coup.
+5. Mettre un vide entre deux plans ; clic droit dans le vide › « Remplir ce vide par un plan de liaison… ». Si le plan tient dans le vide, rien d'autre ne bouge.
+6. « Gemini Omni » (si crédits) : la case d'accord est obligatoire ; le prix maximal est demandé avant. Le plan doit commencer exactement sur l'image A et finir exactement sur l'image B : me le confirmer.
+7. Aide › Comment faire… › « Lier deux rushes par un plan de passage » : ✓ faisable ; « Montrez-moi » ouvre le clic droit avec la bonne ligne surlignée.
+
 ## T70 — 0.9.55 : garde-fous, guides en ligne, petit écran
 
 1. Fenêtre de PhilCut réduite à environ 1024 de large : la barre de lecture sous l'aperçu passe sur deux lignes, rien n'est coupé, tout reste cliquable.

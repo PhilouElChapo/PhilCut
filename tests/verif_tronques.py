@@ -2,9 +2,9 @@
 
 Une fenêtre est montrée à sa taille d'ouverture (bornée à 1024×768) ; on regarde chaque bouton, case et étiquette
 visibles : le texte doit tenir dans la place qu'il a (un QPushButton ou une QCheckBox coupe sans prévenir ; une
-étiquette sans retour à la ligne aussi)."""
+étiquette sans retour à la ligne aussi). Et le contenu d'une zone qui défile ne doit pas être plus large qu'elle (0.9.56)."""
 from PySide6.QtWidgets import (QAbstractButton, QAbstractScrollArea, QApplication, QCheckBox, QLabel, QPushButton, QRadioButton,
-                               QToolButton)
+                               QScrollArea, QToolButton)
 from PySide6.QtCore import Qt
 
 ECRAN = (1024, 768)
@@ -49,4 +49,10 @@ def tronques(fen, ecran=ECRAN):
             if type(w).__name__ in ("Timeline", "QGraphicsView", "QTableWidget", "QTableView", "QPlainTextEdit", "QTextEdit"):
                 continue                                        # la timeline et les tableaux défilent par nature
             pb.append(("défilement horizontal", type(w).__name__, ""))
+    # 0.9.56 : un contenu plus large que sa zone de défilement, sans barre horizontale, est coupé à droite sans prévenir
+    for w in fen.findChildren(QScrollArea):
+        c = w.widget()
+        if c is not None and _visible(w, fen) and not w.horizontalScrollBar().isVisible() \
+                and c.width() > w.viewport().width() + 2:
+            pb.append(("coupé par la zone de défilement", type(c).__name__, f"{c.width()} px pour {w.viewport().width()} px"))
     return pb

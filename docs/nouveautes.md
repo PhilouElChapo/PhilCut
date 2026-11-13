@@ -4,7 +4,17 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.55 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.56 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.56 (plan de liaison intelligent)
+- Plan de liaison : un plan qui part de la derniere image d'un rush et arrive a la premiere image du suivant, pour passer d'un lieu a l'autre sans coupe seche. Clic droit sur le premier plan > "Plan de liaison avec le plan suivant...", clic droit dans un vide > "Remplir ce vide par un plan de liaison...", Montage > Pistes et passage choisi, ou Fabrique IA > Video.
+- La fenetre montre les deux images du raccord, mesure la lumiere, les couleurs et le mouvement de la camera, et propose des passages (mouvement continu, passage par la lumiere ou l'ombre, envolee, fondu des formes). "Analyser avec l'IA de ce poste" (gratuit) ou "avec l'IA cloud" (cout affiche avant) : l'IA regarde les deux images et propose trois passages. La consigne reste modifiable.
+- Trois facons de fabriquer : transition 3D (gratuite, immediate) ; IA video de ce poste (part de l'image A, rejoint l'image B par un fondu) ; Gemini Omni (votre clef, prix maximal affiche et demande avant : part exactement de l'image A et arrive exactement sur l'image B). Pour une IA, case d'accord des personnes visibles obligatoire.
+- On regarde le plan, on garde le morceau voulu, puis "Poser entre les deux plans" : il remplit le vide s'il y en a un, sinon la suite du film (plans, marqueurs, titres) se decale d'autant. Un seul Annuler revient en arriere.
+- Guide "Lier deux rushes par un plan de passage" : faisable, avec "Montrez-moi".
+- Garde-fou de plus : un contenu plus large que sa zone qui defile (coupe a droite sans prevenir) est detecte. Deux cas corriges : le volet Proposition et la colonne de la fenetre Vignette.
+
+## Nouveautes de 0.9.55
 
 ### 0.9.55 (garde-fous, guides en ligne)
 - Garde-fous automatiques : chaque regle de conception, et chaque incident passe, est verifie a chaque version (listes alphabetiques, rien de tronque, fenetres qui tiennent dans un ecran de 1024 x 768, reglages dans les Preferences, progression des taches, dossiers du systeme, aucun secret dans le code, jamais une erreur vide, aucune tache detruite en plein travail, guides qui ne citent que des menus existants, IA essayees en vrai, tout se defait d'un seul Annuler).

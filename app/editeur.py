@@ -656,6 +656,8 @@ class Editeur(QWidget):
         zp.setFrameShape(QFrame.NoFrame)
         zp.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         zp.setWidget(self.proposition)
+        # la zone est au moins aussi large que son contenu (sinon la droite des boutons est coupée sans prévenir, 0.9.56)
+        zp.setMinimumWidth(self.proposition.minimumSizeHint().width() + zp.verticalScrollBar().sizeHint().width() + 2)
         self.volet.addTab(zp, icone("assistant", theme.COULEURS["texte2"]), _("Proposition"))
         from .inspecteur import Inspecteur
         self.inspecteur = Inspecteur(self)
@@ -1818,6 +1820,8 @@ class Editeur(QWidget):
             self.couper_son_fin(ident)
         elif quoi == "separer":
             self.separer_sons(self.projet.clip(ident))
+        elif quoi == "liaison":
+            self.plan_liaison(self.projet.clip(ident))
         elif quoi == "whoosh":
             c = self.projet.clip(ident)
             if c:
@@ -2706,6 +2710,24 @@ class Editeur(QWidget):
             return self.fabrique_musique()
         from .dialogues_creatif import DialogueAtelierIA
         self._ouvrir_atelier(DialogueAtelierIA(self, famille))
+
+    def plan_liaison(self, clip=None):
+        """Plan de liaison (0.9.56) entre un plan et le suivant ; sans plan donné : le plan sous la tête de lecture, ou le
+        plan sélectionné. Fenêtre non bloquante."""
+        from . import liaison as L
+        from .dialogues_liaison import DialogueLiaison
+        if clip is None:
+            clip = self._clip_selectionne()
+        if clip and not clip["piste"].startswith("video"):
+            clip = None
+        a, b = (L.plans_voisins(self.projet, clip) if clip else L.plans_autour(self.projet, self.timeline.position))
+        if not a or not b:
+            self.encart.message(_("Placez la tête de lecture sur le premier des deux plans à relier (ou dans le vide entre eux), "
+                                  "puis recommencez : le plan de liaison va de ce plan au suivant."))
+            return None
+        d = DialogueLiaison(self, a, b)
+        d.show()
+        return d
 
     def separer_sons(self, clip=None, fichier=None):
         """Séparer voix, musique et bruits (0.9.53) d'un plan du film ou d'un fichier ; fenêtre non bloquante."""

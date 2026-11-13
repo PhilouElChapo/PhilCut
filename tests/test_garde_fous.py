@@ -50,6 +50,7 @@ def _fenetre():
     v = commun.video_test(os.environ["APPDATA"], "garde.mp4", duree=3)
     m = ed.projet.ajouter_media(v, {"duree": 3.0})
     ed.projet.ajouter_clip(m["id"])
+    ed.projet.ajouter_clip(m["id"])                    # deux plans : les menus « avec le plan suivant » existent
     ed.rafraichir()
     return f, ed
 
@@ -186,11 +187,13 @@ class G7RienDeTronque(unittest.TestCase):
         from app.dialogues_musique_ia import DialogueFabriqueMusique
         from app.dialogues_sequence import DialogueSequence
         from app.dialogues_vignette import DialogueVignette
+        from app.dialogues_liaison import DialogueLiaison
+        c2 = ed.projet.clips_piste("video")[1]
         fen = [("PhilCut", f), ("Préférences", DialoguePreferences(f, f.params)), ("Dites-le", DialogueCommande(ed)),
                ("Guides", DialogueGuides(f)), ("Séparation", DialogueSeparation(ed, c)),
                ("Publier", DialoguePublier(f, ed.projet, f.params)), ("Atelier IA", DialogueAtelierIA(ed, "video")),
                ("Fabrique musique", DialogueFabriqueMusique(ed, f.params)), ("Séquence IA", DialogueSequence(ed, None)),
-               ("Vignette", DialogueVignette(ed, None, "vignette"))]
+               ("Vignette", DialogueVignette(ed, None, "vignette")), ("Plan de liaison", DialogueLiaison(ed, c, c2))]
         fautes = []
         for nom, d in fen:
             d.show()

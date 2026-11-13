@@ -270,6 +270,9 @@ class Fenetre(QMainWindow):
                  lambda: self._ed(lambda ed: ed.partie(True)), None),
                 (None, _("Partie jaune : supprimer ce passage"), _("Le passage choisi est retiré et la suite se recolle"),
                  lambda: self._ed(lambda ed: ed.partie(False)), None),
+                (icone("ia"), _("Plan de liaison entre deux plans…"),
+                 _("Un plan qui part de la dernière image du plan à la ligne rouge et arrive à la première image du suivant (aussi "
+                   "dans Fabrique IA › Vidéo)"), lambda: self._ed(lambda ed: ed.plan_liaison()), None),
                 (None, _("Poser un marqueur à la ligne rouge"), _("Un repère sur la règle des temps : clic dessus pour y revenir, clic droit "
                                                                  "pour le nommer ou le supprimer"),
                  lambda: self._ed(lambda ed: ed.timeline.poser_marqueur()), "M")]),
@@ -925,6 +928,10 @@ class Fenetre(QMainWindow):
                 ent(None, _("Mes plans IA déjà fabriqués (dossier)…"),
                     _("Les plans vidéo générés et les logos fabriqués sont gardés dans ce dossier, même s'ils ne sont plus dans un projet."),
                     self._dossier_fabrique),
+                ent(icone("ia"), _("Plan de liaison entre deux plans…"),
+                    _("Un plan qui part de la dernière image d'un plan et arrive à la première image du suivant : l'IA regarde les "
+                      "deux images et propose des passages. Transition 3D gratuite, IA de ce poste, ou Gemini (prix annoncé)."),
+                    quand(lambda e: e.plan_liaison())),
                 ent(icone("ia"), _("Plan vidéo à partir d'une phrase…"),
                     _("Décrivez le plan (« survol de collines au lever du soleil ») : IA de ce poste, Gemini ou Flow."),
                     lambda: self.fabrique(onglet=1))]),
