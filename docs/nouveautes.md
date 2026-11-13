@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.51 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.52 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.52 (guides pas a pas)
+- Aide > "Comment faire... (guides pas a pas)" : des cas concrets (changer le fond, couper, faire parler des personnages, lier deux rushes, retirer la voix, suivre une personne, passer d'un rush a l'autre...), par ordre alphabetique, avec recherche. Chaque guide dit ce qui est faisable aujourd'hui, en partie, ou pas encore.
+- Chaque etape a un bouton "Montrez-moi" : PhilCut ouvre lui-meme le bon menu en surlignant la bonne ligne, le menu du clic droit sur le plan, ou l'onglet du volet avec la bonne recherche. L'etape se coche toute seule quand c'est fait. La fenetre reste a cote du film, sans bloquer.
+- Aussi depuis le bouton IA ("Comment faire..."), et en ecrivant une question dans Dites-le en clair ("comment retirer la voix ?").
+- Sequence IA : avant de donner les images d'un personnage, l'auteur certifie l'accord de la personne (case a cocher qui l'engage).
 
 ### 0.9.51 (corrections apres les essais du 12/11 au soir)
 - Plantage corrige : dans "Dites-le en clair" avec l'IA locale, cliquer sur une autre action pendant que l'IA reflechissait encore faisait fermer PhilCut d'un coup (Windows : Qt6Core.dll, code 0xc0000409). Une tache relancee avant la fin de la precedente ne peut plus faire planter PhilCut, partout dans le logiciel. Dans Dites-le, les boutons d'actions attendent la reponse, et seule la derniere demande compte.

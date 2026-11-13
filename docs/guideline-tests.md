@@ -157,6 +157,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T68 — 0.9.52 : guides pas à pas
+
+1. Aide › « Comment faire… (guides pas à pas) » (en tête, en gras) : une fenêtre s'ouvre à droite du film. La liste est par ordre alphabétique ; ✓ faisable, ◐ en partie, … pas encore.
+2. Taper « voix » dans la recherche : les guides sur la voix restent. Ouvrir « Couper des images dans un rush ».
+3. Avec un plan dans la timeline : « Montrez-moi » de l'étape 2 ouvre le menu du clic droit avec « Couper ici » surligné ; celui de l'étape 4 ouvre Montage › Pistes et passage choisi avec « Partie jaune : supprimer ce passage » surligné.
+4. Guide « Suivre une personne » : cliquer le plan dans la timeline coche l'étape 1 toute seule ; poser le suivi coche l'étape 2.
+5. Pendant ce temps, travailler dans le film : la fenêtre des guides ne bloque rien.
+6. Bouton IA › « Comment faire… » ; et écrire « comment retirer la voix d'une musique ? » puis Comprendre : le bon guide s'ouvre.
+7. Séquence IA › personnage › « Images du personnage… » : la case « Je certifie… » est obligatoire avant de choisir les images.
+
 ## T67 — 0.9.51 : plus de plantage dans Dites-le en clair
 
 1. Niveau « IA de ce poste » dans Dites-le en clair. Cliquer sur une action : pendant « Je lis votre demande… », les autres boutons sont grisés.

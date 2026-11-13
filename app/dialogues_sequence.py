@@ -320,11 +320,40 @@ class DialogueSequence(QDialog):
         if not (0 <= r < len(liste)):
             self.etat.setText(_("Cliquez d'abord sur la ligne voulue."))
             return
+        if quoi == "perso" and not liste[r].get("accord") and not self._accord_personne(liste[r].get("nom", "")):
+            return
         from .widgets import ouvrir_fichiers
         ps = ouvrir_fichiers(self, _("Images de référence"), _("Images") + " (*.jpg *.jpeg *.png *.webp)", "images", self.params)
         if ps:
+            if quoi == "perso":
+                liste[r]["accord"] = True
             liste[r]["images"] = (liste[r].get("images") or []) + list(ps)
             self._remplir_tables()
+
+    def _accord_personne(self, nom):
+        """0.9.52 : l'image d'une personne réelle ne sert qu'avec son accord, que l'auteur certifie (case engageante)."""
+        from PySide6.QtWidgets import QDialogButtonBox
+        from .widgets import CaseLongue
+        d = QDialog(self)
+        d.setWindowTitle(_("Accord de la personne"))
+        v = QVBoxLayout(d)
+        t = QLabel(_("Les images de « {n} » vont servir à lui faire jouer une scène et dire des répliques. PhilCut ne le fait "
+                     "qu'avec l'accord de la personne : vous-même, un proche, un ami qui a accepté. Jamais une personne connue "
+                     "ni quelqu'un qui n'a pas donné son accord.", n=nom or _("ce personnage")))
+        t.setWordWrap(True)
+        v.addWidget(t)
+        case = CaseLongue(_("Je certifie que la personne sur ces images a donné son accord pour cette utilisation, et j'en prends "
+                            "la responsabilité."))
+        v.addWidget(case)
+        bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        bb.button(QDialogButtonBox.Ok).setText(_("Continuer"))
+        bb.button(QDialogButtonBox.Ok).setEnabled(False)
+        case.toggled.connect(bb.button(QDialogButtonBox.Ok).setEnabled)
+        bb.accepted.connect(d.accept)
+        bb.rejected.connect(d.reject)
+        v.addWidget(bb)
+        d.setMinimumWidth(520)
+        return d.exec() == QDialog.Accepted
 
     # ------------------------------------------------------------------ onglet 3 : plans
     def _onglet_plans(self):

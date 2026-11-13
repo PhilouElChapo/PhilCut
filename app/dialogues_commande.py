@@ -56,6 +56,13 @@ class DialogueCommande(QDialog):
             fr.addWidget(b)
         v.addWidget(zr)
         self.rapides = zr
+        bg = QPushButton(_("Comment faire… (guides pas à pas)"))         # 0.9.52
+        bg.setToolTip(_("Des cas concrets expliqués étape par étape ; PhilCut ouvre lui-même les bons menus"))
+        bg.clicked.connect(lambda: self._guides())
+        hg = QHBoxLayout()                                   # de l'aide, pas une action : sur sa ligne, hors de la liste triée
+        hg.addWidget(bg)
+        hg.addStretch(1)
+        v.addLayout(hg)
         h = QHBoxLayout()
         self.niveau = QComboBox()
         for k, lib in (("recettes", _("Sans IA (gratuit, instantané)")), ("locale", _("IA locale (sur ce poste)")),
@@ -95,6 +102,8 @@ class DialogueCommande(QDialog):
         if not phrase:
             self.etat.setText(_("Ecrivez d'abord ce que vous voulez."))
             return
+        if self._guide_pour(phrase):
+            return
         niv = self.niveau.currentData()
         self.ed.params["commande_niveau"] = niv
         if niv == "cloud":
@@ -119,6 +128,24 @@ class DialogueCommande(QDialog):
             self._compris(r, e)
         except RuntimeError:          # fenêtre déjà fermée pendant que l'IA réfléchissait : rien à afficher
             pass
+
+    def _guides(self, guide=None):
+        f = self.ed.window()
+        if hasattr(f, "guides"):
+            f.guides(guide)
+
+    def _guide_pour(self, phrase):
+        """« comment retirer la voix ? » : une question, pas un ordre → le guide qui y répond."""
+        from . import guides as G
+        p = phrase.strip().lower()
+        if not (p.startswith(("comment", "je ne sais pas", "aide", "où ", "ou trouver")) or p.endswith("?")):
+            return False
+        gs = G.chercher(phrase)
+        if not gs:
+            return False
+        self._guides(gs[0]["id"])
+        self.etat.setText(_("Guide ouvert à droite : « {t} ».", t=gs[0]["titre"]))
+        return True
 
     def _occupe(self, oui):
         """Pendant que l'IA lit la demande, les boutons d'actions attendent (un clic à la fois)."""

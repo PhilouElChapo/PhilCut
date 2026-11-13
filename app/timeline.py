@@ -1663,6 +1663,16 @@ class Timeline(QGraphicsView):
         self._menu_zoom(m)
         m.addSeparator()
         m.addAction(_("Tous les effets et transitions (fenêtre)…"), lambda: self.proprietes.emit(clip["id"]))
+        self._exec_menu(m, pos)
+
+    def _exec_menu(self, m, pos):
+        """Ouvre le menu ; si le guide (« Montrez-moi ») l'a demandé, la bonne ligne est surlignée (0.9.52)."""
+        chemin = getattr(self, "surligner_menu", None)
+        self.surligner_menu = None
+        if chemin:
+            from PySide6.QtCore import QTimer
+            from .guides import surligner
+            QTimer.singleShot(200, lambda: surligner(m, chemin))
         m.exec(pos)
 
     # ---- images clefs

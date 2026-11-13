@@ -308,12 +308,22 @@ class Fenetre(QMainWindow):
         ou.addAction(_("Journal des plantages et erreurs…"), self.journal_plantages)
         ou.addAction(_("Ouvrir le dossier des données"), lambda: self.ouvrir_externe(dossier_donnees()))
         ai = mb.addMenu(_("&Aide"))
+        a = ai.addAction(icone("ia"), _("Comment faire… (guides pas à pas)"), self.guides)     # 0.9.52 : en tête, c'est l'aide
+        f_ = a.font()
+        f_.setBold(True)
+        a.setFont(f_)
+        ai.addSeparator()
         ai.addAction(_("Raccourcis clavier"), self.raccourcis)
         ai.addAction(_("Vérifier les mises à jour…"), lambda: self.verifier_maj(silencieux=False))
         ai.addAction(_("Nouveautés du catalogue (Goodies, modèles, styles)…"), self.voir_nouveautes)
         ai.addAction(_("Site du projet (GitHub)"), lambda: webbrowser.open("https://github.com/PhilouElChapo/PhilCut"))
         ai.addSeparator()
         ai.addAction(_("A propos de PhilCut"), self.a_propos)
+
+    def guides(self, guide=None):
+        """Les guides pas à pas, à côté du film (non bloquants) : « Montrez-moi » ouvre les bons menus."""
+        from .dialogues_guide import ouvrir_guides
+        return ouvrir_guides(self, guide)
 
     def _remplir_recents(self):
         self.menu_recents.clear()
