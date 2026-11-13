@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.53 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.54 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.54 (pCloud direct)
+- pCloud : connexion directe par l'application PhilFactory acceptee par pCloud (autorisation dans le navigateur, sans donner de mot de passe). Le WebDAV reste possible.
 
 ### 0.9.53 (separer voix, musique et bruits)
 - Clic droit sur un plan (video ou son) > "Separer voix, musique et bruits..." ; aussi Fabrique IA > Musique pour un fichier. Trois choix tout faits : "Retirer la voix", "Garder la voix seule", "Les trois pistes". Calcul sur ce poste (gratuit, rien n'est envoye), avec sa progression ; on ecoute chaque piste ; "Poser dans le film" les pose sous le plan, a la place exacte, et coupe le son d'origine. Un seul Annuler revient en arriere.
