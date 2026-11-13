@@ -3,7 +3,7 @@ partagee entre postes, mises a jour proposees, Fabrique, export, sous-titres, mu
 
 Memes regles que PhilPDF : rien de bloquant au demarrage, propositions laissees sur l'Accueil, encart de
 progression non bloquant, journaux depuis l'Aide, mises a jour proposees jamais imposees."""
-import datetime, os, subprocess, sys, webbrowser
+import datetime, os, posixpath, subprocess, sys, webbrowser
 
 from PySide6.QtCore import Qt, QTimer, QUrl
 from PySide6.QtGui import QAction, QKeySequence, QDesktopServices
@@ -171,13 +171,17 @@ class Fenetre(QMainWindow):
         m.addAction(icone("clap"), _("Nouveau projet 16:9"), lambda: self.nouveau_projet("16:9"), QKeySequence.New)
         m.addAction(icone("format"), _("Nouveau projet 9:16"), lambda: self.nouveau_projet("9:16"))
         m.addAction(icone("ouvrir"), _("Ouvrir un projet…"), self.dialogue_ouvrir, QKeySequence.Open)
+        m.addAction(icone("nuage"), _("Ouvrir un projet depuis un emplacement (cloud, NAS)…"), lambda: self.ouvrir_distant(),
+                    "Ctrl+Shift+O")
         self.menu_recents = m.addMenu(_("Projets récents"))
         self.menu_recents.aboutToShow.connect(self._remplir_recents)
         m.addSeparator()
         m.addAction(icone("importer"), _("Importer des rushes…"), lambda: self._editeur_ou_nouveau().importer(), "Ctrl+I")
+        m.addAction(icone("nuage"), _("Importer des rushes depuis un emplacement (cloud, NAS)…"), lambda: self.importer_distant())
         m.addSeparator()
         m.addAction(icone("enregistrer"), _("Enregistrer"), self.enregistrer, QKeySequence.Save)
         m.addAction(_("Enregistrer sous…"), lambda: self.enregistrer(sous=True), "Ctrl+Shift+S")
+        m.addAction(icone("nuage"), _("Enregistrer le projet vers un emplacement (cloud, NAS)…"), lambda: self.enregistrer_distant())
         m.addAction(_("Revenir à une sauvegarde automatique…"), self.revenir_sauvegarde)
         m.addSeparator()
         m.addAction(_("Médias introuvables sur ce poste…"), lambda: self.medias_introuvables())
@@ -308,7 +312,7 @@ class Fenetre(QMainWindow):
         ou = mb.addMenu(_("&Outils"))
         ou.addAction(_("Publier (YouTube, Instagram, TikTok…)…"), self.publier)
         ou.addAction(_("Vignette de la vidéo (miniature YouTube)…"), lambda: self._ed(lambda ed: ed.vignette_composee("vignette")))
-        ou.addAction(icone("nuage"), _("Déposer l'export sur le Drive / NAS…"), self.partager)
+        ou.addAction(icone("nuage"), _("Envoyer une vidéo exportée vers un emplacement (cloud, NAS)…"), self.partager)
         ou.addAction(_("Synchroniser maintenant"), self.synchro_demarrage)
         ou.addAction(_("Centre d'activité (tâches en cours, téléchargements)…"), self.voir_activite)
         ou.addAction(_("Journal des échanges (Drives, IA)…"), self.journal_echanges)
@@ -333,9 +337,11 @@ class Fenetre(QMainWindow):
         return ouvrir_guides(self, guide)
 
     def _remplir_recents(self):
+        from . import cloud_projets as CP
         self.menu_recents.clear()
         for p in (self.params.get("recents") or [])[:15]:
-            self.menu_recents.addAction(os.path.basename(p), lambda p=p: self.ouvrir(p))
+            o = CP.origine(self.params, p)
+            self.menu_recents.addAction(("☁ " + o.get("lieu", "") + " — " if o else "") + os.path.basename(p), lambda p=p: self.ouvrir(p))
 
     # ---------------------------------------------------------------- projets et onglets
     def editeur_courant(self):
@@ -393,7 +399,10 @@ class Fenetre(QMainWindow):
     def _maj_titre(self, ed):
         i = self.onglets.indexOf(ed)
         if i >= 0:
-            self.onglets.setTabText(i, ed.projet.nom + (" •" if ed.projet.modifie else ""))
+            o = getattr(ed.projet, "distant", None)
+            self.onglets.setTabText(i, ("☁ " if o else "") + ed.projet.nom + (" •" if ed.projet.modifie else ""))
+            self.onglets.setTabToolTip(i, _("Ouvert depuis {l} : {c}\nChaque Enregistrer l'y renvoie.", l=o.get("lieu", ""),
+                                            c=o.get("chemin", "")) if o else (ed.projet.chemin or ""))
 
     def rushes_vers_projet(self):
         filtres = _("Vidéos, sons, images") + " (*.mp4 *.mov *.mkv *.m4v *.webm *.avi *.mts *.m2ts *.3gp *.mp3 *.wav *.m4a *.jpg *.jpeg *.png *.heic);;" + _("Tous") + " (*)"
@@ -415,8 +424,12 @@ class Fenetre(QMainWindow):
         if p:
             self.ouvrir(p)
 
-    def ouvrir(self, chemin):
+    def ouvrir(self, chemin, verifier_cloud=True):
+        from . import cloud_projets as CP
+        o = CP.origine(self.params, chemin)
         if not os.path.exists(chemin):
+            if o:                                            # copie de travail effacée : on la reprend sur le compte
+                return self.ouvrir_distant(o.get("compte"), o.get("chemin"), o.get("cle"))
             QMessageBox.warning(self, _("Ouvrir"), _("Introuvable : {p}", p=chemin))
             return None
         if chemin.lower().endswith(EXTENSION_PROJET):
@@ -435,7 +448,12 @@ class Fenetre(QMainWindow):
                 r = p.retrouver_medias()
             except Exception:    # noqa: BLE001
                 r = {"trouves": [], "copies": [], "manquants": p.manquants()}
+            if o:
+                p.distant = dict(o)
             ed = self.ajouter_onglet(p)
+            self._maj_titre(ed)
+            if o and verifier_cloud:
+                self._verifier_version_cloud(ed)
             if r["trouves"] or r["copies"]:
                 p.modifie = True
             if r["manquants"] or r["copies"]:
@@ -534,6 +552,11 @@ class Fenetre(QMainWindow):
         self._maj_titre(ed)
         self.accueil.rafraichir()
         self.ecrire_session()
+        if getattr(p, "distant", None) and not sous:
+            self._renvoyer_cloud(ed)
+        elif sous:
+            p.distant = None                         # « Enregistrer sous » sur ce poste : la copie n'a plus d'origine
+            self._maj_titre(ed)
         if not getattr(self, "_sans_proposition_drive", False):
             try:
                 from .dialogues_drive import proposer_apres_enregistrement
@@ -1382,32 +1405,218 @@ class Fenetre(QMainWindow):
         ed.rafraichir()
 
     def partager(self, chemin=None):
+        """Envoie une vidéo exportée vers un emplacement (0.9.58) : le compte des projets d'abord, dossier « Exports »."""
+        from . import cloud_projets as CP, distant
+        from .session import dossier_systeme
         if not chemin:
-            chemin, _f = QFileDialog.getOpenFileName(self, _("Vidéo à déposer"), self.params.get("dernier_dossier_export") or __import__("app.session", fromlist=["x"]).dossier_systeme("videos"), "MP4 (*.mp4)")
+            depart = self.params.get("dernier_dossier_export") or dossier_systeme("videos")
+            chemin, _f = QFileDialog.getOpenFileName(self, _("Vidéo à envoyer"), depart, _("Vidéos") + " (*.mp4 *.mov *.mkv *.webm)")
             if not chemin:
+                return None
+        if not self._comptes_ou_preferences():
+            return None
+        from .dialogues_distant import DialogueParcourir
+        pref = CP.compte_projets(self.params)
+        dernier = self.params.get("envoi_export_dernier") or {}
+        d = DialogueParcourir(self, self.params, "enregistrer", nom=os.path.basename(chemin),
+                              compte_id=dernier.get("compte") or (pref["id"] if pref else None),
+                              dossier=dernier.get("dossier") or posixpath.join(posixpath.dirname(CP.dossier_projets(self.params)), "Exports"),
+                              extensions=(".mp4", ".mov", ".mkv", ".webm"))
+        d.setWindowTitle(_("Envoyer la vidéo vers un emplacement"))
+        d.b_ok.setText(_("Envoyer ici"))
+        if d.exec() != QDialog.Accepted or not d.choisi:
+            return None
+        c, e, dest = d.compte(), d.e, d.choisi
+        self.params["envoi_export_dernier"] = {"compte": c["id"], "dossier": posixpath.dirname(dest)}
+        lieu = distant.libelle(c)
+        return self._tache_cloud(_("Envoi vers {l}", l=lieu),
+                                 lambda t: CP.envoyer(e, chemin, dest, lambda f: t.avancer(f, os.path.basename(chemin)), lambda: t.arret),
+                                 lambda r, err: self.statusBar().showMessage(
+                                     _("✓ Vidéo envoyée sur {l} : {d}", l=lieu, d=dest) if not err else
+                                     _("✕ Envoi vers {l} impossible : {e}", l=lieu, e=texte_erreur(err)), 15000))
+
+    # ---------------------------------------------------------------- projets et rushes dans les clouds (0.9.58)
+    def _comptes_ou_preferences(self):
+        if self.params.get("comptes"):
+            return True
+        QMessageBox.information(self, _("Emplacements"), _("Ajoutez d'abord votre cloud (pCloud, Google Drive, OneDrive…), NAS ou FTP : "
+                                                           "Edition › Préférences › Comptes et synchro."))
+        self.preferences(_("Comptes et synchro"))
+        return False
+
+    def _tache_cloud(self, titre, travail, fin, ed=None):
+        """Echange avec un compte en tâche de fond : progression dans l'encart du projet, sinon dans la barre du bas."""
+        t = Tache(travail, titre)
+        self.taches.append(t)
+        if ed is not None:
+            ed.encart.suivre(t, titre)
+        else:
+            t.progression.connect(lambda f, txt: self.statusBar().showMessage(
+                f"{titre} — {int(f * 100)} %" + (f" — {txt}" if txt else "")), Qt.QueuedConnection)
+            self.statusBar().showMessage(titre + "…")
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
+        return t
+
+    def ouvrir_distant(self, compte_id=None, chemin=None, cle=None):
+        """Ouvre un projet d'un cloud, d'un NAS ou d'un FTP : copie de travail sur ce poste, chaque Enregistrer l'y renvoie."""
+        from . import cloud_projets as CP, distant
+        if not self._comptes_ou_preferences():
+            return None
+        c = CP.compte(self.params, compte_id) or CP.compte_par_cle(self.params, cle)
+        e = None
+        if chemin is None or c is None:
+            from .dialogues_distant import DialogueParcourir
+            pref = CP.compte_projets(self.params)
+            d = DialogueParcourir(self, self.params, "ouvrir", compte_id=(c or pref or {}).get("id"),
+                                  dossier=CP.dossier_projets(self.params), extensions=CP.EXT_PROJET)
+            d.setWindowTitle(_("Ouvrir un projet depuis un emplacement"))
+            if d.exec() != QDialog.Accepted or not d.choisi:
+                return None
+            c, e, chemin = d.compte(), d.e, d.choisi
+        lieu = distant.libelle(c)
+
+        def fin(r, err):
+            if err:
+                QMessageBox.warning(self, _("Ouvrir"), _("✕ Projet non téléchargé depuis {l} : {e}", l=lieu, e=texte_erreur(err)))
                 return
-        try:
-            from . import miroir, distant
-            compte = miroir.compte_drive(self.params)
-            if compte:
-                e = distant.emplacement(compte)
-                import posixpath
-                dest = posixpath.join(miroir.racine_distante(compte), "Exports", os.path.basename(chemin))
-                e.envoyer(chemin, dest) if hasattr(e, "envoyer") else e.televerser(chemin, dest)
-                QMessageBox.information(self, _("Déposer"), _("Déposé sur {c} : {d}", c=miroir.libelle_compte(compte), d=dest))
-                return
-            dd = self.params.get("drive")
-            if dd and os.path.isdir(dd):
-                import shutil
-                d = os.path.join(dd, "PhilCut", "Exports")
-                os.makedirs(d, exist_ok=True)
-                shutil.copy2(chemin, d)
-                QMessageBox.information(self, _("Déposer"), _("Copié dans {d}", d=d))
-                return
-        except Exception as e:    # noqa: BLE001
-            QMessageBox.warning(self, _("Déposer"), str(e))
+            local, info = r
+            self.statusBar().showMessage(_("Ouvert depuis {l} : {c}", l=lieu, c=chemin), 8000)
+            self.ouvrir(local, verifier_cloud=False)
+            self.params.enregistrer()
+        return self._tache_cloud(_("Téléchargement depuis {l}", l=lieu),
+                                 lambda t: CP.ouvrir_projet(self.params, c, chemin, e, lambda f: t.avancer(f, posixpath.basename(chemin)),
+                                                            lambda: t.arret), fin)
+
+    def _verifier_version_cloud(self, ed):
+        """Projet récent d'un cloud rouvert depuis sa copie de travail : si le compte en a une version plus récente
+        (modifiée sur un autre poste), on le dit, sans rien remplacer."""
+        from . import cloud_projets as CP, distant
+        o = getattr(ed.projet, "distant", None) or {}
+        c = CP.compte(self.params, o.get("compte")) or CP.compte_par_cle(self.params, o.get("cle"))
+        if not c or not o.get("date"):
             return
-        QMessageBox.information(self, _("Déposer"), _("Aucun emplacement de synchronisation : choisissez-en un dans Edition › Préférences › Comptes et synchro."))
+
+        def travail(_t):
+            return CP._date_distante(distant.emplacement(c), o["chemin"])
+
+        def fin(date, err):
+            if err or not date or date == o.get("date"):
+                return
+            ed.encart.suivre_message(_("Une version plus récente de ce projet est sur {l} (enregistrée sur un autre poste).", l=o.get("lieu", "")),
+                                     (_("La reprendre"), lambda: self._recharger_cloud(ed)), 60000)
+        t = Tache(travail, _("Vérification"))
+        self.taches.append(t)
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
+
+    def _recharger_cloud(self, ed):
+        o = getattr(ed.projet, "distant", None) or {}
+        if ed.projet.modifie and QMessageBox.question(self, _("Reprendre"), _("Vos modifications non enregistrées de ce projet seront "
+                                                                             "remplacées par la version du cloud. Continuer ?")) != QMessageBox.Yes:
+            return
+        ed.projet.modifie = False
+        self.fermer_onglet(self.onglets.indexOf(ed))
+        self.ouvrir_distant(o.get("compte"), o.get("chemin"), o.get("cle"))
+
+    def _renvoyer_cloud(self, ed, forcer=False):
+        """Après l'enregistrement sur ce poste : la copie de travail repart vers son compte, en tâche de fond."""
+        from . import cloud_projets as CP
+        p = ed.projet
+        o = dict(p.distant)
+        lieu = o.get("lieu", "")
+
+        def fin(r, err):
+            if isinstance(err, CP.ConflitDistant):
+                b = QMessageBox(self)
+                b.setWindowTitle(_("Enregistrer"))
+                b.setText(_("Ce projet a aussi été modifié sur {l} depuis que vous l'avez ouvert (un autre poste).", l=lieu))
+                b.setInformativeText(_("Que faire de votre version ?"))
+                rempl = b.addButton(_("Remplacer celle du cloud"), QMessageBox.AcceptRole)
+                deux = b.addButton(_("Garder les deux"), QMessageBox.ActionRole)
+                b.addButton(_("Plus tard"), QMessageBox.RejectRole)
+                b.exec()
+                if b.clickedButton() is rempl:
+                    self._renvoyer_cloud(ed, forcer=True)
+                elif b.clickedButton() is deux:
+                    base, ext = posixpath.splitext(o["chemin"])
+                    p.distant = dict(o, chemin=f"{base} ({self.params.get('machine', _('ce poste'))}){ext}", date="")
+                    self._renvoyer_cloud(ed, forcer=True)
+                    self._maj_titre(ed)
+                return
+            if err:
+                ed.encart.suivre_message(_("✕ Projet enregistré sur ce poste, mais pas renvoyé sur {l} : {e}", l=lieu, e=texte_erreur(err)),
+                                         (_("Réessayer"), lambda: self._renvoyer_cloud(ed)), 60000)
+                return
+            p.distant = r
+            self.params.enregistrer()
+            self.statusBar().showMessage(_("✓ Projet renvoyé sur {l} : {c}", l=lieu, c=o.get("chemin", "")), 8000)
+        return self._tache_cloud(_("Envoi du projet vers {l}", l=lieu),
+                                 lambda t: CP.envoyer_projet(self.params, p.chemin, o, forcer=forcer,
+                                                             progression=lambda f: t.avancer(f, posixpath.basename(o["chemin"])),
+                                                             arret=lambda: t.arret), fin, ed)
+
+    def enregistrer_distant(self):
+        """Enregistre le projet sur un compte (cloud, NAS, FTP) : il y retournera à chaque Enregistrer."""
+        from . import cloud_projets as CP
+        ed = self.editeur_courant()
+        if not ed or not self._comptes_ou_preferences():
+            return False
+        from .dialogues_distant import DialogueParcourir
+        pref = CP.compte_projets(self.params)
+        d = DialogueParcourir(self, self.params, "enregistrer", nom=ed.projet.nom.replace("/", "-") + EXTENSION_PROJET,
+                              compte_id=pref["id"] if pref else None, dossier=CP.dossier_projets(self.params), extensions=CP.EXT_PROJET)
+        d.setWindowTitle(_("Enregistrer le projet vers un emplacement"))
+        if d.exec() != QDialog.Accepted or not d.choisi:
+            return False
+        c, e, chemin = d.compte(), d.e, d.choisi
+        try:
+            deja = posixpath.basename(chemin) in {x.nom for x in e.lister(posixpath.dirname(chemin) or "/")}
+        except Exception:                                  # noqa: BLE001
+            deja = False
+        if deja and QMessageBox.question(self, d.windowTitle(), _("« {n} » existe déjà dans ce dossier. Le remplacer ?",
+                                                                  n=posixpath.basename(chemin))) != QMessageBox.Yes:
+            return False
+        local = CP.cache_projet(c, chemin)
+        info = CP.info_distante(c, chemin)
+        CP.retenir(self.params, local, info)
+        ed.projet.nom = posixpath.splitext(posixpath.basename(chemin))[0]
+        ed.projet.chemin = local
+        ed.projet.distant = info
+        return self.enregistrer()
+
+    def importer_distant(self):
+        """Télécharge des rushes choisis sur un compte (pCloud, NAS…) dans Vidéos, puis les importe dans le projet."""
+        from . import cloud_projets as CP, distant
+        if not self._comptes_ou_preferences():
+            return None
+        from .dialogues_distant import DialogueParcourir
+        cr = CP.compte_rushs(self.params) or CP.compte_projets(self.params)
+        d = DialogueParcourir(self, self.params, "ouvrir", compte_id=cr["id"] if cr else None, extensions=CP.EXT_RUSHES, multiple=True,
+                              dossier=CP.dossier_rushs(self.params) if CP.compte_rushs(self.params) else None)
+        d.setWindowTitle(_("Importer des rushes depuis un emplacement"))
+        d.b_ok.setText(_("Importer"))
+        if d.exec() != QDialog.Accepted or not d.choisis:
+            return None
+        c, e, chemins = d.compte(), d.e, list(d.choisis)
+        tailles = {}
+        for i in range(d.liste.count()):
+            x = d.liste.item(i).data(Qt.UserRole)
+            if x and x != ".." and not x.dossier:
+                tailles[x.chemin] = x.taille
+        ed = self._editeur_ou_nouveau()
+        dossier = CP.dossier_import(self.params, c)
+        lieu = distant.libelle(c)
+
+        def fin(r, err):
+            if err:
+                ed.encart.message(_("✕ Rushes non téléchargés depuis {l} : {e}", l=lieu, e=texte_erreur(err)), 15000)
+                return
+            ed.importer(r)
+            ed.encart.message(_("{n} rush(es) téléchargé(s) depuis {l} dans « {d} », importé(s).", n=len(r), l=lieu, d=dossier), 10000)
+        return self._tache_cloud(_("Rushes depuis {l}", l=lieu),
+                                 lambda t: CP.importer(self.params, c, chemins, dossier, lambda f, txt="": t.avancer(f, txt),
+                                                       lambda: t.arret, e, tailles), fin, ed)
 
     # ---------------------------------------------------------------- barre, preferences, aide
     def personnaliser_barre(self):
@@ -1985,7 +2194,10 @@ class Fenetre(QMainWindow):
             if rc is not None and (sens is None or "envoyer" in sens):     # copies légères des rushes, sur leur propre compte
                 t.avancer(0.6, _("Copies légères des rushes avec {l} : envoi et réception…", l=miroir.libelle_compte(rc)))
                 try:
-                    r2 = miroir.synchroniser(self.params, rc, sens=None if sens is None else {"envoyer", "recevoir"})
+                    # 0.9.58 : le compte des rushes n'est plus reçu d'office (copies légères, originaux : au choix, rush par
+                    # rush, dans « Médias introuvables ») ; seul l'index des copies est partagé
+                    r2 = miroir.synchroniser(self.params, rc, sens={"envoyer", "recevoir:Medias/index.json",
+                                                                     "fusionner:Medias/index.json"})
                     r = (r[0] + r2[0], r[1] + r2[1])
                 except Exception as e:      # noqa: BLE001 : le lieu de synchro principal a bien été traité
                     miroir.journal(f"rushes {miroir.libelle_compte(rc)} : {e}")
@@ -2028,7 +2240,7 @@ class Fenetre(QMainWindow):
         try:
             from .session import session_de
             s = session_de(self.params)
-            ouverts = [(ed.projet.chemin, 0, 1.0) for ed in self.editeurs() if ed.projet.chemin]
+            ouverts = [(ed.projet.chemin, 0, 1.0, getattr(ed.projet, "distant", None)) for ed in self.editeurs() if ed.projet.chemin]
             s.ecrire(ouverts)
             from . import reglages
             reglages.ecrire_drive(self.params)
@@ -2087,7 +2299,10 @@ class Fenetre(QMainWindow):
                     p = s.retrouver_direct(machine, f)[0] or p
                 except Exception:    # noqa: BLE001
                     pass
-            if p and os.path.exists(p):
+            if p and p.startswith("distant:"):              # projet d'un cloud : même compte ici, on le rouvre là-bas
+                _x, cid, chemin = p.split(":", 2)
+                self.ouvrir_distant(cid, chemin)
+            elif p and os.path.exists(p):
                 self.ouvrir(p)
             else:
                 self.statusBar().showMessage(_("Introuvable ici : {n}", n=f.get("nom", "")), 8000)

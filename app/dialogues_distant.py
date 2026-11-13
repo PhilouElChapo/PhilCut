@@ -562,8 +562,11 @@ class PanneauComptes(QWidget):
             detail = c.get("adresse") or ""
             if c.get("utilisateur"):
                 detail = f"{c['utilisateur']} @ {detail}"
-            it = QListWidgetItem(avatars.icone_compte(c, self.params),
-                                 f"{distant.libelle(c)}   —   " + (f"{_(distant.TYPES[c['type']])}   " if distant.libelle(c) != _(distant.TYPES[c['type']]) else "") + detail)
+            texte = f"{distant.libelle(c)}   —   " + (f"{_(distant.TYPES[c['type']])}   " if distant.libelle(c) != _(distant.TYPES[c['type']]) else "") + detail
+            roles = roles_compte(self.params, c)                # 0.9.58 : le rôle de chaque compte, d'un coup d'œil
+            if roles:
+                texte = texte.rstrip(" —") + "   [" + ", ".join(roles) + "]"
+            it = QListWidgetItem(avatars.icone_compte(c, self.params), texte)
             it.setData(Qt.UserRole, c["id"])
             self.liste.addItem(it)
 
@@ -626,12 +629,29 @@ class PanneauComptes(QWidget):
 
 
 # ------------------------------------------------------------------------------------------- parcourir
+def roles_compte(params, c):
+    """Les rôles d'un compte (Préférences › Comptes et synchro › Rôle de chaque compte) : réglages, projets, rushes."""
+    out = []
+    if params.get("drive_compte") == c["id"]:
+        out.append(_("réglages"))
+    if params.get("compte_prefere") == c["id"]:
+        out.append(_("projets"))
+    if params.get("rushs_compte") == c["id"]:
+        out.append(_("rushes"))
+    return out
+
+
 class DialogueParcourir(QDialog):
     """Choisir une video ou un projet a ouvrir, ou un dossier et un nom pour enregistrer, sur un emplacement distant."""
 
-    def __init__(self, parent, params, mode="ouvrir", nom="", compte_id=None):
+    def __init__(self, parent, params, mode="ouvrir", nom="", compte_id=None, dossier=None, extensions=None, multiple=False):
+        """mode : « ouvrir » (un fichier, ou plusieurs avec multiple=True), « enregistrer » (dossier + nom) ou « dossier ».
+        compte_id : le compte affiché d'abord (sinon le compte des projets ★) ; dossier : où commencer (sinon la racine) ;
+        extensions : les fichiers montrés (sinon projets, vidéos, sons et images)."""
         super().__init__(parent)
         self.params, self.mode = params, mode
+        self.extensions = tuple(extensions or EXTENSIONS)
+        self.multiple, self.choisis, self._depart = multiple, [], dossier
         self.setWindowTitle(_("Ouvrir depuis un emplacement") if mode == "ouvrir" else _("Choisir un dossier") if mode == "dossier"
                             else _("Enregistrer vers un emplacement"))
         self.resize(760, 520)
@@ -639,8 +659,10 @@ class DialogueParcourir(QDialog):
         h = QHBoxLayout()
         h.addWidget(QLabel(_("Emplacement :")))
         self.comptes = QComboBox()
-        for c in params.get("comptes", []):
-            self.comptes.addItem(avatars.icone_compte(c, params), distant.libelle(c), c["id"])
+        pref = distant.prefere(params)
+        for c in distant.comptes_ordonnes(params):        # le compte des projets (★) en tête
+            self.comptes.addItem(avatars.icone_compte(c, params), ("★ " if pref and c["id"] == pref["id"] else "") + distant.libelle(c),
+                                 c["id"])
         h.addWidget(self.comptes, 1)
         v.addLayout(h)
         # chemin + bouton bien visible pour remonter (aussi : ligne « .. » en tete de liste, touche Retour arriere)
@@ -653,6 +675,10 @@ class DialogueParcourir(QDialog):
         self.lbl_chemin.setStyleSheet("color:#333; font-weight:600")
         self.lbl_chemin.setWordWrap(True)
         hc.addWidget(self.lbl_chemin, 1)
+        self.b_dossier = QPushButton(icone("ouvrir", "#c8a000"), _("Nouveau dossier"))
+        self.b_dossier.setToolTip(_("Créer un dossier ici"))
+        self.b_dossier.clicked.connect(self.nouveau_dossier)
+        hc.addWidget(self.b_dossier)
         v.addLayout(hc)
         self.bandeau = QLabel()
         self.bandeau.setWordWrap(True)
@@ -663,6 +689,9 @@ class DialogueParcourir(QDialog):
         v.addWidget(self.bandeau)
         self.liste = QListWidget()
         self.liste.setIconSize(QSize(20, 20))
+        if multiple:
+            self.liste.setSelectionMode(QListWidget.ExtendedSelection)
+            self.liste.setToolTip(_("Ctrl + clic ou Maj + clic pour en choisir plusieurs"))
         self.liste.itemDoubleClicked.connect(self._double)
         self.liste.currentItemChanged.connect(self._choix)
         v.addWidget(self.liste, 1)
@@ -684,20 +713,50 @@ class DialogueParcourir(QDialog):
         self.comptes.currentIndexChanged.connect(lambda _i: self._connecter())
         if compte_id:
             self.comptes.setCurrentIndex(max(0, self.comptes.findData(compte_id)))
-        self._connecter()
+        self._connecter(premier=True)
 
     def compte(self):
         cid = self.comptes.currentData()
         return next((c for c in self.params.get("comptes", []) if c["id"] == cid), None)
 
-    def _connecter(self):
+    def _connecter(self, premier=False):
         c = self.compte()
         self.liste.clear()
         if not c:
             return
         self.e = ouvrir_emplacement(self, c)
-        if self.e:
-            self.aller(self.e.racine())
+        if not self.e:
+            return
+        if premier and self._depart:                       # dossier de départ : s'il n'existe pas (encore), la racine
+            try:
+                self.e.lister(self._depart)
+                self.aller(self._depart)
+                return
+            except Exception:                              # noqa: BLE001
+                pass
+        self.aller(self.e.racine())
+
+    def nouveau_dossier(self):
+        if not self.e:
+            return
+        nom, ok = QInputDialog.getText(self, _("Nouveau dossier"), _("Nom du dossier :"))
+        nom = (nom or "").strip().strip("/")
+        if not ok or not nom:
+            return
+        if any(x in nom for x in '/\\:*?"<>|'):
+            QMessageBox.warning(self, _("Nouveau dossier"), _("Ce nom contient un caractère interdit (/ \\ : * ? \" < > |)."))
+            return
+        chemin = posixpath.join(self.dossier or "/", nom)
+        try:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                self.e.nouveau_dossier(chemin)
+            finally:
+                QApplication.restoreOverrideCursor()
+        except distant.ErreurDistant as ex:
+            erreur(self, _("Nouveau dossier"), ex, self.e)
+            return
+        self.aller(chemin)
 
     def aller(self, dossier):
         try:
@@ -722,7 +781,7 @@ class DialogueParcourir(QDialog):
         f_gras = self.liste.font()
         f_gras.setBold(True)
         for x in sorted(elems, key=lambda e: (not e.dossier, e.nom.lower())):
-            if not x.dossier and not x.nom.lower().endswith(EXTENSIONS):
+            if not x.dossier and not x.nom.lower().endswith(self.extensions):
                 continue
             it = QListWidgetItem(icone("ouvrir" if x.dossier else "creer", "#c8a000" if x.dossier else "#c9252d"),
                                  x.nom + ("" if x.dossier else _("   ({n} Ko)", n=max(1, x.taille // 1024))))
@@ -767,6 +826,7 @@ class DialogueParcourir(QDialog):
             self.aller(x.chemin)
         elif self.mode == "ouvrir":
             self.choisi = x.chemin
+            self.choisis = [x.chemin]
             self.accept()
 
     def _choix(self, it, _ancien=None):
@@ -785,6 +845,13 @@ class DialogueParcourir(QDialog):
             self.choisi = x.chemin if x and x != ".." and x.dossier else self.dossier
             self.accept()
             return
+        if self.mode == "ouvrir" and self.multiple:
+            choisis = [it.data(Qt.UserRole) for it in self.liste.selectedItems()]
+            fichiers = [x.chemin for x in choisis if x != ".." and not x.dossier]
+            if fichiers:
+                self.choisis, self.choisi = fichiers, fichiers[0]
+                self.accept()
+                return
         if self.mode == "ouvrir":
             it = self.liste.currentItem()
             x = it.data(Qt.UserRole) if it else None
@@ -797,6 +864,7 @@ class DialogueParcourir(QDialog):
                 self.aller(x.chemin)
                 return
             self.choisi = x.chemin
+            self.choisis = [x.chemin]
         else:
             nom = self.nom.text().strip()
             if not nom:

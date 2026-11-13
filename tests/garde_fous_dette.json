@@ -56,7 +56,9 @@
    "ia_locale_modeles",
    "dossier_tampons_web",
    "musiques_telechargement",
-   "guides_vus"
+   "guides_vus",
+   "recents_distants",
+   "envoi_export_dernier"
   ]
  },
  "G8_reglages_a_mettre_dans_preferences": [

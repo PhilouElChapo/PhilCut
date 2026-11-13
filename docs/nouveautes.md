@@ -4,7 +4,18 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.57 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.58 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.58 (projets et rushes dans vos clouds, comme PhilPDF)
+- Chaque compte a son role (Preferences > Comptes et synchro > "Role de chaque compte") : un pour les reglages et la session, un pour deposer et retrouver les projets (par exemple pCloud), un pour les rushes (gros fichiers). Le role de chaque compte est ecrit a cote de son nom dans la liste.
+- Fichier > "Ouvrir un projet depuis un emplacement (cloud, NAS)..." (Ctrl+Maj+O) et "Enregistrer le projet vers un emplacement (cloud, NAS)..." : le compte des projets est propose d'abord, dans son dossier. Un projet ouvert depuis un compte y retourne a chaque Enregistrer (un nuage devant son nom). Si un autre poste l'a modifie entre-temps, PhilCut demande : remplacer, ou garder les deux.
+- Projets recents du cloud sur l'Accueil et dans Fichier > Projets recents ; sur un autre poste avec le meme compte, double-clic : le projet est repris du cloud.
+- Rushes : apres l'enregistrement, on peut aussi deposer les originaux sur le compte des rushes (jamais coche d'office). Sur un autre poste, "Medias introuvables sur ce poste" propose, rush par rush, "Telecharger la copie legere" ou "Telecharger l'original". Le compte des rushes n'est plus recu d'office : rien de lourd n'arrive sans clic.
+- Fichier > "Importer des rushes depuis un emplacement (cloud, NAS)..." (plusieurs a la fois) et Outils > "Envoyer une video exportee vers un emplacement..." (aussi propose apres l'export).
+- "Nouveau dossier" dans les fenetres Ouvrir / Enregistrer vers un emplacement.
+- Guide "Retrouver mes projets et mes rushes sur un autre PC (cloud)".
+
+## Nouveautes de 0.9.57
 
 ### 0.9.57 (continuer avec ma voix)
 - Continuer avec ma voix : PhilCut fait dire une nouvelle phrase avec la voix d'un extrait de 5 a 15 secondes du film, pour continuer un commentaire ("Et maintenant, passons a autre chose...") sans tout reenregistrer. Clic droit sur le plan qui porte la voix > "Continuer avec cette voix...", Montage > Son, Fabrique IA > Musique, ou le bouton "Une phrase avec ma voix sur ce plan..." apres la pose d'un plan de liaison.

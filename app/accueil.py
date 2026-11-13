@@ -96,11 +96,17 @@ class PageAccueil(QWidget):
         autres, ailleurs = getattr(self, "_autres", None), getattr(self, "_ailleurs", [])
         self.liste.clear()
         dates = self.params.get("recents_dates") or {}
+        from . import cloud_projets as CP
         for p in self.params.get("recents") or []:
             it = QListWidgetItem(os.path.splitext(os.path.basename(p))[0])
             d = dates.get(p, "")
-            absent = not os.path.exists(p)
-            it.setToolTip(p + ("\n" + _("Introuvable pour l'instant (disque, NAS ou Drive non branché ?)") if absent else ""))
+            o = CP.origine(self.params, p)                     # 0.9.58 : projet d'un cloud (rouvert là-bas si besoin)
+            absent = not os.path.exists(p) and not o
+            if o:
+                it.setToolTip(_("Sur {l} : {c}\nChaque Enregistrer l'y renvoie ; double-clic : ouvert (repris du cloud si besoin).",
+                                l=o.get("lieu", ""), c=o.get("chemin", "")))
+            else:
+                it.setToolTip(p + ("\n" + _("Introuvable pour l'instant (disque, NAS ou Drive non branché ?)") if absent else ""))
             it.setData(Qt.UserRole, p)
             vign = p[:-8] + "_vignette.png" if p.lower().endswith(".philcut") else ""
             if vign and os.path.exists(vign):
@@ -109,7 +115,8 @@ class PageAccueil(QWidget):
                 it.setIcon(icone("projet", theme.COULEURS["desactive"] if absent else theme.COULEURS["accent"], 48))
             if absent:
                 it.setForeground(Qt.gray)
-            it.setText(it.text() + (f"   —   {_date(d)}" if d else "") + f"\n{os.path.dirname(p)}")
+            ou = ("☁ " + o.get("lieu", "") + " : " + (os.path.dirname(o.get("chemin", "")) or "/")) if o else os.path.dirname(p)
+            it.setText(it.text() + (f"   —   {_date(d)}" if d else "") + f"\n{ou}")
             self.liste.addItem(it)
         deja = {os.path.normcase(os.path.abspath(p)) for p in self.params.get("recents") or []}
         for machine, dte, fichiers in ailleurs:
@@ -119,7 +126,9 @@ class PageAccueil(QWidget):
                     continue
                 deja.add(os.path.normcase(os.path.abspath(p)))
                 nom = os.path.splitext(f.get("nom") or os.path.basename(p))[0]
-                it = QListWidgetItem(nom + "   —   " + _("ouvert sur « {m} » ({d})", m=machine, d=_date(dte)) + f"\n{os.path.dirname(p)}")
+                dist = f.get("distant") or {}
+                ou = ("☁ " + dist.get("lieu", "") + " : " + (os.path.dirname(dist.get("chemin", "")) or "/")) if dist else os.path.dirname(p)
+                it = QListWidgetItem(nom + "   —   " + _("ouvert sur « {m} » ({d})", m=machine, d=_date(dte)) + f"\n{ou}")
                 it.setIcon(icone("projet", theme.COULEURS["desactive"], 48))
                 it.setForeground(Qt.gray)
                 it.setToolTip(_("Projet ouvert sur un autre poste. Double-clic : PhilCut le cherche sur ce poste "

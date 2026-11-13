@@ -50,12 +50,79 @@ class DialogueManquants(QDialog):
         b.setToolTip(_("Parcourt vos dossiers habituels (Vidéos, Images, Téléchargements, Drive…) par nom, taille et empreinte"))
         b.clicked.connect(self.chercher)
         h.addWidget(b)
+        # 0.9.58 : depuis le compte des rushes, au choix (rien n'arrive sans clic)
+        self.b_leger = QPushButton(_("Télécharger la copie légère"))
+        self.b_leger.setToolTip(_("La copie 720p déposée par un autre poste : légère, pour monter tout de suite"))
+        self.b_leger.clicked.connect(lambda: self.telecharger("leger"))
+        h.addWidget(self.b_leger)
+        self.b_original = QPushButton(_("Télécharger l'original"))
+        self.b_original.setToolTip(_("Le fichier d'origine déposé par un autre poste : plus lourd, pleine qualité pour l'export"))
+        self.b_original.clicked.connect(lambda: self.telecharger("original"))
+        h.addWidget(self.b_original)
         h.addStretch(1)
         b = QPushButton(_("Fermer"))
         b.clicked.connect(self.accept)
         h.addWidget(b)
         v.addLayout(h)
+        self.dispo = {"leger": {}, "original": {}}
+        self.arbre.currentItemChanged.connect(lambda *_a: self._maj_boutons())
         self.remplir()
+        self._lire_dispo()
+
+    def _lire_dispo(self):
+        """Ce que le compte des rushes propose (copies légères, originaux), lu en arrière-plan."""
+        from . import cloud_projets as CP
+        if CP.compte_rushs(self.params) is None:
+            self._maj_boutons()
+            return
+        t = Tache(lambda _t: CP.dispo_rushs(self.params), _("Rushes"))
+        self.taches.append(t)
+
+        def fin(r, e):
+            if not e and r:
+                self.dispo = r
+            self.remplir()
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
+
+    def _maj_boutons(self):
+        from . import cloud_projets as CP
+        m = self._courant()
+        ch = dict(CP.choix_possibles(m, self.dispo)) if m else {}
+        occupe = any(t.isRunning() for t in self.taches if getattr(t, "_telechargement", False))
+        for b, g in ((self.b_leger, "leger"), (self.b_original, "original")):
+            b.setEnabled(g in ch and not occupe)
+            b.setVisible(CP.compte_rushs(self.params) is not None)
+            if g in ch:
+                b.setText((_("Télécharger la copie légère") if g == "leger" else _("Télécharger l'original")) + f" ({DP.taille_lisible(ch[g])})")
+
+    def telecharger(self, genre):
+        from . import cloud_projets as CP
+        m = self._courant()
+        ch = dict(CP.choix_possibles(m, self.dispo)) if m else {}
+        if genre not in ch:
+            return
+        p, params = self.ed.projet, self.params
+        t = Tache(lambda tache: CP.telecharger_rush(params, p, m, genre, lambda f: tache.avancer(f), lambda: tache.arret, taille=ch[genre]),
+                  _("Rushes"))
+        t._telechargement = True
+        self.taches.append(t)
+        self.suivi.demarrer(_("Téléchargement de « {n} » ({g})", n=m.get("nom", ""), g=_("copie légère") if genre == "leger" else _("original")),
+                            t, _("Vous pouvez continuer à travailler ; le plan se met à jour à la fin."))
+        self._maj_boutons()
+
+        def fin(r, e):
+            self.suivi.finir()
+            if e:
+                self._apres(_("✕ {e}", e=texte_erreur(e)[:200]))
+            else:
+                self._apres(_("« {n} » téléchargé : {c}", n=m.get("nom", ""), c=r))
+                f = self.ed.window()                       # proxys, vignettes, ondes du fichier reçu
+                if hasattr(f, "_reconstruire_medias"):
+                    f._reconstruire_medias(self.ed)
+            self._maj_boutons()
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
 
     def _manquants(self):
         return [m for m in self.ed.projet.medias if not os.path.exists(m.get("chemin") or "") or m.get("copie_legere")]
@@ -66,6 +133,11 @@ class DialogueManquants(QDialog):
             emp = m.get("emplacements") or {}
             ou = "\n".join(f"{k} : {e.get('chemin', '')}" for k, e in emp.items()) or (m.get("original") or m.get("chemin") or "")
             etat = _("copie légère du Drive en attendant l'original") if m.get("copie_legere") else _("introuvable")
+            from . import cloud_projets as CP
+            ch = CP.choix_possibles(m, self.dispo)
+            if ch:
+                etat += "\n" + _("à télécharger : {l}", l=", ".join(
+                    (_("copie légère") if g == "leger" else _("original")) + f" ({DP.taille_lisible(t)})" for g, t in ch))
             it = QTreeWidgetItem([m.get("nom", ""), ou, etat])
             it.setData(0, Qt.UserRole, m["id"])
             it.setToolTip(1, ou)
@@ -76,6 +148,8 @@ class DialogueManquants(QDialog):
         if not self.arbre.topLevelItemCount():
             it = QTreeWidgetItem([_("Tous les médias sont retrouvés."), "", "✓"])
             self.arbre.addTopLevelItem(it)
+        if hasattr(self, "b_leger"):
+            self._maj_boutons()
 
     def _courant(self):
         it = self.arbre.currentItem() or self.arbre.topLevelItem(0)
@@ -153,6 +227,15 @@ class DialoguePreparer(QDialog):
         self.c_creations.setChecked(bool(creations))
         self.c_creations.setVisible(bool(creations))
         v.addWidget(self.c_creations)
+        from . import cloud_projets as CP, distant as _D
+        cr = CP.compte_rushs(self.params)
+        self.originaux = CP.a_envoyer_original(ed.projet) if cr else []
+        taille_o = sum(os.path.getsize(m["chemin"]) for m in self.originaux if os.path.exists(m["chemin"]))
+        self.c_originaux = QCheckBox(_("Les originaux de {n} rush(es) sur {l} — {t} (pleine qualité ailleurs ; plus long à envoyer)",
+                                       n=len(self.originaux), l=_D.libelle(cr) if cr else "", t=DP.taille_lisible(taille_o)))
+        self.c_originaux.setChecked(False)                 # lourd : jamais coché d'office
+        self.c_originaux.setVisible(bool(self.originaux))
+        v.addWidget(self.c_originaux)
         self.c_plus = QCheckBox(_("Ne plus me le demander pour ce projet"))
         v.addWidget(self.c_plus)
         note = QLabel(_("<span style='color:#999'>Ces fichiers prennent de la place sur votre Drive ; « Espace PhilCut sur le Drive » "
@@ -192,7 +275,9 @@ def proposer_apres_enregistrement(ed):
         creations = []
     elif mode == "jamais":
         creations = []
-    if not videos and not creations:
+    from . import cloud_projets as CP
+    originaux = CP.a_envoyer_original(p) if CP.compte_rushs(params) else []
+    if not videos and not creations and not originaux:
         return
     d = DialoguePreparer(ed, videos, creations)
     ok = d.exec() == QDialog.Accepted
@@ -203,9 +288,10 @@ def proposer_apres_enregistrement(ed):
         return
     a_copier = videos if d.c_videos.isChecked() else []
     a_deposer = creations if d.c_creations.isChecked() else []
+    a_envoyer = d.originaux if d.c_originaux.isChecked() else []
 
     def travail(tache):
-        n = len(a_copier) + len(a_deposer)
+        n = max(1, len(a_copier) + len(a_deposer) + len(a_envoyer))
         for k, m in enumerate(a_deposer):
             tache.avancer(k / n, _("création {k} sur {n}", k=k + 1, n=len(a_deposer)))
             DP.deposer_creation(params, m["chemin"], m)
@@ -215,6 +301,12 @@ def proposer_apres_enregistrement(ed):
             base = len(a_deposer) + k
             tache.avancer(base / n, _("copie légère de {nom}", nom=m.get("nom", "")))
             DP.copier_leger(params, m, progression=lambda f, base=base: tache.avancer((base + f) / n), arret=lambda: tache.arret)
+        for k, m in enumerate(a_envoyer):
+            if tache.arret:
+                break
+            base = len(a_copier) + len(a_deposer) + k
+            tache.avancer(base / n, _("original de {nom}", nom=m.get("nom", "")))
+            CP.envoyer_original(params, m, progression=lambda f, base=base: tache.avancer((base + f) / n), arret=lambda: tache.arret)
         return True
     t = Tache(travail, _("Drive"))
     ed._taches_drive = getattr(ed, "_taches_drive", []) + [t]

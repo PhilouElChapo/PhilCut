@@ -19,7 +19,7 @@ Reprise sur une autre machine, en cascade :
 Toute correspondance trouvee est APPRISE (dossier source -> dossier ici) et partagee via le Drive :
 la fois suivante, c'est immediat.
 """
-import datetime, hashlib, json, os, subprocess, sys, time
+import posixpath, datetime, hashlib, json, os, subprocess, sys, time
 from .langue import _
 
 _HOTES = {}                        # \\NAS-xxx : joignable ? (verifie une fois, garde 5 minutes)
@@ -323,6 +323,10 @@ class Session:
                 continue
             e = self._decrire(p, maison, connus)
             e["date"] = q
+            dist = (self.params.get("recents_distants") or {}).get(p)      # 0.9.58 : projet d'un cloud
+            if dist and dist.get("cle"):
+                e["distant"] = {"cle": dist.get("cle"), "chemin": dist.get("chemin"), "lieu": dist.get("lieu")}
+                e["nom"] = posixpath.basename(dist.get("chemin") or p)
             recents.append(e)
         d = self.lire()
         d[self.params["machine"]] = {"maj": datetime.datetime.now().isoformat(timespec="minutes"),

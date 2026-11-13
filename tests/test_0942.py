@@ -237,8 +237,7 @@ class TestRushes(unittest.TestCase):
         f.params["comptes"] = [p]
         d = DialoguePreferences(f, f.params)
         i = d.findChildren(type(d), "")  # noqa: F841
-        cb = [w for w in d.findChildren(__import__("PySide6.QtWidgets", fromlist=["QComboBox"]).QComboBox)
-              if w.findData(p["id"]) >= 0 and w.itemData(0) == ""][0]
+        cb = d.rushs_compte                       # 0.9.58 : la liste des comptes des rushes (rôle de chaque compte)
         cb.setCurrentIndex(cb.findData(p["id"]))
         d.valider()
         self.assertEqual(f.params.get("rushs_compte"), p["id"])

@@ -13,6 +13,34 @@ from .widgets import CaseLongue as QCheckBox, a_gauche, page_a_largeur, boutons_
 from .taches import texte_erreur
 
 
+
+class ComboComptes(QComboBox):
+    """Liste des comptes avec un premier choix « aucun » ; relue à chaque ouverture : un compte ajouté juste au-dessus
+    (Comptes et synchro) y apparaît aussitôt."""
+
+    def __init__(self, params, aucun, choisi=""):
+        super().__init__()
+        self.params, self.aucun = params, aucun
+        self._remplir(choisi)
+
+    def _remplir(self, choisi):
+        from . import distant as D, avatars as AV
+        self.blockSignals(True)
+        self.clear()
+        self.addItem(self.aucun, "")
+        for c in self.params.get("comptes", []):
+            if c.get("type") in D.TYPES:
+                self.addItem(AV.icone_compte(c, self.params), D.libelle(c), c["id"])
+        self.setCurrentIndex(max(0, self.findData(choisi or "")))
+        self.blockSignals(False)
+
+    def showPopup(self):
+        avant = self.currentData()
+        self._remplir(avant)
+        if self.currentData() != avant:
+            self.currentIndexChanged.emit(self.currentIndex())
+        super().showPopup()
+
 class DialoguePreferences(QDialog):
     def __init__(self, parent, params, onglet=None):
         super().__init__(parent)
@@ -748,9 +776,7 @@ class DialoguePreferences(QDialog):
         self.synchro_secrets = QCheckBox(_("Synchroniser aussi les mots de passe et clefs (chiffrés par une phrase secrète)"))
         self.synchro_secrets.setChecked(self.params.get("synchro_secrets", False))
         f.addRow(self.synchro_secrets)
-        b = QPushButton(_("Choisir l'emplacement de synchronisation…"))
-        b.clicked.connect(lambda: self.fenetre.bienvenue(seulement_synchro=True))
-        f.addRow(a_gauche(b))
+        f.addRow(self._groupe_roles())
         h = QHBoxLayout()
         be = QPushButton(_("Exporter les préférences…"))
         be.clicked.connect(lambda: self.fenetre.exporter_reglages(self))
@@ -762,16 +788,75 @@ class DialoguePreferences(QDialog):
         f.addRow(h)
         f.addRow(self._groupe_appareils())
 
-    def _choisir_dossier_rushs(self):
-        """Parcourt le compte des rushes (pCloud, kDrive…) pour désigner le dossier d'échange."""
-        cid = self.rushs_compte.currentData()
+    def _groupe_roles(self):
+        """Rôles des comptes (0.9.58, comme PhilPDF) : les réglages se synchronisent sur un compte, les projets se déposent
+        et se retrouvent sur un autre, les rushes (gros fichiers) sur un troisième si l'on veut."""
+        g = QGroupBox(_("Rôle de chaque compte"))
+        fg = QFormLayout(g)
+        intro = QLabel(_("Un compte n'a pas forcément le même rôle qu'un autre : par exemple Google Drive pour les réglages, pCloud "
+                         "pour les projets et les rushes. Ajoutez d'abord vos comptes dans la liste ci-dessus."))
+        intro.setWordWrap(True)
+        fg.addRow(intro)
+        # réglages : le lieu de synchronisation
+        from . import miroir
+        c = miroir.compte_drive(self.params)
+        lieu = miroir.libelle_compte(c) if c else (self.params.get("drive") or _("aucun : chaque poste reste indépendant"))
+        self.lieu_synchro = QLabel(lieu)
+        self.lieu_synchro.setWordWrap(True)
+        b = QPushButton(_("Choisir…"))
+        b.setToolTip(_("L'emplacement de synchronisation des réglages, de la session et de la bibliothèque entre vos postes"))
+        b.clicked.connect(lambda: self.fenetre.bienvenue(seulement_synchro=True))
+        fg.addRow(_("Réglages et session"), self._ligne(self.lieu_synchro, b))
+        # projets : le compte « préféré » de PhilPDF
+        self.projets_compte = ComboComptes(self.params, _("Ce poste seulement (dossier Vidéos)"), self.params.get("compte_prefere") or "")
+        self.projets_compte.setToolTip(_("Fichier › « Ouvrir un projet depuis un emplacement » et « Enregistrer le projet vers un "
+                                         "emplacement » proposent ce compte d'abord ; un projet ouvert depuis un compte y retourne "
+                                         "à chaque Enregistrer."))
+        fg.addRow(_("Projets (déposer, retrouver)"), self.projets_compte)
+        self.projets_dossier = QLineEdit(self.params.get("projets_dossier") or "/PhilCut/Projets")
+        self.projets_dossier.setToolTip(_("Dossier des projets sur ce compte, le même pour tous vos postes ; créé au premier envoi"))
+        bp = QPushButton(_("Choisir…"))
+        bp.clicked.connect(lambda: self._choisir_dossier(self.projets_compte, self.projets_dossier))
+        lp = self._ligne(self.projets_dossier, bp)
+        fg.addRow(_("Dossier des projets"), lp)
+        self.projets_compte.currentIndexChanged.connect(lambda *_a: lp.setEnabled(bool(self.projets_compte.currentData())))
+        lp.setEnabled(bool(self.projets_compte.currentData()))
+        # rushes : grand espace
+        self.rushs_compte = ComboComptes(self.params, _("Le lieu de synchronisation (comme les réglages)"),
+                                         self.params.get("rushs_compte") or "")
+        self.rushs_compte.setToolTip(_("Copies légères et originaux des rushes envoyés pour vos autres postes, et « Importer des "
+                                       "rushes depuis un emplacement » : un compte avec beaucoup d'espace (pCloud, kDrive, NAS…)"))
+        fg.addRow(_("Rushes (gros fichiers)"), self.rushs_compte)
+        self.rushs_dossier = QLineEdit(self.params.get("rushs_dossier") or "/PhilCut")
+        self.rushs_dossier.setToolTip(_("Dossier d'échange des rushes sur ce compte, le même pour tous vos postes. Il est créé "
+                                        "au premier envoi s'il n'existe pas ; les copies vont dans son sous-dossier « Medias »."))
+        br = QPushButton(_("Choisir…"))
+        br.clicked.connect(lambda: self._choisir_dossier(self.rushs_compte, self.rushs_dossier))
+        lr = self._ligne(self.rushs_dossier, br)
+        fg.addRow(_("Dossier d'échange des rushes"), lr)
+        self.rushs_compte.currentIndexChanged.connect(lambda *_a: lr.setEnabled(bool(self.rushs_compte.currentData())))
+        lr.setEnabled(bool(self.rushs_compte.currentData()))
+        return g
+
+    @staticmethod
+    def _ligne(champ, bouton):
+        w = QWidget()
+        h = QHBoxLayout(w)
+        h.setContentsMargins(0, 0, 0, 0)
+        h.addWidget(champ, 1)
+        h.addWidget(bouton)
+        return w
+
+    def _choisir_dossier(self, combo, champ):
+        """Parcourt le compte choisi (pCloud, kDrive…) pour désigner un dossier."""
+        cid = combo.currentData()
         if not cid:
             return
         from .dialogues_distant import DialogueParcourir
-        d = DialogueParcourir(self, self.params, mode="dossier", compte_id=cid)
+        d = DialogueParcourir(self, self.params, mode="dossier", compte_id=cid, dossier=champ.text().strip() or None)
         d.comptes.setEnabled(False)
         if d.exec() == QDialog.Accepted and d.choisi:
-            self.rushs_dossier.setText(d.choisi)
+            champ.setText(d.choisi)
 
     def _groupe_appareils(self):
         """Projets entre vos appareils (0.9.35) : copies légères, créations IA déposées, espace PhilCut, transparence."""
@@ -785,32 +870,6 @@ class DialoguePreferences(QDialog):
         self.proposer_copie = QCheckBox(_("Proposer la copie légère 720p sur le Drive à l'enregistrement d'un projet"))
         self.proposer_copie.setChecked(self.params.get("proposer_copie_legere", True))
         fg.addRow(self.proposer_copie)
-        from . import distant as _D, avatars as _AV
-        self.rushs_compte = QComboBox()
-        self.rushs_compte.addItem(_("Le lieu de synchronisation (comme les réglages)"), "")
-        for c in self.params.get("comptes", []):
-            if c.get("type") in _D.TYPES:
-                self.rushs_compte.addItem(_AV.icone_compte(c, self.params), _D.libelle(c), c["id"])
-        self.rushs_compte.setCurrentIndex(max(0, self.rushs_compte.findData(self.params.get("rushs_compte", ""))))
-        self.rushs_compte.setToolTip(_("Par exemple pCloud ou kDrive pour les rushes (grand espace), et Google Drive pour les "
-                                       "réglages et la session. Ajoutez le compte plus haut, dans cette page."))
-        fg.addRow(_("Envoyer les copies légères des rushes sur"), self.rushs_compte)
-        self.rushs_dossier = QLineEdit(self.params.get("rushs_dossier") or "/PhilCut")
-        self.rushs_dossier.setToolTip(_("Dossier d'échange des rushes sur ce compte, le même pour tous vos postes. Il est créé "
-                                        "au premier envoi s'il n'existe pas ; les copies vont dans son sous-dossier « Medias »."))
-        b_rd = QPushButton(_("Choisir…"))
-        b_rd.clicked.connect(self._choisir_dossier_rushs)
-        wrd = QWidget()
-        hrd = QHBoxLayout(wrd)
-        hrd.setContentsMargins(0, 0, 0, 0)
-        hrd.addWidget(self.rushs_dossier, 1)
-        hrd.addWidget(b_rd)
-        fg.addRow(_("Dossier d'échange des rushes"), wrd)
-
-        def _rd_actif(*_a):
-            wrd.setEnabled(bool(self.rushs_compte.currentData()))
-        self.rushs_compte.currentIndexChanged.connect(_rd_actif)
-        _rd_actif()
         self.creations_drive = QComboBox()
         for k, lib in (("demander", _("Demander à l'enregistrement du projet")), ("toujours", _("Toujours (sans demander)")),
                        ("jamais", _("Jamais"))):
@@ -876,6 +935,8 @@ class DialoguePreferences(QDialog):
         p = self.params
         p["creations_purge_jours"] = self.purge.currentData() or 0
         p["proposer_copie_legere"] = self.proposer_copie.isChecked()
+        p["compte_prefere"] = self.projets_compte.currentData() or None
+        p["projets_dossier"] = self.projets_dossier.text().strip() or "/PhilCut/Projets"
         p["rushs_compte"] = self.rushs_compte.currentData() or ""
         p["rushs_dossier"] = self.rushs_dossier.text().strip() or "/PhilCut"
         p["creations_drive"] = self.creations_drive.currentData()

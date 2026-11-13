@@ -157,6 +157,18 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T73 — 0.9.58 : projets et rushes dans vos clouds
+
+1. Edition › Préférences › Comptes et synchro : vos comptes (Google Drive, pCloud…) ; groupe « Rôle de chaque compte » : réglages = Google Drive (par exemple), projets = pCloud, rushes = pCloud. OK. Rouvrir : la liste des comptes affiche le rôle de chacun entre crochets.
+2. Un projet ouvert : Fichier › « Enregistrer le projet vers un emplacement (cloud, NAS)… » : la fenêtre s'ouvre sur pCloud (★ en tête), dans /PhilCut/Projets (créé s'il manque). Essayer « Nouveau dossier ». Enregistrer : l'onglet porte ☁ ; la barre du bas montre l'envoi.
+3. Modifier le projet, Ctrl+S : « ✓ Projet renvoyé sur pCloud ». Vérifier dans pCloud (site web) que la date du fichier a changé.
+4. Proposition après l'enregistrement : cocher « Les originaux de N rush(es) sur pCloud » (décoché d'office) ; l'envoi se suit dans l'encart.
+5. Sur l'autre PC : Accueil (☁ pCloud : /PhilCut/Projets) ou Fichier › « Ouvrir un projet depuis un emplacement… ». Médias absents : Fichier › Médias introuvables : « Télécharger la copie légère (… Mo) » / « Télécharger l'original (… Go) » selon ce qui a été déposé ; le plan se met à jour.
+6. Conflit : modifier le même projet sur les deux PC sans rouvrir, enregistrer sur l'un puis sur l'autre : la question « Remplacer celle du cloud / Garder les deux / Plus tard » apparaît.
+7. Fichier › « Importer des rushes depuis un emplacement… » : en choisir plusieurs (Ctrl + clic) ; ils arrivent dans Vidéos/PhilCut — pCloud et sont importés.
+8. Exporter une vidéo, puis Outils › « Envoyer une vidéo exportée vers un emplacement… » : dossier /PhilCut/Exports proposé.
+9. Vérifier que les copies légères ne se téléchargent plus toutes seules sur l'autre PC (seulement l'index).
+
 ## T72 — 0.9.57 : continuer avec ma voix
 
 1. Edition › Préférences › IA locale : installer « Continuer avec ma voix » (environ 1,6 Go). La progression s'affiche dans la barre du bas.

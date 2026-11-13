@@ -194,6 +194,28 @@ def _guides_integres():
                          "le suivi à la ligne rouge… », retracez la zone : la suite est refaite."),
               "montrer": {"clic_droit": [_("Cadrage"), _("Corriger le suivi à la ligne rouge…")]}},
          ]},
+        {"id": "projets_cloud", "etat": "ok",
+         "titre": _("Retrouver mes projets et mes rushes sur un autre PC (cloud)"),
+         "mots": "cloud pcloud drive nas projet autre pc poste ordinateur ouvrir enregistrer retrouver rushes original copie",
+         "intro": _("Chaque compte a son rôle : un pour les réglages, un pour déposer et retrouver les projets, un pour les rushes "
+                    "(gros fichiers). Un projet ouvert depuis un compte y retourne à chaque Enregistrer ; sur un autre PC, chaque rush "
+                    "absent se télécharge au choix en copie légère ou en original."),
+         "etapes": [
+             {"texte": _("Edition › Préférences › Comptes et synchro : ajoutez vos comptes (pCloud, Google Drive, NAS…), puis, dans "
+                         "« Rôle de chaque compte », choisissez le compte des projets et celui des rushes."),
+              "montrer": {"menu": [_("&Edition"), _("Préférences…")]}},
+             {"texte": _("Projet ouvert : Fichier › « Enregistrer le projet vers un emplacement (cloud, NAS)… ». Ensuite, chaque "
+                         "Enregistrer le renvoie là-bas (☁ devant son nom)."),
+              "montrer": {"menu": [_("&Fichier"), _("Enregistrer le projet vers un emplacement (cloud, NAS)…")]}},
+             {"texte": _("Pour l'autre PC : après l'enregistrement, cochez « Les originaux » (ou la copie légère) des rushes à "
+                         "déposer.")},
+             {"texte": _("Sur l'autre PC : Fichier › « Ouvrir un projet depuis un emplacement (cloud, NAS)… », ou double-clic sur le "
+                         "projet dans l'Accueil (☁)."),
+              "montrer": {"menu": [_("&Fichier"), _("Ouvrir un projet depuis un emplacement (cloud, NAS)…")]}},
+             {"texte": _("Rushes absents : Fichier › « Médias introuvables sur ce poste… » : « Télécharger la copie légère » ou "
+                         "« Télécharger l'original », rush par rush."),
+              "montrer": {"menu": [_("&Fichier"), _("Médias introuvables sur ce poste…")]}},
+         ]},
         {"id": "derniere_image", "etat": "ok",
          "titre": _("Passer d'un rush à l'autre par la dernière image ou une animation"),
          "mots": "derniere image figer arret sur image animer animation photo 3d transition fin",
