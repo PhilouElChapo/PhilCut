@@ -1,0 +1,33 @@
+# 0.9.53 : essai réel de « Séparer voix, musique et bruits » (HT-Demucs ONNX) sur une voix et une musique synthétiques.
+name: Essai separation
+
+on:
+  push:
+    paths:
+      - .github/workflows/essai_separation.yml
+      - app/separation.py
+      - outils_dev/essai_separation.py
+  workflow_dispatch:
+
+jobs:
+  essai:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Outils
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg espeak-ng
+          pip install -q numpy onnxruntime
+      - name: Separation
+        env:
+          PHILCUT_FFMPEG: ffmpeg
+        run: python outils_dev/essai_separation.py essai_sep
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: essai-separation
+          path: essai_sep/*.wav
