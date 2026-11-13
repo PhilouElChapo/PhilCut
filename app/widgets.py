@@ -600,3 +600,45 @@ class SuiviAttente(QWidget):
     def finir(self):
         self._minuterie.stop()
         self.hide()
+
+
+# ------------------------------------------------------------------ calculs qui continuent fenêtre fermée (0.9.64)
+def _encart_de(dlg):
+    """La barre du bas de l'éditeur qui a ouvert la fenêtre (None hors éditeur)."""
+    w = dlg
+    while w is not None:
+        e = getattr(w, "encart", None) or getattr(getattr(w, "ed", None), "encart", None)
+        if e is not None:
+            return e
+        w = w.parent() if hasattr(w, "parent") else None
+    return None
+
+
+def reafficher(dlg):
+    dlg.show()
+    dlg.raise_()
+    dlg.activateWindow()
+
+
+def suivre_en_fond(dlg, tache, texte):
+    """Une création lancée depuis une fenêtre est suivie dans la barre du bas et au Centre d'activité : fermer la fenêtre
+    ne l'arrête pas ; « Afficher la fenêtre » la rouvre pendant le calcul, « Voir le résultat » à la fin."""
+    e = _encart_de(dlg)
+    if e is None:
+        from . import activite
+        activite.centre().suivre(tache, texte, ouvrir=(_("Voir le résultat"), lambda: reafficher(dlg)),
+                                 pendant=(_("Afficher la fenêtre"), lambda: reafficher(dlg)))
+        return
+    e.suivre(tache, texte, action=(_("Voir le résultat"), lambda: reafficher(dlg)),
+             pendant=(_("Afficher la fenêtre"), lambda: reafficher(dlg)))
+
+
+def garder_calcul(dlg, en_cours):
+    """Fermer pendant un calcul : la fenêtre se range, rien ne s'arrête ; True si c'est le cas."""
+    if not en_cours:
+        return False
+    dlg.hide()
+    e = _encart_de(dlg)
+    if e is not None and getattr(e, "tache", None) is None:
+        e.message(_("La création continue : la barre du bas la suit, puis « Voir le résultat » rouvre la fenêtre."), 8000)
+    return True

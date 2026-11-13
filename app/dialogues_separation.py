@@ -131,6 +131,8 @@ class DialogueSeparation(QDialog):
                            _("Séparation voix, musique et bruits"))
         self.tache.lier(self)
         self.tache.progression.connect(lambda f, txt: (self.barre.setValue(int(f * 1000)), self.etat.setText(txt)), Qt.QueuedConnection)
+        from .widgets import suivre_en_fond
+        suivre_en_fond(self, self.tache, _("Séparation voix, musique et bruits"))
         self.tache.fini.connect(self._fini, Qt.QueuedConnection)
         self.tache.start()
 
@@ -199,9 +201,17 @@ class DialogueSeparation(QDialog):
     def closeEvent(self, ev):
         if self.lecteur is not None:
             self.lecteur.stop()
-        if self._en_calcul():
-            self.tache.stopper()
+        from .widgets import garder_calcul
+        if garder_calcul(self, self._en_calcul()):      # 0.9.64 : la fenêtre se range, le calcul continue
+            ev.ignore()
+            return
         super().closeEvent(ev)
+
+    def done(self, r):
+        from .widgets import garder_calcul
+        if garder_calcul(self, self._en_calcul()):
+            return
+        super().done(r)
 
 
 def _libre(projet, piste, a, b):

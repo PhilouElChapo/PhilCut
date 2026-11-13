@@ -157,6 +157,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T79 — 0.9.64 : fermer une fenêtre pendant une création
+
+1. Fabrique IA › Musique › Fabrique musique : « Créer la musique », puis « Fermer » tout de suite. La fenêtre disparaît ; la barre du bas montre « Fabrique musique : création du morceau » avec la progression et « Afficher la fenêtre ». Continuer à monter : PhilCut n'est pas bloqué.
+2. Cliquer « Afficher la fenêtre » : la Fabrique revient avec sa barre. La refermer.
+3. A la fin : « ✓ Fabrique musique… » et « Voir le résultat » : la fenêtre revient avec le morceau à écouter, « Poser sous la vidéo ».
+4. Plus tard (après la disparition du bouton) : clic sur la barre du bas › Centre d'activité : la ligne a « Voir le résultat ».
+5. Même essai avec le plan de liaison (« Fabriquer le plan »), « Continuer avec ma voix » et « Séparer voix, musique et bruits ».
+
 ## T78 — 0.9.63 : Fabrique musique, « à la manière de », voix, passage
 
 1. Fabrique IA › Musique › Fabrique musique, ligne Phrase › « Style « à la manière de »… » : taper « metallic » : Metallica, Iron Maiden, Gojira… apparaissent. Famille « Musiques de film, de série, de jeu » : Einaudi, Göransson, Hans Zimmer… Taper un nom absent : « Utiliser « … » » l'ajoute à la phrase.

@@ -819,7 +819,8 @@ class DialogueAtelierIA(QDialog):
         self.info.setStyleSheet("")
         self.tache = Tache(travail, _("Atelier IA"))
         self.ed.taches.append(self.tache)
-        self.ed.encart.suivre(self.tache, _("IA locale : {n}", n=e["nom"]), pendant=(_("Afficher l'Atelier"), self._reafficher))
+        self.ed.encart.suivre(self.tache, _("IA locale : {n}", n=e["nom"]), pendant=(_("Afficher l'Atelier"), self._reafficher),
+                             action=(_("Voir le résultat"), self._reafficher))
         self.tache.progression.connect(self._progression, Qt.QueuedConnection)
         self.tache.fini.connect(lambda r, err, e=e: self._fini(e, r, err), Qt.QueuedConnection)
         self.b_creer.setEnabled(False)

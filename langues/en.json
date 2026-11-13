@@ -7283,5 +7283,9 @@
  "Ligne Phrase › « Style « à la manière de »… » : choisissez une famille ou tapez (« metal », « Einaudi »…), double-cliquez un nom. Absent de la liste ? « Utiliser », puis « Améliorer avec l'IA ».": "Phrase row › “« In the style of » style…”: choose a family or type (“metal”, “Einaudi”…), double-click a name. Not in the list? “Use”, then “Improve with AI”.",
  "Ligne Voix › « À la manière de… » : une manière de chanter connue, ou « Décrire la voix d'un morceau » : choisissez le passage où la voix chante, PhilCut l'isole de la musique et la décrit (registre, vibrato, timbre).": "Voice row › “In the style of…”: a well-known way of singing, or “Describe the voice of a track”: choose the passage where the voice sings, PhilCut isolates it from the music and describes it (register, vibrato, timbre).",
  "« S'inspirer d'un morceau » › Choisir un morceau : un fichier, ou en ligne (« S'inspirer de ce morceau » télécharge tout seul ; « Plus de résultats » si besoin). Gardez tout le morceau ou seulement un passage.": "“Take inspiration from a track” › Choose a track: a file, or online (“Take inspiration from this track” downloads by itself; “More results” if needed). Keep the whole track or only a passage.",
- "Relisez la consigne anglaise en bas, puis « Créer la musique ».": "Reread the English prompt at the bottom, then “Create the music”."
+ "Relisez la consigne anglaise en bas, puis « Créer la musique ».": "Reread the English prompt at the bottom, then “Create the music”.",
+ "Voir le résultat": "See the result",
+ "Fabrique musique : création du morceau": "Music workshop: creating the track",
+ "La création continue : la barre du bas la suit, puis « Voir le résultat » rouvre la fenêtre.": "The creation continues: the bottom bar follows it, then “See the result” reopens the window.",
+ "Afficher la fenêtre": "Show the window"
 }

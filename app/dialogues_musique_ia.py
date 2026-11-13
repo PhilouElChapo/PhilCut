@@ -515,6 +515,8 @@ class DialogueFabriqueMusique(QDialog):
         t = Tache(travail, titre)
         self._taches.append(t)
         self.suivi.demarrer(quoi, t, conseil)
+        from .widgets import suivre_en_fond
+        suivre_en_fond(self, t, quoi)
 
         def fini(r, err):
             try:
@@ -751,6 +753,8 @@ class DialogueFabriqueMusique(QDialog):
             t.avancer(0.0, _("Préparation de la consigne…"))
             return MI.creer(fiche, sortie, params, t.avancer, lambda: t.arret, traduire)
         self.tache = Tache(travail, _("Fabrique musique"))
+        from .widgets import suivre_en_fond
+        suivre_en_fond(self, self.tache, _("Fabrique musique : création du morceau"))
         self.tache.progression.connect(self._progression, Qt.QueuedConnection)
         self.tache.fini.connect(lambda r, e, fiche=fiche: self._fini(fiche, r, e), Qt.QueuedConnection)
         self._vider_actions()
@@ -838,14 +842,24 @@ class DialogueFabriqueMusique(QDialog):
         if c:
             self.info.setText(_("✓ Copie enregistrée : {f}", f=c))
 
+    def en_calcul(self):
+        return any(t.isRunning() for t in self._taches + ([self.tache] if self.tache is not None else []))
+
     def done(self, r):
+        """Fermer pendant un calcul range la fenêtre (0.9.64) : la création continue, la barre du bas la suit et « Voir le
+        résultat » rouvre la fenêtre avec le morceau à écouter et à poser."""
         self.apercu.arreter()
-        for t in self._taches:
-            if t.isRunning():
-                t.stopper()
-        if self.tache is not None and self.tache.isRunning():
-            self.info.setText(_("La création continue en tâche de fond."))
+        from .widgets import garder_calcul
+        if garder_calcul(self, self.en_calcul()):
+            return
         super().done(r)
+
+    def closeEvent(self, ev):
+        from .widgets import garder_calcul
+        if garder_calcul(self, self.en_calcul()):
+            ev.ignore()
+            return
+        super().closeEvent(ev)
 
 
 def _avec_moteur(niveau, fn):

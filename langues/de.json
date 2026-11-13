@@ -7274,5 +7274,9 @@
  "Ligne Phrase › « Style « à la manière de »… » : choisissez une famille ou tapez (« metal », « Einaudi »…), double-cliquez un nom. Absent de la liste ? « Utiliser », puis « Améliorer avec l'IA ».": "Zeile Satz › „Stil « im Stil von »…“: Familie wählen oder tippen („Metal“, „Einaudi“…), Namen doppelklicken. Nicht in der Liste? „Verwenden“, dann „Mit KI verbessern“.",
  "Ligne Voix › « À la manière de… » : une manière de chanter connue, ou « Décrire la voix d'un morceau » : choisissez le passage où la voix chante, PhilCut l'isole de la musique et la décrit (registre, vibrato, timbre).": "Zeile Stimme › „Im Stil von…“: eine bekannte Singweise, oder „Die Stimme eines Stücks beschreiben“: Passage wählen, in der die Stimme singt; PhilCut trennt sie von der Musik und beschreibt sie (Lage, Vibrato, Klangfarbe).",
  "« S'inspirer d'un morceau » › Choisir un morceau : un fichier, ou en ligne (« S'inspirer de ce morceau » télécharge tout seul ; « Plus de résultats » si besoin). Gardez tout le morceau ou seulement un passage.": "„Von einem Stück inspirieren“ › Stück wählen: eine Datei oder online („Sich von diesem Titel inspirieren lassen“ lädt selbst herunter; bei Bedarf „Mehr Ergebnisse“). Das ganze Stück oder nur eine Passage behalten.",
- "Relisez la consigne anglaise en bas, puis « Créer la musique ».": "Lesen Sie den englischen Prompt unten, dann „Musik erstellen“."
+ "Relisez la consigne anglaise en bas, puis « Créer la musique ».": "Lesen Sie den englischen Prompt unten, dann „Musik erstellen“.",
+ "Voir le résultat": "Ergebnis ansehen",
+ "Fabrique musique : création du morceau": "Musikwerkstatt: Stück wird erstellt",
+ "La création continue : la barre du bas la suit, puis « Voir le résultat » rouvre la fenêtre.": "Die Erstellung läuft weiter: Die untere Leiste verfolgt sie, dann öffnet „Ergebnis ansehen“ das Fenster wieder.",
+ "Afficher la fenêtre": "Fenster anzeigen"
 }

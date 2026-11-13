@@ -56,7 +56,7 @@ class Encart(QFrame):
         (ex. « Afficher » une fenêtre réduite). La tâche est aussi inscrite au Centre d'activité."""
         self._minuteur.stop()
         from . import activite
-        activite.centre().suivre(tache, texte)
+        activite.centre().suivre(tache, texte, ouvrir=action, pendant=pendant)
         if hasattr(tache, "lier"):
             tache.lier(self)                         # barre du bas détruite (onglet fermé) : la tâche s'arrête sans prévenir
         self.tache = tache
@@ -2790,7 +2790,19 @@ class Editeur(QWidget):
         if remplace:
             h.remplacer = lambda chemin, r: ed.remplacer_media_clip(remplace, chemin, r)
         duree = max(10.0, min(240.0, round(self.projet.duree() or 60.0)))
-        DialogueFabriqueMusique(self, self.params, h, fiche, duree).exec()
+        anc = getattr(self, "_fab_musique", None)
+        if anc is not None and fiche is None and remplace is None:
+            try:
+                if anc.en_calcul() or (anc.resultat and anc.isHidden()):   # une création en route ou pas encore vue : la même fenêtre
+                    from .widgets import reafficher
+                    reafficher(anc)
+                    return anc
+            except RuntimeError:
+                pass
+        d = DialogueFabriqueMusique(self, self.params, h, fiche, duree)
+        self._fab_musique = d
+        d.show()                           # non bloquante (0.9.64) : on continue à monter pendant la création
+        return d
 
     def reprendre_creation(self, clip_id=None, media_id=None):
         """Rouvre l'Atelier IA avec ce qui a servi à créer ce morceau, cette image ou ce clip (phrase, paroles, voix, durée) ;

@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog,
 
 from . import sequence_ia as Q
 from .langue import _
+from .widgets import garder_calcul, suivre_en_fond
 from .taches import Tache
 from .widgets import SuiviAttente
 from .taches import texte_erreur
@@ -182,6 +183,7 @@ class DialogueSequence(QDialog):
         seq = copy.deepcopy(self.seq)
         t = Tache(lambda tache: Q.decouper_ia(seq, self.params, niveau), _("Découpage"))
         self.taches.append(t)
+        suivre_en_fond(self, t, _("Séquence IA"))
         self.suivi.demarrer(_("L'IA découpe l'histoire en plans"), t,
                             _("IA de ce poste : une à plusieurs minutes.") if niveau == "locale" else _("IA cloud : quelques secondes."))
 
@@ -579,6 +581,7 @@ class DialogueSequence(QDialog):
         texte = self.p_consigne.toPlainText().strip() or Q.consigne(self.seq, p, self.params)
         t = Tache(lambda tache: Q.ameliorer(texte, self.params, niveau), _("Consigne"))
         self.taches.append(t)
+        suivre_en_fond(self, t, _("Séquence IA"))
         self.suivi.demarrer(_("L'IA détaille la consigne du plan"), t)
         i = self._courant
 
@@ -631,6 +634,7 @@ class DialogueSequence(QDialog):
         seq = copy.deepcopy(self.seq)
         t = Tache(lambda tache: Q.image_depart(seq, i, self.params, moteur), _("Image de départ"))
         self.taches.append(t)
+        suivre_en_fond(self, t, _("Séquence IA"))
         self.suivi.demarrer(_("Composition de l'image de départ du plan {n}", n=i + 1), t,
                             _("Gemini : 10 à 60 s.") if moteur == "gemini" else _("IA de ce poste : une à plusieurs minutes."))
 
@@ -728,6 +732,7 @@ class DialogueSequence(QDialog):
             return faits
         t = Tache(travail, _("Séquence IA"))
         self.taches.append(t)
+        suivre_en_fond(self, t, _("Séquence IA"))
         self.suivi.demarrer(_("Fabrication de {n} plan(s)", n=len(indices)), t,
                             _("IA de ce poste : plusieurs minutes par plan.") if m == "locale" else _("Cloud : 1 à 6 min par plan."))
         t.progression.connect(lambda f, txt: txt and self.suivi.etape(_("Fabrication : {t} — {p} %", t=txt, p=int(f * 100))),
@@ -775,6 +780,7 @@ class DialogueSequence(QDialog):
         avant = FAB.preparer_flow(texte, dossier)
         t = Tache(lambda tache: FAB.attendre_clip(dossier, avant, tache), _("Clip Flow"))
         self.taches.append(t)
+        suivre_en_fond(self, t, _("Séquence IA"))
         self.suivi.demarrer(_("Plan {n} : consigne copiée, Flow ouvert ; PhilCut attend la vidéo téléchargée", n=i + 1), t,
                             _("Dans Flow : images de référence, Ctrl+V, générer, puis « Télécharger »."))
 
@@ -855,6 +861,7 @@ class DialogueSequence(QDialog):
             return out
         t = Tache(travail, _("Séquence IA"))
         self.taches.append(t)
+        suivre_en_fond(self, t, _("Séquence IA"))
         self.suivi.demarrer(_("Préparation du montage (répliques, musique)"), t)
         t.progression.connect(lambda f, txt: txt and self.suivi.etape(_("Préparation : {t} — {p} %", t=txt, p=int(f * 100))),
                               Qt.QueuedConnection)
@@ -890,6 +897,8 @@ class DialogueSequence(QDialog):
         t.start()
 
     def done(self, r):
+        if garder_calcul(self, any(t.isRunning() for t in self.taches)):     # 0.9.64 : rangée, le calcul continue
+            return
         self._lire_tables()
         self.seq["histoire"] = self.histoire.toPlainText().strip()
         self.seq["musique"] = {"active": self.musique.isChecked(), "phrase": self.phrase_musique.text().strip()}

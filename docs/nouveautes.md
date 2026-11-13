@@ -4,7 +4,16 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.63 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.64 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.64 (fermer une fenetre ne perd plus une creation)
+- Fermer la Fabrique musique (ou le plan de liaison, Continuer avec ma voix, Separer voix et musique, la Sequence IA) pendant un calcul : la fenetre se range, le calcul continue. La barre du bas le suit avec "Afficher la fenetre" ; a la fin, "Voir le resultat" rouvre la fenetre avec le resultat a ecouter ou regarder et a poser.
+- Le Centre d'activite (barre du bas, clic) garde ces boutons : on retrouve le resultat meme plus tard.
+- La Fabrique musique ne bloque plus PhilCut : on continue a monter pendant la creation ; Fabrique IA > Musique rouvre la meme fenetre tant qu'une creation est en route ou pas encore vue.
+- Atelier IA (effets video et image) : "Voir le resultat" a la fin, comme les autres.
+
+## Nouveautes de 0.9.63
+
 
 ### 0.9.63 (Fabrique musique : a la maniere de, voix, passage)
 - "A la maniere de" : la liste passe de 74 a plus de 250 references (rock, metal, pop, chanson, rap, electro, jazz, musiques de film et compositeurs d'aujourd'hui, classique, musiques du monde). Elle vient aussi du catalogue en ligne : elle s'enrichit et suit la mode sans nouvelle version.

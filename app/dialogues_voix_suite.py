@@ -269,6 +269,8 @@ class DialogueVoixSuite(QDialog):
         self.etat.setText(_("Fabrication de la voix sur ce poste…"))
         self.tache = Tache(travail, _("Continuer avec ma voix"))
         self.tache.lier(self)
+        from .widgets import suivre_en_fond
+        suivre_en_fond(self, self.tache, _("Continuer avec ma voix"))
         self.tache.progression.connect(lambda f, txt: (self.barre.setValue(int(f * 1000)), txt and self.etat.setText(txt)),
                                        Qt.QueuedConnection)
         self.tache.fini.connect(self._fini, Qt.QueuedConnection)
@@ -301,6 +303,14 @@ class DialogueVoixSuite(QDialog):
     def closeEvent(self, ev):
         if self.lecteur:
             self.lecteur.stop()
-        if self._en_calcul():
-            self.tache.stopper()
+        from .widgets import garder_calcul
+        if garder_calcul(self, self._en_calcul()):      # 0.9.64 : la fenêtre se range, le calcul continue
+            ev.ignore()
+            return
         super().closeEvent(ev)
+
+    def done(self, r):
+        from .widgets import garder_calcul
+        if garder_calcul(self, self._en_calcul()):
+            return
+        super().done(r)

@@ -44,12 +44,17 @@ class Centre(QObject):
         self.lignes = []            # dicts : titre, texte, fraction, etat, debut, fin, erreur, tache, cle
         self.telechargements = None  # GestionTelechargements, branché par la fenêtre
 
-    def suivre(self, tache, titre):
-        """Inscrit une tâche de fond (Tache) : progression et fin suivies automatiquement."""
-        if any(l.get("tache") is tache for l in self.lignes):
-            return
+    def suivre(self, tache, titre, ouvrir=None, pendant=None):
+        """Inscrit une tâche de fond (Tache) : progression et fin suivies automatiquement. ouvrir : (libellé, fonction) qui
+        donne le résultat à la fin (0.9.64) ; pendant : (libellé, fonction) qui rouvre la fenêtre pendant le calcul."""
+        for l in self.lignes:
+            if l.get("tache") is tache:
+                if (ouvrir or pendant) and not (l.get("ouvrir") or l.get("pendant")):
+                    l["ouvrir"], l["pendant"] = ouvrir, pendant
+                    self.change.emit()
+                return
         l = {"titre": titre, "texte": "", "fraction": 0.0, "etat": EN_COURS, "debut": time.monotonic(), "fin": None, "erreur": None,
-             "tache": tache, "cle": None}
+             "tache": tache, "cle": None, "ouvrir": ouvrir, "pendant": pendant}
         self.lignes.append(l)
         del self.lignes[:-60]
 
@@ -106,6 +111,13 @@ class Centre(QObject):
         if reste:
             txt += _(" · {n} autre(s)", n=reste)
         return txt, True
+
+
+def _ouvrir_ligne(l, cle="ouvrir"):
+    try:
+        l[cle][1]()
+    except RuntimeError:            # fenêtre détruite entre-temps (onglet fermé)
+        l[cle] = None
 
 
 class FenetreActivite(QDialog):
@@ -179,13 +191,19 @@ class FenetreActivite(QDialog):
             if l["genre"] == "telech" and l["etat"] in (EN_COURS, ATTENTE, "pause", ERREUR, ARRETE):
                 from .telechargements import boutons_ligne
                 self.table.setCellWidget(i, 5, boutons_ligne(self.c.telechargements, l))
-            elif l["etat"] in (EN_COURS, ATTENTE):
+            elif l["etat"] in (EN_COURS, ATTENTE) or (l.get("ouvrir") and l["etat"] == FINI):
                 w = QWidget()
                 hl = QHBoxLayout(w)
                 hl.setContentsMargins(2, 0, 2, 0)
-                bs = QPushButton(_("Arrêter"))
-                bs.clicked.connect(lambda _c=False, l=l: self.c.arreter(l))
-                hl.addWidget(bs)
+                cle = "pendant" if l["etat"] in (EN_COURS, ATTENTE) else "ouvrir"
+                if l.get(cle):
+                    bo = QPushButton(l[cle][0])
+                    bo.clicked.connect(lambda _c=False, l=l, cle=cle: _ouvrir_ligne(l, cle))
+                    hl.addWidget(bo)
+                if l["etat"] in (EN_COURS, ATTENTE):
+                    bs = QPushButton(_("Arrêter"))
+                    bs.clicked.connect(lambda _c=False, l=l: self.c.arreter(l))
+                    hl.addWidget(bs)
                 self.table.setCellWidget(i, 5, w)
             else:
                 self.table.setCellWidget(i, 5, None)
