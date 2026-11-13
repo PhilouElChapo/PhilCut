@@ -66,3 +66,47 @@ def demander_phrase(parent, params, nouvelle=True):
         QMessageBox.information(d, d.windowTitle(), _("{n} mot(s) de passe ou clef(s) repris de vos autres postes.", n=n))
         return True
     return False
+
+
+def changer_phrase(parent, params):
+    """Changer la phrase secrète ou son indice (0.9.62) : la phrase actuelle, puis la nouvelle (deux fois). Les secrets
+    partagés sont rechiffrés ; vos autres postes redemanderont la phrase une fois."""
+    d = QDialog(parent)
+    d.setWindowTitle(_("Changer la phrase secrète ou l'indice"))
+    f = QFormLayout(d)
+    aide = QLabel(_("Pour changer seulement l'indice, redonnez la phrase actuelle dans les trois cases. Si vous changez la phrase, "
+                    "vos autres postes vous la demanderont une fois."))
+    aide.setWordWrap(True)
+    aide.setMinimumWidth(460)
+    f.addRow(aide)
+    ind = QLineEdit(reglages.lire_indice(params))                 # l'indice en haut, les phrases plus bas
+    ind.setPlaceholderText(_("Facultatif, visible sur vos autres postes (jamais la phrase elle-même)"))
+    f.addRow(_("Indice"), ind)
+    a, p1, p2 = QLineEdit(), QLineEdit(), QLineEdit()
+    for x in (a, p1, p2):
+        oeil(x)
+    f.addRow(_("Phrase actuelle"), a)
+    f.addRow(_("Nouvelle phrase"), p1)
+    f.addRow(_("Encore une fois"), p2)
+    bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+    bb.accepted.connect(d.accept)
+    bb.rejected.connect(d.reject)
+    f.addRow(bb)
+    while d.exec():
+        if len(p1.text()) < 6:
+            QMessageBox.warning(d, d.windowTitle(), _("La phrase doit faire au moins 6 caractères."))
+            continue
+        if p1.text() != p2.text():
+            QMessageBox.warning(d, d.windowTitle(), _("Les deux phrases sont différentes."))
+            continue
+        try:
+            reglages.changer_phrase(params, a.text(), p1.text(), ind.text().strip())
+        except reglages.PhraseRequise:
+            QMessageBox.warning(d, d.windowTitle(), _("Ce n'est pas la phrase actuelle."))
+            continue
+        except (OSError, ValueError, KeyError) as e:
+            QMessageBox.warning(d, d.windowTitle(), str(e))
+            continue
+        params.enregistrer()
+        return True
+    return False

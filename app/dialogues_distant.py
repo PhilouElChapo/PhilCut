@@ -687,6 +687,14 @@ class DialogueParcourir(QDialog):
         self.bandeau.linkActivated.connect(lambda _l: self._reautoriser())
         self.bandeau.hide()
         v.addWidget(self.bandeau)
+        # 0.9.62 : dossier demandé (Préférences) qui n'existe pas encore sur le compte : on le dit, on propose de le créer
+        self.manquant = QLabel()
+        self.manquant.setWordWrap(True)
+        self.manquant.setStyleSheet("background:#1f3a5f; color:#dbe9ff; padding:6px; border-radius:4px")
+        self.manquant.setTextFormat(Qt.RichText)
+        self.manquant.linkActivated.connect(lambda _l: self.creer_depart())
+        self.manquant.hide()
+        v.addWidget(self.manquant)
         self.liste = QListWidget()
         self.liste.setIconSize(QSize(20, 20))
         if multiple:
@@ -727,14 +735,61 @@ class DialogueParcourir(QDialog):
         self.e = ouvrir_emplacement(self, c)
         if not self.e:
             return
-        if premier and self._depart:                       # dossier de départ : s'il n'existe pas (encore), la racine
-            try:
-                self.e.lister(self._depart)
-                self.aller(self._depart)
+        if premier and self._depart:                       # dossier de départ ; s'il n'existe pas encore : son parent
+            dossier = "/" + "/".join(x for x in self._depart.split("/") if x)
+            essai = dossier
+            while True:
+                try:
+                    self.e.lister(essai)
+                    break
+                except Exception:                          # noqa: BLE001
+                    if essai in ("", "/"):
+                        essai = None
+                        break
+                    essai = posixpath.dirname(essai.rstrip("/")) or "/"
+            if essai is not None:
+                self.aller(essai)
+                if essai != dossier:
+                    self.manquant.setText(_("Le dossier « {d} » n'existe pas encore sur ce compte (il serait créé au premier "
+                                            "envoi). <a href='#'>Le créer maintenant</a>", d=dossier))
+                    self.manquant.show()
+                    self._a_creer = dossier
                 return
-            except Exception:                              # noqa: BLE001
-                pass
         self.aller(self.e.racine())
+
+    def creer_depart(self):
+        """Crée le dossier de départ manquant (et ses parents), puis s'y place."""
+        d = getattr(self, "_a_creer", None)
+        if not d or not self.e:
+            return
+        try:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            try:
+                self.e.creer_dossier(d)
+            finally:
+                QApplication.restoreOverrideCursor()
+            self.aller(d)
+        except distant.ErreurDistant as ex:
+            erreur(self, _("Nouveau dossier"), ex, self.e)
+            return
+        self.manquant.hide()
+        self._a_creer = None
+
+    def showEvent(self, ev):
+        """Centrée sur la fenêtre qui l'ouvre, et jamais plus grande que l'écran (boutons de droite toujours visibles)."""
+        super().showEvent(ev)
+        if getattr(self, "_placee", False):
+            return
+        self._placee = True
+        ecran = (self.screen() or QApplication.primaryScreen()).availableGeometry()
+        self.resize(min(self.width(), ecran.width() - 40), min(self.height(), ecran.height() - 60))
+        par = self.parentWidget()
+        centre = par.window().frameGeometry().center() if par is not None else ecran.center()
+        g = self.frameGeometry()
+        g.moveCenter(centre)
+        x = max(ecran.left(), min(g.left(), ecran.right() - g.width()))
+        y = max(ecran.top(), min(g.top(), ecran.bottom() - g.height()))
+        self.move(x, y)
 
     def nouveau_dossier(self):
         if not self.e:

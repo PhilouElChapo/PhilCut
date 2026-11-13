@@ -180,6 +180,23 @@ class Emplacement:
         """Crée le dossier chemin (bouton « Nouveau dossier » d'Ouvrir / Enregistrer vers un emplacement, 0.9.58)."""
         self.creer_dossiers(posixpath.join(chemin.rstrip("/"), "_"))
 
+    def creer_dossier(self, dossier):
+        """Crée le DOSSIER donné et ses parents s'ils manquent (0.9.62). Un seul sens pour tous les types : attention,
+        creer_dossiers() reçoit un chemin de FICHIER pour WebDAV mais un chemin de DOSSIER pour pCloud et kDrive."""
+        fait = ""
+        for x in [x for x in dossier.split("/") if x]:
+            fait += "/" + x
+            try:
+                self.lister(fait)
+                continue                                    # déjà là
+            except ErreurDistant:
+                pass
+            try:
+                self.nouveau_dossier(fait)
+            except ErreurDistant:
+                pass
+        self.lister("/" + "/".join(x for x in dossier.split("/") if x))   # erreur claire s'il n'a pas pu être créé
+
     def supprimer(self, chemin):
         """Supprime un fichier (0.9.35, nettoyage de l'espace PhilCut). Les Drives le mettent à la corbeille."""
         raise ErreurDistant(_("La suppression n'est pas disponible sur ce type d'emplacement."))
@@ -1146,10 +1163,14 @@ class PCloud(_DriveOAuth):
         return {e.nom: (e.taille, f"{e.date}|{e.taille}", e.dossier) for e in elems}
 
     def creer_dossiers(self, chemin):
+        """pCloud : chemin est un DOSSIER (appelé par envoyer avec le dossier du fichier)."""
         fait = ""
         for p in [p for p in self._cle(chemin).split("/") if p]:
             fait += "/" + p
             self._api("createfolderifnotexists", path=fait)
+
+    def creer_dossier(self, dossier):
+        self.creer_dossiers(dossier)
 
     def telecharger(self, chemin, local):
         try:
@@ -1317,6 +1338,15 @@ class KDrive(_Http):
         return {e.nom: (e.taille, f"{e.date}|{e.taille}", e.dossier) for e in elems}
 
     def creer_dossiers(self, chemin):
+        """kDrive : chemin est un DOSSIER."""
+        self._id(chemin, creer=True)
+
+    def creer_dossier(self, dossier):
+        self._id(dossier, creer=True)
+
+    def nouveau_dossier(self, chemin):
+        if self._id(chemin) is not None:
+            raise ErreurDistant(_("Ce dossier existe déjà."))
         self._id(chemin, creer=True)
 
     def telecharger(self, chemin, local):

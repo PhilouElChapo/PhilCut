@@ -125,10 +125,8 @@ def telecharger(e, chemin, local, taille=0, progression=None, arret=lambda: Fals
 
 def envoyer(e, local, chemin, progression=None, arret=lambda: False):
     """Envoie un fichier (dossiers créés au besoin) ; progression réelle si l'emplacement la donne."""
-    try:
-        e.creer_dossiers(chemin)
-    except distant.ErreurDistant:
-        pass
+    # chaque type d'emplacement crée lui-même les dossiers du fichier à l'envoi (0.9.62 : plus d'appel ici, qui créait sur
+    # pCloud un DOSSIER du nom du fichier)
     import inspect
     try:
         avec = "progression" in inspect.signature(e.envoyer).parameters
@@ -313,6 +311,21 @@ def importer(params, c, chemins, dossier_local, progression=None, arret=lambda: 
             telecharger(e, ch, local, (tailles or {}).get(ch, 0),
                         (lambda f, k=k: progression((k + f) / n, posixpath.basename(ch))) if progression else None, arret)
         out.append(local)
+    return out
+
+
+def preparer_dossiers(params):
+    """Après les Préférences (0.9.62) : le dossier des projets et celui des rushes existent sur leurs comptes. Renvoie
+    [(lieu, dossier, erreur ou None)]."""
+    out = []
+    for c, d in ((compte_projets(params), dossier_projets(params)), (compte_rushs(params), dossier_rushs(params))):
+        if c is None or any(x[0] == distant.libelle(c) and x[1] == d for x in out):
+            continue
+        try:
+            distant.emplacement(c).creer_dossier(d)
+            out.append((distant.libelle(c), d, None))
+        except Exception as ex:      # noqa: BLE001
+            out.append((distant.libelle(c), d, ex))
     return out
 
 

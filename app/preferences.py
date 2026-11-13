@@ -246,7 +246,8 @@ class DialoguePreferences(QDialog):
         b_conn.clicked.connect(self._connecter)
         fg.addRow(a_gauche(b_conn))
         fg.addRow(QLabel(_("<span style='color:#999'>Rien n'est envoyé sans votre clic. Avant chaque envoi, PhilCut vérifie s'il y a des données sensibles et vous demande confirmation. "
-                           "Les clefs vont dans le coffre du système, jamais dans un fichier en clair.</span>")))
+                           "Les clefs vont dans le coffre du système, jamais dans un fichier en clair. Pour les retrouver sur vos autres postes : "
+                           "Comptes et synchro › « Synchroniser aussi les mots de passe et clefs » (phrase secrète).</span>")))
         self.confirmer_cout = QCheckBox(_("Afficher le coût estimé et demander confirmation avant chaque envoi à l'IA cloud"))
         self.confirmer_cout.setChecked(self.params.get("ia_confirmer_cout", True))
         fg.addRow(self.confirmer_cout)
@@ -776,6 +777,29 @@ class DialoguePreferences(QDialog):
         self.synchro_secrets = QCheckBox(_("Synchroniser aussi les mots de passe et clefs (chiffrés par une phrase secrète)"))
         self.synchro_secrets.setChecked(self.params.get("synchro_secrets", False))
         f.addRow(self.synchro_secrets)
+        # 0.9.62 (comme PhilPDF) : la phrase secrète se voit et se règle ici ; cocher la case la demande tout de suite
+        self.etat_secrets = QLabel("")
+        self.etat_secrets.setWordWrap(True)
+        f.addRow(self.etat_secrets)
+        hs = QHBoxLayout()
+        self.b_phrase = QPushButton(_("Phrase secrète…"))
+        self.b_phrase.clicked.connect(self._phrase)
+        hs.addWidget(self.b_phrase)
+        self.b_changer_phrase = QPushButton(_("Changer la phrase ou l'indice…"))
+        self.b_changer_phrase.clicked.connect(self._changer_phrase)
+        hs.addWidget(self.b_changer_phrase)
+        hs.addStretch(1)
+        f.addRow(hs)
+        ns = QLabel(_("Les clefs des IA (Claude, Gemini, fal.ai), de Pixabay et Pexels, et les mots de passe et autorisations de vos "
+                      "comptes passent à vos autres postes dans un fichier chiffré (AES) avec une phrase secrète que vous choisissez, "
+                      "la même sur tous vos postes : sans elle, le fichier est illisible, même pour le Drive. Chaque poste la "
+                      "demande une seule fois et la garde dans son coffre ; elle ne voyage jamais. L'indice, que vous écrivez, "
+                      "vous aide à vous en souvenir."))
+        ns.setWordWrap(True)
+        ns.setStyleSheet("color:#9aa4b2")
+        f.addRow(ns)
+        self.synchro_secrets.toggled.connect(self._secrets_coche)
+        self._maj_secrets()
         f.addRow(self._groupe_roles())
         h = QHBoxLayout()
         be = QPushButton(_("Exporter les préférences…"))
@@ -787,6 +811,70 @@ class DialoguePreferences(QDialog):
         h.addStretch(1)
         f.addRow(h)
         f.addRow(self._groupe_appareils())
+
+    def _maj_secrets(self):
+        from . import reglages
+        e = reglages.etat_secrets(self.params)
+        if not e["phrase_ici"]:
+            if e["fichier"]:
+                t = _("Vos autres postes partagent déjà des mots de passe et clefs : donnez la phrase secrète une fois pour les "
+                      "reprendre ici.") + (" " + _("Indice : « {i} ».", i=e["indice"]) if e["indice"] else "")
+            else:
+                t = _("Pas encore de phrase secrète : elle vous sera demandée en cochant la case.")
+            self.etat_secrets.setStyleSheet("color:#e3b341")
+        else:
+            t = _("✓ Phrase secrète gardée dans le coffre de ce poste.") + (" " + _("Indice : « {i} ».", i=e["indice"]) if e["indice"] else "")
+            if e["lisible"]:
+                t += " " + _("Partagés : {l}.", l=", ".join(e["noms"]) or _("rien pour l'instant"))
+                if e["date"]:
+                    import datetime as _dt
+                    try:
+                        q = _dt.datetime.fromisoformat(e["date"][:19]).strftime("%d/%m/%Y %H:%M")
+                    except ValueError:
+                        q = e["date"][:16]
+                    t += " " + _("Dernier envoi : {d} ({m}).", d=q, m=e["machine"])
+            elif e["fichier"]:
+                t += " " + _("⚠ Le fichier partagé ne s'ouvre pas avec cette phrase (changée sur un autre poste ?) : « Phrase secrète… ».")
+            self.etat_secrets.setStyleSheet("color:#7fd18b")
+        self.etat_secrets.setText(t)
+        self.b_changer_phrase.setEnabled(e["phrase_ici"])
+        self.b_phrase.setText(_("Donner la phrase secrète…") if e["fichier"] and not e["lisible"] else _("Phrase secrète…"))
+
+    def _phrase(self):
+        """Choisir la phrase (premier poste) ou la redonner (fichier déjà partagé par un autre poste)."""
+        from . import reglages
+        from .dialogues_phrase import demander_phrase
+        e = reglages.etat_secrets(self.params)
+        if e["phrase_ici"] and (e["lisible"] or not e["fichier"]):
+            return self._changer_phrase()
+        ok = demander_phrase(self, self.params, nouvelle=not e["fichier"])
+        if ok:
+            self.params["synchro_secrets"] = True
+            self.synchro_secrets.blockSignals(True)
+            self.synchro_secrets.setChecked(True)
+            self.synchro_secrets.blockSignals(False)
+        self._maj_secrets()
+        return ok
+
+    def _changer_phrase(self):
+        from .dialogues_phrase import changer_phrase
+        ok = changer_phrase(self, self.params)
+        self._maj_secrets()
+        return ok
+
+    def _secrets_coche(self, on):
+        """Cocher demande la phrase tout de suite (comme PhilPDF) ; annuler décoche."""
+        from . import coffre, reglages
+        if not on or coffre.lire(reglages.PHRASE):
+            self._maj_secrets()
+            return
+        self.params["synchro_secrets"] = True
+        if not self._phrase():
+            self.params["synchro_secrets"] = False
+            self.synchro_secrets.blockSignals(True)
+            self.synchro_secrets.setChecked(False)
+            self.synchro_secrets.blockSignals(False)
+        self._maj_secrets()
 
     def _groupe_roles(self):
         """Rôles des comptes (0.9.58, comme PhilPDF) : les réglages se synchronisent sur un compte, les projets se déposent

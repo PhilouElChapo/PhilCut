@@ -1436,6 +1436,23 @@ class Fenetre(QMainWindow):
                                      _("✕ Envoi vers {l} impossible : {e}", l=lieu, e=texte_erreur(err)), 15000))
 
     # ---------------------------------------------------------------- projets et rushes dans les clouds (0.9.58)
+    def _preparer_dossiers_cloud(self):
+        """Rôles des comptes changés (0.9.62) : le dossier des projets et celui des rushes sont créés sur leurs comptes s'ils
+        manquent, en tâche de fond ; le résultat s'affiche dans la barre du bas."""
+        from . import cloud_projets as CP
+        if not (CP.compte_projets(self.params) or CP.compte_rushs(self.params)):
+            return None
+
+        def fin(r, err):
+            if err or not r:
+                return
+            ok = [f"{l} : {d}" for l, d, ex in r if ex is None]
+            ko = [f"{l} : {d} ({texte_erreur(ex)})" for l, d, ex in r if ex is not None]
+            self.statusBar().showMessage((_("✓ Dossiers prêts — {l}", l=" ; ".join(ok)) if ok else "")
+                                         + ("   " if ok and ko else "")
+                                         + (_("✕ Dossier non créé — {l}", l=" ; ".join(ko)) if ko else ""), 15000)
+        return self._tache_cloud(_("Dossiers des projets et des rushes"), lambda t: CP.preparer_dossiers(self.params), fin)
+
     def _comptes_ou_preferences(self):
         if self.params.get("comptes"):
             return True
@@ -1705,8 +1722,12 @@ class Fenetre(QMainWindow):
     def preferences(self, onglet=None):
         from .preferences import DialoguePreferences
         avant = (self.params.get("theme"), self.params.get("langue"))
+        roles = lambda: tuple(self.params.get(k) for k in ("compte_prefere", "projets_dossier", "rushs_compte", "rushs_dossier"))
+        roles_avant = roles()
         d = DialoguePreferences(self, self.params, onglet)
         if d.exec() == QDialog.Accepted:
+            if roles() != roles_avant:
+                self._preparer_dossiers_cloud()
             self.reconstruire_barres()
             if avant != (self.params.get("theme"), self.params.get("langue")):
                 if QMessageBox.question(self, _("Préférences"), _("Le thème ou la langue a changé : relancer PhilCut maintenant ?")) == QMessageBox.Yes:

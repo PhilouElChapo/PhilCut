@@ -4,7 +4,16 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.61 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.62 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.62 (dossiers des clouds)
+- Dossier des projets (ou des rushes) pas encore cree sur le cloud : la fenetre "Choisir un dossier" s'ouvre dans le dossier parent et le dit, avec "Le creer maintenant".
+- En validant les Preferences, si le role des comptes a change, PhilCut cree le dossier des projets et celui des rushes sur leurs comptes (resultat dans la barre du bas).
+- Correction importante : envoyer un projet sur pCloud aurait cree un dossier portant le nom du fichier ; "Nouveau dossier" sur kDrive creait un dossier "_" en trop.
+- Les fenetres Ouvrir / Enregistrer / Choisir un dossier d'un emplacement s'ouvrent centrees sur PhilCut et ne depassent plus de l'ecran.
+- Mots de passe et clefs entre vos postes (Preferences > Comptes et synchro), comme PhilPDF : sous la case "Synchroniser aussi les mots de passe et clefs", l'etat (phrase gardee sur ce poste, indice, ce qui est partage, dernier envoi), les boutons "Phrase secrete..." et "Changer la phrase ou l'indice...", et l'explication. Cocher la case demande la phrase tout de suite. L'onglet Assistant et IA dit ou cela se regle.
+
+## Nouveautes de 0.9.61
 
 ### 0.9.61 (consignes en anglais : on ecrit dans sa langue, on voit les deux)
 - Partout ou une consigne doit partir en anglais (plan de liaison, sequence de personnages, tampons IA, musique IA) : une case "Dans votre langue", traduite en direct dans une case "En anglais, envoye au moteur". La traduction reste modifiable pour l'ameliorer ; corrigee a la main, c'est elle qui part.

@@ -16,6 +16,7 @@ s'ils sont inclus, le fichier est chiffre en AES-256 par une phrase secrete.
 """
 import datetime, json, os
 from . import coffre
+from .langue import _
 
 COMMUNS = ["auteur", "langue", "outils_epingles", "barre_rapide", "volet", "ia_moteur", "maj_source", "maj_auto",
            "synchro", "comptes", "comptes_icone", "theme", "synchro_secrets", "barre", "barre_style", "ordre_outils",
@@ -271,6 +272,62 @@ def synchro_secrets_auto(params):
         return n
     except (PhraseRequise, OSError, ValueError, KeyError):
         return 0
+
+
+def nom_secret(params, k):
+    """Le nom lisible d'un secret partagé (jamais sa valeur) : « Clef Claude », « pCloud — autorisation »…"""
+    noms_ia = {"clef_claude": _("Clef Claude"), "clef_gemini": _("Clef Gemini"), "clef_fal": _("Clef fal.ai")}
+    if k in noms_ia:
+        return noms_ia[k]
+    if k.startswith("coffre:"):
+        c = k[7:]
+        if c in COFFRE_PARTAGES:
+            return _("Clef {s}", s=COFFRE_PARTAGES[c])
+        base, _p, quoi = c.partition(".")
+        compte = next((x for x in params.get("comptes", []) if x.get("id") == base), None)
+        if compte is not None:
+            from . import distant
+            return distant.libelle(compte) + " — " + (_("autorisation") if quoi == "jeton" else _("mot de passe"))
+        return _("Mot de passe d'un compte")
+    if k.startswith("identite:"):
+        return _("Adresse d'envoi d'e-mails")
+    return k
+
+
+def etat_secrets(params):
+    """Pour les Préférences (0.9.62) : où en est la synchronisation des mots de passe et clefs sur ce poste.
+    {phrase_ici, fichier, lisible, indice, date, machine, noms}"""
+    phrase = coffre.lire(PHRASE)
+    p = chemin_secrets(params)
+    out = {"phrase_ici": bool(phrase), "fichier": bool(p and os.path.exists(p)), "lisible": False, "indice": lire_indice(params),
+           "date": "", "machine": "", "noms": []}
+    if out["fichier"] and phrase:
+        try:
+            d = importer(p, phrase)
+            out.update(lisible=True, date=d.get("date", ""), machine=d.get("machine", ""),
+                       noms=sorted({nom_secret(params, k) for k, v in (d.get("secrets") or {}).items() if v}, key=str.lower))
+        except (PhraseRequise, OSError, ValueError, KeyError):
+            pass
+    return out
+
+
+def changer_phrase(params, ancienne, nouvelle, indice=None):
+    """Rechiffre les secrets partagés avec une nouvelle phrase (les autres postes la redemanderont une fois)."""
+    if coffre.lire(PHRASE) and ancienne != coffre.lire(PHRASE):
+        raise PhraseRequise()
+    anciens = lire_secrets_drive(params, ancienne) if chemin_secrets(params) and os.path.exists(chemin_secrets(params)) else {}
+    coffre.enregistrer(PHRASE, nouvelle)
+    p = chemin_secrets(params)
+    if p:
+        tous = dict(anciens, **_secrets_partageables(params))
+        tmp = p + ".tmp"
+        exporter(tmp, {"philcut": 1, "date": maintenant(), "machine": params.get("machine", ""), "communs": {}, "poste": {},
+                       "secrets": tous}, nouvelle)
+        os.replace(tmp, p)
+    if indice is not None:
+        ecrire_indice(params, indice)
+    params["secrets_empreinte"] = ""
+    return True
 
 
 def reprendre_secrets_drive(params, phrase, ecraser=False):

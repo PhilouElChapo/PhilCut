@@ -157,6 +157,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T77 — 0.9.62 : dossiers des projets et des rushes sur le cloud
+
+1. Préférences › Comptes et synchro › Rôle de chaque compte : « Dossier des projets » › Choisir… : la fenêtre est centrée et entière ; elle s'ouvre dans /PhilCut avec le bandeau « Le dossier /PhilCut/Projets n'existe pas encore… Le créer maintenant ». Cliquer : il est créé et ouvert.
+2. Changer le dossier (ex. /PhilCut/Projets 2026), OK : la barre du bas indique « ✓ Dossiers prêts — pCloud : /PhilCut/Projets 2026 ; … ». Vérifier sur le site de pCloud.
+3. Fichier › Enregistrer le projet vers un emplacement : sur pCloud, le projet arrive bien comme FICHIER dans le dossier (pas de dossier portant le nom du projet).
+4. Comptes et synchro, sous « Synchroniser aussi les mots de passe et clefs » : l'état en vert (« ✓ Phrase secrète gardée… Indice : … Partagés : Clef Claude, Clef Gemini… Dernier envoi : … »). Si la case n'était pas cochée : la cocher demande la phrase (avec l'indice) tout de suite ; Annuler la décoche.
+5. « Changer la phrase ou l'indice… » : changer seulement l'indice (la phrase actuelle dans les trois cases) ; l'état affiche le nouvel indice. Sur l'autre PC, l'indice apparaît quand la phrase est demandée.
+
 ## T76 — 0.9.61 : consignes écrites dans votre langue, anglais visible
 
 1. Plan de liaison (clic droit sur un plan › Plan de liaison avec le plan suivant…) : choisir une proposition ; la consigne anglaise apparaît en bas et sa traduction française au-dessus (quelques secondes).
