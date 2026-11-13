@@ -109,6 +109,9 @@ class TestFabriqueMusique(unittest.TestCase):
             from app import moteur
             moteur.lancer(["-y", "-f", "lavfi", "-i", "sine=f=300:d=1", os.path.join(d, "voix0.wav")])
         creatif._lancer = lancer
+        from app import separation as S                    # 0.9.53 : ici on vérifie le chemin ACE-Step (sans HT-Demucs)
+        anc_sep = S.manquant
+        S.manquant = lambda params=None: "absent"
         try:
             sortie = os.path.join(os.environ["APPDATA"], "voix.wav")
             creatif.extraire_voix("/tmp/x.mp3", sortie, {})
@@ -116,6 +119,7 @@ class TestFabriqueMusique(unittest.TestCase):
             self.assertEqual((vu["task_type"], vu["track"]), ("extract", "vocals"))
             self.assertIn("base", vu["synth_model"])
         finally:
+            S.manquant = anc_sep
             P.modele_actif, P.installe, P.modeles, P.etat, creatif._moteur, creatif._lancer, creatif._extrait_wav = anc
 
     def test_catalogue_choix_gguf(self):

@@ -316,6 +316,9 @@ def _musique(style, sortie, duree, params, instrumental, paroles, langue, bpm, p
 
 def separation_manquante(params=None):
     """Texte à montrer si la voix seule ne peut pas être séparée sur ce poste, sinon None."""
+    from . import separation as S
+    if S.manquant(params) is None:                 # 0.9.53 : HT-Demucs installé → voix seule meilleure et plus rapide
+        return None
     cle = P.modele_actif("separation", params)
     if not cle or not P.installe(cle):
         return _("Pour garder seulement la voix d'un morceau, installez le modèle « Voix seule d'un morceau » : Edition › Préférences "
@@ -327,7 +330,15 @@ def separation_manquante(params=None):
 
 def extraire_voix(source, sortie, params=None, progression=None, arret=lambda: False, duree=60.0):
     """La voix seule d'un morceau (tâche « extract » d'acestep.cpp, piste « vocals », modèle de base) : WAV en sortie.
-    Seulement pour une voix dont la personne a donné son accord (vérifié par la Fabrique musique avant)."""
+    Seulement pour une voix dont la personne a donné son accord (vérifié par la Fabrique musique avant).
+    0.9.53 : avec le modèle « Séparer voix, musique et bruits » (HT-Demucs), c'est sa piste voix qui sert."""
+    from . import separation as S
+    if S.manquant(params) is None:
+        import tempfile as _t
+        r = S.separer(source, _t.mkdtemp(prefix="philcut-voix-"), 0.0, duree, params, progression, arret)
+        from . import moteur
+        moteur.lancer(["-y", "-i", r["voix"], "-ac", "1", "-ar", "48000", sortie])
+        return sortie
     cle = P.modele_actif("separation", params)
     if not cle or not P.installe(cle):
         raise ErreurCreatif(separation_manquante(params) or _("Modèle de séparation absent."))

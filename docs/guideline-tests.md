@@ -157,6 +157,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T69 — 0.9.53 : séparer voix, musique et bruits
+
+1. Edition › Préférences › IA locale : installer « Séparer voix, musique et bruits » (environ 170 Mo).
+2. Un rush avec une voix et de la musique ou du vent : clic droit sur le plan › « Séparer voix, musique et bruits… ». La fenêtre ne bloque pas le film.
+3. « Les trois pistes », puis « Séparer » : la progression avance par morceaux de 7,8 s. Noter le temps pour une minute de son.
+4. Ecouter Voix, Musique, Bruits : la voix doit être nette ; me dire ce qui reste de musique dans la voix, et si le vent part bien dans « Bruits ».
+5. « Poser dans le film » : trois pistes sous le plan, au même endroit, son d'origine coupé (🔇). Lecture : le film sonne comme avant. Edition › Annuler : tout revient d'un coup.
+6. « Retirer la voix » sur une chanson (Fabrique IA › Musique › Séparer… › un fichier) : « Ajouter aux médias du projet ».
+7. Aide › Comment faire… › « Retirer la voix d'une musique » : ✓ faisable, « Montrez-moi » ouvre le bon menu.
+
 ## T68 — 0.9.52 : guides pas à pas
 
 1. Aide › « Comment faire… (guides pas à pas) » (en tête, en gras) : une fenêtre s'ouvre à droite du film. La liste est par ordre alphabétique ; ✓ faisable, ◐ en partie, … pas encore.

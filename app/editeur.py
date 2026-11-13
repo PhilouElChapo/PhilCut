@@ -1818,6 +1818,8 @@ class Editeur(QWidget):
             self.encart.message(_("Vignette retirée : le fichier montrera sa première image."))
         elif quoi == "son_fin":
             self.couper_son_fin(ident)
+        elif quoi == "separer":
+            self.separer_sons(self.projet.clip(ident))
         elif quoi == "whoosh":
             c = self.projet.clip(ident)
             if c:
@@ -2706,6 +2708,23 @@ class Editeur(QWidget):
             return self.fabrique_musique()
         from .dialogues_creatif import DialogueAtelierIA
         self._ouvrir_atelier(DialogueAtelierIA(self, famille))
+
+    def separer_sons(self, clip=None, fichier=None):
+        """Séparer voix, musique et bruits (0.9.53) d'un plan du film ou d'un fichier ; fenêtre non bloquante."""
+        from .dialogues_separation import DialogueSeparation
+        if clip is None and fichier is None:
+            clip = self._clip_selectionne()
+            if clip is None:
+                from .widgets import ouvrir_fichier
+                fichier = ouvrir_fichier(self, _("Son ou vidéo à séparer"),
+                                         _("Sons et vidéos") + " (*.mp3 *.wav *.flac *.ogg *.m4a *.aac *.opus *.mp4 *.mov *.mkv *.webm)",
+                                         "musique", self.params)
+                if not fichier:
+                    return None
+        d = DialogueSeparation(self, clip, fichier)
+        self._separation = d
+        d.show()
+        return d
 
     def _ouvrir_atelier(self, d):
         """L'Atelier IA reste ouvert à côté du film (non bloquant) : on continue à travailler pendant le calcul."""

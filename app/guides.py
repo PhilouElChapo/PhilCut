@@ -102,15 +102,22 @@ def guides():
                          "puis posez-le entre les deux rushes."),
               "montrer": {"menu": [_("Fabrique IA"), _("Vidéo"), _("Plan vidéo à partir d'une phrase…")]}},
          ]},
-        {"id": "voix_musique", "etat": "a_venir",
+        {"id": "voix_musique", "etat": "ok",
          "titre": _("Retirer la voix d'une musique (garder la musique)"),
-         "mots": "retirer enlever voix chant musique instrumental karaoke separer",
-         "intro": _("Pas encore dans PhilCut : « Séparer voix, musique et bruits » est prévu, en priorité. Aujourd'hui, PhilCut sait "
-                    "seulement l'inverse : garder la voix seule d'un morceau (Fabrique musique)."),
+         "mots": "retirer enlever voix chant musique instrumental karaoke separer bruit vent ambiance isoler",
+         "intro": _("PhilCut sépare le son en voix, musique et bruits de fond, sur ce poste. Les trois pistes ensemble redonnent le "
+                    "son d'origine : on garde ce qu'on veut. Il faut une fois le modèle « Séparer voix, musique et bruits » "
+                    "(Préférences › IA locale, environ 170 Mo)."),
          "etapes": [
-             {"texte": _("Pour garder la voix seule : Fabrique IA › Musique › « Créer une musique par IA (Fabrique musique)… » › "
-                         "« Choisir l'enregistrement… » › voix d'un morceau de ce poste."),
-              "montrer": {"menu": [_("Fabrique IA"), _("Musique"), _("Créer une musique par IA (Fabrique musique)…")]}},
+             {"texte": _("Cliquez le plan (ou la musique) dans la timeline."), "fait": "plan_choisi"},
+             {"texte": _("Clic droit sur le plan › « Séparer voix, musique et bruits… »."),
+              "montrer": {"clic_droit": [_("Séparer voix, musique et bruits…")]}, "fait": "fenetre:DialogueSeparation"},
+             {"texte": _("« Retirer la voix » (ou « Garder la voix seule », ou « Les trois pistes »), puis « Séparer » : la progression "
+                         "s'affiche. Ecoutez chaque piste.")},
+             {"texte": _("« Poser dans le film » : les pistes se posent sous le plan, le son d'origine est coupé. Edition › Annuler "
+                         "pour revenir."), "fait": "separe"},
+             {"texte": _("Pour un fichier qui n'est pas dans le film : Fabrique IA › Musique › « Séparer voix, musique et bruits… »."),
+              "montrer": {"menu": [_("Fabrique IA"), _("Musique"), _("Séparer voix, musique et bruits…")]}},
          ]},
         {"id": "suivi", "etat": "ok",
          "titre": _("Suivre une personne et recadrer"),
@@ -271,6 +278,8 @@ def est_fait(cond, ed):
             return ed._clip_selectionne() is not None
         if cond == "partie_jaune":
             return bool(ed.timeline.zone_valide())
+        if cond == "separe":
+            return any(c.get("separe_de") for c in ed.projet.clips)
         if cond == "suivi":
             return any(c.get("ajustement") == "suivi" for c in ed.projet.clips_piste("video"))
         if cond.startswith("effet:"):

@@ -909,7 +909,11 @@ class Fenetre(QMainWindow):
                     _("Chercher, écouter et télécharger le son d'un titre."), (lambda: self.musique_en_ligne(ed))),
                 ent(icone("ia"), _("Créer une musique par IA (Fabrique musique)…"),
                     _("Style, ambiance, tempo, instruments, voix : une consigne solide, améliorable par l'IA ; créée sur ce poste, gratuitement."),
-                    quand(lambda e: e.fabrique_musique()))]),
+                    quand(lambda e: e.fabrique_musique())),
+                ent(icone("ia"), _("Séparer voix, musique et bruits…"),
+                    _("Du plan choisi dans le film, sinon d'un fichier : retirer la voix d'une chanson, garder une voix nette, isoler "
+                      "l'ambiance. Sur ce poste, gratuit."),
+                    quand(lambda e: e.separer_sons()))]),
             (icone("camera"), _("Vidéo"), _("Créer des plans qui manquent au film : à partir d'une phrase, d'une histoire ou d'une image du "
                                               "film. D'abord l'IA de ce poste (gratuite), puis Gemini (votre clef, prix annoncé), puis Google Flow."), [
                 ent(None, _("Effet IA sur le film (dessin animé, ralenti, agrandir, photo 3D…)…"),

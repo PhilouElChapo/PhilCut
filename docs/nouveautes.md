@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.52 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.53 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.53 (separer voix, musique et bruits)
+- Clic droit sur un plan (video ou son) > "Separer voix, musique et bruits..." ; aussi Fabrique IA > Musique pour un fichier. Trois choix tout faits : "Retirer la voix", "Garder la voix seule", "Les trois pistes". Calcul sur ce poste (gratuit, rien n'est envoye), avec sa progression ; on ecoute chaque piste ; "Poser dans le film" les pose sous le plan, a la place exacte, et coupe le son d'origine. Un seul Annuler revient en arriere.
+- Les trois pistes ensemble redonnent exactement le son d'origine (rien ne se perd). Modele HT-Demucs (Meta, licence MIT, environ 170 Mo) a installer une fois : Preferences > IA locale. Verifie sur une vraie voix et une musique : voix retrouvee a 99 %, plus rapide que le temps reel sur un processeur ordinaire.
+- La voix seule de la Fabrique musique utilise ce modele quand il est installe (meilleure et plus rapide).
+- Guide "Retirer la voix d'une musique" : faisable, avec "Montrez-moi".
 
 ### 0.9.52 (guides pas a pas)
 - Aide > "Comment faire... (guides pas a pas)" : des cas concrets (changer le fond, couper, faire parler des personnages, lier deux rushes, retirer la voix, suivre une personne, passer d'un rush a l'autre...), par ordre alphabetique, avec recherche. Chaque guide dit ce qui est faisable aujourd'hui, en partie, ou pas encore.

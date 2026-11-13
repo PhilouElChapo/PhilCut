@@ -1640,6 +1640,8 @@ class Timeline(QGraphicsView):
         a = m.addAction(_("Muet"), lambda: self._muet(clip))
         a.setCheckable(True)
         a.setChecked(bool(clip.get("muet")))
+        if (med or {}).get("genre") in ("video", "audio"):           # 0.9.53
+            m.addAction(_("Séparer voix, musique et bruits…"), lambda: self.demande_menu.emit(clip["id"], "separer"))
         m.addSeparator()
         m.addAction(_("Effets et transition sur tout le plan…"), lambda: self.demande_menu.emit(clip["id"], "effets"))
         if clip.get("effets"):

@@ -58,6 +58,11 @@ MODELES = {
                                                                "acestep-v15-sft-Q8_0.gguf", "gguf:base-Q4,base-Q8,sft-Q4,sft-Q8"])],
                    {"qualite": 3, "memoire_go": 6, "note": "Garde seulement la voix d'un morceau, pour la voix de référence de la "
                                                            "Fabrique musique (licence MIT). Expérimental."}),
+    # 0.9.53 : séparer voix, musique et bruits (HT-Demucs de Meta, licence MIT, export ONNX une seule entrée « mix »)
+    "separation_sons": ("Séparer voix, musique et bruits (HT-Demucs)", "stems",
+                        [("modele", "adowu/htdemucs-onnx", ["htdemucs_fp16weights.onnx", "htdemucs.onnx"])],
+                        {"qualite": 4, "memoire_go": 2, "note": "Voix, musique et bruits d'un plan ou d'une chanson, sur le processeur "
+                                                                "(licence MIT). Environ 170 Mo."}),
     "profondeur": ("Profondeur (Depth Anything V2 small)", "profondeur",
                    [("modele", "onnx-community/depth-anything-v2-small", ["onnx/model.onnx", "onnx/model_fp16.onnx"])],
                    {"qualite": 4, "memoire_go": 2, "note": "Photo 3D, flou d'arrière-plan, brume : sur le processeur, rapide (Apache 2.0)."}),
