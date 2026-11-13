@@ -7155,5 +7155,8 @@
  "Dossier des projets": "Carpeta de proyectos",
  "Copies légères et originaux des rushes envoyés pour vos autres postes, et « Importer des rushes depuis un emplacement » : un compte avec beaucoup d'espace (pCloud, kDrive, NAS…)": "Copias ligeras y originales de los brutos enviados para sus otros equipos, e «Importar brutos desde una ubicación»: una cuenta con mucho espacio (pCloud, kDrive, NAS…)",
  "Rushes (gros fichiers)": "Brutos (archivos grandes)",
- "aucun : chaque poste reste indépendant": "ninguna: cada equipo sigue independiente"
+ "aucun : chaque poste reste indépendant": "ninguna: cada equipo sigue independiente",
+ "Installer le modèle": "Instalar el modelo",
+ "Le catalogue des modèles n'a pas pu être relu (connexion Internet ?). Réessayez dans un instant, ou Edition › Préférences › IA locale.": "No se ha podido volver a leer el catálogo de modelos (¿conexión a Internet?). Vuelva a intentarlo en un momento, o Edición › Preferencias › IA local.",
+ "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Descarga del modelo en curso: el progreso está en la barra inferior (Herramientas › Centro de actividad). Esta ventana se actualiza sola al final."
 }

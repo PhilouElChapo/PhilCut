@@ -195,8 +195,7 @@ def manifeste(rafraichir=False, delai=8):
             _manifeste = json.load(f)
         return _fusionner(_manifeste, rafraichir, delai)
     copie = os.path.join(dossier(), "moteurs-ia.json")
-    vieux = not os.path.exists(copie) or time.time() - os.path.getmtime(copie) > 86400
-    if rafraichir or vieux:
+    if rafraichir or _perime(copie):
         try:
             req = urllib.request.Request(MANIFESTE_URL, headers=UA)
             with urllib.request.urlopen(req, timeout=delai) as r:
@@ -205,6 +204,7 @@ def manifeste(rafraichir=False, delai=8):
             with open(copie + ".tmp", "wb") as f:
                 f.write(donnees)
             os.replace(copie + ".tmp", copie)
+            _noter_version(copie)
         except Exception as e:          # noqa: BLE001 : hors ligne, on garde la copie
             if not os.path.exists(copie):
                 raise ErreurIA(_("Catalogue de l'IA locale injoignable : {e}", e=e)) from e
@@ -223,13 +223,53 @@ def _fusionner(man, rafraichir, delai):
     return man
 
 
+def _perime(copie):
+    """Copie locale d'un catalogue à relire : absente, vieille d'un jour, ou lue par une autre version de PhilCut (0.9.58 :
+    une nouvelle version peut demander un modèle publié après la dernière lecture)."""
+    if not os.path.exists(copie) or time.time() - os.path.getmtime(copie) > 86400:
+        return True
+    from .config import VERSION
+    try:
+        with open(copie + ".version", encoding="utf-8") as f:
+            return f.read().strip() != VERSION
+    except OSError:
+        return True
+
+
+def _noter_version(copie):
+    from .config import VERSION
+    try:
+        with open(copie + ".version", "w", encoding="utf-8") as f:
+            f.write(VERSION)
+    except OSError:
+        pass
+
+
+def modele_connu(cle):
+    """Le modèle est-il au catalogue ? S'il n'y est pas, le catalogue est relu une fois (modèle publié depuis la dernière
+    lecture)."""
+    if cle in modeles(avec_essai=True):
+        return True
+    if cle in _RELUS:
+        return False
+    _RELUS.add(cle)
+    try:
+        manifeste(rafraichir=True)
+    except Exception:            # noqa: BLE001 : hors ligne
+        return False
+    return cle in modeles(avec_essai=True)
+
+
+_RELUS = set()
+
+
 def _manifeste_creatif(rafraichir=False, delai=8):
     local = os.environ.get("PHILCUT_IA_MANIFESTE2")
     if local:
         with open(local, encoding="utf-8") as f:
             return json.load(f)
     copie = os.path.join(dossier(), "moteurs-creatifs.json")
-    if rafraichir or not os.path.exists(copie) or time.time() - os.path.getmtime(copie) > 86400:
+    if rafraichir or _perime(copie):
         try:
             req = urllib.request.Request(MANIFESTE2_URL, headers=UA)
             with urllib.request.urlopen(req, timeout=delai) as r:
@@ -238,6 +278,7 @@ def _manifeste_creatif(rafraichir=False, delai=8):
             with open(copie + ".tmp", "wb") as f:
                 f.write(donnees)
             os.replace(copie + ".tmp", copie)
+            _noter_version(copie)
         except Exception:        # noqa: BLE001
             if not os.path.exists(copie):
                 return {}

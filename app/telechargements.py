@@ -326,3 +326,40 @@ def colonnes_reglables(table, params, cle, largeurs):
         if params is not None:
             params[cle] = [table.columnWidth(i) for i in range(table.columnCount())]
     h.sectionResized.connect(retenir)
+
+
+def installer_modele(fenetre_dialogue, ed, cle, apres, etiquette=None):
+    """Bouton « Installer le modèle » d'une fenêtre (0.9.58) : le modèle part dans la file de téléchargement de PhilCut
+    (progression dans la barre du bas et le Centre d'activité) ; la fenêtre se met à jour seule à la fin. Le catalogue
+    est relu si le modèle n'y est pas encore (publié depuis la dernière lecture)."""
+    from PySide6.QtWidgets import QApplication, QMessageBox
+    from . import packs_ia
+    QApplication.setOverrideCursor(Qt.WaitCursor)
+    try:
+        connu = packs_ia.modele_connu(cle)
+    finally:
+        QApplication.restoreOverrideCursor()
+    f = ed.window()
+    gestion = getattr(f, "telechargements", None)
+    if not connu or gestion is None:
+        QMessageBox.information(fenetre_dialogue, _("Installer le modèle"), _(
+            "Le catalogue des modèles n'a pas pu être relu (connexion Internet ?). Réessayez dans un instant, ou Edition › "
+            "Préférences › IA locale."))
+        if gestion is None and hasattr(f, "preferences"):
+            f.preferences("IA locale")
+        apres()
+        return False
+    gestion.ajouter([cle])
+    if etiquette is not None:
+        etiquette.setText(_("Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre "
+                            "d'activité). Cette fenêtre se met à jour toute seule à la fin."))
+        etiquette.setVisible(True)
+    minuteur = QTimer(fenetre_dialogue)
+
+    def verifier():
+        if packs_ia.installe(cle) or not gestion.en_file(cle):
+            minuteur.stop()
+            apres()
+    minuteur.timeout.connect(verifier)
+    minuteur.start(2000)
+    return True

@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.58 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.59 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.59 (correction)
+- Le modele "Continuer avec ma voix" n'apparaissait pas dans Preferences > IA locale : PhilCut ne relisait le catalogue des modeles qu'une fois par jour. Il le relit maintenant aussitot apres une mise a jour de PhilCut, et quand une fonction demande un modele qu'il ne connait pas encore.
+- Le bouton "Installer le modele..." des fenetres "Continuer avec ma voix" et "Separer voix, musique et bruits" lance directement le telechargement (progression dans la barre du bas) ; la fenetre se met a jour toute seule a la fin.
+
+## Nouveautes de 0.9.58
 
 ### 0.9.58 (projets et rushes dans vos clouds, comme PhilPDF)
 - Chaque compte a son role (Preferences > Comptes et synchro > "Role de chaque compte") : un pour les reglages et la session, un pour deposer et retrouver les projets (par exemple pCloud), un pour les rushes (gros fichiers). Le role de chaque compte est ecrit a cote de son nom dans la liste.

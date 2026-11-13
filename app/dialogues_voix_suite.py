@@ -207,10 +207,9 @@ class DialogueVoixSuite(QDialog):
 
     # ------------------------------------------------------------------ état
     def _installer(self):
-        f = self.ed.window()
-        if hasattr(f, "preferences"):
-            f.preferences("IA locale")
-        self._maj()
+        from .telechargements import installer_modele
+        if installer_modele(self, self.ed, V.CLE, self._maj, self.manque):
+            self.b_installer.setEnabled(False)
 
     def _en_calcul(self):
         return self.tache is not None and self.tache.isRunning()
@@ -218,9 +217,13 @@ class DialogueVoixSuite(QDialog):
     def _maj(self, *_a):
         from . import separation as S
         m = V.manquant(self.ed.params)
-        self.manque.setText(m or "")
+        gestion = getattr(self.ed.window(), "telechargements", None)
+        en_cours = bool(m) and gestion is not None and gestion.en_file(V.CLE)
+        if not en_cours:
+            self.manque.setText(m or "")
         self.manque.setVisible(bool(m))
         self.b_installer.setVisible(bool(m))
+        self.b_installer.setEnabled(not en_cours)
         sep = S.manquant(self.ed.params) is None
         self.isoler.setEnabled(sep)
         if not sep:

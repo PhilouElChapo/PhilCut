@@ -32,7 +32,7 @@ class DialogueSeparation(QDialog):
         self.manque.setWordWrap(True)
         self.manque.setStyleSheet("color:#e3b341")
         v.addWidget(self.manque)
-        self.b_installer = QPushButton(_("Installer le modèle (Préférences › IA locale)…"))
+        self.b_installer = QPushButton(_("Installer le modèle…"))
         self.b_installer.clicked.connect(self._installer)
         v.addWidget(self.b_installer)
         # ce qu'on veut garder : trois choix tout faits, puis les cases
@@ -98,10 +98,10 @@ class DialogueSeparation(QDialog):
         self.b_separer.setEnabled(not m and not self._en_calcul())
 
     def _installer(self):
-        f = self.ed.window()
-        if hasattr(f, "preferences"):
-            f.preferences("IA locale")
-        self._etat_modele()
+        from .telechargements import installer_modele
+        from . import separation as S
+        if installer_modele(self, self.ed, S.CLE, self._etat_modele, self.manque):
+            self.b_installer.setEnabled(False)
 
     def _garder(self, garde):
         for k, c in self.cases.items():

@@ -7164,5 +7164,8 @@
  "Dossier des projets": "Projects folder",
  "Copies légères et originaux des rushes envoyés pour vos autres postes, et « Importer des rushes depuis un emplacement » : un compte avec beaucoup d'espace (pCloud, kDrive, NAS…)": "Light copies and originals of the rushes sent for your other computers, and “Import rushes from a location”: an account with plenty of space (pCloud, kDrive, NAS…)",
  "Rushes (gros fichiers)": "Rushes (big files)",
- "aucun : chaque poste reste indépendant": "none: each computer stays independent"
+ "aucun : chaque poste reste indépendant": "none: each computer stays independent",
+ "Installer le modèle": "Install the model",
+ "Le catalogue des modèles n'a pas pu être relu (connexion Internet ?). Réessayez dans un instant, ou Edition › Préférences › IA locale.": "The model catalogue could not be read again (Internet connection?). Try again in a moment, or Edit › Preferences › Local AI.",
+ "Téléchargement du modèle en cours : la progression est dans la barre du bas (Outils › Centre d'activité). Cette fenêtre se met à jour toute seule à la fin.": "Model download in progress: the progress is in the bottom bar (Tools › Activity centre). This window updates by itself at the end."
 }

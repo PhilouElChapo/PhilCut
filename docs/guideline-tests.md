@@ -157,6 +157,12 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T74 — 0.9.59 : modèle « Continuer avec ma voix » visible et installable
+
+1. Après la mise à jour, Edition › Préférences › IA locale : le groupe « Continuer avec ma voix » apparaît (environ 1,6 Go).
+2. Ou directement : clic droit sur un plan › « Continuer avec cette voix… » › « Installer le modèle… » : le téléchargement démarre (barre du bas), le bouton se grise, le texte l'explique ; à la fin, le message disparaît et « Fabriquer la voix » devient possible (après la case d'accord et le texte).
+3. Même chose dans « Séparer voix, musique et bruits » si le modèle n'y est pas.
+
 ## T73 — 0.9.58 : projets et rushes dans vos clouds
 
 1. Edition › Préférences › Comptes et synchro : vos comptes (Google Drive, pCloud…) ; groupe « Rôle de chaque compte » : réglages = Google Drive (par exemple), projets = pCloud, rushes = pCloud. OK. Rouvrir : la liste des comptes affiche le rôle de chacun entre crochets.
