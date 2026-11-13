@@ -16,6 +16,7 @@ from . import sequence_ia as Q
 from .langue import _
 from .taches import Tache
 from .widgets import SuiviAttente
+from .taches import texte_erreur
 
 AIDE_FLOW = _(
     "<b>Avec Google Flow (votre abonnement)</b>, plan par plan :<br>"
@@ -73,6 +74,10 @@ class DialogueSequence(QDialog):
         self.moteur.setCurrentIndex(max(0, i))
         self.moteur.currentIndexChanged.connect(self._maj_moteur)
         f.addRow(self._gras(_("Vidéo")), self.moteur)
+        self.explication_moteur = QLabel("")              # 0.9.55 : ce que chaque moteur garde du personnage
+        self.explication_moteur.setWordWrap(True)
+        self.explication_moteur.setStyleSheet("color:#9aa4b2")
+        f.addRow("", self.explication_moteur)
         self.voix = QComboBox()
         self.voix.addItem(_("Voix de ce poste (gratuite)"), "local")
         self.voix.addItem(_("Voix Gemini (joue vraiment la phrase ; votre clef, payant)"), "gemini")
@@ -183,7 +188,7 @@ class DialogueSequence(QDialog):
         def fin(r, e):
             self.suivi.finir()
             if e:
-                self.etat.setText(_("✕ Découpage impossible : {e}", e=str(e)[:300]))
+                self.etat.setText(_("✕ Découpage impossible : {e}", e=texte_erreur(e)[:300]))
                 return
             self.seq = r
             self._apres_decoupe()
@@ -579,7 +584,7 @@ class DialogueSequence(QDialog):
         def fin(r, e):
             self.suivi.finir()
             if e:
-                self.etat.setText(_("✕ {e}", e=str(e)[:300]))
+                self.etat.setText(_("✕ {e}", e=texte_erreur(e)[:300]))
                 return
             self.seq["plans"][i]["consigne"] = r
             if self._courant == i:
@@ -631,7 +636,7 @@ class DialogueSequence(QDialog):
         def fin(r, e):
             self.suivi.finir()
             if e:
-                self.etat.setText(_("✕ Image impossible : {e}", e=str(e)[:300]))
+                self.etat.setText(_("✕ Image impossible : {e}", e=texte_erreur(e)[:300]))
                 return
             self.seq["plans"][i]["image"] = r
             if self._courant == i:
@@ -641,7 +646,21 @@ class DialogueSequence(QDialog):
         t.start()
 
     # ------------------------------------------------------------------ fabrication
+    def _expliquer_moteur(self):
+        m = self.moteur.currentData()
+        if m == "locale":
+            t = _("IA de ce poste : gratuite. Elle part de l'image du personnage, mais le visage dérive pendant le plan (5 s) et "
+                  "change d'un plan à l'autre ; les lèvres ne bougent pas avec la réplique (dite par une voix posée par-dessus). "
+                  "Bien pour un plan court, un paysage, une silhouette.")
+        elif m == "flow":
+            t = _("Google Flow : votre abonnement, pas à pas dans le navigateur ; mêmes possibilités que Gemini.")
+        else:
+            t = _("Gemini (votre clef, coût affiché avant) : il mélange les images du personnage et du lieu, garde le même visage "
+                  "d'un plan à l'autre et joue la réplique. A choisir pour une vraie scène avec un personnage.")
+        self.explication_moteur.setText(t)
+
     def _maj_moteur(self, *_a):
+        self._expliquer_moteur()
         m = self.moteur.currentData()
         self.seq["moteur"] = m
         flow = m == "flow"
@@ -720,7 +739,7 @@ class DialogueSequence(QDialog):
             Q.enregistrer(self.seq)
             self._remplir_plans()
             if e:
-                self.etat.setText(_("✕ {e}", e=str(e)[:300]))
+                self.etat.setText(_("✕ {e}", e=texte_erreur(e)[:300]))
             else:
                 self.etat.setText(_("{n} plan(s) prêts : regardez-les un par un (onglet Plans), refaites ceux qui ne vont pas, "
                                     "puis « Monter la séquence ».", n=len(r or {})))
@@ -761,7 +780,7 @@ class DialogueSequence(QDialog):
         def fin(r, e):
             self.suivi.finir()
             if e:
-                self.etat.setText(_("✕ {e}", e=str(e)[:300]))
+                self.etat.setText(_("✕ {e}", e=texte_erreur(e)[:300]))
                 return
             if r:
                 self.seq["plans"][i]["fichier"] = r[0]
@@ -842,7 +861,7 @@ class DialogueSequence(QDialog):
         def fin(r, e):
             self.suivi.finir()
             if e:
-                self.etat.setText(_("✕ {e}", e=str(e)[:300]))
+                self.etat.setText(_("✕ {e}", e=texte_erreur(e)[:300]))
                 return
             for i, v in (r.get("voix") or {}).items():
                 self.seq["plans"][i]["voix"] = v

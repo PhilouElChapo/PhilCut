@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QW
 from . import tampons as T, theme
 from .langue import _
 from .taches import Tache
+from .taches import texte_erreur
 
 
 def _tc(t):
@@ -481,7 +482,7 @@ class DialogueTampons(QDialog):
             return TI.creer(self.params, r2, L=L // 2 * 2 if L <= 1280 else 1280, H=(H * (1280 / L) if L > 1280 else H) // 2 * 2,
                             niveau=niveau, progression=t.avancer, arret=t.arret_demande)
         self._lancer(travail, _("Création du tampon « {n} » par l'IA…", n=r["nom"]),
-                     fin=lambda e, err: (self.etat.setText("✕ " + str(err)[:300]) if err else
+                     fin=lambda e, err: (self.etat.setText("✕ " + texte_erreur(err)[:300]) if err else
                                          (self.remplir_biblio(choisir=e["id"]), self.onglets.setCurrentIndex(0),
                                           self.etat.setText(_("✓ « {n} » créé et rangé dans votre bibliothèque : double-clic pour le "
                                                               "mettre dans le film.", n=e["nom"])))))
@@ -928,7 +929,7 @@ class DialogueTampons(QDialog):
 
             def fin(e, err, nom=nom):
                 if err:
-                    self.etat.setText("✕ " + str(err))
+                    self.etat.setText("✕ " + texte_erreur(err))
                     return
                 self.remplir_biblio(choisir=e["id"])
                 self.etat.setText(_("✓ « {n} » ajouté à votre bibliothèque. Onglet « Ma bibliothèque » : écouter, raccourcir, renommer, insérer.",
@@ -994,7 +995,7 @@ class DialogueTampons(QDialog):
                 self.lecteur.stop()
                 self.lecteur.setSource(QUrl())
             self._lancer(lambda t: T.raccourcir(self.params, e["id"], a.value(), b.value()), _("Raccourci en cours…"),
-                         fin=lambda r, err: (self.etat.setText("✕ " + str(err)) if err else
+                         fin=lambda r, err: (self.etat.setText("✕ " + texte_erreur(err)) if err else
                                              (self.remplir_biblio(choisir=e["id"]), self.etat.setText(_("✓ « {n} » raccourci.", n=e["nom"])))))
 
     def importer_telecharge(self):
@@ -1058,7 +1059,7 @@ class DialogueTampons(QDialog):
     def _resultats_recus(self, res, err):
         self._plus_en_cours = False
         if err:
-            self.etat.setText("✕ " + str(err))
+            self.etat.setText("✕ " + texte_erreur(err))
             return
         self.resultats.clear()
         note = (res[0].get("_note") if res else "") or ""
@@ -1176,7 +1177,7 @@ class DialogueTampons(QDialog):
 
         def fin(url, err):
             if err or not url:
-                self.etat.setText(_("✕ Lecture impossible ici : {e}. « page » ouvre la vidéo dans le navigateur.", e=str(err)[:200]))
+                self.etat.setText(_("✕ Lecture impossible ici : {e}. « page » ouvre la vidéo dans le navigateur.", e=texte_erreur(err)[:200]))
                 return
             self.etat.setText("")
             d = DialogueVisionner(self, url, r, _lire_temps_txt(self.morceau_de.text()), _lire_temps_txt(self.morceau_a.text()))
@@ -1246,7 +1247,7 @@ class DialogueTampons(QDialog):
                     VL.installer_deno(progression=lambda f: t.avancer(0.3 + f * 0.7, _("Installation de Deno (lecteur de YouTube)…")),
                                       arret=t.arret_demande)
             self._lancer(les_deux, _("Installation de yt-dlp…"),
-                         fin=lambda r, err: self.etat.setText("✕ " + str(err) if err else _("✓ yt-dlp installé : relancez la recherche.")))
+                         fin=lambda r, err: self.etat.setText("✕ " + texte_erreur(err) if err else _("✓ yt-dlp installé : relancez la recherche.")))
             return False
         if not VL.deno_installe():
             if QMessageBox.question(self, _("Installer Deno"), _("Pour lire et télécharger les vidéos YouTube, yt-dlp a maintenant besoin de "
@@ -1255,7 +1256,7 @@ class DialogueTampons(QDialog):
                 return True                          # la recherche marche sans lui ; la lecture dira ce qu'il faut
             self._lancer(lambda t: VL.installer_deno(progression=lambda f: t.avancer(f, _("Installation de Deno (lecteur de YouTube)…")),
                                                      arret=t.arret_demande), _("Installation de Deno…"),
-                         fin=lambda r, err: self.etat.setText("✕ " + str(err) if err else _("✓ Deno installé : vous pouvez regarder et "
+                         fin=lambda r, err: self.etat.setText("✕ " + texte_erreur(err) if err else _("✓ Deno installé : vous pouvez regarder et "
                                                                                            "télécharger les vidéos YouTube.")))
             return False
         return True
@@ -1271,7 +1272,7 @@ class DialogueTampons(QDialog):
                 VL.installer_deno(progression=lambda f: t.avancer(f, _("Installation de Deno (lecteur de YouTube)…")), arret=t.arret_demande)
             return r
         self._lancer(travail, _("Mise à jour de yt-dlp…"),
-                     fin=lambda r, err: self.etat.setText("✕ " + str(err) if err else _("✓ yt-dlp à jour.")))
+                     fin=lambda r, err: self.etat.setText("✕ " + texte_erreur(err) if err else _("✓ yt-dlp à jour.")))
 
     def _ajouter_en_ligne(self, r, inserer):
         from . import videos_en_ligne as VL
@@ -1339,7 +1340,7 @@ class DialogueTampons(QDialog):
                 fin(r, err)
                 return
             if err:
-                self.etat.setText("✕ " + str(err))
+                self.etat.setText("✕ " + texte_erreur(err))
                 return
             self.etat.setText(_("✓ Ajouté à votre bibliothèque."))
             self.remplir_biblio(choisir=r.get("id") if isinstance(r, dict) else None)

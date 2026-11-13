@@ -67,6 +67,7 @@ class DialogueGuides(QDialog):
             self.ouvrir(guide)
         else:
             self.liste()
+        self._mise_a_jour_catalogue()
 
     def _placer(self):
         """A droite de la fenêtre de PhilCut, sur toute sa hauteur utile."""
@@ -108,7 +109,9 @@ class DialogueGuides(QDialog):
         v.addWidget(intro)
         for g in gs:
             sym, coul = G.ETATS.get(g["etat"], ("", ""))
-            b = CaseGuide(f"<span style='color:{coul}'>{sym}</span>&nbsp; {g['titre']}",
+            nouveau = g.get("catalogue") and g["id"] not in (self._vus() or [])
+            badge = f"&nbsp; <span style='color:#8b7cf6;font-weight:600'>{_('Nouveau')}</span>" if nouveau else ""
+            b = CaseGuide(f"<span style='color:{coul}'>{sym}</span>&nbsp; {g['titre']}{badge}",
                           lambda g_=g: self.ouvrir(g_))           # le titre passe à la ligne : jamais coupé
             b.setToolTip(G.libelle_etat(g["etat"]) + "\n\n" + g["intro"])
             v.addWidget(b)
@@ -124,6 +127,31 @@ class DialogueGuides(QDialog):
         v.addStretch(1)
         self.zone.setWidget(w)
 
+    def _params(self):
+        return getattr(self.fenetre, "params", None)
+
+    def _vus(self):
+        p = self._params()
+        return list(p.get("guides_vus") or []) if p is not None else []
+
+    def _mise_a_jour_catalogue(self):
+        """Les guides du catalogue en ligne, relus en arrière-plan (jamais bloquant) ; la liste se refait s'ils ont changé."""
+        import os, threading
+        p = self._params()
+        if os.environ.get("PHILCUT_SANS_RESEAU") or (p is not None and not p.get("effets_en_ligne", True)):
+            return
+        from . import catalogue_ligne as CL
+        avant = [g["id"] for g in G.guides()]
+        fil = threading.Thread(target=lambda: CL.telecharger("guides.json", 8), daemon=True)
+        fil.start()
+
+        def apres():
+            if fil.is_alive():
+                QTimer.singleShot(800, apres)
+            elif self.guide is None and [g["id"] for g in G.guides()] != avant:
+                self._filtrer(self.cherche.text())
+        QTimer.singleShot(800, apres)
+
     # ------------------------------------------------------------------ un guide
     def ouvrir(self, g):
         if isinstance(g, str):
@@ -131,6 +159,9 @@ class DialogueGuides(QDialog):
             if g is None:
                 return self.liste()
         self.guide = g
+        p = self._params()
+        if g.get("catalogue") and p is not None and g["id"] not in self._vus():
+            p["guides_vus"] = self._vus() + [g["id"]]
         self.b_retour.show()
         self.cherche.hide()
         w = QWidget()

@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QHBoxLayout, QHeaderView, QLa
 from . import recettes_ia as R
 from .langue import _
 from .taches import Tache
+from .taches import texte_erreur
 
 
 class DialogueCreations(QDialog):
@@ -200,7 +201,7 @@ class DialogueCreations(QDialog):
         self.b_arreter.hide()
         self.b_lancer.setEnabled(True)
         if err:
-            self.etape.setText(_("Arrêté.") if isinstance(err, InterruptedError) else _("✕ {e}", e=str(err)[:300]))
+            self.etape.setText(_("Arrêté.") if isinstance(err, InterruptedError) else _("✕ {e}", e=texte_erreur(err)[:300]))
             return
         faits = 0
         for l, chemin, e in res or []:

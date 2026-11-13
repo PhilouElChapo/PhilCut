@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QFormLayout, QHBoxLayout, QLa
 from . import modeles_montage as MM
 from .langue import _
 from .taches import Tache
+from .taches import texte_erreur
 
 
 class DialogueModeles(QDialog):
@@ -148,7 +149,7 @@ class DialogueModeles(QDialog):
             self.barre.hide()
             self.b_monter.setEnabled(True)
             if err:
-                self.etat.setText(_("✕ Présentation impossible : {e}", e=str(err)[:300]))
+                self.etat.setText(_("✕ Présentation impossible : {e}", e=texte_erreur(err)[:300]))
                 return
             k, _d, fmt = self._choix
             self.ed.projet.d["format"] = fmt
@@ -168,7 +169,7 @@ class DialogueModeles(QDialog):
             self.barre.hide()
             self.b_monter.setEnabled(True)
             if err:
-                self.etat.setText(_("✕ Analyse impossible : {e}", e=str(err)[:300]))
+                self.etat.setText(_("✕ Analyse impossible : {e}", e=texte_erreur(err)[:300]))
                 return
             k, duree, fmt = self._choix
             rec = MM.appliquer(self.ed.projet, k, self.ed.params, duree, fmt)

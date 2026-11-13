@@ -7,6 +7,7 @@ from . import commande_ia as C
 from .langue import _
 from .taches import Tache
 from .widgets import boutons_fr
+from .taches import texte_erreur
 
 EXEMPLES = [_("mets une musique calme et coupe-la à la fin de la vidéo"), _("titre « Notre week-end » au début"),
             _("effet vintage sur tous les plans"), _("ralenti sur le plan 2"), _("une flèche rouge courbe à 5 s"),
@@ -161,7 +162,7 @@ class DialogueCommande(QDialog):
                 it.widget().deleteLater()
         self.cases = []
         if err:
-            self.etat.setText(_("✕ {e}", e=err))
+            self.etat.setText(_("✕ {e}", e=texte_erreur(err)))
             return
         self.actions = r.get("actions") or []
         src = {"regles": _("compris sans IA")}.get(r.get("source"), r.get("source", ""))
@@ -217,7 +218,7 @@ class DialogueCommande(QDialog):
         self.b_comprendre.setEnabled(True)
         if err:
             self.b_faire.setEnabled(True)
-            self.etat.setText(_("✕ {e}", e=err))
+            self.etat.setText(_("✕ {e}", e=texte_erreur(err)))
             return
         self._faire(acts)
 

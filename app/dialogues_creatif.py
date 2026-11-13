@@ -512,7 +512,7 @@ class DialogueAtelierIA(QDialog):
                 self.suivi.finir()
                 self.b_reecrire.setEnabled(True)
                 if err:
-                    self.etat_replique.setText(_("✕ Réplique non récrite : {e}", e=str(err)[:300]))
+                    self.etat_replique.setText(_("✕ Réplique non récrite : {e}", e=texte_erreur(err)[:300]))
                     return
                 self.replique.setPlainText(r)
                 self.etat_replique.setText(_("Réplique récrite : écoutez-la, modifiez-la si besoin."))
@@ -546,7 +546,7 @@ class DialogueAtelierIA(QDialog):
                 self.suivi.finir()
                 self.b_ecouter_replique.setEnabled(True)
                 if err:
-                    self.etat_replique.setText(_("✕ Voix impossible : {e}", e=str(err)[:300]))
+                    self.etat_replique.setText(_("✕ Voix impossible : {e}", e=texte_erreur(err)[:300]))
                     return
                 self._maj_diction()
                 self.apercu_media.charger(r, video=False)
@@ -1015,7 +1015,7 @@ class DialogueAtelierIA(QDialog):
         debut, duree = r["src_debut"], r["src_fin"] - r["src_debut"]
         t = Tache(lambda tache: T.ajouter_fichier(params, f, nom, [m for m in mots if m], debut=debut, duree=duree), _("Bibliothèque"))
         self._tache_ranger = t
-        t.fini.connect(lambda res, err: self.info.setText(("✕ " + str(err)) if err else
+        t.fini.connect(lambda res, err: self.info.setText(("✕ " + texte_erreur(err)) if err else
                                                           _("✓ Rangé dans votre bibliothèque (Montage › Tampons vidéo › Ma bibliothèque) : « {n} ».",
                                                             n=nom)), Qt.QueuedConnection)
         t.start()
@@ -1043,7 +1043,7 @@ class DialogueAtelierIA(QDialog):
                 self.suivi.finir()
                 self.b_essai_voix.setEnabled(True)
                 if err:
-                    self.info.setText(_("✕ Essai impossible : {e}", e=str(err)[:300]))
+                    self.info.setText(_("✕ Essai impossible : {e}", e=texte_erreur(err)[:300]))
                     return
                 self.apercu_media.charger(r if isinstance(r, str) else sortie, video=False)
                 self.apercu_media.show()
@@ -1075,7 +1075,7 @@ class DialogueAtelierIA(QDialog):
                 self.suivi.finir()
                 self.b_paroles.setEnabled(True)
                 if err:
-                    self.info.setText(_("✕ Paroles non écrites : {e}", e=str(err)[:300]))
+                    self.info.setText(_("✕ Paroles non écrites : {e}", e=texte_erreur(err)[:300]))
                     return
                 self.paroles.setPlainText(r)
                 self.info.setText(_("Paroles écrites : relisez-les, modifiez-les si besoin, puis « Créer »."))

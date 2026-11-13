@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QPlainTextEdit, QProg
 from . import diagnostic_ia as D
 from .langue import _
 from .taches import Tache
+from .taches import texte_erreur
 
 
 def genres_moteur(genre):
@@ -214,7 +215,7 @@ class PanneauDiagnostic(QFrame):
     def _reinstalle(self, r, err):
         self.barre.hide()
         if err:
-            self._etat(_("✕ Réinstallation impossible : {e}", e=str(err)[:300]))
+            self._etat(_("✕ Réinstallation impossible : {e}", e=texte_erreur(err)[:300]))
             return
         self._etat(_("Moteur réinstallé. Nouvel essai…"))
         self._relancer()

@@ -19,8 +19,56 @@ def _norm(t):
     return unicodedata.normalize("NFD", t).encode("ascii", "ignore").decode().lower()
 
 
+def _version(v):
+    try:
+        return tuple(int(x) for x in str(v).split("."))
+    except ValueError:
+        return (0,)
+
+
+def guides_catalogue():
+    """Guides livrés par le catalogue en ligne (0.9.55), comme les Goodies : ajoutés ou corrigés sans nouvelle version.
+    Textes par langue ; chemins de menus en français, traduits ici ; un guide qui demande une version plus récente de
+    PhilCut est laissé de côté."""
+    from . import catalogue_ligne as CL
+    from .config import VERSION
+    out = []
+    for g in (CL.charger("guides.json").get("guides") or []):
+        try:
+            if _version(g.get("philcut_min", "0")) > _version(VERSION):
+                continue
+            etapes = []
+            for e in g.get("etapes") or []:
+                n = {"texte": CL.localise(e.get("texte"))}
+                mo = e.get("montrer") or {}
+                if mo.get("menu"):
+                    n["montrer"] = {"menu": [_(x) for x in mo["menu"]]}
+                elif mo.get("clic_droit"):
+                    n["montrer"] = {"clic_droit": [_(x) for x in mo["clic_droit"]]}
+                elif mo.get("volet"):
+                    n["montrer"] = {"volet": mo["volet"], "chercher": CL.localise(mo.get("chercher", ""))}
+                if e.get("fait"):
+                    n["fait"] = e["fait"]
+                etapes.append(n)
+            if not g.get("id") or not etapes:
+                continue
+            out.append({"id": g["id"], "etat": g.get("etat", "ok") if g.get("etat") in ETATS else "ok",
+                        "titre": CL.localise(g.get("titre")), "intro": CL.localise(g.get("intro")), "mots": g.get("mots", ""),
+                        "etapes": etapes, "catalogue": True})
+        except (TypeError, AttributeError, KeyError):
+            continue                                       # un guide mal formé ne gêne pas les autres
+    return out
+
+
 def guides():
-    """Les guides, par ordre alphabétique de titre (accents ignorés)."""
+    """Les guides intégrés et ceux du catalogue (qui remplacent un guide de même id), par ordre alphabétique."""
+    tous = {g["id"]: g for g in _guides_integres()}
+    for g in guides_catalogue():
+        tous[g["id"]] = g
+    return sorted(tous.values(), key=lambda g: _norm(g["titre"]))
+
+
+def _guides_integres():
     G = [
         {"id": "fond", "etat": "partiel",
          "titre": _("Changer le fond (décor, paysage) d'un rush"),
@@ -148,7 +196,7 @@ def guides():
               "montrer": {"volet": "effets", "chercher": _("transition")}},
          ]},
     ]
-    return sorted(G, key=lambda g: _norm(g["titre"]))
+    return G
 
 
 ETATS = {"ok": ("✓", "#3fb950"), "partiel": ("◐", "#e3b341"), "a_venir": ("…", "#8a94a6")}

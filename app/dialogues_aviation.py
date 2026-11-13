@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QCheckBox, QComboBox, QDialog,
 from . import aviation as A, goodies as GO, theme
 from .langue import _
 from .widgets import CaseLongue, boutons_fr
+from .taches import texte_erreur
 
 
 def _sp(mini, maxi, val, suffixe="", pas=1, decimales=0):
@@ -315,7 +316,7 @@ class DialogueTrajet(QDialog):
             try:
                 if err:
                     self.b_monde.setEnabled(True)
-                    self.b_monde.setText(_("✕ Téléchargement impossible : {e}. Réessayer", e=str(err)[:120]))
+                    self.b_monde.setText(_("✕ Téléchargement impossible : {e}. Réessayer", e=texte_erreur(err)[:120]))
                     return
                 self.b_monde.hide()
                 self.resume.setText(_("✓ {n} aérodromes disponibles : cherchez par code, nom ou ville.", n=n))

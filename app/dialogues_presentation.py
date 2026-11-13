@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QF
 from . import presentation as PR
 from .langue import _
 from .taches import Tache
+from .taches import texte_erreur
 
 
 class DialoguePresentation(QDialog):
@@ -290,7 +291,7 @@ class DialoguePresentation(QDialog):
             self.b_fabriquer.setEnabled(True)
             self.barre.hide()
             if err:
-                self.etat.setText(_("✕ Présentation impossible : {e}", e=str(err)[:300]))
+                self.etat.setText(_("✕ Présentation impossible : {e}", e=texte_erreur(err)[:300]))
                 return
             self.resultat = r
             from . import creations

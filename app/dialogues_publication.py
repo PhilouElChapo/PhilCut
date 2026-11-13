@@ -10,6 +10,7 @@ from . import publication as P
 from .langue import _
 from .taches import Tache
 from .widgets import boutons_fr
+from .taches import texte_erreur
 
 
 class DialoguePublier(QDialog):
@@ -162,7 +163,7 @@ class DialoguePublier(QDialog):
 
     def _relie(self, r, e):
         if e or not r:
-            self.etat.setText(_("✕ {e}", e=e))
+            self.etat.setText(_("✕ {e}", e=texte_erreur(e)))
             self._etat_youtube()
             return
         if not r.get("nom_trouve"):                    # YouTube n'a pas donné le nom : on le demande, pour s'y retrouver
@@ -230,7 +231,7 @@ class DialoguePublier(QDialog):
     def _fini(self, url, err):
         self.b_ok.setEnabled(True)
         if err:
-            self.etat.setText(_("✕ {e}", e=err))
+            self.etat.setText(_("✕ {e}", e=texte_erreur(err)))
             return
         pub = self.projet.d.setdefault("publications", [])
         pub.append({"reseau": "youtube", "url": url, "titre": self.titre.text().strip(), "date": __import__("time").strftime("%Y-%m-%d %H:%M")})

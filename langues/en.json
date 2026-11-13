@@ -6936,5 +6936,10 @@
  "Pas de son dans ce plan.": "No sound in this clip.",
  "Lecture du son": "Reading the sound",
  "Voix, musique et bruits": "Voice, music and noises",
- "Séparation : morceau {i} sur {n}": "Separation: piece {i} of {n}"
+ "Séparation : morceau {i} sur {n}": "Separation: piece {i} of {n}",
+ "Nouveau": "New",
+ "IA de ce poste : gratuite. Elle part de l'image du personnage, mais le visage dérive pendant le plan (5 s) et change d'un plan à l'autre ; les lèvres ne bougent pas avec la réplique (dite par une voix posée par-dessus). Bien pour un plan court, un paysage, une silhouette.": "This computer's AI: free. It starts from the character's image, but the face drifts during the shot (5 s) and changes from one shot to the next; the lips don't move with the line (spoken by a voice laid on top). Good for a short shot, a landscape, a silhouette.",
+ "Google Flow : votre abonnement, pas à pas dans le navigateur ; mêmes possibilités que Gemini.": "Google Flow: your subscription, step by step in the browser; same possibilities as Gemini.",
+ "Gemini (votre clef, coût affiché avant) : il mélange les images du personnage et du lieu, garde le même visage d'un plan à l'autre et joue la réplique. A choisir pour une vraie scène avec un personnage.": "Gemini (your key, cost shown first): it blends the images of the character and the place, keeps the same face from one shot to the next and acts the line. The choice for a real scene with a character.",
+ "Par exemple pCloud ou kDrive pour les rushes (grand espace), et Google Drive pour les réglages et la session. Ajoutez le compte plus haut, dans cette page.": "For example pCloud or kDrive for the rushes (lots of space), and Google Drive for the settings and the session. Add the account higher up, on this page."
 }

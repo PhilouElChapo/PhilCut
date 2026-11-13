@@ -11,6 +11,7 @@ from . import liens
 from .langue import _
 from .taches import Tache
 from .widgets import SuiviAttente
+from .taches import texte_erreur
 
 
 # ------------------------------------------------------------------ médias introuvables
@@ -107,7 +108,7 @@ class DialogueManquants(QDialog):
         def fin(r, e):
             self.suivi.finir()
             if e:
-                self._apres(_("✕ {e}", e=str(e)[:200]))
+                self._apres(_("✕ {e}", e=texte_erreur(e)[:200]))
                 return
             self._apres(_("{n} média(s) retrouvé(s), {c} sur copie légère, {m} encore introuvable(s).", n=len(r["trouves"]),
                           c=len(r["copies"]), m=len(r["manquants"])))

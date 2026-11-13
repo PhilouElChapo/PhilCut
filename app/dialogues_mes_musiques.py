@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QFileDialog, QHBoxLayout, QHe
 from . import musiques as MU
 from .langue import _
 from .taches import Tache
+from .taches import texte_erreur
 
 
 def _duree(d):
@@ -134,7 +135,7 @@ class DialogueMesMusiques(QDialog):
 
     def _charge(self, liste, err):
         if err:
-            self.etat.setText(_("✕ {e}", e=str(err)[:300]))
+            self.etat.setText(_("✕ {e}", e=texte_erreur(err)[:300]))
             return
         self.liste = liste or []
         n = MU.lire_en_fond(self.liste)

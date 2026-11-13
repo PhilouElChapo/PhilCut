@@ -10,6 +10,7 @@ from . import effets as E, goodies as GO, ia_locale, moteur, packs_ia, theme
 from .config import VERSION, est_portable, dossier_donnees
 from .langue import _, disponibles as langues_disponibles
 from .widgets import CaseLongue as QCheckBox, a_gauche, page_a_largeur, boutons_fr, oeil
+from .taches import texte_erreur
 
 
 class DialoguePreferences(QDialog):
@@ -446,7 +447,7 @@ class DialoguePreferences(QDialog):
             try:
                 bouton.setEnabled(True)
                 bouton.setText(_("Mettre à jour yt-dlp"))
-                self.lbl_ytdlp.setText(("✕ " + str(err)[:200]) if err else _("✓ yt-dlp installé et à jour."))
+                self.lbl_ytdlp.setText(("✕ " + texte_erreur(err)[:200]) if err else _("✓ yt-dlp installé et à jour."))
             except RuntimeError:
                 pass
         t.fini.connect(fin, Qt.QueuedConnection)
@@ -792,7 +793,7 @@ class DialoguePreferences(QDialog):
                 self.rushs_compte.addItem(_AV.icone_compte(c, self.params), _D.libelle(c), c["id"])
         self.rushs_compte.setCurrentIndex(max(0, self.rushs_compte.findData(self.params.get("rushs_compte", ""))))
         self.rushs_compte.setToolTip(_("Par exemple pCloud ou kDrive pour les rushes (grand espace), et Google Drive pour les "
-                                       "réglages et la session. Ajoutez le compte dans « Comptes et emplacements »."))
+                                       "réglages et la session. Ajoutez le compte plus haut, dans cette page."))
         fg.addRow(_("Envoyer les copies légères des rushes sur"), self.rushs_compte)
         self.rushs_dossier = QLineEdit(self.params.get("rushs_dossier") or "/PhilCut")
         self.rushs_dossier.setToolTip(_("Dossier d'échange des rushes sur ce compte, le même pour tous vos postes. Il est créé "

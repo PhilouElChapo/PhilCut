@@ -20,6 +20,7 @@ from .langue import _
 from .projet import Projet
 from .taches import Tache
 from .widgets import boutons_fr
+from .taches import texte_erreur
 
 
 def resume_notes(notes, n=4):
@@ -1519,7 +1520,7 @@ class Fenetre(QMainWindow):
 
     def _telech_termine(self, cle, erreur):
         if erreur is not None and not isinstance(erreur, InterruptedError):
-            self.encart_global.message(_("✕ Téléchargement de {c} : {e}", c=cle, e=str(erreur)[:160]), 15000)
+            self.encart_global.message(_("✕ Téléchargement de {c} : {e}", c=cle, e=texte_erreur(erreur)[:160]), 15000)
 
     def installer_ia(self, cles):
         """Télécharge des modèles d'IA locale (et leur moteur) : file d'attente visible. La première fois, PhilCut demande où
@@ -1549,7 +1550,7 @@ class Fenetre(QMainWindow):
         self.taches.append(t)
         texte = _("Téléchargement de l'IA locale dans le dossier de PhilCut")
         self.suivre_tache(t, texte)
-        t.fini.connect(lambda r, e: e and QMessageBox.warning(self, _("IA locale"), _("✕ {t} : {e}", t=texte, e=e)))
+        t.fini.connect(lambda r, e: e and QMessageBox.warning(self, _("IA locale"), _("✕ {t} : {e}", t=texte, e=texte_erreur(e))))
         t.fini.connect(lambda r, e: self.params.enregistrer())
         t.start()
 
@@ -1755,7 +1756,7 @@ class Fenetre(QMainWindow):
         NV.integrer(reseau=False)
         if os.environ.get("PHILCUT_SANS_RESEAU") or not self.params.get("effets_en_ligne", True):
             return
-        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_gl.json", "effets_ia.json", NV.FICHIER, "elements.json")],
+        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_gl.json", "effets_ia.json", NV.FICHIER, "elements.json", "guides.json")],
                                daemon=True)
         fil.start()
 

@@ -10,7 +10,24 @@ from PySide6.QtCore import QThread, Signal
 _EN_COURS = set()          # 0.9.51 : toute tâche lancée est gardée ici jusqu'à sa vraie fin
 
 
-class Tache(QThread):
+class FilProtege(QThread):
+    """Tout fil de PhilCut en hérite (garde-fou G2) : jamais détruit en plein travail (sinon Qt arrête tout PhilCut :
+    « QThread: Destroyed while thread is still running », code 0xc0000409 dans Qt6Core.dll), et jamais relâché
+    pendant l'appel de son propre signal « finished »."""
+
+    def start(self, *a):
+        if self not in _EN_COURS:
+            _EN_COURS.add(self)
+            self.finished.connect(self._liberer)
+        super().start(*a)
+
+    def _liberer(self):
+        self.wait(5000)
+        from PySide6.QtCore import QTimer
+        QTimer.singleShot(0, lambda t=self: _EN_COURS.discard(t))
+
+
+class Tache(FilProtege):
     progression = Signal(float, str)       # 0..1, texte
     fini = Signal(object, object)          # resultat, erreur (None si tout va bien)
 
@@ -27,21 +44,6 @@ class Tache(QThread):
         f = max(0.0, min(1.0, float(fraction)))
         self.dernier = (f, texte or self.dernier[1])
         self.progression.emit(f, texte)
-
-    def start(self, *a):
-        """Une tâche n'est jamais détruite en plein travail : sinon Qt arrête tout PhilCut (« QThread: Destroyed while
-        thread is still running », code 0xc0000409 dans Qt6Core.dll), par exemple quand une fenêtre relance une tâche
-        alors que la précédente tourne encore."""
-        if self not in _EN_COURS:
-            _EN_COURS.add(self)
-            self.finished.connect(self._liberer)
-        super().start(*a)
-
-    def _liberer(self):
-        # jamais détruite pendant l'appel de son propre signal « finished » (plantage) : relâchée au tour suivant
-        self.wait(5000)
-        from PySide6.QtCore import QTimer
-        QTimer.singleShot(0, lambda t=self: _EN_COURS.discard(t))
 
     def lier(self, objet):
         """La tâche appartient à cet objet (fenêtre, volet, barre du bas) : s'il disparaît, elle est arrêtée et ne prévient

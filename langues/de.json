@@ -6927,5 +6927,10 @@
  "Pas de son dans ce plan.": "Kein Ton in diesem Clip.",
  "Lecture du son": "Ton wird gelesen",
  "Voix, musique et bruits": "Stimme, Musik und Geräusche",
- "Séparation : morceau {i} sur {n}": "Trennung: Stück {i} von {n}"
+ "Séparation : morceau {i} sur {n}": "Trennung: Stück {i} von {n}",
+ "Nouveau": "Neu",
+ "IA de ce poste : gratuite. Elle part de l'image du personnage, mais le visage dérive pendant le plan (5 s) et change d'un plan à l'autre ; les lèvres ne bougent pas avec la réplique (dite par une voix posée par-dessus). Bien pour un plan court, un paysage, une silhouette.": "KI dieses Rechners: kostenlos. Sie geht vom Bild der Figur aus, aber das Gesicht verändert sich während der Einstellung (5 s) und von einer Einstellung zur nächsten; die Lippen bewegen sich nicht mit dem Satz (von einer darübergelegten Stimme gesprochen). Gut für eine kurze Einstellung, eine Landschaft, eine Silhouette.",
+ "Google Flow : votre abonnement, pas à pas dans le navigateur ; mêmes possibilités que Gemini.": "Google Flow: Ihr Abonnement, Schritt für Schritt im Browser; dieselben Möglichkeiten wie Gemini.",
+ "Gemini (votre clef, coût affiché avant) : il mélange les images du personnage et du lieu, garde le même visage d'un plan à l'autre et joue la réplique. A choisir pour une vraie scène avec un personnage.": "Gemini (Ihr Schlüssel, Kosten vorher angezeigt): mischt die Bilder der Figur und des Ortes, behält dasselbe Gesicht von Einstellung zu Einstellung und spielt den Satz. Die Wahl für eine echte Szene mit einer Figur.",
+ "Par exemple pCloud ou kDrive pour les rushes (grand espace), et Google Drive pour les réglages et la session. Ajoutez le compte plus haut, dans cette page.": "Zum Beispiel pCloud oder kDrive für die Rohaufnahmen (viel Platz) und Google Drive für die Einstellungen und die Sitzung. Fügen Sie das Konto weiter oben auf dieser Seite hinzu."
 }

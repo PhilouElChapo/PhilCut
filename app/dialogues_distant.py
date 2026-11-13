@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, Q
 from .langue import _
 from .icones import icone
 from . import distant, coffre, avatars
+from .taches import FilProtege
 
 ICONES = {"reseau": "ouvrir", "synology": "archiver", "webdav": "lot", "ftp": "exporter", "gdrive": "synchro",
           "onedrive": "synchro", "dropbox": "synchro", "box": "synchro", "pcloud": "synchro", "pcloud_dav": "lot", "kdrive": "synchro"}
@@ -106,7 +107,7 @@ def ouvrir_emplacement(parent, compte):
 from PySide6.QtCore import QThread, Signal
 
 
-class TacheAutorisation(QThread):
+class TacheAutorisation(FilProtege):
     fini = Signal(object, str)          # jetons, erreur
     ligne = Signal(str)                 # etape de l'echange, affichee en direct
 

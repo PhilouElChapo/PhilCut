@@ -7,6 +7,7 @@ renonce. Le modele est choisi automatiquement si celui des reglages n'existe plu
 import base64, json, re, threading, time, urllib.error, urllib.request
 
 from .langue import _
+from .taches import texte_erreur
 
 CLAUDE_API = "https://api.anthropic.com/v1"
 GEMINI_API = "https://generativelanguage.googleapis.com/v1beta"
@@ -486,7 +487,7 @@ def retoucher_image(params, png, consigne, zones_png=None, delai=240):
                 if modele != liste[-1]:
                     rapporter(_("→ On essaie le modèle suivant."))
                 continue
-            rapporter(_("✕ {e}", e=str(e)[:300]))
+            rapporter(_("✕ {e}", e=texte_erreur(e)[:300]))
             raise
     if refus:
         raise ErreurIA(_("Gemini a refusé la demande sur les modèles d'image essayés :") + "\n" +

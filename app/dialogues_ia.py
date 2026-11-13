@@ -8,10 +8,11 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QFormLayout, Q
 
 from .langue import _
 from . import ia, apprentissage
+from .taches import FilProtege
 
 
 # ------------------------------------------------------------------ tache d'attente
-class _Tache(QThread):
+class _Tache(FilProtege):
     fini = Signal(object, object)
     info = Signal(str)
 
@@ -53,7 +54,7 @@ def executer(parent, texte, fonction):
     return res.get("r")
 
 
-class _TacheSuivie(QThread):
+class _TacheSuivie(FilProtege):
     etape = Signal(str, int, int)          # texte, valeur, total
     detail = Signal(str)
     fini = Signal(object, object)

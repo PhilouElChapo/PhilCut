@@ -1,0 +1,77 @@
+{
+ "_lisez_moi": "Guides « Comment faire… » livrés par le catalogue en ligne (0.9.55) : ajoutés ou corrigés sans nouvelle version de PhilCut. Un guide de même « id » qu'un guide intégré le remplace. « philcut_min » : version qui a les fonctions citées. Les chemins de menus sont en français (traduits par PhilCut) et vérifiés par le garde-fou G3.",
+ "version": 1,
+ "guides": [
+  {
+   "id": "rushes_pcloud",
+   "philcut_min": "0.9.54",
+   "etat": "ok",
+   "titre": {
+    "fr": "Echanger ses rushes entre ses postes par pCloud (ou un autre Drive)",
+    "en": "Exchange your rushes between your computers via pCloud (or another Drive)",
+    "de": "Rushes zwischen den eigenen Rechnern über pCloud (oder ein anderes Drive) austauschen",
+    "es": "Intercambiar los brutos entre sus equipos por pCloud (u otro Drive)",
+    "it": "Scambiare i girati tra i propri computer tramite pCloud (o un altro Drive)"
+   },
+   "mots": "pcloud kdrive drive rushes echange synchro synchroniser poste compte nuage cloud",
+   "intro": {
+    "fr": "Les rushes vont dans un dossier d'échange (par exemple sur pCloud, qui offre beaucoup de place) : vos autres postes les retrouvent tout seuls. Les réglages et la session peuvent rester sur un autre compte.",
+    "en": "The rushes go into an exchange folder (for example on pCloud, which offers a lot of space): your other computers find them by themselves. Settings and the session can stay on another account.",
+    "de": "Die Rushes kommen in einen Austauschordner (zum Beispiel auf pCloud, das viel Platz bietet): Ihre anderen Rechner finden sie von selbst. Einstellungen und Sitzung können auf einem anderen Konto bleiben.",
+    "es": "Los brutos van a una carpeta de intercambio (por ejemplo en pCloud, que ofrece mucho espacio): sus otros equipos los encuentran solos. Los ajustes y la sesión pueden quedarse en otra cuenta.",
+    "it": "I girati vanno in una cartella di scambio (per esempio su pCloud, che offre molto spazio): gli altri computer li ritrovano da soli. Impostazioni e sessione possono restare su un altro account."
+   },
+   "etapes": [
+    {
+     "texte": {
+      "fr": "Edition › Préférences… › « Comptes et synchro » › « Ajouter un compte... » › pCloud : le navigateur s'ouvre, connectez-vous et autorisez PhilFactory (sans donner votre mot de passe à PhilCut).",
+      "en": "Edit › Preferences… › « Accounts and sync » › « Add an account... » › pCloud: the browser opens, sign in and allow PhilFactory (without giving your password to PhilCut).",
+      "de": "Bearbeiten › Einstellungen… › « Konten und Synchronisierung » › « Konto hinzufügen... » › pCloud: Der Browser öffnet sich, melden Sie sich an und erlauben Sie PhilFactory (ohne PhilCut Ihr Passwort zu geben).",
+      "es": "Edición › Preferencias… › « Cuentas y sincronización » › « Añadir una cuenta... » › pCloud: se abre el navegador, inicie sesión y autorice PhilFactory (sin dar su contraseña a PhilCut).",
+      "it": "Modifica › Preferenze… › « Account e sincronizzazione » › « Aggiungi un account... » › pCloud: si apre il browser, accedete e autorizzate PhilFactory (senza dare la password a PhilCut)."
+     },
+     "montrer": {
+      "menu": [
+       "Edition",
+       "Préférences…"
+      ]
+     },
+     "fait": "fenetre:DialoguePreferences"
+    },
+    {
+     "texte": {
+      "fr": "Dans les Préférences, « Comptes et synchro » › « Projets entre vos appareils » : « Envoyer les copies légères des rushes sur » = votre compte pCloud ; choisissez le dossier d'échange (le même sur tous vos postes).",
+      "en": "In Preferences, « Projects between your devices »: « Send light copies of the rushes to » = your pCloud account; choose the exchange folder (the same on all your computers).",
+      "de": "In den Einstellungen, « Projekte zwischen Ihren Geräten »: « Leichte Kopien der Rohaufnahmen senden an » = Ihr pCloud-Konto; wählen Sie den Austauschordner (auf allen Rechnern derselbe).",
+      "es": "En Preferencias, « Proyectos entre sus dispositivos »: « Enviar las copias ligeras de los brutos a » = su cuenta pCloud; elija la carpeta de intercambio (la misma en todos sus equipos).",
+      "it": "Nelle Preferenze, « Progetti tra i vostri dispositivi »: « Invia le copie leggere del girato a » = il vostro account pCloud; scegliete la cartella di scambio (la stessa su tutti i computer)."
+     }
+    },
+    {
+     "texte": {
+      "fr": "Outils › « Synchroniser maintenant » : les rushes partent dans le dossier « Rushes » du compte ; la barre du bas suit l'envoi.",
+      "en": "Tools › « Sync now »: the rushes go into the account's « Rushes » folder; the bottom bar follows the upload.",
+      "de": "Werkzeuge › « Jetzt synchronisieren »: Die Rushes gehen in den Ordner « Rushes » des Kontos; die untere Leiste zeigt das Senden.",
+      "es": "Herramientas › « Sincronizar ahora »: los brutos van a la carpeta « Rushes » de la cuenta; la barra inferior sigue el envío.",
+      "it": "Strumenti › « Sincronizza ora »: i girati vanno nella cartella « Rushes » dell'account; la barra in basso segue l'invio."
+     },
+     "montrer": {
+      "menu": [
+       "Outils",
+       "Synchroniser maintenant"
+      ]
+     }
+    },
+    {
+     "texte": {
+      "fr": "Sur l'autre poste, même compte et même dossier dans les Préférences : PhilCut retrouve les rushes du projet tout seul.",
+      "en": "On the other computer, same account and same folder in Preferences: PhilCut finds the project's rushes by itself.",
+      "de": "Auf dem anderen Rechner dasselbe Konto und derselbe Ordner in den Einstellungen: PhilCut findet die Rushes des Projekts von selbst.",
+      "es": "En el otro equipo, la misma cuenta y la misma carpeta en Preferencias: PhilCut encuentra solo los brutos del proyecto.",
+      "it": "Sull'altro computer, stesso account e stessa cartella nelle Preferenze: PhilCut ritrova da solo i girati del progetto."
+     }
+    }
+   ]
+  }
+ ]
+}

@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.54 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.55 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.55 (garde-fous, guides en ligne)
+- Garde-fous automatiques : chaque regle de conception, et chaque incident passe, est verifie a chaque version (listes alphabetiques, rien de tronque, fenetres qui tiennent dans un ecran de 1024 x 768, reglages dans les Preferences, progression des taches, dossiers du systeme, aucun secret dans le code, jamais une erreur vide, aucune tache detruite en plein travail, guides qui ne citent que des menus existants, IA essayees en vrai, tout se defait d'un seul Annuler).
+- 53 messages d'erreur qui pouvaient s'afficher vides disent maintenant au moins la nature de l'erreur. Trois autres taches de fond sont protegees contre le plantage de "Dites-le".
+- La barre de lecture sous l'apercu passe a la ligne : PhilCut s'utilise des 1024 pixels de large (il en fallait 1113). La fenetre Vignette tient aussi.
+- Guides "Comment faire..." : ils arrivent aussi par le catalogue en ligne, comme les Goodies (marques "Nouveau"). Premier guide livre ainsi : "Echanger ses rushes entre ses postes par pCloud".
+- Sequence IA : sous le choix du moteur, ce que chacun garde du personnage (IA de ce poste : visage qui derive, levres immobiles ; Gemini : meme visage d'un plan a l'autre).
 
 ### 0.9.54 (pCloud direct)
 - pCloud : connexion directe par l'application PhilFactory acceptee par pCloud (autorisation dans le navigateur, sans donner de mot de passe). Le WebDAV reste possible.

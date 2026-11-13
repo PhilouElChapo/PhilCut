@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QF
 from . import musique_ia as MI
 from .langue import _
 from .taches import Tache
+from .taches import texte_erreur
 
 ALERTE = _("Le morceau reste sur ce poste : rien n'est envoyé. PhilCut n'en garde que le style (tempo, tonalité, instruments, ambiance, "
            "déroulé) ; la mélodie et les paroles ne sont jamais recopiées. Une voix de chanteur ou de personne connue n'est jamais "
@@ -443,7 +444,7 @@ class DialogueFabriqueMusique(QDialog):
         def fin(r, err):
             self.b_paroles.setEnabled(True)
             if err:
-                self.info.setText(_("✕ Paroles non écrites : {e}", e=str(err)[:300]))
+                self.info.setText(_("✕ Paroles non écrites : {e}", e=texte_erreur(err)[:300]))
                 return
             self.paroles.setPlainText(r)
             self.info.setText(_("Paroles écrites : relisez-les, modifiez-les si besoin, puis « Créer la musique »."))
@@ -517,7 +518,7 @@ class DialogueFabriqueMusique(QDialog):
         def fin(r, err):
             if err:
                 if not isinstance(err, InterruptedError):
-                    self.info.setText(_("✕ Séparation de la voix impossible : {e}", e=str(err)[:300]))
+                    self.info.setText(_("✕ Séparation de la voix impossible : {e}", e=texte_erreur(err)[:300]))
                 return
             MI.declarer(r, **{k: v for k, v in MI.droits(ch).items() if k in ("voix_a_moi", "voix_accord")})
             self.reference = r
@@ -560,7 +561,7 @@ class DialogueFabriqueMusique(QDialog):
         def fin(r, err):
             if err:
                 if not isinstance(err, InterruptedError):
-                    self.info.setText(_("✕ Analyse impossible : {e}", e=str(err)[:300]))
+                    self.info.setText(_("✕ Analyse impossible : {e}", e=texte_erreur(err)[:300]))
                 return
             r["chemin"] = ch
             self._montrer_inspiration(r, appliquer=True)
@@ -697,7 +698,7 @@ class DialogueFabriqueMusique(QDialog):
             if isinstance(err, InterruptedError) or getattr(self.tache, "arret", False):
                 self.info.setText(_("Création arrêtée."))
             else:
-                self.info.setText(_("✕ La création n'a pas abouti : {e}", e=str(err)[:600]))
+                self.info.setText(_("✕ La création n'a pas abouti : {e}", e=texte_erreur(err)[:600]))
             return
         chemin, c = r
         self.resultat = chemin
@@ -919,7 +920,7 @@ class DialogueMusiqueEnLigne(QDialog):
                 VL.installer_deno(t.avancer, lambda: t.arret)
             except Exception:      # noqa: BLE001 : Deno n'est utile que pour certaines vidéos
                 pass
-        self._lancer(travail, _("yt-dlp"), _("Installation de yt-dlp"), lambda r, e: (self.info.setText(("✕ " + str(e)) if e else
+        self._lancer(travail, _("yt-dlp"), _("Installation de yt-dlp"), lambda r, e: (self.info.setText(("✕ " + texte_erreur(e)) if e else
                                                                                                        _("yt-dlp est installé.")), self._maj()), True)
 
     def chercher(self):
@@ -934,7 +935,7 @@ class DialogueMusiqueEnLigne(QDialog):
 
         def fin(r, err):
             if err:
-                self.info.setText(_("✕ Recherche impossible : {e}", e=str(err)[:300]))
+                self.info.setText(_("✕ Recherche impossible : {e}", e=texte_erreur(err)[:300]))
                 return
             self.resultats = r or []
             self.liste.clear()
@@ -1012,7 +1013,7 @@ class DialogueMusiqueEnLigne(QDialog):
 
         def fin(url, err):
             if err:
-                self.info.setText(_("✕ Ecoute impossible : {e}", e=str(err)[:300]))
+                self.info.setText(_("✕ Ecoute impossible : {e}", e=texte_erreur(err)[:300]))
                 return
             self.lecteur.setSource(QUrl(url))
             self.lecteur.play()
@@ -1036,7 +1037,7 @@ class DialogueMusiqueEnLigne(QDialog):
         def fin(r, err):
             if err:
                 if not isinstance(err, InterruptedError):
-                    self.info.setText(_("✕ Téléchargement impossible : {e}", e=str(err)[:300]))
+                    self.info.setText(_("✕ Téléchargement impossible : {e}", e=texte_erreur(err)[:300]))
                 return
             self.dernier = r
             self.b_poser.setEnabled(True)

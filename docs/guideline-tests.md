@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T70 — 0.9.55 : garde-fous, guides en ligne, petit écran
+
+1. Fenêtre de PhilCut réduite à environ 1024 de large : la barre de lecture sous l'aperçu passe sur deux lignes, rien n'est coupé, tout reste cliquable.
+2. Aide › Comment faire… : « Echanger ses rushes entre ses postes par pCloud » est marqué « Nouveau » ; l'ouvrir : le badge disparaît ensuite. « Montrez-moi » ouvre Edition › Préférences…, puis Outils › Synchroniser maintenant.
+3. Séquence IA : changer le moteur (ce poste, Gemini, Flow) : la phrase grise sous le choix explique ce que chacun garde du personnage.
+4. Provoquer une erreur (par exemple une recherche de musique sans réseau) : le message « ✕ … » n'est jamais vide.
+
 ## T69 — 0.9.53 : séparer voix, musique et bruits
 
 1. Edition › Préférences › IA locale : installer « Séparer voix, musique et bruits » (environ 170 Mo).

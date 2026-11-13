@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabe
 from . import fond as F
 from .langue import _
 from .taches import Tache
+from .taches import texte_erreur
 
 
 def _damier(w, h, c=12):
@@ -141,7 +142,7 @@ class DialogueFond(QDialog):
     def _fini(self, r, err):
         self.barre.hide()
         if err:
-            self.etat.setText(_("✕ {e}", e=str(err)[:300]))
+            self.etat.setText(_("✕ {e}", e=texte_erreur(err)[:300]))
             return
         self.sortie, utilisee = r
         self.vue_apres.setPixmap(_pixmap(self.sortie, 460, 380))

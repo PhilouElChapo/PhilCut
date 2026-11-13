@@ -8,6 +8,7 @@ from . import musiques as MU
 from .langue import _
 from .taches import Tache
 from .widgets import boutons_fr
+from .taches import texte_erreur
 
 _EN_ROUTE = []
 
@@ -137,7 +138,7 @@ class DialogueMusiques(QDialog):
         self.b_chercher.show()
         self.liste.clear()
         if err:
-            self.etat.setText(_("✕ {e}", e=err))
+            self.etat.setText(_("✕ {e}", e=texte_erreur(err)))
             return
         for m in res:
             it = QTreeWidgetItem([m["titre"], m["auteur"], f"{int(m['duree'] // 60)}:{int(m['duree'] % 60):02d}" if m["duree"] else "?",
@@ -189,7 +190,7 @@ class DialogueMusiques(QDialog):
     def _telecharge(self, m, chemin, err):
         self.b_ok.setEnabled(True)
         if err:
-            self.etat.setText(_("✕ {e}", e=err))
+            self.etat.setText(_("✕ {e}", e=texte_erreur(err)))
             return
         self.chemin, self.morceau = chemin, m
         self.accept()

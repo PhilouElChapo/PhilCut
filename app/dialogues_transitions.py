@@ -7,6 +7,7 @@ from .langue import _
 from .projet import fin_clip
 from .taches import Tache
 from .widgets import boutons_fr
+from .taches import texte_erreur
 
 
 def _tc(t):
@@ -72,7 +73,7 @@ class DialogueTransitionsAuto(QDialog):
                 it.widget().deleteLater()
         self.lignes = []
         if err:
-            self.etat.setText(_("✕ {e}", e=err))
+            self.etat.setText(_("✕ {e}", e=texte_erreur(err)))
             return
         self.props = props or []
         if not self.props:

@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDialog, QDou
 from . import vignette as V
 from .langue import _
 from .taches import Tache
+from .taches import texte_erreur
 
 
 def _dossier():
@@ -38,7 +39,7 @@ class Toile(QWidget):
         self.mode = "lasso"
         self.montrer = True
         self._trace = []
-        self.setMinimumSize(480, 270)
+        self.setMinimumSize(384, 216)                 # 0.9.55 (G7) : la fenêtre tient dans un écran de 1024 de large
         self.setMouseTracking(True)
         self.setCursor(Qt.CrossCursor)
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -190,7 +191,7 @@ class DialogueVignette(QDialog):
         zg = QScrollArea()
         zg.setWidgetResizable(True)
         zg.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        zg.setMinimumWidth(420)
+        zg.setMinimumWidth(340)
         gauche = QWidget()
         vg = QVBoxLayout(gauche)
         zg.setWidget(gauche)
@@ -624,7 +625,7 @@ class DialogueVignette(QDialog):
     def _compose(self, gen, r, err):
         self.barre.hide()
         if err:
-            self.etat.setText(_("✕ {e}", e=str(err)[:300]))
+            self.etat.setText(_("✕ {e}", e=texte_erreur(err)[:300]))
             return
         if gen != self._gen:
             return
@@ -679,7 +680,7 @@ class DialogueVignette(QDialog):
             self.barre.hide()
             self.b_ia.setEnabled(True)
             if err:
-                self.etat.setText(_("✕ L'IA n'a pas répondu : {e}", e=str(err)[:300]))
+                self.etat.setText(_("✕ L'IA n'a pas répondu : {e}", e=texte_erreur(err)[:300]))
                 return
             for cle, champ in (("titre", self.titre), ("accent_mots", self.accent)):
                 if r.get(cle):
@@ -720,7 +721,7 @@ class DialogueVignette(QDialog):
     def _variantes_pretes(self, images, err):
         self.barre.hide()
         if err:
-            self.etat.setText(_("✕ {e}", e=str(err)[:300]))
+            self.etat.setText(_("✕ {e}", e=texte_erreur(err)[:300]))
             return
         for lb, q in zip(self.vues_var, images):
             pm = QPixmap.fromImage(q).scaled(lb.width(), lb.height(), Qt.KeepAspectRatio, Qt.SmoothTransformation)

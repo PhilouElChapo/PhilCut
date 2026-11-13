@@ -980,12 +980,11 @@ class Editeur(QWidget):
     def _transport(self):
         w = QFrame()
         w.setStyleSheet("QFrame{background:%s;border-top:1px solid %s}" % (theme.COULEURS["surface"], theme.COULEURS["bord_leger"]))
-        h = QHBoxLayout(w)
-        h.setContentsMargins(8, 2, 8, 2)
+        from .widgets import FluxLayout                  # 0.9.55 (garde-fou G7) : passe à la ligne sur un écran étroit
+        h = FluxLayout(w, marge=8, espace=2)
         self.lbl_temps = QLabel("0:00.0")
         self.lbl_temps.setStyleSheet("font-family:Consolas,monospace;font-size:14px;font-weight:600")
         h.addWidget(self.lbl_temps)
-        h.addStretch(1)
         for ic, aide, f in (("debut", _("Début (Origine)"), lambda: self.aller_a(0)), ("image_prec", _("Image précédente (←)"), lambda: self.aller_a(self.timeline.position - 1 / self.projet.cadence))):
             h.addWidget(self._petit(ic, aide, f))
         self.b_lecture = self._petit("lecture", _("Lecture / pause (Espace)"), self.lecture_auto)
@@ -1048,7 +1047,6 @@ class Editeur(QWidget):
         self.b_prepa.toggled.connect(lambda on: self.preparation.regler(on))
         h.addWidget(self.b_prepa)
         h.addWidget(self._petit("image", _("Enregistrer l'image affichée (PNG, pleine définition)"), self.extraire_image))
-        h.addStretch(1)
         self.lbl_duree = QLabel("")
         self.lbl_duree.setStyleSheet("color:%s" % theme.COULEURS["texte2"])
         h.addWidget(self.lbl_duree)

@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (QCheckBox, QDialog, QDoubleSpinBox, QHBoxLayout, 
 from . import montage_texte as MT
 from .langue import _
 from .taches import Tache
+from .taches import texte_erreur
 
 
 class DialogueMontageTexte(QDialog):
@@ -261,7 +262,7 @@ class DialogueMontageTexte(QDialog):
             self.b_transcrire.setEnabled(True)
             self.barre.hide()
             if err:
-                self.etat.setText(_("✕ Transcription impossible : {e}", e=str(err)[:300]))
+                self.etat.setText(_("✕ Transcription impossible : {e}", e=texte_erreur(err)[:300]))
                 return
             self.remplir()
         except RuntimeError:

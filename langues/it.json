@@ -6927,5 +6927,10 @@
  "Pas de son dans ce plan.": "Nessun audio in questa clip.",
  "Lecture du son": "Lettura dell'audio",
  "Voix, musique et bruits": "Voce, musica e rumori",
- "Séparation : morceau {i} sur {n}": "Separazione: pezzo {i} di {n}"
+ "Séparation : morceau {i} sur {n}": "Separazione: pezzo {i} di {n}",
+ "Nouveau": "Nuovo",
+ "IA de ce poste : gratuite. Elle part de l'image du personnage, mais le visage dérive pendant le plan (5 s) et change d'un plan à l'autre ; les lèvres ne bougent pas avec la réplique (dite par une voix posée par-dessus). Bien pour un plan court, un paysage, une silhouette.": "IA di questo computer: gratuita. Parte dall'immagine del personaggio, ma il volto cambia durante l'inquadratura (5 s) e da un'inquadratura all'altra; le labbra non si muovono con la battuta (detta da una voce sovrapposta). Va bene per un'inquadratura breve, un paesaggio, una silhouette.",
+ "Google Flow : votre abonnement, pas à pas dans le navigateur ; mêmes possibilités que Gemini.": "Google Flow: il vostro abbonamento, passo passo nel browser; stesse possibilità di Gemini.",
+ "Gemini (votre clef, coût affiché avant) : il mélange les images du personnage et du lieu, garde le même visage d'un plan à l'autre et joue la réplique. A choisir pour une vraie scène avec un personnage.": "Gemini (la vostra chiave, costo mostrato prima): mescola le immagini del personaggio e del luogo, mantiene lo stesso volto da un'inquadratura all'altra e recita la battuta. La scelta per una vera scena con un personaggio.",
+ "Par exemple pCloud ou kDrive pour les rushes (grand espace), et Google Drive pour les réglages et la session. Ajoutez le compte plus haut, dans cette page.": "Per esempio pCloud o kDrive per il girato (molto spazio) e Google Drive per le impostazioni e la sessione. Aggiungete l'account più in alto, in questa pagina."
 }

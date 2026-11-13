@@ -1,4 +1,4 @@
-"""Essai réel de la séparation (0.9.53), lancé par GitHub Actions (essai_separation.yml) : télécharge HT-Demucs ONNX,
+"""Essai réel de la séparation (0.9.53, modèle « separation_sons »), lancé par GitHub Actions (essai_separation.yml) : télécharge HT-Demucs ONNX,
 mélange une voix de synthèse (espeak-ng) et une musique synthétique, sépare, et vérifie :
 - les quatre pistes ont la bonne forme et s'additionnent au mélange ;
 - la piste voix ressemble à la voix (corrélation) bien plus qu'à la musique ;
