@@ -1,0 +1,34 @@
+# 0.9.57 : essai réel de « Continuer avec ma voix » (Chatterbox Multilingual ONNX, licence MIT) sur un extrait de voix de synthèse.
+name: Essai voix
+
+on:
+  push:
+    branches: [essai-voix]
+    paths:
+      - .github/workflows/essai_voix.yml
+      - app/voix_clone.py
+      - outils_dev/essai_voix.py
+  workflow_dispatch:
+
+jobs:
+  essai:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Outils
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg espeak-ng
+          pip install -q numpy onnxruntime tokenizers
+      - name: Voix
+        env:
+          PHILCUT_FFMPEG: ffmpeg
+        run: python outils_dev/essai_voix.py essai_voix
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: essai-voix
+          path: essai_voix/*.wav
