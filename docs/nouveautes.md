@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.69 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.70 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.70 (Sequence IA : gestes coherents, personnage fidele a son image)
+- Une action par plan : les moteurs video ne reussissent bien qu'une action simple ; deux actions enchainees ("contourne le bureau et s'assoit") donnent des gestes incoherents (traverser la table). PhilCut les repere (signe ⚠ dans la liste, avertissement sous "Ce qu'on voit" et avant de fabriquer), "Couper en deux plans" ou "Une action par plan" pour tous.
+- Le decoupage par l'IA ne fait plus qu'une action simple par plan (4 a 6 s) ; la consigne envoyee au moteur demande une seule action lente et physiquement possible (on contourne les meubles, on ne traverse rien) ; les consignes ecrites par PhilCut avant cette version sont refaites a la fabrication.
+- Personnage fidele : sans image de depart, le moteur reinventait le personnage d'apres sa description. Desormais, si le personnage (ou le lieu) a des images, l'image de depart est composee d'office avec elles par Gemini (0,04 $ par plan, compte dans le prix ; case "Image de depart par Gemini").
+
+## Nouveautes de 0.9.69
+
 
 ### 0.9.69 (la voix : un seul reglage)
 - Sequence IA, "Repliques" decide tout : "Aucune voix : personne ne parle" ; voix de ce poste ou voix Gemini posees ensuite par PhilCut ; ou nouveau "Voix du moteur video" : le moteur (Kling, Seedance, Gemini) fait parler les personnages avec la video, levres naturelles, d'apres les repliques ecrites.

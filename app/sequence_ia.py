@@ -47,18 +47,57 @@ def plan(action="", personnages=None, lieu_="", duree=DUREE_PLAN, repliques=None
 _SEPARATEURS = r"(?:[.;!?\n]+|\bpuis\b|\bensuite\b|\bet enfin\b|\bthen\b)"
 
 
+_ENCHAINEMENTS = re.compile(r"\s*(?:,\s*)?\b(?:puis|ensuite|avant de|après avoir|et enfin|pour s'|pour se)\b\s*|"
+                            r"\s+et\s+(?=(?:s'|se |l'|lui |y |en )?(?!(?:le|la|les|un|une|des|du|de|son|sa|ses|mon|ma|leur|leurs|ce|cette)\b)"
+                            r"\w{3,}(?:e|ent|it|ait)\b)", re.I)
+
+
+def actions_multiples(action):
+    """L'action décrit-elle plusieurs actions enchaînées (« contourne le bureau et s'assoit ») ? Renvoie la position de la
+    coupe (début, fin du lien) ou None. Les moteurs vidéo ne savent bien faire qu'UNE action simple par plan."""
+    for m in _ENCHAINEMENTS.finditer(action or ""):
+        if 3 < m.start() < len(action) - 4:
+            return m.start(), m.end()
+    return None
+
+
+def couper_plan(seq, i):
+    """Coupe le plan i en deux à l'enchaînement d'actions : deux plans d'une action chacun (durée partagée, mêmes
+    personnages, lieu et caméra). Renvoie True si la coupe a eu lieu."""
+    pl = seq["plans"][i]
+    pos = actions_multiples(pl.get("action"))
+    if not pos:
+        return False
+    a, b = pl["action"][:pos[0]].strip(" ,"), pl["action"][pos[1]:].strip(" ,")
+    sujet = ""
+    for n in pl.get("personnages") or []:
+        if a.lower().startswith(n.lower()):
+            sujet = n
+    if sujet and not b.lower().startswith(sujet.lower()):
+        b = f"{sujet} {b}"
+    elif not sujet and pl.get("personnages") and len(pl["personnages"]) == 1:
+        b = f"{pl['personnages'][0]} {b}"
+    d = max(3, int(round(float(pl.get("duree") or DUREE_PLAN) / 2 + 0.5)))
+    p1 = dict(pl, action=a[0].upper() + a[1:], duree=d, consigne="", fichier="", image="")
+    p2 = dict(pl, action=b[0].upper() + b[1:], duree=d, consigne="", fichier="", image="", repliques=[], voix=[])
+    seq["plans"][i:i + 1] = [p1, p2]
+    return True
+
+
 def decouper_simple(histoire):
     """Sans IA : une phrase (ou un « puis ») = un plan."""
     morceaux = [m.strip(" ,") for m in re.split(_SEPARATEURS, histoire or "", flags=re.I)]
     return [plan(m[0].upper() + m[1:]) for m in morceaux if len(m) > 3][:12]
 
 
-CONSIGNE_DECOUPER = """Tu es scénariste et réalisateur. Découpe cette petite histoire en plans de cinéma courts (4 à 8 secondes chacun,
-12 au plus), en français. Réponds en JSON strict, sans texte autour :
+CONSIGNE_DECOUPER = """Tu es scénariste et réalisateur. Découpe cette petite histoire en plans de cinéma courts (4 à 6 secondes chacun,
+12 au plus), en français. REGLE ESSENTIELLE : UNE SEULE action simple par plan (« elle s'assoit », « il ouvre la porte »),
+jamais deux actions enchaînées (« elle contourne le bureau et s'assoit » = deux plans). Des gestes lents et physiquement possibles :
+on contourne les meubles, on ne traverse jamais un objet. Réponds en JSON strict, sans texte autour :
 {{"personnages": [{{"nom": "prénom court inventé", "description": "apparence physique et vêtements, précis et constants (âge, carrure,
 cheveux, tenue)", "style": "nom de la personne ou du personnage dont il a le style, si l'histoire en cite un, sinon vide"}}],
 "lieux": [{{"nom": "nom court", "description": "description visuelle précise (lumière, saison, détails)"}}],
-"plans": [{{"action": "ce qu'on voit, une phrase", "personnages": ["noms présents"], "lieu": "nom du lieu", "duree": 6,
+"plans": [{{"action": "ce qu'on voit : une seule action simple", "personnages": ["noms présents"], "lieu": "nom du lieu", "duree": 6,
 "camera": "cadrage et mouvement (plan large, travelling, gros plan…)", "repliques": [{{"qui": "nom", "texte": "réplique courte,
 écrite dans la manière de parler de son style, sans jamais citer une réplique existante"}}]}}]}}
 Garde les personnages et lieux déjà décrits par l'utilisateur. Histoire :
@@ -197,6 +236,10 @@ def consigne(seq, pl, params=None, traduire=True):
         morceaux.append(lignes + " Natural lip sync, no subtitles.")
     elif pl.get("repliques"):
         morceaux.append("The characters talk briefly (lips moving), no subtitles.")
+    morceaux.append("One single simple action, slow and natural, physically plausible: people walk around furniture and never "
+                    "pass through objects or tables; steady camera unless stated.")
+    if images_du_plan(seq, pl):
+        morceaux.append("The people and the place look exactly like in the starting image.")
     morceaux.append("Same characters, same clothes and same light as the other shots of this sequence. Realistic, high detail, "
                     "natural motion, no text, no watermark, no logo, no famous person.")
     return " ".join(morceaux)
@@ -204,7 +247,8 @@ def consigne(seq, pl, params=None, traduire=True):
 
 CONSIGNE_AMELIORER = """You improve a prompt for an AI video generator. Keep EXACTLY, word for word, every "Character X: ..." description
 and the "Setting:" sentence (continuity between shots). Make the action, camera movement, lighting, lens and atmosphere more
-precise and cinematic, in English, under 110 words. Never add a real person's name, a known character or a logo. Answer with the
+precise and cinematic, in English, under 110 words. Keep ONE single simple, slow, physically plausible action (people walk around
+furniture, never through objects); never add a second action. Never add a real person's name, a known character or a logo. Answer with the
 prompt only.
 
 Prompt:
@@ -278,6 +322,12 @@ def fabriquer_plan(seq, i, params, moteur_video, progression=None, arret=lambda:
     texte = pl.get("consigne") or consigne(seq, pl, params)
     sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_{int(time.time())}.mp4")
     image = pl.get("image") if pl.get("image") and os.path.exists(pl["image"]) else None
+    if image is None and seq.get("image_auto", True) and moteur_video not in ("locale", "flow") and params.get("clef_gemini") \
+            and images_du_plan(seq, pl):
+        # 0.9.70 : sans image de départ, le moteur réinvente le personnage ; on compose d'abord l'image avec ses références
+        progression and progression(0.02)
+        image = image_depart(seq, i, params, "gemini")
+        pl["image"] = image
     if moteur_video == "locale":
         from . import creatif
         L, H = (272, 480) if seq.get("format") == "9:16" else (480, 272)
@@ -312,7 +362,11 @@ def prix_total(seq, moteur_video, params):
     if not m:
         return 0.0
     son = seq.get("voix") == "moteur"
-    return round(sum(GV.prix(m, int(p.get("duree") or DUREE_PLAN), son) for p in seq["plans"] if not p.get("fichier")), 2)
+    from .recettes_ia import PRIX_GEMINI
+    auto = seq.get("image_auto", True) and params.get("clef_gemini")
+    return round(sum(GV.prix(m, int(p.get("duree") or DUREE_PLAN), son) +
+                     (PRIX_GEMINI["image"] if auto and not p.get("image") and images_du_plan(seq, p) else 0.0)
+                     for p in seq["plans"] if not p.get("fichier")), 2)
 
 
 def monter(projet, seq, t):

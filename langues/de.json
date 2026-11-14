@@ -7527,5 +7527,15 @@
  "Aucune voix : personne ne parle": "Keine Stimme: niemand spricht",
  "plans jusqu'à 15 s": "Clips bis 15 s",
  "Voix du moteur vidéo : il fait parler les personnages avec la vidéo (lèvres naturelles)": "Stimme der Video-Engine: Sie lässt die Figuren mit dem Video sprechen (natürliche Lippen)",
- "Un seul réglage pour la voix : personne ne parle, voix posée ensuite par PhilCut, ou voix fabriquée avec la vidéo par le moteur (Kling, Seedance, Gemini ; un peu plus cher chez Kling)": "Eine einzige Einstellung für die Stimme: niemand spricht, Stimme danach von PhilCut gelegt, oder Stimme mit dem Video von der Engine erzeugt (Kling, Seedance, Gemini; bei Kling etwas teurer)"
+ "Un seul réglage pour la voix : personne ne parle, voix posée ensuite par PhilCut, ou voix fabriquée avec la vidéo par le moteur (Kling, Seedance, Gemini ; un peu plus cher chez Kling)": "Eine einzige Einstellung für die Stimme: niemand spricht, Stimme danach von PhilCut gelegt, oder Stimme mit dem Video von der Engine erzeugt (Kling, Seedance, Gemini; bei Kling etwas teurer)",
+ "Image de départ par Gemini (0,04 $ par plan)": "Startbild von Gemini (0,04 $ pro Clip)",
+ "Composée avec les images des personnages et du lieu : le personnage ressemble à son image. Sans elle, le moteur réinvente le personnage d'après sa description.": "Aus den Bildern der Figuren und des Ortes zusammengesetzt: Die Figur sieht aus wie auf ihrem Bild. Ohne sie erfindet die Engine die Figur nach ihrer Beschreibung neu.",
+ "Une action par plan": "Eine Aktion pro Clip",
+ "Chaque plan qui enchaîne deux actions (« contourne le bureau et s'assoit ») devient deux plans": "Jeder Clip mit zwei verketteten Aktionen („geht um den Schreibtisch und setzt sich“) wird zu zwei Clips",
+ "⚠ Deux actions dans ce plan : les moteurs vidéo n'en réussissent bien qu'une (sinon gestes incohérents).": "⚠ Zwei Aktionen in diesem Clip: Video-Engines schaffen nur eine gut (sonst unstimmige Bewegungen).",
+ "Couper en deux plans": "In zwei Clips teilen",
+ "Plan coupé en deux : une action chacun.": "Clip in zwei geteilt: je eine Aktion.",
+ "{n} plan(s) coupé(s) : une action par plan.": "{n} Clip(s) geteilt: eine Aktion pro Clip.",
+ "Chaque plan n'a déjà qu'une action.": "Jeder Clip hat bereits nur eine Aktion.",
+ "⚠ Plan(s) {l} : deux actions enchaînées, les gestes risquent d'être incohérents. « Une action par plan » les coupe en deux.": "⚠ Clip(s) {l}: zwei verkettete Aktionen, die Bewegungen könnten unstimmig sein. „Eine Aktion pro Clip“ teilt sie in zwei."
 }

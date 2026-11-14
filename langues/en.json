@@ -7536,5 +7536,15 @@
  "Aucune voix : personne ne parle": "No voice: nobody speaks",
  "plans jusqu'à 15 s": "clips up to 15 s",
  "Voix du moteur vidéo : il fait parler les personnages avec la vidéo (lèvres naturelles)": "Video engine voice: it makes the characters speak with the video (natural lips)",
- "Un seul réglage pour la voix : personne ne parle, voix posée ensuite par PhilCut, ou voix fabriquée avec la vidéo par le moteur (Kling, Seedance, Gemini ; un peu plus cher chez Kling)": "A single setting for the voice: nobody speaks, voice placed afterwards by PhilCut, or voice made with the video by the engine (Kling, Seedance, Gemini; a bit more expensive with Kling)"
+ "Un seul réglage pour la voix : personne ne parle, voix posée ensuite par PhilCut, ou voix fabriquée avec la vidéo par le moteur (Kling, Seedance, Gemini ; un peu plus cher chez Kling)": "A single setting for the voice: nobody speaks, voice placed afterwards by PhilCut, or voice made with the video by the engine (Kling, Seedance, Gemini; a bit more expensive with Kling)",
+ "Image de départ par Gemini (0,04 $ par plan)": "Starting image by Gemini ($0.04 per clip)",
+ "Composée avec les images des personnages et du lieu : le personnage ressemble à son image. Sans elle, le moteur réinvente le personnage d'après sa description.": "Composed with the images of the characters and the place: the character looks like their image. Without it, the engine reinvents the character from their description.",
+ "Une action par plan": "One action per clip",
+ "Chaque plan qui enchaîne deux actions (« contourne le bureau et s'assoit ») devient deux plans": "Each clip that chains two actions (“walks around the desk and sits down”) becomes two clips",
+ "⚠ Deux actions dans ce plan : les moteurs vidéo n'en réussissent bien qu'une (sinon gestes incohérents).": "⚠ Two actions in this clip: video engines only do one well (otherwise incoherent movements).",
+ "Couper en deux plans": "Split into two clips",
+ "Plan coupé en deux : une action chacun.": "Clip split in two: one action each.",
+ "{n} plan(s) coupé(s) : une action par plan.": "{n} clip(s) split: one action per clip.",
+ "Chaque plan n'a déjà qu'une action.": "Each clip already has only one action.",
+ "⚠ Plan(s) {l} : deux actions enchaînées, les gestes risquent d'être incohérents. « Une action par plan » les coupe en deux.": "⚠ Clip(s) {l}: two chained actions, the movements may be incoherent. “One action per clip” splits them in two."
 }

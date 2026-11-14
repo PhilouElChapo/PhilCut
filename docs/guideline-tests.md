@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T84 — 0.9.70 : Séquence IA, gestes cohérents et personnage fidèle
+
+1. Reprendre l'histoire d'Hélène : dans la liste des plans, les plans à deux actions portent ⚠ ; sous « Ce qu'on voit », l'avertissement et « Couper en deux plans ». Essayer « Une action par plan » : chaque plan double devient deux plans (durées partagées).
+2. Le personnage a une image (onglet Personnages et lieux) : case « Image de départ par Gemini » cochée ; le prix compte 0,04 $ par plan.
+3. Fabriquer un plan avec Gemini Omni : l'onglet Plans montre l'image de départ composée ; le personnage ressemble-t-il à son image ? les gestes sont-ils cohérents (plus de traversée de table) ?
+4. Nouvelle histoire, « Découper en plans (IA cloud) » : chaque plan n'a qu'une action.
+
 ## T83 — 0.9.68 : fenêtres non bloquantes, certificats, histoire sans voix
 
 1. Séquence IA : « Fabriquer les plans manquants » ; pendant le calcul, cliquer dans la timeline : PhilCut répond. « Réduire (suivi dans la barre du bas) » : la fenêtre disparaît, la barre du bas suit ; « Afficher la fenêtre » la rouvre.

@@ -90,6 +90,13 @@ class DialogueSequence(QDialog):
         self.voix.currentIndexChanged.connect(lambda _i: (self.seq.__setitem__("voix", self.voix.currentData()), self._maj_prix()))
         f.addRow(self._gras(_("Répliques")), self.voix)
         hm = QHBoxLayout()
+        self.image_auto = QCheckBox(_("Image de départ par Gemini (0,04 $ par plan)"))
+        self.image_auto.setToolTip(_("Composée avec les images des personnages et du lieu : le personnage ressemble à son image. "
+                                     "Sans elle, le moteur réinvente le personnage d'après sa description."))
+        self.image_auto.setChecked(bool(self.seq.get("image_auto", True)))
+        self.image_auto.setEnabled(bool(self.params.get("clef_gemini")))
+        self.image_auto.toggled.connect(lambda v: (self.seq.__setitem__("image_auto", v), self._maj_prix()))
+        f.addRow(self._gras(_("Visages")), self.image_auto)
         self.musique = QCheckBox(_("Musique sous la séquence (IA de ce poste)"))
         self.musique.setChecked(bool(self.seq["musique"].get("active", True)))
         hm.addWidget(self.musique)
@@ -404,6 +411,10 @@ class DialogueSequence(QDialog):
         b.clicked.connect(self._retirer_plan)
         h.addWidget(b)
         vg.addLayout(h)
+        self.b_une_action = QPushButton(_("Une action par plan"))
+        self.b_une_action.setToolTip(_("Chaque plan qui enchaîne deux actions (« contourne le bureau et s'assoit ») devient deux plans"))
+        self.b_une_action.clicked.connect(self._couper_tous)
+        vg.addWidget(self.b_une_action)
         w.addWidget(gauche)
         droite = QScrollArea()
         droite.setWidgetResizable(True)
@@ -413,6 +424,20 @@ class DialogueSequence(QDialog):
         self.p_action = QPlainTextEdit()
         self.p_action.setMaximumHeight(60)
         f.addRow(_("Ce qu'on voit"), self.p_action)
+        # 0.9.70 : une seule action simple par plan, sinon le moteur enchaîne mal (traverser une table pour s'asseoir…)
+        self.boite_multi = QWidget()
+        hm2 = QHBoxLayout(self.boite_multi)
+        hm2.setContentsMargins(0, 0, 0, 0)
+        self.lbl_multi = QLabel(_("⚠ Deux actions dans ce plan : les moteurs vidéo n'en réussissent bien qu'une (sinon gestes "
+                                  "incohérents)."))
+        self.lbl_multi.setWordWrap(True)
+        self.lbl_multi.setStyleSheet("color:#c98a00")
+        hm2.addWidget(self.lbl_multi, 1)
+        b = QPushButton(_("Couper en deux plans"))
+        b.clicked.connect(self._couper_courant)
+        hm2.addWidget(b)
+        self.boite_multi.hide()
+        f.addRow("", self.boite_multi)
         self.p_persos = QLineEdit()
         self.p_persos.setPlaceholderText(_("Noms des personnages présents, séparés par des virgules"))
         f.addRow(_("Personnages"), self.p_persos)
@@ -497,10 +522,6 @@ class DialogueSequence(QDialog):
         w.setSizes([300, 760])
         self.onglets.addTab(w, _("3. Plans"))
 
-    def _libelle(self, i, p):
-        signe = "✓" if p.get("fichier") and os.path.exists(p["fichier"]) else "○"
-        return f"{signe} {i + 1}. {p.get('action') or _('(plan vide)')}"
-
     def _remplir_plans(self):
         self.liste.blockSignals(True)
         self.liste.clear()
@@ -538,6 +559,25 @@ class DialogueSequence(QDialog):
             self._courant = min(i, len(self.seq["plans"]) - 1)
             self._remplir_plans()
 
+    def _couper_courant(self):
+        if 0 <= self._courant < len(self.seq["plans"]) and Q.couper_plan(self.seq, self._courant):
+            self._remplir_plans()
+            self.etat.setText(_("Plan coupé en deux : une action chacun."))
+
+    def _couper_tous(self):
+        n, i = 0, 0
+        while i < len(self.seq["plans"]):
+            if not self.seq["plans"][i].get("fichier") and Q.couper_plan(self.seq, i):
+                n += 1
+                continue                       # le premier morceau peut encore contenir deux actions
+            i += 1
+        self._remplir_plans()
+        self.etat.setText(_("{n} plan(s) coupé(s) : une action par plan.", n=n) if n else _("Chaque plan n'a déjà qu'une action."))
+
+    def _libelle(self, i, p):
+        signe = "✓" if p.get("fichier") and os.path.exists(p["fichier"]) else ("⚠" if Q.actions_multiples(p.get("action")) else "○")
+        return f"{signe} {i + 1}. {p.get('action') or _('(plan vide)')}"
+
     def _plan(self):
         return self.seq["plans"][self._courant] if 0 <= self._courant < len(self.seq["plans"]) else None
 
@@ -553,6 +593,7 @@ class DialogueSequence(QDialog):
             self.p_camera.setText(p.get("camera", ""))
             self.p_repliques.setPlainText("\n".join(f"{r['qui']} : {r['texte']}" for r in p.get("repliques") or []))
             self.p_consigne.setPlainText(p.get("consigne", ""))
+            self.boite_multi.setVisible(bool(Q.actions_multiples(p.get("action", ""))))
             self._maj_vignette()
             self.apercu.arreter()
             if p.get("fichier") and os.path.exists(p["fichier"]):
@@ -585,6 +626,7 @@ class DialogueSequence(QDialog):
         it = self.liste.item(self._courant)
         if it:
             it.setText(self._libelle(self._courant, p))
+        self.boite_multi.setVisible(bool(Q.actions_multiples(p["action"])))
         self._maj_prix()
 
     def _rediger(self):
@@ -714,9 +756,16 @@ class DialogueSequence(QDialog):
         from . import generateurs_video as GV
         mo = GV.modele(m, self.params)
         son = self.seq.get("voix") == "moteur"
-        prix = round(sum(GV.prix(mo, int(self.seq["plans"][i].get("duree") or Q.DUREE_PLAN), son) for i in indices), 2) if mo else 0
+        from .recettes_ia import PRIX_GEMINI
+        auto = self.seq.get("image_auto", True) and self.params.get("clef_gemini")
+        prix = round(sum(GV.prix(mo, int(self.seq["plans"][i].get("duree") or Q.DUREE_PLAN), son) +
+                         (PRIX_GEMINI["image"] if auto and not self.seq["plans"][i].get("image") and
+                          Q.images_du_plan(self.seq, self.seq["plans"][i]) else 0.0) for i in indices), 2) if mo else 0
+        doubles = [i + 1 for i in indices if Q.actions_multiples(self.seq["plans"][i].get("action"))]
+        avert = ("\n\n" + _("⚠ Plan(s) {l} : deux actions enchaînées, les gestes risquent d'être incohérents. « Une action par "
+                             "plan » les coupe en deux.", l=", ".join(map(str, doubles)))) if doubles else ""
         return QMessageBox.question(self, _("Séquence IA"), _("Fabriquer {n} plan(s) avec {m} pour au plus {p} $ environ (votre clef) ?",
-                                                              n=len(indices), m=(mo or {}).get("nom", m), p=prix)) == QMessageBox.Yes
+                                                              n=len(indices), m=(mo or {}).get("nom", m), p=prix) + avert) == QMessageBox.Yes
 
     def _fabriquer_courant(self):
         if self._plan():
@@ -736,8 +785,9 @@ class DialogueSequence(QDialog):
         m = self.moteur.currentData()
         for i in indices:
             p = self.seq["plans"][i]
-            if not p.get("consigne"):
-                p["consigne"] = Q.consigne(self.seq, p, self.params)
+            ancienne = p.get("consigne", "")
+            if not ancienne or (ancienne.startswith("Cinematic shot,") and "One single simple action" not in ancienne):
+                p["consigne"] = Q.consigne(self.seq, p, self.params)      # écrite par PhilCut avant 0.9.70 : refaite
         seq = copy.deepcopy(self.seq)
 
         def travail(tache):
@@ -746,8 +796,9 @@ class DialogueSequence(QDialog):
                 if tache.arret:
                     break
                 tache.avancer(k / len(indices), _("plan {i} ({k} sur {n})", i=i + 1, k=k + 1, n=len(indices)))
-                faits[i] = Q.fabriquer_plan(seq, i, self.params, m,
-                                            progression=lambda f, k=k: tache.avancer((k + f) / len(indices)), arret=lambda: tache.arret)
+                f = Q.fabriquer_plan(seq, i, self.params, m,
+                                     progression=lambda f, k=k: tache.avancer((k + f) / len(indices)), arret=lambda: tache.arret)
+                faits[i] = (f, seq["plans"][i].get("image", ""))      # l'image de départ composée revient aussi
             return faits
         t = Tache(travail, _("Séquence IA"))
         self.taches.append(t)
@@ -759,8 +810,10 @@ class DialogueSequence(QDialog):
 
         def fin(r, e):
             self.suivi.finir()
-            for i, chemin in (r or {}).items():
+            for i, (chemin, image) in (r or {}).items():
                 self.seq["plans"][i]["fichier"] = chemin
+                if image:
+                    self.seq["plans"][i]["image"] = image
             Q.enregistrer(self.seq)
             self._remplir_plans()
             if e:

@@ -7527,5 +7527,15 @@
  "Aucune voix : personne ne parle": "Sin voz: nadie habla",
  "plans jusqu'à 15 s": "planos de hasta 15 s",
  "Voix du moteur vidéo : il fait parler les personnages avec la vidéo (lèvres naturelles)": "Voz del motor de vídeo: hace hablar a los personajes con el vídeo (labios naturales)",
- "Un seul réglage pour la voix : personne ne parle, voix posée ensuite par PhilCut, ou voix fabriquée avec la vidéo par le moteur (Kling, Seedance, Gemini ; un peu plus cher chez Kling)": "Un solo ajuste para la voz: nadie habla, voz colocada después por PhilCut, o voz fabricada con el vídeo por el motor (Kling, Seedance, Gemini; algo más caro con Kling)"
+ "Un seul réglage pour la voix : personne ne parle, voix posée ensuite par PhilCut, ou voix fabriquée avec la vidéo par le moteur (Kling, Seedance, Gemini ; un peu plus cher chez Kling)": "Un solo ajuste para la voz: nadie habla, voz colocada después por PhilCut, o voz fabricada con el vídeo por el motor (Kling, Seedance, Gemini; algo más caro con Kling)",
+ "Image de départ par Gemini (0,04 $ par plan)": "Imagen de partida por Gemini (0,04 $ por plano)",
+ "Composée avec les images des personnages et du lieu : le personnage ressemble à son image. Sans elle, le moteur réinvente le personnage d'après sa description.": "Compuesta con las imágenes de los personajes y del lugar: el personaje se parece a su imagen. Sin ella, el motor reinventa el personaje a partir de su descripción.",
+ "Une action par plan": "Una acción por plano",
+ "Chaque plan qui enchaîne deux actions (« contourne le bureau et s'assoit ») devient deux plans": "Cada plano que encadena dos acciones («rodea el escritorio y se sienta») se convierte en dos planos",
+ "⚠ Deux actions dans ce plan : les moteurs vidéo n'en réussissent bien qu'une (sinon gestes incohérents).": "⚠ Dos acciones en este plano: los motores de vídeo solo hacen bien una (si no, gestos incoherentes).",
+ "Couper en deux plans": "Dividir en dos planos",
+ "Plan coupé en deux : une action chacun.": "Plano dividido en dos: una acción cada uno.",
+ "{n} plan(s) coupé(s) : une action par plan.": "{n} plano(s) dividido(s): una acción por plano.",
+ "Chaque plan n'a déjà qu'une action.": "Cada plano ya tiene una sola acción.",
+ "⚠ Plan(s) {l} : deux actions enchaînées, les gestes risquent d'être incohérents. « Une action par plan » les coupe en deux.": "⚠ Plano(s) {l}: dos acciones encadenadas, los gestos pueden ser incoherentes. «Una acción por plano» los divide en dos."
 }
