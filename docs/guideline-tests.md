@@ -157,6 +157,17 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T80 — 0.9.65 : faire parler un personnage sur votre son
+
+Il faut une clef fal.ai (Préférences › Assistant et IA, « Clef fal.ai ») avec un peu de crédit.
+
+1. Posez une voix de 5 à 10 s sur la piste Voix, sous un plan où l'on voit un visage (un plan IA ou un personnage inventé).
+2. Clic droit sur le plan › « Faire parler ce plan sur le son dessous… » : la ligne bleue nomme la voix (et la musique s'il y en a) ; le coût s'affiche (LatentSync : 0,20 $).
+3. « Faire parler » reste gris tant que la case du visage n'est pas cochée. Cocher, « Faire parler », confirmer le prix. Fermer la fenêtre : la barre du bas suit ; « Voir le résultat » à la fin.
+4. Regarder l'aperçu : les lèvres suivent-elles la voix ? « Poser à la place du plan » : le plan est remplacé, muet ; on entend la voix de la piste Voix. Edition › Annuler revient au plan d'origine.
+5. Fabrique IA › Vidéo › « Personnage qui parle (une image et votre son)… » : partie en jaune sur la voix, « L'image du film à la ligne rouge » (ou une image), OmniHuman, 720p ; écrire « parle calmement en souriant » (l'anglais suit) ; faire parler, poser au-dessus du film.
+6. Avec une chanson (musique et voix) : cocher « Isoler d'abord la voix » et comparer.
+
 ## T79 — 0.9.64 : fermer une fenêtre pendant une création
 
 1. Fabrique IA › Musique › Fabrique musique : « Créer la musique », puis « Fermer » tout de suite. La fenêtre disparaît ; la barre du bas montre « Fabrique musique : création du morceau » avec la progression et « Afficher la fenêtre ». Continuer à monter : PhilCut n'est pas bloqué.

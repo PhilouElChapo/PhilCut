@@ -962,6 +962,10 @@ class Fenetre(QMainWindow):
                     _("Un plan qui part de la dernière image d'un plan et arrive à la première image du suivant : l'IA regarde les "
                       "deux images et propose des passages. Transition 3D gratuite, IA de ce poste, ou Gemini (prix annoncé)."),
                     quand(lambda e: e.plan_liaison())),
+                ent(icone("ia"), _("Personnage qui parle (une image et votre son)…"),
+                    _("Une image du personnage devient une vidéo qui dit votre son (voix, chanson) : les lèvres suivent le son. "
+                      "fal.ai, prix annoncé. Pour un plan déjà fait : clic droit sur le plan › « Faire parler ce plan… »."),
+                    quand(lambda e: e.faire_parler(genre="image"))),
                 ent(icone("ia"), _("Plan vidéo à partir d'une phrase…"),
                     _("Décrivez le plan (« survol de collines au lever du soleil ») : IA de ce poste, Gemini ou Flow."),
                     lambda: self.fabrique(onglet=1))]),

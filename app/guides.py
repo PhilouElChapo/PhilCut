@@ -165,6 +165,24 @@ def _guides_integres():
              {"texte": _("« Poser entre les deux plans » : la suite du film se décale d'autant. Edition › Annuler revient en arrière."),
               "fait": "liaison"},
          ]},
+        {"id": "levres", "etat": "ok",
+         "titre": _("Faire parler un personnage sur ma voix (lèvres synchronisées)"),
+         "mots": "levres bouche parler synchroniser lipsync personnage presentateur avatar chanter chanteur voix doublage",
+         "intro": _("Le son d'abord : posez la voix (ou la chanson) sur la timeline, puis le moteur fabrique les lèvres dessus. "
+                    "Un plan déjà fait garde tout sauf la bouche ; une image du personnage devient une vidéo complète. Calcul par "
+                    "fal.ai (clef à connecter une fois), prix annoncé avant. Jamais une personnalité."),
+         "etapes": [
+             {"texte": _("Posez la voix sous le plan (piste Voix : enregistrement, voix IA, « Continuer avec ma voix »…).")},
+             {"texte": _("Un plan déjà fait : clic droit sur le plan › « Faire parler ce plan sur le son dessous… ». Une image : "
+                         "Fabrique IA › Vidéo › « Personnage qui parle (une image et votre son)… »."),
+              "montrer": {"clic_droit": [_("Faire parler ce plan sur le son dessous…")]}, "fait": "fenetre:DialogueLevres"},
+             {"texte": _("Vérifiez la ligne bleue « Son : ce qui passe de … à … ». Musique derrière ou chanson : cochez « Isoler "
+                         "d'abord la voix ».")},
+             {"texte": _("Choisissez le moteur (le prix s'affiche), cochez la case du visage, puis « Faire parler ». Vous pouvez "
+                         "fermer la fenêtre : la barre du bas suit le calcul.")},
+             {"texte": _("Regardez le résultat, puis « Poser à la place du plan » (ou « au-dessus du film ») : le son reste celui "
+                         "de la timeline. Edition › Annuler pour revenir.")},
+         ]},
         {"id": "musique_maniere", "etat": "ok",
          "titre": _("Créer une musique à la manière de… (style, voix, passage d'un morceau)"),
          "mots": "musique maniere style comme metal compositeur groupe chanteur voix chanter inspirer passage refrain morceau decrire",

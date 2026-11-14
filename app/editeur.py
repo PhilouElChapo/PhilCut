@@ -1824,6 +1824,8 @@ class Editeur(QWidget):
             self.plan_liaison(self.projet.clip(ident))
         elif quoi == "voix_suite":
             self.continuer_voix(self.projet.clip(ident))
+        elif quoi == "levres":
+            self.faire_parler(self.projet.clip(ident))
         elif quoi == "whoosh":
             c = self.projet.clip(ident)
             if c:
@@ -2728,6 +2730,22 @@ class Editeur(QWidget):
                                   "puis recommencez : le plan de liaison va de ce plan au suivant."))
             return None
         d = DialogueLiaison(self, a, b)
+        d.show()
+        return d
+
+    def faire_parler(self, clip=None, genre="video"):
+        """Lèvres sur le son (0.9.65) : un plan vidéo dont la bouche suit le son posé dessous (genre « video »), ou une image
+        du personnage qui devient une vidéo (genre « image »). Fenêtre non bloquante."""
+        from .dialogues_levres import DialogueLevres
+        if genre == "video":
+            clip = clip or self._clip_selectionne()
+            if clip is None:
+                t = self.timeline.position
+                clip = next((c for c in self.projet.clips_piste("video") if c["debut"] <= t < c["debut"] + (c["src_fin"] - c["src_debut"])), None)
+            if clip is None or not clip["piste"].startswith("video"):
+                self.encart.message(_("Cliquez d'abord le plan vidéo à faire parler (ou placez la ligne rouge dessus)."))
+                return None
+        d = DialogueLevres(self, clip, genre)
         d.show()
         return d
 

@@ -161,6 +161,12 @@ def generer_fal(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, p
     corps = {"prompt": consigne, "duration": str(int(duree_reelle(m, duree))), "aspect_ratio": "9:16" if format_ == "9:16" else "16:9"}
     if image:
         corps["image_url"] = _data_uri(image)
+    return attendre_fal(cle, point, corps, sortie, progression, arret)
+
+
+def attendre_fal(cle, point, corps, sortie, progression=None, arret=lambda: False, attente=300.0):
+    """Une demande à la file d'attente de fal.ai, suivie jusqu'au bout ; la vidéo rendue est téléchargée dans `sortie`."""
+    point = point.strip("/")
     r = _http(f"{FAL_FILE}/{point}", cle, corps)
     statut_url = r.get("status_url") or f"{FAL_FILE}/{point}/requests/{r.get('request_id')}/status"
     reponse_url = r.get("response_url") or f"{FAL_FILE}/{point}/requests/{r.get('request_id')}"
@@ -177,7 +183,7 @@ def generer_fal(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, p
         time.sleep(5)
         st = _http(statut_url, cle)
         etat = (st.get("status") or "").upper()
-        progression and progression(min(0.9, (time.time() - debut) / 300))
+        progression and progression(min(0.9, (time.time() - debut) / attente))
         if etat == "COMPLETED":
             break
         if etat in ("FAILED", "ERROR", "CANCELLED"):
@@ -192,6 +198,40 @@ def generer_fal(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, p
         f.write(r2.read())
     progression and progression(1.0)
     return sortie
+
+
+FAL_REST = "https://rest.fal.ai"
+TYPES_FICHIERS = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".wav": "audio/wav",
+                  ".mp3": "audio/mpeg", ".m4a": "audio/mp4", ".mp4": "video/mp4", ".mov": "video/quicktime", ".webm": "video/webm"}
+
+
+def televerser(cle, chemin):
+    """Envoie un fichier sur le stockage de fal.ai (même méthode que la bibliothèque officielle fal-client) ; renvoie son
+    adresse, que le modèle lit. Repli : le stockage « initiate » puis PUT."""
+    ext = os.path.splitext(chemin)[1].lower()
+    typ = TYPES_FICHIERS.get(ext, "application/octet-stream")
+    with open(chemin, "rb") as f:
+        donnees = f.read()
+    nom = os.path.basename(chemin)
+    try:
+        jeton = _http(f"{FAL_REST}/storage/auth/token?storage_type=fal-cdn-v3", cle, {})
+        req = urllib.request.Request(jeton["base_url"].rstrip("/") + "/files/upload", data=donnees, method="POST",
+                                     headers={"Authorization": f"{jeton['token_type']} {jeton['token']}", "Content-Type": typ,
+                                              "X-Fal-File-Name": nom, "User-Agent": "PhilCut"})
+        with urllib.request.urlopen(req, timeout=600) as r:
+            url = json.loads(r.read().decode("utf-8")).get("access_url")
+        if url:
+            return url
+    except ErreurGenerateur as e:
+        if "refusée" in str(e):
+            raise
+    except Exception:      # noqa: BLE001 : on essaie l'autre méthode
+        pass
+    init = _http(f"{FAL_REST}/storage/upload/initiate?storage_type=gcs", cle, {"file_name": nom, "content_type": typ})
+    req = urllib.request.Request(init["upload_url"], data=donnees, method="PUT", headers={"Content-Type": typ})
+    with urllib.request.urlopen(req, timeout=600):
+        pass
+    return init["file_url"]
 
 
 # ------------------------------------------------------------------ test des clefs (gratuit)

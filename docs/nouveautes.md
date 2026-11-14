@@ -4,7 +4,19 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.64 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.65 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.65 (faire parler un personnage sur votre son)
+- Le son d'abord : posez la voix (ou la chanson) sur la timeline, puis les levres sont fabriquees dessus.
+- Clic droit sur un plan video > "Faire parler ce plan sur le son dessous..." : seule la bouche est refaite pour dire le son qui passe sous le plan (voix et musiques a leur place). LatentSync (0,20 $ jusqu'a 40 s) ou Sync lipsync-2 (3 $ la minute, le plus precis), par fal.ai.
+- Fabrique IA > Video > "Personnage qui parle (une image et votre son)..." : une image du personnage devient une video qui dit votre son (levres, tete, regard). OmniHuman 1.5 (0,16 $ la seconde), attitude et gestes ecrits dans votre langue.
+- "Isoler d'abord la voix" : pour une chanson ou une musique derriere, les levres suivent la voix seule.
+- Cout annonce et demande avant ; apercu avant de poser ; le plan pose est muet (le son reste celui de la timeline) ; un seul Annuler. Case obligatoire : personnage invente, votre visage, ou une personne d'accord, jamais une personnalite.
+- Fermer la fenetre ne perd rien : la barre du bas suit le calcul.
+- Nouveau guide : "Faire parler un personnage sur ma voix".
+
+## Nouveautes de 0.9.64
+
 
 ### 0.9.64 (fermer une fenetre ne perd plus une creation)
 - Fermer la Fabrique musique (ou le plan de liaison, Continuer avec ma voix, Separer voix et musique, la Sequence IA) pendant un calcul : la fenetre se range, le calcul continue. La barre du bas le suit avec "Afficher la fenetre" ; a la fin, "Voir le resultat" rouvre la fenetre avec le resultat a ecouter ou regarder et a poser.

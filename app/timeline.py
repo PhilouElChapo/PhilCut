@@ -1641,6 +1641,8 @@ class Timeline(QGraphicsView):
             a.setChecked(clip.get("ajustement") == "suivi")
             if clip.get("ajustement") == "suivi":
                 sm.addAction(_("Corriger le suivi à la ligne rouge…"), lambda: self.demande_menu.emit(clip["id"], "corriger"))
+            a = m.addAction(_("Faire parler ce plan sur le son dessous…"), lambda: self.demande_menu.emit(clip["id"], "levres"))
+            a.setToolTip(_("Les lèvres du personnage suivent la voix ou la chanson posée sous ce plan"))
             if self._plan_suivant(clip):                       # 0.9.56
                 m.addAction(_("Plan de liaison avec le plan suivant…"), lambda: self.demande_menu.emit(clip["id"], "liaison"))
         a = m.addAction(_("Muet"), lambda: self._muet(clip))
