@@ -1826,6 +1826,8 @@ class Editeur(QWidget):
             self.continuer_voix(self.projet.clip(ident))
         elif quoi == "levres":
             self.faire_parler(self.projet.clip(ident))
+        elif quoi == "clip_groupe":
+            self.clip_groupe(self.projet.clip(ident))
         elif quoi == "whoosh":
             c = self.projet.clip(ident)
             if c:
@@ -2733,6 +2735,51 @@ class Editeur(QWidget):
         d.show()
         return d
 
+    def clip_groupe(self, clip=None, prefs=None):
+        """Clip de groupe d'après une chanson (0.9.66) : le morceau choisi, sinon celui sous la ligne rouge sur une piste de
+        son, sinon un fichier. Fenêtre non bloquante ; une seule par morceau."""
+        from .dialogues_clip_groupe import DialogueClipGroupe
+        from .projet import fin_clip
+        if clip is None:
+            c = self._clip_selectionne()
+            if c is not None and not c["piste"].startswith("video"):
+                clip = c
+        if clip is None:
+            t = self.timeline.position
+            clip = next((c for p in self.projet.pistes_audio() for c in self.projet.clips_piste(p) if c["debut"] <= t < fin_clip(c)), None)
+        chemin = None
+        if clip is None:
+            from .widgets import ouvrir_fichier
+            chemin = ouvrir_fichier(self, _("Chanson du clip"), _("Sons") + " (*.mp3 *.wav *.flac *.ogg *.m4a *.aac *.opus)", "musique",
+                                    self.params)
+            if not chemin:
+                return None
+        ouverts = getattr(self, "_clips_groupe", {})
+        cle = clip["id"] if clip else chemin
+        anc = ouverts.get(cle)
+        if anc is not None:
+            try:
+                from .widgets import reafficher
+                reafficher(anc)
+                return anc
+            except RuntimeError:
+                pass
+        d = DialogueClipGroupe(self, clip, chemin, prefs)
+        ouverts[cle] = d
+        self._clips_groupe = ouverts
+        d.show()
+        return d
+
+    def _ouvrir_clip_apres_import(self, chemin, prefs, essais=40):
+        """Après la pose d'un morceau de la Fabrique avec « Clip » choisi : la fenêtre du clip s'ouvre sur ce morceau dès
+        qu'il est dans la timeline (l'import se fait en fond)."""
+        from PySide6.QtCore import QTimer
+        c = next((x for x in self.projet.clips if (self.projet.media(x["media"]) or {}).get("chemin") == chemin), None)
+        if c is not None:
+            self.clip_groupe(c, prefs)
+        elif essais > 0:
+            QTimer.singleShot(250, lambda: self._ouvrir_clip_apres_import(chemin, prefs, essais - 1))
+
     def faire_parler(self, clip=None, genre="video"):
         """Lèvres sur le son (0.9.65) : un plan vidéo dont la bouche suit le son posé dessous (genre « video »), ou une image
         du personnage qui devient une vidéo (genre « image »). Fenêtre non bloquante."""
@@ -2803,7 +2850,12 @@ class Editeur(QWidget):
         def poser(chemin, r, a_la_ligne):
             ed._piste_depot = ("audio", float(ed.timeline.position if a_la_ligne else 0.0), dict(r, volume=0.8, _couper_fin=True))
             ed.importer([chemin])
+            from . import creations
+            cl = ((creations.lire(chemin) or {}).get("fiche") or {}).get("clip")
+            if cl and cl.get("lieu"):
+                ed._ouvrir_clip_apres_import(chemin, cl)
         h.poser = poser
+        h.clip = True
         h.garder = lambda chemin: ed.importer([chemin])
         if remplace:
             h.remplacer = lambda chemin, r: ed.remplacer_media_clip(remplace, chemin, r)

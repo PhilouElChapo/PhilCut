@@ -165,6 +165,28 @@ def _guides_integres():
              {"texte": _("« Poser entre les deux plans » : la suite du film se décale d'autant. Edition › Annuler revient en arrière."),
               "fait": "liaison"},
          ]},
+        {"id": "clip_groupe", "etat": "ok",
+         "titre": _("Créer le clip d'un groupe d'après une chanson"),
+         "mots": "clip groupe concert scene chanson musique musiciens chanteur batteur guitariste video clip dessin anime refrain",
+         "intro": _("PhilCut écoute la chanson (tempo, mesures, intro, couplets, refrains, voix), invente le groupe et propose les "
+                    "plans calés sur les mesures. Vous corrigez tout ; la fabrication passe par le cloud, prix total demandé avant. "
+                    "Des musiciens inventés, jamais un vrai groupe."),
+         "etapes": [
+             {"texte": _("Clic droit sur la chanson dans la timeline › « Créer le clip du groupe d'après ce morceau… » (ou Fabrique "
+                         "IA › Vidéo › « Clip de groupe d'après une chanson… »). Depuis la Fabrique musique : ligne « Clip vidéo » "
+                         "avant de créer, la fenêtre s'ouvre quand le morceau est posé."),
+              "montrer": {"menu": [_("Fabrique IA"), _("Vidéo"), _("Clip de groupe d'après une chanson…")]},
+              "fait": "fenetre:DialogueClipGroupe"},
+             {"texte": _("« Ecouter le morceau » : la bande de couleurs montre les parties ; gardez « Séparer la voix » pour que le "
+                         "chanteur chante au bon moment.")},
+             {"texte": _("Lieu (concert ou ailleurs), dessin animé ou non ; décrivez les musiciens comme vous les voulez.")},
+             {"texte": _("Relisez les plans (modifiables), ou « Idées avec l'IA » ; gardez « Un refrain qui revient reprend les "
+                         "plans du premier » pour payer moins.")},
+             {"texte": _("Choisissez le moteur, cochez « Musiciens inventés », « Fabriquer les plans » (prix demandé). Vous pouvez "
+                         "fermer : la barre du bas suit.")},
+             {"texte": _("Cliquez chaque ligne pour regarder le plan, puis « Poser le clip sous la chanson ». Edition › Annuler "
+                         "pour revenir.")},
+         ]},
         {"id": "levres", "etat": "ok",
          "titre": _("Faire parler un personnage sur ma voix (lèvres synchronisées)"),
          "mots": "levres bouche parler synchroniser lipsync personnage presentateur avatar chanter chanteur voix doublage",

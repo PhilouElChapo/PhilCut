@@ -157,6 +157,20 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T81 — 0.9.66 : clip de groupe d'après une chanson
+
+Il faut une clef Gemini et/ou fal.ai avec un peu de crédit ; « Séparer voix, musique et bruits » installé (conseillé).
+
+1. Fabrique IA › Musique › Fabrique musique : un morceau chanté, ligne « Clip vidéo » › « Clip : concert sur scène », créer, poser. La fenêtre « Clip de groupe d'après la chanson » s'ouvre seule sur ce morceau.
+2. « Ecouter le morceau » : la barre du bas suit ; la bande de couleurs montre intro, couplets, refrains… Vérifier à l'oreille que les refrains tombent au bon endroit (survol : les heures).
+3. Le groupe : les rôles correspondent-ils au morceau (chant, batterie, basse…) ? Changer une description.
+4. Les plans : plans longs au calme, courts au refrain ; les lignes grises du 2e refrain « reprend n ». Décocher puis recocher « Un refrain qui revient… » : le nombre de plans à fabriquer et le prix changent. Essayer « Idées avec l'IA ».
+5. Choisir le moteur (essayer d'abord Omni 360p, le moins cher), cocher « Musiciens inventés », « Fabriquer les plans », lire le prix détaillé, confirmer. Fermer la fenêtre : la barre du bas suit, « Voir le résultat » à la fin.
+6. Cliquer chaque ligne : l'aperçu montre le plan ; les plans chantés ont les lèvres sur la voix.
+7. « Poser le clip sous la chanson » : les plans sont posés sur une piste vidéo libre, chaque coupe sur une mesure, muets. Lecture : le clip suit la chanson. Edition › Annuler.
+8. Clic droit sur la chanson › « Créer le clip du groupe d'après ce morceau… » : la fenêtre se rouvre avec le même clip.
+9. Refaire avec « Clip : tourné ailleurs » et « Dessin animé ».
+
 ## T80 — 0.9.65 : faire parler un personnage sur votre son
 
 Il faut une clef fal.ai (Préférences › Assistant et IA, « Clef fal.ai ») avec un peu de crédit.

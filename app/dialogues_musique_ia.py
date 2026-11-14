@@ -27,6 +27,7 @@ class Hote:
     poser = None              # poser(chemin, reglages, a_la_ligne_rouge)
     garder = None             # garder(chemin) : dans les médias / la bibliothèque
     remplacer = None          # remplacer(chemin, reglages) : à la place du morceau repris
+    clip = False              # le logiciel sait faire le clip vidéo d'après le morceau (PhilCut)
 
 
 def _dossier_sorties():
@@ -160,6 +161,25 @@ class DialogueFabriqueMusique(QDialog):
         bvd.addWidget(self.b_sans_voix_decrite, 0, Qt.AlignLeft)
         self.boite_voix_decrite.hide()
         f.addRow(self.boite_voix_decrite)
+        # 0.9.66 : le clip vidéo à créer ensuite d'après ce morceau (PhilCut)
+        self.clip_lieu, self.clip_anime = QComboBox(), QCheckBox(_("Dessin animé"))
+        self.clip_lieu.addItem(_("Pas de clip"), "")
+        self.clip_lieu.addItem(_("Clip : concert sur scène"), "concert")
+        self.clip_lieu.addItem(_("Clip : tourné ailleurs"), "ailleurs")
+        self.clip_lieu.setToolTip(_("Une fois le morceau posé, PhilCut propose le clip du groupe : il écoute le morceau, invente le "
+                                    "groupe et découpe les plans sur les mesures (fabrication par le cloud, prix demandé avant)"))
+        self.clip_lieu.currentIndexChanged.connect(lambda _i: self.clip_anime.setEnabled(bool(self.clip_lieu.currentData())))
+        self.clip_anime.setEnabled(False)
+        hcl = QHBoxLayout()
+        hcl.addWidget(self.clip_lieu, 1)
+        hcl.addWidget(self.clip_anime)
+        self.ligne_clip = QWidget()
+        self.ligne_clip.setLayout(hcl)
+        hcl.setContentsMargins(0, 0, 0, 0)
+        f.addRow(_("Clip vidéo"), self.ligne_clip)
+        if not getattr(self.hote, "clip", False):
+            self.ligne_clip.hide()
+            f.labelForField(self.ligne_clip).hide()
         self.paroles = QPlainTextEdit()
         self.paroles.setMaximumHeight(110)
         self.paroles.setPlaceholderText(_("Paroles : tapez-les, ou seulement le début, puis « Écrire les paroles par l'IA ». Balises "
@@ -380,6 +400,8 @@ class DialogueFabriqueMusique(QDialog):
             f["voix_reference"] = {"chemin": self.reference}
         if self.voix_decrite:
             f["voix_decrite"] = dict(self.voix_decrite)
+        if self.clip_lieu.currentData():
+            f["clip"] = {"lieu": self.clip_lieu.currentData(), "anime": self.clip_anime.isChecked()}
         return f
 
     def appliquer_fiche(self, f):
@@ -407,6 +429,9 @@ class DialogueFabriqueMusique(QDialog):
             self._montrer_inspiration(dict(f["inspiration"]))
         if f.get("voix_decrite"):
             self._poser_voix_decrite(dict(f["voix_decrite"]))
+        cl = f.get("clip") or {}
+        self.clip_lieu.setCurrentIndex(max(0, self.clip_lieu.findData(cl.get("lieu", ""))))
+        self.clip_anime.setChecked(bool(cl.get("anime")))
 
     def _maj(self, *_a):
         f = self.fiche()

@@ -1650,6 +1650,9 @@ class Timeline(QGraphicsView):
         a.setChecked(bool(clip.get("muet")))
         if (med or {}).get("genre") in ("video", "audio"):           # 0.9.53
             m.addAction(_("Séparer voix, musique et bruits…"), lambda: self.demande_menu.emit(clip["id"], "separer"))
+            if (med or {}).get("genre") == "audio":                   # 0.9.66
+                a = m.addAction(_("Créer le clip du groupe d'après ce morceau…"), lambda: self.demande_menu.emit(clip["id"], "clip_groupe"))
+                a.setToolTip(_("PhilCut écoute le morceau, invente le groupe et découpe les plans sur les mesures"))
             a = m.addAction(_("Continuer avec cette voix…"), lambda: self.demande_menu.emit(clip["id"], "voix_suite"))
             a.setToolTip(_("Faire dire une nouvelle phrase avec la voix de ce plan (la vôtre, ou celle d'une personne d'accord)"))
         m.addSeparator()

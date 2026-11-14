@@ -4,7 +4,21 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.65 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.66 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.66 (clip de groupe deduit de la chanson)
+- Clic droit sur une chanson > "Creer le clip du groupe d'apres ce morceau..." (ou Fabrique IA > Video > "Clip de groupe d'apres une chanson...").
+- PhilCut ecoute le morceau sur ce poste : tempo, mesures, parties (intro, couplets, montee, refrains, solo, fin, en couleurs), voix separee pour savoir quand on chante.
+- Il invente le groupe d'apres le son (ou d'apres le style de la Fabrique musique) : chanteur ou chanteuse, guitare, basse, batterie, claviers, machines, cordes, cuivres ; descriptions modifiables.
+- Lieu : concert sur scene ou clip tourne ailleurs (lieu propose d'apres l'ambiance) ; dessin anime ou realiste ; paysage ou vertical.
+- Decoupage plan par plan cale sur les mesures (plans longs au calme, courts au refrain), modifiable ; "Idees avec l'IA" d'apres l'ambiance et les paroles. Un refrain qui revient reprend les plans du premier : bien moins cher.
+- Fabrication par le cloud (Gemini, fal.ai) : memes visages dans tous les plans (portraits puis images de depart), levres du chanteur calees sur la voix separee ; prix total detaille et demande avant ; fermer la fenetre n'arrete rien ; un plan rate n'arrete pas les autres.
+- Apercu de chaque plan, puis "Poser le clip sous la chanson" : chaque coupe sur une mesure, plans muets, un seul Annuler. Le clip est garde avec le morceau et se rouvre.
+- Fabrique musique : nouvelle ligne "Clip video" (concert, ailleurs, dessin anime) : la fenetre du clip s'ouvre des que le morceau est pose.
+- Nouveau guide : "Creer le clip d'un groupe d'apres une chanson".
+
+## Nouveautes de 0.9.65
+
 
 ### 0.9.65 (faire parler un personnage sur votre son)
 - Le son d'abord : posez la voix (ou la chanson) sur la timeline, puis les levres sont fabriquees dessus.
