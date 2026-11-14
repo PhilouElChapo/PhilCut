@@ -714,6 +714,9 @@ class _DriveOAuth(_Http):
         try:
             j = oauth.rafraichir(self.c["type"], rt, self.log)
         except oauth.ErreurAutorisation as e:
+            if getattr(e, "reseau", False):          # 0.9.71 : réseau lent ou coupé, l'autorisation n'y est pour rien
+                raise ErreurDistant(_("{nom} ne répond pas pour le moment ({raison}) : la synchronisation réessaiera seule, rien "
+                                      "à refaire.", nom=nom, raison=e))
             raise ErreurDistant(_("L'autorisation {nom} a expiré ou a été retirée ({raison}) : autorisez à nouveau.",
                                   nom=nom, raison=e))
         if j.get("refresh_token") and j["refresh_token"] != rt:      # Box (et parfois Microsoft) renouvellent le jeton durable

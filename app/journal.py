@@ -96,6 +96,7 @@ def surveiller_plantages(version):
         _ecrire_plantage(f"{time.strftime('%Y-%m-%d %H:%M:%S')}  ERREUR (tâche {getattr(a.thread, 'name', '?')})\n" +
                          "".join(traceback.format_exception(a.exc_type, a.exc_value, a.exc_traceback)))
     threading.excepthook = crochet_fil
+    _calmer_dialogues_windows()
     try:
         from PySide6.QtCore import QtMsgType, qInstallMessageHandler
 
@@ -108,10 +109,59 @@ def surveiller_plantages(version):
 
 
 def fin_normale():
-    """Fermeture normale : notée, pour distinguer un plantage d'une sortie voulue en lisant le journal."""
+    """Fermeture normale : notée, pour distinguer un plantage d'une sortie voulue en lisant le journal. Le surveillant de
+    plantages est ensuite coupé : une tâche réseau interrompue par la sortie voulue (os._exit) n'est pas un plantage
+    (0.9.71 : « access violation » noté à tort à « Installer et redémarrer »)."""
     if _fichier_plantage:
         try:
             _fichier_plantage.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')}  fermeture normale\n")
             _fichier_plantage.flush()
         except Exception:   # noqa: BLE001
             pass
+    try:
+        import faulthandler
+        faulthandler.disable()
+    except Exception:       # noqa: BLE001
+        pass
+
+
+class _SansSurveillance:
+    """Le temps d'une fenêtre de fichiers de Windows : ses composants (COM, extensions de l'Explorateur) lèvent et
+    rattrapent eux-mêmes des exceptions (ex. 0x80040155) que faulthandler écrit comme des « Windows fatal exception »
+    alors que rien ne plante. On ne surveille pas pendant ces quelques secondes."""
+
+    def __enter__(self):
+        import faulthandler
+        self.actif = faulthandler.is_enabled()
+        if self.actif:
+            faulthandler.disable()
+
+    def __exit__(self, *a):
+        if self.actif and _fichier_plantage:
+            import faulthandler
+            try:
+                faulthandler.enable(file=_fichier_plantage, all_threads=True)
+            except Exception:   # noqa: BLE001
+                pass
+        return False
+
+
+def _calmer_dialogues_windows():
+    import sys
+    if not sys.platform.startswith("win"):
+        return
+    try:
+        from PySide6.QtWidgets import QFileDialog
+    except Exception:       # noqa: BLE001
+        return
+    for nom in ("getOpenFileName", "getOpenFileNames", "getSaveFileName", "getExistingDirectory", "getOpenFileUrl",
+                "getSaveFileUrl", "getExistingDirectoryUrl"):
+        f = getattr(QFileDialog, nom, None)
+        if f is None or getattr(f, "_philcut", False):
+            continue
+
+        def enveloppe(*a, _f=f, **k):
+            with _SansSurveillance():
+                return _f(*a, **k)
+        enveloppe._philcut = True
+        setattr(QFileDialog, nom, staticmethod(enveloppe))

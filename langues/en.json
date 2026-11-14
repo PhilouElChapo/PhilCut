@@ -7546,5 +7546,6 @@
  "Plan coupé en deux : une action chacun.": "Clip split in two: one action each.",
  "{n} plan(s) coupé(s) : une action par plan.": "{n} clip(s) split: one action per clip.",
  "Chaque plan n'a déjà qu'une action.": "Each clip already has only one action.",
- "⚠ Plan(s) {l} : deux actions enchaînées, les gestes risquent d'être incohérents. « Une action par plan » les coupe en deux.": "⚠ Clip(s) {l}: two chained actions, the movements may be incoherent. “One action per clip” splits them in two."
+ "⚠ Plan(s) {l} : deux actions enchaînées, les gestes risquent d'être incohérents. « Une action par plan » les coupe en deux.": "⚠ Clip(s) {l}: two chained actions, the movements may be incoherent. “One action per clip” splits them in two.",
+ "{nom} ne répond pas pour le moment ({raison}) : la synchronisation réessaiera seule, rien à refaire.": "{nom} is not responding right now ({raison}): the sync will retry by itself, nothing to redo."
 }

@@ -4,7 +4,16 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.70 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.71 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.71 (journal des plantages sans fausses alertes)
+- "Installer et redemarrer" pendant une synchronisation ne laisse plus une fausse "access violation" dans le journal : la sortie voulue coupe d'abord la surveillance.
+- La fenetre de fichiers de Windows ne laisse plus de fausse "Windows fatal exception 0x80040155" (erreur interne de Windows qu'il rattrape lui-meme).
+- Google Drive lent ou injoignable n'est plus annonce comme "autorisation expiree, autorisez a nouveau" : "ne repond pas pour le moment, la synchronisation reessaiera seule".
+- Feuille de test : les fiches validees par Philippe sont rangees dans "guideline-tests-validees.md".
+
+## Nouveautes de 0.9.70
+
 
 ### 0.9.70 (Sequence IA : gestes coherents, personnage fidele a son image)
 - Une action par plan : les moteurs video ne reussissent bien qu'une action simple ; deux actions enchainees ("contourne le bureau et s'assoit") donnent des gestes incoherents (traverser la table). PhilCut les repere (signe ⚠ dans la liste, avertissement sous "Ce qu'on voit" et avant de fabriquer), "Couper en deux plans" ou "Une action par plan" pour tous.

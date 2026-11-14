@@ -7537,5 +7537,6 @@
  "Plan coupé en deux : une action chacun.": "Clip in zwei geteilt: je eine Aktion.",
  "{n} plan(s) coupé(s) : une action par plan.": "{n} Clip(s) geteilt: eine Aktion pro Clip.",
  "Chaque plan n'a déjà qu'une action.": "Jeder Clip hat bereits nur eine Aktion.",
- "⚠ Plan(s) {l} : deux actions enchaînées, les gestes risquent d'être incohérents. « Une action par plan » les coupe en deux.": "⚠ Clip(s) {l}: zwei verkettete Aktionen, die Bewegungen könnten unstimmig sein. „Eine Aktion pro Clip“ teilt sie in zwei."
+ "⚠ Plan(s) {l} : deux actions enchaînées, les gestes risquent d'être incohérents. « Une action par plan » les coupe en deux.": "⚠ Clip(s) {l}: zwei verkettete Aktionen, die Bewegungen könnten unstimmig sein. „Eine Aktion pro Clip“ teilt sie in zwei.",
+ "{nom} ne répond pas pour le moment ({raison}) : la synchronisation réessaiera seule, rien à refaire.": "{nom} antwortet gerade nicht ({raison}): Die Synchronisierung versucht es selbst erneut, nichts zu tun."
 }

@@ -80,6 +80,8 @@ FOURNISSEURS = {
 
 
 class ErreurAutorisation(Exception):
+    reseau = False              # 0.9.71 : True = serveur injoignable ou trop lent (l'autorisation, elle, est intacte)
+
     pass
 
 
@@ -154,7 +156,9 @@ def _poster(url, champs, journal=None):
     except (urllib.error.URLError, OSError) as e:
         if journal:
             journal(f"✕ {e}")
-        raise ErreurAutorisation(_("Serveur injoignable : {raison}", raison=getattr(e, "reason", e)))
+        err = ErreurAutorisation(_("Serveur injoignable : {raison}", raison=getattr(e, "reason", e)))
+        err.reseau = True
+        raise err
 
 
 PORTEE_COMPLETE = {"gdrive": "https://www.googleapis.com/auth/drive"}   # tout le Drive (option du compte)
@@ -284,7 +288,9 @@ def _jeton_durable(f, cid, sec, recu, journal):
             with urllib.request.urlopen(url, timeout=30) as r:
                 rep = json.load(r)
         except (urllib.error.URLError, OSError, ValueError) as e:
-            raise ErreurAutorisation(_("Serveur injoignable : {raison}", raison=getattr(e, "reason", e)))
+            err = ErreurAutorisation(_("Serveur injoignable : {raison}", raison=getattr(e, "reason", e)))
+        err.reseau = True
+        raise err
         if rep.get("result") or not rep.get("access_token"):
             raise ErreurAutorisation(rep.get("error") or _("Le fournisseur n'a pas donné de jeton durable."))
         jeton = rep["access_token"]

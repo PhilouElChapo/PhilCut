@@ -7537,5 +7537,6 @@
  "Plan coupé en deux : une action chacun.": "Plano dividido en dos: una acción cada uno.",
  "{n} plan(s) coupé(s) : une action par plan.": "{n} plano(s) dividido(s): una acción por plano.",
  "Chaque plan n'a déjà qu'une action.": "Cada plano ya tiene una sola acción.",
- "⚠ Plan(s) {l} : deux actions enchaînées, les gestes risquent d'être incohérents. « Une action par plan » les coupe en deux.": "⚠ Plano(s) {l}: dos acciones encadenadas, los gestos pueden ser incoherentes. «Una acción por plano» los divide en dos."
+ "⚠ Plan(s) {l} : deux actions enchaînées, les gestes risquent d'être incohérents. « Une action par plan » les coupe en deux.": "⚠ Plano(s) {l}: dos acciones encadenadas, los gestos pueden ser incoherentes. «Una acción por plano» los divide en dos.",
+ "{nom} ne répond pas pour le moment ({raison}) : la synchronisation réessaiera seule, rien à refaire.": "{nom} no responde por el momento ({raison}): la sincronización lo volverá a intentar sola, no hay nada que rehacer."
 }
