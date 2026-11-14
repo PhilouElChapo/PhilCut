@@ -157,6 +157,20 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T82 — 0.9.67 : vidéo de narration d'après ce qui est dit
+
+Il faut une clef Gemini ou fal.ai (et fal.ai pour le présentateur), et un modèle de voix (Préférences › IA locale) pour la transcription.
+
+1. Enregistrez (ou posez) 30 s à 1 min de voix sur la piste Voix, qui raconte quelque chose de concret.
+2. Clic droit sur la voix › « Illustrer ce qui est dit (vidéo de narration)… » : la ligne bleue nomme la piste et la durée.
+3. « Ecouter et découper » : la barre du bas suit ; le tableau montre les idées (2 à 8 s), le texte entier, sans rien de coupé.
+4. Essayer « Idées d'images avec l'IA » : les images proposées deviennent concrètes ; en modifier une à la main.
+5. Cocher « Un présentateur… » : il est proposé au début et à la fin ; « Le créer avec Gemini », regarder la vignette ; cocher la case du visage.
+6. Choisir le moteur (Omni 360p d'abord), lire le prix détaillé, « Fabriquer les plans », confirmer ; fermer la fenêtre, attendre « Voir le résultat ».
+7. Cliquer chaque ligne : les images collent-elles aux mots ? Le présentateur dit-il bien sa phrase ?
+8. « Poser sous les mots » : chaque plan tombe sous ses mots, au-dessus du film, muet. Lecture. Edition › Annuler.
+9. Rouvrir par le clic droit : la narration est reprise.
+
 ## T81 — 0.9.66 : clip de groupe d'après une chanson
 
 Il faut une clef Gemini et/ou fal.ai avec un peu de crédit ; « Séparer voix, musique et bruits » installé (conseillé).

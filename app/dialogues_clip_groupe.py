@@ -148,6 +148,9 @@ class DialogueClipGroupe(QDialog):
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
         self.table.verticalHeader().hide()
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.setWordWrap(True)                      # jamais de texte coupé : la ligne s'agrandit
+        self.table.setTextElideMode(Qt.ElideNone)
+        self.table.horizontalHeader().sectionResized.connect(lambda *_a: self.table.resizeRowsToContents())
         self.table.setMinimumHeight(200)
         self.table.currentCellChanged.connect(lambda r, *_a: self._voir_plan(r))
         l3.addWidget(self.table)
@@ -352,6 +355,7 @@ class DialogueClipGroupe(QDialog):
                 self.table.setItem(r, 3, _fixe(""))
             self._etat_plan(r)
         self.table.resizeColumnToContents(0)
+        self.table.resizeRowsToContents()
         self.table.resizeColumnToContents(1)
         self._maj()
 

@@ -966,6 +966,10 @@ class Fenetre(QMainWindow):
                     _("PhilCut écoute la chanson (parties, mesures, voix), invente le groupe, propose les plans calés sur les "
                       "mesures ; fabrication par le cloud, prix total demandé avant, lèvres du chanteur sur la voix."),
                     quand(lambda e: e.clip_groupe())),
+                ent(icone("ia"), _("Vidéo de narration d'après ce qui est dit…"),
+                    _("La voix est transcrite sur ce poste et découpée en idées ; une image animée par idée (proposée, modifiable), "
+                      "posée exactement sous les mots ; un présentateur peut apparaître. Cloud, prix total demandé avant."),
+                    quand(lambda e: e.narration())),
                 ent(icone("ia"), _("Personnage qui parle (une image et votre son)…"),
                     _("Une image du personnage devient une vidéo qui dit votre son (voix, chanson) : les lèvres suivent le son. "
                       "fal.ai, prix annoncé. Pour un plan déjà fait : clic droit sur le plan › « Faire parler ce plan… »."),

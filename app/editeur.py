@@ -1828,6 +1828,8 @@ class Editeur(QWidget):
             self.faire_parler(self.projet.clip(ident))
         elif quoi == "clip_groupe":
             self.clip_groupe(self.projet.clip(ident))
+        elif quoi == "narration":
+            self.narration(self.projet.clip(ident))
         elif quoi == "whoosh":
             c = self.projet.clip(ident)
             if c:
@@ -2732,6 +2734,25 @@ class Editeur(QWidget):
                                   "puis recommencez : le plan de liaison va de ce plan au suivant."))
             return None
         d = DialogueLiaison(self, a, b)
+        d.show()
+        return d
+
+    def narration(self, clip=None):
+        """Vidéo de narration d'après ce qui est dit (0.9.67) : une fenêtre par piste de voix, non bloquante."""
+        from .dialogues_narration import DialogueNarration, piste_de_voix
+        cle = piste_de_voix(self.projet, clip)
+        ouverts = getattr(self, "_narrations", {})
+        anc = ouverts.get(cle)
+        if anc is not None:
+            try:
+                from .widgets import reafficher
+                reafficher(anc)
+                return anc
+            except RuntimeError:
+                pass
+        d = DialogueNarration(self, clip)
+        ouverts[cle] = d
+        self._narrations = ouverts
         d.show()
         return d
 

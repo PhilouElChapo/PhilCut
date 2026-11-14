@@ -4,7 +4,20 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.66 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.67 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.67 (video de narration d'apres ce qui est dit)
+- Clic droit sur la voix > "Illustrer ce qui est dit (video de narration)..." (ou Fabrique IA > Video > "Video de narration d'apres ce qui est dit...").
+- "Ecouter et decouper" : la voix est transcrite sur ce poste au mot pres, puis decoupee en idees de 2 a 8 secondes (fin de phrase, silences, virgules), sans trou.
+- Une image animee proposee par idee, modifiable ; "Idees d'images avec l'IA" (Claude, Gemini ou ce poste) propose des plans concrets et varies, sans texte a l'ecran.
+- Rendu : cinema realiste, documentaire, dessin anime, aquarelle animee, animation 3D ; paysage ou vertical.
+- Presentateur facultatif : il apparait au debut, a la fin et de temps en temps, et dit exactement son passage de voix (levres calees, OmniHuman) ; son image : un fichier, ou creee par Gemini d'apres une description ; case du visage obligatoire.
+- Fabrication par le cloud, prix total detaille et demande avant ; fermer la fenetre n'arrete rien ; un plan rate n'arrete pas les autres. Apercu de chaque plan, puis "Poser sous les mots" : chaque plan exactement sous les mots qu'il illustre, au-dessus du film, muet ; un seul Annuler. La narration est gardee avec la voix et se rouvre.
+- Tableaux du clip et de la narration : les textes longs passent a la ligne (plus de texte coupe).
+- Nouveau guide : "Illustrer ce qui est dit : video de narration".
+
+## Nouveautes de 0.9.66
+
 
 ### 0.9.66 (clip de groupe deduit de la chanson)
 - Clic droit sur une chanson > "Creer le clip du groupe d'apres ce morceau..." (ou Fabrique IA > Video > "Clip de groupe d'apres une chanson...").

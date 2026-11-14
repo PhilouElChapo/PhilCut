@@ -165,6 +165,24 @@ def _guides_integres():
              {"texte": _("« Poser entre les deux plans » : la suite du film se décale d'autant. Edition › Annuler revient en arrière."),
               "fait": "liaison"},
          ]},
+        {"id": "narration", "etat": "ok",
+         "titre": _("Illustrer ce qui est dit : vidéo de narration"),
+         "mots": "narration illustrer voix off explication images plans b-roll presentateur commentaire explicative tuto",
+         "intro": _("La voix d'abord : PhilCut la transcrit sur ce poste, la découpe en idées et propose une image animée pour "
+                    "chacune, posée exactement sous les mots. Un présentateur inventé peut apparaître et dire la voix. "
+                    "Fabrication par le cloud, prix total demandé avant."),
+         "etapes": [
+             {"texte": _("Posez la voix (piste Voix : enregistrement, voix IA…), puis clic droit dessus › « Illustrer ce qui est dit "
+                         "(vidéo de narration)… », ou Fabrique IA › Vidéo › « Vidéo de narration d'après ce qui est dit… »."),
+              "montrer": {"menu": [_("Fabrique IA"), _("Vidéo"), _("Vidéo de narration d'après ce qui est dit…")]},
+              "fait": "fenetre:DialogueNarration"},
+             {"texte": _("« Ecouter et découper » : la voix est transcrite et coupée en idées de 2 à 8 secondes.")},
+             {"texte": _("Choisissez le rendu ; cochez « Un présentateur… » si vous voulez le voir parler par moments (une image, ou "
+                         "« Le créer avec Gemini »).")},
+             {"texte": _("Relisez les images proposées (modifiables), ou « Idées d'images avec l'IA ».")},
+             {"texte": _("Choisissez le moteur, « Fabriquer les plans » (prix demandé), regardez chaque ligne, puis « Poser sous les "
+                         "mots ». Edition › Annuler pour revenir.")},
+         ]},
         {"id": "clip_groupe", "etat": "ok",
          "titre": _("Créer le clip d'un groupe d'après une chanson"),
          "mots": "clip groupe concert scene chanson musique musiciens chanteur batteur guitariste video clip dessin anime refrain",
