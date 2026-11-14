@@ -189,7 +189,9 @@ def consigne(seq, pl, params=None, traduire=True):
     morceaux.append("Action: " + action.rstrip(".") + ".")
     if pl.get("camera"):
         morceaux.append("Camera: " + _anglais(pl["camera"], traduire).rstrip(".") + ".")
-    if pl.get("repliques"):
+    if seq.get("voix") == "aucune":                  # 0.9.68 : histoire sans voix
+        morceaux.append("Nobody speaks, no dialogue, closed mouths.")
+    elif pl.get("repliques"):
         morceaux.append("The characters talk briefly (lips moving), no subtitles.")
     morceaux.append("Same characters, same clothes and same light as the other shots of this sequence. Realistic, high detail, "
                     "natural motion, no text, no watermark, no logo, no famous person.")
@@ -321,6 +323,8 @@ def monter(projet, seq, t):
         ci = prolonger.poser(projet, {"debut": t, "piste": "video"}, f, "debut", (pl.get("action") or "")[:40])
         if not ci:
             continue
+        if seq.get("voix") == "aucune":
+            ci["muet"] = True                        # 0.9.68 : histoire sans voix, le son inventé par le moteur est coupé
         for decal, wav in pl.get("voix") or []:
             if os.path.exists(wav):
                 m = projet.ajouter_media(wav, moteur.sonder(wav))

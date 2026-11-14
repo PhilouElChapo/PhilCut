@@ -92,6 +92,8 @@ def verifier(sortie):
 
 
 def main():
+    from app import reseau
+    reseau.activer()                  # 0.9.68 : toutes les connexions HTTPS vérifiées par Windows (fal.ai, Gemini, clouds…)
     if "--verifier" in sys.argv:
         return verifier(sys.argv[sys.argv.index("--verifier") + 1])
     from PySide6.QtCore import Qt

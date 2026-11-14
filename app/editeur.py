@@ -2642,11 +2642,22 @@ class Editeur(QWidget):
     def sequence_ia(self, nouvelle=False):
         """Séquence IA : histoire en plusieurs plans (personnages constants, répliques, musique) ; reprend la dernière du projet."""
         from .dialogues_sequence import DialogueSequence
+        anc = getattr(self, "_sequence", None)
+        if anc is not None and not nouvelle:                 # 0.9.68 : une seule fenêtre, non bloquante
+            try:
+                if anc.isVisible() or any(t.isRunning() for t in anc.taches):
+                    from .widgets import reafficher
+                    reafficher(anc)
+                    return anc
+            except RuntimeError:
+                pass
         anciennes = self.projet.d.get("sequences_ia") or []
         d = DialogueSequence(self, None if nouvelle or not anciennes else anciennes[-1])
-        d.exec()
-        if getattr(d, "nouvelle_demandee", False):           # « Nouvelle histoire » dans la fenêtre
-            self.sequence_ia(nouvelle=True)
+        d.setModal(False)
+        d.finished.connect(lambda _r, d=d: getattr(d, "nouvelle_demandee", False) and self.sequence_ia(nouvelle=True))
+        self._sequence = d
+        d.show()
+        return d
 
     def vignette_composee(self, usage="vignette", recette_id=None, clip_id=None):
         """Vignette YouTube ou image fixe composée à partir d'une image du film (zones de couleur, kit de style)."""
@@ -2680,23 +2691,20 @@ class Editeur(QWidget):
     def presentation_photos(self, chemins=None):
         """Une série de photos devient un clip animé (lancer de cartes, explosion, puzzle, mur…) ; 0.9.27."""
         from .dialogues_presentation import DialoguePresentation
-        d = DialoguePresentation(self, chemins)
-        d.exec()
-        return d
+        from .widgets import non_bloquante
+        return non_bloquante(self, "presentation", lambda: DialoguePresentation(self, chemins))
 
     def modeles_montage(self):
         """Modèles de montage tout faits, avec les rushes du projet (0.9.25)."""
         from .dialogues_modeles import DialogueModeles
-        d = DialogueModeles(self)
-        d.exec()
-        return d
+        from .widgets import non_bloquante
+        return non_bloquante(self, "modeles", lambda: DialogueModeles(self))
 
     def prolonger_plan(self, clip):
         """Quelques secondes de plus au début ou à la fin d'un plan (image tenue, ralenti ou IA), regardées avant d'être posées."""
         from .dialogues_prolonger import DialogueProlonger
-        d = DialogueProlonger(self, clip)
-        d.exec()
-        return d
+        from .widgets import non_bloquante
+        return non_bloquante(self, ("prolonger", clip["id"]), lambda: DialogueProlonger(self, clip))
 
     def monter_par_texte(self):
         """Le texte de ce qui est dit, pour couper la vidéo en effaçant des mots (0.9.23). Fenêtre non bloquante."""
@@ -3075,7 +3083,11 @@ class Editeur(QWidget):
     def tampons(self, onglet=0):
         """Bibliothèque de tampons vidéo : les vôtres, les tampons maison, les clips libres trouvés en ligne."""
         from .dialogues_tampons import DialogueTampons
-        DialogueTampons(self, onglet).exec()
+        from .widgets import non_bloquante
+        d = non_bloquante(self, "tampons", lambda: DialogueTampons(self, onglet))
+        if hasattr(d, "onglets"):
+            d.onglets.setCurrentIndex(onglet)
+        return d
 
     def poser_au_dessus(self, video, t, nom="", duree=None):
         """Pose un clip ou une image créés (effet IA) au-dessus du film, plein cadre, sur la première piste vidéo libre :

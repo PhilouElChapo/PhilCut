@@ -1355,6 +1355,9 @@ class DialogueTampons(QDialog):
         t.start()
 
     def reject(self):
+        from .widgets import calcul_en_cours, garder_calcul
+        if garder_calcul(self, calcul_en_cours(self)):
+            return
         self._fermer()
         super().reject()
 
@@ -1703,6 +1706,9 @@ class DialogueVisionner(QDialog):
                                d=self.fin - self.debut))
 
     def done(self, r):
+        from .widgets import calcul_en_cours, garder_calcul
+        if garder_calcul(self, calcul_en_cours(self)):         # 0.9.68 : rangée, le calcul continue
+            return
         if self.lecteur is not None:
             self.lecteur.stop()
             self.lecteur.setSource(QUrl())

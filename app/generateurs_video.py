@@ -34,11 +34,11 @@ MODELES = [
     {"id": "omni-1080p", "fournisseur": "google", "nom": "Gemini Omni Flash 1080p", "modele": "gemini-omni-1.1-flash",
      "resolution": "1080p", "prix_s": 0.10, "duree_auto": True, "note": _("720p agrandi par Google")},
     {"id": "kling-3-pro", "fournisseur": "fal", "nom": "Kling 3.0 Pro (fal)", "modele": "fal-ai/kling-video/v3/pro/text-to-video",
-     "modele_image": "fal-ai/kling-video/v3/pro/image-to-video", "prix_s": 0.14, "durees": [5, 10],
+     "modele_image": "fal-ai/kling-video/v3/pro/image-to-video", "prix_s": 0.112, "durees": [5, 10], "son_param": "generate_audio",
      "note": _("mouvements réalistes, personnes")},
     {"id": "seedance-2", "fournisseur": "fal", "nom": "Seedance 2.0 (fal)", "modele": "bytedance/seedance-2.0/text-to-video",
      "modele_image": "bytedance/seedance-2.0/image-to-video", "prix_s": 0.30, "durees": list(range(4, 16)),
-     "note": _("son généré, plans jusqu'à 15 s")},
+     "son_param": "generate_audio", "note": _("plans jusqu'à 15 s")},
 ]
 
 
@@ -161,6 +161,9 @@ def generer_fal(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, p
     corps = {"prompt": consigne, "duration": str(int(duree_reelle(m, duree))), "aspect_ratio": "9:16" if format_ == "9:16" else "16:9"}
     if image:
         corps["image_url"] = _data_uri(image)
+    if m.get("son_param"):
+        # 0.9.68 : jamais de son fabriqué par le moteur (voix inventées, musique) : PhilCut pose le sien ; et c'est moins cher
+        corps[m["son_param"]] = False
     return attendre_fal(cle, point, corps, sortie, progression, arret)
 
 

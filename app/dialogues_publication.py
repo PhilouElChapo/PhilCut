@@ -245,6 +245,9 @@ class DialoguePublier(QDialog):
         self.etat.setText(texte)
 
     def done(self, r):
+        from .widgets import calcul_en_cours, garder_calcul
+        if garder_calcul(self, calcul_en_cours(self)):         # 0.9.68 : rangée, le calcul continue
+            return
         for t in self.taches:
             if t.isRunning():
                 t.stopper()

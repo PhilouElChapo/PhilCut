@@ -7521,5 +7521,9 @@
  "Plan {n} : le présentateur parle": "Clip {n}: der Moderator spricht",
  "Plan {n} : image animée": "Clip {n}: animiertes Bild",
  "Illustrer ce qui est dit (vidéo de narration)…": "Das Gesagte illustrieren (Erzählvideo)…",
- "La voix est transcrite et découpée en idées ; une image animée par idée, posée sous les mots": "Die Stimme wird transkribiert und in Ideen geteilt; ein animiertes Bild pro Idee, unter die Worte gelegt"
+ "La voix est transcrite et découpée en idées ; une image animée par idée, posée sous les mots": "Die Stimme wird transkribiert und in Ideen geteilt; ein animiertes Bild pro Idee, unter die Worte gelegt",
+ "La fabrication continue ; « Afficher la fenêtre » dans la barre du bas la rouvre": "Die Herstellung läuft weiter; „Fenster anzeigen“ in der unteren Leiste öffnet es wieder",
+ "Une fabrication est en cours : attendez la fin, ou « Arrêter », avant de repartir d'une histoire vide.": "Eine Herstellung läuft: Warten Sie das Ende ab oder „Anhalten“, bevor Sie mit einer leeren Geschichte neu beginnen.",
+ "Aucune voix : personne ne parle": "Keine Stimme: niemand spricht",
+ "plans jusqu'à 15 s": "Clips bis 15 s"
 }

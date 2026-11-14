@@ -64,7 +64,7 @@ class TestGenerateurs(unittest.TestCase):
         dispo = {m["fournisseur"] for m in GV.disponibles(dict(params, clef_fal=""))}
         self.assertEqual(dispo, {"google"})
         self.assertEqual(GV.prix(GV.modele("omni-360p"), 4), 0.35)          # Omni : jusqu'à 10 s comptées
-        self.assertEqual(GV.prix(GV.modele("kling-3-pro"), 6), 1.4)         # Kling : 5 ou 10 s -> 10 s
+        self.assertEqual(GV.prix(GV.modele("kling-3-pro"), 6), 1.12)        # Kling sans son : 5 ou 10 s -> 10 s
         self.assertEqual(GV.duree_reelle(GV.modele("seedance-2"), 7), 7)
 
     def test_file_d_attente_fal(self):

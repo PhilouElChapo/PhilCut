@@ -80,9 +80,11 @@ class DialogueSequence(QDialog):
         self.explication_moteur.setStyleSheet("color:#9aa4b2")
         f.addRow("", self.explication_moteur)
         self.voix = QComboBox()
+        self.voix.addItem(_("Aucune voix : personne ne parle"), "aucune")
         self.voix.addItem(_("Voix de ce poste (gratuite)"), "local")
         self.voix.addItem(_("Voix Gemini (joue vraiment la phrase ; votre clef, payant)"), "gemini")
         self.voix.setCurrentIndex(max(0, self.voix.findData(self.seq.get("voix", "local"))))
+        self.voix.currentIndexChanged.connect(lambda _i: self.seq.__setitem__("voix", self.voix.currentData()))
         f.addRow(self._gras(_("Répliques")), self.voix)
         hm = QHBoxLayout()
         self.musique = QCheckBox(_("Musique sous la séquence (IA de ce poste)"))
@@ -117,6 +119,15 @@ class DialogueSequence(QDialog):
         for b in (self.b_tout, self.b_monter):
             b.setStyleSheet("font-weight:600")
         hb.addStretch(1)
+        # 0.9.68 : la fenêtre ne bloque plus PhilCut ; pendant un calcul, « Réduire » la range (la barre du bas suit)
+        self.b_reduire = QPushButton(_("Réduire (suivi dans la barre du bas)"))
+        self.b_reduire.setToolTip(_("La fabrication continue ; « Afficher la fenêtre » dans la barre du bas la rouvre"))
+        self.b_reduire.clicked.connect(self.hide)
+        self.b_reduire.hide()
+        hb.addWidget(self.b_reduire)
+        self._veille_reduire = QTimer(self)
+        self._veille_reduire.timeout.connect(lambda: self.b_reduire.setVisible(any(t.isRunning() for t in self.taches)))
+        self._veille_reduire.start(500)
         b_f = QPushButton(_("Fermer"))
         b_f.clicked.connect(self.reject)
         hb.addWidget(b_f)
@@ -134,6 +145,10 @@ class DialogueSequence(QDialog):
         return lb
 
     def _nouvelle(self):
+        if any(t.isRunning() for t in self.taches):
+            QMessageBox.information(self, _("Nouvelle histoire"), _("Une fabrication est en cours : attendez la fin, ou « Arrêter », "
+                                                                    "avant de repartir d'une histoire vide."))
+            return
         if (self.seq.get("histoire") or self.seq.get("plans")) and QMessageBox.question(
                 self, _("Nouvelle histoire"), _("Repartir d'une histoire vide ? L'histoire en cours reste dans le projet "
                                                 "(elle n'est pas effacée).")) != QMessageBox.Yes:
@@ -837,7 +852,7 @@ class DialogueSequence(QDialog):
             from . import moteur, creatif
             out = {"voix": {}, "musique": ""}
             for k, i in enumerate(prets):
-                if seq["plans"][i].get("repliques") and not seq["plans"][i].get("voix"):
+                if moteur_voix != "aucune" and seq["plans"][i].get("repliques") and not seq["plans"][i].get("voix"):
                     tache.avancer(k / (len(prets) + 1), _("répliques du plan {n}", n=i + 1))
                     out["voix"][i] = Q.voix_du_plan(seq, i, self.params, moteur_voix)
             if musique and not tache.arret:

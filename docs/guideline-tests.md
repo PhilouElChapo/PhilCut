@@ -157,6 +157,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 12. **Micro** : Voix › Enregistrer : la barre « Niveau » bouge quand vous parlez (test du micro) ; après l'enregistrement, « Ecouter la prise » avant de la poser.
 13. **Stabiliser** et **Fabrique** : un texte explique ce que fait l'outil avant de l'appliquer.
 
+## T83 — 0.9.68 : fenêtres non bloquantes, certificats, histoire sans voix
+
+1. Séquence IA : « Fabriquer les plans manquants » ; pendant le calcul, cliquer dans la timeline : PhilCut répond. « Réduire (suivi dans la barre du bas) » : la fenêtre disparaît, la barre du bas suit ; « Afficher la fenêtre » la rouvre.
+2. Même essai avec Atelier de logo (générer puis Fermer) et la publication YouTube (Fermer pendant l'envoi) : l'envoi continue.
+3. Séquence IA avec Kling (fal.ai) : plus d'erreur CERTIFICATE_VERIFY_FAILED ; le prix affiché est 0,112 $/s ; le plan reçu n'a pas de son.
+4. Séquence IA, « Répliques » › « Aucune voix : personne ne parle », moteur Gemini : les personnages ne parlent pas ; monté sur la timeline, le plan est muet.
+
 ## T82 — 0.9.67 : vidéo de narration d'après ce qui est dit
 
 Il faut une clef Gemini ou fal.ai (et fal.ai pour le présentateur), et un modèle de voix (Préférences › IA locale) pour la transcription.

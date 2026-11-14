@@ -4,7 +4,16 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.67 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.68 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.68 (fenetres qui ne bloquent plus, certificats, histoire sans voix)
+- La Sequence IA ne bloque plus PhilCut : on continue a monter pendant la fabrication ; "Reduire (suivi dans la barre du bas)" pendant un calcul ; le menu la rouvre. Meme chose pour la presentation de photos, les modeles de montage, prolonger un plan, les tampons video, l'atelier de logo et la publication : fermer pendant un calcul range la fenetre, le calcul continue et la barre du bas le suit (l'atelier de logo ne fige plus PhilCut 30 s, la publication n'est plus arretee).
+- Erreur "CERTIFICATE_VERIFY_FAILED" (fal.ai sous Windows) : toutes les connexions sont verifiees par Windows lui-meme, comme le navigateur (le correctif n'etait branche que pour la mise a jour).
+- Sequence IA : "Repliques > Aucune voix : personne ne parle" ; la consigne demande des bouches fermees et le son invente par le moteur (Gemini) est coupe au montage.
+- Kling 3.0 et Seedance (fal.ai) ne fabriquent plus de son ni de voix : PhilCut pose le sien. Kling passe de 0,14 a 0,112 $ la seconde.
+
+## Nouveautes de 0.9.67
+
 
 ### 0.9.67 (video de narration d'apres ce qui est dit)
 - Clic droit sur la voix > "Illustrer ce qui est dit (video de narration)..." (ou Fabrique IA > Video > "Video de narration d'apres ce qui est dit...").

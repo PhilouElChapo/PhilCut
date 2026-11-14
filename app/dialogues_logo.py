@@ -454,6 +454,9 @@ class DialogueLogo(QDialog):
         self.accept()
 
     def done(self, r):
+        from .widgets import calcul_en_cours, garder_calcul
+        if garder_calcul(self, calcul_en_cours(self)):         # 0.9.68 : rangée, le calcul continue
+            return
         for t in self.taches:
             t.wait(30000)
         super().done(r)

@@ -7521,5 +7521,9 @@
  "Plan {n} : le présentateur parle": "Plano {n}: el presentador habla",
  "Plan {n} : image animée": "Plano {n}: imagen animada",
  "Illustrer ce qui est dit (vidéo de narration)…": "Ilustrar lo que se dice (vídeo de narración)…",
- "La voix est transcrite et découpée en idées ; une image animée par idée, posée sous les mots": "La voz se transcribe y se divide en ideas; una imagen animada por idea, colocada bajo las palabras"
+ "La voix est transcrite et découpée en idées ; une image animée par idée, posée sous les mots": "La voz se transcribe y se divide en ideas; una imagen animada por idea, colocada bajo las palabras",
+ "La fabrication continue ; « Afficher la fenêtre » dans la barre du bas la rouvre": "La fabricación continúa; «Mostrar la ventana» en la barra inferior la vuelve a abrir",
+ "Une fabrication est en cours : attendez la fin, ou « Arrêter », avant de repartir d'une histoire vide.": "Hay una fabricación en curso: espere al final, o «Detener», antes de empezar con una historia vacía.",
+ "Aucune voix : personne ne parle": "Sin voz: nadie habla",
+ "plans jusqu'à 15 s": "planos de hasta 15 s"
 }

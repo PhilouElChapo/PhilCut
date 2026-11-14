@@ -7530,5 +7530,9 @@
  "Plan {n} : le présentateur parle": "Clip {n}: the presenter speaks",
  "Plan {n} : image animée": "Clip {n}: animated image",
  "Illustrer ce qui est dit (vidéo de narration)…": "Illustrate what is said (narration video)…",
- "La voix est transcrite et découpée en idées ; une image animée par idée, posée sous les mots": "The voice is transcribed and split into ideas; one animated image per idea, placed under the words"
+ "La voix est transcrite et découpée en idées ; une image animée par idée, posée sous les mots": "The voice is transcribed and split into ideas; one animated image per idea, placed under the words",
+ "La fabrication continue ; « Afficher la fenêtre » dans la barre du bas la rouvre": "Making continues; “Show the window” in the bottom bar reopens it",
+ "Une fabrication est en cours : attendez la fin, ou « Arrêter », avant de repartir d'une histoire vide.": "Making is in progress: wait for the end, or “Stop”, before starting from an empty story.",
+ "Aucune voix : personne ne parle": "No voice: nobody speaks",
+ "plans jusqu'à 15 s": "clips up to 15 s"
 }

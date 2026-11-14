@@ -870,7 +870,8 @@ class Fenetre(QMainWindow):
     def publier(self, fichier=""):
         ed = self._editeur_ou_nouveau()
         from .dialogues_publication import DialoguePublier
-        DialoguePublier(self, ed.projet, self.params, fichier).exec()
+        from .widgets import non_bloquante
+        return non_bloquante(self, ("publier", id(ed)), lambda: DialoguePublier(self, ed.projet, self.params, fichier))
 
     def _exporte(self, sortie, journal, erreur, deposer):
         from .journal import ecrire
@@ -899,9 +900,13 @@ class Fenetre(QMainWindow):
     def atelier_logo(self):
         """Atelier de logo ; « Enregistrer et animer » enchaîne sur la Fabrique avec ce logo."""
         from .dialogues_logo import DialogueLogo
-        d = DialogueLogo(self, self.params)
-        if d.exec() == QDialog.Accepted and d.png:
-            self.fabrique(image=d.png, texte=d.logo.get("nom"))
+        from .widgets import non_bloquante
+
+        def fabriquer():
+            d = DialogueLogo(self, self.params)
+            d.accepted.connect(lambda: d.png and self.fabrique(image=d.png, texte=d.logo.get("nom")))
+            return d
+        return non_bloquante(self, "logo", fabriquer)
 
     def remplir_fabrique(self, fb, ed=None):
         """Le menu Fabrique IA (0.9.46) : le seul endroit où l'on crée vidéo, musique, image et logo. Le même menu sert à la

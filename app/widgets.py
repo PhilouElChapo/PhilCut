@@ -638,7 +638,50 @@ def garder_calcul(dlg, en_cours):
     if not en_cours:
         return False
     dlg.hide()
+    try:                                       # les calculs pas encore suivis le sont maintenant (barre du bas, Centre d'activité)
+        from . import activite
+        suivis = {id(l.get("tache")) for l in activite.centre().lignes}
+        ts = list(getattr(dlg, "taches", None) or []) + list(getattr(dlg, "_taches", None) or [])
+        if getattr(dlg, "tache", None) is not None:
+            ts.append(dlg.tache)
+        for t in ts:
+            if hasattr(t, "isRunning") and t.isRunning() and id(t) not in suivis:
+                suivre_en_fond(dlg, t, dlg.windowTitle())
+    except Exception:      # noqa: BLE001 : ne jamais empêcher de ranger la fenêtre
+        pass
     e = _encart_de(dlg)
     if e is not None and getattr(e, "tache", None) is None:
         e.message(_("La création continue : la barre du bas la suit, puis « Voir le résultat » rouvre la fenêtre."), 8000)
     return True
+
+
+def non_bloquante(proprietaire, cle, fabrique):
+    """Ouvre une fenêtre de travail sans bloquer PhilCut (0.9.68) : une seule par clef ; si elle est déjà là (visible ou
+    rangée pendant un calcul), elle revient au premier plan au lieu d'en ouvrir une autre."""
+    ouvertes = proprietaire.__dict__.setdefault("_fenetres_travail", {})
+    anc = ouvertes.get(cle)
+    if anc is not None:
+        try:
+            en_cours = any(getattr(t, "isRunning", lambda: False)() for t in (getattr(anc, "taches", None) or [])) or \
+                bool(getattr(anc, "tache", None) is not None and anc.tache.isRunning())
+            if anc.isVisible() or en_cours:
+                reafficher(anc)
+                return anc
+        except RuntimeError:
+            pass
+    d = fabrique()
+    d.setModal(False)
+    ouvertes[cle] = d
+    d.show()
+    return d
+
+
+def calcul_en_cours(dlg):
+    """Une tâche de la fenêtre tourne-t-elle encore (attributs habituels : tache, taches, _taches) ?"""
+    ts = list(getattr(dlg, "taches", None) or []) + list(getattr(dlg, "_taches", None) or [])
+    if getattr(dlg, "tache", None) is not None:
+        ts.append(dlg.tache)
+    try:
+        return any(t.isRunning() for t in ts if hasattr(t, "isRunning"))
+    except RuntimeError:
+        return False
