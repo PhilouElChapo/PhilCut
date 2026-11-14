@@ -7525,5 +7525,7 @@
  "La fabrication continue ; « Afficher la fenêtre » dans la barre du bas la rouvre": "La fabbricazione continua; «Mostra la finestra» nella barra in basso la riapre",
  "Une fabrication est en cours : attendez la fin, ou « Arrêter », avant de repartir d'une histoire vide.": "È in corso una fabbricazione: attendete la fine, o «Ferma», prima di ripartire da una storia vuota.",
  "Aucune voix : personne ne parle": "Nessuna voce: nessuno parla",
- "plans jusqu'à 15 s": "clip fino a 15 s"
+ "plans jusqu'à 15 s": "clip fino a 15 s",
+ "Voix du moteur vidéo : il fait parler les personnages avec la vidéo (lèvres naturelles)": "Voce del motore video: fa parlare i personaggi con il video (labbra naturali)",
+ "Un seul réglage pour la voix : personne ne parle, voix posée ensuite par PhilCut, ou voix fabriquée avec la vidéo par le moteur (Kling, Seedance, Gemini ; un peu plus cher chez Kling)": "Un'unica impostazione per la voce: nessuno parla, voce posata dopo da PhilCut, o voce fabbricata con il video dal motore (Kling, Seedance, Gemini; un po' più caro con Kling)"
 }

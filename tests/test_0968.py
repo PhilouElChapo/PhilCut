@@ -110,6 +110,22 @@ class TestSansVoixEtCertificats(unittest.TestCase):
         self.assertIn("Nobody speaks", Q.consigne(s, s["plans"][0], traduire=False))
         s["voix"] = "local"
         self.assertIn("talk briefly", Q.consigne(s, s["plans"][0], traduire=False))
+        # un seul réglage : la voix du moteur reçoit les répliques, le son est demandé et gardé, le prix suit
+        s["personnages"] = [Q.personnage("Léa", "femme de 30 ans")]
+        s["plans"][0]["repliques"] = [{"qui": "Léa", "texte": "On y va."}]
+        s["voix"] = "moteur"
+        c = Q.consigne(s, s["plans"][0], traduire=False)
+        self.assertIn('Character A says: "On y va."', c)
+        self.assertNotIn("Léa", c)
+        m = GV.modele("kling-3-pro", {})
+        self.assertGreater(GV.prix(m, 5, son=True), GV.prix(m, 5))
+        recu.clear()
+        GV.attendre_fal = lambda cle, point, corps, sortie, *a, **k: recu.update(corps)
+        try:
+            GV.generer_fal("k", m, "a shot", "x.mp4", 5, son=True)
+        finally:
+            GV.attendre_fal = anc
+        self.assertIs(recu["generate_audio"], True)
         # au montage, le son du plan (voix inventée par Gemini) est coupé
         import tempfile
         from app.projet import Projet
@@ -119,6 +135,10 @@ class TestSansVoixEtCertificats(unittest.TestCase):
         p = Projet()
         Q.monter(p, s, 0.0)
         self.assertTrue(p.clips_piste("video")[0]["muet"])
+        s["voix"] = "moteur"
+        p2 = Projet()
+        Q.monter(p2, s, 0.0)
+        self.assertFalse(p2.clips_piste("video")[0].get("muet"))           # la voix du moteur est gardée
 
     def test_certificats_par_windows(self):
         import ssl

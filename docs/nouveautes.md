@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.68 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.69 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.69 (la voix : un seul reglage)
+- Sequence IA, "Repliques" decide tout : "Aucune voix : personne ne parle" ; voix de ce poste ou voix Gemini posees ensuite par PhilCut ; ou nouveau "Voix du moteur video" : le moteur (Kling, Seedance, Gemini) fait parler les personnages avec la video, levres naturelles, d'apres les repliques ecrites.
+- Avec "Voix du moteur", le son fabrique est demande et garde au montage ; sinon il n'est pas fabrique (Kling, Seedance) ou coupe au montage (Gemini). Le prix suit le reglage (Kling : 0,112 $/s sans son, 0,168 $/s avec).
+
+## Nouveautes de 0.9.68
+
 
 ### 0.9.68 (fenetres qui ne bloquent plus, certificats, histoire sans voix)
 - La Sequence IA ne bloque plus PhilCut : on continue a monter pendant la fabrication ; "Reduire (suivi dans la barre du bas)" pendant un calcul ; le menu la rouvre. Meme chose pour la presentation de photos, les modeles de montage, prolonger un plan, les tampons video, l'atelier de logo et la publication : fermer pendant un calcul range la fenetre, le calcul continue et la barre du bas le suit (l'atelier de logo ne fige plus PhilCut 30 s, la publication n'est plus arretee).

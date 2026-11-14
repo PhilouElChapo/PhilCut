@@ -34,7 +34,7 @@ MODELES = [
     {"id": "omni-1080p", "fournisseur": "google", "nom": "Gemini Omni Flash 1080p", "modele": "gemini-omni-1.1-flash",
      "resolution": "1080p", "prix_s": 0.10, "duree_auto": True, "note": _("720p agrandi par Google")},
     {"id": "kling-3-pro", "fournisseur": "fal", "nom": "Kling 3.0 Pro (fal)", "modele": "fal-ai/kling-video/v3/pro/text-to-video",
-     "modele_image": "fal-ai/kling-video/v3/pro/image-to-video", "prix_s": 0.112, "durees": [5, 10], "son_param": "generate_audio",
+     "modele_image": "fal-ai/kling-video/v3/pro/image-to-video", "prix_s": 0.112, "prix_s_son": 0.168, "durees": [5, 10], "son_param": "generate_audio",
      "note": _("mouvements réalistes, personnes")},
     {"id": "seedance-2", "fournisseur": "fal", "nom": "Seedance 2.0 (fal)", "modele": "bytedance/seedance-2.0/text-to-video",
      "modele_image": "bytedance/seedance-2.0/image-to-video", "prix_s": 0.30, "durees": list(range(4, 16)),
@@ -96,13 +96,14 @@ def disponibles(params):
     return [m for m in modeles(params) if clef(params, m["fournisseur"])]
 
 
-def prix(m, duree):
-    """Prix estimé maximal en $ : Omni choisit lui-même la durée (jusqu'à 10 s)."""
+def prix(m, duree, son=False):
+    """Prix estimé maximal en $ : Omni choisit lui-même la durée (jusqu'à 10 s) ; son=True : le moteur fabrique aussi le son
+    (voix comprises), plus cher chez certains."""
     if m.get("duree_auto"):
         duree = max(duree, 10)
     elif m.get("durees"):
         duree = min((d for d in m["durees"] if d >= duree), default=max(m["durees"]))
-    return round(float(m.get("prix_s", 0.2)) * duree, 2)
+    return round(float((m.get("prix_s_son") if son else None) or m.get("prix_s", 0.2)) * duree, 2)
 
 
 def duree_reelle(m, duree):
@@ -112,7 +113,10 @@ def duree_reelle(m, duree):
 
 
 # ------------------------------------------------------------------ génération
-def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None, progression=None, arret=lambda: False):
+def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None, progression=None, arret=lambda: False, son=False):
+    """son : le moteur fabrique aussi le son et fait parler (un seul réglage, « Répliques » de la Séquence IA) ; sinon, chez
+    les moteurs qui le permettent, aucun son n'est fabriqué (PhilCut pose le sien ; Omni en fabrique toujours un, coupé au
+    montage)."""
     m = modele(ident, params)
     if not m:
         raise ErreurGenerateur(_("Modèle inconnu : {m}", m=ident))
@@ -129,7 +133,7 @@ def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None
             if m.get("repli") and (getattr(e, "code", None) == 404 or any(x in str(e) for x in ("404", "NOT_FOUND", "not found", "not supported"))):
                 return generer_omni(k, consigne, sortie, m["repli"], duree, format_, image, m.get("resolution", "720p"), progression, arret)
             raise
-    return generer_fal(k, m, consigne, sortie, duree, format_, image, progression, arret)
+    return generer_fal(k, m, consigne, sortie, duree, format_, image, progression, arret, son)
 
 
 FAL_FILE = "https://queue.fal.run"
@@ -155,15 +159,15 @@ def _data_uri(chemin):
         return f"data:{mime};base64," + base64.b64encode(f.read()).decode()
 
 
-def generer_fal(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, progression=None, arret=lambda: False):
+def generer_fal(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, progression=None, arret=lambda: False, son=False):
     """File d'attente fal.ai : envoi, suivi de l'état, récupération de la vidéo (video.url)."""
     point = (m.get("modele_image") if image and m.get("modele_image") else m["modele"]).strip("/")
     corps = {"prompt": consigne, "duration": str(int(duree_reelle(m, duree))), "aspect_ratio": "9:16" if format_ == "9:16" else "16:9"}
     if image:
         corps["image_url"] = _data_uri(image)
     if m.get("son_param"):
-        # 0.9.68 : jamais de son fabriqué par le moteur (voix inventées, musique) : PhilCut pose le sien ; et c'est moins cher
-        corps[m["son_param"]] = False
+        # 0.9.68 : pas de son fabriqué par le moteur (voix inventées, musique) sauf demande : PhilCut pose le sien, moins cher
+        corps[m["son_param"]] = bool(son)
     return attendre_fal(cle, point, corps, sortie, progression, arret)
 
 

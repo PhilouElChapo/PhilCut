@@ -7534,5 +7534,7 @@
  "La fabrication continue ; « Afficher la fenêtre » dans la barre du bas la rouvre": "Making continues; “Show the window” in the bottom bar reopens it",
  "Une fabrication est en cours : attendez la fin, ou « Arrêter », avant de repartir d'une histoire vide.": "Making is in progress: wait for the end, or “Stop”, before starting from an empty story.",
  "Aucune voix : personne ne parle": "No voice: nobody speaks",
- "plans jusqu'à 15 s": "clips up to 15 s"
+ "plans jusqu'à 15 s": "clips up to 15 s",
+ "Voix du moteur vidéo : il fait parler les personnages avec la vidéo (lèvres naturelles)": "Video engine voice: it makes the characters speak with the video (natural lips)",
+ "Un seul réglage pour la voix : personne ne parle, voix posée ensuite par PhilCut, ou voix fabriquée avec la vidéo par le moteur (Kling, Seedance, Gemini ; un peu plus cher chez Kling)": "A single setting for the voice: nobody speaks, voice placed afterwards by PhilCut, or voice made with the video by the engine (Kling, Seedance, Gemini; a bit more expensive with Kling)"
 }

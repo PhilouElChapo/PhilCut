@@ -163,6 +163,7 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 2. Même essai avec Atelier de logo (générer puis Fermer) et la publication YouTube (Fermer pendant l'envoi) : l'envoi continue.
 3. Séquence IA avec Kling (fal.ai) : plus d'erreur CERTIFICATE_VERIFY_FAILED ; le prix affiché est 0,112 $/s ; le plan reçu n'a pas de son.
 4. Séquence IA, « Répliques » › « Aucune voix : personne ne parle », moteur Gemini : les personnages ne parlent pas ; monté sur la timeline, le plan est muet.
+5. (0.9.69) « Répliques » › « Voix du moteur vidéo » avec Kling : le prix passe à 0,168 $/s ; une réplique écrite (« Hélène : Bonjour. ») est dite par le personnage dans le plan reçu ; montée, le son du plan est gardé. Revenir à « Voix de ce poste » : le prix redescend, le plan fabriqué est muet et la réplique est posée sur la piste Voix.
 
 ## T82 — 0.9.67 : vidéo de narration d'après ce qui est dit
 

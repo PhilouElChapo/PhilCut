@@ -7525,5 +7525,7 @@
  "La fabrication continue ; « Afficher la fenêtre » dans la barre du bas la rouvre": "Die Herstellung läuft weiter; „Fenster anzeigen“ in der unteren Leiste öffnet es wieder",
  "Une fabrication est en cours : attendez la fin, ou « Arrêter », avant de repartir d'une histoire vide.": "Eine Herstellung läuft: Warten Sie das Ende ab oder „Anhalten“, bevor Sie mit einer leeren Geschichte neu beginnen.",
  "Aucune voix : personne ne parle": "Keine Stimme: niemand spricht",
- "plans jusqu'à 15 s": "Clips bis 15 s"
+ "plans jusqu'à 15 s": "Clips bis 15 s",
+ "Voix du moteur vidéo : il fait parler les personnages avec la vidéo (lèvres naturelles)": "Stimme der Video-Engine: Sie lässt die Figuren mit dem Video sprechen (natürliche Lippen)",
+ "Un seul réglage pour la voix : personne ne parle, voix posée ensuite par PhilCut, ou voix fabriquée avec la vidéo par le moteur (Kling, Seedance, Gemini ; un peu plus cher chez Kling)": "Eine einzige Einstellung für die Stimme: niemand spricht, Stimme danach von PhilCut gelegt, oder Stimme mit dem Video von der Engine erzeugt (Kling, Seedance, Gemini; bei Kling etwas teurer)"
 }

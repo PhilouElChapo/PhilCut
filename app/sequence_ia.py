@@ -191,6 +191,10 @@ def consigne(seq, pl, params=None, traduire=True):
         morceaux.append("Camera: " + _anglais(pl["camera"], traduire).rstrip(".") + ".")
     if seq.get("voix") == "aucune":                  # 0.9.68 : histoire sans voix
         morceaux.append("Nobody speaks, no dialogue, closed mouths.")
+    elif seq.get("voix") == "moteur" and pl.get("repliques"):     # le moteur fait parler : il reçoit les répliques telles quelles
+        lignes = " ".join(f'Character {chr(65 + rangs[r["qui"].lower()])} says: "{r["texte"]}".' if (r.get("qui") or "").lower() in rangs else
+                          f'Someone says: "{r["texte"]}".' for r in pl["repliques"])
+        morceaux.append(lignes + " Natural lip sync, no subtitles.")
     elif pl.get("repliques"):
         morceaux.append("The characters talk briefly (lips moving), no subtitles.")
     morceaux.append("Same characters, same clothes and same light as the other shots of this sequence. Realistic, high detail, "
@@ -282,7 +286,7 @@ def fabriquer_plan(seq, i, params, moteur_video, progression=None, arret=lambda:
     else:
         from . import generateurs_video as GV
         GV.generer(params, moteur_video, texte, sortie, int(pl.get("duree") or DUREE_PLAN), seq.get("format", "16:9"), image,
-                   progression, arret)
+                   progression, arret, son=seq.get("voix") == "moteur")
     return sortie
 
 
@@ -307,7 +311,8 @@ def prix_total(seq, moteur_video, params):
     m = GV.modele(moteur_video, params)
     if not m:
         return 0.0
-    return round(sum(GV.prix(m, int(p.get("duree") or DUREE_PLAN)) for p in seq["plans"] if not p.get("fichier")), 2)
+    son = seq.get("voix") == "moteur"
+    return round(sum(GV.prix(m, int(p.get("duree") or DUREE_PLAN), son) for p in seq["plans"] if not p.get("fichier")), 2)
 
 
 def monter(projet, seq, t):
@@ -323,8 +328,8 @@ def monter(projet, seq, t):
         ci = prolonger.poser(projet, {"debut": t, "piste": "video"}, f, "debut", (pl.get("action") or "")[:40])
         if not ci:
             continue
-        if seq.get("voix") == "aucune":
-            ci["muet"] = True                        # 0.9.68 : histoire sans voix, le son inventé par le moteur est coupé
+        if seq.get("voix") != "moteur":
+            ci["muet"] = True                        # 0.9.68 : seul « voix du moteur » garde le son fabriqué avec la vidéo
         for decal, wav in pl.get("voix") or []:
             if os.path.exists(wav):
                 m = projet.ajouter_media(wav, moteur.sonder(wav))

@@ -83,8 +83,11 @@ class DialogueSequence(QDialog):
         self.voix.addItem(_("Aucune voix : personne ne parle"), "aucune")
         self.voix.addItem(_("Voix de ce poste (gratuite)"), "local")
         self.voix.addItem(_("Voix Gemini (joue vraiment la phrase ; votre clef, payant)"), "gemini")
+        self.voix.addItem(_("Voix du moteur vidéo : il fait parler les personnages avec la vidéo (lèvres naturelles)"), "moteur")
+        self.voix.setToolTip(_("Un seul réglage pour la voix : personne ne parle, voix posée ensuite par PhilCut, ou voix fabriquée "
+                               "avec la vidéo par le moteur (Kling, Seedance, Gemini ; un peu plus cher chez Kling)"))
         self.voix.setCurrentIndex(max(0, self.voix.findData(self.seq.get("voix", "local"))))
-        self.voix.currentIndexChanged.connect(lambda _i: self.seq.__setitem__("voix", self.voix.currentData()))
+        self.voix.currentIndexChanged.connect(lambda _i: (self.seq.__setitem__("voix", self.voix.currentData()), self._maj_prix()))
         f.addRow(self._gras(_("Répliques")), self.voix)
         hm = QHBoxLayout()
         self.musique = QCheckBox(_("Musique sous la séquence (IA de ce poste)"))
@@ -710,7 +713,8 @@ class DialogueSequence(QDialog):
             return True
         from . import generateurs_video as GV
         mo = GV.modele(m, self.params)
-        prix = round(sum(GV.prix(mo, int(self.seq["plans"][i].get("duree") or Q.DUREE_PLAN)) for i in indices), 2) if mo else 0
+        son = self.seq.get("voix") == "moteur"
+        prix = round(sum(GV.prix(mo, int(self.seq["plans"][i].get("duree") or Q.DUREE_PLAN), son) for i in indices), 2) if mo else 0
         return QMessageBox.question(self, _("Séquence IA"), _("Fabriquer {n} plan(s) avec {m} pour au plus {p} $ environ (votre clef) ?",
                                                               n=len(indices), m=(mo or {}).get("nom", m), p=prix)) == QMessageBox.Yes
 
@@ -852,7 +856,7 @@ class DialogueSequence(QDialog):
             from . import moteur, creatif
             out = {"voix": {}, "musique": ""}
             for k, i in enumerate(prets):
-                if moteur_voix != "aucune" and seq["plans"][i].get("repliques") and not seq["plans"][i].get("voix"):
+                if moteur_voix not in ("aucune", "moteur") and seq["plans"][i].get("repliques") and not seq["plans"][i].get("voix"):
                     tache.avancer(k / (len(prets) + 1), _("répliques du plan {n}", n=i + 1))
                     out["voix"][i] = Q.voix_du_plan(seq, i, self.params, moteur_voix)
             if musique and not tache.arret:
