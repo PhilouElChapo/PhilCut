@@ -72,7 +72,8 @@ class TestCalculEnFond(unittest.TestCase):
         textes = [b.text() for b in fa.findChildren(QPushButton)]
         self.assertIn("Afficher la fenêtre", textes)
         ev.set()
-        attendre(lambda: not t.isRunning())
+        ligne = next(l for l in activite.centre().lignes if l["tache"] is t)
+        attendre(lambda: not t.isRunning() and ligne["etat"] == activite.FINI)      # la fin arrive par un signal différé
         app.processEvents()
         fa.remplir()
         b = [b for b in fa.findChildren(QPushButton) if b.text() == "Voir le résultat" and b.isVisibleTo(fa)]
