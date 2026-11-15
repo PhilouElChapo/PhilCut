@@ -122,25 +122,52 @@ def _guides_integres():
               "montrer": {"menu": [_("Montage"), _("Pistes et passage choisi (partie jaune)"), _("Partie jaune : supprimer ce passage")]}},
              {"texte": _("Un vide est resté entre deux plans ? Clic droit dans le vide › « Refermer ce vide : recoller les plans ».")},
          ]},
-        {"id": "personnages", "etat": "partiel",
-         "titre": _("Faire jouer et parler des personnages d'un rush"),
-         "mots": "personnage personne jouer parler replique dialogue visage acteur histoire sequence",
-         "intro": _("Seulement des personnes qui ont donné leur accord : vous le certifiez en cochant une case. « A la manière de » "
-                    "décrit un style, jamais le visage ou la voix d'une personne connue. Garder le même visage d'un plan à "
-                    "l'autre passe aujourd'hui par Gemini (coût affiché avant) ; l'IA de ce poste part de l'image du personnage "
-                    "mais ne garde pas aussi bien le visage."),
+        {"id": "personnages", "etat": "ok",
+         "titre": _("Garder le même personnage d'un plan à l'autre (Séquence IA)"),
+         "mots": "personnage personne jouer parler replique dialogue visage acteur histoire sequence ressemblant fidele identique "
+                 "fiche planche reference kling enchainer raccord table traverse",
+         "intro": _("Une seule image de départ ne suffit pas : le moteur invente le reste et le visage dérive. Quatre verrous : la "
+                    "fiche du personnage (face, profil, en pied), l'image de départ, l'image d'arrivée, et le moteur « Kling O3 "
+                    "Référence » qui garde le visage ; chaque plan démarre sur la dernière image du précédent. Seulement des "
+                    "personnes d'accord, jamais une célébrité."),
          "etapes": [
-             {"texte": _("Ligne rouge sur un moment où le personnage est bien visible, puis clic droit sur le plan › « Enregistrer "
-                         "l'image à cet endroit… »."),
-              "montrer": {"clic_droit": [_("Enregistrer l'image à cet endroit…")]}},
-             {"texte": _("Fabrique IA › Vidéo › « Histoire en plusieurs plans (Séquence IA)… » : écrivez la petite scène (ce qu'ils "
-                         "font, ce qu'ils disent)."),
+             {"texte": _("Fabrique IA › Vidéo › « Histoire en plusieurs plans (Séquence IA)… » : écrivez la scène, une action "
+                         "simple par plan."),
               "montrer": {"menu": [_("Fabrique IA"), _("Vidéo"), _("Histoire en plusieurs plans (Séquence IA)…")]},
               "fait": "fenetre:DialogueSequence"},
-             {"texte": _("Onglet des personnages : cliquez la ligne du personnage › « Images du personnage… » › l'image enregistrée "
-                         "(cochez l'accord de la personne).")},
-             {"texte": _("Vérifiez chaque plan et ses répliques, choisissez le moteur (ce poste, Gemini, Flow), puis fabriquez : "
-                         "chaque plan se regarde avant d'être posé.")},
+             {"texte": _("Onglet des personnages : cliquez la ligne › « Images du personnage… » (une image nette de face, bien "
+                         "éclairée), puis « Fiche personnage… » : regardez la planche avant de la garder.")},
+             {"texte": _("Moteur « Kling O3 Référence : personnage fidèle (fal) » ; laissez cochées « Image de départ » et « Image "
+                         "d'arrivée et fiche personnage » : le plan doit rejoindre la pose finale, il ne traverse plus la table.")},
+             {"texte": _("Dans chaque plan, « Enchaîner » (coché d'office) : le plan démarre sur la dernière image du précédent. "
+                         "Jusqu'à 15 s par plan ; le prix total est demandé avant l'envoi.")},
+             {"texte": _("Un plan raté ? Refaites seulement celui-là ; les suivants repartent de sa nouvelle dernière image.")},
+         ]},
+        {"id": "rallonger", "etat": "ok",
+         "titre": _("Rallonger un rush ou créer sa suite (même personnage)"),
+         "mots": "rallonger prolonger allonger suite continuer fin rush plan plus long 6 secondes duree extend",
+         "intro": _("La suite démarre sur la dernière image exacte du plan : le raccord est parfait. Sur ce poste (gratuit, moins "
+                    "fidèle) ou par le cloud (Kling O3 Référence : les personnes et objets du plan sont gardés, jusqu'à 15 s, prix "
+                    "demandé avant). Plus long encore : prolongez le morceau posé, il repart de sa propre fin."),
+         "etapes": [
+             {"texte": _("Cliquez le plan dans la timeline."), "fait": "plan_choisi"},
+             {"texte": _("Clic droit sur le plan › « Prolonger ce plan (image tenue, ralenti ou IA)… »."),
+              "montrer": {"clic_droit": [_("Prolonger ce plan (image tenue, ralenti ou IA)…")]}, "fait": "fenetre:DialogueProlonger"},
+             {"texte": _("« Comment » : « Prolongé par l'IA cloud, fidèle » ; la durée (jusqu'à 15 s) ; « Suite » : ce qui se passe "
+                         "ensuite, dans votre langue (l'anglais envoyé reste visible et modifiable).")},
+             {"texte": _("« Fabriquer », regardez, puis « Poser dans le film » : la suite du montage est décalée, Ctrl+Z l'enlève.")},
+         ]},
+        {"id": "credit_ia", "etat": "ok",
+         "titre": _("Voir le crédit restant chez l'IA et le recharger"),
+         "mots": "credit solde reste argent recharger payer compte fal gemini prix cout budget",
+         "intro": _("Les fenêtres qui paient un calcul (Séquence IA, Prolonger, Faire parler) montrent le crédit fal.ai restant et "
+                    "un bouton « Recharger… » qui ouvre votre compte. Google ne donne pas le solde d'une clef Gemini : le bouton "
+                    "ouvre le suivi des dépenses."),
+         "etapes": [
+             {"texte": _("Ouvrez par exemple la Séquence IA, choisissez un moteur fal.ai : la ligne « Crédit fal.ai restant » "
+                         "apparaît sous le prix.")},
+             {"texte": _("« Recharger… » ouvre la page de facturation de fal.ai dans le navigateur ; le solde se relit à la "
+                         "prochaine ouverture de la fenêtre.")},
          ]},
         {"id": "liaison", "etat": "ok",
          "titre": _("Lier deux rushes par un plan de passage"),

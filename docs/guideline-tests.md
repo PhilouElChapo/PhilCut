@@ -23,6 +23,19 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T85 — 0.9.72 : personnage fidèle, plans plus longs, rallonger un rush
+
+Il faut une clef fal.ai avec un peu de crédit, et une clef Gemini.
+
+1. Séquence IA, onglet « Personnages et lieux » : cliquer la ligne du personnage, « Images du personnage… » (ton personnage IA, de face), puis « Fiche personnage… » : la planche (face, trois quarts, profil, en pied) s'affiche avant d'être gardée ; la colonne Images dit « + fiche ».
+2. Moteur « Kling O3 Référence : personnage fidèle (fal) » : l'explication change, la ligne « Crédit fal.ai restant » s'affiche ; « Recharger… » ouvre la page de facturation de fal.ai.
+3. Onglet Plans : durée jusqu'à 15 s ; « Enchaîner » coché d'office (sauf le premier plan) ; pas de défilement horizontal.
+4. « Fabriquer les plans manquants » : le prix compte la fiche et l'image d'arrivée (0,04 $ chacune). Le personnage ressemble-t-il à son image, du début à la fin du plan ? Plus de traversée de table ? Le plan 2 démarre-t-il exactement où finit le plan 1 ?
+5. Un rush (filmé ou IA) : clic droit sur le plan › « Prolonger ce plan… » › « Prolongé par l'IA cloud, fidèle », 8 s, « Suite » : « elle ouvre l'ordinateur et sourit » ; le prix est demandé ; regarder, poser.
+6. Tampons vidéo, onglet « Tampons IA » : pendant la création, « Réduire » apparaît en bas ; la fenêtre se range, la barre du bas suit, « Voir le résultat » la rouvre.
+7. Tampons, « Ma bibliothèque » : glisser une icône sur une autre (vers la droite, vers la gauche) : elle prend sa place, rien ne disparaît.
+8. « Faire parler » (image + son) : sans cocher la case du visage, le message en bas dit de la cocher ; cochée, le bouton s'active.
+
 ## T84 — 0.9.70 : Séquence IA, gestes cohérents et personnage fidèle
 
 1. Reprendre l'histoire d'Hélène : dans la liste des plans, les plans à deux actions portent ⚠ ; sous « Ce qu'on voit », l'avertissement et « Couper en deux plans ». Essayer « Une action par plan » : chaque plan double devient deux plans (durées partagées).

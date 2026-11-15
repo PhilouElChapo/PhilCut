@@ -134,22 +134,24 @@ class DialogueLevres(QDialog):
             v.addWidget(self.consigne)
         else:
             self.consigne = None
-        self.accord = QCheckBox(_("Visage d'un personnage inventé, le mien, ou d'une personne d'accord"))
-        self.accord.toggled.connect(self._maj)
-        v.addWidget(self.accord)
-        eng = QLabel(_("Jamais une personnalité ni une personne qui n'est pas d'accord : faire dire à un vrai visage ce qu'il n'a "
-                       "pas dit, c'est fabriquer un faux. En cochant, vous vous en portez garant."))
-        eng.setWordWrap(True)
-        eng.setStyleSheet("color:#c98a00")
-        v.addWidget(eng)
-        self.cout = QLabel("")
-        self.cout.setWordWrap(True)
-        self.cout.setStyleSheet("font-weight:600")
-        v.addWidget(self.cout)
         from .dialogues_creatif import ApercuCreation
         self.apercu = ApercuCreation(self)
         v.addWidget(self.apercu)
         v.addStretch(1)
+        # 0.9.72 : la case et le coût restent visibles près des boutons (cachés en bas de la zone qui défile, le bouton
+        # « Faire parler » paraissait grisé sans raison)
+        self.accord = QCheckBox(_("Visage d'un personnage inventé, le mien, ou d'une personne d'accord"))
+        self.accord.toggled.connect(self._maj)
+        self.accord.setToolTip(_("Jamais une personnalité ni une personne qui n'est pas d'accord : faire dire à un vrai visage ce qu'il "
+                                 "n'a pas dit, c'est fabriquer un faux. En cochant, vous vous en portez garant."))
+        racine.addWidget(self.accord)
+        self.cout = QLabel("")
+        self.cout.setWordWrap(True)
+        self.cout.setStyleSheet("font-weight:600")
+        racine.addWidget(self.cout)
+        from .credit_ia import LigneCredit
+        self.credit = LigneCredit(ed.params, "fal")
+        racine.addWidget(self.credit)
         self.barre = QProgressBar()
         self.barre.setRange(0, 1000)
         self.barre.hide()
@@ -224,6 +226,8 @@ class DialogueLevres(QDialog):
             manque = _("Choisissez l'image du personnage.")
         elif not self.fichier_son and not LV.sons_sous(self.ed.projet, a, b):
             manque = _("Pas de son à faire dire.")
+        elif not self.accord.isChecked():
+            manque = _("Pour lancer : cochez la case du visage ci-dessus (personnage inventé, vous, ou une personne d'accord).")
         self.cout.setText(manque or _("Coût annoncé par fal.ai : environ {p} $ pour {d} s (demandé avant de lancer).",
                                       p=f"{LV.prix(k, d):.2f}".replace(".", ","), d=int(round(d))))
         self.cout.setStyleSheet("font-weight:600;color:#c98a00" if manque else "font-weight:600")

@@ -64,7 +64,7 @@ class DialogueSequence(QDialog):
         dispo = {m["id"] for m in GV.disponibles(self.params)}
         modeles = sorted(GV.modeles(self.params), key=lambda m: (m.get("fournisseur") != "google", m["id"] not in dispo))
         for m in modeles:
-            lib = _("Cloud : {n} — {p:.2f} $/s (votre clef)", n=m["nom"], p=m.get("prix_s", 0))
+            lib = _("Cloud : {n} — {p} $/s (votre clef)", n=m["nom"], p=f"{m.get('prix_s', 0):.3f}".rstrip("0").replace(".", ","))
             self.moteur.addItem(lib, m["id"])
             if m["id"] not in dispo:
                 self.moteur.model().item(self.moteur.count() - 1).setEnabled(False)
@@ -97,6 +97,14 @@ class DialogueSequence(QDialog):
         self.image_auto.setEnabled(bool(self.params.get("clef_gemini")))
         self.image_auto.toggled.connect(lambda v: (self.seq.__setitem__("image_auto", v), self._maj_prix()))
         f.addRow(self._gras(_("Visages")), self.image_auto)
+        self.image_fin = QCheckBox(_("Image d'arrivée et fiche personnage (moteur Référence)"))
+        self.image_fin.setToolTip(_("Avec « Kling O3 Référence » : une planche du personnage (face, profil, en pied) et l'image de fin "
+                                    "de chaque plan sont composées par Gemini (0,04 $ chacune). Le moteur garde le visage et doit "
+                                    "rejoindre la pose finale : plus de personnage qui change ni de passage à travers la table."))
+        self.image_fin.setChecked(bool(self.seq.get("image_fin_auto", True)))
+        self.image_fin.setEnabled(bool(self.params.get("clef_gemini")))
+        self.image_fin.toggled.connect(lambda v: (self.seq.__setitem__("image_fin_auto", v), self._maj_prix()))
+        f.addRow("", self.image_fin)
         self.musique = QCheckBox(_("Musique sous la séquence (IA de ce poste)"))
         self.musique.setChecked(bool(self.seq["musique"].get("active", True)))
         hm.addWidget(self.musique)
@@ -106,6 +114,9 @@ class DialogueSequence(QDialog):
         f.addRow(self._gras(_("Musique")), hm)
         self.prix = QLabel("")
         f.addRow(self.prix)
+        from .credit_ia import LigneCredit, fournisseur_du_moteur
+        self.credit = LigneCredit(self.params, fournisseur_du_moteur(self.seq.get("moteur"), self.params))
+        f.addRow(self.credit)
         v.addWidget(g)
         self.suivi = SuiviAttente()
         v.addWidget(self.suivi)
@@ -247,7 +258,8 @@ class DialogueSequence(QDialog):
         v.addWidget(self.t_persos, 1)
         h = QHBoxLayout()
         for lib, f in ((_("Ajouter un personnage"), lambda: self._ajouter("perso")), (_("Retirer"), lambda: self._retirer("perso")),
-                       (_("Choisir le style…"), self._style_perso), (_("Images du personnage…"), lambda: self._images("perso"))):
+                       (_("Choisir le style…"), self._style_perso), (_("Images du personnage…"), lambda: self._images("perso")),
+                       (_("Fiche personnage…"), self._planche)):
             b = QPushButton(lib)
             b.clicked.connect(f)
             h.addWidget(b)
@@ -287,9 +299,10 @@ class DialogueSequence(QDialog):
             cb.setCurrentIndex(max(0, cb.findData(p.get("maniere", ""))))
             cb.currentIndexChanged.connect(lambda _i, p=p, cb=cb: p.__setitem__("maniere", cb.currentData()))
             self.t_persos.setCellWidget(r, 3, cb)
-            it = QTableWidgetItem(str(len(p.get("images") or [])))
+            fiche = bool(p.get("planche") and os.path.exists(p["planche"]))
+            it = QTableWidgetItem(str(len(p.get("images") or [])) + (" + " + _("fiche") if fiche else ""))
             it.setFlags(it.flags() & ~Qt.ItemIsEditable)
-            it.setToolTip("\n".join(p.get("images") or []))
+            it.setToolTip("\n".join((p.get("images") or []) + ([p["planche"]] if fiche else [])))
             self.t_persos.setItem(r, 4, it)
         self.t_lieux.setRowCount(0)
         for l_ in self.seq["lieux"]:
@@ -362,6 +375,43 @@ class DialogueSequence(QDialog):
             liste[r]["images"] = (liste[r].get("images") or []) + list(ps)
             self._remplir_tables()
 
+    def _planche(self):
+        """0.9.72 : planche du personnage (face, trois quarts, profil, en pied) d'après ses images, montrée avant d'être gardée."""
+        r = self.t_persos.currentRow()
+        if not (0 <= r < len(self.seq["personnages"])):
+            self.etat.setText(_("Cliquez d'abord sur la ligne du personnage."))
+            return
+        p = self.seq["personnages"][r]
+        if not [i for i in p.get("images") or [] if os.path.exists(i)]:
+            self.etat.setText(_("Ajoutez d'abord une image du personnage (« Images du personnage… »)."))
+            return
+        if not self.params.get("clef_gemini"):
+            self.etat.setText(_("La fiche se compose avec Gemini : Préférences › IA › Connecter une IA."))
+            return
+        if QMessageBox.question(self, _("Fiche personnage"), _("Composer la planche de « {n} » (face, trois quarts, profil, en pied) "
+                                "avec Gemini, d'après ses images (votre clef, 0,04 $ environ) ?", n=p.get("nom") or "?")) != QMessageBox.Yes:
+            return
+        seq = copy.deepcopy(self.seq)
+        t = Tache(lambda tache: Q.planche_personnage(seq, seq["personnages"][r], self.params), _("Fiche personnage"))
+        self.taches.append(t)
+        suivre_en_fond(self, t, _("Séquence IA"))
+        self.suivi.demarrer(_("Fiche du personnage « {n} »", n=p.get("nom") or "?"), t, _("Gemini : 10 à 60 s."))
+
+        def fin(chemin, e):
+            self.suivi.finir()
+            if e:
+                self.etat.setText(_("✕ {e}", e=texte_erreur(e)[:300]))
+                return
+            if apercu_planche(self, chemin, p.get("nom") or ""):
+                p["planche"] = chemin
+                Q.enregistrer(self.seq)
+                self._remplir_tables()
+                self.etat.setText(_("✓ Fiche gardée : le moteur Référence s'en sert pour garder le personnage identique."))
+            else:
+                self.etat.setText(_("Fiche écartée ; refaites-la, ou changez les images du personnage."))
+        t.fini.connect(fin, Qt.QueuedConnection)
+        t.start()
+
     def _accord_personne(self, nom):
         """0.9.52 : l'image d'une personne réelle ne sert qu'avec son accord, que l'auteur certifie (case engageante)."""
         from PySide6.QtWidgets import QDialogButtonBox
@@ -418,6 +468,7 @@ class DialogueSequence(QDialog):
         w.addWidget(gauche)
         droite = QScrollArea()
         droite.setWidgetResizable(True)
+        droite.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)          # 0.9.72 : jamais de défilement horizontal
         cont = QWidget()
         droite.setWidget(cont)
         f = QFormLayout(cont)
@@ -446,11 +497,15 @@ class DialogueSequence(QDialog):
         self.p_lieu.setEditable(True)
         hl.addWidget(self.p_lieu, 1)
         self.p_duree = QSpinBox()
-        self.p_duree.setRange(3, 10)
+        self.p_duree.setRange(3, 15)
         self.p_duree.setSuffix(" s")
         hl.addWidget(QLabel(_("Durée")))
         hl.addWidget(self.p_duree)
         f.addRow(_("Lieu"), hl)
+        self.p_enchainer = QCheckBox(_("Démarrer sur la dernière image du plan précédent"))
+        self.p_enchainer.setToolTip(_("Raccord parfait : même personnage, même place, même lumière (moteur Référence)"))
+        self.p_enchainer.toggled.connect(self._lire_plan)
+        f.addRow(_("Enchaîner"), self.p_enchainer)
         self.p_camera = QLineEdit()
         self.p_camera.setPlaceholderText(_("ex. : plan large, travelling latéral lent ; gros plan sur les mains"))
         f.addRow(_("Caméra"), self.p_camera)
@@ -591,6 +646,8 @@ class DialogueSequence(QDialog):
             self.p_lieu.setCurrentText(p.get("lieu", ""))
             self.p_duree.setValue(int(p.get("duree") or Q.DUREE_PLAN))
             self.p_camera.setText(p.get("camera", ""))
+            self.p_enchainer.setChecked(bool(p.get("enchainer", True)))
+            self.p_enchainer.setEnabled(i > 0)
             self.p_repliques.setPlainText("\n".join(f"{r['qui']} : {r['texte']}" for r in p.get("repliques") or []))
             self.p_consigne.setPlainText(p.get("consigne", ""))
             self.boite_multi.setVisible(bool(Q.actions_multiples(p.get("action", ""))))
@@ -612,6 +669,7 @@ class DialogueSequence(QDialog):
         p["lieu"] = self.p_lieu.currentText().strip()
         p["duree"] = self.p_duree.value()
         p["camera"] = self.p_camera.text().strip()
+        p["enchainer"] = self.p_enchainer.isChecked()
         reps = []
         for ligne in self.p_repliques.toPlainText().splitlines():
             if ":" in ligne:
@@ -720,8 +778,18 @@ class DialogueSequence(QDialog):
         elif m == "flow":
             t = _("Google Flow : votre abonnement, pas à pas dans le navigateur ; mêmes possibilités que Gemini.")
         else:
-            t = _("Gemini (votre clef, coût affiché avant) : il mélange les images du personnage et du lieu, garde le même visage "
-                  "d'un plan à l'autre et joue la réplique. A choisir pour une vraie scène avec un personnage.")
+            from . import generateurs_video as GV
+            mo = GV.modele(m, self.params) or {}
+            if mo.get("references"):
+                t = _("Le plus fidèle (votre clef fal.ai, coût affiché avant) : il reçoit la fiche du personnage et la garde "
+                      "identique, part de l'image de départ (ou de la fin du plan précédent) et rejoint l'image d'arrivée ; jusqu'à "
+                      "15 s par plan.")
+            elif mo.get("fournisseur") == "fal":
+                t = _("{n} (votre clef fal.ai, coût affiché avant) : part de l'image de départ ; le visage peut dériver pendant le "
+                      "plan. Pour garder le personnage, préférez « Kling O3 Référence ».", n=mo.get("nom", m))
+            else:
+                t = _("Gemini (votre clef, coût affiché avant) : il mélange les images du personnage et du lieu et joue la réplique ; "
+                      "le visage peut dériver. Pour garder le personnage, préférez « Kling O3 Référence ».")
         self.explication_moteur.setText(t)
 
     def _maj_moteur(self, *_a):
@@ -733,6 +801,11 @@ class DialogueSequence(QDialog):
         self.aide_flow.setVisible(flow)
         self.b_plan.setVisible(not flow)
         self.b_tout.setVisible(not flow)
+        if hasattr(self, "credit"):
+            from .credit_ia import fournisseur_du_moteur
+            f_ = fournisseur_du_moteur(m, self.params)
+            if f_ != self.credit.fournisseur:
+                self.credit.montrer(f_)
         self._maj_prix()
 
     def _maj_prix(self):
@@ -758,9 +831,14 @@ class DialogueSequence(QDialog):
         son = self.seq.get("voix") == "moteur"
         from .recettes_ia import PRIX_GEMINI
         auto = self.seq.get("image_auto", True) and self.params.get("clef_gemini")
+        fin = bool((mo or {}).get("references")) and self.seq.get("image_fin_auto", True) and self.params.get("clef_gemini")
         prix = round(sum(GV.prix(mo, int(self.seq["plans"][i].get("duree") or Q.DUREE_PLAN), son) +
                          (PRIX_GEMINI["image"] if auto and not self.seq["plans"][i].get("image") and
-                          Q.images_du_plan(self.seq, self.seq["plans"][i]) else 0.0) for i in indices), 2) if mo else 0
+                          Q.images_du_plan(self.seq, self.seq["plans"][i]) else 0.0) +
+                         (PRIX_GEMINI["image"] if fin and not self.seq["plans"][i].get("image_fin") else 0.0)
+                         for i in indices), 2) if mo else 0
+        if fin:
+            prix = round(prix + PRIX_GEMINI["image"] * len(Q.sans_planche(self.seq, indices)), 2)
         doubles = [i + 1 for i in indices if Q.actions_multiples(self.seq["plans"][i].get("action"))]
         avert = ("\n\n" + _("⚠ Plan(s) {l} : deux actions enchaînées, les gestes risquent d'être incohérents. « Une action par "
                              "plan » les coupe en deux.", l=", ".join(map(str, doubles)))) if doubles else ""
@@ -791,15 +869,23 @@ class DialogueSequence(QDialog):
         seq = copy.deepcopy(self.seq)
 
         def travail(tache):
-            faits = {}
+            faits, erreur = {}, None
             for k, i in enumerate(indices):
                 if tache.arret:
                     break
                 tache.avancer(k / len(indices), _("plan {i} ({k} sur {n})", i=i + 1, k=k + 1, n=len(indices)))
-                f = Q.fabriquer_plan(seq, i, self.params, m,
-                                     progression=lambda f, k=k: tache.avancer((k + f) / len(indices)), arret=lambda: tache.arret)
-                faits[i] = (f, seq["plans"][i].get("image", ""))      # l'image de départ composée revient aussi
-            return faits
+                try:
+                    Q.planches_manquantes(seq, seq["plans"][i], self.params, m)
+                    f = Q.fabriquer_plan(seq, i, self.params, m,
+                                         progression=lambda f, k=k: tache.avancer((k + f) / len(indices)), arret=lambda: tache.arret)
+                except InterruptedError:
+                    break
+                except Exception as e:      # noqa: BLE001 : les plans déjà payés sont gardés, l'erreur est dite
+                    erreur = e
+                    break
+                seq["plans"][i]["fichier"] = f                    # le plan suivant peut démarrer sur sa dernière image
+                faits[i] = (f, seq["plans"][i].get("image", ""), seq["plans"][i].get("image_fin", ""))
+            return {"faits": faits, "erreur": erreur, "planches": {p["nom"]: p.get("planche", "") for p in seq["personnages"]}}
         t = Tache(travail, _("Séquence IA"))
         self.taches.append(t)
         suivre_en_fond(self, t, _("Séquence IA"))
@@ -810,10 +896,18 @@ class DialogueSequence(QDialog):
 
         def fin(r, e):
             self.suivi.finir()
-            for i, (chemin, image) in (r or {}).items():
+            r = r or {}
+            e = e or r.get("erreur")
+            for i, (chemin, image, image_fin) in (r.get("faits") or {}).items():
                 self.seq["plans"][i]["fichier"] = chemin
                 if image:
                     self.seq["plans"][i]["image"] = image
+                if image_fin:
+                    self.seq["plans"][i]["image_fin"] = image_fin
+            for p in self.seq["personnages"]:
+                if (r.get("planches") or {}).get(p["nom"]) and not p.get("planche"):
+                    p["planche"] = r["planches"][p["nom"]]
+            r = r.get("faits") or {}
             Q.enregistrer(self.seq)
             self._remplir_plans()
             if e:
@@ -991,3 +1085,27 @@ class DialogueSequence(QDialog):
             if t.isRunning():
                 t.stopper()
         super().done(r)
+
+
+def apercu_planche(parent, chemin, nom=""):
+    """Montre la planche du personnage avant de la garder (aperçu avant intégration)."""
+    from PySide6.QtWidgets import QDialogButtonBox
+    d = QDialog(parent)
+    d.setWindowTitle(_("Fiche du personnage « {n} »", n=nom))
+    v = QVBoxLayout(d)
+    lbl = QLabel()
+    lbl.setPixmap(QPixmap(chemin).scaled(900, 520, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+    lbl.setAlignment(Qt.AlignCenter)
+    v.addWidget(lbl, 1)
+    t = QLabel(_("Même visage, même tenue sur les quatre vues ? Gardez-la : elle servira à chaque plan. Sinon, écartez-la et refaites."))
+    t.setWordWrap(True)
+    v.addWidget(t)
+    bb = QDialogButtonBox()
+    bb.addButton(_("Garder cette fiche"), QDialogButtonBox.AcceptRole)
+    bb.addButton(_("Ecarter"), QDialogButtonBox.RejectRole)
+    bb.accepted.connect(d.accept)
+    bb.rejected.connect(d.reject)
+    v.addWidget(bb)
+    if getattr(parent, "_test_planche", None) is not None:
+        return parent._test_planche
+    return d.exec() == QDialog.Accepted

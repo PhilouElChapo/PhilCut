@@ -36,6 +36,10 @@ MODELES = [
     {"id": "kling-3-pro", "fournisseur": "fal", "nom": "Kling 3.0 Pro (fal)", "modele": "fal-ai/kling-video/v3/pro/text-to-video",
      "modele_image": "fal-ai/kling-video/v3/pro/image-to-video", "prix_s": 0.112, "prix_s_son": 0.168, "durees": [5, 10], "son_param": "generate_audio",
      "note": _("mouvements réalistes, personnes")},
+    {"id": "kling-o3-ref", "fournisseur": "fal", "nom": "Kling O3 Référence : personnage fidèle (fal)",
+     "modele": "fal-ai/kling-video/o3/standard/reference-to-video", "references": True, "image_fin": True,
+     "prix_s": 0.084, "prix_s_son": 0.112, "durees": list(range(3, 16)), "son_param": "generate_audio",
+     "note": _("garde le visage et la tenue d'après la fiche du personnage, image de départ et d'arrivée, jusqu'à 15 s")},
     {"id": "seedance-2", "fournisseur": "fal", "nom": "Seedance 2.0 (fal)", "modele": "bytedance/seedance-2.0/text-to-video",
      "modele_image": "bytedance/seedance-2.0/image-to-video", "prix_s": 0.30, "durees": list(range(4, 16)),
      "son_param": "generate_audio", "note": _("plans jusqu'à 15 s")},
@@ -113,10 +117,13 @@ def duree_reelle(m, duree):
 
 
 # ------------------------------------------------------------------ génération
-def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None, progression=None, arret=lambda: False, son=False):
+def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None, progression=None, arret=lambda: False, son=False,
+            references=None, image_fin=None):
     """son : le moteur fabrique aussi le son et fait parler (un seul réglage, « Répliques » de la Séquence IA) ; sinon, chez
     les moteurs qui le permettent, aucun son n'est fabriqué (PhilCut pose le sien ; Omni en fabrique toujours un, coupé au
-    montage)."""
+    montage).
+    references (0.9.72, moteurs « Référence ») : [(nom, [images])] — un « élément » par personnage, que le moteur garde
+    identique ; image_fin : la dernière image imposée (le plan doit y arriver)."""
     m = modele(ident, params)
     if not m:
         raise ErreurGenerateur(_("Modèle inconnu : {m}", m=ident))
@@ -133,7 +140,71 @@ def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None
             if m.get("repli") and (getattr(e, "code", None) == 404 or any(x in str(e) for x in ("404", "NOT_FOUND", "not found", "not supported"))):
                 return generer_omni(k, consigne, sortie, m["repli"], duree, format_, image, m.get("resolution", "720p"), progression, arret)
             raise
+    if m.get("references"):
+        return generer_reference(k, m, consigne, sortie, duree, format_, image, image_fin, references, progression, arret, son)
     return generer_fal(k, m, consigne, sortie, duree, format_, image, progression, arret, son)
+
+
+def corps_reference(consigne, duree, format_, depart_url=None, fin_url=None, elements=None, m=None, son=False):
+    """Demande « reference to video » (Kling O1/O3) : chaque personnage est un élément (@Element1…) avec une image de face et
+    des images d'appui ; le texte commence par dire qui est qui, pour que le moteur relie les noms aux images."""
+    elements = [e for e in (elements or []) if e.get("frontal_image_url")][:3]
+    noms = [f"@Element{i + 1} is {e['nom']}" for i, e in enumerate(elements) if e.get("nom")]
+    texte = ("; ".join(noms) + ". " if noms else "") + consigne
+    if elements:
+        texte += " Keep @" + ", @".join(f"Element{i + 1}" for i in range(len(elements))) + \
+                 " exactly identical to the reference images: same face, hair, body and outfit."
+    corps = {"prompt": texte, "duration": str(int(duree_reelle(m or {"durees": list(range(3, 16))}, duree))),
+             "aspect_ratio": "9:16" if format_ == "9:16" else "16:9"}
+    if elements:
+        corps["elements"] = [{"frontal_image_url": e["frontal_image_url"],
+                              "reference_image_urls": list(e.get("reference_image_urls") or [])[:3]} for e in elements]
+    if depart_url:
+        corps["start_image_url"] = depart_url
+    if fin_url:
+        corps["end_image_url"] = fin_url
+    if (m or {}).get("son_param"):
+        corps[m["son_param"]] = bool(son)
+    return corps
+
+
+def generer_reference(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, image_fin=None, references=None,
+                      progression=None, arret=lambda: False, son=False):
+    """Moteur « Référence » : images envoyées sur le stockage fal, puis la demande ; la planche du personnage sert d'image de
+    face, ses autres images d'appui."""
+    av = progression or (lambda f: None)
+    av(0.01)
+    elements = []
+    for nom, images in (references or [])[:3]:
+        images = [i for i in images if i and os.path.exists(i)]
+        if not images:
+            continue
+        urls = [televerser(cle, i) for i in images[:4]]
+        elements.append({"nom": nom, "frontal_image_url": urls[0], "reference_image_urls": urls[1:]})
+    depart = televerser(cle, image) if image and os.path.exists(image) else None
+    fin = televerser(cle, image_fin) if image_fin and os.path.exists(image_fin) else None
+    corps = corps_reference(consigne, duree, format_, depart, fin, elements, m, son)
+    return attendre_fal(cle, m["modele"], corps, sortie, progression, arret)
+
+
+# ------------------------------------------------------------------ crédit restant (0.9.72)
+PAGES_CREDIT = {"fal": "https://fal.ai/dashboard/billing", "google": "https://aistudio.google.com/usage"}
+
+
+def credit(params, fournisseur):
+    """Crédit restant quand le fournisseur le dit : (montant, devise) ou None. fal.ai le donne (API Platform) ; Google ne
+    publie pas le solde d'une clef Gemini (facturation Cloud) : None, et le bouton mène à la page de suivi."""
+    k = clef(params, fournisseur)
+    if not k or fournisseur != "fal":
+        return None
+    try:
+        r = _http("https://api.fal.ai/v1/account/billing?expand=credits", k, delai=15)
+    except Exception:          # noqa: BLE001 : clef sans droit de lecture du solde, hors ligne
+        return None
+    c = r.get("credits") or {}
+    if c.get("current_balance") is None:
+        return None
+    return float(c["current_balance"]), c.get("currency") or "USD"
 
 
 FAL_FILE = "https://queue.fal.run"

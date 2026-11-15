@@ -4,7 +4,21 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.71 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.72 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.72 (personnage fidele d'un plan a l'autre, plans plus longs, rallonger un rush)
+- Nouveau moteur "Kling O3 Reference : personnage fidele (fal)" : il recoit le personnage comme "element" (sa fiche et ses images) et le garde identique ; image de depart ET image d'arrivee ; jusqu'a 15 s par plan ; 0,084 $/s sans son.
+- Sequence IA, onglet des personnages : "Fiche personnage..." compose avec Gemini une planche du personnage (face, trois quarts, profil, en pied) d'apres ses images ; on la regarde avant de la garder. Faite d'office avant le premier plan si elle manque (case "Image d'arrivee et fiche personnage").
+- Image d'arrivee : la pose a la fin du plan est composee d'apres l'image de depart ; le moteur doit la rejoindre, il ne peut plus faire traverser la table ni changer de visage en route.
+- "Enchainer" (coche d'office) : chaque plan demarre sur la derniere image exacte du plan precedent, raccord parfait. Un plan rate en cours de fabrication n'efface plus les plans deja payes.
+- "Prolonger ce plan" : nouvelle maniere "Prolonge par l'IA cloud, fidele" (Kling O3 Reference) : la suite part de la derniere image du rush, avec ses personnes et objets en reference, jusqu'a 15 s, "Suite" a decrire dans votre langue ; prix demande avant.
+- Credit restant : Sequence IA, Prolonger et Faire parler montrent le credit fal.ai restant et un bouton "Recharger..." (Google ne donne pas le solde d'une clef Gemini : le bouton ouvre le suivi des depenses).
+- Fenetres de travail : toutes recoivent "Reduire" pendant un calcul (Tampons video compris) ; la vignette composee ne bloque plus PhilCut.
+- Tampons, "Ma bibliotheque" : glisser une icone la met a la place de celle survolee ; elle ne part plus hors de vue.
+- Faire parler : la case du visage et le cout restent visibles pres des boutons, et le message dit pourquoi "Faire parler" est grise.
+- Guide "Comment faire" : "Garder le meme personnage d'un plan a l'autre", "Rallonger un rush ou creer sa suite", "Voir le credit restant et le recharger".
+
+## Nouveautes de 0.9.71
 
 ### 0.9.71 (journal des plantages sans fausses alertes)
 - "Installer et redemarrer" pendant une synchronisation ne laisse plus une fausse "access violation" dans le journal : la sortie voulue coupe d'abord la surveillance.

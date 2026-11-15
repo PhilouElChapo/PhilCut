@@ -2668,11 +2668,12 @@ class Editeur(QWidget):
             recette_id = (c or {}).get("vignette")
         if recette_id:
             rec = next((r for r in self.projet.d.get("vignettes") or [] if r.get("id") == recette_id), None)
-        d = DialogueVignette(self, rec, usage)
+        from .widgets import non_bloquante
+        d = non_bloquante(self, "vignette", lambda: DialogueVignette(self, rec, usage))   # 0.9.72 : ne bloque plus PhilCut
         if clip_id:
             d.clip_a_remplacer = clip_id
-        d.exec()
-        self.rafraichir()
+        d.finished.connect(lambda _r: self.rafraichir())
+        return d
 
     def etalonner(self, clip=None):
         """Étalonnage du plan (roues de couleur, avant / après, auto, accorder) ; 0.9.28."""

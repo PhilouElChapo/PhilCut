@@ -672,8 +672,39 @@ def non_bloquante(proprietaire, cle, fabrique):
     d = fabrique()
     d.setModal(False)
     ouvertes[cle] = d
+    _bouton_reduire(d)
     d.show()
     return d
+
+
+def _bouton_reduire(d):
+    """0.9.72 : toute fenêtre de travail reçoit « Réduire » pendant un calcul (pas de bouton de réduction Windows sur une
+    boîte de dialogue) ; la fermer pendant un calcul la range aussi, le calcul continue et la barre du bas le suit."""
+    if getattr(d, "b_reduire", None) is not None:              # la fenêtre a déjà le sien (Séquence IA)
+        return
+    from PySide6.QtWidgets import QDialogButtonBox, QPushButton
+    from PySide6.QtCore import QTimer
+    boites = d.findChildren(QDialogButtonBox)
+    b = QPushButton(_("Réduire (suivi dans la barre du bas)"))
+    b.setToolTip(_("Le calcul continue ; « Afficher la fenêtre » dans la barre du bas la rouvre"))
+    b.clicked.connect(lambda: garder_calcul(d, True))
+    b.hide()
+    if boites:
+        boites[-1].addButton(b, QDialogButtonBox.ActionRole)
+    else:
+        lay = d.layout()
+        if lay is None:
+            return
+        lay.addWidget(b)
+    d.b_reduire = b
+    veille = QTimer(d)
+    veille.timeout.connect(lambda: b.setVisible(calcul_en_cours(d)))
+    veille.start(400)
+
+    def fini(_r):
+        if calcul_en_cours(d):
+            garder_calcul(d, True)
+    d.finished.connect(fini)
 
 
 def calcul_en_cours(dlg):

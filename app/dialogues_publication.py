@@ -225,8 +225,9 @@ class DialoguePublier(QDialog):
         ed = self.parent().editeur_courant() if hasattr(self.parent(), "editeur_courant") else None
         if ed is None:
             return
-        ed.vignette_composee("vignette")
-        self._montrer_vignette()
+        d = ed.vignette_composee("vignette")
+        if d is not None:
+            d.finished.connect(lambda _r: self._montrer_vignette())
 
     def _fini(self, url, err):
         self.b_ok.setEnabled(True)

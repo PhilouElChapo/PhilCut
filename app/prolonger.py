@@ -13,7 +13,27 @@ from . import moteur
 from .langue import _
 
 METHODES = {"tenue": _("Image tenue, léger zoom (instantané)"), "ralenti": _("Ralenti de la fin, images fondues (quelques secondes)"),
-            "ia": _("Prolongé par l'IA sur ce poste (la scène continue ; une à plusieurs minutes)")}
+            "ia": _("Prolongé par l'IA sur ce poste (la scène continue ; une à plusieurs minutes)"),
+            "cloud": _("Prolongé par l'IA cloud, fidèle (Kling O3 Référence, votre clef fal)")}
+MODELE_CLOUD = "kling-o3-ref"
+
+
+def prix_cloud(duree, params=None):
+    from . import generateurs_video as GV
+    m = GV.modele(MODELE_CLOUD, params) or {"prix_s": 0.084, "durees": list(range(3, 16))}
+    return GV.prix(m, max(3, int(-(-float(duree) // 1))))
+
+
+def images_reperes(chemin, debut, fin, dossier, n=3):
+    """Quelques images du plan (début, milieu, fin) : le moteur « Référence » s'en sert pour garder les personnes et les
+    objets identiques dans la suite."""
+    out = []
+    for k in range(n):
+        t = debut + (fin - debut) * (k / max(1, n - 1)) - (0.05 if k == n - 1 else 0.0)
+        f = _image(chemin, max(debut, t), os.path.join(dossier, f"repere{k}.png"))
+        if os.path.exists(f):
+            out.append(f)
+    return out
 SONS = {"ambiance": _("Ambiance du plan prolongée (fondu)"), "silence": _("Silence")}
 
 
@@ -44,7 +64,7 @@ def _son(chemin, t_ref, duree, sortie, cote="fin", genre="ambiance", a_son=True)
 
 
 def fabriquer(media, clip, duree, methode="tenue", cote="fin", son="ambiance", taille=(1920, 1080), cadence=30, params=None,
-              sortie=None, progression=None, arret=lambda: False):
+              sortie=None, progression=None, arret=lambda: False, suite=""):
     """Fabrique le morceau ajouté (MP4 avec son) ; renvoie son chemin."""
     chemin = media["chemin"]
     fiche = media.get("fiche") or moteur.sonder(chemin)
@@ -83,6 +103,25 @@ def fabriquer(media, clip, duree, methode="tenue", cote="fin", son="ambiance", t
         moteur.lancer(["-y", "-ss", f"{deb:.3f}", "-t", f"{base:.3f}", "-i", chemin, "-i", wav, "-map", "0:v", "-map", "1:a", "-vf", vf,
                        "-t", f"{duree:.3f}", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",
                        "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", sortie], arret=arret)
+    elif methode == "cloud":
+        # 0.9.72 : la suite démarre sur la dernière image exacte (ou arrive sur la première), les personnes et objets du plan
+        # servent de référence : même visage, même tenue, même lieu
+        from . import generateurs_video as GV
+        av(0.05, _("Envoi des images du plan…"))
+        reperes = images_reperes(chemin, float(clip["src_debut"]), float(clip["src_fin"]), d) if media.get("genre") != "image" else [image]
+        texte = (suite or "").strip() or "The same scene continues naturally"
+        texte += (". Exactly the same people, faces, clothes, objects, place, light and camera style as in the reference images. "
+                  "One simple natural action, physically plausible, no text.")
+        brut = os.path.join(d, "cloud.mp4")
+        L0, H0 = taille
+        GV.generer(params, MODELE_CLOUD, texte, brut, max(3, int(-(-duree // 1))), "9:16" if H0 > L0 else "16:9",
+                   image if cote == "fin" else None, lambda f: av(0.1 + 0.8 * f, _("L'IA cloud fabrique la suite…")), arret,
+                   references=[("the main subject", reperes)], image_fin=image if cote == "debut" else None)
+        av(0.92, _("Mise au format du film…"))
+        deb = 0.0 if cote == "fin" else max(0.0, float((moteur.sonder(brut) or {}).get("duree") or duree) - duree)
+        moteur.lancer(["-y", "-ss", f"{deb:.3f}", "-i", brut, "-i", wav, "-map", "0:v", "-map", "1:a", "-vf", f"{cadre},fps={cadence}",
+                       "-t", f"{duree:.3f}", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-c:a", "aac",
+                       "-b:a", "192k", "-movflags", "+faststart", sortie])
     else:
         from . import creatif as C
         av(0.1, _("L'IA invente la suite de la scène…"))

@@ -18,6 +18,57 @@ def _tc(t):
     return f"{int(m)}:{s:04.1f}"
 
 
+class GrilleRangeable(QListWidget):
+    """Grille d'icônes rangeable à la souris (0.9.72) : l'icône lâchée prend la place de celle qu'elle survole (ou la
+    dernière place), la grille reste alignée ; le glisser libre de Qt laissait l'icône à une position quelconque, hors de vue."""
+
+    def __init__(self, apres_rangement=None):
+        super().__init__()
+        self.apres_rangement = apres_rangement
+        self.rangeable = False
+
+    def permettre(self, oui):
+        self.rangeable = bool(oui)
+        self.setDragEnabled(self.rangeable)
+        self.setAcceptDrops(self.rangeable)
+        self.viewport().setAcceptDrops(self.rangeable)
+        self.setDropIndicatorShown(self.rangeable)
+        self.setDragDropMode(QListWidget.InternalMove if self.rangeable else QListWidget.NoDragDrop)
+        self.setMovement(QListWidget.Static)
+
+    def dragMoveEvent(self, ev):
+        if self.rangeable and ev.source() is self:
+            ev.setDropAction(Qt.MoveAction)
+            ev.accept()
+        else:
+            ev.ignore()
+
+    def dropEvent(self, ev):
+        if not (self.rangeable and ev.source() is self):
+            ev.ignore()
+            return
+        it = self.currentItem()
+        if it is None:
+            ev.ignore()
+            return
+        depart = self.row(it)
+        cible = self.itemAt(ev.position().toPoint())
+        arrivee = self.row(cible) if cible is not None else self.count() - 1
+        ev.setDropAction(Qt.IgnoreAction)              # Qt ne déplace rien lui-même : c'est fait ici, proprement
+        ev.accept()
+        if arrivee == depart or arrivee < 0:
+            return
+        self.deplacer(depart, arrivee)
+
+    def deplacer(self, depart, arrivee):
+        it = self.takeItem(depart)
+        self.insertItem(arrivee, it)
+        self.setCurrentItem(it)
+        self.doItemsLayout()
+        if self.apres_rangement:
+            self.apres_rangement()
+
+
 class DialogueTampons(QDialog):
     def __init__(self, ed, onglet=0):
         super().__init__(ed)
@@ -58,8 +109,8 @@ class DialogueTampons(QDialog):
         self.remplir_biblio()
 
     # ------------------------------------------------------------------ ma bibliothèque
-    def _liste_icones(self):
-        li = QListWidget()
+    def _liste_icones(self, rangeable=False):
+        li = GrilleRangeable() if rangeable else QListWidget()
         li.setViewMode(QListWidget.IconMode)
         li.setIconSize(QSize(192, 108))
         li.setGridSize(QSize(212, 150))
@@ -94,8 +145,8 @@ class DialogueTampons(QDialog):
         h.addWidget(b)
         v.addLayout(h)
         corps = QHBoxLayout()
-        self.liste = self._liste_icones()
-        self.liste.model().rowsMoved.connect(lambda *_a: QTimer.singleShot(0, self._ordre_glisse))
+        self.liste = self._liste_icones(rangeable=True)
+        self.liste.apres_rangement = self._ordre_glisse
         self.liste.currentItemChanged.connect(lambda *_a: self._choisi())
         self.liste.itemDoubleClicked.connect(lambda _i: self.inserer())
         # comme une table de sons : un clic sur un son, on l'entend
@@ -154,8 +205,7 @@ class DialogueTampons(QDialog):
         tout = T.charger(self.params)
         mode = self.classement.currentData() or "perso"
         perso = mode == "perso" and not self.recherche.text().strip()
-        self.liste.setMovement(QListWidget.Snap if perso else QListWidget.Static)
-        self.liste.setDragDropMode(QListWidget.InternalMove if perso else QListWidget.NoDragDrop)
+        self.liste.permettre(perso)
         for e in T.trier(T.chercher_local(tout, self.recherche.text()), mode):
             it = QListWidgetItem(("★ " if e.get("favori") else "") + f"{e['nom']}\n{e.get('duree', 0):.1f} s · {T.SOURCES.get(e.get('source'), _('maison') if e.get('source') == 'maison' else _('à moi'))}")
             vg = None if e.get("genre") == "son" else T.vignette(self.params, e)

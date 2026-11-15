@@ -40,7 +40,25 @@ class DialogueProlonger(QDialog):
             self.methode.addItem(lib if (k != "ia" or ia_ok) else lib + "  " + _("(installez un modèle vidéo : Préférences › IA locale)"), k)
         if not ia_ok:
             self.methode.model().item(2).setEnabled(False)
+        from . import generateurs_video as GV
+        if not GV.clef(ed.params, "fal"):
+            i = self.methode.findData("cloud")
+            self.methode.setItemText(i, self.methode.itemText(i) + "  " + _("(clef fal.ai : Préférences › IA)"))
+            self.methode.model().item(i).setEnabled(False)
+        self.methode.currentIndexChanged.connect(self._methode_changee)
         f.addRow(_("Comment"), self.methode)
+        from .consigne_bilingue import ConsigneBilingue
+        self.suite = ConsigneBilingue(50)
+        self.suite.setPlaceholderText(_("Facultatif : ce qui se passe ensuite (ex. : elle ouvre l'ordinateur et sourit)"))
+        self.lbl_suite = QLabel(_("Suite"))
+        f.addRow(self.lbl_suite, self.suite)
+        self.prix = QLabel("")
+        self.prix.setWordWrap(True)
+        f.addRow("", self.prix)
+        from .credit_ia import LigneCredit
+        self.credit = LigneCredit(ed.params, None)
+        f.addRow("", self.credit)
+        self.duree.valueChanged.connect(lambda _v: self._methode_changee())
         self.son = QComboBox()
         for k, lib in PR.SONS.items():
             self.son.addItem(lib, k)
@@ -68,15 +86,37 @@ class DialogueProlonger(QDialog):
         self.apercu = ApercuCreation(self)
         self.apercu.hide()
         v.addWidget(self.apercu, 1)
+        self._methode_changee()
+
+    def _methode_changee(self, *_a):
+        cloud = self.methode.currentData() == "cloud"
+        self.duree.setMaximum(15.0 if cloud else 6.0)
+        self.suite.setVisible(cloud)
+        self.lbl_suite.setVisible(cloud)
+        self.prix.setVisible(cloud)
+        if hasattr(self, "credit") and (self.credit.fournisseur == "fal") != cloud:
+            self.credit.montrer("fal" if cloud else None)
+        if cloud:
+            self.prix.setText(_("Environ {p} $ (votre clef fal.ai), demandé avant l'envoi. Une suite plus longue : refaites "
+                                "« Prolonger » sur le morceau posé, il repart de sa dernière image.",
+                                p=f"{PR.prix_cloud(self.duree.value(), self.ed.params):.2f}".replace(".", ",")))
 
     def fabriquer(self):
         p = self.ed.projet
+        if self.methode.currentData() == "cloud":
+            from PySide6.QtWidgets import QMessageBox
+            prix = f"{PR.prix_cloud(self.duree.value(), self.ed.params):.2f}".replace(".", ",")
+            if getattr(self, "_test_confirmer", None) is None and QMessageBox.question(
+                    self, _("Prolonger ce plan"), _("Envoyer trois images du plan et la consigne à fal.ai (Kling O3) pour environ "
+                                                     "{p} $ sur votre compte ?", p=prix)) != QMessageBox.Yes:
+                return
         media = p.media(self.clip["media"])
         if not media or not os.path.exists(media.get("chemin", "")):
             self.etat.setText(_("Le rush de ce plan est introuvable."))
             return
         args = dict(media=media, clip=dict(self.clip), duree=self.duree.value(), methode=self.methode.currentData(), cote=self.cote.currentData(),
-                    son=self.son.currentData(), taille=p.taille, cadence=p.cadence, params=self.ed.params)
+                    son=self.son.currentData(), taille=p.taille, cadence=p.cadence, params=self.ed.params,
+                    suite=self.suite.toPlainText() if self.methode.currentData() == "cloud" else "")
         self.b_fabriquer.setEnabled(False)
         self.b_poser.setEnabled(False)
         self.apercu.arreter()

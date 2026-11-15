@@ -1643,6 +1643,8 @@ class Timeline(QGraphicsView):
                 sm.addAction(_("Corriger le suivi à la ligne rouge…"), lambda: self.demande_menu.emit(clip["id"], "corriger"))
             a = m.addAction(_("Faire parler ce plan sur le son dessous…"), lambda: self.demande_menu.emit(clip["id"], "levres"))
             a.setToolTip(_("Les lèvres du personnage suivent la voix ou la chanson posée sous ce plan"))
+            a = m.addAction(_("Prolonger ce plan (image tenue, ralenti ou IA)…"), lambda: self.demande_menu.emit(clip["id"], "prolonger"))
+            a.setToolTip(_("Quelques secondes de plus, ou la suite de la scène par l'IA, à partir de la dernière image"))   # 0.9.72
             if self._plan_suivant(clip):                       # 0.9.56
                 m.addAction(_("Plan de liaison avec le plan suivant…"), lambda: self.demande_menu.emit(clip["id"], "liaison"))
         a = m.addAction(_("Muet"), lambda: self._muet(clip))

@@ -315,6 +315,98 @@ def image_depart(seq, i, params, moteur_image="gemini"):
     return sortie
 
 
+# ------------------------------------------------------------------ 0.9.72 : personnage fidèle d'un plan à l'autre
+CONSIGNE_PLANCHE = ("Character model sheet of EXACTLY the same person as in the reference images: same face, same hairstyle, same "
+                    "body, same outfit. Four views side by side on a plain light grey background: front view, three-quarter view, "
+                    "side profile, full body standing. Even soft studio light, photorealistic, sharp, no text, no labels. {d}")
+
+
+def planche_personnage(seq, p, params):
+    """Fiche du personnage (0.9.72) : une planche face, trois quarts, profil, en pied, d'après ses images (Gemini). Une image
+    se contrôle bien mieux qu'une vidéo : c'est elle que le moteur « Référence » garde ensuite à l'identique."""
+    from . import ia
+    refs = [i for i in p.get("images") or [] if os.path.exists(i)]
+    if not refs:
+        raise ValueError(_("Ajoutez d'abord une image du personnage « {n} ».", n=p.get("nom") or "?"))
+    d = _anglais((p.get("description") or "").strip(), True)
+    png = ia.generer_image_refs(params, CONSIGNE_PLANCHE.format(d=("Description: " + d) if d else ""), refs)
+    sortie = os.path.join(dossier(seq), "planche_" + re.sub(r"[^\w-]+", "_", p.get("nom") or "perso")[:30] + ".png")
+    with open(sortie, "wb") as f:
+        f.write(png)
+    p["planche"] = sortie
+    return sortie
+
+
+def sans_planche(seq, indices):
+    """Personnages présents dans ces plans, avec des images, mais sans planche encore."""
+    noms = {n.lower() for i in indices for n in seq["plans"][i].get("personnages") or []}
+    return [p for p in seq["personnages"] if p["nom"].lower() in noms and not (p.get("planche") and os.path.exists(p["planche"]))
+            and [x for x in p.get("images") or [] if os.path.exists(x)]]
+
+
+def planches_manquantes(seq, pl, params, moteur_video):
+    """Avant un plan au moteur « Référence » : la planche des personnages qui n'en ont pas encore (si demandé, clef Gemini)."""
+    if moteur_video in ("locale", "flow") or not (seq.get("image_fin_auto", True) and params.get("clef_gemini")):
+        return
+    from . import generateurs_video as GV
+    if not (GV.modele(moteur_video, params) or {}).get("references"):
+        return
+    k = seq["plans"].index(pl)
+    for p in sans_planche(seq, [k]):
+        planche_personnage(seq, p, params)
+
+
+def references_du_plan(seq, pl):
+    """[(« Character A », [planche, images…])] des personnages du plan, pour les moteurs « Référence »."""
+    out = []
+    for k, p in enumerate(seq["personnages"]):
+        if p["nom"].lower() not in [n.lower() for n in pl.get("personnages") or []]:
+            continue
+        imgs = ([p["planche"]] if p.get("planche") and os.path.exists(p["planche"]) else []) + \
+               [i for i in p.get("images") or [] if os.path.exists(i)]
+        if imgs:
+            out.append((f"Character {chr(65 + k)}", imgs[:4]))
+    return out
+
+
+def derniere_image(video, sortie):
+    """La dernière image exacte d'une vidéo : le plan suivant démarre dessus (raccord parfait)."""
+    from . import moteur
+    moteur.lancer(["-y", "-sseof", "-1", "-i", video, "-update", "1", "-q:v", "2", sortie])     # chaque image écrase la précédente : reste la dernière
+    if not os.path.exists(sortie):
+        moteur.lancer(["-y", "-i", video, "-update", "1", "-q:v", "2", sortie])
+    return sortie if os.path.exists(sortie) else ""
+
+
+def depart_enchaine(seq, i):
+    """Image de départ du plan i prise à la fin du plan i-1 déjà fabriqué, si l'enchaînement est demandé (par défaut)."""
+    if i <= 0 or not seq["plans"][i].get("enchainer", True):
+        return ""
+    f = seq["plans"][i - 1].get("fichier")
+    if not (f and os.path.exists(f)):
+        return ""
+    return derniere_image(f, os.path.join(dossier(seq), f"plan{i + 1:02d}_depart_enchaine.png"))
+
+
+def image_arrivee(seq, i, params, depart=None):
+    """Image d'arrivée du plan i (0.9.72) : la pose quand l'action est finie, composée d'après l'image de départ et les
+    références. Le moteur doit la rejoindre : il ne peut plus faire traverser la table ni changer de visage en route."""
+    from . import ia
+    pl = seq["plans"][i]
+    refs = ([depart] if depart and os.path.exists(depart) else []) + [x for _n, im in references_du_plan(seq, pl) for x in im[:1]]
+    refs += [x for x in images_du_plan(seq, pl) if x not in refs]
+    action = consigne(seq, pl, params)
+    png = (ia.generer_image_refs if refs else lambda prm, c, r=None: ia.generer_image(prm, c))(
+        params, "LAST frame of this video shot, when the action is completely finished (final pose, physically plausible). Same "
+                "people, same face, same clothes, same place and same light as in the reference images (the first one is the "
+                "first frame of the shot). One photorealistic still image, no text. " + action, refs[:4])
+    sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_arrivee.png")
+    with open(sortie, "wb") as f:
+        f.write(png)
+    pl["image_fin"] = sortie
+    return sortie
+
+
 def fabriquer_plan(seq, i, params, moteur_video, progression=None, arret=lambda: False):
     """Plan i en vidéo. moteur_video : "locale" (IA de ce poste) ou l'identifiant d'un générateur cloud (votre clef).
     Flow se fait à la main (voir le dialogue). Renvoie le chemin du MP4."""
@@ -322,6 +414,12 @@ def fabriquer_plan(seq, i, params, moteur_video, progression=None, arret=lambda:
     texte = pl.get("consigne") or consigne(seq, pl, params)
     sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_{int(time.time())}.mp4")
     image = pl.get("image") if pl.get("image") and os.path.exists(pl["image"]) else None
+    ref = False
+    if moteur_video not in ("locale", "flow"):
+        from . import generateurs_video as GV
+        ref = bool((GV.modele(moteur_video, params) or {}).get("references"))
+    if image is None and ref:
+        image = depart_enchaine(seq, i) or None              # 0.9.72 : le plan démarre sur la dernière image du précédent
     if image is None and seq.get("image_auto", True) and moteur_video not in ("locale", "flow") and params.get("clef_gemini") \
             and images_du_plan(seq, pl):
         # 0.9.70 : sans image de départ, le moteur réinvente le personnage ; on compose d'abord l'image avec ses références
@@ -333,8 +431,14 @@ def fabriquer_plan(seq, i, params, moteur_video, progression=None, arret=lambda:
         L, H = (272, 480) if seq.get("format") == "9:16" else (480, 272)
         creatif.video(texte, sortie, params, init=image, secondes=min(5.0, float(pl.get("duree") or 5)), largeur=L, hauteur=H,
                       progression=progression, arret=arret)
+    elif ref:
+        fin = pl.get("image_fin") if pl.get("image_fin") and os.path.exists(pl["image_fin"]) else None
+        if fin is None and seq.get("image_fin_auto", True) and params.get("clef_gemini"):
+            progression and progression(0.04)
+            fin = image_arrivee(seq, i, params, image)
+        GV.generer(params, moteur_video, texte, sortie, int(pl.get("duree") or DUREE_PLAN), seq.get("format", "16:9"), image,
+                   progression, arret, son=seq.get("voix") == "moteur", references=references_du_plan(seq, pl), image_fin=fin)
     else:
-        from . import generateurs_video as GV
         GV.generer(params, moteur_video, texte, sortie, int(pl.get("duree") or DUREE_PLAN), seq.get("format", "16:9"), image,
                    progression, arret, son=seq.get("voix") == "moteur")
     return sortie
@@ -364,8 +468,10 @@ def prix_total(seq, moteur_video, params):
     son = seq.get("voix") == "moteur"
     from .recettes_ia import PRIX_GEMINI
     auto = seq.get("image_auto", True) and params.get("clef_gemini")
+    fin = bool(m.get("references")) and seq.get("image_fin_auto", True) and params.get("clef_gemini")
     return round(sum(GV.prix(m, int(p.get("duree") or DUREE_PLAN), son) +
-                     (PRIX_GEMINI["image"] if auto and not p.get("image") and images_du_plan(seq, p) else 0.0)
+                     (PRIX_GEMINI["image"] if auto and not p.get("image") and images_du_plan(seq, p) else 0.0) +
+                     (PRIX_GEMINI["image"] if fin and not p.get("image_fin") else 0.0)
                      for p in seq["plans"] if not p.get("fichier")), 2)
 
 
