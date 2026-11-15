@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.74 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.75 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.75 (transformer une voix, guides)
+- "Transformer la voix..." (Inspecteur, groupe Voix et son ; bouton Voix et son de la barre) : sur ce poste, gratuit, hauteur et timbre (formants) reglables, prereglages "Plus masculine", "Plus feminine", "Voix d'enfant", "Narrateur pose", "Grosse voix", "Petite voix" ; on ecoute avant d'appliquer, la transformation se rend a l'export et se retire. Par l'IA cloud (fal.ai, 0,30 $ la minute, prix demande) : la voix du plan est redite par une voix toute faite (femme ou homme) avec les memes intonations, bruit de fond retire au choix ; ecoutee avant d'etre posee sur la piste Voix (son d'origine coupe, un Annuler). Seulement sa voix ou celle d'une personne d'accord (case obligatoire).
+- Guides : "Transformer une voix", "Une fleche, un texte ou un goodie qui suit une personne ou un objet" (c'etait deja possible : clic droit sur l'element, "Accrocher a une personne"), "Changer le fond" corrige (l'effet "Changer le fond (detourage)" detoure deja sur ce poste un rush filme n'importe ou).
+
 
 ### 0.9.74 (son des tampons IA par le cloud)
 - Tampons IA : nouveau choix "Son" : sur ce poste (gratuit) ou "IA cloud : voix Gemini, bruitages d'apres la video (fal.ai)". Les bruitages sont fabriques d'apres la video du tampon (environ 0,001 $ la seconde), la phrase est dite par la voix Gemini dans le style choisi (grosse voix, petite voix, robot, radio...). Prix demande, credit fal.ai affiche.

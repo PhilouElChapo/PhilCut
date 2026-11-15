@@ -715,6 +715,10 @@ class Inspecteur(QWidget):
             bc.setToolTip(_("Les mêmes retouches de voix sur d'autres plans : sélectionnés, de la même piste, ou du même rush"))
             bc.clicked.connect(lambda: self._copier_retouches(c, bc))
             hb.addWidget(bc)
+            bt = QPushButton(_("Transformer la voix…"))
+            bt.setToolTip(_("Plus grave, plus aiguë, plus masculine ou féminine : sur ce poste (gratuit) ou par l'IA cloud (plus naturel)"))
+            bt.clicked.connect(lambda: self.ed.transformer_voix(c))
+            vv.addWidget(bt)
             ba = QPushButton(_("Autotune…"))
             ba.setToolTip(_("Vraie correction de justesse d'un chant (tonalité, force), écoute avant / après, nouveau fichier"))
             ba.clicked.connect(lambda: self.ed.autotune(c))
@@ -811,7 +815,8 @@ class Inspecteur(QWidget):
         debut = c["src_debut"] + decal * vitesse
         duree = max(0.5, min(15.0, c["src_fin"] - debut))
         self._texte_ecoute(_("Préparation…"))
-        t = Tache(lambda tc: V.rendu_ecoute(m["chemin"], effets, sortie, debut, duree, vol), _("Ecoute"))
+        transfo = dict(c.get("voix_transfo") or {})
+        t = Tache(lambda tc: V.rendu_ecoute(m["chemin"], effets, sortie, debut, duree, vol, transfo), _("Ecoute"))
         self._tache_ecoute = t
 
         def fini(r, e):

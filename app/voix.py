@@ -225,10 +225,10 @@ def baisser_originaux(projet, niveau=0.15):
 
 
 # ------------------------------------------------------------------ écouter avant de poser
-def rendu_ecoute(entree, effets, sortie, debut=0.0, duree=None, volume=1.0):
+def rendu_ecoute(entree, effets, sortie, debut=0.0, duree=None, volume=1.0, transfo=None):
     """Fichier WAV pour écouter une voix avec ses retouches (les mêmes filtres qu'à l'export), sans rien modifier."""
-    from .export import filtre_audio
-    chaine = [f for f in (filtre_audio(e) for e in (effets or [])) if f]
+    from .export import filtres_voix
+    chaine = filtres_voix({"effets_audio": list(effets or []), "voix_transfo": transfo or {}})
     chaine.append(f"volume={float(volume):.3f}")
     args = ["-ss", f"{max(0.0, debut):.3f}"] + (["-t", f"{duree:.3f}"] if duree else []) + ["-i", entree, "-af", ",".join(chaine),
                                                                                              "-ar", "48000", "-ac", "2", "-c:a", "pcm_s16le", sortie]

@@ -1316,6 +1316,7 @@ class Fenetre(QMainWindow):
         m.addAction(_("Continuer avec ma voix…"), lambda: ed.continuer_voix(c))
         m.addAction(_("Doubler la vidéo dans une autre langue…"), self.doubler)
         if c:
+            m.addAction(_("Transformer la voix (plus grave, plus aiguë, masculine, féminine)…"), lambda: ed.transformer_voix(c))
             m.addAction(_("Autotune : corriger la justesse du chant de ce plan…"), lambda: ed.autotune(c))
             m.addAction(_("▶ Ecouter ce plan avec ses retouches"), lambda: self._ecouter_retouches(ed, c))
         if not c:

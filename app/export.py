@@ -50,6 +50,31 @@ VOIX = [("a_studio", "Voix studio, façon Insta (débruitage IA locale)"), ("a_s
         ("a_autotune", "Effet chorus (chant)"), ("a_reverb", "Réverbération"), ("a_echo", "Echo")]
 
 
+def filtre_transfo(hauteur=0.0, timbre=1.0):
+    """0.9.75 : voix transformée sur ce poste. hauteur en demi-tons (−12…+12) ; timbre = facteur des formants (0,8 :
+    voix plus « grande », plus masculine ; 1,2 : plus « petite », plus féminine ou enfantine). Les formants bougent avec
+    asetrate (tempo rétabli), puis rubberband remet la hauteur voulue en gardant ces formants."""
+    h, t = float(hauteur or 0.0), float(timbre or 1.0)
+    if abs(h) < 0.05 and abs(t - 1.0) < 0.005:
+        return ""
+    p = 2 ** (h / 12.0)
+    if moteur.filtre_disponible("rubberband"):
+        morceaux = ["aresample=48000"]
+        if abs(t - 1.0) >= 0.005:
+            morceaux += [f"asetrate=48000*{t:.4f}", "aresample=48000", f"atempo={1 / t:.4f}"]
+        if abs(p / t - 1.0) >= 0.002:
+            morceaux.append(f"rubberband=pitch={p / t:.4f}:formant=preserved")
+        return ",".join(morceaux)
+    return f"aresample=48000,asetrate=48000*{p:.4f},aresample=48000,atempo={1 / p:.4f}"
+
+
+def filtres_voix(c):
+    """Filtres de voix d'un plan, dans l'ordre : transformation (hauteur, timbre), puis les retouches cochées."""
+    tr = c.get("voix_transfo") or {}
+    out = [filtre_transfo(tr.get("hauteur", 0.0), tr.get("timbre", 1.0))] if tr else []
+    return [f for f in out + [filtre_audio(e) for e in (c.get("effets_audio") or [])] if f]
+
+
 # 0.9.73 : un seul traitement complet à la fois (ils se remplacent), et grave / aigu s'excluent ; les petites retouches
 # (s qui sifflent, chaude, réverbération…) s'ajoutent
 TRAITEMENTS_COMPLETS = ("a_studio", "a_studio_doux", "a_narration", "a_narration_chaude", "a_narration_bruit", "a_harmonieuse", "a_voix")
@@ -632,7 +657,7 @@ class Exportateur:
             m = self.p.media(c["media"])
             k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
             nom = self._nom("vo")
-            fx = "".join("," + f for f in (filtre_audio(e) for e in (c.get("effets_audio") or [])) if f)
+            fx = "".join("," + f for f in filtres_voix(c))
             fv = fondus_audio(c, duree_clip(c), 0.0, 0.0) if c["piste"] == "voix" else ""
             self.filtres.append(f"[{k}:a]asetpts=PTS-STARTPTS{self._atempo(c)}{fx},volume={0.0 if c.get('muet') else c.get('volume', 1.0):.3f}{fv},"
                                 f"aresample=48000,aformat=channel_layouts=stereo,adelay={int(c['debut'] * 1000)}|{int(c['debut'] * 1000)}[{nom}]")
@@ -702,7 +727,7 @@ class Exportateur:
             return self._silence(d)
         k = self._entree("-ss", f"{c['src_debut']:.3f}", "-t", f"{(c['src_fin'] - c['src_debut']):.3f}", "-i", m["chemin"])
         nom = self._nom("a")
-        fx = "".join("," + f for f in (filtre_audio(e) for e in (c.get("effets_audio") or [])) if f)
+        fx = "".join("," + f for f in filtres_voix(c))
         self.filtres.append(f"[{k}:a]asetpts=PTS-STARTPTS{self._atempo(c)}{fx},volume={c.get('volume', 1.0):.3f},"
                             f"aresample=48000,aformat=channel_layouts=stereo,atrim=duration={d:.3f},apad=whole_dur={d:.3f}[{nom}]")
         return nom

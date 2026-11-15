@@ -70,19 +70,23 @@ def guides():
 
 def _guides_integres():
     G = [
-        {"id": "fond", "etat": "partiel",
+        {"id": "fond", "etat": "ok",
          "titre": _("Changer le fond (décor, paysage) d'un rush"),
          "mots": "fond decor paysage arriere-plan detourer remplacer chroma vert",
-         "intro": _("Un rush tourné devant un fond uni (vert, bleu) se détoure déjà. Un rush filmé n'importe où ne se détoure pas "
-                    "encore : c'est prévu. En attendant, on peut flouter le fond."),
+         "intro": _("Un rush tourné devant un fond uni (vert, bleu) se détoure par la couleur. Un rush filmé n'importe où : l'effet "
+                    "« Changer le fond (détourage) » sépare la personne du fond sur ce poste (modèle « Détourage de personne », "
+                    "Préférences › IA locale) et la pose sur une image, une vidéo, une couleur ou le fond flouté."),
          "etapes": [
              {"texte": _("Rush tourné devant un fond uni : cliquez le plan dans la timeline."), "fait": "plan_choisi"},
              {"texte": _("Dans le volet Effets, cherchez « Fond vert » et glissez « Fond vert (chroma key) » sur le plan."),
               "montrer": {"volet": "effets", "chercher": _("Fond vert")}, "fait": "effet:chroma_key"},
              {"texte": _("Dans l'Inspecteur, « Nouveau décor » : choisissez l'image ou la vidéo du paysage ; réglez la couleur du "
                          "fond et la tolérance jusqu'à ce que le sujet soit net.")},
-             {"texte": _("Rush filmé n'importe où : flouter le fond (le sujet reste net). Ligne rouge sur le plan, puis Fabrique IA › "
-                         "Vidéo › Effet IA sur le film… › « Flou d'arrière-plan (effet portrait) » › Créer."),
+             {"texte": _("Rush filmé n'importe où : volet Effets, cherchez « Changer le fond », glissez « Changer le fond (détourage) » "
+                         "sur le plan ; dans l'Inspecteur, « Nouveau fond » : image ou vidéo du projet, couleur, ou fond flouté."),
+              "montrer": {"volet": "effets", "chercher": _("Changer le fond")}, "fait": "effet:detourage"},
+             {"texte": _("Ou seulement flouter le fond : ligne rouge sur le plan, puis Fabrique IA › Vidéo › Effet IA sur le film… › "
+                         "« Flou d'arrière-plan (effet portrait) » › Créer."),
               "montrer": {"menu": [_("Fabrique IA"), _("Vidéo"), _("Effet IA sur le film (dessin animé, ralenti, agrandir, photo 3D…)…")]},
               "fait": "fenetre:DialogueAtelierIA"},
          ]},
@@ -269,14 +273,14 @@ def _guides_integres():
                          "télécharge tout seul ; « Plus de résultats » si besoin). Gardez tout le morceau ou seulement un passage.")},
              {"texte": _("Relisez la consigne anglaise en bas, puis « Créer la musique ».")},
          ]},
-        {"id": "voix_retouches", "etat": "partiel",
+        {"id": "voix_retouches", "etat": "ok",
          "titre": _("Retoucher une voix (studio, narration, plus grave ou plus aiguë) et l'entendre"),
          "mots": "voix retouche studio narration diction grave aigu timbre feminine masculine changer transformer ecouter "
                  "ameliorer radio echo appliquer rush plans",
          "intro": _("Les retouches se posent sur le plan et se rendent à l'export ; « Ecouter » fait entendre 15 s avec elles, à "
                     "partir de la ligne rouge. Un seul traitement complet à la fois (studio, narration…) : en cocher un remplace "
-                    "l'autre ; les petites retouches (plus grave, plus chaude, « s » qui sifflent…) s'ajoutent. Transformer une "
-                    "voix en voix d'homme ou de femme viendra dans une prochaine version."),
+                    "l'autre ; les petites retouches (plus grave, plus chaude, « s » qui sifflent…) s'ajoutent. Pour changer "
+                    "vraiment la voix (masculine, féminine, enfant), « Transformer la voix… »."),
          "etapes": [
              {"texte": _("Cliquez le plan de la voix dans la timeline (piste Voix, ou un rush avec du son)."), "fait": "plan_choisi"},
              {"texte": _("Inspecteur (volet de droite), groupe « Voix et son » : cochez les retouches voulues.")},
@@ -284,6 +288,33 @@ def _guides_integres():
                          "bouton « Voix et son » de la barre, choisir une retouche la fait entendre aussitôt.")},
              {"texte": _("« Appliquer à… » : les mêmes retouches sur les plans sélectionnés, toute la piste, ou tous les plans du "
                          "même rush (Ctrl+Z pour revenir).")},
+         ]},
+        {"id": "voix_transformer", "etat": "ok",
+         "titre": _("Transformer une voix : plus grave, plus aiguë, masculine, féminine, enfant"),
+         "mots": "voix transformer changer grave aigue masculine feminine homme femme enfant timbre hauteur narrateur diction",
+         "intro": _("Sur ce poste : hauteur et timbre réglés, gratuit, s'entend aussitôt (un peu artificiel si on force). IA cloud : "
+                    "la voix est redite par une voix toute faite avec vos intonations, plus naturel (0,30 $ la minute, prix "
+                    "demandé). Seulement votre voix ou celle d'une personne d'accord."),
+         "etapes": [
+             {"texte": _("Cliquez le plan de la voix dans la timeline."), "fait": "plan_choisi"},
+             {"texte": _("Inspecteur › « Voix et son » › « Transformer la voix… » (ou bouton Voix et son de la barre)."),
+              "fait": "fenetre:DialogueVoixTransfo"},
+             {"texte": _("Sur ce poste : choisissez « Plus masculine », « Plus féminine »… ou réglez hauteur et timbre, « ▶ Ecouter », "
+                         "puis « Appliquer au plan ».")},
+             {"texte": _("Par l'IA cloud : choisissez la nouvelle voix, cochez l'accord, « Transformer », écoutez, puis « Poser sur "
+                         "la piste Voix » (le son d'origine du plan est coupé ; Ctrl+Z pour revenir).")},
+         ]},
+        {"id": "suivre_element", "etat": "ok",
+         "titre": _("Une flèche, un texte ou un goodie qui suit une personne ou un objet"),
+         "mots": "fleche suivre suit accrocher goodie texte etiquette personne objet avion voiture narration montrer designer",
+         "intro": _("Un élément posé (flèche, étiquette, goodie, image) peut suivre une personne ou un objet du plan : il se déplace "
+                    "avec lui, à l'export comme à l'aperçu."),
+         "etapes": [
+             {"texte": _("Posez la flèche (bouton Goodies) ou le texte au-dessus du plan, au moment voulu.")},
+             {"texte": _("Clic droit sur l'élément dans la timeline › « Accrocher à une personne (suit ses mouvements)… ».")},
+             {"texte": _("La personne est trouvée seule ; pour un objet (avion, voiture), tracez un cadre autour à la souris, puis OK : "
+                         "la barre du bas suit le calcul.")},
+             {"texte": _("Il décroche à un moment ? Clic droit sur l'élément › « Décrocher (position fixe) », puis accrochez-le à nouveau.")},
          ]},
         {"id": "tampons_son", "etat": "ok",
          "titre": _("Créer un tampon IA avec un vrai son (voix, tambour, cymbales…)"),

@@ -23,6 +23,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T87 — 0.9.75 : transformer une voix, élément qui suit, fond
+
+1. Un plan avec ta voix : Inspecteur › « Voix et son » › « Transformer la voix… ». « Plus féminine », « ▶ Ecouter » ; puis régler hauteur et timbre à la main ; « Appliquer au plan » ; exporter 10 s : la voix est transformée. « Retirer ».
+2. IA cloud : « Homme : narrateur (Brian) », cocher l'accord, « Transformer par l'IA cloud » (prix demandé) ; écouter, « Poser sur la piste Voix » : le son d'origine du plan est coupé. Ctrl+Z.
+3. Une flèche (Goodies) au-dessus de l'avion qui roule : clic droit sur la flèche dans la timeline › « Accrocher à une personne… », tracer le cadre autour de l'avion, OK : la flèche le suit.
+4. Effets › chercher « Changer le fond » › glisser « Changer le fond (détourage) » sur un rush avec une personne ; Inspecteur : « Nouveau fond » = une image : la personne est sur le nouveau décor (modèle « Détourage de personne » installé).
+5. Aide › Comment faire… : chercher « voix », « flèche », « fond » : les nouvelles fiches apparaissent.
+
 ## T86 — 0.9.73 et 0.9.74 : images avant la vidéo, voix, son des tampons
 
 1. Séquence IA, moteur « Kling O3 Référence » : « Fabriquer les plans manquants » propose d'abord de voir les images ; accepter, confirmer le prix : la fenêtre « Images des plans » montre départ et arrivée de chaque plan.

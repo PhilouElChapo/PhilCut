@@ -1251,6 +1251,16 @@ class Editeur(QWidget):
                     self.inspecteur.montrer_selection([ident])
                 return
 
+    def transformer_voix(self, c=None):
+        """0.9.75 : voix plus grave, plus aiguë, masculine, féminine… (ce poste ou IA cloud) ; une fenêtre par plan."""
+        c = c or self._clip_selectionne()
+        if not c:
+            self.encart.message(_("Cliquez d'abord le plan dont la voix est à transformer."), 5000)
+            return None
+        from .dialogues_voix_transfo import DialogueVoixTransfo
+        from .widgets import non_bloquante
+        return non_bloquante(self, "voix_transfo_" + c["id"], lambda: DialogueVoixTransfo(self, c))
+
     def autotune(self, c):
         """Vraie correction de justesse : le plan passe sur un nouveau fichier corrigé ; l'original est gardé."""
         from .dialogues_voix import DialogueAutotune
