@@ -23,6 +23,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T86 — 0.9.73 et 0.9.74 : images avant la vidéo, voix, son des tampons
+
+1. Séquence IA, moteur « Kling O3 Référence » : « Fabriquer les plans manquants » propose d'abord de voir les images ; accepter, confirmer le prix : la fenêtre « Images des plans » montre départ et arrivée de chaque plan.
+2. Une arrivée qui ne va pas : « Refaire… », écrire « assise, l'ordinateur ouvert devant elle, face caméra » : la nouvelle image correspond-elle ? Essayer « Image du film » et « Sans arrivée ». Le plan 2 montre en départ l'arrivée du plan 1.
+3. « Valider ce plan » jusqu'au dernier ; puis « Fabriquer » : la vidéo part, sans redemander.
+4. Un plan avec voix : Inspecteur › « Voix et son » : cocher « Voix studio, plus naturelle » puis « Narration chaude » : la première se décoche. « ▶ Ecouter avec ces retouches » : le son sort, le bouton devient « ■ Arrêter l'écoute ».
+5. Bouton « Voix et son » de la barre › une retouche › « Faire » : l'écoute part aussitôt. « Appliquer à… » › « A tous les plans de cette piste ».
+6. « Continuer avec ma voix » : texte avec « vidéo » (accent) : la voix se fabrique jusqu'au bout.
+7. Tampons IA, modèle « Victoire, trophée » : écrire dans la phrase d'image « … en son un roulement de tambour » : à la création, ce passage part dans « Son décrit ». « Son » : « IA cloud… », phrase dite « Victoire ! », style « Grosse voix grave » : prix demandé ; écouter le tampon : tambour, cymbales et voix ?
+
 ## T85 — 0.9.72 : personnage fidèle, plans plus longs, rallonger un rush
 
 Il faut une clef fal.ai avec un peu de crédit, et une clef Gemini.

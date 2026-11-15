@@ -291,13 +291,14 @@ def images_du_plan(seq, pl):
     return out[:4]
 
 
-def image_depart(seq, i, params, moteur_image="gemini"):
+def image_depart(seq, i, params, moteur_image="gemini", precision=""):
     """Image de départ du plan i, composée à partir des images de référence (Gemini : personnages et lieu réunis ;
     IA de ce poste : image du lieu retravaillée). Renvoie le chemin, ou "" s'il n'y a rien pour la composer."""
     pl = seq["plans"][i]
-    refs = images_du_plan(seq, pl)
-    sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_depart.png")
-    texte = consigne(seq, pl, params)
+    planches = [im[0] for _n, im in references_du_plan(seq, pl) if "planche_" in os.path.basename(im[0])]
+    refs = (planches + [x for x in images_du_plan(seq, pl) if x not in planches])[:4]
+    texte = consigne(seq, pl, params) + ((" Precisely, at the start: " + _anglais(precision, True)) if precision else "")
+    sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_depart_{int(time.time() * 1000) % 10 ** 9}.png")
     if moteur_image == "gemini":
         from . import ia
         if not refs:
@@ -388,7 +389,7 @@ def depart_enchaine(seq, i):
     return derniere_image(f, os.path.join(dossier(seq), f"plan{i + 1:02d}_depart_enchaine.png"))
 
 
-def image_arrivee(seq, i, params, depart=None):
+def image_arrivee(seq, i, params, depart=None, precision=""):
     """Image d'arrivée du plan i (0.9.72) : la pose quand l'action est finie, composée d'après l'image de départ et les
     références. Le moteur doit la rejoindre : il ne peut plus faire traverser la table ni changer de visage en route."""
     from . import ia
@@ -399,12 +400,53 @@ def image_arrivee(seq, i, params, depart=None):
     png = (ia.generer_image_refs if refs else lambda prm, c, r=None: ia.generer_image(prm, c))(
         params, "LAST frame of this video shot, when the action is completely finished (final pose, physically plausible). Same "
                 "people, same face, same clothes, same place and same light as in the reference images (the first one is the "
-                "first frame of the shot). One photorealistic still image, no text. " + action, refs[:4])
-    sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_arrivee.png")
+                "first frame of the shot). One photorealistic still image, no text. " + action +
+        ((" Precisely, at the end: " + _anglais(precision, True)) if precision else ""), refs[:4])
+    sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_arrivee_{int(time.time() * 1000) % 10 ** 9}.png")
     with open(sortie, "wb") as f:
         f.write(png)
     pl["image_fin"] = sortie
     return sortie
+
+
+# ------------------------------------------------------------------ 0.9.73 : images vues et validées avant la vidéo
+def depart_prevu(seq, i):
+    """L'image par laquelle le plan i commencera : la sienne, sinon (enchaîné) l'arrivée du plan précédent, ou la vraie
+    dernière image de sa vidéo si elle est faite."""
+    pl = seq["plans"][i]
+    if pl.get("image") and os.path.exists(pl["image"]):
+        return pl["image"]
+    if i > 0 and pl.get("enchainer", True):
+        av = seq["plans"][i - 1]
+        if av.get("fichier") and os.path.exists(av["fichier"]):
+            return depart_enchaine(seq, i)
+        if av.get("image_fin") and os.path.exists(av["image_fin"]):
+            return av["image_fin"]
+    return ""
+
+
+def preparer_images(seq, i, params, quoi=("depart", "arrivee"), precision="", force=False):
+    """Compose (Gemini) l'image de départ et/ou d'arrivée du plan i ; une image refaite n'est plus validée."""
+    pl = seq["plans"][i]
+    if seq.get("image_fin_auto", True) and params.get("clef_gemini"):
+        for p in sans_planche(seq, [i]):                  # la fiche du personnage d'abord : les deux images s'en servent
+            planche_personnage(seq, p, params)
+    if "depart" in quoi and (force or precision or not (i > 0 and pl.get("enchainer", True) and depart_prevu(seq, i))):
+        pl["image"] = image_depart(seq, i, params, "gemini", precision if quoi == ("depart",) else "")
+    if "arrivee" in quoi:
+        image_arrivee(seq, i, params, depart_prevu(seq, i) or None, precision if quoi == ("arrivee",) else "")
+    pl["images_ok"] = False
+    return pl
+
+
+def images_a_verifier(seq, indices, params, moteur_video):
+    """Plans dont les images doivent être vues avant la vidéo (moteur Référence avec image d'arrivée demandée)."""
+    from . import generateurs_video as GV
+    if moteur_video in ("locale", "flow") or not (GV.modele(moteur_video, params) or {}).get("references"):
+        return []
+    if not (seq.get("image_fin_auto", True) and params.get("clef_gemini")):
+        return []
+    return [i for i in indices if not seq["plans"][i].get("images_ok") and not seq["plans"][i].get("fichier")]
 
 
 def fabriquer_plan(seq, i, params, moteur_video, progression=None, arret=lambda: False):
@@ -433,7 +475,7 @@ def fabriquer_plan(seq, i, params, moteur_video, progression=None, arret=lambda:
                       progression=progression, arret=arret)
     elif ref:
         fin = pl.get("image_fin") if pl.get("image_fin") and os.path.exists(pl["image_fin"]) else None
-        if fin is None and seq.get("image_fin_auto", True) and params.get("clef_gemini"):
+        if fin is None and seq.get("image_fin_auto", True) and params.get("clef_gemini") and not pl.get("sans_fin"):
             progression and progression(0.04)
             fin = image_arrivee(seq, i, params, image)
         GV.generer(params, moteur_video, texte, sortie, int(pl.get("duree") or DUREE_PLAN), seq.get("format", "16:9"), image,

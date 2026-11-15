@@ -50,6 +50,27 @@ VOIX = [("a_studio", "Voix studio, façon Insta (débruitage IA locale)"), ("a_s
         ("a_autotune", "Effet chorus (chant)"), ("a_reverb", "Réverbération"), ("a_echo", "Echo")]
 
 
+# 0.9.73 : un seul traitement complet à la fois (ils se remplacent), et grave / aigu s'excluent ; les petites retouches
+# (s qui sifflent, chaude, réverbération…) s'ajoutent
+TRAITEMENTS_COMPLETS = ("a_studio", "a_studio_doux", "a_narration", "a_narration_chaude", "a_narration_bruit", "a_harmonieuse", "a_voix")
+GROUPES_EXCLUSIFS = (TRAITEMENTS_COMPLETS, ("a_grave", "a_aigu"))
+
+
+def basculer_retouche(effets, eid, on=None):
+    """Liste des retouches après avoir coché (on=True), décoché (False) ou basculé (None) eid : cocher un traitement
+    complet retire l'autre traitement complet ; grave et aigu s'excluent."""
+    l = list(effets or [])
+    if on is None:
+        on = eid not in l
+    l = [x for x in l if x != eid]
+    if on:
+        for g in GROUPES_EXCLUSIFS:
+            if eid in g:
+                l = [x for x in l if x not in g]
+        l.append(eid)
+    return l
+
+
 def modele_rnnoise(genre="parole"):
     """Chemin du modèle RNNoise livré avec PhilCut (catalogue/voix), écrit pour un filtre FFmpeg ; None s'il manque."""
     import sys

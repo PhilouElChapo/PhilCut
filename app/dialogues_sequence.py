@@ -131,6 +131,11 @@ class DialogueSequence(QDialog):
         self.b_tout = QPushButton(_("Fabriquer les plans manquants"))
         self.b_tout.setToolTip(_("Chaque plan sans vidéo est fabriqué l'un après l'autre ; vous les regardez ensuite dans l'onglet Plans"))
         self.b_tout.clicked.connect(self.fabriquer_tout)
+        self.b_images = QPushButton(_("Images des plans…"))
+        self.b_images.setToolTip(_("Voir, refaire ou remplacer l'image de départ et d'arrivée de chaque plan avant la vidéo "
+                                   "(moteur Référence)"))
+        self.b_images.clicked.connect(lambda: self.verifier_images(None))
+        hb.addWidget(self.b_images)
         hb.addWidget(self.b_tout)
         self.b_monter = QPushButton(_("Monter la séquence à la ligne rouge"))
         self.b_monter.setToolTip(_("Pose les plans fabriqués l'un après l'autre (la suite du film est décalée), les répliques sur la "
@@ -857,7 +862,40 @@ class DialogueSequence(QDialog):
             return
         self._fabriquer(manquants)
 
+    def verifier_images(self, indices=None):
+        """0.9.73 : départ et arrivée de chaque plan vus et validés avant la vidéo."""
+        self._lire_tables()
+        if indices is None:
+            indices = [i for i, p in enumerate(self.seq["plans"]) if not p.get("fichier")] or list(range(len(self.seq["plans"])))
+        if not indices:
+            self.etat.setText(_("Pas encore de plan : découpez d'abord l'histoire."))
+            return None
+        if not self.params.get("clef_gemini"):
+            self.etat.setText(_("Les images se composent avec Gemini : Préférences › IA › Connecter une IA."))
+            return None
+        anc = getattr(self, "_revue", None)
+        try:
+            if anc is not None and (anc.isVisible() or anc._en_calcul()):
+                anc.show()
+                anc.raise_()
+                return anc
+        except RuntimeError:
+            pass
+        from . import dialogues_images_plans as DI
+        self._revue = DI.ouvrir(self, self.seq, self.params, indices, self.ed)
+        self._revue.finished.connect(lambda _r: (self._remplir_plans(), self._maj_prix()))
+        return self._revue
+
     def _fabriquer(self, indices):
+        a_voir = Q.images_a_verifier(self.seq, indices, self.params, self.moteur.currentData())
+        if a_voir:
+            r = QMessageBox.question(self, _("Séquence IA"), _(
+                "Avant la vidéo, regardez l'image de départ et d'arrivée des plans {l} (Gemini les compose, quelques centimes) : "
+                "s'il se trompe, la vidéo serait forcée vers l'erreur. Les préparer et les voir maintenant ?",
+                l=", ".join(str(i + 1) for i in a_voir)))
+            if r == QMessageBox.Yes:
+                self.verifier_images(a_voir)
+            return
         if not self._confirmer(indices):
             return
         m = self.moteur.currentData()

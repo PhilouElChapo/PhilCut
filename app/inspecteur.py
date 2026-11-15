@@ -86,6 +86,11 @@ def widget_parametre(spec, val, on_change, medias=()):
     return w
 
 
+def V_LIBELLES():
+    from .export import VOIX
+    return VOIX
+
+
 class Inspecteur(QWidget):
     demande_effets = Signal(str)            # clip_id : ouvrir la fenêtre « Effets et transition »
     demande_edition = Signal(str)           # id d'un texte ou Goodie : fenêtre complète
@@ -701,9 +706,15 @@ class Inspecteur(QWidget):
             poses = list(c.get("effets_audio") or [])
             hb = QHBoxLayout()
             be = QPushButton(_("▶ Ecouter avec ces retouches"))
-            be.setToolTip(_("Ecoute les 15 premières secondes du plan avec les retouches cochées, comme dans la vidéo exportée"))
-            be.clicked.connect(lambda: self._ecouter(c, be))
+            be.setToolTip(_("Ecoute 15 secondes du plan (à partir de la ligne rouge si elle est dessus) avec les retouches cochées, "
+                            "comme dans la vidéo exportée"))
+            be.clicked.connect(lambda: self.ecouter(c))
+            self._bouton_ecoute = be
             hb.addWidget(be)
+            bc = QPushButton(_("Appliquer à…"))
+            bc.setToolTip(_("Les mêmes retouches de voix sur d'autres plans : sélectionnés, de la même piste, ou du même rush"))
+            bc.clicked.connect(lambda: self._copier_retouches(c, bc))
+            hb.addWidget(bc)
             ba = QPushButton(_("Autotune…"))
             ba.setToolTip(_("Vraie correction de justesse d'un chant (tonalité, force), écoute avant / après, nouveau fichier"))
             ba.clicked.connect(lambda: self.ed.autotune(c))
@@ -717,6 +728,9 @@ class Inspecteur(QWidget):
                 cv = QCheckBox(_(lib))
                 cv.setChecked(eid in poses)
                 cv.toggled.connect(lambda on, eid=eid: self._changer(lambda: self._effet_audio(c, eid, on)))
+                from .export import TRAITEMENTS_COMPLETS
+                if eid in TRAITEMENTS_COMPLETS:
+                    cv.setToolTip(_("Traitement complet : il remplace l'autre traitement complet coché"))
                 vv.addWidget(cv)
             lay.addWidget(gv)
         # ---- résumé du rush
@@ -741,7 +755,35 @@ class Inspecteur(QWidget):
                     pass
             QTimer.singleShot(0, voir)
 
-    def _ecouter(self, c, bouton):
+    def _copier_retouches(self, c, bouton):
+        """0.9.73 : les retouches de voix de ce plan, recopiées sur d'autres plans (un seul Annuler)."""
+        from PySide6.QtWidgets import QMenu
+        p = self.projet
+        sel = [x for x in (p.clip(i) for i in self.ed.timeline.selection()) if x and x["id"] != c["id"]]
+        piste = [x for x in p.clips_piste(c["piste"]) if x["id"] != c["id"]]
+        rush = [x for x in p.d.get("clips", []) if x.get("media") == c.get("media") and x["id"] != c["id"]]
+        m = QMenu(self)
+        for lib, cibles in ((_("Aux plans sélectionnés ({n})", n=len(sel)), sel),
+                            (_("A tous les plans de cette piste ({n})", n=len(piste)), piste),
+                            (_("A tous les plans du même rush ({n})", n=len(rush)), rush)):
+            a = m.addAction(lib, lambda cibles=cibles: self._poser_retouches(c, cibles))
+            a.setEnabled(bool(cibles))
+        m.exec(bouton.mapToGlobal(bouton.rect().bottomLeft()))
+
+    def _poser_retouches(self, c, cibles):
+        self.projet.marquer()
+        for x in cibles:
+            x["effets_audio"] = list(c.get("effets_audio") or [])
+        self.ed._modifie()
+        self.ed.timeline.reconstruire()
+        self.ed.encart.message(_("Retouches de voix posées sur {n} plan(s) ; Ctrl+Z pour revenir.", n=len(cibles)), 5000)
+
+    def ecouter(self, c, bouton=None):
+        """0.9.73 : bouton gardé par l'Inspecteur (il est refait à chaque changement), résultat joué dans le fil de
+        l'interface, erreur dite. Second clic pendant la lecture : arrêt."""
+        self._ecouter(c, bouton)
+
+    def _ecouter(self, c, bouton=None):
         """Rend 15 s du plan avec ses retouches audio et les joue ; second clic : arrêt."""
         from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
         from PySide6.QtCore import QUrl
@@ -757,32 +799,52 @@ class Inspecteur(QWidget):
             return
         m = self.projet.media(c["media"]) or {}
         if not m.get("chemin"):
+            self.ed.encart.message(_("Le fichier de ce plan est introuvable : rien à écouter."), 5000)
             return
-        sortie = os.path.join(tempfile.gettempdir(), f"philcut_ecoute_{os.getpid()}.wav")
+        self._n_ecoute = getattr(self, "_n_ecoute", 0) + 1
+        sortie = os.path.join(tempfile.gettempdir(), f"philcut_ecoute_{os.getpid()}_{self._n_ecoute}.wav")
         effets, vol = list(c.get("effets_audio") or []), float(c.get("volume", 1.0))
-        debut, duree = c["src_debut"], min(15.0, c["src_fin"] - c["src_debut"])
-        bouton.setText(_("Préparation…"))
+        from .projet import fin_clip
+        t0 = self.ed.timeline.position
+        decal = t0 - c["debut"] if c["debut"] <= t0 < fin_clip(c) - 1.0 else 0.0     # depuis la ligne rouge si elle est sur le plan
+        vitesse = float(c.get("vitesse", 1.0) or 1.0)
+        debut = c["src_debut"] + decal * vitesse
+        duree = max(0.5, min(15.0, c["src_fin"] - debut))
+        self._texte_ecoute(_("Préparation…"))
         t = Tache(lambda tc: V.rendu_ecoute(m["chemin"], effets, sortie, debut, duree, vol), _("Ecoute"))
         self._tache_ecoute = t
 
         def fini(r, e):
-            try:
-                bouton.setText(_("▶ Ecouter avec ces retouches"))
-            except RuntimeError:
-                pass
-            if e or not r:
+            self._texte_ecoute(_("▶ Ecouter avec ces retouches"))
+            if e or not r or not os.path.exists(r):
+                from .taches import texte_erreur
+                self.ed.encart.message(_("✕ Ecoute impossible : {e}", e=texte_erreur(e) if e else _("rien n'a été rendu")), 8000)
                 return
             self._lecteur.setSource(QUrl())
             self._lecteur.setSource(QUrl.fromLocalFile(r))
             self._lecteur.play()
-        t.fini.connect(fini)
+            self._texte_ecoute(_("■ Arrêter l'écoute"))
+            self.ed.encart.message(_("Ecoute : {n} — {r}", n=c.get("nom", ""),
+                                     r=", ".join(_(lib) for eid, lib in V_LIBELLES() if eid in effets) or _("sans retouche")), 6000)
+        from PySide6.QtCore import Qt
+        t.fini.connect(fini, Qt.QueuedConnection)       # le résultat est joué dans le fil de l'interface (avant : rien ne sortait)
+        if not getattr(self, "_suivi_lecture", False):
+            self._suivi_lecture = True
+            self._lecteur.playbackStateChanged.connect(
+                lambda st: st != QMediaPlayer.PlayingState and self._texte_ecoute(_("▶ Ecouter avec ces retouches")))
         t.start()
 
+    def _texte_ecoute(self, texte):
+        try:
+            b = getattr(self, "_bouton_ecoute", None)
+            if b is not None:
+                b.setText(texte)
+        except RuntimeError:            # Inspecteur refait entre-temps
+            pass
+
     def _effet_audio(self, c, eid, on):
-        l = [x for x in (c.get("effets_audio") or []) if x != eid]
-        if on:
-            l.append(eid)
-        c["effets_audio"] = l
+        from .export import basculer_retouche
+        c["effets_audio"] = basculer_retouche(c.get("effets_audio"), eid, on)
 
     def _ligne_effet(self, c, i, e):
         """Une ligne par effet : case Actif, nom, monter / descendre, supprimer ; réglages dépliables dessous."""

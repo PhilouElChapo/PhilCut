@@ -353,6 +353,12 @@ class DialoguePreferences(QDialog):
             self.classement_tampons.addItem(lib, k)
         self.classement_tampons.setCurrentIndex(max(0, self.classement_tampons.findData(self.params.get("tampons_classement", "perso"))))
         f0.addRow(_("Classer la bibliothèque"), self.classement_tampons)
+        from . import tampons_ia as TI
+        self.son_tampons = QComboBox()
+        for k, lib in TI.NIVEAUX_SON.items():
+            self.son_tampons.addItem(lib, k)
+        self.son_tampons.setCurrentIndex(max(0, self.son_tampons.findData(self.params.get("tampons_son", "locale"))))
+        f0.addRow(_("Son des tampons IA"), self.son_tampons)
         n1 = QLabel(_("« Mon ordre » : dans la fenêtre des tampons, glissez les vignettes pour les ranger, ou clic droit › Monter, Descendre, "
                       "★ Favori (toujours en tête)."))
         n1.setWordWrap(True)
@@ -1051,6 +1057,7 @@ class DialoguePreferences(QDialog):
         p["ytdlp_son_seul"] = self.ytdlp_son_seul.isChecked()
         p["ytdlp_resultats"] = self.ytdlp_resultats.value()
         p["tampons_classement"] = self.classement_tampons.currentData()
+        p["tampons_son"] = self.son_tampons.currentData()
         p["tampons_placement"] = {"quand": self.pl_quand.currentData(), "comment": self.pl_comment.currentData(),
                                   "ajuster": self.pl_ajuster.currentData(), "son": self.pl_son.isChecked(), "demander": self.pl_demander.isChecked(),
                                   "cadrage": self.pl_cadrage.currentData()}

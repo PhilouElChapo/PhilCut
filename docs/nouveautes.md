@@ -4,7 +4,19 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.72 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.74 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.74 (son des tampons IA par le cloud)
+- Tampons IA : nouveau choix "Son" : sur ce poste (gratuit) ou "IA cloud : voix Gemini, bruitages d'apres la video (fal.ai)". Les bruitages sont fabriques d'apres la video du tampon (environ 0,001 $ la seconde), la phrase est dite par la voix Gemini dans le style choisi (grosse voix, petite voix, robot, radio...). Prix demande, credit fal.ai affiche.
+- Nouveau champ "Son decrit" ("roulement de tambour, quelques cymbales"). La phrase d'image ne fait aucun son : ce qui y decrit le son ("en son...", "on entend...", "and the sound of...") en est retire et passe a "Son decrit".
+
+### 0.9.73 (images vues avant la video, voix)
+- Sequence IA, moteur Reference : avant toute video, la fenetre "Images des plans" montre pour chaque plan l'image de depart et l'image d'arrivee composees par Gemini (quelques centimes chacune). On garde, on refait avec une precision ("assise, l'ordinateur ouvert"), on met sa propre image ou l'image du film a la ligne rouge, ou on laisse le plan finir librement. Seuls les plans valides partent en video ("Fabriquer" renvoie vers cette fenetre sinon).
+- Retouches de voix : "Ecouter avec ces retouches" marche (le son n'etait jamais joue) et part de la ligne rouge ; choisir une retouche depuis "Voix et son" la fait entendre aussitot ; un seul traitement complet a la fois (studio, narration...) : en cocher un remplace l'autre, grave et aigu s'excluent ; "Appliquer a..." recopie les retouches sur les plans selectionnes, la piste ou le meme rush.
+- Continuer avec ma voix : un mot qui fait se perdre le modele ("video" avec accent) n'arrete plus la fabrication : la phrase est refaite sans accents ; sinon, le message dit quelle phrase coince.
+- Guides : "Retoucher une voix et l'entendre", "Creer un tampon IA avec un vrai son".
+
+## Nouveautes de 0.9.72
 
 ### 0.9.72 (personnage fidele d'un plan a l'autre, plans plus longs, rallonger un rush)
 - Nouveau moteur "Kling O3 Reference : personnage fidele (fal)" : il recoit le personnage comme "element" (sa fiche et ses images) et le garde identique ; image de depart ET image d'arrivee ; jusqu'a 15 s par plan ; 0,084 $/s sans son.

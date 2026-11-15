@@ -128,9 +128,26 @@ def jetons_texte(tokenizer, texte, langue):
     langue = (langue or "fr").lower()
     if langue not in LANGUES:
         raise ErreurVoix(_("Langue non prise en charge : {l}.", l=langue))
-    t = f"[{langue}]{texte}"
-    ids = tokenizer.encode(t).ids
+    import unicodedata
+    texte = unicodedata.normalize("NFC", texte)              # « é » tapé sous Windows ou collé (NFD) : une seule forme
+    ids = tokenizer.encode(f"[{langue}]{texte}").ids
+    inconnus = {x for x in (_id(tokenizer, "[UNK]"), _id(tokenizer, "<unk>")) if x is not None}
+    if inconnus & set(ids):                                   # 0.9.73 : un mot que le découpeur ne connaît pas : sans accents
+        mots = [m if not (inconnus & set(tokenizer.encode(m).ids)) else sans_accents(m) for m in texte.split(" ")]
+        ids = tokenizer.encode(f"[{langue}]" + " ".join(mots)).ids
     return np.array([ids], dtype=np.int64)
+
+
+def _id(tokenizer, jeton):
+    try:
+        return tokenizer.token_to_id(jeton)
+    except Exception:      # noqa: BLE001
+        return None
+
+
+def sans_accents(texte):
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFD", texte) if unicodedata.category(c) != "Mn")
 
 
 def jetons_attendus(texte):
@@ -217,8 +234,11 @@ def _penaliser(deja, logits, penalite=PENALITE):
     return out
 
 
-def parole(s, ids, emp, expressivite=0.5, maxi=400, progression=None, arret=lambda: False):
-    """Jetons de parole d'un morceau de texte (sans les jetons de début et de fin)."""
+def parole(s, ids, emp, expressivite=0.5, maxi=400, progression=None, arret=lambda: False, infos=None):
+    """Jetons de parole d'un morceau de texte (sans les jetons de début et de fin). infos["fini"] : le modèle a terminé
+    seul (False : il a tourné jusqu'au maximum, signe qu'il bégaie ou se perd)."""
+    if infos is not None:
+        infos["fini"] = False
     import numpy as np
     cond, _jt, _timbre, _traits = emp
     pos = np.where(ids >= DEBUT_PAROLE, 0, np.arange(ids.shape[1])[np.newaxis, :] - 1).astype(np.int64)
@@ -241,6 +261,8 @@ def parole(s, ids, emp, expressivite=0.5, maxi=400, progression=None, arret=lamb
         suivant = np.argmax(dernier, axis=-1, keepdims=True).astype(np.int64)
         produits = np.concatenate((produits, suivant), axis=-1)
         if int(suivant[0, 0]) == FIN_PAROLE:
+            if infos is not None:
+                infos["fini"] = True
             break
         entrees["input_ids"] = suivant
         entrees["position_ids"] = np.full((1, 1), i + 1, dtype=np.int64)
@@ -264,6 +286,33 @@ def decoder(s, jetons, emp):
     return np.squeeze(son, axis=0)
 
 
+def _morceau(s, m, langue, emp, expressivite, prog, arret):
+    """Un morceau dit ; 0.9.73 : si le modèle se perd (jusqu'au maximum de jetons) ou si un calcul échoue sur un mot (ex.
+    « vidéo »), le morceau est refait une fois sans accents et un peu moins expressif, au lieu d'arrêter toute la voix."""
+    essais = [(m, expressivite), (sans_accents(m), max(0.25, expressivite - 0.2))]
+    derniere = None
+    for k, (texte, ex) in enumerate(essais):
+        if k and texte == m and ex == expressivite:
+            continue
+        try:
+            infos = {}
+            ids = jetons_texte(s["tokenizer"], texte, langue)
+            j = parole(s, ids, emp, ex, jetons_attendus(texte), prog, arret, infos)
+            if j.shape[1] == 0 or (not infos.get("fini") and k == 0):
+                derniere = ErreurVoix(_("Le modèle s'est perdu sur « {t} ».", t=m[:60]))
+                continue
+            prog(0.6)
+            return decoder(s, j, emp)
+        except InterruptedError:
+            raise
+        except Exception as e:      # noqa: BLE001 : on réessaie autrement, puis on dit quelle phrase coince
+            derniere = e
+    if isinstance(derniere, ErreurVoix):
+        raise derniere
+    raise ErreurVoix(_("Le modèle n'arrive pas à dire « {t} » ({e}) : reformulez ce passage ou écrivez le mot autrement.",
+                       t=m[:60], e=str(derniere)[:120]))
+
+
 def dire(texte, reference, sortie, langue="fr", expressivite=0.5, params=None, progression=None, arret=lambda: False,
          chemins=None, s=None):
     """Dit le texte avec la voix de l'extrait (tableau mono 24 kHz) ; écrit un WAV 24 kHz et renvoie (chemin, durée)."""
@@ -281,13 +330,10 @@ def dire(texte, reference, sortie, langue="fr", expressivite=0.5, params=None, p
         def prog(f, k=k):
             if progression:
                 progression(0.03 + 0.92 * (k + f) / n, _("Voix : phrase {i} sur {n}", i=k + 1, n=n))
-        ids = jetons_texte(s["tokenizer"], m, langue)
-        j = parole(s, ids, emp, expressivite, jetons_attendus(m), prog, arret)
-        if j.shape[1] == 0:
+        son_m = _morceau(s, m, langue, emp, expressivite, prog, arret)
+        if son_m is None:
             continue
-        if progression:                                   # la mise en son est l'étape la plus longue (≈ 4 s par seconde de voix)
-            progression(0.03 + 0.92 * (k + 0.6) / n, _("Voix : phrase {i} sur {n}, mise en son…", i=k + 1, n=n))
-        sons += [decoder(s, j, emp), blanc]
+        sons += [son_m, blanc]
     if not sons:
         raise ErreurVoix(_("Le modèle n'a rien prononcé : reformulez le texte."))
     son = np.concatenate(sons[:-1]).astype(np.float32)

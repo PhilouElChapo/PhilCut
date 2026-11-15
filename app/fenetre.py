@@ -1317,8 +1317,7 @@ class Fenetre(QMainWindow):
         m.addAction(_("Doubler la vidéo dans une autre langue…"), self.doubler)
         if c:
             m.addAction(_("Autotune : corriger la justesse du chant de ce plan…"), lambda: ed.autotune(c))
-            m.addAction(_("▶ Ecouter ce plan avec ses retouches"), lambda: (ed._ouvrir_volet(1), ed.timeline.selectionner(c["id"]),
-                                                                          ed.inspecteur.montrer_clip(c["id"])))
+            m.addAction(_("▶ Ecouter ce plan avec ses retouches"), lambda: self._ecouter_retouches(ed, c))
         if not c:
             m.addSeparator()
             m.addAction(_("(choisissez un plan pour retoucher sa voix)")).setEnabled(False)
@@ -1412,14 +1411,18 @@ class Fenetre(QMainWindow):
         t.start()
 
     def _effet_audio(self, ed, c, eid):
+        from .export import basculer_retouche
         ed.projet.marquer()
-        l = list(c.get("effets_audio") or [])
-        if eid in l:
-            l.remove(eid)
-        else:
-            l.append(eid)
-        c["effets_audio"] = l
+        c["effets_audio"] = basculer_retouche(c.get("effets_audio"), eid)
         ed.rafraichir()
+        self._ecouter_retouches(ed, c)            # 0.9.73 : on entend tout de suite ce que la retouche donne
+
+    def _ecouter_retouches(self, ed, c):
+        """Ouvre l'Inspecteur sur le plan (les cases y montrent les retouches) et joue 15 s avec elles."""
+        ed._ouvrir_volet(1)
+        ed.timeline.selectionner(c["id"])
+        ed.inspecteur.montrer_clip(c["id"])
+        ed.inspecteur.ecouter(c)
 
     def partager(self, chemin=None):
         """Envoie une vidéo exportée vers un emplacement (0.9.58) : le compte des projets d'abord, dossier « Exports »."""

@@ -460,7 +460,7 @@ class DialogueTampons(QDialog):
         self.ia_texte.setPlaceholderText(_("Facultatif : BOUM !, VICTOIRE !…"))
         f.addRow(_("Texte à l'image"), self.ia_texte)
         self.ia_phrase = QLineEdit()
-        self.ia_phrase.setPlaceholderText(_("Facultatif : la phrase dite (voix de synthèse de ce poste)"))
+        self.ia_phrase.setPlaceholderText(_("Facultatif : les mots dits à voix haute (ex. : Victoire !)"))
         f.addRow(_("Phrase dite"), self.ia_phrase)
         self.ia_voix = QComboBox()
         for k, lib in TI.STYLES_VOIX.items():
@@ -474,6 +474,20 @@ class DialogueTampons(QDialog):
                 cb.addItem(nom, k)
             hb.addWidget(cb)
         f.addRow(_("Bruitages"), hb)
+        self.ia_son = QLineEdit()
+        self.ia_son.setPlaceholderText(_("Bruitages décrits (IA cloud) : ex. roulement de tambour, quelques cymbales"))
+        self.ia_son.setToolTip(_("Le son se décrit ici, pas dans la phrase d'image (l'image ne fait aucun son) : avec « Son : IA "
+                                 "cloud », ces bruitages sont fabriqués d'après la vidéo du tampon"))
+        f.addRow(_("Son décrit"), self.ia_son)
+        self.ia_son_niveau = QComboBox()
+        for k, lib in TI.NIVEAUX_SON.items():
+            self.ia_son_niveau.addItem(lib, k)
+        self.ia_son_niveau.setCurrentIndex(max(0, self.ia_son_niveau.findData(self.params.get("tampons_son", "locale"))))
+        self.ia_son_niveau.currentIndexChanged.connect(self._son_niveau_change)
+        f.addRow(_("Son"), self.ia_son_niveau)
+        from .credit_ia import LigneCredit
+        self.ia_credit = LigneCredit(self.params, None)
+        f.addRow(self.ia_credit)
         self.ia_duree = QDoubleSpinBox()
         self.ia_duree.setRange(1.5, 8.0)
         self.ia_duree.setSuffix(" s")
@@ -512,12 +526,37 @@ class DialogueTampons(QDialog):
         return {"nom": self.ia_nom.text().strip() or _("Tampon IA"), "consigne": self.ia_consigne.toPlainText().strip(),
                 "mouvement": self.ia_mouvement.currentData(), "texte": self.ia_texte.text().strip(), "phrase": self.ia_phrase.text().strip(),
                 "voix": self.ia_voix.currentData(), "bruitages": [b for b in (self.ia_b1.currentData(), self.ia_b2.currentData()) if b],
-                "duree": self.ia_duree.value()}
+                "duree": self.ia_duree.value(), "son": self.ia_son_niveau.currentData(), "son_texte": self.ia_son.text().strip()}
+
+    def _son_niveau_change(self, *_a):
+        k = self.ia_son_niveau.currentData()
+        self.params["tampons_son"] = k
+        self.params.enregistrer()
+        self.ia_credit.montrer("fal" if k == "cloud" else None)
 
     def creer_ia(self):
         from . import tampons_ia as TI, traduction_recherche as TR
         r = self.reglages_ia()
         niveau = self.ia_niveau.currentData()
+        img, son = TI.separer_son(r["consigne"])             # 0.9.74 : la phrase d'image ne fait aucun son
+        if son:
+            r["consigne"] = img
+            r["son_texte"] = ", ".join(x for x in (r["son_texte"], son) if x)
+            self.ia_son.setText(r["son_texte"])
+            self.etat.setText(_("« {s} » décrit du son : retiré de la phrase d'image et passé à « Son décrit ».", s=son[:80]))
+        if r["son"] == "cloud":
+            from . import generateurs_video as GV
+            manque = [n for n, ok in (("fal.ai", GV.clef(self.params, "fal")),
+                                      ("Gemini", bool(self.params.get("clef_gemini")) or not r["phrase"])) if not ok]
+            if manque:
+                self.etat.setText(_("Son par l'IA cloud : il faut la clef {c} (Préférences › IA › Connecter une IA).", c=", ".join(manque)))
+                return
+            prix = TI.prix_son_cloud(r["phrase"], r["duree"])
+            if getattr(self, "_test_oui", None) is None and QMessageBox.question(
+                    self, _("Son du tampon"), _("Son par l'IA cloud : bruitages fabriqués d'après la vidéo (fal.ai) et phrase dite par "
+                                                "la voix Gemini, environ {p} $ (vos clefs). Continuer ?",
+                                                p=f"{max(prix, 0.01):.2f}".replace(".", ","))) != QMessageBox.Yes:
+                return
         if niveau == "cloud":
             from . import ia
             if not ia.confirmer_cout(self, self.params, 200, 1, _("Image du tampon « {n} »", n=r["nom"])):

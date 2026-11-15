@@ -244,6 +244,23 @@ def generer_fal(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, p
 
 def attendre_fal(cle, point, corps, sortie, progression=None, arret=lambda: False, attente=300.0):
     """Une demande à la file d'attente de fal.ai, suivie jusqu'au bout ; la vidéo rendue est téléchargée dans `sortie`."""
+    res = demande_fal(cle, point, corps, progression, arret, attente)
+    url = ((res.get("video") or {}).get("url")) or next((v.get("url") for v in (res.get("videos") or []) if isinstance(v, dict)), None)
+    if not url:
+        raise ErreurGenerateur(_("fal.ai n'a renvoyé aucune vidéo : {r}", r=str(res)[:200]))
+    telecharger(url, sortie)
+    progression and progression(1.0)
+    return sortie
+
+
+def telecharger(url, sortie):
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "PhilCut"}), timeout=600) as r2, open(sortie, "wb") as f:
+        f.write(r2.read())
+    return sortie
+
+
+def demande_fal(cle, point, corps, progression=None, arret=lambda: False, attente=300.0):
+    """Demande à la file d'attente de fal.ai suivie jusqu'au bout ; renvoie la réponse (JSON) du modèle."""
     point = point.strip("/")
     r = _http(f"{FAL_FILE}/{point}", cle, corps)
     statut_url = r.get("status_url") or f"{FAL_FILE}/{point}/requests/{r.get('request_id')}/status"
@@ -268,14 +285,7 @@ def attendre_fal(cle, point, corps, sortie, progression=None, arret=lambda: Fals
             raise ErreurGenerateur(_("fal.ai : génération refusée ou en échec ({e}).", e=st.get("error") or etat))
         if time.time() - debut > 1500:
             raise ErreurGenerateur(_("La génération met trop de temps ; réessayez plus tard."))
-    res = _http(reponse_url, cle)
-    url = ((res.get("video") or {}).get("url")) or next((v.get("url") for v in (res.get("videos") or []) if isinstance(v, dict)), None)
-    if not url:
-        raise ErreurGenerateur(_("fal.ai n'a renvoyé aucune vidéo : {r}", r=str(res)[:200]))
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "PhilCut"}), timeout=600) as r2, open(sortie, "wb") as f:
-        f.write(r2.read())
-    progression and progression(1.0)
-    return sortie
+    return _http(reponse_url, cle)
 
 
 FAL_REST = "https://rest.fal.ai"

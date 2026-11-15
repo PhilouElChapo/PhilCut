@@ -7,6 +7,7 @@ Mouvement et texte : dessinés ici (QPainter). Sons : bruitages fabriqués ici, 
 """
 import math
 import os
+import re
 import random
 import shutil
 import tempfile
@@ -49,6 +50,80 @@ MOUVEMENTS = {"zoom": _("Zoom avant doux"), "choc": _("Choc (secousse et zoom ra
 _FILTRES_VOIX = {"normale": "", "robot": "afreqshift=shift=-120,aecho=0.8:0.6:12:0.5,aphaser=type=t:speed=2",
                  "aigue": "asetrate=22050*1.35,aresample=48000,atempo=0.75", "grave": "asetrate=22050*0.78,aresample=48000,atempo=1.28",
                  "radio": "highpass=f=500,lowpass=f=3000,acrusher=bits=8:mix=0.25", "echo": "aecho=0.8:0.7:60|120:0.4|0.25"}
+
+
+# ------------------------------------------------------------------ 0.9.74 : son par l'IA cloud
+# Philippe : « le son de l'IA sur ce poste est une catastrophe ; on a mis tambour et cymbale, je n'ai pas du tout ce bruit-là ».
+# La phrase d'image ne fabrique aucun son : ce qui décrit le son en est retiré et va aux bruitages. Cloud : la phrase est
+# jouée par la voix Gemini (dans le style demandé), les bruitages sont fabriqués d'après la vidéo elle-même (MMAudio, fal.ai).
+NIVEAUX_SON = {"locale": _("Sur ce poste (gratuit)"), "cloud": _("IA cloud : voix Gemini, bruitages d'après la vidéo (fal.ai)")}
+MODELE_BRUITAGES = "fal-ai/mmaudio-v2"
+PRIX_BRUITAGES_S = 0.001
+_DEBUT_SON = re.compile(r"(?i)(?:^|[.;,]\s*|\s)(?:(?:et|and)\s+)?(?:the\s+|a\s+)?(?:en son|on the sound|in the sound|côté son|avec le son|on entend|on doit entendre|bruit(?:s|age|ages)? d[eu']|"
+                        r"son d[eu']|sons? de|sound of|we hear|with the sound|sound effects?:?)\b")
+DIRECTION_VOIX = {"normale": "Say clearly and lively", "robot": "Say like a cheerful robot, flat and metallic", "aigue":
+                  "Say in a tiny, high-pitched cartoon voice", "grave": "Say in a big, deep, booming voice",
+                  "radio": "Say like an announcer on a radio", "echo": "Say loudly like in a big hall"}
+
+
+def separer_son(consigne):
+    """(phrase d'image sans le son, description du son) : « … ambiance festive. En son une voix de commentateur… » →
+    l'image garde le début, le son prend la suite."""
+    m = _DEBUT_SON.search(consigne or "")
+    if not m:
+        return (consigne or "").strip(), ""
+    image_ = consigne[:m.start()].strip(" .,;")
+    son = consigne[m.start():].strip(" .,;")
+    son = re.sub(r"(?i)^(?:(?:et|and)\s+)?(?:the\s+)?(?:en son|côté son|avec le son|on the sound|in the sound|with the sound of|sound of)\s*[:,]?\s*", "", son).strip()
+    return image_, son
+
+
+def prix_son_cloud(phrase, duree):
+    from . import voix
+    return round((voix.prix_gemini(phrase) if (phrase or "").strip() else 0.0) + PRIX_BRUITAGES_S * max(1.0, float(duree)), 3)
+
+
+def _son_cloud(clip_muet, bruitages, son_texte, phrase, style, duree, dossier, params, av=lambda f, t="": None):
+    """Bande son par le cloud : bruitages fabriqués d'après la vidéo (fal.ai, MMAudio), phrase dite par Gemini ; mêlés."""
+    from . import bruitages as B, moteur, voix, generateurs_video as GV
+    from .traduction_recherche import phrase_en_anglais
+    pistes = []
+    k = GV.clef(params, "fal")
+    noms = [B.SONS[b][0] for b in bruitages if b in B.SONS]
+    description = ", ".join(x for x in noms + ([son_texte] if son_texte else []) if x)
+    if k and (description or not phrase.strip()):
+        av(0.82, _("Bruitages par l'IA cloud, d'après la vidéo…"))
+        en = (phrase_en_anglais(description)[0] or description) if description else "fitting cartoon sound effects"
+        url = GV.televerser(k, clip_muet)
+        res = GV.demande_fal(k, MODELE_BRUITAGES, {"video_url": url, "prompt": en + ", sound effects, no music, no speech",
+                                                   "negative_prompt": "music, speech, voice", "duration": int(round(duree)) or 1})
+        lien = ((res.get("audio") or {}).get("url")) or ((res.get("video") or {}).get("url"))
+        if not lien:
+            raise RuntimeError(_("fal.ai n'a renvoyé aucun son : {r}", r=str(res)[:200]))
+        brut = GV.telecharger(lien, os.path.join(dossier, "bruitages_cloud" + (".wav" if res.get("audio") else ".mp4")))
+        w = os.path.join(dossier, "bruitages_cloud_son.wav")
+        moteur.lancer(["-i", brut, "-vn", "-ac", "2", "-ar", "48000", w])
+        pistes.append((w, ""))
+    if phrase.strip():
+        av(0.88, _("Phrase dite par la voix Gemini…"))
+        w = os.path.join(dossier, "voix_gemini.wav")
+        voix.lire_gemini(f"{DIRECTION_VOIX.get(style, DIRECTION_VOIX['normale'])}: {phrase.strip()}", w, params)
+        fv = {"robot": _FILTRES_VOIX["robot"], "radio": _FILTRES_VOIX["radio"], "echo": _FILTRES_VOIX["echo"]}.get(style, "")
+        pistes.append((w, (fv + ",") if fv else ""))
+    sortie = os.path.join(dossier, "son.wav")
+    if not pistes:
+        moteur.lancer(["-f", "lavfi", "-i", f"anullsrc=r=48000:cl=stereo:d={duree}", sortie])
+        return sortie
+    entrees, filtres = [], []
+    for i, (w, fv) in enumerate(pistes):
+        entrees += ["-i", w]
+        decal = "adelay=350|350," if w.endswith("voix_gemini.wav") else ""
+        vol = "1.5" if w.endswith("voix_gemini.wav") else "0.9"
+        filtres.append(f"[{i}:a]{fv}aresample=48000,{decal}volume={vol}[a{i}]")
+    mix = ";".join(filtres) + ";" + "".join(f"[a{i}]" for i in range(len(pistes))) + \
+        f"amix=inputs={len(pistes)}:normalize=0,atrim=0:{duree},apad=whole_dur={duree}"
+    moteur.lancer(entrees + ["-filter_complex", mix, "-ac", "2", "-ar", "48000", sortie])
+    return sortie
 
 
 def image(consigne, chemin, L, H, params, niveau="locale", progression=None, arret=lambda: False):
@@ -172,8 +247,14 @@ def creer(params, reglages, L=1280, H=720, niveau="locale", progression=None, ar
                     progression=lambda f, *_a: av(0.02 + 0.6 * f, _("Dessin de l'image par l'IA : {p} %", p=int(f * 100))), arret=arret)
         av(0.65, _("Animation et texte…"))
         motif, _n = _images(img, reglages.get("texte") or "", reglages.get("mouvement") or "zoom", duree, L, H, d)
-        av(0.8, _("Bruitages et voix…"))
-        son = _son(reglages.get("bruitages") or [], reglages.get("phrase") or "", reglages.get("voix") or "normale", duree, d, params)
+        if reglages.get("son") == "cloud":
+            muet = os.path.join(d, "muet.mp4")
+            moteur.lancer(["-framerate", "30", "-i", motif, "-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-pix_fmt", "yuv420p", muet])
+            son = _son_cloud(muet, reglages.get("bruitages") or [], reglages.get("son_texte") or "", reglages.get("phrase") or "",
+                             reglages.get("voix") or "normale", duree, d, params, av)
+        else:
+            av(0.8, _("Bruitages et voix…"))
+            son = _son(reglages.get("bruitages") or [], reglages.get("phrase") or "", reglages.get("voix") or "normale", duree, d, params)
         av(0.9, _("Assemblage du clip…"))
         clip = os.path.join(d, "tampon.mp4")
         moteur.lancer(["-framerate", "30", "-i", motif, "-i", son, "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p",

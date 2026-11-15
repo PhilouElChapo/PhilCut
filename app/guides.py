@@ -269,6 +269,36 @@ def _guides_integres():
                          "télécharge tout seul ; « Plus de résultats » si besoin). Gardez tout le morceau ou seulement un passage.")},
              {"texte": _("Relisez la consigne anglaise en bas, puis « Créer la musique ».")},
          ]},
+        {"id": "voix_retouches", "etat": "partiel",
+         "titre": _("Retoucher une voix (studio, narration, plus grave ou plus aiguë) et l'entendre"),
+         "mots": "voix retouche studio narration diction grave aigu timbre feminine masculine changer transformer ecouter "
+                 "ameliorer radio echo appliquer rush plans",
+         "intro": _("Les retouches se posent sur le plan et se rendent à l'export ; « Ecouter » fait entendre 15 s avec elles, à "
+                    "partir de la ligne rouge. Un seul traitement complet à la fois (studio, narration…) : en cocher un remplace "
+                    "l'autre ; les petites retouches (plus grave, plus chaude, « s » qui sifflent…) s'ajoutent. Transformer une "
+                    "voix en voix d'homme ou de femme viendra dans une prochaine version."),
+         "etapes": [
+             {"texte": _("Cliquez le plan de la voix dans la timeline (piste Voix, ou un rush avec du son)."), "fait": "plan_choisi"},
+             {"texte": _("Inspecteur (volet de droite), groupe « Voix et son » : cochez les retouches voulues.")},
+             {"texte": _("« ▶ Ecouter avec ces retouches » : 15 s jouées depuis la ligne rouge ; second clic pour arrêter. Depuis le "
+                         "bouton « Voix et son » de la barre, choisir une retouche la fait entendre aussitôt.")},
+             {"texte": _("« Appliquer à… » : les mêmes retouches sur les plans sélectionnés, toute la piste, ou tous les plans du "
+                         "même rush (Ctrl+Z pour revenir).")},
+         ]},
+        {"id": "tampons_son", "etat": "ok",
+         "titre": _("Créer un tampon IA avec un vrai son (voix, tambour, cymbales…)"),
+         "mots": "tampon ia son bruitage bruit tambour cymbale voix commentateur gemini cloud victoire animation",
+         "intro": _("La phrase d'image ne fait aucun son : le son se décrit à part. « Son : IA cloud » fabrique les bruitages "
+                    "d'après la vidéo du tampon (fal.ai, environ 0,001 $ la seconde) et fait dire la phrase par la voix Gemini, "
+                    "dans le style choisi. Sur ce poste, gratuit, les sons sont plus simples."),
+         "etapes": [
+             {"texte": _("Menu Montage › « Tampons vidéo… », onglet « Tampons IA » ; choisissez un modèle.")},
+             {"texte": _("« Phrase dite » : les mots dits à voix haute (« Victoire ! »). « Son décrit » : les bruitages (« roulement "
+                         "de tambour, quelques cymbales »). Ecrit dans la phrase d'image, le son y est retiré et passé à « Son décrit ».")},
+             {"texte": _("« Son » : « IA cloud : voix Gemini, bruitages d'après la vidéo » ; le prix est demandé, le crédit fal.ai "
+                         "restant s'affiche.")},
+             {"texte": _("« Créer ce tampon » : il rejoint « Ma bibliothèque » ; « ▶ Écouter » pour l'entendre.")},
+         ]},
         {"id": "voix_musique", "etat": "ok",
          "titre": _("Retirer la voix d'une musique (garder la musique)"),
          "mots": "retirer enlever voix chant musique instrumental karaoke separer bruit vent ambiance isoler",
