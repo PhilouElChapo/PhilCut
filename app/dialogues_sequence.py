@@ -387,14 +387,14 @@ class DialogueSequence(QDialog):
             self.etat.setText(_("Cliquez d'abord sur la ligne du personnage."))
             return
         p = self.seq["personnages"][r]
-        if not [i for i in p.get("images") or [] if os.path.exists(i)]:
-            self.etat.setText(_("Ajoutez d'abord une image du personnage (« Images du personnage… »)."))
+        if not [i for i in p.get("images") or [] if os.path.exists(i)] and not (p.get("description") or "").strip():
+            self.etat.setText(_("Ajoutez d'abord une image du personnage, ou décrivez-le (personnage inventé)."))
             return
         if not self.params.get("clef_gemini"):
             self.etat.setText(_("La fiche se compose avec Gemini : Préférences › IA › Connecter une IA."))
             return
         if QMessageBox.question(self, _("Fiche personnage"), _("Composer la planche de « {n} » (face, trois quarts, profil, en pied) "
-                                "avec Gemini, d'après ses images (votre clef, 0,04 $ environ) ?", n=p.get("nom") or "?")) != QMessageBox.Yes:
+                                "avec Gemini, d'après ses images ou sa description (votre clef, 0,04 $ environ) ?", n=p.get("nom") or "?")) != QMessageBox.Yes:
             return
         seq = copy.deepcopy(self.seq)
         t = Tache(lambda tache: Q.planche_personnage(seq, seq["personnages"][r], self.params), _("Fiche personnage"))
@@ -881,6 +881,12 @@ class DialogueSequence(QDialog):
                 return anc
         except RuntimeError:
             pass
+        grp = Q.groupes_suspects(self.seq)
+        if grp and getattr(self, "_test_oui", None) is None and QMessageBox.question(self, _("Séquence IA"), _(
+                "« {n} » semble désigner plusieurs personnes. Le moteur garde un visage par personnage : créez un personnage par "
+                "personne (même photo pour les deux, et dans la description : « à gauche, cheveux longs bruns, manteau noir… »), "
+                "puis une fiche pour chacune. Continuer quand même ?", n=", ".join(grp))) != QMessageBox.Yes:
+            return None
         from . import dialogues_images_plans as DI
         self._revue = DI.ouvrir(self, self.seq, self.params, indices, self.ed)
         self._revue.finished.connect(lambda _r: (self._remplir_plans(), self._maj_prix()))

@@ -47,7 +47,7 @@ def plan(action="", personnages=None, lieu_="", duree=DUREE_PLAN, repliques=None
 _SEPARATEURS = r"(?:[.;!?\n]+|\bpuis\b|\bensuite\b|\bet enfin\b|\bthen\b)"
 
 
-_ENCHAINEMENTS = re.compile(r"\s*(?:,\s*)?\b(?:puis|ensuite|avant de|après avoir|et enfin|pour s'|pour se)\b\s*|"
+_ENCHAINEMENTS = re.compile(r"\s*(?:,\s*)?\b(?:puis|ensuite|avant de|après avoir|et enfin|pour s'|pour se|pour que|afin que|pendant que)\b\s*|"
                             r"\s+et\s+(?=(?:s'|se |l'|lui |y |en )?(?!(?:le|la|les|un|une|des|du|de|son|sa|ses|mon|ma|leur|leurs|ce|cette)\b)"
                             r"\w{3,}(?:e|ent|it|ait)\b)", re.I)
 
@@ -283,7 +283,8 @@ def enregistrer(seq):
 def images_du_plan(seq, pl):
     """Images de référence utiles au plan : celles des personnages présents, puis celles du lieu (au plus 4)."""
     out = []
-    for n in pl.get("personnages") or []:
+    noms = [n for n in pl.get("personnages") or [] if n.strip()] or [x["nom"] for x in seq["personnages"]]
+    for n in noms:
         p = next((x for x in seq["personnages"] if x["nom"].lower() == n.lower()), None)
         out += [i for i in (p or {}).get("images") or [] if os.path.exists(i)]
     li = next((x for x in seq["lieux"] if x["nom"].lower() == (pl.get("lieu") or "").lower()), None)
@@ -317,7 +318,8 @@ def image_depart(seq, i, params, moteur_image="gemini", precision=""):
 
 
 # ------------------------------------------------------------------ 0.9.72 : personnage fidèle d'un plan à l'autre
-CONSIGNE_PLANCHE = ("Character model sheet of EXACTLY the same person as in the reference images: same face, same hairstyle, same "
+CONSIGNE_PLANCHE = ("If the reference photo shows several people, draw ONLY the one person matching the description below, never "
+                    "the others. Character model sheet of EXACTLY that same person as in the reference images: same face, same hairstyle, same "
                     "body, same outfit. Four views side by side on a plain light grey background: front view, three-quarter view, "
                     "side profile, full body standing. Even soft studio light, photorealistic, sharp, no text, no labels. {d}")
 
@@ -327,10 +329,15 @@ def planche_personnage(seq, p, params):
     se contrôle bien mieux qu'une vidéo : c'est elle que le moteur « Référence » garde ensuite à l'identique."""
     from . import ia
     refs = [i for i in p.get("images") or [] if os.path.exists(i)]
-    if not refs:
-        raise ValueError(_("Ajoutez d'abord une image du personnage « {n} ».", n=p.get("nom") or "?"))
     d = _anglais((p.get("description") or "").strip(), True)
-    png = ia.generer_image_refs(params, CONSIGNE_PLANCHE.format(d=("Description: " + d) if d else ""), refs)
+    if not refs and not d:
+        raise ValueError(_("Ajoutez d'abord une image ou une description du personnage « {n} ».", n=p.get("nom") or "?"))
+    if refs:
+        png = ia.generer_image_refs(params, CONSIGNE_PLANCHE.format(d=("Description: " + d) if d else ""), refs)
+    else:                                   # 0.9.77 : personnage inventé (le chauffeur) : sa fiche le fixe pour tous les plans
+        png = ia.generer_image(params, "Character model sheet of an INVENTED person (not a real or famous person): " + d +
+                               ". Four views side by side on a plain light grey background: front view, three-quarter view, side "
+                               "profile, full body standing. Even soft studio light, photorealistic, sharp, no text, no labels.")
     sortie = os.path.join(dossier(seq), "planche_" + re.sub(r"[^\w-]+", "_", p.get("nom") or "perso")[:30] + ".png")
     with open(sortie, "wb") as f:
         f.write(png)
@@ -338,11 +345,20 @@ def planche_personnage(seq, p, params):
     return sortie
 
 
+_GROUPE = re.compile(r"(?i)\b(?:les deux|les trois|deux|trois|couple|groupe|elles|ils|both|two|three|group|everyone)\b")
+
+
+def groupes_suspects(seq):
+    """Personnages qui semblent être plusieurs personnes (« Les deux ») : un élément du moteur = une seule personne,
+    sinon les visages se mélangent."""
+    return [p["nom"] for p in seq["personnages"] if _GROUPE.search(p.get("nom") or "")]
+
+
 def sans_planche(seq, indices):
     """Personnages présents dans ces plans, avec des images, mais sans planche encore."""
-    noms = {n.lower() for i in indices for n in seq["plans"][i].get("personnages") or []}
+    noms = {n.lower() for i in indices for n in (seq["plans"][i].get("personnages") or [x["nom"] for x in seq["personnages"]])}
     return [p for p in seq["personnages"] if p["nom"].lower() in noms and not (p.get("planche") and os.path.exists(p["planche"]))
-            and [x for x in p.get("images") or [] if os.path.exists(x)]]
+            and ([x for x in p.get("images") or [] if os.path.exists(x)] or (p.get("description") or "").strip())]
 
 
 def planches_manquantes(seq, pl, params, moteur_video):
@@ -360,8 +376,9 @@ def planches_manquantes(seq, pl, params, moteur_video):
 def references_du_plan(seq, pl):
     """[(« Character A », [planche, images…])] des personnages du plan, pour les moteurs « Référence »."""
     out = []
+    noms = [n.lower() for n in pl.get("personnages") or [] if n.strip()]
     for k, p in enumerate(seq["personnages"]):
-        if p["nom"].lower() not in [n.lower() for n in pl.get("personnages") or []]:
+        if noms and p["nom"].lower() not in noms:     # 0.9.77 : champ vide = tous les personnages (avant : aucun, visages perdus)
             continue
         imgs = ([p["planche"]] if p.get("planche") and os.path.exists(p["planche"]) else []) + \
                [i for i in p.get("images") or [] if os.path.exists(i)]
@@ -383,7 +400,10 @@ def depart_enchaine(seq, i):
     """Image de départ du plan i prise à la fin du plan i-1 déjà fabriqué, si l'enchaînement est demandé (par défaut)."""
     if i <= 0 or not seq["plans"][i].get("enchainer", True):
         return ""
-    f = seq["plans"][i - 1].get("fichier")
+    av = seq["plans"][i - 1]
+    if av.get("image_fin") and os.path.exists(av["image_fin"]) and not av.get("sans_fin") and seq.get("ancrer_visages", True):
+        return av["image_fin"]            # 0.9.77 : image propre, visages d'après la fiche ; la vidéo y est arrivée
+    f = av.get("fichier")
     if not (f and os.path.exists(f)):
         return ""
     return derniere_image(f, os.path.join(dossier(seq), f"plan{i + 1:02d}_depart_enchaine.png"))
@@ -394,13 +414,15 @@ def image_arrivee(seq, i, params, depart=None, precision=""):
     références. Le moteur doit la rejoindre : il ne peut plus faire traverser la table ni changer de visage en route."""
     from . import ia
     pl = seq["plans"][i]
-    refs = ([depart] if depart and os.path.exists(depart) else []) + [x for _n, im in references_du_plan(seq, pl) for x in im[:1]]
+    fiches = [x for _n, im in references_du_plan(seq, pl) for x in im[:1]]
+    refs = fiches[:3] + ([depart] if depart and os.path.exists(depart) else [])
     refs += [x for x in images_du_plan(seq, pl) if x not in refs]
     action = consigne(seq, pl, params)
     png = (ia.generer_image_refs if refs else lambda prm, c, r=None: ia.generer_image(prm, c))(
-        params, "LAST frame of this video shot, when the action is completely finished (final pose, physically plausible). Same "
-                "people, same face, same clothes, same place and same light as in the reference images (the first one is the "
-                "first frame of the shot). One photorealistic still image, no text. " + action +
+        params, "LAST frame of this video shot, when the action is completely finished (final pose, physically plausible). The "
+                "first reference images are the character sheets: every face, hairstyle and outfit must match them exactly. The next "
+                "image is the first frame of the shot: same place, light and positions, but if a face there differs from its sheet, "
+                "follow the sheet. One photorealistic still image, no text. " + action +
         ((" Precisely, at the end: " + _anglais(precision, True)) if precision else ""), refs[:4])
     sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_arrivee_{int(time.time() * 1000) % 10 ** 9}.png")
     with open(sortie, "wb") as f:
@@ -418,10 +440,10 @@ def depart_prevu(seq, i):
         return pl["image"]
     if i > 0 and pl.get("enchainer", True):
         av = seq["plans"][i - 1]
+        if av.get("image_fin") and os.path.exists(av["image_fin"]) and not av.get("sans_fin") and seq.get("ancrer_visages", True):
+            return av["image_fin"]
         if av.get("fichier") and os.path.exists(av["fichier"]):
             return depart_enchaine(seq, i)
-        if av.get("image_fin") and os.path.exists(av["image_fin"]):
-            return av["image_fin"]
     return ""
 
 

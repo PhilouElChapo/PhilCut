@@ -29,8 +29,11 @@ class CaseGuide(QFrame):
 
     def mouseReleaseEvent(self, e):
         if e.button() == Qt.LeftButton and self.rect().contains(e.position().toPoint()):
-            self.action()
-        super().mouseReleaseEvent(e)
+            self.action()                 # peut refaire la liste : cette case n'existe alors plus (journal du 15/11)
+        try:
+            super().mouseReleaseEvent(e)
+        except RuntimeError:
+            pass
 
 
 class DialogueGuides(QDialog):

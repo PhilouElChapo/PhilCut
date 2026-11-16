@@ -4,7 +4,17 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.76 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.77 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.77 (visages gardes sur toute l'histoire)
+- Sequence IA : un plan enchaine demarre sur l'image d'arrivee validee du plan precedent (propre, visages d'apres la fiche) et non plus sur la derniere image de sa video, ou les visages avaient deja derive : la derive ne s'accumule plus de plan en plan.
+- Image d'arrivee : les fiches des personnages passent en premier ; un visage qui a derive dans l'image de depart est corrige d'apres la fiche.
+- Fiche personnage d'apres une photo de groupe : Gemini ne dessine que la personne decrite (ex. : "a gauche, cheveux longs bruns, manteau noir"). Un personnage nomme comme un groupe ("Les deux") est signale : une fiche = une personne.
+- Personnage invente sans photo (le chauffeur) : sa fiche est dessinee d'apres sa description et le garde identique d'un plan a l'autre.
+- Un plan dont le champ "Personnages" est vide recoit maintenant TOUS les personnages de l'histoire (avant : aucun, et le moteur inventait les visages).
+- "pour que", "afin que", "pendant que" sont reconnus comme deux actions dans un plan (avertissement et "Couper en deux plans").
+- Journal : le clic dans le guide qui provoquait une erreur ("CaseGuide already deleted") est corrige.
+
 
 ### 0.9.76 (prolonger un rush par l'IA, en une fois)
 - "Prolonger ce plan" › "Prolonge par l'IA cloud, fidele" : une PHOTO etait prolongee en image fixe (zoom lent) au lieu d'etre animee : corrige, la photo est le point de depart de la video.

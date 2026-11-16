@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T88 — 0.9.76 et 0.9.77 : prolonger en une fois, visages gardés
+
+1. Photo des deux femmes posée dans le film : clic droit › « Prolonger ce plan… » › « Prolongé par l'IA cloud, fidèle », durée 25 s, « Suite » : toute l'histoire avec « puis » ; la fenêtre liste les étapes et le prix ; « Fabriquer » : la photo s'anime (plus d'image figée) et les étapes s'enchaînent seules.
+2. Séquence IA : trois personnages (femme brune, femme cheveux courts, chauffeur sans photo mais décrit) ; « Fiche personnage… » pour chacun : une seule personne par planche, chauffeur inventé.
+3. Un personnage nommé « Les deux » : avertissement à l'ouverture d'« Images des plans… ».
+4. Plan avec « pour que » : ⚠ et « Couper en deux plans ».
+5. Fabriquer 3 plans enchaînés : les visages restent-ils ceux des fiches jusqu'au dernier plan ?
+6. Une bulle d'aide longue (survol de « Image d'arrivée et fiche personnage ») passe à la ligne.
+
 ## T87 — 0.9.75 : transformer une voix, élément qui suit, fond
 
 1. Un plan avec ta voix : Inspecteur › « Voix et son » › « Transformer la voix… ». « Plus féminine », « ▶ Ecouter » ; puis régler hauteur et timbre à la main ; « Appliquer au plan » ; exporter 10 s : la voix est transformée. « Retirer ».

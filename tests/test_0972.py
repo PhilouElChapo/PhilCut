@@ -91,8 +91,8 @@ class TestSequenceFidele(unittest.TestCase):
         self.assertEqual(refs[0][0], "Character A")
         self.assertEqual(refs[0][1][0], s["personnages"][0]["planche"])      # la planche passe en image de face
         self.assertTrue(appels[0][2])                                        # image d'arrivée composée
-        self.assertIn("depart_enchaine", appels[1][0])                       # plan 2 : dernière image du plan 1
-        self.assertTrue(any(c.startswith("Character model sheet") for c in images_ia))
+        self.assertIn("plan01_arrivee", appels[1][0])                        # 0.9.77 : plan 2 part de l'arrivée du plan 1
+        self.assertTrue(any(c.startswith("If the reference photo") for c in images_ia))
         s2 = Q.nouvelle()
         s2["plans"] = [Q.plan("a", [], "", 5)]
         self.assertGreater(Q.prix_total(s2, "kling-o3-ref", params), Q.prix_total(dict(s2, image_fin_auto=False), "kling-o3-ref", params))
