@@ -59,6 +59,7 @@ class DialogueProlonger(QDialog):
         self.credit = LigneCredit(ed.params, None)
         f.addRow("", self.credit)
         self.duree.valueChanged.connect(lambda _v: self._methode_changee())
+        self.suite.textChanged.connect(lambda: self._methode_changee())
         self.son = QComboBox()
         for k, lib in PR.SONS.items():
             self.son.addItem(lib, k)
@@ -90,25 +91,40 @@ class DialogueProlonger(QDialog):
 
     def _methode_changee(self, *_a):
         cloud = self.methode.currentData() == "cloud"
-        self.duree.setMaximum(15.0 if cloud else 6.0)
+        self.duree.setMaximum(60.0 if cloud else 6.0)
         self.suite.setVisible(cloud)
         self.lbl_suite.setVisible(cloud)
         self.prix.setVisible(cloud)
         if hasattr(self, "credit") and (self.credit.fournisseur == "fal") != cloud:
             self.credit.montrer("fal" if cloud else None)
         if cloud:
-            self.prix.setText(_("Environ {p} $ (votre clef fal.ai), demandé avant l'envoi. Une suite plus longue : refaites "
-                                "« Prolonger » sur le morceau posé, il repart de sa dernière image.",
-                                p=f"{PR.prix_cloud(self.duree.value(), self.ed.params):.2f}".replace(".", ",")))
+            et = self._etapes()
+            lignes = "".join(f"<br>{k + 1}. {fr} ({str(dk).replace('.', ',')} s)" for k, (_en, dk, fr) in enumerate(et))
+            self.prix.setText(_("PhilCut fera {n} étape(s), une action chacune, enchaînées seules (chaque étape part de la dernière image "
+                                "de la précédente) :", n=len(et)) + lignes + "<br>" +
+                              _("En tout {d} s, environ {p} $ (votre clef fal.ai), demandé avant l'envoi. Décrivez toute la suite "
+                                "d'un coup, avec « puis » entre les actions.", d=str(round(sum(x[1] for x in et), 1)).replace(".", ","),
+                                p=f"{PR.prix_etapes(et, self.ed.params):.2f}".replace(".", ",")))
+
+    def _etapes(self):
+        src = getattr(self.suite, "source", None)
+        return PR.etapes_suite(self.suite.toPlainText(), self.duree.value(), src.toPlainText() if src is not None else "")
 
     def fabriquer(self):
         p = self.ed.projet
+        etapes = None
         if self.methode.currentData() == "cloud":
             from PySide6.QtWidgets import QMessageBox
-            prix = f"{PR.prix_cloud(self.duree.value(), self.ed.params):.2f}".replace(".", ",")
+            etapes = self._etapes()
+            prix = f"{PR.prix_etapes(etapes, self.ed.params):.2f}".replace(".", ",")
+            photo = (p.media(self.clip["media"]) or {}).get("genre") == "image"
             if getattr(self, "_test_confirmer", None) is None and QMessageBox.question(
-                    self, _("Prolonger ce plan"), _("Envoyer trois images du plan et la consigne à fal.ai (Kling O3) pour environ "
-                                                     "{p} $ sur votre compte ?", p=prix)) != QMessageBox.Yes:
+                    self, _("Prolonger ce plan"),
+                    (_("Envoyer la photo (point de départ et modèle des personnes) et la consigne à fal.ai (Kling O3) pour {n} étape(s), "
+                       "environ {p} $ sur votre compte ?", n=len(etapes), p=prix) if photo else
+                     _("Envoyer à fal.ai (Kling O3) la dernière image du plan (point de départ) et deux autres images du plan (le "
+                       "début et le milieu, pour que le moteur connaisse les personnes sous plusieurs angles), avec la consigne : {n} "
+                       "étape(s), environ {p} $ sur votre compte ?", n=len(etapes), p=prix))) != QMessageBox.Yes:
                 return
         media = p.media(self.clip["media"])
         if not media or not os.path.exists(media.get("chemin", "")):
@@ -116,7 +132,7 @@ class DialogueProlonger(QDialog):
             return
         args = dict(media=media, clip=dict(self.clip), duree=self.duree.value(), methode=self.methode.currentData(), cote=self.cote.currentData(),
                     son=self.son.currentData(), taille=p.taille, cadence=p.cadence, params=self.ed.params,
-                    suite=self.suite.toPlainText() if self.methode.currentData() == "cloud" else "")
+                    suite=self.suite.toPlainText() if self.methode.currentData() == "cloud" else "", etapes=etapes)
         self.b_fabriquer.setEnabled(False)
         self.b_poser.setEnabled(False)
         self.apercu.arreter()

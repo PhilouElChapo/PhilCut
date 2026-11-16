@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.75 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.76 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.76 (prolonger un rush par l'IA, en une fois)
+- "Prolonger ce plan" › "Prolonge par l'IA cloud, fidele" : une PHOTO etait prolongee en image fixe (zoom lent) au lieu d'etre animee : corrige, la photo est le point de depart de la video.
+- Toute la suite se decrit d'un coup ("elles descendent les marches, puis vont vers la limousine, puis le chauffeur les aide a monter, puis la limousine demarre") : PhilCut en fait des etapes d'une seule action (une indication de camera reste avec son action), les montre avec leur duree et le prix total, puis les fabrique a la chaine, chaque etape partant de la derniere image de la precedente, et montre le tout avant de le poser. Duree jusqu'a 60 s.
+- La confirmation dit ce qui part : la derniere image du plan (point de depart) et deux images de repere (debut et milieu) pour que le moteur connaisse les personnes ; pour une photo, la photo seule.
+- "Recharger..." ouvre directement la page des credits de fal.ai.
+- Bulles d'aide longues : elles passent a la ligne au lieu d'etre coupees par le bord de l'ecran. Prix de la Sequence IA avec une virgule.
+
 
 ### 0.9.75 (transformer une voix, guides)
 - "Transformer la voix..." (Inspecteur, groupe Voix et son ; bouton Voix et son de la barre) : sur ce poste, gratuit, hauteur et timbre (formants) reglables, prereglages "Plus masculine", "Plus feminine", "Voix d'enfant", "Narrateur pose", "Grosse voix", "Petite voix" ; on ecoute avant d'appliquer, la transformation se rend a l'export et se retire. Par l'IA cloud (fal.ai, 0,30 $ la minute, prix demande) : la voix du plan est redite par une voix toute faite (femme ou homme) avec les memes intonations, bruit de fond retire au choix ; ecoutee avant d'etre posee sur la piste Voix (son d'origine coupe, un Annuler). Seulement sa voix ou celle d'une personne d'accord (case obligatoire).

@@ -7,6 +7,7 @@ Le son : l'ambiance de la fin du plan est prolongée (aller-retour, fondu), ou d
 fichier, posé juste après le plan (ou avant), la suite décalée ; Ctrl+Z l'enlève.
 """
 import os
+import re
 import tempfile
 
 from . import moteur
@@ -22,6 +23,47 @@ def prix_cloud(duree, params=None):
     from . import generateurs_video as GV
     m = GV.modele(MODELE_CLOUD, params) or {"prix_s": 0.084, "durees": list(range(3, 16))}
     return GV.prix(m, max(3, int(-(-float(duree) // 1))))
+
+
+_COUPURES_EN = re.compile(r"\s*(?:;|\.\s+|,?\s+(?:and\s+)?then\s+|,?\s+after that,?\s+|,?\s+finally,?\s+)\s*", re.I)
+_COUPURES_FR = re.compile(r"\s*(?:;|\.\s+|,?\s+(?:et\s+)?puis\s+|,?\s+ensuite,?\s+|,?\s+enfin,?\s+)\s*", re.I)
+
+
+def etapes_suite(texte_en, duree_totale, source=""):
+    """0.9.76 : une suite décrite d'un coup (« elles descendent l'escalier puis… puis… ») devient des étapes d'une seule action,
+    fabriquées à la chaîne, chacune partant de la dernière image de la précédente. Renvoie [(anglais, durée, français)]."""
+    morceaux = _fusionner([m.strip(" .,;") for m in _COUPURES_EN.split(texte_en or "") if m and len(m.strip(" .,;")) > 3])
+    fr = _fusionner([m.strip(" .,;") for m in _COUPURES_FR.split(source or "") if m and len(m.strip(" .,;")) > 3])
+    if not morceaux:
+        morceaux = [(texte_en or "").strip() or "The same scene continues naturally"]
+    if len(fr) != len(morceaux):
+        fr = morceaux
+    n = len(morceaux)
+    duree_totale = max(3.0 * n, float(duree_totale))
+    d = min(15.0, duree_totale / n)
+    return [(m, round(d, 1), f) for m, f in zip(morceaux, fr)]
+
+
+_CAMERA = re.compile(r"(?i)^(?:the\s+)?(?:camera|shot|la\s+cam[ée]ra|le\s+plan|cam[ée]ra)\b")
+_LIAISON = re.compile(r"(?i)^(?:then|and then|after that|finally|puis|ensuite|enfin|et puis)\s*,?\s+")
+
+
+def _fusionner(morceaux):
+    """Une indication de caméra (« la caméra recule… ») reste avec l'action qui précède ; les mots de liaison de tête partent."""
+    out = []
+    for m in morceaux:
+        m = _LIAISON.sub("", m).strip()
+        if not m:
+            continue
+        if out and _CAMERA.match(m):
+            out[-1] = out[-1] + "; " + m
+        else:
+            out.append(m[:1].upper() + m[1:])
+    return out
+
+
+def prix_etapes(etapes, params=None):
+    return round(sum(prix_cloud(d, params) for _t, d, _f in etapes), 2)
 
 
 def images_reperes(chemin, debut, fin, dossier, n=3):
@@ -64,7 +106,7 @@ def _son(chemin, t_ref, duree, sortie, cote="fin", genre="ambiance", a_son=True)
 
 
 def fabriquer(media, clip, duree, methode="tenue", cote="fin", son="ambiance", taille=(1920, 1080), cadence=30, params=None,
-              sortie=None, progression=None, arret=lambda: False, suite=""):
+              sortie=None, progression=None, arret=lambda: False, suite="", etapes=None):
     """Fabrique le morceau ajouté (MP4 avec son) ; renvoie son chemin."""
     chemin = media["chemin"]
     fiche = media.get("fiche") or moteur.sonder(chemin)
@@ -87,7 +129,7 @@ def fabriquer(media, clip, duree, methode="tenue", cote="fin", son="ambiance", t
         _image(chemin, t_ref, image)
     cadre = f"scale={L}:{H}:force_original_aspect_ratio=increase,crop={L}:{H},setsar=1"
     n = max(2, int(round(duree * cadence)))
-    if methode == "tenue" or media.get("genre") == "image":
+    if methode == "tenue" or (media.get("genre") == "image" and methode not in ("cloud", "ia")):
         av(0.3, _("Image tenue…"))
         z = "1+0.04*on/{n}".format(n=n) if cote == "fin" else "1.04-0.04*on/{n}".format(n=n)
         vf = (f"scale={L * 2}:{H * 2}:force_original_aspect_ratio=increase,crop={L * 2}:{H * 2},"
@@ -109,19 +151,41 @@ def fabriquer(media, clip, duree, methode="tenue", cote="fin", son="ambiance", t
         from . import generateurs_video as GV
         av(0.05, _("Envoi des images du plan…"))
         reperes = images_reperes(chemin, float(clip["src_debut"]), float(clip["src_fin"]), d) if media.get("genre") != "image" else [image]
-        texte = (suite or "").strip() or "The same scene continues naturally"
-        texte += (". Exactly the same people, faces, clothes, objects, place, light and camera style as in the reference images. "
-                  "One simple natural action, physically plausible, no text.")
-        brut = os.path.join(d, "cloud.mp4")
         L0, H0 = taille
-        GV.generer(params, MODELE_CLOUD, texte, brut, max(3, int(-(-duree // 1))), "9:16" if H0 > L0 else "16:9",
-                   image if cote == "fin" else None, lambda f: av(0.1 + 0.8 * f, _("L'IA cloud fabrique la suite…")), arret,
-                   references=[("the main subject", reperes)], image_fin=image if cote == "debut" else None)
+        fmt = "9:16" if H0 > L0 else "16:9"
+        etapes = etapes or [((suite or "").strip() or "The same scene continues naturally", duree, "")]
+        if cote != "fin":
+            etapes = etapes[-1:]
+        bruts, depart = [], image
+        for k, (texte, dk, _fr) in enumerate(etapes):
+            texte = texte.rstrip(". ") + (". Exactly the same people, faces, clothes, objects, place, light and camera style as in the "
+                                          "reference images. One simple natural action, physically plausible, no text.")
+            brut = os.path.join(d, f"cloud{k}.mp4")
+            a, b = 0.05 + 0.85 * k / len(etapes), 0.05 + 0.85 * (k + 1) / len(etapes)
+            GV.generer(params, MODELE_CLOUD, texte, brut, max(3, int(-(-dk // 1))), fmt,
+                       depart if cote == "fin" else None,
+                       lambda f, a=a, b=b, k=k: av(a + (b - a) * f, _("L'IA cloud fabrique l'étape {k} sur {n}…", k=k + 1, n=len(etapes))),
+                       arret, references=[("the main subject", reperes)], image_fin=image if cote == "debut" else None)
+            bruts.append((brut, dk))
+            if k < len(etapes) - 1:                         # l'étape suivante part de la dernière image exacte de celle-ci
+                depart = os.path.join(d, f"fin{k}.png")
+                moteur.lancer(["-y", "-sseof", "-1", "-i", brut, "-update", "1", "-q:v", "2", depart])
         av(0.92, _("Mise au format du film…"))
-        deb = 0.0 if cote == "fin" else max(0.0, float((moteur.sonder(brut) or {}).get("duree") or duree) - duree)
-        moteur.lancer(["-y", "-ss", f"{deb:.3f}", "-i", brut, "-i", wav, "-map", "0:v", "-map", "1:a", "-vf", f"{cadre},fps={cadence}",
-                       "-t", f"{duree:.3f}", "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-c:a", "aac",
-                       "-b:a", "192k", "-movflags", "+faststart", sortie])
+        listes = []
+        for k, (brut, dk) in enumerate(bruts):
+            part = os.path.join(d, f"part{k}.mp4")
+            deb = 0.0 if cote == "fin" else max(0.0, float((moteur.sonder(brut) or {}).get("duree") or dk) - dk)
+            moteur.lancer(["-y", "-ss", f"{deb:.3f}", "-i", brut, "-an", "-vf", f"{cadre},fps={cadence}", "-t", f"{dk:.3f}",
+                           "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", part])
+            listes.append(part)
+        liste = os.path.join(d, "liste.txt")
+        with open(liste, "w", encoding="utf-8") as f:
+            f.write("".join(f"file '{x}'\n" for x in listes))
+        total = sum(dk for _b, dk in bruts)
+        if total > duree + 0.05:                            # plusieurs étapes : le son suit la durée totale
+            wav = _son(chemin, float(clip["src_fin"]) if cote == "fin" else t_ref, total, os.path.join(d, "son_total.wav"), cote, son, a_son)
+        moteur.lancer(["-y", "-f", "concat", "-safe", "0", "-i", liste, "-i", wav, "-map", "0:v", "-map", "1:a", "-c:v", "copy",
+                       "-c:a", "aac", "-b:a", "192k", "-t", f"{total:.3f}", "-movflags", "+faststart", sortie])
     else:
         from . import creatif as C
         av(0.1, _("L'IA invente la suite de la scène…"))

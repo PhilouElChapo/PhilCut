@@ -7728,5 +7728,10 @@
  "Homme : grave (George)": "Uomo: grave (George)",
  "Homme : narrateur (Brian)": "Uomo: narratore (Brian)",
  "Homme : posé (Daniel)": "Uomo: pacato (Daniel)",
- "Homme : décontracté (Roger)": "Uomo: rilassato (Roger)"
+ "Homme : décontracté (Roger)": "Uomo: rilassato (Roger)",
+ "En tout {d} s, environ {p} $ (votre clef fal.ai), demandé avant l'envoi. Décrivez toute la suite d'un coup, avec « puis » entre les actions.": "In tutto {d} s, circa {p} $ (la vostra chiave fal.ai), chiesto prima dell'invio. Descrivete tutto il seguito in una volta, con «poi» tra le azioni.",
+ "PhilCut fera {n} étape(s), une action chacune, enchaînées seules (chaque étape part de la dernière image de la précédente) :": "PhilCut farà {n} tappa/e, un'azione ciascuna, concatenate da sole (ogni tappa parte dall'ultima immagine della precedente):",
+ "Envoyer la photo (point de départ et modèle des personnes) et la consigne à fal.ai (Kling O3) pour {n} étape(s), environ {p} $ sur votre compte ?": "Inviare la foto (punto di partenza e modello delle persone) e la consegna a fal.ai (Kling O3) per {n} tappa/e, circa {p} $ sul vostro account?",
+ "Envoyer à fal.ai (Kling O3) la dernière image du plan (point de départ) et deux autres images du plan (le début et le milieu, pour que le moteur connaisse les personnes sous plusieurs angles), avec la consigne : {n} étape(s), environ {p} $ sur votre compte ?": "Inviare a fal.ai (Kling O3) l'ultima immagine della clip (punto di partenza) e altre due immagini della clip (inizio e metà, perché il motore conosca le persone da più angolazioni), con la consegna: {n} tappa/e, circa {p} $ sul vostro account?",
+ "L'IA cloud fabrique l'étape {k} sur {n}…": "L'IA cloud fabbrica la tappa {k} di {n}…"
 }

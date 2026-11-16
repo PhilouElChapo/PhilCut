@@ -825,7 +825,7 @@ class DialogueSequence(QDialog):
                                 n=manquants))
         else:
             self.prix.setText(_("{n} plan(s) à fabriquer : jusqu'à {p} $ environ sur votre clef ; confirmation avant l'envoi.",
-                                n=manquants, p=Q.prix_total(self.seq, m, self.params)))
+                                n=manquants, p=f"{Q.prix_total(self.seq, m, self.params):.2f}".replace(".", ",")))
 
     def _confirmer(self, indices):
         m = self.moteur.currentData()

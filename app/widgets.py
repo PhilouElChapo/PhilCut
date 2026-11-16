@@ -716,3 +716,25 @@ def calcul_en_cours(dlg):
         return any(t.isRunning() for t in ts if hasattr(t, "isRunning"))
     except RuntimeError:
         return False
+
+
+# ------------------------------------------------------------------ 0.9.76 : bulles d'aide qui passent à la ligne
+class _InfoBulles(QObject):
+    """Une bulle d'aide longue en texte simple s'affichait sur une seule ligne, coupée par le bord de l'écran (règle : jamais
+    de texte tronqué) : elle est montrée en texte riche, que Qt fait passer à la ligne."""
+
+    def eventFilter(self, obj, ev):
+        from PySide6.QtCore import QEvent
+        if ev.type() == QEvent.ToolTip and isinstance(obj, QWidget):
+            t = obj.toolTip()
+            if t and len(t) > 70 and not t.lstrip().startswith("<"):
+                import html
+                from PySide6.QtWidgets import QToolTip
+                QToolTip.showText(ev.globalPos(), "<p style='white-space:pre-wrap'>" + html.escape(t) + "</p>", obj)
+                return True
+        return False
+
+
+def installer_infobulles(app):
+    app._infobulles = _InfoBulles(app)
+    app.installEventFilter(app._infobulles)

@@ -7737,5 +7737,10 @@
  "Homme : grave (George)": "Man: deep (George)",
  "Homme : narrateur (Brian)": "Man: narrator (Brian)",
  "Homme : posé (Daniel)": "Man: calm (Daniel)",
- "Homme : décontracté (Roger)": "Man: relaxed (Roger)"
+ "Homme : décontracté (Roger)": "Man: relaxed (Roger)",
+ "En tout {d} s, environ {p} $ (votre clef fal.ai), demandé avant l'envoi. Décrivez toute la suite d'un coup, avec « puis » entre les actions.": "In all {d} s, about {p} $ (your fal.ai key), asked before sending. Describe the whole continuation at once, with “then” between the actions.",
+ "PhilCut fera {n} étape(s), une action chacune, enchaînées seules (chaque étape part de la dernière image de la précédente) :": "PhilCut will make {n} step(s), one action each, chained automatically (each step starts from the last frame of the previous one):",
+ "Envoyer la photo (point de départ et modèle des personnes) et la consigne à fal.ai (Kling O3) pour {n} étape(s), environ {p} $ sur votre compte ?": "Send the photo (starting point and model of the people) and the prompt to fal.ai (Kling O3) for {n} step(s), about {p} $ on your account?",
+ "Envoyer à fal.ai (Kling O3) la dernière image du plan (point de départ) et deux autres images du plan (le début et le milieu, pour que le moteur connaisse les personnes sous plusieurs angles), avec la consigne : {n} étape(s), environ {p} $ sur votre compte ?": "Send to fal.ai (Kling O3) the clip's last frame (starting point) and two other frames of the clip (the start and the middle, so the engine knows the people from several angles), with the prompt: {n} step(s), about {p} $ on your account?",
+ "L'IA cloud fabrique l'étape {k} sur {n}…": "The cloud AI is making step {k} of {n}…"
 }

@@ -101,6 +101,8 @@ def main():
     from PySide6.QtWidgets import QApplication
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     app = QApplication(sys.argv)
+    from app.widgets import installer_infobulles
+    installer_infobulles(app)
     app.setApplicationName("PhilCut")
     app.setOrganizationName("PhilouElChapo")
     from app.config import VERSION

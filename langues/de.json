@@ -7728,5 +7728,10 @@
  "Homme : grave (George)": "Mann: tief (George)",
  "Homme : narrateur (Brian)": "Mann: Erzähler (Brian)",
  "Homme : posé (Daniel)": "Mann: ruhig (Daniel)",
- "Homme : décontracté (Roger)": "Mann: locker (Roger)"
+ "Homme : décontracté (Roger)": "Mann: locker (Roger)",
+ "En tout {d} s, environ {p} $ (votre clef fal.ai), demandé avant l'envoi. Décrivez toute la suite d'un coup, avec « puis » entre les actions.": "Insgesamt {d} s, etwa {p} $ (Ihr fal.ai-Schlüssel), wird vor dem Senden gefragt. Beschreiben Sie die ganze Fortsetzung auf einmal, mit „dann“ zwischen den Handlungen.",
+ "PhilCut fera {n} étape(s), une action chacune, enchaînées seules (chaque étape part de la dernière image de la précédente) :": "PhilCut macht {n} Schritt(e), je eine Handlung, automatisch verkettet (jeder Schritt startet beim letzten Bild des vorherigen):",
+ "Envoyer la photo (point de départ et modèle des personnes) et la consigne à fal.ai (Kling O3) pour {n} étape(s), environ {p} $ sur votre compte ?": "Das Foto (Startpunkt und Vorlage der Personen) und die Anweisung an fal.ai (Kling O3) für {n} Schritt(e) senden, etwa {p} $ auf Ihrem Konto?",
+ "Envoyer à fal.ai (Kling O3) la dernière image du plan (point de départ) et deux autres images du plan (le début et le milieu, pour que le moteur connaisse les personnes sous plusieurs angles), avec la consigne : {n} étape(s), environ {p} $ sur votre compte ?": "An fal.ai (Kling O3) das letzte Bild des Clips (Startpunkt) und zwei weitere Bilder (Anfang und Mitte, damit die Engine die Personen aus mehreren Winkeln kennt) mit der Anweisung senden: {n} Schritt(e), etwa {p} $ auf Ihrem Konto?",
+ "L'IA cloud fabrique l'étape {k} sur {n}…": "Die Cloud-KI erstellt Schritt {k} von {n}…"
 }

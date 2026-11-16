@@ -188,7 +188,7 @@ def generer_reference(cle, m, consigne, sortie, duree=5, format_="16:9", image=N
 
 
 # ------------------------------------------------------------------ crédit restant (0.9.72)
-PAGES_CREDIT = {"fal": "https://fal.ai/dashboard/billing", "google": "https://aistudio.google.com/usage"}
+PAGES_CREDIT = {"fal": "https://fal.ai/dashboard/usage-billing/credits", "google": "https://aistudio.google.com/usage"}
 
 
 def credit(params, fournisseur):
