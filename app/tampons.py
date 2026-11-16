@@ -798,3 +798,10 @@ def maison_manquants(params, L, H):
     from . import langue
     d = dossier_tampons(params)
     return [k for k in MAISON if not os.path.exists(os.path.join(d, f"maison_{k}_{langue.LANGUE or 'fr'}_{L}x{H}.mp4"))]
+
+
+def entree_maison(params, ident, L, H):
+    """L'entrée de bibliothèque du tampon maison `ident` déjà fabriqué pour ce format et cette langue, ou None."""
+    from . import langue
+    nom = f"maison_{ident}_{langue.LANGUE or 'fr'}_{L}x{H}.mp4"
+    return next((e for e in charger(params) if e.get("fichier") == nom and os.path.exists(chemin(params, e))), None)

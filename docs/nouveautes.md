@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.77 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.78 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.78
+- Tampons maison : ceux qui sont prets portent ✓ et se posent directement depuis leur onglet (double-clic ou "Mettre dans le film...") ; plus besoin d'aller les chercher dans "Ma bibliotheque".
+- Bruitages (fenetre et listes des tampons IA) et modeles de tampons IA : par ordre alphabetique.
+- Telecharger un son ou un extrait en ligne : quand FFmpeg echoue pendant le decoupage fait par yt-dlp (journal du 17/11 : "ffmpeg exited with code 3436169992"), le fichier est telecharge tel quel puis PhilCut coupe et convertit lui-meme.
+
 
 ### 0.9.77 (visages gardes sur toute l'histoire)
 - Sequence IA : un plan enchaine demarre sur l'image d'arrivee validee du plan precedent (propre, visages d'apres la fiche) et non plus sur la derniere image de sa video, ou les visages avaient deja derive : la derive ne s'accumule plus de plan en plan.

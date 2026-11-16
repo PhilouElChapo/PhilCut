@@ -436,7 +436,8 @@ class DialogueTampons(QDialog):
         aide.setWordWrap(True)
         g.addWidget(aide)
         self.liste_ia = QListWidget()
-        for k, m in TI.MODELES.items():
+        from .fenetre import alpha
+        for k, m in sorted(TI.MODELES.items(), key=lambda kv: alpha(kv[1][0])):        # 0.9.77 : ordre alphabétique
             it = QListWidgetItem(m[0])
             it.setData(Qt.UserRole, k)
             self.liste_ia.addItem(it)
@@ -470,7 +471,8 @@ class DialogueTampons(QDialog):
         self.ia_b1, self.ia_b2 = QComboBox(), QComboBox()
         for cb in (self.ia_b1, self.ia_b2):
             cb.addItem(_("(aucun)"), "")
-            for k, (nom, *_r) in B.SONS.items():
+            from .fenetre import alpha
+            for k, (nom, *_r) in sorted(B.SONS.items(), key=lambda kv: alpha(kv[1][0])):
                 cb.addItem(nom, k)
             hb.addWidget(cb)
         f.addRow(_("Bruitages"), hb)
@@ -581,7 +583,8 @@ class DialogueTampons(QDialog):
         w = QWidget()
         v = QVBoxLayout(w)
         aide = QLabel(_("Tampons dessinés et sonorisés par PhilCut sur ce poste : aucun droit à payer, textes dans la langue de PhilCut, "
-                        "au format du projet. Ils rejoignent votre bibliothèque."))
+                        "au format du projet. ✓ = prêt : double-clic ou « Mettre dans le film… » ici même (ils sont aussi dans "
+                        "« Ma bibliothèque »)."))
         aide.setWordWrap(True)
         v.addWidget(aide)
         self.liste_maison = self._liste_icones()
@@ -591,15 +594,15 @@ class DialogueTampons(QDialog):
             it.setData(Qt.UserRole, k)
             it.setIcon(QIcon(QPixmap.fromImage(T.image_maison(k, d * 0.7, 192, 108))))
             self.liste_maison.addItem(it)
-        self.liste_maison.itemDoubleClicked.connect(lambda _i: self.creer_maison(False))
+        self.liste_maison.itemDoubleClicked.connect(lambda _i: self._maison_double_clic())
         v.addWidget(self.liste_maison, 1)
         h = QHBoxLayout()
         self.info_maison = QLabel("")
         self.info_maison.setWordWrap(True)
         h.addWidget(self.info_maison, 1)
-        b = QPushButton(_("Créer celui-ci"))
-        b.clicked.connect(lambda: self.creer_maison(False))
-        h.addWidget(b)
+        self.b_maison = QPushButton(_("Créer celui-ci"))
+        self.b_maison.clicked.connect(self._maison_double_clic)
+        h.addWidget(self.b_maison)
         b_perso = QPushButton(_("Personnaliser (texte, durée)…"))
         b_perso.setToolTip(_("Votre version de ce tampon : votre texte (« 3 HEURES PLUS TARD », « BIEN JOUÉ ! »…) et sa durée ; "
                              "elle rejoint votre bibliothèque à côté de l'original"))
@@ -620,10 +623,27 @@ class DialogueTampons(QDialog):
         manque = T.maison_manquants(self.params, *self.format)
         self.b_tous.setText(_("Créer les {n} tampons maison manquants", n=len(manque)) if manque else _("Tous les tampons maison sont prêts"))
         self.b_tous.setEnabled(bool(manque))
+        for i in range(self.liste_maison.count()):         # 0.9.78 : ✓ sur ceux qui sont prêts
+            x = self.liste_maison.item(i)
+            kx = x.data(Qt.UserRole)
+            x.setText(("✓ " if kx not in manque else "") + T.MAISON[kx][0])
         if it:
             k = it.data(Qt.UserRole)
             self.info_maison.setText(f"<b>{T.MAISON[k][0]}</b> — {T.MAISON[k][1]} ({T.MAISON[k][3]:.1f} s)"
-                                     + ("" if k in manque else "  ✓ " + _("dans votre bibliothèque")))
+                                     + ("" if k in manque else "  ✓ " + _("prêt")))
+            self.b_maison.setText(_("Créer celui-ci") if k in manque else _("Mettre dans le film…"))
+            self.b_maison.setProperty("primaire", k not in manque)
+
+    def _maison_double_clic(self):
+        """Prêt : on le pose dans le film directement depuis cet onglet ; sinon on le crée."""
+        it = self.liste_maison.currentItem()
+        if not it:
+            return
+        e = T.entree_maison(self.params, it.data(Qt.UserRole), *self.format)
+        if e:
+            self.poser_entree(e)
+        else:
+            self.creer_maison(False)
 
     def _animer_maison(self):
         it = self.liste_maison.currentItem()

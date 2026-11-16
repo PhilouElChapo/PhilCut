@@ -67,7 +67,8 @@ class DialogueBruitages(QDialog):
         aide.setWordWrap(True)
         v.addWidget(aide)
         self.liste = QListWidget()
-        for k, (nom, desc, *_r) in B.SONS.items():
+        from .fenetre import alpha
+        for k, (nom, desc, *_r) in sorted(B.SONS.items(), key=lambda kv: alpha(kv[1][0])):     # 0.9.77 : ordre alphabétique
             it = QListWidgetItem(f"{nom} — {desc}")
             it.setData(Qt.UserRole, k)
             self.liste.addItem(it)

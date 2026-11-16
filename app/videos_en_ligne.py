@@ -314,11 +314,41 @@ def telecharger(url, dossier, audio_seul=False, debut=None, fin=None, progressio
         args += ["-f", f"bv*[height<={h}][ext=mp4]+ba[ext=m4a]/b[height<={h}][ext=mp4]/bv*[height<={h}]+ba/b", "--merge-output-format", "mp4"]
     if debut is not None and fin is not None and fin > debut:
         args += ["--download-sections", f"*{float(debut):.2f}-{float(fin):.2f}", "--force-keyframes-at-cuts"]
-    lignes = _lancer_ytdlp(args + [url], progression, arret)
+    try:
+        lignes = _lancer_ytdlp(args + [url], progression, arret)
+    except RuntimeError as e:
+        if "ffmpeg" not in str(e).lower():
+            raise
+        # 0.9.77 (journal du 17/11 : « ffmpeg exited with code 3436169992 » pour un bruitage) : le découpage ou la conversion
+        # faits par yt-dlp via FFmpeg échouent parfois ; on télécharge le fichier tel quel, puis PhilCut coupe et convertit
+        return _telecharger_puis_couper(url, dossier, audio_seul, debut, fin, progression, arret, h)
     fichiers = [l.strip() for l in lignes if l.strip() and os.path.exists(l.strip())]
     if not fichiers:
         raise RuntimeError(_("Téléchargement terminé mais fichier introuvable."))
     return fichiers[-1]
+
+
+def _telecharger_puis_couper(url, dossier, audio_seul, debut, fin, progression, arret, h):
+    from . import moteur
+    modele = os.path.join(dossier, "%(title).80s [%(id)s] brut.%(ext)s")
+    fmt = "bestaudio/b" if audio_seul else f"b[height<={h}][ext=mp4]/b[height<={h}]/b"
+    lignes = _lancer_ytdlp(["--no-playlist", "--restrict-filenames", "-o", modele, "--print", "after_move:filepath", "--newline",
+                            "-f", fmt, url], progression, arret)
+    brut = next((l.strip() for l in reversed(lignes) if l.strip() and os.path.exists(l.strip())), "")
+    if not brut:
+        raise RuntimeError(_("Téléchargement terminé mais fichier introuvable."))
+    sortie = brut.replace(" brut.", ".").rsplit(".", 1)[0] + (".m4a" if audio_seul else ".mp4")
+    morceau = ["-ss", f"{float(debut):.3f}", "-to", f"{float(fin):.3f}"] if debut is not None and fin is not None and fin > debut else []
+    if audio_seul:
+        moteur.lancer(["-y"] + morceau + ["-i", brut, "-vn", "-c:a", "aac", "-b:a", "192k", sortie])
+    else:
+        moteur.lancer(["-y"] + morceau + ["-i", brut, "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-c:a", "aac",
+                                          "-b:a", "192k", "-movflags", "+faststart", sortie])
+    try:
+        os.remove(brut)
+    except OSError:
+        pass
+    return sortie
 
 
 # ------------------------------------------------------------------ Internet Archive (domaine public)
