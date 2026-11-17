@@ -952,6 +952,10 @@ class Fenetre(QMainWindow):
                       "elle part avec l'export et la publication."), quand(lambda e: e.vignette_composee("vignette")))]),
             (icone("musique"), _("Musique"), _("Créer une musique sur ce poste (gratuit) ou en chercher une en ligne, avec ce qui est "
                                                  "permis expliqué."), [
+                ent(icone("assistant"), _("Assistant de création : une musique ou une chanson, guidé pas à pas…"),
+                    _("Dites en quelques mots la musique voulue ; l'assistant en déduit style, voix, paroles et déroulé, vous fait "
+                      "choisir d'où vient chacun (morceau à vous, en ligne, description, liste), puis crée partie par partie sur ce poste."),
+                    quand(lambda e: e.assistant_creation(musique=True))),
                 ent(icone("telecharger"), _("Chercher une musique en ligne (YouTube Music, YouTube, archives libres)…"),
                     _("Chercher, écouter et télécharger le son d'un titre."), (lambda: self.musique_en_ligne(ed))),
                 ent(icone("ia"), _("Continuer avec ma voix…"),
@@ -968,8 +972,9 @@ class Fenetre(QMainWindow):
             (icone("camera"), _("Vidéo"), _("Créer des plans qui manquent au film : à partir d'une phrase, d'une histoire ou d'une image du "
                                               "film. D'abord l'IA de ce poste (gratuite), puis Gemini (votre clef, prix annoncé), puis Google Flow."), [
                 ent(icone("assistant"), _("Assistant de création : guidé pas à pas…"),
-                    _("Vous racontez, l'assistant pose les questions, prépare personnages, plans et images, fabrique, relit chaque "
-                      "plan ; budget prévu et dépensé affiché. Pour continuer un rush ou créer une scène."),
+                    _("Dites en quelques mots ce que vous voulez ; l'assistant en déduit personnes, objets et plans, pré-remplis, "
+                      "vous fait valider carte par carte, prépare les images, fabrique, relit chaque plan ; budget affiché. Pour "
+                      "continuer un rush, créer une scène, ou une musique."),
                     quand(lambda e: e.assistant_creation())),
                 ent(None, _("Effet IA sur le film (dessin animé, ralenti, agrandir, photo 3D…)…"),
                     _("A partir d'une image ou d'une partie du film, sur ce poste, gratuitement."), quand(lambda e: e.atelier_ia("video"))),

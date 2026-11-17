@@ -48,7 +48,8 @@ class TestLogique(unittest.TestCase):
         self.assertEqual(s["plans"][0]["image"], img)                    # le premier plan part de l'image du rush
         self.assertTrue(all(pl["enchainer"] for pl in s["plans"][1:]))
         self.assertTrue(s["personnages"][0]["description"].startswith("à gauche sur l'image"))
-        self.assertEqual(s["personnages"][0]["images"], [img])
+        self.assertEqual(s["personnages"][0]["images"][-1], img)          # 0.9.80 : la découpe d'abord, puis l'image
+        self.assertTrue(os.path.exists(s["personnages"][0]["images"][0]))
         self.assertEqual(s["personnages"][2]["images"], [])
         self.assertEqual(s["personnages"][3]["genre"], "objet")
         s["personnages"][0]["planche"] = img
@@ -85,6 +86,7 @@ class TestFenetre(unittest.TestCase):
     def test_parcours(self):
         from app.fenetre import Fenetre
         from app import moteur, assistant_creation as A, sequence_ia as Q, generateurs_video as GV, ia
+        from app import dialogues_assistant_creation as D
         f = Fenetre()
         f.bienvenue = lambda *a, **k: None                 # pas de fenêtre d'accueil pendant l'essai
         ed = f.nouveau_projet("16:9")
@@ -101,7 +103,7 @@ class TestFenetre(unittest.TestCase):
             if "contrôles un plan" in consigne:
                 return {"visages": len(demandes) % 2 == 0, "action": True, "probleme": "visage différent"}
             if "Demande :" in texte:
-                e = eval(texte.split("Etat :\n")[1].split("\n\nDemande")[0].replace("true", "True").replace("false", "False"))
+                e = eval(texte.split("Etat :\n")[1].split("\n\nDemande")[0].replace("true", "True").replace("false", "False").replace("null", "None"))
                 e["personnages"][2]["description"] += ", plus âgé"
                 e["message"] = "Chauffeur vieilli."
                 return e
@@ -121,24 +123,25 @@ class TestFenetre(unittest.TestCase):
             dl.apercu.charger = lambda *a, **k: None
             dl.apercu.arreter = lambda: None
             self.assertTrue(dl.r_suite.isChecked() and os.path.exists(dl.image))
-            dl.suivant()
             dl.histoire.setPlainText("Elles descendent, un chauffeur ouvre, la limousine part.")
+            self.assertTrue(dl.r_suite.isChecked())                       # 0.9.80 : une idée vidéo reste la suite du plan
             dl.suivant()
-            self.assertTrue(attendre(lambda: dl.pages.currentIndex() == 2 and not dl._en_calcul()))
+            self.assertTrue(attendre(lambda: dl.pages.currentIndex() == D.P_QUI and not dl._en_calcul()))
             self.assertEqual(demandes[0][1], 1)                           # l'image de départ a été montrée à l'IA
-            self.assertEqual(dl.t_qui.rowCount(), 4)
+            self.assertEqual(len(dl.cartes), 4)                           # une carte par personne et par objet
+            self.assertEqual([c.e["source"] for c in dl.cartes], ["image", "image", "inventer", "inventer"])
             dl.suivant()
-            self.assertEqual(dl.pages.currentIndex(), 2)                  # accord des personnes obligatoire
+            self.assertEqual(dl.pages.currentIndex(), D.P_QUI)            # accord des personnes obligatoire
             dl.accord.setChecked(True)
             dl.libre.setText("le chauffeur plus âgé")
             dl.dire()
             self.assertTrue(attendre(lambda: not dl._en_calcul() and "plus âgé" in dl.seq["personnages"][2]["description"]))
             dl.suivant()
-            self.assertEqual(dl.pages.currentIndex(), 3)
+            self.assertEqual(dl.pages.currentIndex(), D.P_PLANS)
             self.assertEqual(dl.t_plans.rowCount(), 4)
             self.assertEqual(dl.moteur.currentData(), "kling-o3-ref")
             dl.suivant()
-            self.assertTrue(attendre(lambda: dl.pages.currentIndex() == 4 and not dl._en_calcul()))
+            self.assertTrue(attendre(lambda: dl.pages.currentIndex() == D.P_IMAGES and not dl._en_calcul()))
             self.assertTrue(all(p.get("planche") for p in dl.seq["personnages"]))
             self.assertTrue(all(pl.get("image_fin") for pl in dl.seq["plans"]))
             prevu = A.budget(dl.seq)["prevu"]
@@ -146,7 +149,7 @@ class TestFenetre(unittest.TestCase):
             dl.corriger_image(1, "arrivee")
             self.assertTrue(attendre(lambda: not dl._en_calcul()))
             dl.suivant()
-            self.assertTrue(attendre(lambda: dl.pages.currentIndex() == 5 and not dl._en_calcul() and not dl.file
+            self.assertTrue(attendre(lambda: dl.pages.currentIndex() == D.P_VIDEO and not dl._en_calcul() and not dl.file
                                      and all(pl.get("fichier") for pl in dl.seq["plans"]), 90))
             self.assertTrue(any(pl["verdict"] and not pl["verdict"]["ok"] for pl in dl.seq["plans"]))
             self.assertIn("⚠", dl.l_plans.item(0).text() + dl.l_plans.item(1).text())

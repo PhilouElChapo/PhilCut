@@ -129,21 +129,47 @@ def _guides_integres():
         {"id": "assistant_creation", "etat": "ok",
          "titre": _("Etre guidé pour continuer un rush ou créer une scène par IA (mode assisté)"),
          "mots": "assistant assiste guide aide pas a pas continuer rallonger rush suite scene histoire personnages plans budget "
-                 "facile automatique limousine",
-         "intro": _("Vous racontez la suite d'un trait ; l'assistant (Claude, Gemini ou l'IA de ce poste) regarde la dernière image, "
-                    "propose les personnes, les objets et les plans d'une action, prépare fiches et images, vous les montre avant la "
-                    "vidéo, fabrique, puis relit chaque plan. Le budget prévu et dépensé reste affiché ; dépassé, il passe en rouge. "
-                    "A tout moment : écrire en clair ce qu'il faut changer, ou « Régler moi-même »."),
+                 "facile automatique limousine idee carte fiche chauffeur cadre ameliorer reformuler",
+         "intro": _("Vous dites en quelques mots ce que vous voulez ; l'assistant (Claude, Gemini ou l'IA de ce poste) regarde la "
+                    "dernière image, en déduit une carte par personne et par objet (cadre proposé sur l'image), et les plans d'une "
+                    "action. Vous validez ou corrigez carte par carte : dans l'image, une photo à vous, ou inventé d'après la "
+                    "description. Tout texte a son « ✨ Améliorer » (l'IA reformule, vous choisissez). Puis images avant la vidéo, "
+                    "fabrication relue, budget prévu et dépensé (rouge s'il est dépassé)."),
          "etapes": [
              {"texte": _("Cliquez le plan à continuer dans la timeline."), "fait": "plan_choisi"},
              {"texte": _("Clic droit sur le plan › « Continuer ce plan avec l'assistant IA… » (ou Fabrique IA › Vidéo › Assistant de création)."),
               "montrer": {"clic_droit": [_("Continuer ce plan avec l'assistant IA…")]}, "fait": "fenetre:DialogueAssistant"},
-             {"texte": _("Racontez ce qui se passe ensuite, puis « Analyser mon histoire ».")},
-             {"texte": _("Vérifiez qui et quoi (une ligne par personne, par objet important), puis les plans ; corrigez dans les tableaux "
-                         "ou écrivez-le en clair en bas (« le chauffeur plus âgé »).")},
+             {"texte": _("« Que voulez-vous faire ? » : écrivez la suite d'un trait (« ✨ Améliorer » si vous voulez), vérifiez ce que "
+                         "l'assistant comprend, puis « Voir ce qu'il faut ».")},
+             {"texte": _("Une carte par personne et par objet : pas la bonne personne ? Cliquez la carte puis la personne sur l'image (ou "
+                         "tracez son cadre). Choisissez d'où vient chacun ; « Compléter la description » aide pour les inventés.")},
+             {"texte": _("Les plans : corrigez dans le tableau ou en clair en bas ; « ✨ Améliorer le plan choisi » reformule une action.")},
              {"texte": _("Confirmez le budget : l'assistant prépare fiches et images. Regardez-les, « Corriger… » celles qui ne vont pas, "
                          "puis lancez la vidéo.")},
              {"texte": _("Chaque plan est relu : ✓ ou ⚠ avec la raison. « Refaire ce plan… » si besoin, puis « Poser dans le film ».")},
+         ]},
+        {"id": "assistant_musique", "etat": "ok",
+         "titre": _("Créer une musique ou une chanson guidé pas à pas (style d'un groupe, voix, paroles, passage lent)"),
+         "mots": "assistant musique chanson ballade rock style groupe a la maniere voix feminine chaude paroles tempo lent rapide "
+                 "partie deroule reorchestrer morceau archangel guide",
+         "intro": _("Dites en quelques mots la musique voulue (« une ballade rock de 3 minutes, rapide, avec au milieu un long passage "
+                    "lent, le style de mon groupe et sa voix en plus féminine »). L'assistant en déduit trois cartes (style, voix, "
+                    "paroles) et le déroulé ; pour chaque carte vous choisissez d'où elle vient, chaque possibilité expliquée. La "
+                    "musique est créée partie par partie à son tempo, sur ce poste, puis enchaînée."),
+         "etapes": [
+             {"texte": _("Fabrique IA › Musique › « Assistant de création : une musique ou une chanson… »."),
+              "montrer": {"menu": [_("Fabrique IA"), _("Musique"), _("Assistant de création : une musique ou une chanson, guidé pas à pas…")]},
+              "fait": "fenetre:DialogueAssistant"},
+             {"texte": _("Ecrivez votre idée (« ✨ Améliorer » si vous voulez), puis « Voir ce qu'il faut ».")},
+             {"texte": _("Carte Style : un morceau à vous ou trouvé en ligne, puis « S'en inspirer » (style mesuré) ou « Repartir du "
+                         "morceau » (seulement à vous ou libre, déclaré) ; ou le décrire, ou la liste.")},
+             {"texte": _("Carte Voix : la voix d'un morceau, « Décrire sa manière de chanter » ou « Garder son timbre » (accord de la "
+                         "personne) ; « A changer dans cette voix » : plus féminine, plus chaude… ; ou la décrire, la liste, aucune.")},
+             {"texte": _("Le déroulé : une ligne par partie (durée, tempo, énergie, chantée) ; « Recaler les parties » sur la durée totale.")},
+             {"texte": _("Les paroles : écrivez-les ou « Ecrire avec l'IA », une balise par partie chantée ; « ✨ Améliorer » propose une "
+                         "version, vous choisissez.")},
+             {"texte": _("« Créer la musique » : chaque partie à son tempo, puis l'enchaînement. Ecoutez les raccords, « Refaire la "
+                         "partie choisie » si besoin, puis « Poser sous la vidéo ».")},
          ]},
         {"id": "personnages", "etat": "ok",
          "titre": _("Garder le même personnage d'un plan à l'autre (Séquence IA)"),

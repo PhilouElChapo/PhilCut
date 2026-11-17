@@ -4,7 +4,17 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.79 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.80 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.80 (de l'idee au resultat : video et musique)
+- L'assistant de creation commence par une seule question, "Que voulez-vous faire ?" : vous l'ecrivez en quelques mots ; il devine s'il s'agit de la suite du plan, d'une scene, ou d'une musique ou chanson (modifiable d'un clic).
+- Video : une carte par personne et par objet important, deduite et pre-remplie (une fiche par personne, jamais deux ; le chauffeur invente a la sienne). Sur la derniere image, l'IA propose le cadre de chaque personne ; un clic ou un trace le corrige, et c'est cette decoupe qui fait la fiche. Pour chaque carte : dans l'image, une photo a vous, ou invente d'apres la description ("Completer la description" par l'IA).
+- Musique et chanson (Fabrique IA › Musique › "Assistant de creation") : "une ballade rock de 3 minutes, rapide avec au milieu un long passage lent, le style de mon groupe et sa voix plus feminine et chaude" donne trois cartes (style, voix, paroles) et un deroule. Style : un morceau a vous ou trouve en ligne, dont on s'inspire ou que l'on reorchestre (s'il est a vous, declare) ; voix : sa maniere de chanter decrite, ou son timbre garde (accord de la personne), avec ce qu'il faut changer ; paroles ecrites par vous ou par l'IA.
+- La musique est creee partie par partie, chacune a son tempo, meme style, meme voix, meme tonalite, puis enchainee en fondu d'une mesure ; une partie se refait seule.
+- Tout texte propose (idee, descriptions, plans, parties, paroles) a son bouton "✨ Ameliorer" : l'IA reformule sans changer le sens, les deux versions sont montrees, vous choisissez.
+- "Regler moi-meme" ouvre ce qui est prepare dans la Sequence IA ou la Fabrique musique : rien n'est perdu.
+- Budget : tant que rien n'est prevu, seul le depense s'affiche (plus de "depasse" rouge a tort apres la premiere lecture).
+
 
 ### 0.9.79 (assistant de creation : le mode assiste)
 - Nouveau : Fabrique IA › Video › "Assistant de creation : guide pas a pas..." et, au clic droit sur un plan, "Continuer ce plan avec l'assistant IA...". Vous racontez la suite d'un trait ; l'assistant (Claude par defaut, Gemini ou l'IA de cet ordinateur, au choix) regarde la derniere image, propose les personnes, les objets importants et les plans d'une seule action ; vous corrigez dans les tableaux ou en clair ("le chauffeur plus age", "un plan de plus ou elles saluent").

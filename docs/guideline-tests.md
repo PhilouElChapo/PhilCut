@@ -23,6 +23,20 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T90 — 0.9.80 : de l'idée au résultat (vidéo et musique)
+
+1. Photo des deux femmes posée dans le film : clic droit › « Continuer ce plan avec l'assistant IA… ». Ecrire la suite d'un trait ; « ✨ Améliorer » : les deux textes s'affichent côte à côte, prendre ou garder. « L'assistant comprend » : « La suite de ce plan » est coché.
+2. « Voir ce qu'il faut » : une carte par femme, une pour le chauffeur, une pour la limousine. Sur l'image, un cadre numéroté par femme : est-ce la bonne ? Cliquer la carte d'une femme puis cliquer (ou tracer) sur l'autre : le cadre et la petite découpe changent.
+3. Carte du chauffeur : « Inventé d'après la description », « ✨ Compléter la description » : proposition, choisir. Cocher l'accord, « C'est bien eux ».
+4. Plans : « ✨ Améliorer le plan choisi » sur une ligne ; puis la suite comme en T89 : les fiches des femmes sont-elles faites d'après leur découpe (bon visage) ?
+5. Musique : Fabrique IA › Musique › « Assistant de création : une musique ou une chanson… ». Ecrire : « crée une ballade rock de 3 minutes avec des moments rapides et au milieu une longue ballade lente et entraînante, avec le style d'Archangel et la voix de ce même groupe en plus féminine et chaude ». « Voir ce qu'il faut » : cartes Style, Voix, Paroles.
+6. Style : « Un morceau à moi » › « Choisir le morceau… » (un MP3 d'Archangel), passage ; essayer « S'en inspirer » puis « Ecouter et décrire » ; puis « Repartir du morceau » : déclarer « C'est le mien », régler Proche / Libre.
+7. Voix : « Le même que pour le style » ; essayer « Décrire sa manière de chanter » (« Isoler et décrire la voix ») puis « Garder son timbre » (case d'accord, « Isoler la voix ») ; « A changer dans cette voix » : « plus féminine et chaude ».
+8. Déroulé : les parties rapides et la longue partie lente au milieu, avec leurs tempos ; changer une durée, « Recaler les parties ».
+9. Paroles : « Ecrire avec l'IA » ; « ✨ Améliorer » ; une balise par partie chantée.
+10. « Créer la musique » : les parties se font une à une (barre du bas), puis l'enchaînement ; écouter les raccords, « Refaire la partie choisie » sur une partie ; « Poser sous la vidéo ».
+11. « Régler moi-même… » à l'étape Déroulé : la Fabrique musique s'ouvre pré-remplie.
+
 ## T89 — 0.9.79 : assistant de création (mode assisté)
 
 1. Photo des deux femmes posée dans le film : clic droit › « Continuer ce plan avec l'assistant IA… ». Page 1 : choisir qui assiste (Claude, Gemini ou IA de cet ordinateur), « Commencer ».

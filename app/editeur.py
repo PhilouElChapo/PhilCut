@@ -2673,15 +2673,22 @@ class Editeur(QWidget):
         except Exception:
             pass
 
-    def assistant_creation(self, clip=None):
-        """0.9.79 : mode assisté de la vidéo par IA (continuer un rush, scène en plusieurs plans) ; une seule fenêtre."""
+    def assistant_creation(self, clip=None, musique=False):
+        """0.9.79 : mode assisté (continuer un rush, scène en plusieurs plans) ; 0.9.80 : de l'idée au résultat, musique et
+        chanson comprises ; une seule fenêtre."""
         from .dialogues_assistant_creation import DialogueAssistant
         from .widgets import non_bloquante
-        if clip is None:
+        if clip is None and not musique:
             clip = self._clip_selectionne()
             if clip is None and hasattr(self.projet, "plan_visible"):
                 clip = self.projet.plan_visible(self.timeline.position)
-        return non_bloquante(self, "assistant_creation", lambda: DialogueAssistant(self, clip))
+        d = non_bloquante(self, "assistant_creation", lambda: DialogueAssistant(self, clip))
+        if musique and d is not None:
+            try:
+                d.choisir_genre("musique")
+            except (RuntimeError, AttributeError):
+                pass
+        return d
 
     def sequence_ia(self, nouvelle=False):
         """Séquence IA : histoire en plusieurs plans (personnages constants, répliques, musique) ; reprend la dernière du projet."""

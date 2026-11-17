@@ -27,7 +27,8 @@ CONSIGNE_ANALYSE = """Tu es réalisateur et tu prépares une courte séquence vi
 {contexte}
 A partir de l'histoire de l'utilisateur, rends un objet JSON :
 {{"personnages": [{{"nom": "...", "genre": "personne" ou "objet", "sur_image": true ou false, "position": "gauche", "droite",
-"centre" ou "", "description": "..."}}],
+"centre" ou "", "boite": [x0, y0, x1, y1] en pourcentages de l'image (0 à 100) pour ce qui est sur l'image, sinon [],
+"description": "..."}}],
  "plans": [{{"action": "...", "personnages": ["nom", ...], "duree": 4 à 10, "camera": "..."}}],
  "remarques": "une phrase pour l'utilisateur, ou vide"}}
 Règles impératives :
@@ -125,7 +126,8 @@ def lire_analyse(d):
                        "sur_image": bool(p.get("sur_image")),
                        "position": _texte(p.get("position"), 12).lower() if _texte(p.get("position"), 12).lower() in
                        ("gauche", "droite", "centre", "left", "right", "center") else "",
-                       "description": _texte(p.get("description")), "style": _texte(p.get("style"), 60)})
+                       "description": _texte(p.get("description")), "style": _texte(p.get("style"), 60),
+                       "boite": lire_boite(p.get("boite")) if p.get("sur_image") else None})
     plans = []
     for pl in (d.get("plans") or [])[:10]:
         if not isinstance(pl, dict) or not _texte(pl.get("action")):
@@ -138,6 +140,68 @@ def lire_analyse(d):
         plans.append({"action": _texte(pl.get("action"), 300), "personnages": noms, "duree": max(3, min(15, duree)),
                       "camera": _texte(pl.get("camera"), 120)})
     return {"personnages": persos, "plans": plans, "remarques": _texte(d.get("remarques") or d.get("message"), 300)}
+
+
+def lire_boite(b):
+    """[x0, y0, x1, y1] en fractions (0..1), rangées et assez grandes ; None si la boîte n'est pas lisible."""
+    try:
+        x0, y0, x1, y1 = (float(v) for v in list(b)[:4])
+    except (TypeError, ValueError):
+        return None
+    if max(x0, y0, x1, y1) > 1.5:                       # pourcentages (ou 0..1000 à la façon de Gemini)
+        k = 1000.0 if max(x0, y0, x1, y1) > 100.5 else 100.0
+        x0, y0, x1, y1 = x0 / k, y0 / k, x1 / k, y1 / k
+    x0, x1 = sorted((max(0.0, min(1.0, x0)), max(0.0, min(1.0, x1))))
+    y0, y1 = sorted((max(0.0, min(1.0, y0)), max(0.0, min(1.0, y1))))
+    return [round(x0, 4), round(y0, 4), round(x1, 4), round(y1, 4)] if x1 - x0 > 0.03 and y1 - y0 > 0.03 else None
+
+
+BOITES_POSITION = {"gauche": [0.04, 0.08, 0.46, 0.98], "left": [0.04, 0.08, 0.46, 0.98], "droite": [0.54, 0.08, 0.96, 0.98],
+                   "right": [0.54, 0.08, 0.96, 0.98], "centre": [0.3, 0.08, 0.7, 0.98], "center": [0.3, 0.08, 0.7, 0.98]}
+
+
+def boite_par_defaut(p):
+    return BOITES_POSITION.get(p.get("position") or "", [0.3, 0.08, 0.7, 0.98])
+
+
+def boite_autour(x, y, larg=0.3, haut=0.85):
+    """Un clic sur l'image (fractions) : un cadre de personne debout centré sur le clic, gardé dans l'image."""
+    x0 = max(0.0, min(1.0 - larg, x - larg / 2))
+    y0 = max(0.0, min(1.0 - haut, y - haut / 2))
+    return [round(x0, 4), round(y0, 4), round(x0 + larg, 4), round(y0 + haut, 4)]
+
+
+def decouper(image, boite, sortie, marge=0.12):
+    """La personne ou l'objet découpé dans l'image (avec un peu de marge) : c'est cette découpe qui fait la fiche, et non
+    plus toute la photo de groupe."""
+    from . import moteur
+    from PySide6.QtGui import QImage
+    q = QImage(image)
+    w, h = q.width(), q.height()
+    if not (w and h):
+        return ""
+    x0, y0, x1, y1 = boite
+    mx, my = (x1 - x0) * marge, (y1 - y0) * marge
+    x0, y0, x1, y1 = max(0.0, x0 - mx), max(0.0, y0 - my), min(1.0, x1 + mx), min(1.0, y1 + my)
+    cw, ch = max(16, int((x1 - x0) * w)) // 2 * 2, max(16, int((y1 - y0) * h)) // 2 * 2
+    moteur.lancer(["-y", "-i", image, "-vf", f"crop={cw}:{ch}:{int(x0 * w)}:{int(y0 * h)}", "-frames:v", "1", sortie])
+    return sortie if os.path.exists(sortie) else ""
+
+
+CONSIGNE_DECRIRE = """Tu aides à décrire {quoi} pour qu'une IA le dessine puis le garde identique d'un plan vidéo à l'autre. Voici ce
+qu'en dit l'utilisateur et l'histoire. Rends un objet JSON {{"description": "description physique précise et complète en une ou
+deux phrases ({details}), sans aucun nom de personne réelle ni marque"}}. Garde tout ce que l'utilisateur a écrit. Ecris en {langue}."""
+
+
+def aider_a_decrire(params, p, histoire="", niveau="claude", image=None):
+    """Complète la description d'un personnage ou d'un objet (inventé, ou vu sur l'image jointe)."""
+    objet = p.get("genre") == "objet"
+    r = demander(params, CONSIGNE_DECRIRE.format(quoi=_("un objet") if objet else _("une personne"), langue=_langue(),
+                                                 details="couleur, forme, matière, état" if objet else
+                                                 "âge, allure, visage, cheveux, vêtements, chaussures"),
+                 f"Nom : {p.get('nom', '')}\nCe qu'en dit l'utilisateur : {p.get('description', '')}\nHistoire : {histoire}",
+                 [image] if image else [], niveau, max_jetons=600)
+    return _texte((r or {}).get("description"), 500) if isinstance(r, dict) else ""
 
 
 def analyser(params, histoire, image=None, niveau="claude"):
@@ -176,10 +240,29 @@ def appliquer(seq, analyse, image=None):
     persos = []
     for a in analyse["personnages"]:
         p = Q.personnage(a["nom"], description_complete(a), a.get("style", ""))
-        p.update(genre=a["genre"], sur_image=a["sur_image"], position=a.get("position", ""), brut=a.get("description", ""))
-        if a["sur_image"] and image:
-            p["images"] = [image]
         vieux = anciens.get(a["nom"].lower())
+        for cle in ("source", "boite", "photo", "decoupe", "accord"):     # 0.9.80 : ce que la carte a fixé suit
+            if a.get(cle) is None and vieux and vieux.get(cle) is not None:
+                if cle == "decoupe" and (a.get("boite") or vieux.get("boite")) != vieux.get("boite"):
+                    continue                              # cadre changé : la découpe est refaite
+                a[cle] = vieux[cle]
+        source = a.get("source") or ("image" if a["sur_image"] and image else "inventer")
+        p.update(genre=a["genre"], sur_image=source == "image", position=a.get("position", ""), brut=a.get("description", ""),
+                 source=source, boite=a.get("boite") or (boite_par_defaut(a) if source == "image" else None))
+        if source == "image" and image:
+            dec = a.get("decoupe") if a.get("decoupe") and os.path.exists(a["decoupe"]) else ""
+            if not dec and p["boite"]:
+                try:
+                    dec = decouper(image, p["boite"], os.path.join(Q.dossier(seq), "decoupe_" + re.sub(r"[^\w-]+", "_", a["nom"])[:30] + ".png"))
+                except Exception:      # noqa: BLE001 : sans découpe, la photo entière et la position suffisent
+                    dec = ""
+            p["decoupe"] = dec
+            p["images"] = [x for x in (dec, image) if x]
+        elif source == "photo" and a.get("photo"):
+            p["photo"] = a["photo"]
+            p["images"] = [a["photo"]]
+        if a.get("accord"):
+            p["accord"] = True
         if vieux and vieux.get("description") == p["description"] and vieux.get("style", "") == p["style"] and \
                 vieux.get("images") == p["images"]:
             for cle in ("planche", "accord"):
@@ -228,6 +311,7 @@ def uniformiser(seq, image=None):
 def etat(seq):
     """L'état de la séquence tel qu'il est montré à l'IA pour une correction en clair."""
     return {"personnages": [{"nom": p["nom"], "genre": p.get("genre", "personne"), "sur_image": bool(p.get("sur_image")),
+                             "source": p.get("source"), "boite": p.get("boite"),
                              "position": p.get("position", ""), "description": p.get("brut") or p.get("description", ""),
                              "style": p.get("style", "")} for p in seq["personnages"]],
             "plans": [{"action": pl["action"], "personnages": pl.get("personnages") or [], "duree": pl.get("duree"),
@@ -321,6 +405,8 @@ def depenser(seq, libelle, montant):
 
 def depasse(seq):
     b = budget(seq)
+    if float(b.get("prevu", 0.0)) <= 0:                   # rien de prévu encore (lecture de l'idée) : pas de dépassement
+        return False
     return float(b.get("depense", 0.0)) > float(b.get("prevu", 0.0)) + 0.004
 
 
