@@ -7748,5 +7748,13 @@
  "« {n} » semble désigner plusieurs personnes. Le moteur garde un visage par personnage : créez un personnage par personne (même photo pour les deux, et dans la description : « à gauche, cheveux longs bruns, manteau noir… »), puis une fiche pour chacune. Continuer quand même ?": "“{n}” seems to name several people. The engine keeps one face per character: create one character per person (same photo for both, and in the description: “on the left, long brown hair, black coat…”), then a sheet for each. Continue anyway?",
  "Ajoutez d'abord une image ou une description du personnage « {n} ».": "First add an image or a description of the character “{n}”.",
  "Tampons dessinés et sonorisés par PhilCut sur ce poste : aucun droit à payer, textes dans la langue de PhilCut, au format du projet. ✓ = prêt : double-clic ou « Mettre dans le film… » ici même (ils sont aussi dans « Ma bibliothèque »).": "Stamps drawn and voiced by PhilCut on this computer: no rights to pay, texts in PhilCut's language, in the project format. ✓ = ready: double-click or “Put in the film…” right here (they are also in “My library”).",
- "prêt": "ready"
+ "prêt": "ready",
+ "Puis l'envoyer vers un emplacement (NAS, Google Drive, pCloud, OneDrive…)": "Then send it to a place (NAS, Google Drive, pCloud, OneDrive…)",
+ "A la fin de l'export, PhilCut demande où l'envoyer (le dernier emplacement est proposé) ; la barre du bas suit l'envoi": "At the end of the export, PhilCut asks where to send it (the last place is suggested); the bottom bar follows the upload",
+ "Exporter la vidéo vers un emplacement (cloud, NAS)…": "Export the video to a place (cloud, NAS)…",
+ "Envoyer une vidéo déjà exportée vers un emplacement (cloud, NAS)…": "Send an already exported video to a place (cloud, NAS)…",
+ "Fondus des sons": "Sound fades",
+ "Fondu donné d'office aux musiques et sons posés (0 = aucun) ; chaque plan se règle ensuite dans l'Inspecteur. La voix n'en a jamais.": "Fade given by default to music and sounds placed (0 = none); each clip is then adjusted in the Inspector. Voice never gets one.",
+ "entrée": "in",
+ "sortie": "out"
 }

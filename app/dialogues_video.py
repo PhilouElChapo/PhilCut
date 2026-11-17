@@ -882,7 +882,10 @@ class DialogueExport(QDialog):
         self.dest.currentIndexChanged.connect(self._maj_autres)
         self._maj_autres()
         f.addRow(g)
-        self.drive = QCheckBox(_("Déposer ensuite sur le Drive / NAS de synchronisation"))
+        self.drive = QCheckBox(_("Puis l'envoyer vers un emplacement (NAS, Google Drive, pCloud, OneDrive…)"))
+        self.drive.setToolTip(_("A la fin de l'export, PhilCut demande où l'envoyer (le dernier emplacement est proposé) ; la barre "
+                                "du bas suit l'envoi"))
+        self.drive.setChecked(bool(getattr(parent, "_exporter_vers", False)))
         f.addRow(self.drive)
         # ---- vignette du fichier : l'image du film qui représente la vidéo
         hv = QHBoxLayout()

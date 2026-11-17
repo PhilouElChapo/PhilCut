@@ -593,7 +593,8 @@ class Inspecteur(QWidget):
                 self._changer(f_)
             sd.valueChanged.connect(debut_morceau)
             fm.addRow(_("Commencer le morceau à"), sd)
-            for cle, lib, defaut in (("fondu_entree", _("Fondu d'entrée"), 0.8), ("fondu_sortie", _("Fondu de sortie"), 1.2)):
+            from .export import FONDUS_DEFAUT
+            for cle, lib, defaut in (("fondu_entree", _("Fondu d'entrée"), FONDUS_DEFAUT[0]), ("fondu_sortie", _("Fondu de sortie"), FONDUS_DEFAUT[1])):
                 fs = QDoubleSpinBox()
                 fs.setRange(0.0, 20.0)
                 fs.setDecimals(1)

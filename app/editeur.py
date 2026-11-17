@@ -1621,8 +1621,30 @@ class Editeur(QWidget):
         t.start()
 
     def _memoriser_tailles(self):
+        if not getattr(self, "_tailles_pretes", False):       # pas avant que la vraie disposition ait été remise
+            return
         self.params["tailles_vue"] = {"v": self.split_v.sizes(), "h": self.split_h.sizes()}
         self.params.enregistrer()
+
+    def showEvent(self, e):
+        """0.9.78 : les largeurs (médias, aperçu, volet) et la hauteur de la timeline sont remises une fois l'éditeur
+        affiché à sa vraie taille : posées avant, Qt les redistribuait (fenêtre agrandie ensuite, volet recalculé)."""
+        super().showEvent(e)
+        if not getattr(self, "_tailles_pretes", False):
+            QTimer.singleShot(80, self._restaurer_tailles)
+
+    def _restaurer_tailles(self):
+        t = self.params.get("tailles_vue") or {}
+        try:
+            if t.get("h") and len(t["h"]) == 4 and sum(t["h"]) > 0:
+                total = sum(self.split_h.sizes()) or sum(t["h"])
+                self.split_h.setSizes([int(x * total / sum(t["h"])) for x in t["h"]])
+            if t.get("v") and len(t["v"]) == 2 and sum(t["v"]) > 0:
+                total = sum(self.split_v.sizes()) or sum(t["v"])
+                self.split_v.setSizes([int(x * total / sum(t["v"])) for x in t["v"]])
+        except RuntimeError:
+            return
+        self._tailles_pretes = True
 
     def _zoom_auto(self):
         """Un montage court dans une grande timeline : on zoome pour qu'il remplisse la largeur (images lisibles)."""

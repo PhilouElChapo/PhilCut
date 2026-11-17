@@ -7,6 +7,9 @@ Guide de test : docs/guideline-tests.md
 ## Nouveautes de 0.9.78 (comprend tout ce qui est sorti depuis la 0.4.4)
 
 ### 0.9.78
+- Fichier : "Exporter la video vers un emplacement (cloud, NAS)..." et "Envoyer une video deja exportee vers un emplacement..." ; dans la fenetre d'export, la case "Puis l'envoyer vers un emplacement (NAS, Google Drive, pCloud, OneDrive...)".
+- Fondus donnes d'office aux musiques et sons : reglables dans Preferences › Export (0 = aucun).
+- La disposition (largeur des medias, de l'apercu, du volet de droite, hauteur de la timeline) est remise a l'ouverture une fois PhilCut a sa vraie taille (avant, Qt la redistribuait).
 - Tampons maison : ceux qui sont prets portent ✓ et se posent directement depuis leur onglet (double-clic ou "Mettre dans le film...") ; plus besoin d'aller les chercher dans "Ma bibliotheque".
 - Bruitages (fenetre et listes des tampons IA) et modeles de tampons IA : par ordre alphabetique.
 - Telecharger un son ou un extrait en ligne : quand FFmpeg echoue pendant le decoupage fait par yt-dlp (journal du 17/11 : "ffmpeg exited with code 3436169992"), le fichier est telecharge tel quel puis PhilCut coupe et convertit lui-meme.

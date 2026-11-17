@@ -7739,5 +7739,13 @@
  "« {n} » semble désigner plusieurs personnes. Le moteur garde un visage par personnage : créez un personnage par personne (même photo pour les deux, et dans la description : « à gauche, cheveux longs bruns, manteau noir… »), puis une fiche pour chacune. Continuer quand même ?": "„{n}“ scheint mehrere Personen zu bezeichnen. Die Engine behält ein Gesicht pro Figur: legen Sie eine Figur pro Person an (dasselbe Foto für beide, in der Beschreibung: „links, lange braune Haare, schwarzer Mantel…“), dann ein Blatt für jede. Trotzdem fortfahren?",
  "Ajoutez d'abord une image ou une description du personnage « {n} ».": "Fügen Sie zuerst ein Bild oder eine Beschreibung der Figur „{n}“ hinzu.",
  "Tampons dessinés et sonorisés par PhilCut sur ce poste : aucun droit à payer, textes dans la langue de PhilCut, au format du projet. ✓ = prêt : double-clic ou « Mettre dans le film… » ici même (ils sont aussi dans « Ma bibliothèque »).": "Von PhilCut auf diesem Rechner gezeichnete und vertonte Stempel: keine Rechte zu zahlen, Texte in der Sprache von PhilCut, im Projektformat. ✓ = bereit: Doppelklick oder „In den Film setzen…“ direkt hier (sie sind auch in „Meine Bibliothek“).",
- "prêt": "bereit"
+ "prêt": "bereit",
+ "Puis l'envoyer vers un emplacement (NAS, Google Drive, pCloud, OneDrive…)": "Dann an einen Ort senden (NAS, Google Drive, pCloud, OneDrive…)",
+ "A la fin de l'export, PhilCut demande où l'envoyer (le dernier emplacement est proposé) ; la barre du bas suit l'envoi": "Am Ende des Exports fragt PhilCut, wohin es gesendet werden soll (der letzte Ort wird vorgeschlagen); die untere Leiste verfolgt das Senden",
+ "Exporter la vidéo vers un emplacement (cloud, NAS)…": "Video an einen Ort exportieren (Cloud, NAS)…",
+ "Envoyer une vidéo déjà exportée vers un emplacement (cloud, NAS)…": "Ein bereits exportiertes Video an einen Ort senden (Cloud, NAS)…",
+ "Fondus des sons": "Ton-Blenden",
+ "Fondu donné d'office aux musiques et sons posés (0 = aucun) ; chaque plan se règle ensuite dans l'Inspecteur. La voix n'en a jamais.": "Standard-Blende für gesetzte Musik und Töne (0 = keine); jeder Clip wird danach im Inspektor eingestellt. Die Stimme bekommt nie eine.",
+ "entrée": "Anfang",
+ "sortie": "Ende"
 }

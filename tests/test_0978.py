@@ -35,6 +35,7 @@ class Test0978(unittest.TestCase):
         d.poser_entree = lambda e: poses.append(e)
         d._maison_double_clic()
         self.assertEqual(poses[0]["maison"], k)
+        T.retirer(ed.params, poses[0]["id"])
 
     def test_ytdlp_repli(self):
         from app import videos_en_ligne as VL

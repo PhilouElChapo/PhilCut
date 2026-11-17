@@ -190,6 +190,22 @@ class DialoguePreferences(QDialog):
             if k == self.params.get("export_destination", "youtube"):
                 self.dest.setCurrentIndex(self.dest.count() - 1)
         f.addRow(_("Destination par défaut"), self.dest)
+        from PySide6.QtWidgets import QDoubleSpinBox
+        hf = QHBoxLayout()
+        self.fondu_e, self.fondu_s = QDoubleSpinBox(), QDoubleSpinBox()
+        for w, cle, defaut in ((self.fondu_e, "fondu_son_entree", 0.8), (self.fondu_s, "fondu_son_sortie", 1.2)):
+            w.setRange(0.0, 10.0)
+            w.setSingleStep(0.1)
+            w.setSuffix(" s")
+            w.setValue(float(self.params.get(cle, defaut)))
+            w.setToolTip(_("Fondu donné d'office aux musiques et sons posés (0 = aucun) ; chaque plan se règle ensuite dans "
+                           "l'Inspecteur. La voix n'en a jamais."))
+        hf.addWidget(QLabel(_("entrée")))
+        hf.addWidget(self.fondu_e)
+        hf.addWidget(QLabel(_("sortie")))
+        hf.addWidget(self.fondu_s)
+        hf.addStretch(1)
+        f.addRow(_("Fondus des sons"), hf)
         self.enc = QComboBox()
         self.enc.addItem(_("Automatique (le plus rapide disponible)"), "")
         for e in moteur.encodeurs():
@@ -1079,6 +1095,10 @@ class DialoguePreferences(QDialog):
         p["apercu_images"] = self.apercu_images.isChecked()
         p["export_destination"] = self.dest.currentData()
         p["encodeur"] = self.enc.currentData()
+        p["fondu_son_entree"] = round(self.fondu_e.value(), 2)
+        p["fondu_son_sortie"] = round(self.fondu_s.value(), 2)
+        from .export import regler_fondus
+        regler_fondus(p)
         p["ducking"] = self.ducking.isChecked()
         p["musiques_dossier"] = self.musiques.text().strip()
         p["assistant_niveau"] = self.niveau.currentData()

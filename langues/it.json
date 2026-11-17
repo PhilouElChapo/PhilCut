@@ -7739,5 +7739,13 @@
  "« {n} » semble désigner plusieurs personnes. Le moteur garde un visage par personnage : créez un personnage par personne (même photo pour les deux, et dans la description : « à gauche, cheveux longs bruns, manteau noir… »), puis une fiche pour chacune. Continuer quand même ?": "«{n}» sembra indicare più persone. Il motore mantiene un volto per personaggio: create un personaggio per persona (stessa foto per entrambe e, nella descrizione: «a sinistra, capelli lunghi castani, cappotto nero…»), poi una scheda per ciascuna. Continuare comunque?",
  "Ajoutez d'abord une image ou une description du personnage « {n} ».": "Aggiungete prima un'immagine o una descrizione del personaggio «{n}».",
  "Tampons dessinés et sonorisés par PhilCut sur ce poste : aucun droit à payer, textes dans la langue de PhilCut, au format du projet. ✓ = prêt : double-clic ou « Mettre dans le film… » ici même (ils sont aussi dans « Ma bibliothèque »).": "Timbri disegnati e sonorizzati da PhilCut su questo computer: nessun diritto da pagare, testi nella lingua di PhilCut, nel formato del progetto. ✓ = pronto: doppio clic o «Metti nel film…» proprio qui (sono anche in «La mia libreria»).",
- "prêt": "pronto"
+ "prêt": "pronto",
+ "Puis l'envoyer vers un emplacement (NAS, Google Drive, pCloud, OneDrive…)": "Poi inviarlo a una posizione (NAS, Google Drive, pCloud, OneDrive…)",
+ "A la fin de l'export, PhilCut demande où l'envoyer (le dernier emplacement est proposé) ; la barre du bas suit l'envoi": "Alla fine dell'esportazione, PhilCut chiede dove inviarlo (viene proposta l'ultima posizione); la barra in basso segue l'invio",
+ "Exporter la vidéo vers un emplacement (cloud, NAS)…": "Esporta il video verso una posizione (cloud, NAS)…",
+ "Envoyer une vidéo déjà exportée vers un emplacement (cloud, NAS)…": "Invia un video già esportato verso una posizione (cloud, NAS)…",
+ "Fondus des sons": "Dissolvenze del suono",
+ "Fondu donné d'office aux musiques et sons posés (0 = aucun) ; chaque plan se règle ensuite dans l'Inspecteur. La voix n'en a jamais.": "Dissolvenza data di default a musiche e suoni posati (0 = nessuna); ogni clip si regola poi nell'Ispettore. La voce non ne ha mai.",
+ "entrée": "entrata",
+ "sortie": "uscita"
 }

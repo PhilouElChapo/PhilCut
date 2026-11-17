@@ -903,8 +903,19 @@ def image_rendue(projet, t, sortie_png, params=None, largeur=960, sous_titres=()
         ex.nettoyer()
 
 
-def fondus_audio(c, d, entree=0.8, sortie=1.2):
+FONDUS_DEFAUT = [0.8, 1.2]
+
+
+def regler_fondus(params):
+    """0.9.78 : fondus donnés d'office aux sons (Préférences › Export ; 0 = aucun)."""
+    FONDUS_DEFAUT[0] = float(params.get("fondu_son_entree", 0.8))
+    FONDUS_DEFAUT[1] = float(params.get("fondu_son_sortie", 1.2))
+
+
+def fondus_audio(c, d, entree=None, sortie=None):
     """Fondus d'entrée et de sortie d'un plan de son (réglables dans l'Inspecteur ; 0 = aucun)."""
+    entree = FONDUS_DEFAUT[0] if entree is None else entree
+    sortie = FONDUS_DEFAUT[1] if sortie is None else sortie
     if not c.get("fondus", True) and "fondu_entree" not in c and "fondu_sortie" not in c:
         return ""
     fe = max(0.0, min(d / 2, float(c.get("fondu_entree", entree))))

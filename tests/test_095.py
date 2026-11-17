@@ -263,12 +263,12 @@ class Test095(unittest.TestCase):
         try:
             dl.ajouter_resultat(False)
             t0 = time.time()
-            while time.time() - t0 < 20 and not ({e["id"] for e in T.charger(ed.params)} - avant):
+            while time.time() - t0 < 20 and not [e for e in T.charger(ed.params) if e["id"] not in avant and e.get("source") == "youtube"]:
                 app.processEvents()
                 time.sleep(0.05)
         finally:
             VL.telecharger, VL.ytdlp_installe = vrai_tel, vrai_inst
-        e = next(e for e in T.charger(ed.params) if e["id"] not in avant)
+        e = next(e for e in T.charger(ed.params) if e["id"] not in avant and e.get("source") == "youtube")   # autres tests en parallèle
         self.assertEqual(e["page"], r["page"])
         self.assertEqual(e["licence"], "Creative Commons Attribution")
         self.assertEqual(e["source"], "youtube")

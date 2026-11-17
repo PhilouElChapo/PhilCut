@@ -75,6 +75,8 @@ class Fenetre(QMainWindow):
     def __init__(self, fichiers=()):
         super().__init__()
         self.params = Parametres()
+        from .export import regler_fondus
+        regler_fondus(self.params)
         from . import projet as _projet_mod
         _projet_mod.PARAMS = self.params          # appareil et Drive pour les liens virtuels (0.9.35)
         self.setWindowTitle("PhilCut")
@@ -189,6 +191,8 @@ class Fenetre(QMainWindow):
         m.addAction(_("Espace PhilCut sur le Drive…"), self.espace_drive)
         m.addSeparator()
         m.addAction(icone("exporter"), _("Exporter la vidéo…"), self.exporter, "Ctrl+E")
+        m.addAction(icone("nuage"), _("Exporter la vidéo vers un emplacement (cloud, NAS)…"), self.exporter_vers)
+        m.addAction(icone("nuage"), _("Envoyer une vidéo déjà exportée vers un emplacement (cloud, NAS)…"), self.partager)
         m.addSeparator()
         m.addAction(_("Fermer le projet"), lambda: self.fermer_onglet(self.onglets.currentIndex()), "Ctrl+W")
         m.addAction(_("Quitter"), self.close, QKeySequence.Quit)
@@ -796,6 +800,14 @@ class Fenetre(QMainWindow):
             self.voix()
         elif oid == "partager":
             self.partager()
+
+    def exporter_vers(self):
+        """0.9.78 : exporter puis envoyer vers le NAS, Google Drive, pCloud… (case cochée d'office dans la fenêtre d'export)."""
+        self._exporter_vers = True
+        try:
+            self.exporter()
+        finally:
+            self._exporter_vers = False
 
     def exporter(self):
         ed = self.editeur_courant()

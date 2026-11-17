@@ -7739,5 +7739,13 @@
  "« {n} » semble désigner plusieurs personnes. Le moteur garde un visage par personnage : créez un personnage par personne (même photo pour les deux, et dans la description : « à gauche, cheveux longs bruns, manteau noir… »), puis une fiche pour chacune. Continuer quand même ?": "«{n}» parece designar a varias personas. El motor conserva un rostro por personaje: cree un personaje por persona (la misma foto para ambas y, en la descripción: «a la izquierda, pelo largo castaño, abrigo negro…»), y luego una ficha para cada una. ¿Continuar de todos modos?",
  "Ajoutez d'abord une image ou une description du personnage « {n} ».": "Añada primero una imagen o una descripción del personaje «{n}».",
  "Tampons dessinés et sonorisés par PhilCut sur ce poste : aucun droit à payer, textes dans la langue de PhilCut, au format du projet. ✓ = prêt : double-clic ou « Mettre dans le film… » ici même (ils sont aussi dans « Ma bibliothèque »).": "Sellos dibujados y sonorizados por PhilCut en este equipo: sin derechos que pagar, textos en el idioma de PhilCut, en el formato del proyecto. ✓ = listo: doble clic o «Poner en la película…» aquí mismo (también están en «Mi biblioteca»).",
- "prêt": "listo"
+ "prêt": "listo",
+ "Puis l'envoyer vers un emplacement (NAS, Google Drive, pCloud, OneDrive…)": "Luego enviarlo a una ubicación (NAS, Google Drive, pCloud, OneDrive…)",
+ "A la fin de l'export, PhilCut demande où l'envoyer (le dernier emplacement est proposé) ; la barre du bas suit l'envoi": "Al final de la exportación, PhilCut pregunta adónde enviarlo (se propone la última ubicación); la barra inferior sigue el envío",
+ "Exporter la vidéo vers un emplacement (cloud, NAS)…": "Exportar el vídeo a una ubicación (nube, NAS)…",
+ "Envoyer une vidéo déjà exportée vers un emplacement (cloud, NAS)…": "Enviar un vídeo ya exportado a una ubicación (nube, NAS)…",
+ "Fondus des sons": "Fundidos de sonido",
+ "Fondu donné d'office aux musiques et sons posés (0 = aucun) ; chaque plan se règle ensuite dans l'Inspecteur. La voix n'en a jamais.": "Fundido dado por defecto a músicas y sonidos colocados (0 = ninguno); cada plano se ajusta luego en el Inspector. La voz nunca lo tiene.",
+ "entrée": "entrada",
+ "sortie": "salida"
 }
