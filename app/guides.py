@@ -126,6 +126,25 @@ def _guides_integres():
               "montrer": {"menu": [_("Montage"), _("Pistes et passage choisi (partie jaune)"), _("Partie jaune : supprimer ce passage")]}},
              {"texte": _("Un vide est resté entre deux plans ? Clic droit dans le vide › « Refermer ce vide : recoller les plans ».")},
          ]},
+        {"id": "assistant_creation", "etat": "ok",
+         "titre": _("Etre guidé pour continuer un rush ou créer une scène par IA (mode assisté)"),
+         "mots": "assistant assiste guide aide pas a pas continuer rallonger rush suite scene histoire personnages plans budget "
+                 "facile automatique limousine",
+         "intro": _("Vous racontez la suite d'un trait ; l'assistant (Claude, Gemini ou l'IA de ce poste) regarde la dernière image, "
+                    "propose les personnes, les objets et les plans d'une action, prépare fiches et images, vous les montre avant la "
+                    "vidéo, fabrique, puis relit chaque plan. Le budget prévu et dépensé reste affiché ; dépassé, il passe en rouge. "
+                    "A tout moment : écrire en clair ce qu'il faut changer, ou « Régler moi-même »."),
+         "etapes": [
+             {"texte": _("Cliquez le plan à continuer dans la timeline."), "fait": "plan_choisi"},
+             {"texte": _("Clic droit sur le plan › « Continuer ce plan avec l'assistant IA… » (ou Fabrique IA › Vidéo › Assistant de création)."),
+              "montrer": {"clic_droit": [_("Continuer ce plan avec l'assistant IA…")]}, "fait": "fenetre:DialogueAssistant"},
+             {"texte": _("Racontez ce qui se passe ensuite, puis « Analyser mon histoire ».")},
+             {"texte": _("Vérifiez qui et quoi (une ligne par personne, par objet important), puis les plans ; corrigez dans les tableaux "
+                         "ou écrivez-le en clair en bas (« le chauffeur plus âgé »).")},
+             {"texte": _("Confirmez le budget : l'assistant prépare fiches et images. Regardez-les, « Corriger… » celles qui ne vont pas, "
+                         "puis lancez la vidéo.")},
+             {"texte": _("Chaque plan est relu : ✓ ou ⚠ avec la raison. « Refaire ce plan… » si besoin, puis « Poser dans le film ».")},
+         ]},
         {"id": "personnages", "etat": "ok",
          "titre": _("Garder le même personnage d'un plan à l'autre (Séquence IA)"),
          "mots": "personnage personne jouer parler replique dialogue visage acteur histoire sequence ressemblant fidele identique "

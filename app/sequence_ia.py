@@ -75,8 +75,9 @@ def couper_plan(seq, i):
             sujet = n
     if sujet and not b.lower().startswith(sujet.lower()):
         b = f"{sujet} {b}"
-    elif not sujet and pl.get("personnages") and len(pl["personnages"]) == 1:
-        b = f"{pl['personnages'][0]} {b}"
+    elif not sujet and pl.get("personnages") and len(pl["personnages"]) == 1 and not re.match(
+            r"(?i)(?:le|la|les|l'|un|une|des|il|elle|ils|elles|on|the|a|an|he|she|they)\b", b):
+        b = f"{pl['personnages'][0]} {b}"         # « s'assoit » → « Hélène s'assoit » ; pas devant un sujet déjà là
     d = max(3, int(round(float(pl.get("duree") or DUREE_PLAN) / 2 + 0.5)))
     p1 = dict(pl, action=a[0].upper() + a[1:], duree=d, consigne="", fichier="", image="")
     p2 = dict(pl, action=b[0].upper() + b[1:], duree=d, consigne="", fichier="", image="", repliques=[], voix=[])
@@ -332,7 +333,16 @@ def planche_personnage(seq, p, params):
     d = _anglais((p.get("description") or "").strip(), True)
     if not refs and not d:
         raise ValueError(_("Ajoutez d'abord une image ou une description du personnage « {n} ».", n=p.get("nom") or "?"))
-    if refs:
+    allure = jeu_du_style(p.get("style", ""), params)       # « à la manière de » : une allure, jamais un visage
+    if allure and not refs:
+        d = "; ".join(x for x in (d, allure) if x)
+    if p.get("genre") == "objet":                            # 0.9.79 : un objet qui revient (véhicule…) a aussi sa fiche
+        consigne_objet = ("Reference sheet of ONE object: " + d + ". Four views side by side on a plain light grey background: "
+                          "front, three-quarter, side, rear. Even soft studio light, photorealistic, sharp, no text, no logo, no "
+                          "brand, no people.")
+        png = ia.generer_image_refs(params, "Only the object described, as seen in the reference image. " + consigne_objet, refs) \
+            if refs else ia.generer_image(params, consigne_objet)
+    elif refs:
         png = ia.generer_image_refs(params, CONSIGNE_PLANCHE.format(d=("Description: " + d) if d else ""), refs)
     else:                                   # 0.9.77 : personnage inventé (le chauffeur) : sa fiche le fixe pour tous les plans
         png = ia.generer_image(params, "Character model sheet of an INVENTED person (not a real or famous person): " + d +

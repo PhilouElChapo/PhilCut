@@ -4,7 +4,16 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.78 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.79 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.79 (assistant de creation : le mode assiste)
+- Nouveau : Fabrique IA › Video › "Assistant de creation : guide pas a pas..." et, au clic droit sur un plan, "Continuer ce plan avec l'assistant IA...". Vous racontez la suite d'un trait ; l'assistant (Claude par defaut, Gemini ou l'IA de cet ordinateur, au choix) regarde la derniere image, propose les personnes, les objets importants et les plans d'une seule action ; vous corrigez dans les tableaux ou en clair ("le chauffeur plus age", "un plan de plus ou elles saluent").
+- Il prepare ensuite les fiches et les images de depart et d'arrivee, vous les montre AVANT la video ("Corriger..." refait une image d'apres ce que vous ecrivez), fabrique les plans a la chaine puis relit chacun : ✓ ou ⚠ avec la raison (visages, action). Un plan rate est signale et propose a refaire : c'est vous qui decidez.
+- Budget toujours affiche en bas : prevu et depense ; le depense passe en rouge avec "depasse" s'il franchit le prevu. Rien de payant ne part sans confirmation.
+- "Le regler moi-meme..." ouvre la meme histoire dans la Sequence IA (mode manuel) ; "Prolonger ce plan" propose le mode assiste.
+- Fiche d'un objet important (vehicule...) pour le garder identique d'un plan a l'autre ; "Style" = une allure "a la maniere de" (jamais un visage copie).
+- A venir sur le meme modele : intro et logo, puis musique, voix et chanson.
+
 
 ### 0.9.78
 - Fichier : "Exporter la video vers un emplacement (cloud, NAS)..." et "Envoyer une video deja exportee vers un emplacement..." ; dans la fenetre d'export, la case "Puis l'envoyer vers un emplacement (NAS, Google Drive, pCloud, OneDrive...)".

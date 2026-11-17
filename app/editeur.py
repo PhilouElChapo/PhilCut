@@ -1856,6 +1856,8 @@ class Editeur(QWidget):
             self.plan_liaison(self.projet.clip(ident))
         elif quoi == "voix_suite":
             self.continuer_voix(self.projet.clip(ident))
+        elif quoi == "assistant":
+            self.assistant_creation(self.projet.clip(ident))
         elif quoi == "levres":
             self.faire_parler(self.projet.clip(ident))
         elif quoi == "clip_groupe":
@@ -2670,6 +2672,16 @@ class Editeur(QWidget):
             apprentissage.ecrire(self.params, "recettes.json", d)
         except Exception:
             pass
+
+    def assistant_creation(self, clip=None):
+        """0.9.79 : mode assisté de la vidéo par IA (continuer un rush, scène en plusieurs plans) ; une seule fenêtre."""
+        from .dialogues_assistant_creation import DialogueAssistant
+        from .widgets import non_bloquante
+        if clip is None:
+            clip = self._clip_selectionne()
+            if clip is None and hasattr(self.projet, "plan_visible"):
+                clip = self.projet.plan_visible(self.timeline.position)
+        return non_bloquante(self, "assistant_creation", lambda: DialogueAssistant(self, clip))
 
     def sequence_ia(self, nouvelle=False):
         """Séquence IA : histoire en plusieurs plans (personnages constants, répliques, musique) ; reprend la dernière du projet."""

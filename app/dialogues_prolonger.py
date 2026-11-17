@@ -47,6 +47,10 @@ class DialogueProlonger(QDialog):
             self.methode.model().item(i).setEnabled(False)
         self.methode.currentIndexChanged.connect(self._methode_changee)
         f.addRow(_("Comment"), self.methode)
+        ba = QPushButton(_("Une vraie suite avec des personnages ? Mode assisté…"))
+        ba.setToolTip(_("L'assistant prépare les fiches des personnes, découpe en plans, montre les images avant la vidéo et relit"))
+        ba.clicked.connect(lambda: (ed.assistant_creation(self.clip), self.close()))
+        f.addRow("", ba)
         from .consigne_bilingue import ConsigneBilingue
         self.suite = ConsigneBilingue(50)
         self.suite.setPlaceholderText(_("Facultatif : ce qui se passe ensuite (ex. : elle ouvre l'ordinateur et sourit)"))

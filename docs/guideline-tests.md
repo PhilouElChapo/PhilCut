@@ -23,6 +23,18 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T89 — 0.9.79 : assistant de création (mode assisté)
+
+1. Photo des deux femmes posée dans le film : clic droit › « Continuer ce plan avec l'assistant IA… ». Page 1 : choisir qui assiste (Claude, Gemini ou IA de cet ordinateur), « Commencer ».
+2. Raconter d'un trait : « Les deux femmes descendent les marches puis vont vers une limousine noire. Un chauffeur leur ouvre la portière, elles montent, et la limousine s'éloigne. » Cocher l'accord, « Analyser mon histoire ».
+3. « Qui et quoi » : une ligne par femme, une pour le chauffeur (inventé), une pour la limousine (objet) ? Corriger une description dans le tableau, puis écrire en bas « le chauffeur plus âgé, casquette » : la ligne change.
+4. « Les plans » : une seule action par plan ; changer une durée ; écrire en bas « un plan de plus où elles saluent ».
+5. « Préparer les images » : le budget prévu est annoncé et demandé ; les fiches et les images de départ et d'arrivée s'affichent ; cliquer une image pour l'agrandir ; « Corriger… » sur une arrivée : la nouvelle image correspond-elle ?
+6. « Tout me va : fabriquer la vidéo » : chaque plan est relu (✓ ou ⚠ avec la raison). « Refaire ce plan… » sur un plan signalé : le dépensé monte ; s'il dépasse le prévu, il passe en rouge avec « dépassé ».
+7. « Poser dans le film » : les plans arrivent à la suite du rush ; Ctrl+Z revient.
+8. Pendant une fabrication : « Réduire », puis fermer la fenêtre : rien n'est perdu (« Afficher la fenêtre »).
+9. « Le régler moi-même… » : la même histoire s'ouvre dans la Séquence IA.
+
 ## T88 — 0.9.76 et 0.9.77 : prolonger en une fois, visages gardés
 
 1. Photo des deux femmes posée dans le film : clic droit › « Prolonger ce plan… » › « Prolongé par l'IA cloud, fidèle », durée 25 s, « Suite » : toute l'histoire avec « puis » ; la fenêtre liste les étapes et le prix ; « Fabriquer » : la photo s'anime (plus d'image figée) et les étapes s'enchaînent seules.

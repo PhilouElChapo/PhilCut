@@ -967,6 +967,10 @@ class Fenetre(QMainWindow):
                     quand(lambda e: e.separer_sons()))]),
             (icone("camera"), _("Vidéo"), _("Créer des plans qui manquent au film : à partir d'une phrase, d'une histoire ou d'une image du "
                                               "film. D'abord l'IA de ce poste (gratuite), puis Gemini (votre clef, prix annoncé), puis Google Flow."), [
+                ent(icone("assistant"), _("Assistant de création : guidé pas à pas…"),
+                    _("Vous racontez, l'assistant pose les questions, prépare personnages, plans et images, fabrique, relit chaque "
+                      "plan ; budget prévu et dépensé affiché. Pour continuer un rush ou créer une scène."),
+                    quand(lambda e: e.assistant_creation())),
                 ent(None, _("Effet IA sur le film (dessin animé, ralenti, agrandir, photo 3D…)…"),
                     _("A partir d'une image ou d'une partie du film, sur ce poste, gratuitement."), quand(lambda e: e.atelier_ia("video"))),
                 ent(None, _("Histoire en plusieurs plans (Séquence IA)…"),
