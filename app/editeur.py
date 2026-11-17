@@ -2690,6 +2690,12 @@ class Editeur(QWidget):
                 pass
         return d
 
+    def bibliotheque_creations(self):
+        """0.9.81 : « Ma bibliothèque de créations » (personnages, lieux, voix, styles…), une seule fenêtre, non bloquante."""
+        from .dialogues_bibliotheque_creations import DialogueBibliothequeCreations
+        from .widgets import non_bloquante
+        return non_bloquante(self, "bibliotheque_creations", lambda: DialogueBibliothequeCreations(self))
+
     def sequence_ia(self, nouvelle=False):
         """Séquence IA : histoire en plusieurs plans (personnages constants, répliques, musique) ; reprend la dernière du projet."""
         from .dialogues_sequence import DialogueSequence

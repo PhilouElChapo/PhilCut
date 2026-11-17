@@ -29,7 +29,8 @@ A partir de l'histoire de l'utilisateur, rends un objet JSON :
 {{"personnages": [{{"nom": "...", "genre": "personne" ou "objet", "sur_image": true ou false, "position": "gauche", "droite",
 "centre" ou "", "boite": [x0, y0, x1, y1] en pourcentages de l'image (0 à 100) pour ce qui est sur l'image, sinon [],
 "description": "..."}}],
- "plans": [{{"action": "...", "personnages": ["nom", ...], "duree": 4 à 10, "camera": "..."}}],
+ "lieux": [{{"nom": "...", "sur_image": true si c'est le décor de l'image de départ, "description": "lumière, matières, détails"}}],
+ "plans": [{{"action": "...", "personnages": ["nom", ...], "lieu": "nom du lieu ou vide", "duree": 4 à 10, "camera": "..."}}],
  "remarques": "une phrase pour l'utilisateur, ou vide"}}
 Règles impératives :
 - Un personnage = UNE seule personne (jamais « les deux femmes » comme un seul personnage). Donne à chacun un nom court et
@@ -44,6 +45,7 @@ Règles impératives :
 - Chaque plan liste tous les personnages et objets qu'on y voit, par leur nom exact.
 - Caméra : simple et stable (recule, accompagne de côté, fixe) ; jamais de dos quand les visages doivent rester
   reconnaissables.
+- Un lieu = un décor où se passent un ou plusieurs plans (l'escalier, la rue devant l'entrée…) ; au plus 4 lieux.
 - Au plus 8 plans. Ecris nom, description, action et caméra en {langue}.
 """
 
@@ -128,6 +130,11 @@ def lire_analyse(d):
                        ("gauche", "droite", "centre", "left", "right", "center") else "",
                        "description": _texte(p.get("description")), "style": _texte(p.get("style"), 60),
                        "boite": lire_boite(p.get("boite")) if p.get("sur_image") else None})
+    lieux, vus_l = [], set()
+    for li in (d.get("lieux") or [])[:4]:
+        if isinstance(li, dict) and _texte(li.get("nom"), 40) and _texte(li.get("nom"), 40).lower() not in vus_l:
+            vus_l.add(_texte(li.get("nom"), 40).lower())
+            lieux.append({"nom": _texte(li.get("nom"), 40), "sur_image": bool(li.get("sur_image")), "description": _texte(li.get("description"))})
     plans = []
     for pl in (d.get("plans") or [])[:10]:
         if not isinstance(pl, dict) or not _texte(pl.get("action")):
@@ -137,9 +144,10 @@ def lire_analyse(d):
         except (TypeError, ValueError):
             duree = Q.DUREE_PLAN
         noms = [n for n in (_texte(x, 40) for x in (pl.get("personnages") or []) if x) if n.lower() in vus]
+        lieu = _texte(pl.get("lieu"), 40)
         plans.append({"action": _texte(pl.get("action"), 300), "personnages": noms, "duree": max(3, min(15, duree)),
-                      "camera": _texte(pl.get("camera"), 120)})
-    return {"personnages": persos, "plans": plans, "remarques": _texte(d.get("remarques") or d.get("message"), 300)}
+                      "camera": _texte(pl.get("camera"), 120), "lieu": lieu if lieu.lower() in vus_l else ""})
+    return {"personnages": persos, "lieux": lieux, "plans": plans, "remarques": _texte(d.get("remarques") or d.get("message"), 300)}
 
 
 def lire_boite(b):
@@ -241,7 +249,7 @@ def appliquer(seq, analyse, image=None):
     for a in analyse["personnages"]:
         p = Q.personnage(a["nom"], description_complete(a), a.get("style", ""))
         vieux = anciens.get(a["nom"].lower())
-        for cle in ("source", "boite", "photo", "decoupe", "accord"):     # 0.9.80 : ce que la carte a fixé suit
+        for cle in ("source", "boite", "photo", "decoupe", "accord", "biblio", "planche", "images"):     # ce que la carte a fixé suit
             if a.get(cle) is None and vieux and vieux.get(cle) is not None:
                 if cle == "decoupe" and (a.get("boite") or vieux.get("boite")) != vieux.get("boite"):
                     continue                              # cadre changé : la découpe est refaite
@@ -249,7 +257,12 @@ def appliquer(seq, analyse, image=None):
         source = a.get("source") or ("image" if a["sur_image"] and image else "inventer")
         p.update(genre=a["genre"], sur_image=source == "image", position=a.get("position", ""), brut=a.get("description", ""),
                  source=source, boite=a.get("boite") or (boite_par_defaut(a) if source == "image" else None))
-        if source == "image" and image:
+        if source == "bibliotheque":                      # 0.9.81 : repris tel quel de la bibliothèque (fiche comprise)
+            p["images"] = [x for x in a.get("images") or [] if x and os.path.exists(x)]
+            if a.get("planche") and os.path.exists(a["planche"]):
+                p["planche"] = a["planche"]
+            p["biblio"] = a.get("biblio", "")
+        elif source == "image" and image:
             dec = a.get("decoupe") if a.get("decoupe") and os.path.exists(a["decoupe"]) else ""
             if not dec and p["boite"]:
                 try:
@@ -269,10 +282,28 @@ def appliquer(seq, analyse, image=None):
                 if vieux.get(cle):
                     p[cle] = vieux[cle]
         persos.append(p)
+    if "lieux" in analyse:                                  # 0.9.81 : les lieux (décor de l'image, photo, décrit, bibliothèque)
+        anciens_l = {x["nom"].lower(): x for x in seq.get("lieux") or []}
+        lieux = []
+        for a in analyse["lieux"]:
+            li = Q.lieu(a["nom"], a.get("description", ""))
+            vieux = anciens_l.get(a["nom"].lower()) or {}
+            source = a.get("source") or vieux.get("source") or ("image" if a.get("sur_image") and image else "inventer")
+            li["source"] = source
+            if source == "image" and image:
+                li["images"] = [image]
+            elif source == "photo" and (a.get("photo") or vieux.get("photo")):
+                li["photo"] = a.get("photo") or vieux.get("photo")
+                li["images"] = [li["photo"]]
+            elif source == "bibliotheque":
+                li["images"] = [x for x in (a.get("images") or vieux.get("images") or []) if os.path.exists(x)]
+                li["biblio"] = a.get("biblio") or vieux.get("biblio", "")
+            lieux.append(li)
+        seq["lieux"] = lieux
     vieux_plans = {(pl.get("action"), tuple(pl.get("personnages") or [])): pl for pl in seq.get("plans") or []}
     plans = []
     for a in analyse["plans"]:
-        pl = Q.plan(a["action"], a["personnages"], "", a["duree"], camera=a.get("camera", ""))
+        pl = Q.plan(a["action"], a["personnages"], a.get("lieu", ""), a["duree"], camera=a.get("camera", ""))
         vieux = vieux_plans.get((a["action"], tuple(a["personnages"])))
         if vieux:
             for cle in ("image", "image_fin", "images_ok", "sans_fin", "fichier", "verdict", "consigne"):
@@ -314,8 +345,10 @@ def etat(seq):
                              "source": p.get("source"), "boite": p.get("boite"),
                              "position": p.get("position", ""), "description": p.get("brut") or p.get("description", ""),
                              "style": p.get("style", "")} for p in seq["personnages"]],
+            "lieux": [{"nom": x["nom"], "sur_image": x.get("source") == "image", "description": x.get("description", "")}
+                      for x in seq.get("lieux") or []],
             "plans": [{"action": pl["action"], "personnages": pl.get("personnages") or [], "duree": pl.get("duree"),
-                       "camera": pl.get("camera", "")} for pl in seq["plans"]]}
+                       "camera": pl.get("camera", ""), "lieu": pl.get("lieu", "")} for pl in seq["plans"]]}
 
 
 def modifier(params, seq, demande, niveau="claude", image=None):

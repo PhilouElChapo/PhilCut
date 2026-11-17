@@ -209,7 +209,8 @@ def _synchroniser(params, compte, emplacement, choix, sens, plan):
 EXPLICATIONS = {"preferences.json": "Vos réglages communs à tous vos postes (thème, langue, dossiers, préférences de PhilCut).",
                 "session.json": "Les projets ouverts et récents de ce poste, pour les retrouver sur vos autres postes.",
                 "tampons": "Votre bibliothèque de tampons et d'extraits.", "apprentissage": "Ce que PhilCut retient de vos choix (assistant).",
-                "mes_points.json": "Vos points enregistrés sur la carte (aviation).", "effets_perso.json": "Vos effets et phrases IA personnels."}
+                "mes_points.json": "Vos points enregistrés sur la carte (aviation).",
+                "creations_partagees": "Votre bibliothèque de créations : personnages, lieux, voix, styles, musiques (partagée avec les logiciels PhilFactory).", "effets_perso.json": "Vos effets et phrases IA personnels."}
 
 
 def expliquer(rel):

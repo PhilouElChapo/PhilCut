@@ -304,7 +304,7 @@ class DialogueAssistant(QDialog):
         self.v_cartes = QVBoxLayout(self.w_cartes)
         v.addWidget(_defile(self.w_cartes), 1)
         hb = QHBoxLayout()
-        for lib, genre in ((_("+ Une personne"), "personne"), (_("+ Un objet"), "objet")):
+        for lib, genre in ((_("+ Une personne"), "personne"), (_("+ Un objet"), "objet"), (_("+ Un lieu"), "lieu")):
             b = QPushButton(lib)
             b.clicked.connect(lambda _c=False, g=genre: self._ajouter_carte(g))
             hb.addWidget(b)
@@ -315,17 +315,23 @@ class DialogueAssistant(QDialog):
         h.addLayout(v, 1)
         return w
 
-    def _element_de(self, p):
+    def _element_de(self, p, lieu=False):
+        if lieu:
+            return I.element("lieu", p["nom"], p.get("description", ""), p.get("source") or "inventer", genre="lieu",
+                             photo=p.get("photo", ""), images=list(p.get("images") or []), biblio=p.get("biblio", ""))
         return I.element(p.get("genre", "personne"), p["nom"], p.get("brut") or p.get("description", ""),
                          p.get("source") or ("image" if p.get("sur_image") else "inventer"), genre=p.get("genre", "personne"),
                          boite=p.get("boite"), photo=p.get("photo", ""), decoupe=p.get("decoupe", ""), style=p.get("style", ""),
-                         position=p.get("position", ""))
+                         position=p.get("position", ""), biblio=p.get("biblio", ""), planche=p.get("planche", ""),
+                         images=list(p.get("images") or []) if p.get("source") == "bibliotheque" else [])
 
     def _remplir_cartes(self):
         vider(self.v_cartes)
         self.cartes = []
         for p in self.seq["personnages"]:
             self._carte(self._element_de(p))
+        for li in self.seq.get("lieux") or []:
+            self._carte(self._element_de(li, lieu=True))
         self.v_cartes.addStretch(1)
         vider(self.v_image)
         self.image_cadres = None
@@ -347,7 +353,7 @@ class DialogueAssistant(QDialog):
             if e.get("source") == "image":
                 e["source"] = "inventer"
         c = CarteElement(e, sources, self._options_personne, I.manque, self.ameliorer, COULEURS[k % len(COULEURS)], self._retirer_carte,
-                         _("Personne") if e["type"] == "personne" else _("Objet"))
+                         {"personne": _("Personne"), "objet": _("Objet"), "lieu": _("Lieu")}[e["type"]], self.garder_carte)
         c.change.connect(self._maj_cadres)
         c.active.connect(self._activer)
         self.cartes.append(c)
@@ -356,9 +362,9 @@ class DialogueAssistant(QDialog):
 
     def _ajouter_carte(self, genre):
         n = sum(1 for c in self.cartes if c.e["type"] == genre) + 1
-        nom = _("Personne {n}", n=n) if genre == "personne" else _("Objet {n}", n=n)
+        nom = {"personne": _("Personne {n}", n=n), "objet": _("Objet {n}", n=n), "lieu": _("Lieu {n}", n=n)}[genre]
         e = I.element(genre, nom, "", "image" if self._suite() else "inventer", genre=genre)
-        if self._suite():
+        if self._suite() and genre != "lieu":
             e["boite"] = A.boite_par_defaut({})
         c = self._carte(e)
         self._activer(c)
@@ -382,7 +388,7 @@ class DialogueAssistant(QDialog):
         if getattr(self, "image_cadres", None) is None:
             return
         actif = getattr(self, "_active", None)
-        self.image_cadres.cadres = [(k + 1, c._couleur, c.e.get("boite") if c.e.get("source") == "image" else None)
+        self.image_cadres.cadres = [(k + 1, c._couleur, c.e.get("boite") if c.e.get("source") == "image" and c.e["type"] != "lieu" else None)
                                     for k, c in enumerate(self.cartes)]
         self.image_cadres.actif = self.cartes.index(actif) if actif in self.cartes else -1
         self.image_cadres.update()
@@ -391,6 +397,9 @@ class DialogueAssistant(QDialog):
         c = getattr(self, "_active", None)
         if c not in self.cartes:
             self.etat.setText(_("Cliquez d'abord la carte de la personne ou de l'objet."))
+            return
+        if c.e["type"] == "lieu":
+            self.etat.setText(_("Un lieu pris dans l'image garde toute l'image : rien à encadrer."))
             return
         c.e["boite"] = [round(x, 4) for x in boite]
         c.e["decoupe"] = ""
@@ -405,10 +414,14 @@ class DialogueAssistant(QDialog):
 
     def _options_personne(self, carte, source):
         e = carte.e
+        if source == "bibliotheque":
+            return self._options_bibliotheque(carte)
         w = QWidget()
         v = QVBoxLayout(w)
         v.setContentsMargins(24, 0, 0, 0)
-        if source == "image":
+        if source == "image" and e["type"] == "lieu":
+            v.addWidget(self._aide(_("Le décor de la dernière image sert de référence au lieu.")))
+        elif source == "image":
             if e.get("decoupe") and os.path.exists(e["decoupe"]):
                 h = QHBoxLayout()
                 h.addWidget(Vignette(e["decoupe"], 110))
@@ -425,6 +438,8 @@ class DialogueAssistant(QDialog):
             h.addWidget(b)
             h.addWidget(QLabel(os.path.basename(e.get("photo") or "") or _("aucune")), 1)
             v.addLayout(h)
+        if e["type"] == "lieu":
+            return w
         h = QHBoxLayout()
         b = QPushButton(_("✨ Compléter la description"))
         b.setToolTip(_("L'IA écrit une description complète (âge, allure, vêtements ; couleur, forme) en gardant la vôtre"))
@@ -472,21 +487,89 @@ class DialogueAssistant(QDialog):
                 carte.mettre_description(choisi)
         self._lancer(lambda _t: A.aider_a_decrire(self.params, e, histoire, niveau, image), _("L'IA complète la description"), fin)
 
+    def _lire_lieux(self):
+        return [{"nom": c.e["nom"].strip(), "description": (c.e.get("description") or "").strip(), "source": c.e.get("source") or "inventer",
+                 "sur_image": c.e.get("source") == "image", "photo": c.e.get("photo", ""), "images": c.e.get("images") or [],
+                 "biblio": c.e.get("biblio", "")} for c in self.cartes if c.e["type"] == "lieu" and (c.e.get("nom") or "").strip()]
+
     def _lire_cartes(self):
         persos = []
         for c in self.cartes:
             e = c.e
-            if not (e.get("nom") or "").strip():
+            if not (e.get("nom") or "").strip() or e["type"] == "lieu":
                 continue
             persos.append({"nom": e["nom"].strip(), "genre": e.get("genre") or e["type"], "sur_image": e.get("source") == "image",
                            "position": e.get("position", ""), "description": (e.get("description") or "").strip(),
                            "style": e.get("style", ""), "source": e.get("source") or "inventer", "boite": e.get("boite"),
-                           "photo": e.get("photo", ""), "decoupe": e.get("decoupe") or None,
-                           "accord": bool(self.accord.isChecked()) and e.get("source") in ("image", "photo")})
+                           "photo": e.get("photo", ""), "decoupe": e.get("decoupe") or None, "biblio": e.get("biblio", ""),
+                           "planche": e.get("planche", "") if e.get("source") == "bibliotheque" else None,
+                           "images": e.get("images") if e.get("source") == "bibliotheque" else None,
+                           "accord": (bool(self.accord.isChecked()) and e.get("source") in ("image", "photo")) or
+                                     (e.get("source") == "bibliotheque" and bool(e.get("accord")))})
         return persos
 
     def _avec_personnes_reelles(self):
         return any(c.e.get("type") == "personne" and c.e.get("source") in ("image", "photo") for c in self.cartes)
+
+    # ------------------------------------------------------------------ bibliothèque (0.9.81)
+    def _options_bibliotheque(self, carte):
+        from . import bibliotheque_creations as B
+        e = carte.e
+        w = QWidget()
+        v = QVBoxLayout(w)
+        v.setContentsMargins(24, 0, 0, 0)
+        entrees = B.lister(self.params, B.CARTES_POUR.get(e["type"], ()))
+        h = QHBoxLayout()
+        cb = QComboBox()
+        cb.addItem(_("Choisir…") if entrees else _("Rien encore de ce genre dans votre bibliothèque"), "")
+        for x in entrees:
+            cb.addItem(x["nom"], x["id"])
+        cb.setCurrentIndex(max(0, cb.findData(e.get("biblio") or "")))
+        h.addWidget(cb, 1)
+        b = QPushButton(_("Ma bibliothèque…"))
+        b.setToolTip(_("Voir, créer, renommer ce qui est gardé"))
+        b.clicked.connect(lambda: self.ed.bibliotheque_creations())
+        h.addWidget(b)
+        v.addLayout(h)
+        choisie = next((x for x in entrees if x["id"] == e.get("biblio")), None)
+        if choisie:
+            hh = QHBoxLayout()
+            if B.apercu(choisie):
+                hh.addWidget(Vignette(B.apercu(choisie), 110))
+            hh.addWidget(self._aide(B.resume(choisie)), 1)
+            v.addLayout(hh)
+
+        def choisir(_i):
+            x = next((y for y in entrees if y["id"] == cb.currentData()), None)
+            if x is None:
+                return
+            B.vers_carte(x, e)
+            carte.nom.blockSignals(True)
+            carte.nom.setText(e["nom"])
+            carte.nom.blockSignals(False)
+            carte.mettre_description(e.get("description", ""))
+            carte.rafraichir()
+            self._maj_cadres()
+        cb.currentIndexChanged.connect(choisir)
+        return w
+
+    def garder_carte(self, carte, planche=""):
+        """« ☆ Garder » : la carte telle qu'elle est (fiche, découpe, voix, style) rangée dans la bibliothèque, sous un nom choisi."""
+        from . import bibliotheque_creations as B
+        e = carte.e if hasattr(carte, "e") else carte
+        if not planche and e.get("type") in ("personne", "objet"):
+            p = next((x for x in self.seq["personnages"] if x["nom"].lower() == (e.get("nom") or "").lower()), None)
+            planche = (p or {}).get("planche", "")
+        nom, ok = self._precision(_("Garder dans ma bibliothèque"), _("Nom sous lequel le retrouver (ex. : « Chanteuse rock chaude », "
+                                                                     "« Chauffeur de limousine ») :"), e.get("nom", ""))
+        if not ok or not nom.strip():
+            return
+        try:
+            x = B.depuis_carte(self.params, e, nom.strip(), planche)
+        except Exception as err:      # noqa: BLE001
+            self.etat.setText("✕ " + texte_erreur(err))
+            return
+        self.etat.setText(_("✓ « {n} » est dans votre bibliothèque ({g}).", n=x["nom"], g=B.GENRES[x["genre"]][0]))
 
     def _cartes_completes(self):
         manquent = [f"{k + 1}. {c.e.get('nom')} : {I.manque(c.e)}" for k, c in enumerate(self.cartes) if I.manque(c.e)]
@@ -603,7 +686,10 @@ class DialogueAssistant(QDialog):
             plans = A.etat(self.seq)["plans"]
             for pl in plans:
                 pl["personnages"] = [noms[n.lower()] for n in pl["personnages"] if n.lower() in noms]
-        A.appliquer(self.seq, {"personnages": persos, "plans": plans}, self.image if self._suite() else None)
+        analyse = {"personnages": persos, "plans": plans}
+        if self.cartes:
+            analyse["lieux"] = self._lire_lieux()
+        A.appliquer(self.seq, analyse, self.image if self._suite() else None)
 
     def _maj_prix(self):
         if self.pages.currentIndex() != P_PLANS:
@@ -923,9 +1009,16 @@ class DialogueAssistant(QDialog):
             lb = QLabel(f"<b>{p['nom']}</b><br>{p.get('description', '')}")
             lb.setWordWrap(True)
             g.addWidget(lb, ligne, 1)
+            bl = QVBoxLayout()
             b = QPushButton(_("Corriger…"))
             b.clicked.connect(lambda _c=False, k=k: self.corriger_fiche(k))
-            g.addWidget(b, ligne, 2, Qt.AlignTop)
+            bl.addWidget(b)
+            bg = QPushButton(_("☆ Garder"))
+            bg.setToolTip(_("Ranger cette fiche dans « Ma bibliothèque de créations »"))
+            bg.clicked.connect(lambda _c=False, k=k: self._garder_fiche(k))
+            bl.addWidget(bg)
+            bl.addStretch(1)
+            g.addLayout(bl, ligne, 2)
             ligne += 1
         g.addWidget(self._titre(_("Plans : départ, puis arrivée")), ligne, 0, 1, 3)
         ligne += 1
@@ -952,10 +1045,17 @@ class DialogueAssistant(QDialog):
         g.setRowStretch(ligne, 1)
         self.zone_images.setWidget(w)
 
-    def _precision(self, titre, question):
+    def _precision(self, titre, question, defaut=""):
         if getattr(self, "_test_precision", None) is not None:
-            return self._test_precision, True
-        return QInputDialog.getText(self, titre, question)
+            return self._test_precision or defaut, True
+        return QInputDialog.getText(self, titre, question, QLineEdit.Normal, defaut)
+
+    def _garder_fiche(self, k):
+        p = self.seq["personnages"][k]
+        e = self._element_de(p)
+        e["accord"] = bool(p.get("accord"))
+        e["images"] = list(p.get("images") or [])
+        self.garder_carte(e, p.get("planche", ""))
 
     def corriger_fiche(self, k):
         p = self.seq["personnages"][k]
@@ -1196,7 +1296,8 @@ class DialogueAssistant(QDialog):
         titres = {"style": _("Style"), "voix": _("Voix"), "paroles": _("Paroles")}
         for k, e in enumerate(self.musique["elements"]):
             e.setdefault("genre", {"paroles": "theme"}.get(e["type"], e["type"]))
-            c = CarteElement(e, I.sources(e["type"]), self._options_musique, I.manque, self.ameliorer, COULEURS[k], None, titres[e["type"]])
+            c = CarteElement(e, I.sources(e["type"]), self._options_musique, I.manque, self.ameliorer, COULEURS[k], None, titres[e["type"]],
+                             self.garder_carte if e["type"] in ("style", "voix") else None)
             c.change.connect(self._maj)
             self.mcartes.append(c)
             self.v_mcartes.addWidget(c)
@@ -1211,6 +1312,8 @@ class DialogueAssistant(QDialog):
     def _options_musique(self, carte, source):
         e = carte.e
         t = e["type"]
+        if source == "bibliotheque":
+            return self._options_bibliotheque(carte)
         w = QWidget()
         v = QVBoxLayout(w)
         v.setContentsMargins(24, 0, 0, 0)
@@ -1253,6 +1356,18 @@ class DialogueAssistant(QDialog):
             cb.currentIndexChanged.connect(lambda _i: (e.update(choix=cb.currentData()), carte.maj()))
             v.addWidget(cb)
         if t == "voix" and source != "aucune":
+            from . import bibliotheque_creations as B
+            hr = QHBoxLayout()
+            hr.addWidget(QLabel(_("C'est une voix de")))
+            cr = QComboBox()
+            cr.addItem(_("Au choix"), "")
+            for k, lib in B.ROLES_VOIX:
+                cr.addItem(lib, k)
+            cr.setCurrentIndex(max(0, cr.findData(e.get("role") or "")))
+            cr.currentIndexChanged.connect(lambda _i: e.update(role=cr.currentData()))
+            hr.addWidget(cr)
+            hr.addStretch(1)
+            v.addLayout(hr)
             h = QHBoxLayout()
             h.addWidget(QLabel(_("A changer dans cette voix :")))
             rt = ChampAmeliorable(e.get("retouche", ""), "voix", 1, None, _("ex. : plus féminine et chaude, plus grave…"))
@@ -1628,6 +1743,9 @@ class DialogueAssistant(QDialog):
         self.b_sous = QPushButton(_("Enregistrer sous…"))
         self.b_sous.clicked.connect(self._enregistrer_musique)
         h.addWidget(self.b_sous)
+        self.b_garder_m = QPushButton(_("☆ Garder dans ma bibliothèque"))
+        self.b_garder_m.clicked.connect(self._garder_musique)
+        h.addWidget(self.b_garder_m)
         h.addStretch(1)
         v.addLayout(h)
         return w
@@ -1668,6 +1786,7 @@ class DialogueAssistant(QDialog):
         self.b_refaire_partie.setEnabled(not calc and self.l_parties.currentRow() >= 0 and bool(getattr(self, "parties_faites", None)))
         self.b_ligne.setEnabled(not calc and fait)
         self.b_sous.setEnabled(not calc and fait)
+        self.b_garder_m.setEnabled(not calc and fait)
 
     def creer_musique(self):
         if self._en_calcul():
@@ -1728,6 +1847,15 @@ class DialogueAssistant(QDialog):
         ed._piste_depot = ("audio", float(ed.timeline.position if a_la_ligne else 0.0), dict(r, volume=0.8, _couper_fin=True))
         ed.importer([self.resultat])
         self.etat.setText(_("✓ Morceau posé ({d:.0f} s) sur la piste Musique ; Ctrl+Z pour revenir.", d=r["src_fin"] - r["src_debut"]))
+
+    def _garder_musique(self):
+        from . import bibliotheque_creations as B
+        nom, ok = self._precision(_("Garder dans ma bibliothèque"), _("Nom du morceau :"), self.musique.get("titre") or _("Musique"))
+        if not ok or not nom.strip():
+            return
+        x = B.garder(self.params, "musique", nom.strip(), I.resume(self.musique), {"morceau": self.resultat},
+                     {"assistant": I.etat_musique(self.musique)})
+        self.etat.setText(_("✓ « {n} » est dans votre bibliothèque ({g}).", n=x["nom"], g=B.GENRES["musique"][0]))
 
     def _enregistrer_musique(self):
         from .dialogues_creatif import enregistrer_copie

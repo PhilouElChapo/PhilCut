@@ -171,6 +171,21 @@ def _guides_integres():
              {"texte": _("« Créer la musique » : chaque partie à son tempo, puis l'enchaînement. Ecoutez les raccords, « Refaire la "
                          "partie choisie » si besoin, puis « Poser sous la vidéo ».")},
          ]},
+        {"id": "bibliotheque_creations", "etat": "ok",
+         "titre": _("Garder un personnage, un lieu, une voix ou un style pour le réutiliser (ma bibliothèque de créations)"),
+         "mots": "bibliotheque garder reutiliser personnage musicien lieu endroit decor objet voix chanteur chanteuse narration style "
+                 "nommer musique image fiche creer",
+         "intro": _("Ce que vous gardez se réutilise tel quel : la fiche d'un personnage (sans la repayer), un lieu, une voix décrite ou "
+                    "son timbre (avec accord), un style nommé, une musique. La bibliothèque est rangée avec vos réglages : elle vous "
+                    "suit sur vos autres postes, et servira aussi aux autres logiciels PhilFactory. On n'y range que sur clic."),
+         "etapes": [
+             {"texte": _("Dans l'assistant de création, « ☆ Garder » sur une carte (ou sur une fiche, à l'étape des images ; ou "
+                         "sur la musique créée) : donnez-lui un nom.")},
+             {"texte": _("Pour la reprendre : sur une carte, « Dans ma bibliothèque », puis choisissez-la dans la liste.")},
+             {"texte": _("Fabrique IA › « Ma bibliothèque de créations… » : voir, chercher, renommer, retirer ; « Nouveau… » pour "
+                         "créer un personnage, un musicien, un lieu, une voix, un style ; « Faire sa fiche », « Décrire d'après un "
+                         "morceau », « Ecouter un morceau ».")},
+         ]},
         {"id": "personnages", "etat": "ok",
          "titre": _("Garder le même personnage d'un plan à l'autre (Séquence IA)"),
          "mots": "personnage personne jouer parler replique dialogue visage acteur histoire sequence ressemblant fidele identique "

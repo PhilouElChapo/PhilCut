@@ -120,7 +120,8 @@ class CarteElement(QFrame):
     change = Signal()
     active = Signal(object)
 
-    def __init__(self, element, sources, options=None, manque=None, ameliorer=None, couleur=None, retirer=None, titre_type=""):
+    def __init__(self, element, sources, options=None, manque=None, ameliorer=None, couleur=None, retirer=None, titre_type="",
+                 garder=None):
         super().__init__()
         self.e, self._options, self._manque = element, options, manque
         self.setFrameShape(QFrame.StyledPanel)
@@ -136,6 +137,12 @@ class CarteElement(QFrame):
         self.nom.setToolTip(_("Le nom qui sert dans les plans ; jamais celui d'une personne réelle connue"))
         self.nom.textChanged.connect(self._modifie)
         h.addWidget(self.nom, 1)
+        if garder:
+            bg = QPushButton(_("☆ Garder"))
+            bg.setToolTip(_("Ranger cet élément dans « Ma bibliothèque de créations » pour le réutiliser tel quel, ici et sur vos "
+                            "autres postes"))
+            bg.clicked.connect(lambda: garder(self))
+            h.addWidget(bg)
         if retirer:
             b = QPushButton(_("Retirer"))
             b.clicked.connect(lambda: retirer(self))

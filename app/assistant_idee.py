@@ -38,12 +38,14 @@ SOURCES = {
     "j_ecris": (_("Je les écris"), _("Vous écrivez le texte ; l'IA peut ensuite l'améliorer.")),
     "ia": (_("L'IA les écrit"), _("D'après votre idée ; vous relisez et corrigez avant la création.")),
     "aucune": (_("Aucune"), _("Morceau instrumental, sans voix ni paroles.")),
+    "bibliotheque": (_("Dans ma bibliothèque"), _("Une création déjà gardée : reprise telle quelle (sa fiche, sa voix, son style), sans rien refaire ni payer.")),
 }
 TYPES = {
-    "personne": ("image", "photo", "inventer"),
-    "objet": ("image", "photo", "inventer"),
-    "style": ("fichier", "en_ligne", "decrire", "liste"),
-    "voix": ("fichier", "en_ligne", "decrire", "liste", "aucune"),
+    "personne": ("bibliotheque", "image", "photo", "inventer"),
+    "objet": ("bibliotheque", "image", "photo", "inventer"),
+    "lieu": ("bibliotheque", "image", "photo", "inventer"),
+    "style": ("bibliotheque", "fichier", "en_ligne", "decrire", "liste"),
+    "voix": ("bibliotheque", "fichier", "en_ligne", "decrire", "liste", "aucune"),
     "paroles": ("j_ecris", "ia", "aucune"),
 }
 # Ce que l'on fait d'un morceau donné en source (style ou voix) : deux usages, toujours expliqués.
@@ -71,8 +73,10 @@ def manque(e):
     t, s = e.get("type"), e.get("source")
     if not s:
         return _("Choisissez d'où vient cet élément.")
-    if t in ("personne", "objet"):
-        if s == "image" and not e.get("boite"):
+    if s == "bibliotheque":
+        return "" if e.get("biblio") else _("Choisissez dans votre bibliothèque.")
+    if t in ("personne", "objet", "lieu"):
+        if s == "image" and not e.get("boite") and t != "lieu":       # un lieu pris dans l'image garde toute l'image
             return _("Tracez son cadre sur l'image.")
         if s == "photo" and not (e.get("photo") and os.path.exists(e["photo"])):
             return _("Choisissez la photo.")
@@ -262,7 +266,8 @@ def fiche_base(etat):
     elif style.get("choix"):
         f["style"] = style["choix"]
     phrase = []
-    if style["source"] == "decrire" or (style.get("description") and style["source"] in ("fichier", "en_ligne") and not style.get("inspiration")):
+    if style["source"] == "decrire" or (style.get("description") and style["source"] in ("fichier", "en_ligne", "bibliotheque")
+                                        and not style.get("inspiration")):
         phrase.append(style.get("description") or "")
     if style.get("inspiration"):
         f["inspiration"] = style["inspiration"]
@@ -272,13 +277,13 @@ def fiche_base(etat):
         f["utiliser_ia"], f["consigne_ia"] = False, ""
     f["instrumental"] = voix["source"] == "aucune"
     if not f["instrumental"]:
-        if voix["source"] == "liste" and voix.get("choix"):
+        if voix["source"] in ("liste", "bibliotheque") and voix.get("choix"):
             f["voix"] = voix["choix"]
         if voix.get("voix_decrite"):
             f["voix_decrite"] = dict(voix["voix_decrite"])
-        elif voix["source"] == "decrire" and voix.get("description"):
+        elif voix["source"] in ("decrire", "bibliotheque") and voix.get("description"):
             f["voix_decrite"] = {"fr": voix["description"], "en": "", "a_traduire": voix["description"]}
-        if voix.get("usage") == "timbre" and voix.get("voix_seule"):
+        if voix.get("voix_seule") and (voix.get("usage") == "timbre" or (voix["source"] == "bibliotheque" and voix.get("accord"))):
             f["voix_reference"] = {"chemin": voix["voix_seule"]}
         if voix.get("retouche"):
             f["retouche_voix"] = voix["retouche"]

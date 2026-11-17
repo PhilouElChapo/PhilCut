@@ -23,6 +23,17 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T91 — 0.9.81 : ma bibliothèque de créations, lieux
+
+1. Fabrique IA › « Ma bibliothèque de créations… » : vide au départ. « Nouveau… » › Musicien : nom « Bassiste aux cheveux gris », instrument « basse », description, « ✨ Améliorer », « Enregistrer ». « Faire sa fiche (Gemini)… » : prix demandé, la fiche apparaît.
+2. « Nouveau… » › Voix : « Chanteuse rock chaude », rôle Chanteuse ; « Décrire d'après un morceau… » avec un morceau d'Archangel : la description arrive. Essayer « Garder son timbre… » (case d'accord d'abord).
+3. « Nouveau… » › Style musical : « Archangel, rock mélodique » ; « Ecouter un morceau (sur ce poste)… » : « Entendu : … ».
+4. Assistant vidéo (T90) : une carte « Lieu » apparaît (le décor de l'image) ; « + Un lieu » en ajoute. « ☆ Garder » sur la carte du chauffeur, nom « Chauffeur de limousine ». A l'étape des images : « ☆ Garder » à côté de sa fiche (elle part avec).
+5. Nouvel assistant : sur la carte du chauffeur, « Dans ma bibliothèque » › « Chauffeur de limousine » : le budget ne compte plus sa fiche.
+6. Assistant musique : carte Voix › « Dans ma bibliothèque » › « Chanteuse rock chaude » ; carte Style › « Archangel, rock mélodique » ; créer : la voix et le style sont repris. « ☆ Garder dans ma bibliothèque » sur la musique créée.
+7. Sur l'autre PC (même lieu de synchro) : la bibliothèque est là après la synchronisation.
+8. « Retirer » une entrée : elle disparaît de la liste (gardée dans la corbeille de la bibliothèque).
+
 ## T90 — 0.9.80 : de l'idée au résultat (vidéo et musique)
 
 1. Photo des deux femmes posée dans le film : clic droit › « Continuer ce plan avec l'assistant IA… ». Ecrire la suite d'un trait ; « ✨ Améliorer » : les deux textes s'affichent côte à côte, prendre ou garder. « L'assistant comprend » : « La suite de ce plan » est coché.

@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.80 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.81 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.81 (ma bibliotheque de creations, lieux)
+- Fabrique IA › "Ma bibliotheque de creations..." : personnages et musiciens (avec leur fiche), objets, lieux, voix (chanteur, chanteuse, narration ; voix decrite ou timbre garde avec accord), styles musicaux et visuels nommes, musiques, images. Chercher, renommer, retirer (corbeille, rien n'est efface), "Nouveau..." pour en creer : "Faire sa fiche", "Decrire d'apres un morceau", "Garder son timbre", "Ecouter un morceau".
+- Rangee avec vos reglages : elle vous suit sur vos autres postes, et servira aux autres logiciels PhilFactory. On n'y range que sur clic : "☆ Garder" sur chaque carte de l'assistant, sur une fiche a l'etape des images, sur la musique creee.
+- Chaque carte de l'assistant propose "Dans ma bibliotheque" : la fiche, la voix ou le style gardes sont repris tels quels (une fiche gardee n'est pas repayee).
+- Assistant video : les lieux ont leur carte (le decor de l'image, une photo, decrit, ou de la bibliotheque) ; chaque plan sait dans quel lieu il se passe.
+
 
 ### 0.9.80 (de l'idee au resultat : video et musique)
 - L'assistant de creation commence par une seule question, "Que voulez-vous faire ?" : vous l'ecrivez en quelques mots ; il devine s'il s'agit de la suite du plan, d'une scene, ou d'une musique ou chanson (modifiable d'un clic).
