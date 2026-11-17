@@ -12,6 +12,7 @@ import random
 import shutil
 import tempfile
 
+from . import catalogue_ia as CI
 from .langue import _
 
 # id : nom, consigne image (anglais), mouvement, bruitages, phrase dite, texte affiché, style de voix, durée
@@ -80,7 +81,7 @@ def separer_son(consigne):
 
 def prix_son_cloud(phrase, duree):
     from . import voix
-    return round((voix.prix_gemini(phrase) if (phrase or "").strip() else 0.0) + PRIX_BRUITAGES_S * max(1.0, float(duree)), 3)
+    return round((voix.prix_gemini(phrase) if (phrase or "").strip() else 0.0) + CI.prix("bruitages", "s", PRIX_BRUITAGES_S) * max(1.0, float(duree)), 3)
 
 
 def _son_cloud(clip_muet, bruitages, son_texte, phrase, style, duree, dossier, params, av=lambda f, t="": None):
@@ -95,7 +96,7 @@ def _son_cloud(clip_muet, bruitages, son_texte, phrase, style, duree, dossier, p
         av(0.82, _("Bruitages par l'IA cloud, d'après la vidéo…"))
         en = (phrase_en_anglais(description)[0] or description) if description else "fitting cartoon sound effects"
         url = GV.televerser(k, clip_muet)
-        res = GV.demande_fal(k, MODELE_BRUITAGES, {"video_url": url, "prompt": en + ", sound effects, no music, no speech",
+        res = GV.demande_fal(k, CI.point("bruitages", MODELE_BRUITAGES), {"video_url": url, "prompt": en + ", sound effects, no music, no speech",
                                                    "negative_prompt": "music, speech, voice", "duration": int(round(duree)) or 1})
         lien = ((res.get("audio") or {}).get("url")) or ((res.get("video") or {}).get("url"))
         if not lien:

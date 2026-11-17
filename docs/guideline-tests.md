@@ -23,6 +23,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T95 — 0.9.85 : mises à jour des IA (locales et cloud)
+
+1. Aide › « Mises à jour des IA (locales et cloud)… » : la fenêtre tient dans l'écran, sans défilement horizontal. Onglet « Sur ce poste » : « Tout est à jour » ou une liste (ce qui change, pourquoi, taille), toutes cochées.
+2. « Vérifier maintenant » : « Dernière vérification » prend la date du jour.
+3. S'il y a une mise à jour : « Mettre à jour la sélection », puis « Réduire » : la barre du bas suit le téléchargement ; rouvrir : le compte rendu dit « mis à jour et essayé ». L'IA concernée marche-t-elle (un essai dans Préférences › IA locale) ?
+4. « Anciennes versions gardées » : « Revenir » remet l'ancienne (question posée) ; « Libérer la place » efface et donne la place libérée.
+5. Onglet « Dans le cloud » : chaque service avec son usage, son prix (virgule française) et « conseillé ».
+6. Préférences › IA locale : case « Chercher les mises à jour des IA » et bouton « Mises à jour des IA… ». Décocher, OK, rouvrir : la case reste décochée.
+7. Aide › Comment faire… › « mise à jour IA » : le guide « Mettre à jour les IA » ; « Montrez-moi » ouvre le bon menu.
+
 ## T94 — 0.9.84 : fond levé pour tout sujet, suivi précis par le cloud
 
 Il faut une clef fal.ai avec un peu de crédit.

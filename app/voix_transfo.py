@@ -9,6 +9,7 @@
 import os
 import time
 
+from . import catalogue_ia as CI
 from .langue import _
 
 PRESETS = {"neutre": (_("Sans transformation"), 0.0, 1.0), "masculine": (_("Plus masculine"), -3.0, 0.88),
@@ -25,7 +26,7 @@ VOIX_CLOUD = [(_("Femme : douce (Sarah)"), "Sarah"), (_("Femme : posée (Laura)"
 
 
 def prix_cloud(duree_s):
-    return round(max(0.01, PRIX_MINUTE * float(duree_s) / 60.0), 2)
+    return round(max(0.01, CI.prix("voix_transfo", "minute", PRIX_MINUTE) * float(duree_s) / 60.0), 2)
 
 
 def extraire(projet, clip, sortie):
@@ -55,7 +56,7 @@ def transformer_cloud(params, projet, clip, voix, debruiter=True, progression=No
     src = extraire(projet, clip, base + "_source.wav")
     av(0.1)
     url = GV.televerser(k, src)
-    res = GV.demande_fal(k, MODELE_CLOUD, {"audio_url": url, "voice": voix, "remove_background_noise": bool(debruiter)},
+    res = GV.demande_fal(k, CI.point("voix_transfo", MODELE_CLOUD), {"audio_url": url, "voice": voix, "remove_background_noise": bool(debruiter)},
                          lambda f: av(0.15 + 0.75 * f), arret)
     lien = ((res.get("audio") or {}).get("url")) or res.get("audio_url") or ((res.get("output") or {}).get("url"))
     if not lien:

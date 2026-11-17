@@ -618,6 +618,16 @@ class DialoguePreferences(QDialog):
         h.addWidget(bt)
         h.addWidget(bo)
         f.addRow(h)
+        h = QHBoxLayout()                              # 0.9.85 : mises à jour des IA (locales et cloud)
+        self.ia_maj_verifier = QCheckBox(_("Chercher les mises à jour des IA (une fois par semaine, jamais installées sans vous)"))
+        self.ia_maj_verifier.setChecked(self.params.get("ia_maj_verifier", True))
+        self.ia_maj_verifier.setToolTip(_("Moteurs et modèles de l'IA locale, adresses et prix des IA cloud. Quand il y a du nouveau, "
+                                          "la barre du bas le dit ; vous cochez ce que vous voulez dans « Mises à jour des IA »."))
+        bm = QPushButton(_("Mises à jour des IA…"))
+        bm.clicked.connect(lambda: hasattr(self.fenetre, "maj_ia") and self.fenetre.maj_ia())
+        h.addWidget(self.ia_maj_verifier, 1)
+        h.addWidget(bm)
+        f.addRow(h)
         hc = QHBoxLayout()                                # 0.9.46 : dossier commun à tous les logiciels PhilFactory
         commun = packs_ia.dossier_commun()
         self.lbl_commun = QLabel(_("Modèles rangés dans le dossier commun des IA PhilFactory : {d}", d=commun) if commun else
@@ -1130,6 +1140,8 @@ class DialoguePreferences(QDialog):
                 pass
         p["ia_poste_leger"] = self.poste_leger.isChecked()
         p["ia_gpu"] = self.ia_gpu.isChecked()
+        if hasattr(self, "ia_maj_verifier"):
+            p["ia_maj_verifier"] = self.ia_maj_verifier.isChecked()
         gestion = getattr(self.fenetre, "telechargements", None)
         a_installer = [k for k, c in self.cases_ia.items() if c.isChecked() and not packs_ia.installe(k)
                        and not (gestion is not None and gestion.en_file(k))]

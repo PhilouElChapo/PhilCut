@@ -1,0 +1,53 @@
+# Veille des IA (0.9.85) : chaque mardi, relit Hugging Face pour les modeles de l'IA locale et fal.ai pour les services
+# cloud. Un modele change n'est publie (catalogues de la release moteurs-ia) qu'apres un essai reel reussi ; un prix
+# cloud relu sans ambiguite corrige catalogue/ia.json. Cote utilisateur, PhilCut propose les mises a jour, jamais en
+# silence (« Mises a jour des IA »), avec essai et retour arriere.
+name: Veille des IA
+
+on:
+  schedule:
+    - cron: "41 6 * * 2"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  veille:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependances
+        run: pip install -q numpy opencv-python-headless onnxruntime
+      - name: Modeles de l'IA locale (Hugging Face)
+        id: m
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p dist
+          gh release download moteurs-ia -p moteurs-ia.json -p moteurs-creatifs.json -D dist
+          python outils_dev/veille_ia.py modeles dist
+      - name: Essai reel des modeles changes
+        if: steps.m.outputs.change == 'oui'
+        run: python outils_dev/veille_ia.py essai dist
+      - name: Publication des catalogues
+        if: steps.m.outputs.change == 'oui'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload moteurs-ia dist/moteurs-ia.json dist/moteurs-creatifs.json --clobber
+      - name: Services cloud (fal.ai)
+        id: c
+        if: success() || failure()
+        run: python outils_dev/veille_ia.py cloud
+      - name: Enregistrement du catalogue cloud
+        if: (success() || failure()) && steps.c.outputs.cloud == 'oui'
+        run: |
+          git config user.name "PhilCut veille"
+          git config user.email "veille@users.noreply.github.com"
+          git add catalogue/ia.json
+          git commit -m "Veille des IA : catalogue cloud mis a jour"
+          git pull -q --rebase origin main
+          git push -q origin main

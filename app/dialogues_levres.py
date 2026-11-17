@@ -213,7 +213,7 @@ class DialogueLevres(QDialog):
             self.isoler.setChecked(False)
             self.isoler.setToolTip(_("Installez « Séparer voix, musique et bruits » (Préférences › IA locale) pour isoler la voix"))
         k = self.moteur.currentData()
-        m = LV.MOTEURS[k]
+        m = LV.moteur_ia(k)
         d = self.duree()
         self.expl.setText(m["explication"])
         manque = None
@@ -278,7 +278,7 @@ class DialogueLevres(QDialog):
         k, d = self.moteur.currentData(), self.duree()
         p = LV.prix(k, d)
         if QMessageBox.question(self, _("Faire parler"), _("Faire calculer les lèvres par {m} pour environ {p} $ ({d} s), facturés sur "
-                                                         "votre compte fal.ai ?", m=LV.MOTEURS[k]["nom"],
+                                                         "votre compte fal.ai ?", m=LV.moteur_ia(k)["nom"],
                                                          p=f"{p:.2f}".replace(".", ","), d=int(round(d)))) != QMessageBox.Yes:
             return
         projet, params, clip, (a, b) = self.ed.projet, self.ed.params, self.clip, self._plage()
@@ -301,7 +301,7 @@ class DialogueLevres(QDialog):
         self.tache = Tache(travail, _("Faire parler"))
         self.tache.lier(self)
         from .widgets import suivre_en_fond
-        suivre_en_fond(self, self.tache, _("Lèvres sur le son ({m})", m=LV.MOTEURS[k]["nom"]))
+        suivre_en_fond(self, self.tache, _("Lèvres sur le son ({m})", m=LV.moteur_ia(k)["nom"]))
         self.tache.progression.connect(lambda f, txt: (self.barre.setValue(int(f * 1000)), txt and self.etat.setText(txt)),
                                        Qt.QueuedConnection)
         self.tache.fini.connect(lambda r, e: self._fini(r, e, k, p, a, b), Qt.QueuedConnection)

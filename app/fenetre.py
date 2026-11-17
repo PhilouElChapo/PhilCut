@@ -156,6 +156,8 @@ class Fenetre(QMainWindow):
         if self.params.get("creations_purge_derniere") != datetime.date.today().isoformat():
             QTimer.singleShot(20000, self.nettoyer_creations)
         self._catalogues()
+        if self.params.get("ia_maj_verifier", True) and not os.environ.get("PHILCUT_SANS_RESEAU"):
+            QTimer.singleShot(45000, self._verifier_maj_ia)
         self._minuterie = QTimer(self)
         self._minuterie.timeout.connect(self.ecrire_session)
         self._minuterie.start(60000)
@@ -330,6 +332,7 @@ class Fenetre(QMainWindow):
         ai.addSeparator()
         ai.addAction(_("Raccourcis clavier"), self.raccourcis)
         ai.addAction(_("Vérifier les mises à jour…"), lambda: self.verifier_maj(silencieux=False))
+        ai.addAction(_("Mises à jour des IA (locales et cloud)…"), self.maj_ia)
         ai.addAction(_("Nouveautés du catalogue (Goodies, modèles, styles)…"), self.voir_nouveautes)
         ai.addAction(_("Site du projet (GitHub)"), lambda: webbrowser.open("https://github.com/PhilouElChapo/PhilCut"))
         ai.addSeparator()
@@ -1035,6 +1038,9 @@ class Fenetre(QMainWindow):
                           (lambda: ed.bibliotheque_creations()) if ed is not None else (lambda: self._ed(lambda e: e.bibliotheque_creations())))
         a_.setToolTip(_("Ce que vous avez gardé pour le réutiliser tel quel : personnages et musiciens avec leur fiche, objets, lieux, "
                         "voix (chanteur, chanteuse, narration), styles nommés, musiques, images. Elle vous suit sur vos autres postes."))
+        a_ = fb.addAction(_("Mises à jour des IA (locales et cloud)…"), self.maj_ia)
+        a_.setToolTip(_("Moteurs et modèles de l'IA locale à mettre à jour (essayés, retour arrière possible) ; "
+                        "adresses, prix et état des IA cloud."))
         return fb
 
     def fabrique(self, image=None, texte=None, recette=None, onglet=None):
@@ -2051,7 +2057,7 @@ class Fenetre(QMainWindow):
         NV.integrer(reseau=False)
         if os.environ.get("PHILCUT_SANS_RESEAU") or not self.params.get("effets_en_ligne", True):
             return
-        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_gl.json", "effets_ia.json", NV.FICHIER, "elements.json", "guides.json", "styles.json")] + [__import__("app.styles_ia", fromlist=["x"]).recharger_catalogue()],
+        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_gl.json", "effets_ia.json", NV.FICHIER, "elements.json", "guides.json", "styles.json", "ia.json")] + [__import__("app.styles_ia", fromlist=["x"]).recharger_catalogue()],
                                daemon=True)
         fil.start()
 
@@ -2062,6 +2068,10 @@ class Fenetre(QMainWindow):
                 E.catalogue_en_ligne(reseau=False)
                 NV.integrer(reseau=False)
                 self.params["nouveautes_verifie"] = datetime.datetime.now().strftime("%d/%m/%Y %Hh%M")
+                from . import catalogue_ia as CI
+                CI.recharger()
+                for texte in CI.annonces():
+                    self.statusBar().showMessage("✦ " + texte, 15000)
                 n = NV.nombre_nouveaux(self.params)
                 if n:                                  # discret : la barre du bas, avec le chemin pour les voir
                     self.statusBar().showMessage(_("✦ {n} nouveauté(s) dans le catalogue : Aide › Nouveautés du catalogue.", n=n), 15000)
@@ -2077,6 +2087,63 @@ class Fenetre(QMainWindow):
             return miroir.compte_drive(self.params)
         except Exception:      # noqa: BLE001
             return None
+
+    # ---------------------------------------------------------------- mises à jour des IA (0.9.85)
+    def maj_ia(self):
+        """« Mises à jour des IA » : une seule fenêtre, non bloquante."""
+        from .dialogues_maj_ia import DialogueMajIA
+        from .widgets import non_bloquante
+        return non_bloquante(self, "maj_ia", lambda: DialogueMajIA(self, self.params))
+
+    def _verifier_maj_ia(self, forcer=False):
+        """Une fois par semaine, en fond : relit les catalogues et dit dans la barre du bas s'il y a des mises à jour d'IA.
+        Rien n'est téléchargé ni installé."""
+        derniere = self.params.get("ia_maj_derniere") or ""
+        try:
+            if not forcer and derniere and (datetime.date.today() - datetime.date.fromisoformat(derniere)).days < 7:
+                if self.params.get("ia_maj_nombre"):
+                    self._signaler_maj_ia(self.params["ia_maj_nombre"])
+                return
+        except ValueError:
+            pass
+        from . import maj_ia as MI, packs_ia as P
+
+        def travail(tache):
+            if not P.etat():
+                return []
+            P.manifeste(rafraichir=True)
+            return MI.a_mettre_a_jour()
+        t = Tache(travail, _("Vérification des IA"))
+        self.taches.append(t)
+
+        def fin(r, e):
+            if e is not None:
+                return
+            self.params["ia_maj_derniere"] = datetime.date.today().isoformat()
+            self.params["ia_maj_nombre"] = len(r or [])
+            self.params.enregistrer()
+            self._signaler_maj_ia(len(r or []))
+        t.fini.connect(fin)
+        t.start()
+
+    def _signaler_maj_ia(self, n):
+        """Bouton discret dans la barre du bas, tant qu'il reste des mises à jour d'IA à voir."""
+        from PySide6.QtWidgets import QToolButton
+        b = getattr(self, "_b_maj_ia", None)
+        if not n:
+            if b is not None:
+                b.hide()
+            return
+        if b is None:
+            b = QToolButton()
+            b.setAutoRaise(True)
+            b.setCursor(Qt.PointingHandCursor)
+            b.clicked.connect(self.maj_ia)
+            self.statusBar().addPermanentWidget(b)
+            self._b_maj_ia = b
+        b.setText(_("✦ IA : {n} mise(s) à jour", n=n))
+        b.setToolTip(_("Cliquez pour voir ce qui change et choisir ce que vous mettez à jour"))
+        b.show()
 
     # ---------------------------------------------------------------- sauvegarde automatique (0.9.22)
     def _maj_bouton_synchro(self, recus, envoyes):

@@ -209,6 +209,27 @@ def _guides_integres():
                          "créer un personnage, un musicien, un lieu, une voix, un style ; « Faire sa fiche », « Décrire d'après un "
                          "morceau », « Ecouter un morceau ».")},
          ]},
+        {"id": "maj_ia", "etat": "ok",
+         "titre": _("Mettre à jour les IA (moteurs et modèles locaux, services cloud)"),
+         "mots": "mise a jour maj ia modele moteur version nouvelle ancienne revenir retour arriere essai cloud prix fal retire "
+                 "remplace catalogue",
+         "intro": _("Les IA changent souvent. Chaque semaine, PhilCut regarde s'il y a du nouveau et le dit dans la barre du bas "
+                    "(« ✦ IA : … mise(s) à jour ») ; rien ne s'installe sans vous. Chaque mise à jour est essayée : si l'essai "
+                    "rate, l'ancienne version revient toute seule. Les IA cloud, elles, se mettent à jour chez leur fournisseur : "
+                    "PhilCut relit leur adresse et leur prix, et remplace un service retiré en vous le disant."),
+         "etapes": [
+             {"texte": _("Aide › « Mises à jour des IA (locales et cloud)… » (ou le bouton dans la barre du bas)."),
+              "montrer": {"menu": [_("Aide"), _("Mises à jour des IA (locales et cloud)…")]},
+              "fait": "fenetre:DialogueMajIA"},
+             {"texte": _("Onglet « Sur ce poste » : cochez ce que vous voulez, « Mettre à jour la sélection ». Le téléchargement "
+                         "continue si vous fermez ou réduisez la fenêtre.")},
+             {"texte": _("Si une IA marche moins bien : « Revenir » dans « Anciennes versions gardées ». « Libérer la place » "
+                         "efface ces anciennes versions.")},
+             {"texte": _("Onglet « Dans le cloud » : chaque service, à quoi il sert, son prix indicatif et son état. Le prix est "
+                         "toujours redemandé avant de payer.")},
+             {"texte": _("Pour ne plus chercher chaque semaine : Préférences › IA locale, décochez « Chercher les mises à jour "
+                         "des IA ».")},
+         ]},
         {"id": "personnages", "etat": "ok",
          "titre": _("Garder le même personnage d'un plan à l'autre (Séquence IA)"),
          "mots": "personnage personne jouer parler replique dialogue visage acteur histoire sequence ressemblant fidele identique "

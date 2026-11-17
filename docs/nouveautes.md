@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.84 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.85 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.85 (catalogue des IA et mises a jour)
+- Aide (ou Fabrique IA) › "Mises a jour des IA (locales et cloud)..." : onglet "Sur ce poste", les moteurs et modeles de l'IA locale qui ont une nouvelle version (ce qui change, pourquoi, taille) ; on coche, "Mettre a jour la selection". Le telechargement se fait en fond (fermer ou "Reduire" ne l'arrete pas), puis l'IA est essayee : si l'essai rate, l'ancienne version revient toute seule.
+- L'ancienne version est gardee : "Revenir" la remet ; "Liberer la place" efface les anciennes versions. Un modele retire du catalogue est propose avec son remplacant (l'ancien reste installe).
+- Chaque semaine, PhilCut regarde s'il y a du nouveau et le dit dans la barre du bas ("✦ IA : ... mise(s) a jour") ; rien ne s'installe sans vous. Preferences › IA locale : case "Chercher les mises a jour des IA" et bouton "Mises a jour des IA...".
+- Onglet "Dans le cloud" : chaque service IA cloud (fond, suivi, levres, bruitages, voix, videos IA), a quoi il sert, son prix indicatif et son etat. Adresses et prix sont relus chaque jour dans le catalogue en ligne : un service retire est remplace par celui indique, et la barre du bas le dit. Le prix est toujours demande avant de payer.
+- Cote projet : veille hebdomadaire des modeles (Hugging Face) avec essai reel avant publication, et des prix fal.ai.
+
 
 ### 0.9.84 (fond leve pour tout sujet, suivi precis par le cloud)
 - Changer le fond d'un rush sans fond vert, quel que soit le sujet (personne, animal, objet, avion) : effet "Changer le fond (detourage)", Inspecteur › "Preparer par l'IA cloud (environ ... $)..." (Bria VRMBG 3.0 sur fal.ai, environ 0,05 $ la seconde, prix demande). La video rendue avec sa transparence est gardee sur ce poste : le meme passage n'est jamais repaye ; a l'export, elle sert de masque au plan (ses effets et son cadrage restent). Methode au choix : "IA de ce poste (personnes, gratuit)" ou "IA cloud, tout sujet".

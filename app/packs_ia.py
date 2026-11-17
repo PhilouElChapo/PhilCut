@@ -600,7 +600,8 @@ def installer(cle, progression=None, arret=lambda: False):
     if _COMMUN:
         IP.noter(_COMMUN, cle, LOGICIEL, [{"nom": f["nom"], "taille": f.get("taille", 0), "sha256": f.get("sha256", "")} for f in m["fichiers"]])
     _noter(cle, {"genre": g, "nom": m["nom"], "fichiers": noms, "roles": {f["role"]: f["nom"] for f in m["fichiers"]},
-                 "taille": m.get("taille", 0), "date": time.strftime("%Y-%m-%d")})
+                 "taille": m.get("taille", 0), "date": time.strftime("%Y-%m-%d"),
+                 "empreintes": {f["nom"]: f.get("sha256", "") for f in m["fichiers"]}, "version": m.get("version", "")})
     progression and progression(1.0, m["nom"])
     return True
 
@@ -623,7 +624,8 @@ def adopter():
             continue
         _noter(cle, {"genre": m["genre"], "nom": m["nom"], "fichiers": [f["nom"] for f in m["fichiers"]],
                      "roles": {f["role"]: f["nom"] for f in m["fichiers"]}, "taille": m.get("taille", 0),
-                     "date": time.strftime("%Y-%m-%d"), "repris": True})
+                     "date": time.strftime("%Y-%m-%d"), "repris": True,
+                     "empreintes": {f["nom"]: f.get("sha256", "") for f in m["fichiers"]}, "version": m.get("version", "")})
         from . import ia_partagee as IP
         IP.noter(_COMMUN, cle, LOGICIEL)
         pris.append(cle)

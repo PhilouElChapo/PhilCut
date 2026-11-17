@@ -58,7 +58,9 @@
    "musiques_telechargement",
    "guides_vus",
    "recents_distants",
-   "envoi_export_dernier"
+   "envoi_export_dernier",
+   "ia_maj_derniere",
+   "ia_maj_nombre"
   ]
  },
  "G8_reglages_a_mettre_dans_preferences": [

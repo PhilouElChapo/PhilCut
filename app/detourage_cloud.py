@@ -8,6 +8,7 @@ Un plan déjà préparé n'est jamais repayé (même passage du même fichier = 
 import hashlib
 import os
 
+from . import catalogue_ia as CI
 from .langue import _
 
 POINT = "bria/video/background-removal/v3"
@@ -15,7 +16,7 @@ PRIX_S = 0.05
 
 
 def prix(duree):
-    return round(PRIX_S * max(1.0, float(duree)), 2)
+    return round(CI.prix("detourage_video", "s", PRIX_S) * max(1.0, float(duree)), 2)
 
 
 def dossier():
@@ -69,7 +70,7 @@ def fabriquer(params, clip, media, progression=None, arret=lambda: False):
     progression and progression(0.1, _("envoi à fal.ai"))
     url = GV.televerser(k, passage)
     corps = {"video_url": url, "background_color": "Transparent", "output_container_and_codec": "mov_proresks", "preserve_audio": False}
-    res = GV.demande_fal(k, POINT, corps, (lambda f, t="": progression(0.15 + 0.75 * f, t or _("le cloud lève le fond"))) if progression
+    res = GV.demande_fal(k, CI.point("detourage_video", POINT), corps, (lambda f, t="": progression(0.15 + 0.75 * f, t or _("le cloud lève le fond"))) if progression
                          else None, arret, attente=900.0)
     video = (res or {}).get("video") or {}
     if not video.get("url"):

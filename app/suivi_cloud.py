@@ -12,6 +12,7 @@ l'arrière (zone tracée au milieu), le passage est envoyé à l'envers. Prix : 
 import os
 import tempfile
 
+from . import catalogue_ia as CI
 from .langue import _
 
 POINT = "fal-ai/sam-3/video"
@@ -21,7 +22,7 @@ LARGEUR = 640
 
 
 def prix(duree):
-    return round(max(1, int(duree * IPS / 16) + 1) * PRIX_16, 3)
+    return round(max(1, int(duree * IPS / 16) + 1) * CI.prix("suivi_video", "16", PRIX_16), 3)
 
 
 class ErreurSuiviCloud(Exception):
@@ -92,7 +93,7 @@ def _sam(params, video, point, progression=None, arret=lambda: False):
     url = GV.televerser(k, video)
     corps = {"video_url": url, "point_prompts": [{"x": int(point[0] * w), "y": int(point[1] * h), "label": 1, "object_id": 1}],
              "apply_mask": True, "video_output_type": "X264 (.mp4)"}
-    res = GV.demande_fal(k, POINT, corps, progression, arret, attente=900.0)
+    res = GV.demande_fal(k, CI.point("suivi_video", POINT), corps, progression, arret, attente=900.0)
     url_rendu = ((res or {}).get("video") or {}).get("url")
     if not url_rendu:
         raise ErreurSuiviCloud(_("fal.ai n'a renvoyé aucune vidéo : {r}", r=str(res)[:200]))

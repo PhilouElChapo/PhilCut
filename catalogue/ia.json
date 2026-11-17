@@ -1,0 +1,6 @@
+{
+ "format": 1,
+ "note": "Services IA cloud : adresse, prix indicatif en $, etat (conseille, ancien, retire) et remplacant. Corrige sans reinstaller PhilCut ; tenu a jour par la veille hebdomadaire (essai reel avant publication).",
+ "maj": "2026-11-17",
+ "services": {}
+}

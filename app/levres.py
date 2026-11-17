@@ -26,6 +26,19 @@ MOTEURS = {
 }
 
 
+def moteur_ia(ident):
+    """Le moteur, corrigé par le catalogue des IA (adresse, prix, remplaçant d'un service retiré)."""
+    from . import catalogue_ia as CI
+    m = dict(MOTEURS[ident])
+    role = "levres_" + ident
+    m["modele"] = CI.point(role, m["modele"])
+    if "prix_fixe" in m:
+        m["prix_fixe"] = CI.prix(role, "fixe", m["prix_fixe"])
+        m["seuil"] = CI.prix(role, "seuil", m["seuil"])
+    m["prix_s"] = CI.prix(role, "s", m["prix_s"])
+    return m
+
+
 def moteurs(genre):
     """Moteurs d'un genre (« image » ou « video »), par ordre alphabétique."""
     import unicodedata
@@ -33,9 +46,9 @@ def moteurs(genre):
     return sorted(((k, m) for k, m in MOTEURS.items() if m["genre"] == genre), key=lambda km: net(km[1]["nom"]))
 
 
-def prix(moteur, duree):
+def prix(ident, duree):
     """Prix estimé en $ pour `duree` secondes."""
-    m = MOTEURS[moteur]
+    m = moteur_ia(ident)
     if "prix_fixe" in m:
         return round(m["prix_fixe"] + max(0.0, duree - m["seuil"]) * m["prix_s"], 2)
     return round(duree * m["prix_s"], 2)
@@ -123,7 +136,7 @@ def fabriquer(params, moteur_id, son, sortie, image=None, video=None, consigne="
               arret=lambda: False):
     """Envoie le son et l'image (ou la vidéo) à fal.ai, attend, télécharge la vidéo ; renvoie le chemin."""
     from . import generateurs_video as GV, moteur
-    m = MOTEURS[moteur_id]
+    m = moteur_ia(moteur_id)
     cle = clef(params)
     if not cle:
         raise GV.ErreurGenerateur(_("Pas de clef fal.ai : Préférences › Assistant et IA, « Clef fal.ai » (ou « Connecter une IA »)."))
