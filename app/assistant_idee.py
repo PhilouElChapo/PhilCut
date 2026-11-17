@@ -38,6 +38,15 @@ SOURCES = {
     "j_ecris": (_("Je les écris"), _("Vous écrivez le texte ; l'IA peut ensuite l'améliorer.")),
     "ia": (_("L'IA les écrit"), _("D'après votre idée ; vous relisez et corrigez avant la création.")),
     "aucune": (_("Aucune"), _("Morceau instrumental, sans voix ni paroles.")),
+    "atelier": (_("Un de mes logos"), _("Un logo fait dans l'Atelier de logo de PhilCut.")),
+    "fichier_image": (_("Une image à moi"), _("Un fichier image de votre ordinateur (PNG transparent de préférence pour un logo).")),
+    "creer_ia": (_("Le faire dessiner par l'IA"), _("Gemini le dessine d'après la description (environ 0,04 $, confirmé avant).")),
+    "degrade": (_("Dégradé vivant"), _("Des taches de couleur qui respirent doucement, d'après le style.")),
+    "uni": (_("Couleur unie"), _("Une seule couleur, au choix.")),
+    "film": (_("Les images du film, floutées"), _("Le début de votre film, flouté derrière le titre.")),
+    "transparent": (_("Posé sur le film"), _("Pas de fond : le titre apparaît par-dessus votre vidéo, avec un léger voile.")),
+    "bruitage": (_("Un bruitage"), _("Un son court : whoosh, impact, ding… fabriqué sur ce poste.")),
+    "jingle": (_("Un jingle créé sur ce poste"), _("Un logo sonore court, d'après votre description, créé gratuitement sur ce poste.")),
     "bibliotheque": (_("Dans ma bibliothèque"), _("Une création déjà gardée : reprise telle quelle (sa fiche, sa voix, son style), sans rien refaire ni payer.")),
 }
 TYPES = {
@@ -47,7 +56,12 @@ TYPES = {
     "style": ("bibliotheque", "fichier", "en_ligne", "decrire", "liste"),
     "voix": ("bibliotheque", "fichier", "en_ligne", "decrire", "liste", "aucune"),
     "paroles": ("j_ecris", "ia", "aucune"),
+    "logo": ("bibliotheque", "atelier", "fichier_image", "creer_ia", "aucune"),
+    "style_intro": ("bibliotheque", "liste", "decrire"),
+    "fond": ("bibliotheque", "degrade", "uni", "film", "transparent", "fichier_image", "creer_ia"),
+    "son": ("bibliotheque", "bruitage", "jingle", "fichier", "aucune"),
 }
+TYPES_INTRO = ("logo", "style_intro", "fond", "son")
 # Ce que l'on fait d'un morceau donné en source (style ou voix) : deux usages, toujours expliqués.
 USAGES = {
     "style": (("inspirer", _("S'en inspirer"), _("PhilCut mesure tempo, tonalité, instruments et ambiance, et les écrit dans la consigne : le morceau n'est jamais repris.")),
@@ -64,13 +78,26 @@ def element(type_, nom="", description="", source="", **autres):
     return e
 
 
+# Libellés qui changent selon la carte (même source, autre sens)
+SOURCES_PAR_TYPE = {
+    ("logo", "aucune"): (_("Aucun logo"), _("Seulement le titre et le sous-titre.")),
+    ("son", "aucune"): (_("Aucun son"), _("L'intro reste muette.")),
+    ("son", "fichier"): (_("Un son à moi"), _("Un fichier de votre ordinateur (MP3, WAV…) : il démarre avec l'intro et s'éteint à sa fin.")),
+    ("lieu", "inventer"): (_("Le décrire"), _("Personne ne l'a encore filmé : l'IA le dessine d'après la description.")),
+    ("lieu", "image"): (_("Le décor de l'image du plan"), _("Toute la dernière image du plan sert de référence au lieu.")),
+}
+
+
 def sources(type_):
-    return [(k, SOURCES[k][0], SOURCES[k][1]) for k in TYPES.get(type_, ())]
+    return [(k,) + SOURCES_PAR_TYPE.get((type_, k), SOURCES[k]) for k in TYPES.get(type_, ())]
 
 
 def manque(e):
     """Ce qui manque pour que la carte soit complète (texte pour l'utilisateur), ou "" si elle l'est."""
     t, s = e.get("type"), e.get("source")
+    if t in TYPES_INTRO:
+        from .assistant_intro import manque as manque_intro
+        return manque_intro(e)
     if not s:
         return _("Choisissez d'où vient cet élément.")
     if s == "bibliotheque":
@@ -432,7 +459,9 @@ def resume(etat):
 QUOI = {"idee": "l'idée de départ d'une création (vidéo ou musique)", "personne": "la description physique d'une personne à dessiner",
         "objet": "la description d'un objet à dessiner", "plan": "l'action d'un plan vidéo (une seule action simple, physiquement possible)",
         "style": "la description d'un style musical", "voix": "la description d'une voix chantée", "partie": "ce qu'on entend dans une partie d'un morceau",
-        "paroles": "les paroles d'une chanson (garde les balises [verse], [chorus], [bridge])", "theme": "le thème d'une chanson"}
+        "paroles": "les paroles d'une chanson (garde les balises [verse], [chorus], [bridge])", "theme": "le thème d'une chanson",
+        "titre": "le titre d'une intro vidéo (court, percutant, mêmes mots clefs)", "logo": "la description d'un logo à dessiner",
+        "fond": "la description d'une image de fond pour une intro"}
 
 CONSIGNE_AMELIORER = """Tu améliores le phrasé de {quoi}, pour qu'une IA de création comprenne mieux ce qui est voulu. Garde
 exactement le sens, les noms, les chiffres et tout ce que l'utilisateur a demandé ; précise ce qui est flou, rends les images

@@ -941,6 +941,10 @@ class Fenetre(QMainWindow):
                     quand(lambda e: e.atelier_ia("logo"))),
                 ent(None, _("Image fixe à poser dans le film…"), _("Une image composée au format du film, posée au-dessus à la ligne rouge."),
                     quand(lambda e: e.vignette_composee("image"))),
+                ent(icone("assistant"), _("Assistant de création : une intro ou un logo animé, guidé pas à pas…"),
+                    _("Dites en quelques mots l'intro voulue ; l'assistant en déduit logo, style, fond et son, vous fait choisir d'où "
+                      "vient chacun, montre l'aperçu animé, fabrique avec le son, puis la pose au début, à la fin ou à la ligne rouge."),
+                    quand(lambda e: e.assistant_creation(intro=True))),
                 ent(icone("fabrique"), _("Logo animé, intro ou fin de vidéo…"),
                     _("Des modèles animés avec votre texte ou votre logo, posés au début ou à la fin du film."),
                     lambda: self.fabrique(onglet=0), "Ctrl+Shift+F" if ed is None else None),

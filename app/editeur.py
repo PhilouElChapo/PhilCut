@@ -2673,19 +2673,19 @@ class Editeur(QWidget):
         except Exception:
             pass
 
-    def assistant_creation(self, clip=None, musique=False):
+    def assistant_creation(self, clip=None, musique=False, intro=False):
         """0.9.79 : mode assisté (continuer un rush, scène en plusieurs plans) ; 0.9.80 : de l'idée au résultat, musique et
         chanson comprises ; une seule fenêtre."""
         from .dialogues_assistant_creation import DialogueAssistant
         from .widgets import non_bloquante
-        if clip is None and not musique:
+        if clip is None and not (musique or intro):
             clip = self._clip_selectionne()
             if clip is None and hasattr(self.projet, "plan_visible"):
                 clip = self.projet.plan_visible(self.timeline.position)
         d = non_bloquante(self, "assistant_creation", lambda: DialogueAssistant(self, clip))
-        if musique and d is not None:
+        if (musique or intro) and d is not None:
             try:
-                d.choisir_genre("musique")
+                d.choisir_genre("intro" if intro else "musique")
             except (RuntimeError, AttributeError):
                 pass
         return d

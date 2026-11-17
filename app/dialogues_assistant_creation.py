@@ -23,14 +23,19 @@ from .langue import _
 from .taches import Tache, texte_erreur
 from .widgets import garder_calcul, suivre_en_fond
 
-P_IDEE, P_QUI, P_PLANS, P_IMAGES, P_VIDEO, P_M_ELEM, P_M_DEROULE, P_M_PAROLES, P_M_CREER = range(9)
+P_IDEE, P_QUI, P_PLANS, P_IMAGES, P_VIDEO, P_M_ELEM, P_M_DEROULE, P_M_PAROLES, P_M_CREER, P_I_ELEM, P_I_TEXTE, P_I_CREER = range(12)
 ETAPES = {"video": ((P_IDEE, _("1. Votre idée")), (P_QUI, _("2. Qui et quoi")), (P_PLANS, _("3. Les plans")), (P_IMAGES, _("4. Les images")),
                     (P_VIDEO, _("5. La vidéo"))),
           "musique": ((P_IDEE, _("1. Votre idée")), (P_M_ELEM, _("2. Ce qu'il faut")), (P_M_DEROULE, _("3. Le déroulé")),
-                      (P_M_PAROLES, _("4. Les paroles")), (P_M_CREER, _("5. La musique")))}
+                      (P_M_PAROLES, _("4. Les paroles")), (P_M_CREER, _("5. La musique"))),
+          "intro": ((P_IDEE, _("1. Votre idée")), (P_I_ELEM, _("2. Ce qu'il faut")), (P_I_TEXTE, _("3. Le texte et le rendu")),
+                    (P_I_CREER, _("4. L'intro")))}
 BOUTONS = {P_IDEE: _("Voir ce qu'il faut ›"), P_QUI: _("C'est bien eux ›"), P_PLANS: _("Préparer les images ›"),
            P_IMAGES: _("Tout me convient : fabriquer la vidéo ›"), P_VIDEO: _("Poser dans le film"), P_M_ELEM: _("Tout est prêt ›"),
-           P_M_DEROULE: _("Les paroles ›"), P_M_PAROLES: _("Vers la création ›"), P_M_CREER: _("Poser sous la vidéo")}
+           P_M_DEROULE: _("Les paroles ›"), P_M_PAROLES: _("Vers la création ›"), P_M_CREER: _("Poser sous la vidéo"),
+           P_I_ELEM: _("Le texte et le rendu ›"), P_I_TEXTE: _("Fabriquer l'intro ›"), P_I_CREER: _("Poser l'intro")}
+PLACEMENTS = (("debut", _("Au début du film (la suite est décalée)")), ("fin", _("A la fin du film")),
+              ("ligne", _("A la ligne rouge")), ("medias", _("Seulement dans les médias")))
 SONS = _("Sons") + " (*.mp3 *.wav *.flac *.ogg *.m4a *.aac *.opus *.mp4 *.mkv *.webm *.mov)"
 ENERGIES = (("calme", _("Calme")), ("moyenne", _("Moyenne")), ("forte", _("Forte")))
 
@@ -102,7 +107,8 @@ class DialogueAssistant(QDialog):
         v.addWidget(self.fil)
         self.pages = QStackedWidget()
         for fabrique in (self._page_idee, self._page_qui, self._page_plans, self._page_images, self._page_video,
-                         self._page_m_elements, self._page_m_deroule, self._page_m_paroles, self._page_m_creer):
+                         self._page_m_elements, self._page_m_deroule, self._page_m_paroles, self._page_m_creer,
+                         self._page_i_elements, self._page_i_texte, self._page_i_creer):
             self.pages.addWidget(fabrique())
         v.addWidget(self.pages, 1)
         # --- toujours là : écrire librement, budget, état, navigation
@@ -199,7 +205,7 @@ class DialogueAssistant(QDialog):
         self.r_suite = QRadioButton(_("La suite de ce plan (elle part de sa dernière image, avec les mêmes personnes)"))
         self.r_scene = QRadioButton(_("Une nouvelle scène vidéo, en plusieurs plans"))
         self.r_musique = QRadioButton(_("Une musique ou une chanson"))
-        self.r_logo = QRadioButton(_("Une intro ou un logo animé (fenêtre habituelle pour l'instant)"))
+        self.r_logo = QRadioButton(_("Une intro ou un logo animé"))
         for r in (self.r_suite, self.r_scene, self.r_musique, self.r_logo):
             self.g_genre.addButton(r)
             r.clicked.connect(lambda _c=False: setattr(self, "_genre_choisi", True))
@@ -258,7 +264,7 @@ class DialogueAssistant(QDialog):
     def choisir_genre(self, genre):
         """Ouvert depuis le menu Musique : la musique est choisie d'office (on peut encore changer), si l'on est au début."""
         if self.pages.currentIndex() == P_IDEE:
-            {"musique": self.r_musique, "scene": self.r_scene, "suite": self.r_suite}[genre].setChecked(True)
+            {"musique": self.r_musique, "scene": self.r_scene, "suite": self.r_suite, "intro": self.r_logo}[genre].setChecked(True)
             self._genre_choisi = True
 
     def _suite(self):
@@ -286,7 +292,11 @@ class DialogueAssistant(QDialog):
         self._lancer(lambda _t: I.ameliorer_texte(self.params, texte, quoi, ctx, niveau), _("L'IA améliore le texte"), fin)
 
     def _etat_budget(self):
-        return self.musique if self.genre == "musique" and self.musique is not None else self.seq
+        if self.genre == "musique" and self.musique is not None:
+            return self.musique
+        if self.genre == "intro" and getattr(self, "intro", None) is not None:
+            return self.intro
+        return self.seq
 
     # ------------------------------------------------------------------ 2. qui et quoi (vidéo) : les cartes
     def _page_qui(self):
@@ -742,7 +752,7 @@ class DialogueAssistant(QDialog):
     # ------------------------------------------------------------------ navigation
     def aller(self, k):
         self.pages.setCurrentIndex(k)
-        etapes = ETAPES["musique" if self.genre == "musique" else "video"]
+        etapes = ETAPES.get(self.genre, ETAPES["video"])
         self.fil.setText("   ›   ".join(f"<b>{e}</b>" if p == k else e for p, e in etapes))
         self.b_suiv.setText(BOUTONS[k])
         self._maj()
@@ -759,6 +769,8 @@ class DialogueAssistant(QDialog):
             pret = any(pl.get("fichier") and os.path.exists(pl["fichier"]) for pl in self.seq["plans"])
         elif k == P_M_CREER:
             pret = bool(getattr(self, "resultat", ""))
+        elif k == P_I_CREER:
+            pret = bool(getattr(self, "intro_fichier", ""))
         self.b_suiv.setEnabled(not calc and pret)
         self.b_dire.setEnabled(not calc)
         self.b_reduire.setVisible(calc)
@@ -768,6 +780,9 @@ class DialogueAssistant(QDialog):
             self.b_reprendre.setVisible(not calc and any(not pl.get("fichier") for pl in self.seq["plans"]))
         if k == P_M_CREER:
             self._maj_creer()
+        if k == P_I_CREER:
+            self.b_fab_intro.setEnabled(not calc)
+            self.b_garder_style.setEnabled(not calc)
         b = A.budget(self._etat_budget())
         if not b.get("prevu") and b.get("depense"):
             self.l_budget.setText(_("Dépensé jusqu'ici : <b>{d}</b> (le budget prévu est annoncé avant la première fabrication payante)",
@@ -786,6 +801,12 @@ class DialogueAssistant(QDialog):
             self._lire()
         if k in (P_M_DEROULE, P_M_PAROLES):
             self._lire_musique()
+        if k == P_I_TEXTE:
+            self._lire_intro()
+        if self.genre == "intro":
+            ordre = [p for p, _e in ETAPES["intro"]]
+            self.aller(ordre[max(0, ordre.index(k) - 1)])
+            return
         if self.genre == "musique":
             ordre = [p for p, _e in ETAPES["musique"]]
             cible = ordre[max(0, ordre.index(k) - 1)]
@@ -800,7 +821,8 @@ class DialogueAssistant(QDialog):
         if k == P_IDEE:
             self.params["musique_ia_ecrire"] = self._niveau()
             if self.r_logo.isChecked():
-                self.ed.window().fabrique(onglet=0)
+                self.genre = "intro"
+                self.analyser_intro()
                 return
             if self.r_musique.isChecked():
                 self.genre = "musique"
@@ -851,6 +873,19 @@ class DialogueAssistant(QDialog):
             self.aller(P_M_CREER)
         elif k == P_M_CREER:
             self.poser_musique(False)
+        elif k == P_I_ELEM:
+            manquent = [f"{c.e.get('nom')} : {I.manque(c.e)}" for c in self.icartes if I.manque(c.e)]
+            if manquent:
+                self.etat.setText(_("A compléter : {l}", l=" · ".join(manquent)))
+                return
+            self._remplir_texte_intro()
+            self.aller(P_I_TEXTE)
+        elif k == P_I_TEXTE:
+            self._lire_intro()
+            self.aller(P_I_CREER)
+            self.fabriquer_intro()
+        elif k == P_I_CREER:
+            self.poser_intro()
 
     def _lancer(self, travail, texte, fin):
         """Un calcul suivi (barre du bas, Réduire) ; `travail(tache)` hors de l'interface, `fin(resultat, erreur)` dedans."""
@@ -922,6 +957,9 @@ class DialogueAssistant(QDialog):
             return
         if self.genre == "musique":
             self._dire_musique(texte)
+            return
+        if self.genre == "intro":
+            self._dire_intro(texte)
             return
         if k in (P_QUI, P_PLANS):
             self._lire()
@@ -1863,6 +1901,433 @@ class DialogueAssistant(QDialog):
         if c:
             self.etat.setText(_("✓ Copie enregistrée : {f}", f=c))
 
+    # ================================================================== INTRO ET LOGO (0.9.82)
+    def analyser_intro(self):
+        from . import assistant_intro as AI
+        texte = self.c_histoire.texte()
+        if len(texte) < 4:
+            self.etat.setText(_("Dites d'abord quelle intro vous voulez."))
+            return
+        niveau = self._niveau()
+
+        def travail(_t):
+            try:
+                return AI.analyser_intro(self.params, texte, niveau), None
+            except Exception as e:      # noqa: BLE001 : sans IA, des cartes pré-remplies par les mots
+                return AI.analyse_intro_simple(texte), e
+
+        def fin(r, e):
+            if e or not r:
+                return
+            etat, souci = r
+            etat["idee"] = texte
+            if getattr(self, "intro", None) and self.intro.get("budget"):
+                etat["budget"] = self.intro["budget"]
+            self.intro, self.intro_fichier = etat, ""
+            if self._cloud() and not souci:
+                A.depenser(self.intro, _("Lecture de l'idée"), A.PRIX_LECTURE)
+            if self._cloud() and not A.budget(self.intro).get("prevu"):
+                A.prevoir(self.intro, 6 * A.PRIX_LECTURE + 2 * A.PRIX_IMAGE)
+            self._remplir_icartes()
+            self.aller(P_I_ELEM)
+            self.etat.setText(_("L'IA n'a pas répondu ({e}) : les cartes sont pré-remplies d'après vos mots ; complétez-les.",
+                                e=texte_erreur(souci)[:160]) if souci else
+                              (etat.get("remarques") or _("Pour chaque carte, choisissez d'où elle vient, puis continuez.")))
+        self._lancer(travail, _("L'assistant lit votre idée"), fin)
+
+    def _dire_intro(self, texte):
+        """Une demande en clair : relue avec l'idée de départ ; ce qui a été choisi (fichiers, logos, jingle) est gardé."""
+        from . import assistant_intro as AI
+        self._lire_intro()
+        ancien, niveau = self.intro, self._niveau()
+        idee = (ancien.get("idee", "") + ". " + _("Correction : {c}", c=texte)).strip()
+
+        def fin(r, e):
+            if e or not r:
+                return
+            neuf = r
+            for vieux, el in zip(ancien["elements"], neuf["elements"]):
+                if el.get("source") == vieux.get("source"):
+                    for k in ("chemin", "biblio", "choix", "accent", "couleur"):
+                        if vieux.get(k) and not el.get(k):
+                            el[k] = vieux[k]
+            for k in ("budget", "idee"):
+                if ancien.get(k):
+                    neuf[k] = ancien[k]
+            self.intro, self.intro_fichier = neuf, ""
+            if self._cloud():
+                A.depenser(self.intro, _("Correction en clair"), A.PRIX_LECTURE)
+            self.libre.clear()
+            self._remplir_icartes()
+            self._remplir_texte_intro()
+            if self.pages.currentIndex() == P_I_CREER:
+                self.aller(P_I_TEXTE)
+            self.etat.setText("✓ " + (neuf.get("remarques") or _("C'est modifié : vérifiez, puis continuez.")))
+        self._lancer(lambda _t: AI.analyser_intro(self.params, idee, niveau), _("L'assistant applique votre demande"), fin)
+
+    # ------------------------------------------------------------------ 2. ce qu'il faut (logo, style, fond, son)
+    def _page_i_elements(self):
+        w = QWidget()
+        v = QVBoxLayout(w)
+        v.addWidget(self._titre(_("Ce qu'il faut pour cette intro : vérifiez chaque carte")))
+        v.addWidget(self._aide(_("Le logo, l'allure de l'animation, le fond et le son. Chaque carte dit d'où ils viennent, avec toutes les "
+                                 "possibilités ; le texte et la durée se règlent à l'étape suivante, avec l'aperçu animé.")))
+        self.w_icartes = QWidget()
+        self.v_icartes = QVBoxLayout(self.w_icartes)
+        v.addWidget(_defile(self.w_icartes), 1)
+        self.icartes = []
+        return w
+
+    def _remplir_icartes(self):
+        vider(self.v_icartes)
+        self.icartes = []
+        titres = {"logo": _("Logo"), "style_intro": _("Style"), "fond": _("Fond"), "son": _("Son")}
+        for k, e in enumerate(self.intro["elements"]):
+            e.setdefault("genre", {"style_intro": "style", "son": "partie", "logo": "logo", "fond": "fond"}.get(e["type"], "idee"))
+            c = CarteElement(e, I.sources(e["type"]), self._options_intro, I.manque, self.ameliorer, COULEURS[k], None, titres[e["type"]],
+                             self.garder_carte)
+            c.change.connect(self._maj)
+            self.icartes.append(c)
+            self.v_icartes.addWidget(c)
+        self.v_icartes.addStretch(1)
+
+    def _options_intro(self, carte, source):
+        from . import bruitages as BR
+        from . import intros as IN
+        e, t = carte.e, carte.e["type"]
+        if source == "bibliotheque":
+            return self._options_bibliotheque(carte)
+        w = QWidget()
+        v = QVBoxLayout(w)
+        v.setContentsMargins(24, 0, 0, 0)
+        h = QHBoxLayout()
+        if t == "logo" and source == "atelier":
+            from . import logo as LG
+            logos = sorted(LG.liste(), key=lambda x: _alpha(x.get("nom", "")))
+            cb = QComboBox()
+            cb.addItem(_("Choisir…") if logos else _("Aucun logo encore : ouvrez l'Atelier de logo"), "")
+            for x in logos:
+                cb.addItem(x.get("nom", ""), x.get("nom", ""))
+
+            def choisir(_i):
+                x = next((y for y in logos if y.get("nom") == cb.currentData()), None)
+                if x is not None:
+                    e["chemin"] = LG.enregistrer(x)
+                    carte.rafraichir()
+            if e.get("chemin"):
+                cb.setCurrentIndex(max(0, cb.findText(os.path.splitext(os.path.basename(e["chemin"]))[0])))
+            cb.currentIndexChanged.connect(choisir)
+            h.addWidget(cb, 1)
+            b = QPushButton(_("Atelier de logo…"))
+            b.clicked.connect(lambda: self.ed.window().atelier_logo())
+            h.addWidget(b)
+        elif source in ("fichier_image", "fichier"):
+            b = QPushButton(_("Choisir le fichier…"))
+            b.clicked.connect(lambda: self._fichier_intro(carte, source))
+            h.addWidget(b)
+            h.addWidget(QLabel(os.path.basename(e.get("chemin") or "") or _("aucun")), 1)
+        elif source == "creer_ia":
+            b = QPushButton(_("Le faire dessiner (environ 0,04 $)") if not e.get("chemin") else _("Le redessiner (environ 0,04 $)"))
+            b.clicked.connect(lambda: self._dessiner_intro(carte))
+            h.addWidget(b)
+            h.addStretch(1)
+        elif t == "style_intro" and source in ("liste", "decrire"):
+            cb = QComboBox()
+            for k, (fam, lib, expl) in sorted(IN.MODELES.items(), key=lambda x: _alpha(x[1][1])):
+                cb.addItem(f"{lib} ({IN.FAMILLES[fam]})", k)
+                cb.setItemData(cb.count() - 1, expl, Qt.ToolTipRole)
+            cb.setCurrentIndex(max(0, cb.findData(e.get("choix") or "masque")))
+            cb.currentIndexChanged.connect(lambda _i: (e.update(choix=cb.currentData()), carte.maj()))
+            h.addWidget(cb, 1)
+            if source == "decrire":
+                b = QPushButton(_("Choisir d'après la description"))
+                b.clicked.connect(lambda: self._style_d_apres_description(carte))
+                h.addWidget(b)
+            self._bouton_couleur(h, e, "accent", _("Couleur d'accent…"))
+        elif t == "fond" and source == "uni":
+            self._bouton_couleur(h, e, "couleur", _("Couleur du fond…"))
+            h.addStretch(1)
+        elif t == "son" and source == "bruitage":
+            cb = QComboBox()
+            for k, (lib, expl, *_r) in sorted(BR.SONS.items(), key=lambda x: _alpha(x[1][0])):
+                cb.addItem(lib, k)
+                cb.setItemData(cb.count() - 1, expl, Qt.ToolTipRole)
+            cb.setCurrentIndex(max(0, cb.findData(e.get("choix") or "whoosh")))
+            e["choix"] = cb.currentData()
+            cb.currentIndexChanged.connect(lambda _i: (e.update(choix=cb.currentData()), carte.maj()))
+            h.addWidget(cb, 1)
+        elif t == "son" and source == "jingle":
+            b = QPushButton(_("Créer le jingle (sur ce poste, gratuit)") if not e.get("chemin") else _("Recréer le jingle"))
+            b.clicked.connect(lambda: self._creer_jingle(carte))
+            h.addWidget(b)
+            h.addStretch(1)
+        else:
+            return None
+        v.addLayout(h)
+        if t in ("logo", "fond") and e.get("chemin") and os.path.exists(e["chemin"]) and source in ("atelier", "fichier_image", "creer_ia"):
+            v.addWidget(Vignette(e["chemin"], 160))
+        return w
+
+    def _bouton_couleur(self, h, e, cle, libelle):
+        from PySide6.QtGui import QColor
+        from PySide6.QtWidgets import QColorDialog
+        b = QPushButton(libelle)
+        if e.get(cle):
+            b.setStyleSheet(f"border-left:14px solid {e[cle]}")
+
+        def choisir():
+            c = QColorDialog.getColor(QColor(e.get(cle) or "#3a7bd5"), self, libelle)
+            if c.isValid():
+                e[cle] = c.name()
+                b.setStyleSheet(f"border-left:14px solid {e[cle]}")
+        b.clicked.connect(choisir)
+        h.addWidget(b)
+
+    def _fichier_intro(self, carte, source):
+        from .widgets import ouvrir_fichier
+        if source == "fichier":
+            ch = ouvrir_fichier(self, _("Son"), SONS, "musique", self.params)
+        else:
+            ch = ouvrir_fichier(self, _("Image"), _("Images") + " (*.png *.jpg *.jpeg *.webp)", "image", self.params)
+        if ch:
+            carte.e["chemin"] = ch
+            carte.rafraichir()
+
+    def _dessiner_intro(self, carte):
+        from . import assistant_intro as AI
+        e = carte.e
+        if len((e.get("description") or "").strip()) < 4:
+            self.etat.setText(_("Décrivez-le d'abord dans la carte."))
+            return
+        if getattr(self, "_test_oui", None) is None and QMessageBox.question(
+                self, _("Le faire dessiner"), _("Gemini le dessine d'après la description, environ 0,04 $ sur votre clef. Continuer ?")) \
+                != QMessageBox.Yes:
+            return
+        quoi = "logo" if e["type"] == "logo" else "fond"
+        from .creations import dossier
+        sortie = os.path.join(dossier(), f"intro_{quoi}_{int(time.time())}.png")
+        etat, params = copy.deepcopy(self.intro), self.params
+
+        def fin(r, err):
+            if err or not r:
+                return
+            A.depenser(self.intro, _("Image dessinée"), A.PRIX_IMAGE)
+            e["chemin"] = r
+            carte.rafraichir()
+        self._lancer(lambda _t: AI.image_ia(params, etat, quoi, sortie), _("Gemini dessine"), fin)
+
+    def _style_d_apres_description(self, carte):
+        from . import assistant_intro as AI
+        e, niveau = carte.e, self._niveau()
+        texte = (e.get("description") or "") + " — " + self.c_histoire.texte()
+
+        def fin(r, err):
+            if err or not r:
+                return
+            st = r["elements"][1]
+            e["choix"] = st.get("choix") or e.get("choix")
+            if st.get("accent"):
+                e["accent"] = st["accent"]
+            carte.rafraichir()
+        self._lancer(lambda _t: AI.analyser_intro(self.params, texte, niveau), _("L'IA choisit le modèle"), fin)
+
+    def _creer_jingle(self, carte):
+        from . import assistant_intro as AI
+        from . import traduction_recherche as TR
+        e = carte.e
+        self._lire_intro()
+        etat, params = copy.deepcopy(self.intro), self.params
+        from .creations import dossier
+        sortie = os.path.join(dossier(), f"jingle_{int(time.time())}.mp3")
+
+        def traduire(x):
+            return TR.phrase_en_anglais(x)[0]
+
+        def fin(r, err):
+            if err or not r:
+                return
+            e["chemin"] = r
+            carte.rafraichir()
+            self.etat.setText(_("✓ Jingle créé : il s'entendra dans l'aperçu de l'intro."))
+        self._lancer(lambda t: AI.creer_jingle(etat, sortie, params, t.avancer, t.arret_demande, traduire), _("Création du jingle sur ce poste"),
+                     fin)
+
+    # ------------------------------------------------------------------ 3. le texte et le rendu (aperçu animé)
+    def _page_i_texte(self):
+        from PySide6.QtCore import QTimer
+        w = QWidget()
+        h = QHBoxLayout(w)
+        v = QVBoxLayout()
+        v.addWidget(self._titre(_("Le texte et le rendu")))
+        v.addWidget(QLabel(_("Titre")))
+        self.c_titre = ChampAmeliorable("", "titre", 1, self.ameliorer, _("ex. : Mes vols du dimanche"))
+        v.addWidget(self.c_titre)
+        v.addWidget(QLabel(_("Sous-titre (facultatif)")))
+        self.c_sous = ChampAmeliorable("", "titre", 1, self.ameliorer, _("ex. : épisode 3"))
+        v.addWidget(self.c_sous)
+        hd = QHBoxLayout()
+        hd.addWidget(QLabel(_("Durée (s)")))
+        self.i_duree = QDoubleSpinBox()
+        self.i_duree.setRange(2, 8)
+        self.i_duree.setSingleStep(0.5)
+        self.i_duree.setDecimals(1)
+        hd.addWidget(self.i_duree)
+        hd.addStretch(1)
+        v.addLayout(hd)
+        v.addWidget(QLabel(_("Où la poser ?")))
+        self.i_place = QComboBox()
+        for k, lib in PLACEMENTS:
+            self.i_place.addItem(lib, k)
+        v.addWidget(self.i_place)
+        v.addStretch(1)
+        h.addLayout(v, 1)
+        va = QVBoxLayout()
+        va.addWidget(QLabel(_("Aperçu (sans le son) :")))
+        self.i_apercu = QLabel()
+        self.i_apercu.setFixedSize(400, 225)
+        self.i_apercu.setStyleSheet("background:#000;border-radius:6px")
+        va.addWidget(self.i_apercu)
+        va.addStretch(1)
+        h.addLayout(va)
+        for c in (self.c_titre, self.c_sous):
+            c.change.connect(self._apercu_change)
+        self.i_duree.valueChanged.connect(lambda _x: self._apercu_change())
+        self._minuterie_intro = QTimer(self)
+        self._minuterie_intro.timeout.connect(self._image_suivante)
+        self._ctx_intro, self._t_intro = None, 0.0
+        return w
+
+    def _remplir_texte_intro(self):
+        m = self.intro
+        self._remplissage = True                          # remplir les champs ne doit pas relire les autres, encore vides
+        try:
+            self.c_titre.mettre(m.get("titre", ""))
+            self.c_sous.mettre(m.get("sous_titre", ""))
+            self.i_duree.setValue(float(m.get("duree", 3.0)))
+            voulu = m.get("placement") if m.get("placement") in ("debut", "fin", "ligne", "medias") else "debut"
+            self.i_place.setCurrentIndex(max(0, self.i_place.findData(voulu)))
+        finally:
+            self._remplissage = False
+        self._apercu_change()
+        self._minuterie_intro.start(66)
+
+    def _lire_intro(self):
+        m = getattr(self, "intro", None)
+        if m is None or not hasattr(self, "c_titre") or getattr(self, "_remplissage", False):
+            return
+        if self.c_titre.texte() or self.pages.currentIndex() == P_I_TEXTE:
+            m["titre"] = self.c_titre.texte()
+            m["sous_titre"] = self.c_sous.texte()
+            m["duree"] = float(self.i_duree.value())
+            m["placement"] = self.i_place.currentData()
+
+    def _image_film(self):
+        """La première image du film (pour le fond « images du film »), une fois."""
+        if getattr(self, "_film_img", None) is not None:
+            return self._film_img or None
+        self._film_img = ""
+        p = self.ed.projet
+        c = next(iter(sorted(p.clips_piste("video"), key=lambda c: c["debut"])), None)
+        m = p.media(c["media"]) if c else None
+        if m and os.path.exists(m.get("chemin") or ""):
+            if m.get("genre") == "image":
+                self._film_img = m["chemin"]
+            else:
+                from . import prolonger
+                sortie = os.path.join(Q.dossier(self.seq), "film_debut.png")
+                try:
+                    self._film_img = prolonger._image(m["chemin"], float(c.get("src_debut", 0)) + 0.5, sortie)
+                except Exception:      # noqa: BLE001
+                    self._film_img = ""
+        return self._film_img or None
+
+    def _apercu_change(self):
+        from . import assistant_intro as AI
+        if getattr(self, "intro", None) is None:
+            return
+        self._lire_intro()
+        try:
+            self._ctx_intro = AI.contexte(self.intro, 400, 225, self._image_film())
+        except Exception:      # noqa: BLE001 : l'aperçu ne doit jamais bloquer
+            self._ctx_intro = None
+        self._t_intro = 0.0
+
+    def _image_suivante(self):
+        from PySide6.QtGui import QPixmap
+        from . import intros as IN
+        if self.pages.currentIndex() != P_I_TEXTE or not self.isVisible() or self._ctx_intro is None:
+            return
+        d = float(self.intro.get("duree", 3.0))
+        self._t_intro = (self._t_intro + 1 / 15) % (d + 0.6)
+        self.i_apercu.setPixmap(QPixmap.fromImage(IN.image(self._ctx_intro, min(self._t_intro, d))))
+
+    # ------------------------------------------------------------------ 4. l'intro : fabrication, écoute, pose
+    def _page_i_creer(self):
+        w = QWidget()
+        v = QVBoxLayout(w)
+        v.addWidget(self._titre(_("L'intro : regardez-la, avec son son, avant de la poser")))
+        self.l_resume_i = self._aide("")
+        v.addWidget(self.l_resume_i)
+        from .dialogues_creatif import ApercuCreation
+        self.apercu_i = ApercuCreation(self)
+        v.addWidget(self.apercu_i, 1)
+        h = QHBoxLayout()
+        self.b_fab_intro = QPushButton(_("Refabriquer"))
+        self.b_fab_intro.clicked.connect(self.fabriquer_intro)
+        h.addWidget(self.b_fab_intro)
+        self.b_garder_style = QPushButton(_("☆ Garder ce style d'intro"))
+        self.b_garder_style.setToolTip(_("Le modèle, les couleurs et le fond, nommés, pour refaire la même allure plus tard"))
+        self.b_garder_style.clicked.connect(lambda: self.garder_carte(self.intro["elements"][1]))
+        h.addWidget(self.b_garder_style)
+        h.addStretch(1)
+        v.addLayout(h)
+        return w
+
+    def fabriquer_intro(self):
+        from . import assistant_intro as AI
+        if self._en_calcul():
+            return
+        self._lire_intro()
+        etat = copy.deepcopy(self.intro)
+        L, H = self.ed.projet.taille
+        cadence = self.ed.projet.cadence
+        film = self._image_film()
+        dossier = os.path.join(Q.dossier(self.seq), "intro")
+        lieu = dict(PLACEMENTS).get(etat.get("placement"), "")
+        self.l_resume_i.setText(_("« {t} » — {m}, {d:.1f} s ; pose : {p}.", t=etat.get("titre") or _("Votre titre"),
+                                  m=etat["elements"][1].get("choix"), d=float(etat["duree"]), p=lieu))
+        try:
+            self.apercu_i.arreter()
+        except RuntimeError:
+            pass
+
+        def fin(r, err):
+            if err or not r:
+                return
+            self.intro_fichier = r
+            self.apercu_i.charger(r, video=True)
+            self.etat.setText(_("✓ Intro fabriquée : regardez-la, puis « Poser l'intro »."))
+        self._lancer(lambda t: AI.fabriquer(etat, dossier, L, H, cadence, film, t.avancer), _("Fabrication de l'intro"), fin)
+
+    def poser_intro(self):
+        if not getattr(self, "intro_fichier", ""):
+            return
+        try:
+            self.apercu_i.arreter()
+        except RuntimeError:
+            pass
+        place = self.intro.get("placement", "debut")
+        ed, f = self.ed, self.intro_fichier
+        if place == "ligne":
+            from . import prolonger
+            ed.projet.marquer()
+            prolonger.inserer(ed.projet, f, ed.timeline.position, nom=self.intro.get("titre") or _("Intro"))
+            ed.biblio.remplir(ed.projet)
+            ed.rafraichir()
+        else:
+            ed.window()._logo_pret(ed, f, place if place in ("debut", "fin") else "", None)
+        self.etat.setText(_("✓ Intro posée ({p}) ; Ctrl+Z pour revenir.", p=dict(PLACEMENTS).get(place, "")))
+
     # ------------------------------------------------------------------ poser (vidéo), mode manuel, fermeture
     def poser(self):
         p = self.ed.projet
@@ -1884,7 +2349,14 @@ class DialogueAssistant(QDialog):
         Q.enregistrer(self.seq)
 
     def mode_manuel(self):
-        """Ce qui est préparé, dans la fenêtre habituelle : la Séquence IA (vidéo) ou la Fabrique musique, pré-remplie."""
+        """Ce qui est préparé, dans la fenêtre habituelle : la Séquence IA (vidéo), la Fabrique musique ou la Fabrique (intro),
+        pré-remplie."""
+        if self.genre == "intro" and getattr(self, "intro", None) is not None:
+            self._lire_intro()
+            from . import assistant_intro as AI
+            self.hide()
+            self.ed.window().fabrique(image=AI.logo_chemin(self.intro), texte=self.intro.get("titre") or None, onglet=0)
+            return
         if self.genre == "musique" and self.musique is not None:
             self._lire_musique()
             f = I.fiche_base(self.musique)
@@ -1906,9 +2378,13 @@ class DialogueAssistant(QDialog):
     def done(self, r):
         if garder_calcul(self, self._en_calcul()):
             return
-        for a in ("apercu", "apercu_m"):
+        for a in ("apercu", "apercu_m", "apercu_i"):
             try:
                 getattr(self, a).arreter()
             except (RuntimeError, AttributeError):
                 pass
+        try:
+            self._minuterie_intro.stop()
+        except (RuntimeError, AttributeError):
+            pass
         super().done(r)

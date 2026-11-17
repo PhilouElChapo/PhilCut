@@ -23,6 +23,17 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T92 — 0.9.82 : intro et logo animé, de l'idée au résultat
+
+1. Fabrique IA › Logo, intro et vignette › « Assistant de création : une intro ou un logo animé… ». « Une intro ou un logo animé » est coché. Ecrire : « une intro de 3 s style cinéma pour « Mes vols du dimanche » avec mon logo et un impact », « Voir ce qu'il faut ».
+2. Carte Logo : « Un de mes logos » › choisir le logo (sinon « Atelier de logo… ») ; la vignette s'affiche. Essayer « Le faire dessiner par l'IA » avec une description : prix demandé, image.
+3. Carte Style : le modèle « Générique de cinéma » est choisi ; changer de modèle, « Couleur d'accent… ». Essayer « Le décrire » puis « Choisir d'après la description ».
+4. Carte Fond : essayer « Couleur unie » (« Couleur du fond… »), « Les images du film, floutées », « Posé sur le film ».
+5. Carte Son : « Un bruitage » › Impact ; essayer « Un jingle créé sur ce poste » (description, « Créer le jingle »).
+6. « Le texte et le rendu » : titre et sous-titre pré-remplis ; « ✨ Améliorer » sur le titre ; changer la durée : l'aperçu animé suit.
+7. « Fabriquer l'intro » : la regarder avec le son ; « Poser l'intro » au début : le film est décalé ; Ctrl+Z. Refaire avec « A la ligne rouge ».
+8. « ☆ Garder ce style d'intro », nom « Cinéma doré » ; nouvel assistant : carte Style › « Dans ma bibliothèque » › « Cinéma doré ».
+
 ## T91 — 0.9.81 : ma bibliothèque de créations, lieux
 
 1. Fabrique IA › « Ma bibliothèque de créations… » : vide au départ. « Nouveau… » › Musicien : nom « Bassiste aux cheveux gris », instrument « basse », description, « ✨ Améliorer », « Enregistrer ». « Faire sa fiche (Gemini)… » : prix demandé, la fiche apparaît.

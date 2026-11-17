@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.81 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.82 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.82 (intro et logo anime, de l'idee au resultat)
+- Fabrique IA › Logo, intro et vignette › "Assistant de creation : une intro ou un logo anime..." (ou "Une intro ou un logo anime" dans l'assistant) : "une intro de 3 s style cinema avec mon logo et un impact" donne quatre cartes pre-remplies.
+- Logo : un de vos logos (Atelier), une image a vous, dessine par l'IA (environ 0,04 $, confirme), de la bibliotheque, ou aucun. Style : un des modeles animes et sa couleur d'accent (ou choisi d'apres une description). Fond : degrade, couleur unie, images du film floutees, pose sur le film, une image (a vous, dessinee, de la bibliotheque). Son : un bruitage, un jingle cree sur ce poste, un son a vous, de la bibliotheque, ou aucun.
+- Titre et sous-titre avec "✨ Ameliorer", duree, ou la poser (debut, fin, ligne rouge, medias) : l'apercu anime suit en direct.
+- La fabrication mele le son a l'animation ; on regarde avec le son avant de poser. "☆ Garder ce style d'intro" range le modele, les couleurs et le fond dans la bibliotheque ; logo, fond et son se gardent aussi.
+- "Regler moi-meme" ouvre la Fabrique habituelle avec le titre et le logo.
+
 
 ### 0.9.81 (ma bibliotheque de creations, lieux)
 - Fabrique IA › "Ma bibliotheque de creations..." : personnages et musiciens (avec leur fiche), objets, lieux, voix (chanteur, chanteuse, narration ; voix decrite ou timbre garde avec accord), styles musicaux et visuels nommes, musiques, images. Chercher, renommer, retirer (corbeille, rien n'est efface), "Nouveau..." pour en creer : "Faire sa fiche", "Decrire d'apres un morceau", "Garder son timbre", "Ecouter un morceau".

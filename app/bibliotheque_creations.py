@@ -30,6 +30,8 @@ GENRES = {
     "voix": (_("Voix"), _("Chanteur, chanteuse, narration : une voix décrite, ou un timbre gardé (avec l'accord de la personne).")),
     "style_musical": (_("Style musical"), _("Un style nommé : ce que PhilCut a entendu d'un morceau, ou une description.")),
     "style_visuel": (_("Style visuel"), _("Une allure, un rendu « à la manière de » : décrit, jamais un visage copié.")),
+    "logo": (_("Logo"), _("Un logo prêt à poser (image), fait dans l'Atelier, dessiné par l'IA ou à vous.")),
+    "style_intro": (_("Style d'intro"), _("Une intro nommée : son modèle d'animation, ses couleurs, son fond.")),
     "musique": (_("Musique"), _("Un morceau créé, avec ce qui a servi à le créer.")),
     "image": (_("Image"), _("Une image créée ou gardée pour resservir.")),
 }
@@ -189,9 +191,11 @@ def resume(e):
 
 
 # ------------------------------------------------------------------ des cartes de l'assistant à la bibliothèque, et retour
-GENRE_DE_CARTE = {"personne": "personnage", "objet": "objet", "lieu": "lieu", "voix": "voix", "style": "style_musical"}
+GENRE_DE_CARTE = {"personne": "personnage", "objet": "objet", "lieu": "lieu", "voix": "voix", "style": "style_musical",
+                  "logo": "logo", "style_intro": "style_intro", "fond": "image", "son": "musique"}
 CARTES_POUR = {"personne": ("personnage", "musicien"), "objet": ("objet",), "lieu": ("lieu",), "voix": ("voix",),
-               "style": ("style_musical",)}
+               "style": ("style_musical",), "logo": ("logo", "image"), "style_intro": ("style_intro",), "fond": ("image", "lieu"),
+               "son": ("musique",)}
 
 
 def depuis_carte(params, e, nom=None, planche=""):
@@ -216,6 +220,11 @@ def depuis_carte(params, e, nom=None, planche=""):
                        role=e.get("role") or "", accord=bool(e.get("accord")))
         if e.get("voix_seule") and os.path.exists(e["voix_seule"]):
             fichiers["voix_seule"] = e["voix_seule"]
+    elif t in ("logo", "fond", "son"):
+        if e.get("chemin") and os.path.exists(e["chemin"]):
+            fichiers[{"logo": "image", "fond": "image", "son": "morceau"}[t]] = e["chemin"]
+    elif t == "style_intro":
+        donnees.update(modele=e.get("choix", ""), accent=e.get("accent", ""))
     elif t == "style":
         insp = e.get("inspiration") or {}
         donnees.update(choix=e.get("choix", ""), inspiration={k: insp[k] for k in ("caption_en", "resume", "bpm", "tonalite", "mesure")
@@ -241,4 +250,11 @@ def vers_carte(entree, e):
     elif e.get("type") == "style":
         e["inspiration"] = d.get("inspiration") or None
         e["choix"] = d.get("choix", "")
+    elif e.get("type") in ("logo", "fond"):
+        e["chemin"] = apercu(entree)
+    elif e.get("type") == "son":
+        e["chemin"] = f.get("morceau") or next((p for p in f.values() if not p.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))), "")
+    elif e.get("type") == "style_intro":
+        e["choix"] = d.get("modele", "") or "masque"
+        e["accent"] = d.get("accent", "")
     return e

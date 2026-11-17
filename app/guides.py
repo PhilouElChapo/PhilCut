@@ -171,6 +171,24 @@ def _guides_integres():
              {"texte": _("« Créer la musique » : chaque partie à son tempo, puis l'enchaînement. Ecoutez les raccords, « Refaire la "
                          "partie choisie » si besoin, puis « Poser sous la vidéo ».")},
          ]},
+        {"id": "assistant_intro", "etat": "ok",
+         "titre": _("Créer une intro ou un logo animé guidé pas à pas (logo, style, fond, son)"),
+         "mots": "assistant intro logo anime generique ouverture fin titre jingle whoosh impact bruitage fond style cinema guide",
+         "intro": _("Dites en quelques mots l'intro voulue (« 3 s style cinéma avec mon logo et un impact »). L'assistant en déduit "
+                    "quatre cartes : le logo (un des vôtres, une image, dessiné par l'IA, de la bibliothèque, aucun), le style (un "
+                    "modèle animé, sa couleur), le fond (dégradé, uni, images du film, posé sur le film, une image) et le son (bruitage, "
+                    "jingle créé sur ce poste, un son à vous). Puis le titre, l'aperçu animé, la fabrication avec le son, et la pose."),
+         "etapes": [
+             {"texte": _("Fabrique IA › Logo, intro et vignette › « Assistant de création : une intro ou un logo animé… »."),
+              "montrer": {"menu": [_("Fabrique IA"), _("Logo, intro et vignette"),
+                                   _("Assistant de création : une intro ou un logo animé, guidé pas à pas…")]},
+              "fait": "fenetre:DialogueAssistant"},
+             {"texte": _("Ecrivez votre idée, puis « Voir ce qu'il faut ».")},
+             {"texte": _("Vérifiez les cartes Logo, Style, Fond et Son ; choisissez d'où vient chacun.")},
+             {"texte": _("Le titre et le sous-titre (« ✨ Améliorer »), la durée, où la poser : l'aperçu animé suit.")},
+             {"texte": _("« Fabriquer l'intro » : regardez-la avec son son, puis « Poser l'intro ». « ☆ Garder ce style d'intro » "
+                         "pour refaire la même allure plus tard.")},
+         ]},
         {"id": "bibliotheque_creations", "etat": "ok",
          "titre": _("Garder un personnage, un lieu, une voix ou un style pour le réutiliser (ma bibliothèque de créations)"),
          "mots": "bibliotheque garder reutiliser personnage musicien lieu endroit decor objet voix chanteur chanteuse narration style "
