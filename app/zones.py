@@ -282,7 +282,7 @@ def suivre_modele(chemin, t0, t1, boite, pas=1.0 / 15, progression=None, arret=l
     return sorted(points) if arriere else points
 
 
-def suivre_zone(projet, z, t_depart=None, progression=None, arret=lambda: False):
+def suivre_zone(projet, z, t_depart=None, progression=None, arret=lambda: False, methode="local", params=None):
     """La zone suit ce qu'elle couvre. Premier suivi : depuis l'instant où elle a été tracée (z["t_trace"]), en
     avant jusqu'à sa fin et en arrière jusqu'à son début. Correction (t_depart) : la trajectoire d'avant t_depart
     est gardée, la suite est refaite depuis la place retracée."""
@@ -308,11 +308,18 @@ def suivre_zone(projet, z, t_depart=None, progression=None, arret=lambda: False)
     part_av = (t1 - ref) / max(1e-6, (t1 - ref) + (ref - t_deb if arriere else 0))
     prog_av = (lambda f: progression(f * part_av)) if progression else None
     prog_ar = (lambda f: progression(part_av + f * (1 - part_av))) if progression else None
-    pts = suivre_modele(src, vers_src(ref), vers_src(t1), boite, progression=prog_av, arret=arret)
-    if arriere and not arret():
-        pas_ar = max(1.0 / 15, (ref - t_deb) * v / 200)          # au plus 200 images gardées en mémoire
-        pts = suivre_modele(src, vers_src(ref), vers_src(t_deb), boite, pas=pas_ar, progression=prog_ar, arret=arret,
-                            arriere=True)[:-1] + pts
+    if methode == "cloud":                                     # 0.9.85 : suivi précis par le cloud (SAM 3), même trajectoire
+        from . import suivi_cloud as SC
+        src_c = m["chemin"] if os.path.exists(m.get("chemin") or "") else src
+        pts = SC.suivre(params or {}, src_c, vers_src(ref), vers_src(t1), boite, progression=prog_av, arret=arret)
+        if arriere and not arret():
+            pts = SC.suivre(params or {}, src_c, vers_src(ref), vers_src(t_deb), boite, progression=prog_ar, arret=arret)[:-1] + pts
+    else:
+        pts = suivre_modele(src, vers_src(ref), vers_src(t1), boite, progression=prog_av, arret=arret)
+        if arriere and not arret():
+            pas_ar = max(1.0 / 15, (ref - t_deb) * v / 200)          # au plus 200 images gardées en mémoire
+            pts = suivre_modele(src, vers_src(ref), vers_src(t_deb), boite, pas=pas_ar, progression=prog_ar, arret=arret,
+                                arriere=True)[:-1] + pts
     pts = suivi.lisser(pts, 0.2)
     nouv = []
     for p in pts:
@@ -321,8 +328,13 @@ def suivre_zone(projet, z, t_depart=None, progression=None, arret=lambda: False)
         nouv.append((round(tm, 3), round(ix, 4), round(iy, 4), round(il, 4), round(ih, 4)))
     nouv = suivi.alleger(nouv, 1.0 / 15)
     avant = [p for p in (z.get("suivi") or {}).get("positions") or [] if p[0] < ref - 0.02] if t_depart is not None else []
-    z["suivi"] = {"media": m["id"], "positions": avant + nouv}
+    z["suivi"] = {"media": m["id"], "positions": avant + nouv, "methode": methode}
     return z
+
+
+def duree_a_suivre(projet, z):
+    """Durée (s) de source que le suivi parcourt : pour annoncer le prix du suivi précis."""
+    return max(0.1, float(z["fin"]) - float(z["debut"]))
 
 
 def corriger_ici(z, x, y, l, h, t, portee=0.6):

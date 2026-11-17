@@ -72,10 +72,12 @@ def _guides_integres():
     G = [
         {"id": "fond", "etat": "ok",
          "titre": _("Changer le fond (décor, paysage) d'un rush"),
-         "mots": "fond decor paysage arriere-plan detourer remplacer chroma vert",
+         "mots": "fond decor paysage arriere-plan detourer remplacer chroma vert objet animal avion cloud bria sujet",
          "intro": _("Un rush tourné devant un fond uni (vert, bleu) se détoure par la couleur. Un rush filmé n'importe où : l'effet "
-                    "« Changer le fond (détourage) » sépare la personne du fond sur ce poste (modèle « Détourage de personne », "
-                    "Préférences › IA locale) et la pose sur une image, une vidéo, une couleur ou le fond flouté."),
+                    "« Changer le fond (détourage) » sépare le sujet du fond et le pose sur une image, une vidéo, une couleur ou le "
+                    "fond flouté. Méthode « IA de ce poste » : une personne, gratuit (modèle « Détourage de personne »). Méthode "
+                    "« IA cloud, tout sujet » : personne, animal, objet, avion…, environ 0,05 $ la seconde, payé une seule fois par "
+                    "passage."),
          "etapes": [
              {"texte": _("Rush tourné devant un fond uni : cliquez le plan dans la timeline."), "fait": "plan_choisi"},
              {"texte": _("Dans le volet Effets, cherchez « Fond vert » et glissez « Fond vert (chroma key) » sur le plan."),
@@ -85,6 +87,9 @@ def _guides_integres():
              {"texte": _("Rush filmé n'importe où : volet Effets, cherchez « Changer le fond », glissez « Changer le fond (détourage) » "
                          "sur le plan ; dans l'Inspecteur, « Nouveau fond » : image ou vidéo du projet, couleur, ou fond flouté."),
               "montrer": {"volet": "effets", "chercher": _("Changer le fond")}, "fait": "effet:detourage"},
+             {"texte": _("Un sujet qui n'est pas une personne (avion, animal, objet), ou un détourage plus fin : dans l'Inspecteur, "
+                         "« Préparer par l'IA cloud (environ … $)… » : le prix est demandé, la barre du bas suit, puis la méthode passe "
+                         "seule à « IA cloud, tout sujet ».")},
              {"texte": _("Ou seulement flouter le fond : ligne rouge sur le plan, puis Fabrique IA › Vidéo › Effet IA sur le film… › "
                          "« Flou d'arrière-plan (effet portrait) » › Créer."),
               "montrer": {"menu": [_("Fabrique IA"), _("Vidéo"), _("Effet IA sur le film (dessin animé, ralenti, agrandir, photo 3D…)…")]},
@@ -392,6 +397,9 @@ def _guides_integres():
              {"texte": _("Clic droit sur l'élément dans la timeline › « Accrocher à une personne (suit ses mouvements)… ».")},
              {"texte": _("La personne est trouvée seule ; pour un objet (avion, voiture), tracez un cadre autour à la souris, puis OK : "
                          "la barre du bas suit le calcul.")},
+             {"texte": _("Pour un suivi précis (le sujet se tourne, se cache un instant, change de taille) : cochez « Suivi précis par "
+                         "l'IA cloud » avant OK ; le prix (quelques centimes) est demandé. Pour une zone floutée : Inspecteur › « Suivre "
+                         "précisément (IA cloud) ».")},
              {"texte": _("Il décroche à un moment ? Clic droit sur l'élément › « Décrocher (position fixe) », puis accrochez-le à nouveau.")},
          ]},
         {"id": "tampons_son", "etat": "ok",

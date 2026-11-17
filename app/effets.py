@@ -138,7 +138,9 @@ CATALOGUE = {
                   [("fond", _("Nouveau fond"), "choix", "media", [("media", _("Image ou vidéo du projet")), ("flou", _("Fond d'origine flouté")),
                                                                    ("couleur", _("Couleur unie"))], 0),
                    ("media", _("Image ou vidéo"), "media", "", 0, 0), ("couleur", _("Couleur"), "couleur", "#1d2b3a", 0, 0),
-                   ("adoucir", _("Bords adoucis"), "float", 1.0, 0.0, 4.0)], "segmentation"),
+                   ("adoucir", _("Bords adoucis"), "float", 1.0, 0.0, 4.0),
+                   ("methode", _("Méthode"), "choix", "local", [("local", _("IA de ce poste (personnes, gratuit)")),
+                                                               ("cloud", _("IA cloud, tout sujet (environ 0,05 $/s)"))], 0)], "segmentation"),
     "code_personne": ("matrix", _("Personne en code"), _("La silhouette se remplit de caractères qui défilent puis redevient réelle."),
                       [("duree", _("Durée (s)"), "float", 2.0, 0.5, 6.0)], "segmentation"),
     # ---- matrix

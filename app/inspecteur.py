@@ -138,6 +138,25 @@ class Inspecteur(QWidget):
         self._dernier_marquage = t
         self._derniere_cle = cle
 
+    def _detourage_cloud(self, v, c, e):
+        """0.9.84 : lever le fond de n'importe quel sujet par le cloud : état, prix, « Préparer » (une seule fois par passage)."""
+        from . import detourage_cloud as DC
+        m = self.projet.media(c["media"])
+        if not m or m.get("genre") != "video":
+            return
+        d = duree_clip(c)
+        fait = DC.pret(c, m)
+        lb = QLabel(("✓ " + _("Préparé par l'IA cloud : à l'export, le fond est levé quel que soit le sujet.")) if fait else
+                    _("IA cloud, tout sujet (personne, animal, objet, avion…), sans fond vert : le passage est envoyé une fois, "
+                      "environ {p} $ pour {d:.0f} s ; prix demandé avant.", p=DC.prix(d), d=d))
+        lb.setWordWrap(True)
+        lb.setStyleSheet(f"color:{theme.COULEURS['texte2']}")
+        v.addWidget(lb)
+        if not fait:
+            b = QPushButton(_("Préparer par l'IA cloud (environ {p} $)…", p=DC.prix(d)))
+            b.clicked.connect(lambda: self.ed.detourer_cloud(c, e))
+            v.addWidget(b)
+
     def _changer(self, f, reconstruire=True):
         self._marquer(getattr(f, "__code__", None))
         f()
@@ -904,6 +923,8 @@ class Inspecteur(QWidget):
                                           self.projet.medias)
                     f.addRow(spec[1], wp)
                 v.addLayout(f)
+                if e["id"] == "detourage":
+                    self._detourage_cloud(v, c, e)
             else:
                 v.addWidget(QLabel(f"<span style='color:{theme.COULEURS['texte2']}'>" + _("Cet effet n'a pas de réglage.") + "</span>"))
             # étendue : tout le plan, ou une partie (de … à …, en secondes depuis le début du plan)
@@ -1159,6 +1180,12 @@ class Inspecteur(QWidget):
         b1 = QPushButton(icone("synchro", theme.COULEURS["texte"]), _("Refaire le suivi depuis le début") if pos else _("Suivre ce qu'elle couvre"))
         b1.clicked.connect(lambda: self.ed.suivre_zone(z))
         v.addWidget(b1)
+        from . import suivi_cloud as SC
+        from . import zones as Z
+        bc = QPushButton(_("Suivre précisément (IA cloud, environ {p} $)", p=SC.prix(Z.duree_a_suivre(self.projet, z))))
+        bc.setToolTip(_("SAM 3 suit exactement le sujet couvert, même s'il se tourne ou se cache un instant ; prix demandé avant"))
+        bc.clicked.connect(lambda: self.ed.suivre_zone(z, methode="cloud"))
+        v.addWidget(bc)
         if pos:
             b2 = QPushButton(_("Corriger à la ligne rouge (retracer ici)"))
             b2.setToolTip(_("Le suivi s'est trompé ? Placez la ligne rouge à cet instant, retracez la zone : la suite est refaite."))

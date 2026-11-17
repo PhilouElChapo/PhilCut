@@ -23,6 +23,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T94 — 0.9.84 : fond levé pour tout sujet, suivi précis par le cloud
+
+Il faut une clef fal.ai avec un peu de crédit.
+
+1. Un rush de l'avion qui roule (5 s) : volet Effets › « Changer le fond (détourage) » sur le plan ; Inspecteur : « Nouveau fond » = une image ; « Préparer par l'IA cloud (environ 0,25 $)… » : le prix est demandé, la barre du bas suit, puis « Méthode » passe à « IA cloud, tout sujet ».
+2. Exporter 5 s : l'avion est sur le nouveau décor, bords propres ? Refaire l'export : rien n'est repayé (crédit fal inchangé).
+3. Une zone floutée sur une plaque ou un visage qui bouge : Inspecteur › « Suivre précisément (IA cloud, environ … $) » : prix demandé ; lire le passage : la zone colle-t-elle au sujet, même quand il se tourne ?
+4. Une flèche (Goodies) : clic droit › « Accrocher à une personne… », tracer un cadre autour de l'avion, cocher « Suivi précis par l'IA cloud », OK : la flèche suit-elle l'avion ?
+5. Aide › Comment faire… › « fond » et « flèche » : les nouvelles étapes y sont.
+
 ## T93 — 0.9.83 : la bibliothèque dans la Séquence IA, le clip de groupe, la Fabrique musique
 
 1. Séquence IA, onglet « Personnages et lieux » : « Ma bibliothèque » › « Prendre dans ma bibliothèque… » › un personnage gardé : la ligne arrive avec ses images et sa fiche (« + fiche »). Idem pour un lieu.

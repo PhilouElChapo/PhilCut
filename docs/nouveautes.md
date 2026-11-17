@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.83 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.84 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.84 (fond leve pour tout sujet, suivi precis par le cloud)
+- Changer le fond d'un rush sans fond vert, quel que soit le sujet (personne, animal, objet, avion) : effet "Changer le fond (detourage)", Inspecteur › "Preparer par l'IA cloud (environ ... $)..." (Bria VRMBG 3.0 sur fal.ai, environ 0,05 $ la seconde, prix demande). La video rendue avec sa transparence est gardee sur ce poste : le meme passage n'est jamais repaye ; a l'export, elle sert de masque au plan (ses effets et son cadrage restent). Methode au choix : "IA de ce poste (personnes, gratuit)" ou "IA cloud, tout sujet".
+- Suivi precis par le cloud (SAM 3 sur fal.ai, quelques centimes) : pour une zone (flou, cache), Inspecteur ou clic droit › "Suivre precisement (IA cloud)" ; pour une fleche, un texte ou un Goodie, "Accrocher..." › case "Suivi precis par l'IA cloud". Le sujet est suivi meme s'il se tourne, se cache un instant ou change de taille, en avant et en arriere.
+
 
 ### 0.9.83 (la bibliotheque partout)
 - Sequence IA, onglet Personnages et lieux : bouton "Ma bibliotheque" (prendre un personnage, un objet ou un lieu garde, avec sa fiche ; ou garder la ligne choisie).

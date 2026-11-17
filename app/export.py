@@ -355,10 +355,11 @@ class Exportateur:
                 self.journal.append("changer le fond : aucune image ou vidéo choisie, fond d'origine gardé")
                 return chaine
             return self._avec_second_media(chaine, e, c, d)
-        masque = self._masque_sequence(c)
-        if not masque:
+        mk_cloud = self._masque_cloud(c, e, d)
+        masque = None if mk_cloud else self._masque_sequence(c)
+        if not (mk_cloud or masque):
             return chaine
-        km = self._entree("-framerate", str(self.cad), "-i", masque)
+        km = self._entree("-framerate", str(self.cad), "-i", masque) if masque else None
         a, a1, a2, bg, mk, fg, out = (self._nom(x) for x in ("prim", "pa", "pb", "fond", "msk", "fg", "mix"))
         self.filtres.append(",".join(chaine) + f"[{a}]")
         if fond == "flou":
@@ -371,7 +372,10 @@ class Exportateur:
             self.filtres.append(f"[{kc}:v]format=yuv420p[{bg}]")
         douceur = float(p.get("adoucir", 1.0))
         flou = f",gblur=sigma={douceur * 2:.2f}" if douceur > 0 else ""
-        self.filtres.append(f"[{km}:v]format=gray,scale={self.L}:{self.H}{flou}[{mk}]")
+        if mk_cloud:
+            self.filtres.append(f"[{mk_cloud}]format=gray{flou}[{mk}]")
+        else:
+            self.filtres.append(f"[{km}:v]format=gray,scale={self.L}:{self.H}{flou}[{mk}]")
         self.filtres.append(f"[{a1}][{mk}]alphamerge[{fg}]")
         self.filtres.append(f"[{bg}][{fg}]overlay=0:0:format=auto,format=yuv420p[{out}]")
         return [f"[{out}]null"]
@@ -428,7 +432,13 @@ class Exportateur:
             fg = self._nom("fg")
             self.filtres.append(f"[{a}]format=yuva420p,chromakey=0x{coul}:{tol:.2f}:0.1[{fg}]")
             self.filtres.append(f"[{b}][{fg}]overlay=0:0:format=auto[{out}]")
-        else:   # detourage : masque IA (segmentation.py) prepare en PNG
+        else:   # detourage : masque du cloud (tout sujet) ou masque IA de ce poste (segmentation.py) préparé en PNG
+            mk_cloud = self._masque_cloud(c, e, d)
+            if mk_cloud:
+                fg = self._nom("fg")
+                self.filtres.append(f"[{a}][{mk_cloud}]alphamerge[{fg}]")
+                self.filtres.append(f"[{b}][{fg}]overlay=0:0:format=auto[{out}]")
+                return [f"[{out}]null"]
             masque = self._masque_sequence(c)
             if masque:
                 km = self._entree("-framerate", str(self.cad), "-i", masque)
@@ -516,6 +526,25 @@ class Exportateur:
             return lambda i: None
         m = self.p.media(c["media"])
         return segmentation.masques(m["chemin"], c["src_debut"], self.L, self.H, self.cad, clip=c)
+
+    def _masque_cloud(self, c, e, d):
+        """0.9.84 : le masque tiré de la vidéo transparente rendue par le cloud (tout sujet), au cadrage du plan ; label ou None."""
+        if ((e.get("params") or {}).get("methode") or "local") != "cloud":
+            return None
+        from . import detourage_cloud as DC
+        m = self.p.media(c["media"])
+        f = DC.pret(c, m) if m else ""
+        if not f:
+            self.journal.append("changer le fond (cloud) : plan pas encore préparé, méthode de ce poste utilisée")
+            return None
+        avance = float(c.get("_avance") or 0.0)
+        k = self._entree("-ss", f"{avance:.3f}", "-t", f"{d:.3f}", "-i", f)
+        cad = DC.filtre_masque(self._cadrage(c, m))
+        cad = cad or f"scale={self.L}:{self.H}:force_original_aspect_ratio=decrease,pad={self.L}:{self.H}:(ow-iw)/2:(oh-ih)/2:color=black@0"
+        mk = self._nom("mskc")
+        self.filtres.append(f"[{k}:v]format=yuva420p,fps={self.cad},{cad},format=yuva420p,alphaextract,"
+                            f"trim=duration={d:.3f},setpts=PTS-STARTPTS[{mk}]")
+        return mk
 
     def _masque_sequence(self, c):
         try:

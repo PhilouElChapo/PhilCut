@@ -284,7 +284,8 @@ def recadrer(projet, clip, boite, zoom=1.0, lissage="normal", progression=None, 
     return clip
 
 
-def accrocher(projet, element, media, boite, decalage=(0.0, -0.6), lissage="normal", progression=None, arret=lambda: False):
+def accrocher(projet, element, media, boite, decalage=(0.0, -0.6), lissage="normal", progression=None, arret=lambda: False,
+              methode="local", params=None):
     """Texte, Goodie ou image qui suit la personne. element["suivi"]["positions"] = [(t_montage, x, y)] où (x, y) est le
     point d'accroche : centre de la boîte décalé de `decalage` (en hauteurs de boîte ; -0.6 = au-dessus de la tête)."""
     clip = next((c for c in projet.clips_piste("video") if c["media"] == media["id"]
@@ -296,7 +297,12 @@ def accrocher(projet, element, media, boite, decalage=(0.0, -0.6), lissage="norm
     v = float(clip.get("vitesse", 1.0) or 1.0)
     t0 = clip["src_debut"] + max(0.0, element["debut"] - clip["debut"]) * v
     t1 = min(clip["src_fin"], clip["src_debut"] + (element["fin"] - clip["debut"]) * v)
-    pts = lisser(suivre(_source(projet, media), t0, t1, boite, progression=progression, arret=arret), LISSAGES.get(lissage, 0.6))
+    if methode == "cloud":                          # 0.9.85 : suivi précis par le cloud (SAM 3) : tout sujet, même caché un instant
+        from . import suivi_cloud as SC
+        brut = SC.suivre(params or {}, media["chemin"], t0, t1, boite, progression=progression, arret=arret)
+    else:
+        brut = suivre(_source(projet, media), t0, t1, boite, progression=progression, arret=arret)
+    pts = lisser(brut, LISSAGES.get(lissage, 0.6))
     dx, dy = decalage
     pos = [(round(clip["debut"] + (p[0] - clip["src_debut"]) / v, 3), round(p[1] + dx * p[3], 4), round(p[2] + dy * p[4], 4)) for p in pts]
     element["suivi"] = {"media": media["id"], "boite": list(boite[:4]), "decalage": list(decalage), "lissage": lissage,

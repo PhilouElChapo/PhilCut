@@ -128,6 +128,11 @@ class DialogueSuivi(QDialog):
         self.lissage.setCurrentIndex(max(0, self.lissage.findData((cadre or {}).get("lissage", "normal"))))
         f.addRow(_("Mouvement du cadre") if recadrage else _("Mouvement"), self.lissage)
         v.addLayout(f)
+        self.cloud = None
+        if not recadrage:                      # 0.9.85 : suivi précis par le cloud (tout sujet), prix demandé ensuite
+            from PySide6.QtWidgets import QCheckBox
+            self.cloud = QCheckBox(_("Suivi précis par l'IA cloud (SAM 3, tout sujet, même caché un instant ; quelques centimes, prix demandé)"))
+            v.addWidget(self.cloud)
         bb = boutons_fr(QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel))
         bb.accepted.connect(self._valider)
         bb.rejected.connect(self.reject)

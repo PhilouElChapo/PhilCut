@@ -1390,9 +1390,12 @@ class Editeur(QWidget):
         self.encart.message(_("Zone posée de {a} à {b}, {s}. Changez l'effet dans l'Inspecteur ; « Suivre ce qu'elle couvre » "
                               "la fait bouger avec le visage ou l'objet.", a=_tc(z["debut"]), b=_tc(z["fin"]), s=sur))
 
-    def suivre_zone(self, z, depuis=None, depart=None):
-        """Analyse de l'image : la zone suit ce qu'elle couvre (en arrière-plan, suivi dans le Centre d'activité)."""
+    def suivre_zone(self, z, depuis=None, depart=None, methode="local"):
+        """Analyse de l'image : la zone suit ce qu'elle couvre (en arrière-plan, suivi dans le Centre d'activité). 0.9.85 :
+        methode="cloud" = suivi précis par le cloud (SAM 3), prix demandé avant."""
         from . import zones as Z
+        if methode == "cloud" and not self._accord_suivi_cloud(Z.duree_a_suivre(self.projet, z)):
+            return
         self.projet.marquer()
         if depart is not None:          # correction : position retracée à l'instant `depuis`
             pos = (z.get("suivi") or {}).get("positions") or []
@@ -1404,7 +1407,8 @@ class Editeur(QWidget):
         projet = self.projet
 
         def travail(tache):
-            return Z.suivre_zone(projet, z, depuis, progression=lambda f: tache.avancer(f), arret=lambda: tache.arret)
+            return Z.suivre_zone(projet, z, depuis, progression=lambda f: tache.avancer(f), arret=lambda: tache.arret, methode=methode,
+                                 params=self.params)
         t = Tache(travail, _("Suivi de la zone"))
         self.taches.append(t)
         self.encart.suivre(t, _("Analyse de l'image : la zone suit ce qu'elle couvre"))
@@ -1424,6 +1428,19 @@ class Editeur(QWidget):
                 self.inspecteur.montrer_selection([z["id"]])
         t.fini.connect(fini)
         t.start()
+
+    def _accord_suivi_cloud(self, duree):
+        from PySide6.QtWidgets import QMessageBox
+        from . import generateurs_video as GV
+        from . import suivi_cloud as SC
+        if not GV.clef(self.params, "fal"):
+            QMessageBox.information(self, _("Suivi précis"), _("Il faut une clef fal.ai (Préférences › Assistant et IA) pour le suivi précis "
+                                                               "par le cloud."))
+            return False
+        if getattr(self, "_test_oui", None) is not None:
+            return True
+        return QMessageBox.question(self, _("Suivi précis"), _("Suivre précisément ce sujet par l'IA cloud (SAM 3, sur votre clef fal.ai) "
+                                                               "pour environ {p} $ ({d:.0f} s) ?", p=SC.prix(duree), d=duree)) == QMessageBox.Yes
 
     def figer_zone(self, z):
         from . import zones as Z
@@ -1872,6 +1889,10 @@ class Editeur(QWidget):
             self.tampons()
         elif quoi == "figer":
             self.figer_image()
+        elif quoi == "zone_suivre_cloud":
+            z = next((g for g in self.projet.goodies if g["id"] == ident), None)
+            if z:
+                self.suivre_zone(z, methode="cloud")
         elif quoi in ("zone_suivre", "zone_retracer", "zone_figer"):
             z = self._zone(ident)
             if z:
@@ -1987,12 +2008,15 @@ class Editeur(QWidget):
         if d.exec() != QDialog.Accepted:
             return
         boite, _zoom, lissage = d.resultat()
+        methode = "cloud" if getattr(d, "cloud", None) is not None and d.cloud.isChecked() else "local"
+        if methode == "cloud" and not self._accord_suivi_cloud(max(0.1, element["fin"] - element["debut"])):
+            return
         self.projet.marquer()
         decalage = (0.0, -0.5) if element in self.projet.titres else (0.0, -0.6)
         if element in self.projet.titres:
             element["style"] = "etiquette"
         t = Tache(lambda tache: suivi.accrocher(self.projet, element, m, boite, decalage, lissage, progression=lambda f: tache.avancer(f),
-                                                arret=lambda: tache.arret), _("Suivi"))
+                                                arret=lambda: tache.arret, methode=methode, params=self.params), _("Suivi"))
         self.taches.append(t)
         self.encart.suivre(t, _("Accroché à la personne dans « {n} »", n=m["nom"]))
         t.fini.connect(lambda r, e: self.rafraichir())
@@ -2689,6 +2713,47 @@ class Editeur(QWidget):
             except (RuntimeError, AttributeError):
                 pass
         return d
+
+    def detourer_cloud(self, clip, effet):
+        """0.9.84 : lever le fond de n'importe quel sujet par le cloud (Bria, fal.ai) : prix demandé, calcul suivi dans la barre du
+        bas, méthode « cloud » posée sur l'effet à la fin ; rien n'est repayé pour le même passage."""
+        from PySide6.QtWidgets import QMessageBox
+        from . import detourage_cloud as DC
+        from . import generateurs_video as GV
+        from .projet import duree_clip
+        from .taches import Tache
+        m = self.projet.media(clip["media"])
+        if not m:
+            return
+        if not GV.clef(self.params, "fal"):
+            QMessageBox.information(self, _("Changer le fond"), _("Il faut une clef fal.ai (Préférences › Assistant et IA) pour lever le fond "
+                                                                  "par le cloud."))
+            return
+        p = DC.prix(duree_clip(clip))
+        if getattr(self, "_test_oui", None) is None and QMessageBox.question(
+                self, _("Changer le fond"), _("Lever le fond de ce plan par l'IA cloud (Bria, sur votre clef fal.ai) pour environ {p} $ ? "
+                                              "Le résultat est gardé : ce passage ne sera plus jamais payé.", p=p)) != QMessageBox.Yes:
+            return
+        params = self.params
+        t = Tache(lambda tache: DC.fabriquer(params, clip, m, tache.avancer, lambda: tache.arret), _("Changer le fond"))
+        t.progression.connect(lambda *_a: None)
+        self.encart.suivre(t, _("Le fond est levé par le cloud ({n})", n=m.get("nom", "")))
+
+        def fini(r, err):
+            if err or not r:
+                return
+            self.projet.marquer()
+            effet.setdefault("params", {})["methode"] = "cloud"
+            self._modifie()
+            self.timeline.reconstruire()
+            try:
+                self.inspecteur.montrer_clip(clip["id"])
+            except (AttributeError, RuntimeError):
+                pass
+        t.fini.connect(fini)
+        self.taches.append(t)
+        t.start()
+        return t
 
     def bibliotheque_creations(self):
         """0.9.81 : « Ma bibliothèque de créations » (personnages, lieux, voix, styles…), une seule fenêtre, non bloquante."""

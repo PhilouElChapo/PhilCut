@@ -638,6 +638,7 @@ class ItemCalque(QGraphicsRectItem):
             suivie = bool((self.elem.get("suivi") or {}).get("positions"))
             m.addAction(_("Refaire le suivi depuis le début") if suivie else _("Suivre ce qu'elle couvre (analyse de l'image)"),
                         lambda: self.tl.demande_menu.emit(self.elem["id"], "zone_suivre"))
+            m.addAction(_("Suivre précisément (IA cloud, tout sujet)…"), lambda: self.tl.demande_menu.emit(self.elem["id"], "zone_suivre_cloud"))
             if suivie:
                 m.addAction(_("Corriger à la ligne rouge (retracer ici)"), lambda: self.tl.demande_menu.emit(self.elem["id"], "zone_retracer"))
                 m.addAction(_("Figer (ne plus suivre)"), lambda: self.tl.demande_menu.emit(self.elem["id"], "zone_figer"))
