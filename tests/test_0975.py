@@ -36,6 +36,7 @@ class TestTransfo(unittest.TestCase):
         from app.fenetre import Fenetre
         from app import moteur, generateurs_video as GV, voix_transfo as VT
         f = Fenetre()
+        f.bienvenue = lambda *a, **k: None
         ed = f.nouveau_projet("16:9")
         ed.params["clef_fal"] = "a:b"
         d = tempfile.mkdtemp()

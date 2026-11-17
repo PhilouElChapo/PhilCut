@@ -40,6 +40,7 @@ class TestRetouches(unittest.TestCase):
         from app.fenetre import Fenetre
         from app import moteur
         f = Fenetre()
+        f.bienvenue = lambda *a, **k: None
         ed = f.nouveau_projet("16:9")
         d = tempfile.mkdtemp()
         v = commun.video_test(d)
