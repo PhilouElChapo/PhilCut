@@ -268,6 +268,7 @@ class DialogueSequence(QDialog):
             b = QPushButton(lib)
             b.clicked.connect(f)
             h.addWidget(b)
+        h.addWidget(self._bouton_biblio("perso"))       # 0.9.83 : prendre ou garder, un seul bouton (tient en 1024 px)
         h.addStretch(1)
         v.addLayout(h)
         v.addWidget(QLabel("<b>" + _("Lieux") + "</b>"))
@@ -283,6 +284,7 @@ class DialogueSequence(QDialog):
             b = QPushButton(lib)
             b.clicked.connect(f)
             h.addWidget(b)
+        h.addWidget(self._bouton_biblio("lieu"))       # 0.9.83 : prendre ou garder, un seul bouton (tient en 1024 px)
         h.addStretch(1)
         v.addLayout(h)
         self.onglets.addTab(w, _("2. Personnages et lieux"))
@@ -345,6 +347,57 @@ class DialogueSequence(QDialog):
         else:
             self.seq["lieux"].append(Q.lieu(_("Lieu {n}", n=len(self.seq["lieux"]) + 1)))
         self._remplir_tables()
+
+    def _bouton_biblio(self, quoi):
+        from PySide6.QtWidgets import QMenu
+        b = QPushButton(_("Ma bibliothèque"))
+        b.setToolTip(_("Prendre un personnage, un objet ou un lieu gardé, ou garder la ligne choisie"))
+        m = QMenu(b)
+        m.addAction(_("Prendre dans ma bibliothèque…"), lambda: self._depuis_biblio(quoi))
+        m.addAction(_("☆ Garder la ligne choisie"), lambda: self._garder_biblio(quoi))
+        b.setMenu(m)
+        return b
+
+    def _depuis_biblio(self, quoi):
+        """0.9.83 : un personnage, un objet ou un lieu gardé, repris tel quel (sa fiche n'est pas refaite)."""
+        from . import bibliotheque_creations as B
+        from .dialogues_bibliotheque_creations import choisir_entree
+        e = choisir_entree(self, self.params, ("personnage", "musicien", "objet") if quoi == "perso" else ("lieu",))
+        if e is None:
+            return
+        f, d = e.get("fichiers") or {}, e.get("donnees") or {}
+        images = [x for r, x in sorted(f.items()) if r != "planche" and x.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))]
+        if quoi == "perso":
+            p = Q.personnage(e["nom"], e.get("description", ""), d.get("style", ""))
+            p.update(images=images, genre="objet" if e["genre"] == "objet" else "personne", biblio=e["id"])
+            if f.get("planche"):
+                p["planche"] = f["planche"]
+            if d.get("accord"):
+                p["accord"] = True
+            self.seq["personnages"].append(p)
+        else:
+            li = Q.lieu(e["nom"], e.get("description", ""))
+            li["images"] = images or ([B.apercu(e)] if B.apercu(e) else [])
+            self.seq["lieux"].append(li)
+        self._remplir_tables()
+        self.etat.setText(_("✓ « {n} » repris de votre bibliothèque.", n=e["nom"]))
+
+    def _garder_biblio(self, quoi):
+        from .dialogues_bibliotheque_creations import garder_rapide
+        t, liste = (self.t_persos, self.seq["personnages"]) if quoi == "perso" else (self.t_lieux, self.seq["lieux"])
+        r = t.currentRow()
+        if not (0 <= r < len(liste)):
+            self.etat.setText(_("Cliquez d'abord sur la ligne voulue."))
+            return
+        x = liste[r]
+        fichiers = {f"image{k + 1}": im for k, im in enumerate(x.get("images") or []) if im and os.path.exists(im)}
+        if x.get("planche") and os.path.exists(x["planche"]):
+            fichiers["planche"] = x["planche"]
+        genre = "lieu" if quoi == "lieu" else ("objet" if x.get("genre") == "objet" else "personnage")
+        e = garder_rapide(self, self.params, genre, x["nom"], x.get("description", ""), fichiers,
+                          {"style": x.get("style", ""), "accord": bool(x.get("accord"))})
+        if e:
+            self.etat.setText(_("✓ « {n} » est dans votre bibliothèque.", n=e["nom"]))
 
     def _retirer(self, quoi):
         t, liste = (self.t_persos, self.seq["personnages"]) if quoi == "perso" else (self.t_lieux, self.seq["lieux"])

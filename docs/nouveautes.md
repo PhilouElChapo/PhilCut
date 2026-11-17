@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.82 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.83 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.83 (la bibliotheque partout)
+- Sequence IA, onglet Personnages et lieux : bouton "Ma bibliotheque" (prendre un personnage, un objet ou un lieu garde, avec sa fiche ; ou garder la ligne choisie).
+- Clip de groupe : "Depuis ma bibliotheque..." ajoute un musicien garde, avec son visage (il n'est pas redessine) ; "☆ Garder" range le musicien choisi.
+- Fabrique musique : "A la maniere de..." › "Une voix de ma bibliotheque..." (voix decrite, ou timbre garde avec accord) ; "Choisir un morceau..." › "Un style de ma bibliotheque..." ; apres la creation, "☆ Garder dans ma bibliotheque" range le morceau, et aussi le style entendu et la voix decrite s'il y en a.
+
 
 ### 0.9.82 (intro et logo anime, de l'idee au resultat)
 - Fabrique IA › Logo, intro et vignette › "Assistant de creation : une intro ou un logo anime..." (ou "Une intro ou un logo anime" dans l'assistant) : "une intro de 3 s style cinema avec mon logo et un impact" donne quatre cartes pre-remplies.

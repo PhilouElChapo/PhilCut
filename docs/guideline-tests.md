@@ -23,6 +23,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T93 — 0.9.83 : la bibliothèque dans la Séquence IA, le clip de groupe, la Fabrique musique
+
+1. Séquence IA, onglet « Personnages et lieux » : « Ma bibliothèque » › « Prendre dans ma bibliothèque… » › un personnage gardé : la ligne arrive avec ses images et sa fiche (« + fiche »). Idem pour un lieu.
+2. Cliquer une ligne, « Ma bibliothèque » › « ☆ Garder la ligne choisie » : nom demandé, puis visible dans Fabrique IA › « Ma bibliothèque de créations… ».
+3. Clip de groupe : « Depuis ma bibliothèque… » › le bassiste gardé en T91 : il rejoint le groupe avec son image ; fabriquer un plan : est-ce bien lui ?
+4. Fabrique musique : « À la manière de… » › « Une voix de ma bibliothèque… » › « Chanteuse rock chaude » : la voix décrite s'affiche. « Choisir un morceau… » › « Un style de ma bibliothèque… ».
+5. Créer, puis « ☆ Garder dans ma bibliothèque » : le morceau, puis le style et la voix sont demandés et rangés.
+
 ## T92 — 0.9.82 : intro et logo animé, de l'idée au résultat
 
 1. Fabrique IA › Logo, intro et vignette › « Assistant de création : une intro ou un logo animé… ». « Une intro ou un logo animé » est coché. Ecrire : « une intro de 3 s style cinéma pour « Mes vols du dimanche » avec mon logo et un impact », « Voir ce qu'il faut ».

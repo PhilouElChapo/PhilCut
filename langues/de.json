@@ -8248,5 +8248,22 @@
  "Ecrivez votre idée, puis « Voir ce qu'il faut ».": "Schreiben Sie Ihre Idee, dann „Sehen, was nötig ist“.",
  "Vérifiez les cartes Logo, Style, Fond et Son ; choisissez d'où vient chacun.": "Prüfen Sie die Karten Logo, Stil, Hintergrund und Ton; wählen Sie, woher jedes kommt.",
  "Le titre et le sous-titre (« ✨ Améliorer »), la durée, où la poser : l'aperçu animé suit.": "Titel und Untertitel („✨ Verbessern“), die Dauer, wo setzen: die animierte Vorschau folgt.",
- "« Fabriquer l'intro » : regardez-la avec son son, puis « Poser l'intro ». « ☆ Garder ce style d'intro » pour refaire la même allure plus tard.": "„Intro erstellen“: mit Ton ansehen, dann „Intro setzen“. „☆ Diesen Intro-Stil aufbewahren“, um später dieselbe Anmutung zu erzeugen."
+ "« Fabriquer l'intro » : regardez-la avec son son, puis « Poser l'intro ». « ☆ Garder ce style d'intro » pour refaire la même allure plus tard.": "„Intro erstellen“: mit Ton ansehen, dann „Intro setzen“. „☆ Diesen Intro-Stil aufbewahren“, um später dieselbe Anmutung zu erzeugen.",
+ "Rien encore de ce genre dans votre bibliothèque : « ☆ Garder » sur une création, ou Fabrique IA › « Ma bibliothèque de créations… » › « Nouveau… ».": "Noch nichts dieser Art in Ihrer Bibliothek: „☆ Aufbewahren“ bei einer Erstellung, oder KI-Fabrik › „Meine Erstellungsbibliothek…“ › „Neu…“.",
+ "Depuis ma bibliothèque": "Aus meiner Bibliothek",
+ "Prendre": "Übernehmen",
+ "Nom sous lequel le retrouver :": "Name zum Wiederfinden:",
+ "Depuis ma bibliothèque…": "Aus meiner Bibliothek…",
+ "Un musicien gardé (avec son visage) : il joue tel quel dans ce clip": "Ein aufbewahrter Musiker (mit seinem Gesicht): er spielt unverändert in diesem Clip",
+ "Ranger le musicien choisi dans « Ma bibliothèque de créations »": "Den gewählten Musiker in „Meine Erstellungsbibliothek“ legen",
+ "Une voix de ma bibliothèque…": "Eine Stimme aus meiner Bibliothek…",
+ "Un style de ma bibliothèque…": "Ein Stil aus meiner Bibliothek…",
+ "✓ Voix « {n} » reprise de votre bibliothèque.": "✓ Stimme „{n}“ aus Ihrer Bibliothek übernommen.",
+ "✓ Style « {n} » repris de votre bibliothèque.": "✓ Stil „{n}“ aus Ihrer Bibliothek übernommen.",
+ "✓ Gardé dans votre bibliothèque : {l}.": "✓ In Ihrer Bibliothek aufbewahrt: {l}.",
+ "✓ « {n} » repris de votre bibliothèque.": "✓ „{n}“ aus Ihrer Bibliothek übernommen.",
+ "✓ « {n} » est dans votre bibliothèque.": "✓ „{n}“ ist in Ihrer Bibliothek.",
+ "Prendre un personnage, un objet ou un lieu gardé, ou garder la ligne choisie": "Eine aufbewahrte Figur, einen Gegenstand oder Ort übernehmen, oder die gewählte Zeile aufbewahren",
+ "Prendre dans ma bibliothèque…": "Aus meiner Bibliothek übernehmen…",
+ "☆ Garder la ligne choisie": "☆ Gewählte Zeile aufbewahren"
 }

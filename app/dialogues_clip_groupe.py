@@ -137,6 +137,14 @@ class DialogueClipGroupe(QDialog):
         b = QPushButton(_("Retirer"))
         b.clicked.connect(self._retirer_membre)
         h.addWidget(b)
+        b = QPushButton(_("Depuis ma bibliothèque…"))
+        b.setToolTip(_("Un musicien gardé (avec son visage) : il joue tel quel dans ce clip"))
+        b.clicked.connect(self._membre_biblio)
+        h.addWidget(b)
+        b = QPushButton(_("☆ Garder"))
+        b.setToolTip(_("Ranger le musicien choisi dans « Ma bibliothèque de créations »"))
+        b.clicked.connect(self._garder_membre)
+        h.addWidget(b)
         h.addStretch(1)
         l2.addLayout(h)
         v.addWidget(g2)
@@ -384,6 +392,37 @@ class DialogueClipGroupe(QDialog):
                                     "description": CG.LOOKS[len(self.clip["groupe"]) % len(CG.LOOKS)], "image": ""})
         self._ligne_membre(self.clip["groupe"][-1])
         self._maj()
+
+    def _membre_biblio(self):
+        """0.9.83 : un musicien (ou un personnage) de la bibliothèque rejoint le groupe, avec son image."""
+        from . import bibliotheque_creations as B
+        from .dialogues_bibliotheque_creations import choisir_entree
+        if not self.clip:
+            return
+        e = choisir_entree(self, self.params, ("musicien", "personnage"))
+        if e is None:
+            return
+        self._lire_tables()
+        d = e.get("donnees") or {}
+        texte = d.get("instrument", "") + " " + e.get("description", "")
+        import re
+        roles = (["chant"] if re.search(r"chant|voix|vocal|sing", d.get("instrument", ""), re.I) else []) or \
+            CG._roles_depuis_texte(texte) or ["claviers"]
+        self.clip["groupe"].append({"role": roles[0], "nom": e["nom"], "description": e.get("description", ""),
+                                    "image": (e.get("fichiers") or {}).get("planche") or B.apercu(e), "biblio": e["id"]})
+        self._ligne_membre(self.clip["groupe"][-1])
+        self._maj()
+
+    def _garder_membre(self):
+        from .dialogues_bibliotheque_creations import garder_rapide
+        r = self.table_groupe.currentRow()
+        if not self.clip or not (0 <= r < len(self.clip["groupe"])):
+            return
+        self._lire_tables()
+        m = self.clip["groupe"][r]
+        fichiers = {"image1": m["image"]} if m.get("image") and os.path.exists(m["image"]) else None
+        garder_rapide(self, self.params, "musicien", m.get("nom") or CG.ROLES.get(m["role"], ""), m.get("description", ""), fichiers,
+                      {"instrument": CG.ROLES.get(m["role"], m["role"])})
 
     def _retirer_membre(self):
         r = self.table_groupe.currentRow()

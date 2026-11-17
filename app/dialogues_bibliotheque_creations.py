@@ -366,3 +366,58 @@ class DialogueBibliothequeCreations(QDialog):
         if garder_calcul(self, self._en_calcul()):
             return
         super().done(r)
+
+
+# ------------------------------------------------------------------ pour les autres fenêtres (Séquence IA, clip, Fabrique musique)
+def choisir_entree(parent, params, genres, titre=None):
+    """Petite fenêtre « Depuis ma bibliothèque » : la liste des entrées des genres voulus (vignette, nom, résumé) ; renvoie
+    l'entrée choisie ou None. Essais : parent._test_biblio = nom de l'entrée à prendre."""
+    entrees = B.lister(params, genres)
+    essai = getattr(parent, "_test_biblio", None)
+    if essai is not None:
+        return next((e for e in entrees if e["nom"] == essai), None)
+    if not entrees:
+        QMessageBox.information(parent, titre or _("Ma bibliothèque de créations"),
+                                _("Rien encore de ce genre dans votre bibliothèque : « ☆ Garder » sur une création, ou Fabrique IA › "
+                                  "« Ma bibliothèque de créations… » › « Nouveau… »."))
+        return None
+    d = QDialog(parent)
+    d.setWindowTitle(titre or _("Depuis ma bibliothèque"))
+    v = QVBoxLayout(d)
+    lst = QListWidget()
+    lst.setIconSize(QSize(64, 48))
+    lst.setWordWrap(True)
+    lst.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+    for e in entrees:
+        it = QListWidgetItem(f"{e['nom']}\n{B.resume(e)[:110]}")
+        ap = B.apercu(e)
+        if ap:
+            it.setIcon(QIcon(QPixmap(ap).scaled(64, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)))
+        lst.addItem(it)
+    lst.setCurrentRow(0)
+    lst.itemDoubleClicked.connect(lambda _i: d.accept())
+    v.addWidget(lst, 1)
+    h = QHBoxLayout()
+    h.addStretch(1)
+    for lib, fn in ((_("Annuler"), d.reject), (_("Prendre"), d.accept)):
+        b = QPushButton(lib)
+        b.clicked.connect(fn)
+        h.addWidget(b)
+    v.addLayout(h)
+    d.resize(560, 420)
+    if d.exec() != QDialog.Accepted or lst.currentRow() < 0:
+        return None
+    return entrees[lst.currentRow()]
+
+
+def garder_rapide(parent, params, genre, nom, description="", fichiers=None, donnees=None):
+    """« ☆ Garder » depuis une autre fenêtre : le nom est demandé (proposé), puis l'entrée est rangée. Renvoie l'entrée ou None."""
+    from PySide6.QtWidgets import QInputDialog
+    essai = getattr(parent, "_test_precision", None)
+    if essai is not None:
+        choisi, ok = (essai or nom), True
+    else:
+        choisi, ok = QInputDialog.getText(parent, _("Garder dans ma bibliothèque"), _("Nom sous lequel le retrouver :"), QLineEdit.Normal, nom)
+    if not ok or not (choisi or "").strip():
+        return None
+    return B.garder(params, genre, choisi.strip(), description, fichiers, donnees)

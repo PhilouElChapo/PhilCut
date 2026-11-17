@@ -145,6 +145,7 @@ class DialogueFabriqueMusique(QDialog):
         mv.addAction(_("Chanter à la manière d'un chanteur, d'un groupe…"), self._voix_a_la_maniere)
         mv.addAction(_("Décrire la voix d'un morceau de ce poste…"), lambda: self._decrire_voix(None))
         mv.addAction(_("Décrire la voix d'un morceau en ligne…"), self._decrire_voix_en_ligne)
+        mv.addAction(_("Une voix de ma bibliothèque…"), self._voix_biblio)
         self.b_voix_style.setMenu(mv)
         hv.addWidget(self.b_voix_style)
         f.addRow(_("Voix"), hv)
@@ -207,6 +208,7 @@ class DialogueFabriqueMusique(QDialog):
         mi = QMenu(b)
         mi.addAction(_("Un fichier de ce poste…"), self._choisir_inspiration)
         mi.addAction(_("Chercher en ligne : archives libres, YouTube Music, YouTube…"), self._inspiration_en_ligne)
+        mi.addAction(_("Un style de ma bibliothèque…"), self._style_biblio)
         b.setMenu(mi)
         hi.addWidget(b)
         self.b_sans_insp = QPushButton(_("Ne plus s'en inspirer"))
@@ -853,6 +855,7 @@ class DialogueFabriqueMusique(QDialog):
             self._action(_("Remplacer le morceau d'origine"), lambda: (self.apercu.arreter(), h.remplacer(self.resultat, self.apercu.reglages()),
                                                                       self.info.setText(_("✓ Remplacé (Annuler pour revenir à l'ancien)."))))
         self._action(_("Enregistrer sous…"), self._enregistrer_sous)
+        self._action(_("☆ Garder dans ma bibliothèque"), lambda: self._garder_biblio(fiche))
         self._action(_("Recréer"), self.creer)
 
     def _poser(self, a_la_ligne):
@@ -860,6 +863,57 @@ class DialogueFabriqueMusique(QDialog):
         self.apercu.arreter()
         self.hote.poser(self.resultat, r, a_la_ligne)
         self.info.setText(_("Morceau posé ({d:.1f} s) sur la piste Musique.", d=r["src_fin"] - r["src_debut"]))
+
+    # ------------------------------------------------------------------ bibliothèque de créations (0.9.83)
+    def _voix_biblio(self):
+        """Une voix gardée : sa description (le moteur chante de cette manière) ou son timbre (accord noté à la garde)."""
+        from .dialogues_bibliotheque_creations import choisir_entree
+        e = choisir_entree(self, self.params, ("voix",))
+        if e is None:
+            return
+        d, f = e.get("donnees") or {}, e.get("fichiers") or {}
+        if (d.get("voix_decrite") or {}).get("fr") or (d.get("voix_decrite") or {}).get("en"):
+            self._poser_voix_decrite(dict(d["voix_decrite"], fichier=e["nom"]))
+        elif e.get("description"):
+            self._poser_voix_decrite({"fr": e["description"], "en": "", "fichier": e["nom"]})
+        if f.get("voix_seule") and d.get("accord"):
+            self.reference = f["voix_seule"]
+            self.ref_info.setText(_("Voix de référence : {f}", f=e["nom"]))
+        self.info.setText(_("✓ Voix « {n} » reprise de votre bibliothèque.", n=e["nom"]))
+        self._maj()
+
+    def _style_biblio(self):
+        from .dialogues_bibliotheque_creations import choisir_entree
+        e = choisir_entree(self, self.params, ("style_musical",))
+        if e is None:
+            return
+        insp = dict((e.get("donnees") or {}).get("inspiration") or {})
+        if not insp:
+            insp = {"resume": e.get("description", ""), "caption_en": ""}
+        insp.update(fichier=e["nom"], chemin="")
+        self._montrer_inspiration(insp)
+        self.info.setText(_("✓ Style « {n} » repris de votre bibliothèque.", n=e["nom"]))
+
+    def _garder_biblio(self, fiche):
+        """Le morceau créé ; et, s'il y en a, le style entendu et la voix décrite, chacun sous son nom."""
+        from .dialogues_bibliotheque_creations import garder_rapide
+        x = garder_rapide(self, self.params, "musique", os.path.splitext(os.path.basename(self.resultat or ""))[0][:60] or _("Musique"),
+                          fiche.get("phrase", ""), {"morceau": self.resultat}, {"fiche": {k: v for k, v in fiche.items() if k != "source"}})
+        if not x:
+            return
+        gardes = [x["nom"]]
+        if self.inspiration and self.inspiration.get("resume"):
+            st = garder_rapide(self, self.params, "style_musical", self.inspiration.get("fichier") or _("Style"), self.inspiration.get("resume", ""),
+                               None, {"inspiration": {k: self.inspiration[k] for k in ("caption_en", "resume", "bpm", "tonalite", "mesure")
+                                                      if k in self.inspiration}})
+            if st:
+                gardes.append(st["nom"])
+        if self.voix_decrite:
+            vx = garder_rapide(self, self.params, "voix", self.voix_decrite.get("fichier") or _("Voix"), self.voix_decrite.get("fr", ""),
+                               None, {"voix_decrite": {k: self.voix_decrite[k] for k in ("en", "fr") if k in self.voix_decrite}})
+            if vx:
+                gardes.append(vx["nom"])
+        self.info.setText(_("✓ Gardé dans votre bibliothèque : {l}.", l=", ".join(gardes)))
 
     def _enregistrer_sous(self):
         from .dialogues_creatif import enregistrer_copie

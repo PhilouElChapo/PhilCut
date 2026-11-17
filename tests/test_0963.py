@@ -107,7 +107,7 @@ class TestVoix(unittest.TestCase):
         from PySide6.QtWidgets import QPushButton
         from app.dialogues_musique_ia import DialogueFabriqueMusique
         d = DialogueFabriqueMusique(None, {})
-        self.assertEqual(len(d.b_voix_style.menu().actions()), 3)
+        self.assertEqual(len(d.b_voix_style.menu().actions()), 4)          # 0.9.83 : + une voix de ma bibliothèque
         d._poser_voix_decrite({"en": "high female vocals, soprano range", "fr": "voix de femme aiguë", "fichier": "chanson.mp3"})
         self.assertFalse(d.instrumental.isChecked())
         self.assertFalse(d.voix.isEnabled())

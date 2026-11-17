@@ -8257,5 +8257,22 @@
  "Ecrivez votre idée, puis « Voir ce qu'il faut ».": "Write your idea, then “See what is needed”.",
  "Vérifiez les cartes Logo, Style, Fond et Son ; choisissez d'où vient chacun.": "Check the Logo, Style, Background and Sound cards; choose where each comes from.",
  "Le titre et le sous-titre (« ✨ Améliorer »), la durée, où la poser : l'aperçu animé suit.": "The title and subtitle (“✨ Improve”), the duration, where to place it: the animated preview follows.",
- "« Fabriquer l'intro » : regardez-la avec son son, puis « Poser l'intro ». « ☆ Garder ce style d'intro » pour refaire la même allure plus tard.": "“Make the intro”: watch it with its sound, then “Place the intro”. “☆ Keep this intro style” to redo the same look later."
+ "« Fabriquer l'intro » : regardez-la avec son son, puis « Poser l'intro ». « ☆ Garder ce style d'intro » pour refaire la même allure plus tard.": "“Make the intro”: watch it with its sound, then “Place the intro”. “☆ Keep this intro style” to redo the same look later.",
+ "Rien encore de ce genre dans votre bibliothèque : « ☆ Garder » sur une création, ou Fabrique IA › « Ma bibliothèque de créations… » › « Nouveau… ».": "Nothing of this kind in your library yet: “☆ Keep” on a creation, or AI factory › “My creations library…” › “New…”.",
+ "Depuis ma bibliothèque": "From my library",
+ "Prendre": "Take",
+ "Nom sous lequel le retrouver :": "Name to find it again:",
+ "Depuis ma bibliothèque…": "From my library…",
+ "Un musicien gardé (avec son visage) : il joue tel quel dans ce clip": "A kept musician (with their face): they play as is in this clip",
+ "Ranger le musicien choisi dans « Ma bibliothèque de créations »": "Put the chosen musician in “My creations library”",
+ "Une voix de ma bibliothèque…": "A voice from my library…",
+ "Un style de ma bibliothèque…": "A style from my library…",
+ "✓ Voix « {n} » reprise de votre bibliothèque.": "✓ Voice “{n}” taken from your library.",
+ "✓ Style « {n} » repris de votre bibliothèque.": "✓ Style “{n}” taken from your library.",
+ "✓ Gardé dans votre bibliothèque : {l}.": "✓ Kept in your library: {l}.",
+ "✓ « {n} » repris de votre bibliothèque.": "✓ “{n}” taken from your library.",
+ "✓ « {n} » est dans votre bibliothèque.": "✓ “{n}” is in your library.",
+ "Prendre un personnage, un objet ou un lieu gardé, ou garder la ligne choisie": "Take a kept character, object or place, or keep the chosen row",
+ "Prendre dans ma bibliothèque…": "Take from my library…",
+ "☆ Garder la ligne choisie": "☆ Keep the chosen row"
 }

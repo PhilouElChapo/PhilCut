@@ -8248,5 +8248,22 @@
  "Ecrivez votre idée, puis « Voir ce qu'il faut ».": "Escriba su idea y luego «Ver lo que hace falta».",
  "Vérifiez les cartes Logo, Style, Fond et Son ; choisissez d'où vient chacun.": "Compruebe las tarjetas Logo, Estilo, Fondo y Sonido; elija de dónde viene cada una.",
  "Le titre et le sous-titre (« ✨ Améliorer »), la durée, où la poser : l'aperçu animé suit.": "El título y el subtítulo («✨ Mejorar»), la duración, dónde colocarla: la vista previa animada sigue.",
- "« Fabriquer l'intro » : regardez-la avec son son, puis « Poser l'intro ». « ☆ Garder ce style d'intro » pour refaire la même allure plus tard.": "«Fabricar la intro»: mírela con su sonido y luego «Colocar la intro». «☆ Guardar este estilo de intro» para rehacer el mismo aire más tarde."
+ "« Fabriquer l'intro » : regardez-la avec son son, puis « Poser l'intro ». « ☆ Garder ce style d'intro » pour refaire la même allure plus tard.": "«Fabricar la intro»: mírela con su sonido y luego «Colocar la intro». «☆ Guardar este estilo de intro» para rehacer el mismo aire más tarde.",
+ "Rien encore de ce genre dans votre bibliothèque : « ☆ Garder » sur une création, ou Fabrique IA › « Ma bibliothèque de créations… » › « Nouveau… ».": "Aún nada de este tipo en su biblioteca: «☆ Guardar» en una creación, o Fábrica IA › «Mi biblioteca de creaciones…» › «Nuevo…».",
+ "Depuis ma bibliothèque": "Desde mi biblioteca",
+ "Prendre": "Tomar",
+ "Nom sous lequel le retrouver :": "Nombre para encontrarlo:",
+ "Depuis ma bibliothèque…": "Desde mi biblioteca…",
+ "Un musicien gardé (avec son visage) : il joue tel quel dans ce clip": "Un músico guardado (con su rostro): toca tal cual en este clip",
+ "Ranger le musicien choisi dans « Ma bibliothèque de créations »": "Guardar el músico elegido en «Mi biblioteca de creaciones»",
+ "Une voix de ma bibliothèque…": "Una voz de mi biblioteca…",
+ "Un style de ma bibliothèque…": "Un estilo de mi biblioteca…",
+ "✓ Voix « {n} » reprise de votre bibliothèque.": "✓ Voz «{n}» tomada de su biblioteca.",
+ "✓ Style « {n} » repris de votre bibliothèque.": "✓ Estilo «{n}» tomado de su biblioteca.",
+ "✓ Gardé dans votre bibliothèque : {l}.": "✓ Guardado en su biblioteca: {l}.",
+ "✓ « {n} » repris de votre bibliothèque.": "✓ «{n}» tomado de su biblioteca.",
+ "✓ « {n} » est dans votre bibliothèque.": "✓ «{n}» está en su biblioteca.",
+ "Prendre un personnage, un objet ou un lieu gardé, ou garder la ligne choisie": "Tomar un personaje, objeto o lugar guardado, o guardar la línea elegida",
+ "Prendre dans ma bibliothèque…": "Tomar de mi biblioteca…",
+ "☆ Garder la ligne choisie": "☆ Guardar la línea elegida"
 }
