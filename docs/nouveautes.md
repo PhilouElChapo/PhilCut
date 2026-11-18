@@ -4,10 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.92 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.93 (comprend tout ce qui est sorti depuis la 0.4.4)
 
-### 0.9.92 (levres sur ce poste)
-- Faire parler un plan sur votre son, gratuitement, sur votre carte NVIDIA de 8 Go : moteur "LatentSync 1.5 sur ce poste" (Windows). A installer une fois dans Preferences › IA locale, "Levres synchronisees sur ce poste" (environ 6 Go : programme et modeles).
+### 0.9.92 et 0.9.93 (levres sur ce poste)
+- Faire parler un plan sur votre son, gratuitement, sur votre carte NVIDIA de 8 Go : moteur "LatentSync 1.5 sur ce poste" (Windows). A installer une fois dans Preferences › IA locale, "Levres synchronisees sur ce poste" (environ 9 Go : programme et modeles).
 - Quand il est installe, c'est le moteur propose d'abord ; aucun cout, la barre du bas suit le calcul (visage, levres, recollage). Si la memoire de la carte manque ou si le visage est introuvable, la raison est dite.
 - Le reperage du visage (InsightFace) est reserve a un usage non commercial.
 

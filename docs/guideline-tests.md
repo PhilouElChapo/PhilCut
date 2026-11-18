@@ -25,7 +25,7 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 
 ## T102 — 0.9.92 : lèvres sur ce poste (RTX 3070)
 
-1. Edition › Préférences › IA locale : « Lèvres synchronisées sur ce poste » ; l'installer (environ 6 Go : programme en parties, puis modèles) ; la barre du bas suit ; « Réduire » ; à la fin la case est cochée.
+1. Edition › Préférences › IA locale : « Lèvres synchronisées sur ce poste » ; l'installer (environ 9 Go : programme en parties, puis modèles) ; la barre du bas suit ; « Réduire » ; à la fin la case est cochée.
 2. Un plan où l'on voit un visage net (personnage IA ou toi), la voix posée dessous. Clic droit › « Faire parler ce plan sur le son dessous… » : le moteur « LatentSync 1.5 sur ce poste (gratuit) » est choisi ; « Calcul sur ce poste : gratuit ».
 3. Cocher la case du visage, « Faire parler » : aucune question de prix ; la barre dit « Repérage du visage », « Calcul des lèvres », « Recollage ». Noter le temps pour 10 s.
 4. Les lèvres suivent-elles la voix ? Le reste de l'image est-il intact ? « Poser à la place du plan ».

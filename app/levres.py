@@ -22,9 +22,9 @@ MOTEURS = {
     # 0.9.92 : sur ce poste, gratuit (LatentSync 1.5 dans un Python portable, carte NVIDIA de 8 Go)
     "latentsync_local": {"nom": "LatentSync 1.5 sur ce poste (gratuit)", "genre": "video", "local": True, "prix_s": 0.0,
                          "max_s": 120.0,
-                         "explication": _("Refait seulement la bouche du plan, sur votre carte NVIDIA (8 Go) : gratuit, environ "
-                                          "une à deux minutes de calcul pour 10 s de vidéo. A installer une fois dans "
-                                          "Préférences › IA locale (environ 6 Go).")},
+                         "explication": _("Refait seulement la bouche du plan, sur votre carte NVIDIA (8 Go) : gratuit, quelques "
+                                          "minutes de calcul pour 10 s de vidéo. A installer une fois dans "
+                                          "Préférences › IA locale (environ 9 Go).")},
     "omnihuman": {"nom": "OmniHuman 1.5 (fal.ai)", "genre": "image", "modele": "fal-ai/bytedance/omnihuman/v1.5", "prix_s": 0.16,
                   "max_s": 60.0, "max_1080": 30.0,
                   "explication": _("Anime une image : lèvres, tête, regard, gestes. 0,16 $ la seconde ; 30 s au plus en 1080p, "
@@ -195,7 +195,7 @@ def local_manque():
     if sys.platform != "win32":
         return _("Les lèvres sur ce poste existent pour l'instant sous Windows seulement.")
     if not local_pret():
-        return _("A installer une fois : Préférences › IA locale, « Lèvres synchronisées sur ce poste » (environ 6 Go).")
+        return _("A installer une fois : Préférences › IA locale, « Lèvres synchronisées sur ce poste » (environ 9 Go).")
     carte = (P.carte_graphique() or "").lower() if hasattr(P, "carte_graphique") else ""
     if carte and "nvidia" not in carte and "geforce" not in carte and "rtx" not in carte:
         return _("Il faut une carte NVIDIA (8 Go) : celle de ce poste ne convient pas.")
