@@ -77,7 +77,7 @@ class TestBibliotheque(unittest.TestCase):
         self.assertEqual(s["lieux"][0]["images"], [img])
         self.assertEqual(s["plans"][0]["lieu"], "Rue")
         e = A.estimer(s, "kling-o3-ref", {"clef_gemini": "x", "clef_fal": "a:b"})
-        self.assertAlmostEqual(e["images"], 0.04 * 1, places=2)                     # seulement l'image d'arrivée
+        self.assertAlmostEqual(e["images"], 0.0, places=2)     # fiche reprise, pas d'image clef demandée (0.9.87)
         r = A.lire_analyse({"personnages": [], "lieux": [{"nom": "Escalier", "description": "marbre"}],
                             "plans": [{"action": "Elle descend", "lieu": "Escalier"}, {"action": "Elle sort", "lieu": "Inconnu"}]})
         self.assertEqual([p["lieu"] for p in r["plans"]], ["Escalier", ""])

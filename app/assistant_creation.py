@@ -32,7 +32,7 @@ A partir de l'histoire de l'utilisateur, rends un objet JSON :
  "lieux": [{{"nom": "...", "sur_image": true si c'est le décor de l'image de départ, "description": "lumière, matières, détails"}}],
  "plans": [{{"action": "...", "personnages": ["nom", ...], "hors_champ": "où sont ceux qu'on ne voit plus, ou vide",
  "lieu": "nom du lieu ou vide", "duree": 4 à 10, "camera": "cadrage et mouvement : plan large, plan moyen, gros plan ; fixe,
- recule, s'approche, accompagne…"}}],
+ recule, s'approche, accompagne…", "image_clef": true ou false}}],
  "remarques": "une phrase pour l'utilisateur, ou vide"}}
 Règles impératives :
 - Un personnage = UNE seule personne (jamais « les deux femmes » comme un seul personnage). Donne à chacun un nom court et
@@ -48,6 +48,9 @@ Règles impératives :
   l'autre : quelqu'un qui monte dans un véhicule, entre dans un bâtiment ou sort du champ n'apparaît plus dans les plans
   suivants tant que l'histoire ne le fait pas ressortir ; dis où il est dans « hors_champ » (« les deux femmes sont dans la
   voiture »). Une liste vide = on ne voit aucun personnage (seulement le décor ou un objet).
+- Images clefs : la vidéo de chaque plan part de la vraie dernière image du plan précédent ; on n'impose une image de fin
+  (« image_clef »: true) qu'aux moments où la scène change vraiment (nouveau lieu, quelqu'un arrive ou s'en va, état très
+  différent à respecter) et au dernier plan. Ailleurs false : le moteur enchaîne librement les gestes.
 - Le cadrage suit l'action : plan large quand on se déplace d'un lieu à l'autre ou quand un véhicule doit tenir dans
   l'image, plus serré pour un geste ; dis-le dans « camera ».
 - Caméra : simple et stable (recule, accompagne de côté, fixe) ; jamais de dos quand les visages doivent rester
@@ -141,7 +144,8 @@ def lire_analyse(d):
     for li in (d.get("lieux") or [])[:4]:
         if isinstance(li, dict) and _texte(li.get("nom"), 40) and _texte(li.get("nom"), 40).lower() not in vus_l:
             vus_l.add(_texte(li.get("nom"), 40).lower())
-            lieux.append({"nom": _texte(li.get("nom"), 40), "sur_image": bool(li.get("sur_image")), "description": _texte(li.get("description"))})
+            lieux.append({"nom": _texte(li.get("nom"), 40), "sur_image": bool(li.get("sur_image")), "description": _texte(li.get("description")),
+                          "image_n": 2 if str(li.get("image") or "") == "2" else 1})
     plans = []
     for pl in (d.get("plans") or [])[:10]:
         if not isinstance(pl, dict) or not _texte(pl.get("action")):
@@ -154,7 +158,8 @@ def lire_analyse(d):
         lieu = _texte(pl.get("lieu"), 40)
         plans.append({"action": _texte(pl.get("action"), 300), "personnages": noms, "duree": max(3, min(15, duree)),
                       "camera": _texte(pl.get("camera"), 160), "lieu": lieu if lieu.lower() in vus_l else "",
-                      "hors_champ": _texte(pl.get("hors_champ"), 200), "visibles_fixes": True})
+                      "hors_champ": _texte(pl.get("hors_champ"), 200), "visibles_fixes": True,
+                      "clef": bool(pl.get("image_clef"))})
     return {"personnages": persos, "lieux": lieux, "plans": plans, "remarques": _texte(d.get("remarques") or d.get("message"), 300)}
 
 
@@ -264,9 +269,41 @@ def aider_a_decrire(params, p, histoire="", niveau="claude", image=None):
     return _texte((r or {}).get("description"), 500) if isinstance(r, dict) else ""
 
 
-def analyser(params, histoire, image=None, niveau="claude"):
-    """L'IA lit l'histoire (et regarde l'image de départ) : personnages, objets, plans d'une action."""
-    contexte = ("L'image jointe est la DERNIERE image d'un plan déjà tourné : la séquence en est la suite directe ; le premier plan "
+CONTEXTE_RACCORD = ("L'image jointe montre DEUX images côte à côte : à gauche la DERNIERE image d'un rush filmé, à droite la "
+                    "PREMIERE image du rush filmé ensuite. Entre les deux, rien n'a été filmé : la séquence reconstitue ce qui s'est "
+                    "passé. Le premier plan part exactement de l'image de gauche, le dernier plan arrive exactement sur l'image de "
+                    "droite (même cadrage, mêmes personnes, même lieu). Les boîtes sont en pourcentages de l'image entière (les deux "
+                    "côte à côte). Pour chaque lieu, ajoute \"image\": 1 (décor de gauche) ou 2 (décor de droite). Prévois une "
+                    "image clef partout où l'état doit être respecté pour arriver à droite (quelqu'un qui attend, qui arrive, un "
+                    "changement de lieu).")
+
+
+def image_raccord(gauche, droite, sortie):
+    """Les deux images réelles côte à côte, même hauteur, séparées d'un trait blanc (0.9.87) : une seule image pour que
+    l'assistant voie l'avant et l'après, et pour tracer les cadres des personnes de l'un ou l'autre côté."""
+    from PySide6.QtGui import QImage, QPainter, QColor
+    a, b = QImage(gauche), QImage(droite)
+    if a.isNull() or b.isNull():
+        return gauche
+    H = min(720, max(a.height(), b.height()))
+    a = a.scaledToHeight(H)
+    b = b.scaledToHeight(H)
+    sep = max(6, H // 90)
+    img = QImage(a.width() + sep + b.width(), H, QImage.Format_RGB32)
+    img.fill(QColor("#ffffff"))
+    p = QPainter(img)
+    p.drawImage(0, 0, a)
+    p.drawImage(a.width() + sep, 0, b)
+    p.end()
+    img.save(sortie)
+    return sortie
+
+
+def analyser(params, histoire, image=None, niveau="claude", image_fin=None):
+    """L'IA lit l'histoire (et regarde l'image de départ) : personnages, objets, plans d'une action. image_fin (0.9.87) : la
+    première image du rush suivant ; `image` est alors l'image double (avant | après)."""
+    contexte = (CONTEXTE_RACCORD if image and image_fin else
+                "L'image jointe est la DERNIERE image d'un plan déjà tourné : la séquence en est la suite directe ; le premier plan "
                 "part exactement de cette image." if image else
                 "Il n'y a pas d'image de départ : tous les personnages sont inventés (sur_image = false).")
     try:
@@ -338,7 +375,7 @@ def description_complete(p):
     return ", ".join(x for x in (pos, d) if x and not (pos and d.lower().startswith(pos.lower())))
 
 
-def appliquer(seq, analyse, image=None):
+def appliquer(seq, analyse, image=None, image_cartes=None):
     """Met l'analyse dans la séquence en gardant ce qui est déjà fait pour ce qui n'a pas changé (fiches, images, vidéos)."""
     anciens = {p["nom"].lower(): p for p in seq.get("personnages") or []}
     persos = []
@@ -358,15 +395,15 @@ def appliquer(seq, analyse, image=None):
             if a.get("planche") and os.path.exists(a["planche"]):
                 p["planche"] = a["planche"]
             p["biblio"] = a.get("biblio", "")
-        elif source == "image" and image:
+        elif source == "image" and (image_cartes or image):
             dec = a.get("decoupe") if a.get("decoupe") and os.path.exists(a["decoupe"]) else ""
             if not dec and p["boite"]:
                 try:
-                    dec = decouper(image, p["boite"], os.path.join(Q.dossier(seq), "decoupe_" + re.sub(r"[^\w-]+", "_", a["nom"])[:30] + ".png"))
+                    dec = decouper(image_cartes or image, p["boite"], os.path.join(Q.dossier(seq), "decoupe_" + re.sub(r"[^\w-]+", "_", a["nom"])[:30] + ".png"))
                 except Exception:      # noqa: BLE001 : sans découpe, la photo entière et la position suffisent
                     dec = ""
             p["decoupe"] = dec
-            p["images"] = [x for x in (dec, image) if x]
+            p["images"] = [x for x in (dec, image_cartes or image) if x]
         elif source == "photo" and a.get("photo"):
             p["photo"] = a["photo"]
             p["images"] = [a["photo"]]
@@ -387,7 +424,8 @@ def appliquer(seq, analyse, image=None):
             source = a.get("source") or vieux.get("source") or ("image" if a.get("sur_image") and image else "inventer")
             li["source"] = source
             if source == "image" and image:
-                li["images"] = [image]
+                rac = seq.get("raccord") or {}
+                li["images"] = [rac["image_fin"] if a.get("image_n") == 2 and rac.get("image_fin") else image]
             elif source == "photo" and (a.get("photo") or vieux.get("photo")):
                 li["photo"] = a.get("photo") or vieux.get("photo")
                 li["images"] = [li["photo"]]
@@ -405,12 +443,14 @@ def appliquer(seq, analyse, image=None):
         for cle in ("hors_champ", "visibles_fixes"):
             if a.get(cle):
                 pl[cle] = a[cle]
+        pl["clef"] = bool(a.get("clef"))            # 0.9.87 : image de fin imposée seulement aux images clefs
+        pl["sans_fin"] = not pl["clef"]
         vieux = vieux_plans.get(cle_plan(a))
         if vieux and precedent_change and vieux.get("enchainer", True):
             vieux = dict(vieux, image_fin="", images_ok=False, fichier="", verdict=None)    # son départ a changé : arrivée à refaire
         precedent_change = not vieux                # 0.9.86 : seul ce qui a changé (et le plan qui en part) est refait
         if vieux:
-            for cle in ("image", "image_fin", "images_ok", "sans_fin", "fichier", "verdict", "consigne"):
+            for cle in ("image", "image_fin", "images_ok", "sans_fin", "clef", "fin_reelle", "fichier", "verdict", "consigne"):
                 if cle in vieux:
                     pl[cle] = vieux[cle]
             if int(vieux.get("duree") or 0) != pl["duree"]:
@@ -435,8 +475,15 @@ def uniformiser(seq, image=None):
             i += 1
     for k, pl in enumerate(seq["plans"]):
         pl["enchainer"] = k > 0
+        if pl.get("fin_reelle") and k < len(seq["plans"]) - 1:
+            pl.pop("fin_reelle")
+            pl["image_fin"], pl["clef"], pl["sans_fin"] = "", False, True
     if image and seq["plans"] and not seq["plans"][0].get("image"):
         seq["plans"][0]["image"] = image
+    fin = (seq.get("raccord") or {}).get("image_fin")
+    if fin and os.path.exists(fin) and seq["plans"]:     # 0.9.87 : relier deux rushes : le dernier plan arrive sur le rush suivant
+        der = seq["plans"][-1]
+        der.update(image_fin=fin, clef=True, sans_fin=False, fin_reelle=True)
     seq["image_auto"] = seq["image_fin_auto"] = True
     seq["voix"] = "aucune"
     seq["assistant"] = True
@@ -521,6 +568,7 @@ def a_preparer(seq, params):
     tous = list(range(len(seq["plans"])))
     fiches = len(Q.sans_planche(seq, tous)) if tous and par == "gemini" else 0
     depart = sum(1 for i in tous if not Q.depart_prevu(seq, i) and not (i > 0 and seq["plans"][i].get("enchainer", True)))
+    # 0.9.87 : un plan enchaîné part de la vraie fin de la vidéo d'avant : pas d'image de départ inventée
     arrivee = sum(1 for pl in seq["plans"] if not (pl.get("image_fin") and os.path.exists(pl["image_fin"])) and not pl.get("sans_fin"))
     return fiches, depart, arrivee
 
@@ -607,9 +655,9 @@ def preparer(seq, params, progression=None, arret=lambda: False):
             continue
         av((k - 1) / max(1, etapes), _("Images du plan {i}", i=i + 1))
         quoi = []
-        if not Q.depart_prevu(seq, i):
+        if not Q.depart_prevu(seq, i) and not (i > 0 and pl.get("enchainer", True)):
             quoi.append("depart")
-        if not (pl.get("image_fin") and os.path.exists(pl["image_fin"])) and not pl.get("sans_fin"):
+        if not (pl.get("image_fin") and os.path.exists(pl["image_fin"])) and not pl.get("sans_fin") and not pl.get("fin_reelle"):
             quoi.append("arrivee")
         if quoi:
             Q.preparer_images(seq, i, params, tuple(quoi))

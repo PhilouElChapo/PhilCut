@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.86 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.87 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.87 (images clefs, relier deux rushes)
+- Nouvelle facon de fabriquer : chaque plan part de la vraie fin de la video du plan d'avant (plus d'image de depart inventee) ; une image de fin n'est imposee qu'aux images clefs (nouveau lieu, quelqu'un qui attend ou arrive, la fin). Les gestes s'enchainent naturellement, les visages restent ceux des fiches.
+- "Ce qui n'a pas ete filme entre ce plan et le suivant" : la video part de la derniere image du premier rush et arrive exactement sur la premiere image du suivant ; l'assistant voit l'avant et l'apres cote a cote et prevoit les images clefs entre les deux.
+- Images clefs creees avec les fiches (personnes, objets, vehicules) et les photos reelles des lieux, ou prises dans un rush : "Image de la ligne rouge". Case "Image clef a la fin de ce plan" pour en ajouter ou en retirer.
+- Jusqu'a quatre personnes ou objets suivis par plan (Kling O3).
+
 
 ### 0.9.86 (corrections de l'assistant de creation, image par image)
 - Timeline : au-dessus des pistes, ◀| et |▶ avancent d'une image exactement, [ et ] choisissent les images (une seule image possible), "Supprimer N image(s)" les retire et recolle la suite. Maj + fleches : une image de plus ou de moins.

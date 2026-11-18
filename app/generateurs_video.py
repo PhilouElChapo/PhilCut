@@ -148,7 +148,7 @@ def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None
 def corps_reference(consigne, duree, format_, depart_url=None, fin_url=None, elements=None, m=None, son=False):
     """Demande « reference to video » (Kling O1/O3) : chaque personnage est un élément (@Element1…) avec une image de face et
     des images d'appui ; le texte commence par dire qui est qui, pour que le moteur relie les noms aux images."""
-    elements = [e for e in (elements or []) if e.get("frontal_image_url")][:3]
+    elements = [e for e in (elements or []) if e.get("frontal_image_url")][:4]
     noms = [f"@Element{i + 1} is {e['nom']}" for i, e in enumerate(elements) if e.get("nom")]
     texte = ("; ".join(noms) + ". " if noms else "") + consigne
     if elements:

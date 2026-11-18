@@ -161,6 +161,24 @@ def _guides_integres():
                          "ramène.")},
              {"texte": _("Chaque plan est relu : ✓ ou ⚠ avec la raison. « Refaire ce plan… » si besoin, puis « Poser dans le film ».")},
          ]},
+        {"id": "relier_rushes", "etat": "ok",
+         "titre": _("Recréer ce qui n'a pas été filmé entre deux rushes (relier deux plans)"),
+         "mots": "relier raccord trou manquant pas filme entre deux rushes jonction reconstituer scene image clef keyframe sortie "
+                 "attendre",
+         "intro": _("La vidéo part de la dernière image du premier rush et arrive exactement sur la première image du suivant : "
+                    "deux images réelles. Entre les deux, l'assistant prévoit les images clefs (quelqu'un qui attend, un "
+                    "nouveau lieu), créées avec les fiches de vos personnes, objets et véhicules et les photos réelles des lieux, ou "
+                    "prises dans un autre rush. Entre deux images clefs, les gestes s'enchaînent sur la vraie vidéo."),
+         "etapes": [
+             {"texte": _("Clic droit sur le premier des deux plans › « Continuer ce plan avec l'assistant IA… »."),
+              "montrer": {"clic_droit": [_("Continuer ce plan avec l'assistant IA…")]}, "fait": "fenetre:DialogueAssistant"},
+             {"texte": _("Racontez ce qui s'est passé entre les deux et choisissez « Ce qui n'a pas été filmé entre ce plan et le "
+                         "suivant ».")},
+             {"texte": _("Qui et quoi : l'image montre avant | après ; vérifiez le cadre de chaque personne, objet ou véhicule.")},
+             {"texte": _("Les images : cochez « Image clef » là où la scène doit être respectée ; « Créer… » (dites ce qu'on voit et "
+                         "le cadrage) ou « Image de la ligne rouge » pour une vraie image d'un rush.")},
+             {"texte": _("Fabriquez, regardez, puis « Poser dans le film » : la reconstitution s'insère entre les deux rushes.")},
+         ]},
         {"id": "images_une_a_une", "etat": "ok",
          "titre": _("Avancer image par image et supprimer quelques images d'un rush"),
          "mots": "image par image frame trame avancer reculer supprimer images couper precis une image rush debut fin partie jaune",

@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T97 — 0.9.87 : images clefs, relier deux rushes
+
+1. Poser le rush « discussion au restaurant » puis, juste après, le rush « parvis ». Clic droit sur le premier › « Continuer ce plan avec l'assistant IA… » : à gauche, la fin du rush et le début du suivant ; choisir « Ce qui n'a pas été filmé entre ce plan et le suivant ».
+2. Ecrire : « je quitte la table et vais vers la sortie, ma compagne m'attend près de la porte, nous sortons sur le parvis ». « Voir ce qu'il faut » : l'image avant | après, une carte par personne (et le taxi s'il est visible), les lieux (salle, parvis).
+3. Plans : le dernier arrive sur le rush du parvis. Les images : « Image clef à la fin de ce plan » cochée là où elle attend ; « Créer… » : l'image montre-t-elle bien la salle réelle, ta compagne fidèle, près de la porte ? Essayer aussi « Image de la ligne rouge » sur une image d'un autre rush.
+4. Fabriquer (Kling O3 Référence) : les gestes s'enchaînent-ils sans incohérence ? La dernière image rejoint-elle le rush du parvis ?
+5. « Poser dans le film » : la reconstitution s'insère entre les deux rushes, le parvis est décalé ; Ctrl+Z.
+6. Refaire l'essai limousine en « suite de ce plan » : plus d'images d'arrivée à chaque plan, seulement aux images clefs ; les passagères ne réapparaissent plus.
+
 ## T96 — 0.9.86 : assistant corrigé, image par image
 
 1. Timeline : agrandir, ◀| et |▶ avancent d'une image ; [ puis ] sur la même image : « Supprimer 1 image(s) » ; Maj + flèche droite deux fois : « Supprimer 3 image(s) » ; supprimer : la suite se recolle ; Ctrl+Z.

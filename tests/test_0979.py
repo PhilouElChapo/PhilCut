@@ -57,7 +57,7 @@ class TestLogique(unittest.TestCase):
         self.assertEqual(s["personnages"][0].get("planche"), img)
         e = A.estimer(s, "kling-o3-ref", {"clef_gemini": "x", "clef_fal": "a:b"})
         self.assertGreater(e["videos"], 1.0)
-        self.assertAlmostEqual(e["images"], 0.04 * (3 + 4), places=2)    # 3 fiches manquantes, 4 arrivées
+        self.assertAlmostEqual(e["images"], 0.04 * 3, places=2)    # 3 fiches manquantes ; 0.9.87 : pas d'image clef demandée
         A.prevoir(s, 2.0)
         A.depenser(s, "plan", 1.5)
         self.assertFalse(A.depasse(s))
@@ -143,7 +143,8 @@ class TestFenetre(unittest.TestCase):
             dl.suivant()
             self.assertTrue(attendre(lambda: dl.pages.currentIndex() == D.P_IMAGES and not dl._en_calcul()))
             self.assertTrue(all(p.get("planche") for p in dl.seq["personnages"]))
-            self.assertTrue(all(pl.get("image_fin") for pl in dl.seq["plans"]))
+            self.assertTrue(all(pl.get("image_fin") for pl in dl.seq["plans"] if not pl.get("sans_fin")))   # 0.9.87 : images clefs seules
+            dl._basculer_clef(1, True)                                          # une image clef ajoutée à la main
             prevu = A.budget(dl.seq)["prevu"]
             self.assertGreater(prevu, 1.0)
             dl.corriger_image(1, "arrivee")

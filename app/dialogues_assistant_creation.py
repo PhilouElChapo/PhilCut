@@ -248,10 +248,14 @@ class DialogueAssistant(QDialog):
         v.addWidget(QLabel(_("L'assistant comprend :")))
         self.g_genre = QButtonGroup(self)
         self.r_suite = QRadioButton(_("La suite de ce plan (elle part de sa dernière image, avec les mêmes personnes)"))
+        self.r_raccord = QRadioButton(_("Ce qui n'a pas été filmé entre ce plan et le suivant (relier deux rushes)"))
+        self.r_raccord.setToolTip(_("La vidéo part de la dernière image de ce plan et arrive exactement sur la première image du "
+                                    "plan suivant ; les images clefs entre les deux sont créées avec vos personnes, objets et "
+                                    "lieux réels."))
         self.r_scene = QRadioButton(_("Une nouvelle scène vidéo, en plusieurs plans"))
         self.r_musique = QRadioButton(_("Une musique ou une chanson"))
         self.r_logo = QRadioButton(_("Une intro ou un logo animé"))
-        for r in (self.r_suite, self.r_scene, self.r_musique, self.r_logo):
+        for r in (self.r_suite, self.r_raccord, self.r_scene, self.r_musique, self.r_logo):
             self.g_genre.addButton(r)
             r.clicked.connect(lambda _c=False: setattr(self, "_genre_choisi", True))
             v.addWidget(r)
@@ -288,6 +292,7 @@ class DialogueAssistant(QDialog):
                 ok = os.path.exists(self.image)
         self.r_suite.setEnabled(ok)
         (self.r_suite if ok else self.r_scene).setChecked(True)
+        self.image_b, self.image_ab, self.clip_b = "", "", None
         self.l_rush.setText(_("Plan choisi : « {n} ».", n=c.get("nom") or m.get("nom", "")) if ok else
                             _("Pour continuer un plan : clic droit sur le plan dans la timeline › « Continuer ce plan avec "
                               "l'assistant IA… »."))
@@ -297,13 +302,54 @@ class DialogueAssistant(QDialog):
             vg = Vignette(self.image, 260)
             vg.clic.connect(lambda ch: agrandir(self, ch))
             self.v_depart.addWidget(vg)
+            if m.get("genre") == "video":
+                self._preparer_suivant(c)
             self.v_depart.addStretch(1)
+        self.r_raccord.setEnabled(bool(self.image_b))
+
+    def _preparer_suivant(self, c):
+        """0.9.87 : le plan qui suit sur la même piste ; sa première image est l'arrivée d'un raccord."""
+        from .projet import fin_clip
+        p = self.ed.projet
+        fin = fin_clip(c)
+        suivants = sorted((x for x in p.clips_piste(c.get("piste", "video")) if x["id"] != c["id"] and x["debut"] >= fin - 0.05),
+                          key=lambda x: x["debut"])
+        if not suivants:
+            return
+        cb = suivants[0]
+        mb = p.media(cb["media"])
+        if not (mb and os.path.exists(mb.get("chemin") or "")):
+            return
+        if mb.get("genre") == "image":
+            self.image_b = mb["chemin"]
+        elif mb.get("genre") == "video":
+            from . import prolonger
+            self.image_b = prolonger._image(mb["chemin"], float(cb.get("src_debut") or 0.0) + 1.0 / max(1.0, float(p.cadence)),
+                                            os.path.join(Q.dossier(self.seq), "arrivee_raccord.png"))
+        if not (self.image_b and os.path.exists(self.image_b)):
+            self.image_b = ""
+            return
+        self.clip_b = cb
+        self.image_ab = A.image_raccord(self.image, self.image_b, os.path.join(Q.dossier(self.seq), "raccord_avant_apres.png"))
+        self.v_depart.addWidget(QLabel(_("Début du plan suivant (pour relier) :")))
+        vb = Vignette(self.image_b, 260)
+        vb.clic.connect(lambda ch: agrandir(self, ch))
+        self.v_depart.addWidget(vb)
+
+    def _raccord(self):
+        return self.genre == "video" and self.r_raccord.isChecked() and bool(getattr(self, "image_b", ""))
+
+    def _image_cartes(self):
+        """L'image où l'on encadre les personnes : avant | après pour un raccord, sinon la dernière image du plan."""
+        return self.image_ab if self._raccord() and self.image_ab else self.image
 
     def _deviner(self):
         """Le genre se déduit des mots au fil de la frappe, tant que l'utilisateur n'a pas choisi lui-même."""
         if self._genre_choisi:
             return
         g = I.deviner_genre(self.c_histoire.texte(), bool(self.image))
+        if g == "suite" and self.r_raccord.isChecked():
+            return                                  # relier deux rushes reste choisi
         {"suite": self.r_suite, "scene": self.r_scene, "musique": self.r_musique, "logo": self.r_logo}[g].setChecked(True)
 
     def choisir_genre(self, genre):
@@ -313,7 +359,8 @@ class DialogueAssistant(QDialog):
             self._genre_choisi = True
 
     def _suite(self):
-        return self.genre == "video" and self.r_suite.isChecked() and bool(self.image)
+        """La vidéo part de la dernière image du plan choisi (continuer, ou relier au plan suivant)."""
+        return self.genre == "video" and (self.r_suite.isChecked() or self._raccord()) and bool(self.image)
 
     # ------------------------------------------------------------------ améliorer un texte (tout champ)
     def ameliorer(self, champ, contexte=""):
@@ -391,9 +438,9 @@ class DialogueAssistant(QDialog):
         vider(self.v_image)
         self.image_cadres = None
         if self._suite():
-            self.image_cadres = ImageCadres(self.image, 320)
+            self.image_cadres = ImageCadres(self._image_cartes(), 320)
             self.image_cadres.trace.connect(self._cadre_trace)
-            self.v_image.addWidget(QLabel(_("Dernière image du plan :")))
+            self.v_image.addWidget(QLabel(_("Avant | après (les deux rushes) :") if self._raccord() else _("Dernière image du plan :")))
             self.v_image.addWidget(self.image_cadres)
             self.v_image.addWidget(self._aide(_("Cliquez une carte, puis cliquez ou tracez ici la personne ou l'objet.")))
             self.v_image.addStretch(1)
@@ -461,7 +508,7 @@ class DialogueAssistant(QDialog):
         if c.e.get("source") != "image":
             c.radios["image"].setChecked(True)
         try:
-            c.e["decoupe"] = A.decouper(self.image, c.e["boite"], os.path.join(Q.dossier(self.seq), f"decoupe_carte_{id(c) % 10 ** 6}.png"))
+            c.e["decoupe"] = A.decouper(self._image_cartes(), c.e["boite"], os.path.join(Q.dossier(self.seq), f"decoupe_carte_{id(c) % 10 ** 6}.png"))
         except Exception:      # noqa: BLE001
             c.e["decoupe"] = ""
         c.rafraichir()
@@ -803,7 +850,7 @@ class DialogueAssistant(QDialog):
         analyse = {"personnages": persos, "plans": plans}
         if self.cartes:
             analyse["lieux"] = self._lire_lieux()
-        A.appliquer(self.seq, analyse, self.image if self._suite() else None)
+        A.appliquer(self.seq, analyse, self.image if self._suite() else None, self._image_cartes() if self._suite() else None)
 
     def _maj_prix(self):
         if self.pages.currentIndex() != P_PLANS:
@@ -819,10 +866,10 @@ class DialogueAssistant(QDialog):
     def _page_images(self):
         w = QWidget()
         v = QVBoxLayout(w)
-        v.addWidget(self._titre(_("Regardez avant la vidéo : mêmes visages, mêmes tenues, poses possibles ?")))
-        v.addWidget(self._aide(_("Les fiches gardent chacun identique ; chaque plan part de son image de départ et doit arriver sur son "
-                                 "image d'arrivée. Cliquez une image pour l'agrandir ; « Corriger… » la refait d'après ce que vous "
-                                 "écrivez (0,04 $).")))
+        v.addWidget(self._titre(_("Regardez avant la vidéo : les fiches et les images clefs")))
+        v.addWidget(self._aide(_("Les fiches gardent chacun identique (personnes, objets, véhicules). Les images clefs fixent l'état "
+                                 "de la scène là où il compte ; entre elles, les gestes s'enchaînent sur la vraie vidéo. Cliquez une "
+                                 "image pour l'agrandir.")))
         self.zone_images = QScrollArea()
         self.zone_images.setWidgetResizable(True)
         self.zone_images.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -961,7 +1008,7 @@ class DialogueAssistant(QDialog):
             else:
                 self.genre = "video"
                 if self.seq.get("plans") and self.seq.get("histoire") == self.c_histoire.texte() and \
-                        getattr(self, "_lue_avec", None) == (self._suite(), self._niveau()):
+                        getattr(self, "_lue_avec", None) == (self._suite(), self._niveau(), self._raccord()):
                     self.aller(P_QUI)              # 0.9.86 : rien n'a changé : on retrouve tout tel quel
                     return
                 if self.seq.get("plans") and getattr(self, "_lue_avec", None) and getattr(self, "_test_oui", None) is None \
@@ -1062,10 +1109,17 @@ class DialogueAssistant(QDialog):
         self.seq["histoire"] = histoire
         image = self.image if self._suite() else None
         niveau = self._niveau()
+        raccord = self._raccord()
+        if raccord:
+            self.seq["raccord"] = {"image_debut": self.image, "image_fin": self.image_b,
+                                   "clip_b": (self.clip_b or {}).get("id", "")}
+        else:
+            self.seq.pop("raccord", None)
+        vue = self._image_cartes() if image else None
 
         def travail(_t):
             try:
-                return A.analyser(self.params, histoire, image, niveau), None
+                return A.analyser(self.params, histoire, vue, niveau, image_fin=self.image_b if raccord else None), None
             except Exception as e:      # noqa: BLE001 : sans IA, on découpe simplement et on le dit
                 return A.analyse_simple(histoire), e
 
@@ -1078,8 +1132,8 @@ class DialogueAssistant(QDialog):
                 return
             if self._cloud() and not souci:
                 A.depenser(self.seq, _("Lecture de l'histoire"), A.PRIX_LECTURE)
-            A.appliquer(self.seq, analyse, image)
-            self._lue_avec = (bool(image), niveau) if not souci else None     # lecture ratée : « Suivant » réessaie
+            A.appliquer(self.seq, analyse, image, vue)
+            self._lue_avec = (bool(image), niveau, raccord) if not souci else None     # lecture ratée : « Suivant » réessaie
             self._remplir_cartes()
             self._remplir_plans()
             self.aller(P_QUI)
@@ -1195,7 +1249,7 @@ class DialogueAssistant(QDialog):
         g.addWidget(self._titre(_("Personnages et objets")), ligne, 0, 1, 3)
         ligne += 1
         for k, p in enumerate(self.seq["personnages"]):
-            vg = Vignette(p.get("planche", ""), 300, _("Pas de fiche"))
+            vg = Vignette(p.get("planche", ""), 170, _("Pas de fiche"))
             vg.clic.connect(lambda ch: agrandir(self, ch))
             g.addWidget(vg, ligne, 0)
             lb = QLabel(f"<b>{p['nom']}</b><br>{p.get('description', '')}")
@@ -1212,30 +1266,69 @@ class DialogueAssistant(QDialog):
             bl.addStretch(1)
             g.addLayout(bl, ligne, 2)
             ligne += 1
-        g.addWidget(self._titre(_("Plans : départ, puis arrivée")), ligne, 0, 1, 3)
+        g.addWidget(self._titre(_("Les images clefs")), ligne, 0, 1, 3)
         ligne += 1
+        g.addWidget(self._aide(_("Chaque plan part de la vraie fin de la vidéo du plan d'avant : les gestes s'enchaînent sans image "
+                                 "inventée. On n'impose une image de fin (image clef) que là où la scène doit être exactement "
+                                 "respectée : un nouveau lieu, quelqu'un qui attend ou arrive, et la fin. Une image clef se crée "
+                                 "avec vos fiches et les photos réelles du lieu, ou se prend dans un rush (ligne rouge).")), ligne, 0, 1, 3)
+        ligne += 1
+        n = len(self.seq["plans"])
         for i, pl in enumerate(self.seq["plans"]):
             lb = QLabel(_("<b>Plan {i}</b> ({d} s) : {a}", i=i + 1, d=pl.get("duree"), a=pl.get("action", "")))
             lb.setWordWrap(True)
             g.addWidget(lb, ligne, 0, 1, 3)
             ligne += 1
-            for col, (chemin, quoi, vide) in enumerate(((Q.depart_prevu(self.seq, i), "depart", _("Pas d'image de départ")),
-                                                        (pl.get("image_fin", ""), "arrivee", _("Pas d'image d'arrivée")))):
-                bloc = QVBoxLayout()
-                vg = Vignette(chemin, 230, vide)
-                vg.clic.connect(lambda ch: agrandir(self, ch))
-                self._vignettes_plans[(i, quoi)] = vg
-                if cible == (i, quoi):
-                    vg.setStyleSheet("border: 3px solid #f5a524; border-radius: 6px;")
-                    vg.setToolTip(_("L'image refaite"))
-                bloc.addWidget(vg)
-                enchaine = quoi == "depart" and i > 0 and not pl.get("image")
-                b = QPushButton(_("Corriger l'arrivée…") if quoi == "arrivee" else _("Corriger le départ…"))
-                b.setEnabled(not enchaine and not (quoi == "depart" and i == 0 and self._suite()))
-                b.setToolTip(_("Ce départ est l'arrivée du plan précédent : corrigez-la là-bas") if enchaine else "")
-                b.clicked.connect(lambda _c=False, i=i, quoi=quoi: self.corriger_image(i, quoi))
+            # départ
+            bloc = QVBoxLayout()
+            depart = Q.depart_prevu(self.seq, i)
+            enchaine = i > 0 and pl.get("enchainer", True) and not pl.get("image")
+            vg = Vignette(depart, 200, _("Part de la fin de la vidéo du plan {k}", k=i) if enchaine else _("Pas d'image de départ"))
+            vg.clic.connect(lambda ch: agrandir(self, ch))
+            self._vignettes_plans[(i, "depart")] = vg
+            if cible == (i, "depart"):
+                vg.setStyleSheet("border: 3px solid #f5a524; border-radius: 6px;")
+            bloc.addWidget(vg)
+            if not enchaine and not (i == 0 and self._suite()):
+                b = QPushButton(_("Corriger le départ…"))
+                b.clicked.connect(lambda _c=False, i=i: self.corriger_image(i, "depart"))
                 bloc.addWidget(b)
-                g.addLayout(bloc, ligne, col)
+            elif i == 0 and self._suite():
+                bloc.addWidget(self._aide(_("Image réelle : la fin du rush.")))
+            g.addLayout(bloc, ligne, 0)
+            # fin
+            bloc = QVBoxLayout()
+            if pl.get("fin_reelle"):
+                vg = Vignette(pl.get("image_fin", ""), 200, "")
+                bloc.addWidget(vg)
+                bloc.addWidget(self._aide(_("Image réelle : le début du rush suivant. La vidéo y arrive exactement.")))
+            else:
+                case = QCheckBox(_("Image clef à la fin de ce plan"))
+                case.setChecked(not pl.get("sans_fin"))
+                case.setToolTip(_("Cochée : la vidéo doit arriver sur cette image (lieu, personnes, état de la scène). "
+                                  "Décochée : le moteur enchaîne librement les gestes (souvent plus naturel)."))
+                case.toggled.connect(lambda on, i=i: self._basculer_clef(i, on))
+                bloc.addWidget(case)
+                if not pl.get("sans_fin"):
+                    vg = Vignette(pl.get("image_fin", ""), 200, _("Image clef à créer"))
+                    vg.clic.connect(lambda ch: agrandir(self, ch))
+                    self._vignettes_plans[(i, "arrivee")] = vg
+                    if cible == (i, "arrivee"):
+                        vg.setStyleSheet("border: 3px solid #f5a524; border-radius: 6px;")
+                        vg.setToolTip(_("L'image refaite"))
+                    bloc.addWidget(vg)
+                    hb = QHBoxLayout()
+                    b = QPushButton(_("Créer…") if not pl.get("image_fin") else _("Corriger…"))
+                    b.setToolTip(_("Avec vos fiches et les photos réelles du lieu ; dites ce qu'on doit voir et le cadrage"))
+                    b.clicked.connect(lambda _c=False, i=i: self.corriger_image(i, "arrivee"))
+                    hb.addWidget(b)
+                    br = QPushButton(_("Image de la ligne rouge"))
+                    br.setToolTip(_("Prend l'image affichée à la ligne rouge dans la timeline (un autre rush, une photo) comme "
+                                    "image clef"))
+                    br.clicked.connect(lambda _c=False, i=i: self.clef_ligne_rouge(i))
+                    hb.addWidget(br)
+                    bloc.addLayout(hb)
+            g.addLayout(bloc, ligne, 1)
             ligne += 1
         g.setColumnStretch(1, 1)
         g.setRowStretch(ligne, 1)
@@ -1243,6 +1336,41 @@ class DialogueAssistant(QDialog):
         if cible in self._vignettes_plans:
             vg = self._vignettes_plans[cible]
             QTimer.singleShot(0, lambda: self.zone_images.ensureWidgetVisible(vg, 40, 120))
+
+    def _basculer_clef(self, i, on):
+        pl = self.seq["plans"][i]
+        pl["clef"], pl["sans_fin"] = bool(on), not on
+        pl["fichier"], pl["images_ok"] = "", False
+        if not on:
+            pl["image_fin"] = ""
+        if i + 1 < len(self.seq["plans"]):
+            self.seq["plans"][i + 1]["fichier"] = ""
+        self._remplir_images((i, "arrivee"))
+
+    def clef_ligne_rouge(self, i):
+        """L'image affichée à la ligne rouge devient l'image clef du plan i (0.9.87 : des éléments du réel)."""
+        p, t = self.ed.projet, self.ed.timeline.position
+        c = p.plan_visible(t)
+        m = p.media(c["media"]) if c else None
+        if not (c and m and os.path.exists(m.get("chemin") or "")):
+            self.etat.setText(_("Placez la ligne rouge sur une image d'un rush ou d'une photo, puis recommencez."))
+            return
+        if m.get("genre") == "image":
+            chemin = m["chemin"]
+        else:
+            from . import images_plan
+            src = float(c.get("src_debut") or 0.0) + (t - c["debut"]) * float(c.get("vitesse") or 1.0)
+            r = images_plan.extraire(p, c, [src])
+            chemin = r[0] if r else ""
+        if not chemin:
+            self.etat.setText(_("Image illisible à la ligne rouge."))
+            return
+        pl = self.seq["plans"][i]
+        pl.update(image_fin=chemin, clef=True, sans_fin=False, fichier="", images_ok=False)
+        if i + 1 < len(self.seq["plans"]):
+            self.seq["plans"][i + 1]["fichier"] = ""
+        self._remplir_images((i, "arrivee"))
+        self.etat.setText(_("✓ Image clef prise à la ligne rouge (réelle, gratuite)."))
 
     def _precision(self, titre, question, defaut=""):
         if getattr(self, "_test_precision", None) is not None:
@@ -1306,6 +1434,7 @@ class DialogueAssistant(QDialog):
                 self.etat.setText(_("Image refaite : regardez-la (entourée en orange)."))
                 suivant = i + 1
                 if quoi == "arrivee" and suivant < len(self.seq["plans"]) and self.seq["plans"][suivant].get("enchainer", True) \
+                        and not self.seq["plans"][suivant].get("fin_reelle") \
                         and not self.seq["plans"][suivant].get("image"):
                     nxt = self.seq["plans"][suivant]       # 0.9.86 : cette arrivée est le départ du plan suivant
                     nxt["fichier"], nxt["images_ok"] = "", False
@@ -2526,7 +2655,7 @@ class DialogueAssistant(QDialog):
         import copy as _c
         self.genre = "video"
         self.seq = _c.deepcopy(seq)
-        self._lue_avec = (self._suite(), self._niveau())
+        self._lue_avec = (self._suite(), self._niveau(), self._raccord())
         if self.seq.get("histoire"):
             self.c_histoire.mettre(self.seq["histoire"])
         self._remplir_cartes()

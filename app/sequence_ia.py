@@ -84,6 +84,8 @@ def couper_plan(seq, i):
             b = f"{g.group(1)} {b}"
     d = max(3, int(round(float(pl.get("duree") or DUREE_PLAN) / 2 + 0.5)))
     p1 = dict(pl, action=a[0].upper() + a[1:], duree=d, consigne="", fichier="", image="")
+    if "clef" in pl:                               # 0.9.87 : l'image clef reste à la fin de la seconde moitié
+        p1.update(clef=False, sans_fin=True, image_fin="", fin_reelle=False)
     p2 = dict(pl, action=b[0].upper() + b[1:], duree=d, consigne="", fichier="", image="", repliques=[], voix=[])
     seq["plans"][i:i + 1] = [p1, p2]
     return True
@@ -446,23 +448,40 @@ def depart_enchaine(seq, i):
     return derniere_image(f, os.path.join(dossier(seq), f"plan{i + 1:02d}_depart_enchaine.png"))
 
 
+def image_connue_avant(seq, i):
+    """La dernière image réelle ou validée avant la fin du plan i : son départ, sinon l'image clef précédente, sinon la
+    première image du plan 1 (0.9.87 : base d'une image clef quand le plan part de la vidéo d'avant, pas encore faite)."""
+    for k in range(i, -1, -1):
+        pl = seq["plans"][k]
+        if k < i and pl.get("image_fin") and os.path.exists(pl["image_fin"]) and not pl.get("sans_fin"):
+            return pl["image_fin"]
+        if pl.get("image") and os.path.exists(pl["image"]):
+            return pl["image"]
+    return ""
+
+
 def image_arrivee(seq, i, params, depart=None, precision=""):
     """Image d'arrivée du plan i (0.9.72) : la pose quand l'action est finie, composée d'après l'image de départ et les
     références. Le moteur doit la rejoindre : il ne peut plus faire traverser la table ni changer de visage en route."""
     from . import ia
     pl = seq["plans"][i]
     fiches = [x for _n, im in references_du_plan(seq, pl) for x in im[:1]]
-    refs = fiches[:3] + ([depart] if depart and os.path.exists(depart) else [])
-    refs += [x for x in images_du_plan(seq, pl) if x not in refs]
+    if not (depart and os.path.exists(depart)):
+        depart = image_connue_avant(seq, i)          # 0.9.87 : image clef : la dernière image réelle connue sert de décor
+    lieux = [x for x in images_du_plan(seq, pl) if x not in fiches and x != depart]
+    fin = (seq.get("raccord") or {}).get("image_fin")
+    refs = fiches[:3] + ([depart] if depart and os.path.exists(depart) else []) + lieux[:1]
+    if fin and os.path.exists(fin) and fin not in refs and i < len(seq["plans"]) - 1:
+        refs.append(fin)                             # relier deux rushes : tenues et lumière de l'image d'après
     action = consigne(seq, pl, params)
     png = (ia.generer_image_refs if refs else lambda prm, c, r=None: ia.generer_image(prm, c))(
-        params, "LAST frame of this video shot, when the action is completely finished (final pose, physically plausible). The "
-                "first reference images are the character sheets: every face, hairstyle and outfit must match them exactly. The next "
-                "image is the first frame of the shot: same place and light, but the camera framing follows the Camera line (it may "
-                "move, widen or come closer) and people move as the action says: whoever got into a vehicle, left or is listed as not "
-                "visible must NOT appear. If a face differs from its sheet, follow the sheet. One photorealistic still image, no "
-                "text. " + action +
-        ((" Precisely, at the end: " + _anglais(precision, True)) if precision else ""), refs[:4])
+        params, "KEY IMAGE of a video sequence: the exact state of the scene at the END of this shot, action completely finished "
+                "(final pose, physically plausible). The first reference images are the character and object sheets: every face, "
+                "hairstyle, outfit and object must match them exactly. The next reference images are REAL photos of the place: keep "
+                "their decor, materials, light and lens exactly; the camera framing follows the Camera line (it may move, widen or "
+                "come closer). People are where the story says at that moment: whoever got into a vehicle, left or is listed as not "
+                "visible must NOT appear. One photorealistic still image, no text. " + action +
+        ((" Precisely, at the end: " + _anglais(precision, True)) if precision else ""), refs[:5])
     sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_arrivee_{int(time.time() * 1000) % 10 ** 9}.png")
     with open(sortie, "wb") as f:
         f.write(png)
