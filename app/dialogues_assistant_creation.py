@@ -661,6 +661,24 @@ class DialogueAssistant(QDialog):
         return any(c.e.get("type") == "personne" and c.e.get("source") in ("image", "photo") for c in self.cartes)
 
     # ------------------------------------------------------------------ bibliothèque (0.9.81)
+    def _depuis_catalogue(self, carte):
+        """0.9.89 : la bibliothèque toute faite, filtrée pour cette carte ; l'entrée prise remplit la carte."""
+        from . import bibliotheque_creations as B
+        from .dialogues_catalogue_prompts import DialogueCatalogue
+        genres = {"personne": ("personnage",), "objet": ("objet",), "lieu": ("lieu",)}.get(carte.e.get("type"), None)
+        d = getattr(self, "_test_catalogue", None) or DialogueCatalogue(self, self.params, genres)
+        if not getattr(self, "_test_catalogue", None):
+            d.exec()
+        if d.ajoutees:
+            x = d.ajoutees[-1]
+            B.vers_carte(x, carte.e)
+            carte.e["source"] = "bibliotheque"
+            carte.nom.blockSignals(True)
+            carte.nom.setText(carte.e["nom"])
+            carte.nom.blockSignals(False)
+            carte.mettre_description(carte.e.get("description", ""))
+            carte.rafraichir()
+
     def _options_bibliotheque(self, carte):
         from . import bibliotheque_creations as B
         e = carte.e
@@ -679,6 +697,11 @@ class DialogueAssistant(QDialog):
         b.setToolTip(_("Voir, créer, renommer ce qui est gardé"))
         b.clicked.connect(lambda: self.ed.bibliotheque_creations())
         h.addWidget(b)
+        bt = QPushButton(_("Toute faite…"))
+        bt.setToolTip(_("Prendre une description toute prête (lieu, véhicule, avion, personnage type) : elle rejoint votre "
+                        "bibliothèque et cette carte"))
+        bt.clicked.connect(lambda: self._depuis_catalogue(carte))
+        h.addWidget(bt)
         v.addLayout(h)
         choisie = next((x for x in entrees if x["id"] == e.get("biblio")), None)
         if choisie:

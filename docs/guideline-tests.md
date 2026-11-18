@@ -23,6 +23,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T99 — 0.9.89 : bibliothèque toute faite
+
+1. Fabrique IA › « Ma bibliothèque de créations… » › « Toute faite… » : rubrique « Chaussures », « Femme » : escarpins à talons hauts, moyens, petits talons, ballerines… ; chercher « hélicoptère », puis « piscine ».
+2. Prendre « Bord de mer » › « Ajouter à ma bibliothèque » : il arrive dans la liste, description modifiable ; « Faire sa planche (Gemini)… ».
+3. « Nouveau… » › Tenue : « Composer… » : costume, chemise, richelieus, borsalino, matière cachemire : le texte de la tenue se remplit ; « Enregistrer », puis la mettre à un personnage.
+4. Assistant : sur une carte de lieu ou de véhicule, « Dans ma bibliothèque » › « Toute faite… » › Limousine : la carte la prend.
+5. Les fenêtres tiennent en 1024×768, rien n'est coupé.
+
 ## T98 — 0.9.88 : atelier de création (personnages, lieux, tenues)
 
 1. Fabrique IA › « Ma bibliothèque de créations… » › « Nouveau… » › Personnage « Directrice » : « Création » = Inventé, description, « ✨ Améliorer », « Faire sa fiche (Gemini)… » : la fiche (quatre vues) apparaît.

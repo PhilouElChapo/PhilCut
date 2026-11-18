@@ -60,17 +60,10 @@ class DialogueBibliothequeCreations(QDialog):
         m.setToolTipsVisible(True)
         b.setMenu(m)
         hb.addWidget(b)
-        bt = QPushButton(_("Tenues toutes faites…"))
-        mt = QMenu(bt)
-        from . import tenues as T
-        for k, lib in T.FAMILLES:
-            sm = mt.addMenu(lib)
-            for x in T.pretes(k):
-                a = sm.addAction(x["nom"], lambda x=x: self.ajouter_tenue_prete(x))
-                a.setToolTip(x["description"])
-            sm.setToolTipsVisible(True)
-        bt.setMenu(mt)
-        bt.setToolTip(_("Ajoute une tenue toute faite à la bibliothèque, pour la modifier ou la mettre à vos personnages"))
+        bt = QPushButton(_("Toute faite…"))
+        bt.setToolTip(_("La bibliothèque toute faite : tenues, lieux, véhicules, avions, personnages types ; prenez-en une, "
+                        "puis modifiez-la"))
+        bt.clicked.connect(self.depuis_catalogue)
         hb.addWidget(bt)
         self.b_retirer = QPushButton(_("Retirer"))
         self.b_retirer.setToolTip(_("L'entrée va dans la corbeille de la bibliothèque : rien n'est effacé"))
@@ -249,6 +242,10 @@ class DialogueBibliothequeCreations(QDialog):
             b.clicked.connect(self.faire_planche_lieu)
             h.addWidget(b)
         if e["genre"] == "tenue":
+            bc = QPushButton(_("Composer…"))
+            bc.setToolTip(_("Pièce par pièce : haut, bas ou robe, veste, chaussures, chapeau, accessoire, matière"))
+            bc.clicked.connect(self.composer_tenue)
+            h.addWidget(bc)
             b = QPushButton(_("Faire son image (Gemini)…"))
             b.setToolTip(_("La tenue seule, sur fond neutre, d'après sa description ; environ 0,04 $"))
             b.clicked.connect(self.faire_image_tenue)
@@ -422,6 +419,22 @@ class DialogueBibliothequeCreations(QDialog):
             os.replace(os.path.join(d, nom), os.path.join(d, "." + nom + ".retire"))
         self.remplir(e["id"])
 
+    def depuis_catalogue(self):
+        from .dialogues_catalogue_prompts import DialogueCatalogue
+        d = DialogueCatalogue(self, self.params)
+        d.exec()
+        if d.ajoutees:
+            self.filtre.setCurrentIndex(0)
+            self.remplir(d.ajoutees[-1]["id"])
+
+    def composer_tenue(self):
+        from .dialogues_catalogue_prompts import ComposerTenue
+        d = ComposerTenue(self)
+        if d.exec() == QDialog.Accepted and d.resultat and d.resultat[0]:
+            fr, en = d.resultat
+            self.desc.mettre(fr)
+            self.enregistrer(donnees={"en": en, "fr_origine": fr})
+
     def ajouter_tenue_prete(self, x):
         t = B.garder(self.params, "tenue", x["nom"], x["description"], None, {"famille": x["famille"], "en": x["en"]})
         self.filtre.setCurrentIndex(0)
@@ -434,7 +447,7 @@ class DialogueBibliothequeCreations(QDialog):
         if getattr(self, "_test_oui", None) is None and QMessageBox.question(
                 self, _("Faire sa planche"), _("La planche est dessinée par Gemini (votre clef), environ 0,04 $. Continuer ?")) != QMessageBox.Yes:
             return
-        li = {"nom": self.nom.text(), "description": self.desc.texte(), "images": [p for _r, p in self._photos(e)],
+        li = {"nom": self.nom.text(), "description": self.desc.texte(), "en": self._anglais_pret(e), "images": [p for _r, p in self._photos(e)],
               "mode": self.extra["mode"].currentData() if "mode" in self.extra else ""}
         seq, params = Q.nouvelle(), self.params
 
@@ -449,7 +462,7 @@ class DialogueBibliothequeCreations(QDialog):
         if getattr(self, "_test_oui", None) is None and QMessageBox.question(
                 self, _("Faire son image"), _("L'image est dessinée par Gemini (votre clef), environ 0,04 $. Continuer ?")) != QMessageBox.Yes:
             return
-        texte = (e.get("donnees") or {}).get("en") or Q._anglais(self.desc.texte(), True)
+        texte = self._anglais_pret(e) or Q._anglais(self.desc.texte(), True)
         params, dossier = self.params, e["dossier"]
 
         def travail(t):
@@ -462,6 +475,12 @@ class DialogueBibliothequeCreations(QDialog):
                 f.write(png)
             return sortie
         self._lancer(travail, _("Image de « {n} »", n=self.nom.text()), lambda r: r and self.enregistrer({"image_tenue": r}))
+
+    def _anglais_pret(self, e):
+        """Les mots anglais du catalogue, tant que la description n'a pas été changée."""
+        d = e.get("donnees") or {}
+        return d.get("en", "") if d.get("en") and self.desc.texte().strip() == (d.get("fr_origine") or e.get("description", "")).strip() \
+            else ""
 
     def ajouter_fichier(self):
         from .widgets import ouvrir_fichier
@@ -519,6 +538,7 @@ class DialogueBibliothequeCreations(QDialog):
         p = Q.personnage(self.nom.text(), self.desc.texte(), (e.get("donnees") or {}).get("style", ""))
         p["genre"] = "objet" if e["genre"] == "objet" else "personne"
         p["images"] = images
+        p["en"] = self._anglais_pret(e)
         d = self._donnees()
         p["mode"] = d.get("mode") or ""
         if d.get("tenue"):

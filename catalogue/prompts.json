@@ -1,0 +1,2731 @@
+{
+ "format": 1,
+ "note": "Bibliothèque toute faite de l'atelier de création (prompts). Fabriqué par outils_dev/fabriquer_prompts.py ; images d'exemple facultatives dans catalogue/exemples/<id>.jpg.",
+ "rubriques": {
+  "haut": {
+   "genre": "piece",
+   "nom": {
+    "fr": "Hauts",
+    "en": "Tops"
+   }
+  },
+  "bas": {
+   "genre": "piece",
+   "nom": {
+    "fr": "Bas",
+    "en": "Bottoms"
+   }
+  },
+  "robe": {
+   "genre": "piece",
+   "nom": {
+    "fr": "Robes et ensembles",
+    "en": "Dresses and sets"
+   }
+  },
+  "veste": {
+   "genre": "piece",
+   "nom": {
+    "fr": "Vestes, manteaux, survêtements",
+    "en": "Jackets, coats, outerwear"
+   }
+  },
+  "chaussures": {
+   "genre": "piece",
+   "nom": {
+    "fr": "Chaussures",
+    "en": "Shoes"
+   }
+  },
+  "chapeau": {
+   "genre": "piece",
+   "nom": {
+    "fr": "Chapeaux et casquettes",
+    "en": "Hats and caps"
+   }
+  },
+  "accessoire": {
+   "genre": "piece",
+   "nom": {
+    "fr": "Accessoires",
+    "en": "Accessories"
+   }
+  },
+  "matiere": {
+   "genre": "piece",
+   "nom": {
+    "fr": "Matières et finitions",
+    "en": "Materials and finish"
+   }
+  },
+  "tenue": {
+   "genre": "tenue",
+   "nom": {
+    "fr": "Tenues complètes",
+    "en": "Complete outfits"
+   }
+  },
+  "lieu": {
+   "genre": "lieu",
+   "nom": {
+    "fr": "Lieux",
+    "en": "Places"
+   }
+  },
+  "vehicule": {
+   "genre": "objet",
+   "nom": {
+    "fr": "Véhicules",
+    "en": "Vehicles"
+   }
+  },
+  "air": {
+   "genre": "objet",
+   "nom": {
+    "fr": "Avions et autres transports",
+    "en": "Aircraft and other transport"
+   }
+  },
+  "personnage": {
+   "genre": "personnage",
+   "nom": {
+    "fr": "Personnages types (inventés)",
+    "en": "Character types (invented)"
+   }
+  }
+ },
+ "entrees": [
+  {
+   "id": "chemise_blanche",
+   "rubrique": "haut",
+   "pour": "m",
+   "nom": {
+    "fr": "Chemise blanche",
+    "en": "White shirt"
+   },
+   "description": {
+    "fr": "chemise blanche en coton, col classique",
+    "en": "white cotton shirt, classic collar"
+   },
+   "en": "white cotton shirt, classic collar"
+  },
+  {
+   "id": "chemise_lin",
+   "rubrique": "haut",
+   "pour": "m",
+   "nom": {
+    "fr": "Chemise en lin",
+    "en": "Linen shirt"
+   },
+   "description": {
+    "fr": "chemise en lin légère, manches retroussées",
+    "en": "light linen shirt, rolled-up sleeves"
+   },
+   "en": "light linen shirt, rolled-up sleeves"
+  },
+  {
+   "id": "chemisier_soie",
+   "rubrique": "haut",
+   "pour": "f",
+   "nom": {
+    "fr": "Chemisier en soie",
+    "en": "Silk blouse"
+   },
+   "description": {
+    "fr": "chemisier en soie fluide, col lavallière",
+    "en": "flowing silk blouse with pussy-bow collar"
+   },
+   "en": "flowing silk blouse with pussy-bow collar"
+  },
+  {
+   "id": "tshirt",
+   "rubrique": "haut",
+   "pour": "m",
+   "nom": {
+    "fr": "Tee-shirt",
+    "en": "T-shirt"
+   },
+   "description": {
+    "fr": "tee-shirt uni à col rond",
+    "en": "plain crew-neck t-shirt"
+   },
+   "en": "plain crew-neck t-shirt"
+  },
+  {
+   "id": "polo",
+   "rubrique": "haut",
+   "pour": "m",
+   "nom": {
+    "fr": "Polo",
+    "en": "Polo shirt"
+   },
+   "description": {
+    "fr": "polo en piqué de coton",
+    "en": "cotton piqué polo shirt"
+   },
+   "en": "cotton piqué polo shirt"
+  },
+  {
+   "id": "pull_cachemire",
+   "rubrique": "haut",
+   "pour": "m",
+   "nom": {
+    "fr": "Pull en cachemire",
+    "en": "Cashmere jumper"
+   },
+   "description": {
+    "fr": "pull fin en cachemire, col rond",
+    "en": "fine cashmere crew-neck jumper"
+   },
+   "en": "fine cashmere crew-neck jumper"
+  },
+  {
+   "id": "col_roule",
+   "rubrique": "haut",
+   "pour": "m",
+   "nom": {
+    "fr": "Col roulé",
+    "en": "Turtleneck"
+   },
+   "description": {
+    "fr": "pull col roulé en laine mérinos",
+    "en": "merino wool turtleneck"
+   },
+   "en": "merino wool turtleneck"
+  },
+  {
+   "id": "sweat_capuche",
+   "rubrique": "haut",
+   "pour": "m",
+   "nom": {
+    "fr": "Sweat à capuche",
+    "en": "Hoodie"
+   },
+   "description": {
+    "fr": "sweat à capuche en molleton",
+    "en": "fleece hoodie"
+   },
+   "en": "fleece hoodie"
+  },
+  {
+   "id": "debardeur",
+   "rubrique": "haut",
+   "pour": "m",
+   "nom": {
+    "fr": "Débardeur",
+    "en": "Tank top"
+   },
+   "description": {
+    "fr": "débardeur ajusté",
+    "en": "fitted tank top"
+   },
+   "en": "fitted tank top"
+  },
+  {
+   "id": "top_dentelle",
+   "rubrique": "haut",
+   "pour": "f",
+   "nom": {
+    "fr": "Top en dentelle",
+    "en": "Lace top"
+   },
+   "description": {
+    "fr": "top en dentelle fine",
+    "en": "delicate lace top"
+   },
+   "en": "delicate lace top"
+  },
+  {
+   "id": "gilet_costume",
+   "rubrique": "haut",
+   "pour": "h",
+   "nom": {
+    "fr": "Gilet de costume",
+    "en": "Suit waistcoat"
+   },
+   "description": {
+    "fr": "gilet de costume boutonné sur chemise",
+    "en": "buttoned suit waistcoat over a shirt"
+   },
+   "en": "buttoned suit waistcoat over a shirt"
+  },
+  {
+   "id": "jean_droit",
+   "rubrique": "bas",
+   "pour": "m",
+   "nom": {
+    "fr": "Jean droit",
+    "en": "Straight jeans"
+   },
+   "description": {
+    "fr": "jean bleu coupe droite",
+    "en": "blue straight-cut jeans"
+   },
+   "en": "blue straight-cut jeans"
+  },
+  {
+   "id": "jean_slim",
+   "rubrique": "bas",
+   "pour": "m",
+   "nom": {
+    "fr": "Jean slim",
+    "en": "Slim jeans"
+   },
+   "description": {
+    "fr": "jean slim brut",
+    "en": "raw denim slim jeans"
+   },
+   "en": "raw denim slim jeans"
+  },
+  {
+   "id": "chino",
+   "rubrique": "bas",
+   "pour": "m",
+   "nom": {
+    "fr": "Pantalon chino",
+    "en": "Chinos"
+   },
+   "description": {
+    "fr": "pantalon chino beige",
+    "en": "beige chino trousers"
+   },
+   "en": "beige chino trousers"
+  },
+  {
+   "id": "pantalon_costume",
+   "rubrique": "bas",
+   "pour": "m",
+   "nom": {
+    "fr": "Pantalon de costume",
+    "en": "Suit trousers"
+   },
+   "description": {
+    "fr": "pantalon de costume à pli",
+    "en": "pleated suit trousers"
+   },
+   "en": "pleated suit trousers"
+  },
+  {
+   "id": "pantalon_cuir",
+   "rubrique": "bas",
+   "pour": "m",
+   "nom": {
+    "fr": "Pantalon en cuir",
+    "en": "Leather trousers"
+   },
+   "description": {
+    "fr": "pantalon en cuir noir ajusté",
+    "en": "fitted black leather trousers"
+   },
+   "en": "fitted black leather trousers"
+  },
+  {
+   "id": "jupe_crayon",
+   "rubrique": "bas",
+   "pour": "f",
+   "nom": {
+    "fr": "Jupe crayon",
+    "en": "Pencil skirt"
+   },
+   "description": {
+    "fr": "jupe crayon au genou",
+    "en": "knee-length pencil skirt"
+   },
+   "en": "knee-length pencil skirt"
+  },
+  {
+   "id": "jupe_plissee",
+   "rubrique": "bas",
+   "pour": "f",
+   "nom": {
+    "fr": "Jupe plissée",
+    "en": "Pleated skirt"
+   },
+   "description": {
+    "fr": "jupe plissée mi-longue",
+    "en": "midi pleated skirt"
+   },
+   "en": "midi pleated skirt"
+  },
+  {
+   "id": "minijupe",
+   "rubrique": "bas",
+   "pour": "f",
+   "nom": {
+    "fr": "Minijupe",
+    "en": "Mini skirt"
+   },
+   "description": {
+    "fr": "minijupe trapèze",
+    "en": "A-line mini skirt"
+   },
+   "en": "A-line mini skirt"
+  },
+  {
+   "id": "short",
+   "rubrique": "bas",
+   "pour": "m",
+   "nom": {
+    "fr": "Short",
+    "en": "Shorts"
+   },
+   "description": {
+    "fr": "short en toile",
+    "en": "canvas shorts"
+   },
+   "en": "canvas shorts"
+  },
+  {
+   "id": "legging",
+   "rubrique": "bas",
+   "pour": "f",
+   "nom": {
+    "fr": "Legging",
+    "en": "Leggings"
+   },
+   "description": {
+    "fr": "legging noir",
+    "en": "black leggings"
+   },
+   "en": "black leggings"
+  },
+  {
+   "id": "jogging",
+   "rubrique": "bas",
+   "pour": "m",
+   "nom": {
+    "fr": "Pantalon de jogging",
+    "en": "Joggers"
+   },
+   "description": {
+    "fr": "pantalon de jogging en molleton",
+    "en": "fleece joggers"
+   },
+   "en": "fleece joggers"
+  },
+  {
+   "id": "petite_robe_noire",
+   "rubrique": "robe",
+   "pour": "f",
+   "nom": {
+    "fr": "Petite robe noire",
+    "en": "Little black dress"
+   },
+   "description": {
+    "fr": "petite robe noire droite au genou",
+    "en": "little black knee-length sheath dress"
+   },
+   "en": "little black knee-length sheath dress"
+  },
+  {
+   "id": "robe_longue",
+   "rubrique": "robe",
+   "pour": "f",
+   "nom": {
+    "fr": "Robe longue de soirée",
+    "en": "Long evening gown"
+   },
+   "description": {
+    "fr": "longue robe de soirée fluide",
+    "en": "flowing long evening gown"
+   },
+   "en": "flowing long evening gown"
+  },
+  {
+   "id": "robe_cocktail",
+   "rubrique": "robe",
+   "pour": "f",
+   "nom": {
+    "fr": "Robe de cocktail",
+    "en": "Cocktail dress"
+   },
+   "description": {
+    "fr": "robe de cocktail ajustée",
+    "en": "fitted cocktail dress"
+   },
+   "en": "fitted cocktail dress"
+  },
+  {
+   "id": "robe_ete",
+   "rubrique": "robe",
+   "pour": "f",
+   "nom": {
+    "fr": "Robe d'été",
+    "en": "Summer dress"
+   },
+   "description": {
+    "fr": "robe d'été légère à fleurs",
+    "en": "light floral summer dress"
+   },
+   "en": "light floral summer dress"
+  },
+  {
+   "id": "robe_chemise",
+   "rubrique": "robe",
+   "pour": "f",
+   "nom": {
+    "fr": "Robe chemise",
+    "en": "Shirt dress"
+   },
+   "description": {
+    "fr": "robe chemise ceinturée",
+    "en": "belted shirt dress"
+   },
+   "en": "belted shirt dress"
+  },
+  {
+   "id": "tailleur",
+   "rubrique": "robe",
+   "pour": "f",
+   "nom": {
+    "fr": "Tailleur",
+    "en": "Skirt or trouser suit"
+   },
+   "description": {
+    "fr": "tailleur veste et pantalon assortis",
+    "en": "matching blazer and trouser suit"
+   },
+   "en": "matching blazer and trouser suit"
+  },
+  {
+   "id": "costume_deux",
+   "rubrique": "robe",
+   "pour": "h",
+   "nom": {
+    "fr": "Costume deux pièces",
+    "en": "Two-piece suit"
+   },
+   "description": {
+    "fr": "costume deux pièces bleu marine",
+    "en": "navy two-piece suit"
+   },
+   "en": "navy two-piece suit"
+  },
+  {
+   "id": "costume_trois",
+   "rubrique": "robe",
+   "pour": "h",
+   "nom": {
+    "fr": "Costume trois pièces",
+    "en": "Three-piece suit"
+   },
+   "description": {
+    "fr": "costume trois pièces gris avec gilet",
+    "en": "grey three-piece suit with waistcoat"
+   },
+   "en": "grey three-piece suit with waistcoat"
+  },
+  {
+   "id": "smoking",
+   "rubrique": "robe",
+   "pour": "h",
+   "nom": {
+    "fr": "Smoking",
+    "en": "Tuxedo"
+   },
+   "description": {
+    "fr": "smoking noir à revers satinés",
+    "en": "black tuxedo with satin lapels"
+   },
+   "en": "black tuxedo with satin lapels"
+  },
+  {
+   "id": "combinaison",
+   "rubrique": "robe",
+   "pour": "f",
+   "nom": {
+    "fr": "Combinaison",
+    "en": "Jumpsuit"
+   },
+   "description": {
+    "fr": "combinaison pantalon élégante",
+    "en": "elegant jumpsuit"
+   },
+   "en": "elegant jumpsuit"
+  },
+  {
+   "id": "survetement",
+   "rubrique": "robe",
+   "pour": "m",
+   "nom": {
+    "fr": "Survêtement",
+    "en": "Tracksuit"
+   },
+   "description": {
+    "fr": "survêtement deux pièces",
+    "en": "two-piece tracksuit"
+   },
+   "en": "two-piece tracksuit"
+  },
+  {
+   "id": "blazer",
+   "rubrique": "veste",
+   "pour": "m",
+   "nom": {
+    "fr": "Blazer",
+    "en": "Blazer"
+   },
+   "description": {
+    "fr": "blazer cintré",
+    "en": "tailored blazer"
+   },
+   "en": "tailored blazer"
+  },
+  {
+   "id": "perfecto",
+   "rubrique": "veste",
+   "pour": "m",
+   "nom": {
+    "fr": "Blouson en cuir",
+    "en": "Leather jacket"
+   },
+   "description": {
+    "fr": "blouson en cuir noir style perfecto",
+    "en": "black leather biker jacket"
+   },
+   "en": "black leather biker jacket"
+  },
+  {
+   "id": "blouson_aviateur",
+   "rubrique": "veste",
+   "pour": "m",
+   "nom": {
+    "fr": "Blouson d'aviateur",
+    "en": "Flight jacket"
+   },
+   "description": {
+    "fr": "blouson d'aviateur en cuir à col en mouton",
+    "en": "leather flight jacket with sheepskin collar"
+   },
+   "en": "leather flight jacket with sheepskin collar"
+  },
+  {
+   "id": "trench",
+   "rubrique": "veste",
+   "pour": "m",
+   "nom": {
+    "fr": "Trench",
+    "en": "Trench coat"
+   },
+   "description": {
+    "fr": "trench beige ceinturé",
+    "en": "belted beige trench coat"
+   },
+   "en": "belted beige trench coat"
+  },
+  {
+   "id": "manteau_laine",
+   "rubrique": "veste",
+   "pour": "m",
+   "nom": {
+    "fr": "Manteau en laine",
+    "en": "Wool coat"
+   },
+   "description": {
+    "fr": "long manteau en laine camel",
+    "en": "long camel wool coat"
+   },
+   "en": "long camel wool coat"
+  },
+  {
+   "id": "manteau_cachemire",
+   "rubrique": "veste",
+   "pour": "m",
+   "nom": {
+    "fr": "Manteau en cachemire",
+    "en": "Cashmere coat"
+   },
+   "description": {
+    "fr": "manteau long en cachemire gris",
+    "en": "long grey cashmere coat"
+   },
+   "en": "long grey cashmere coat"
+  },
+  {
+   "id": "doudoune",
+   "rubrique": "veste",
+   "pour": "m",
+   "nom": {
+    "fr": "Doudoune",
+    "en": "Puffer jacket"
+   },
+   "description": {
+    "fr": "doudoune matelassée",
+    "en": "quilted puffer jacket"
+   },
+   "en": "quilted puffer jacket"
+  },
+  {
+   "id": "veste_jean",
+   "rubrique": "veste",
+   "pour": "m",
+   "nom": {
+    "fr": "Veste en jean",
+    "en": "Denim jacket"
+   },
+   "description": {
+    "fr": "veste en jean délavé",
+    "en": "washed denim jacket"
+   },
+   "en": "washed denim jacket"
+  },
+  {
+   "id": "parka",
+   "rubrique": "veste",
+   "pour": "m",
+   "nom": {
+    "fr": "Parka",
+    "en": "Parka"
+   },
+   "description": {
+    "fr": "parka kaki à capuche",
+    "en": "khaki hooded parka"
+   },
+   "en": "khaki hooded parka"
+  },
+  {
+   "id": "fourrure_synth",
+   "rubrique": "veste",
+   "pour": "f",
+   "nom": {
+    "fr": "Manteau fausse fourrure",
+    "en": "Faux fur coat"
+   },
+   "description": {
+    "fr": "manteau en fausse fourrure",
+    "en": "faux fur coat"
+   },
+   "en": "faux fur coat"
+  },
+  {
+   "id": "cape",
+   "rubrique": "veste",
+   "pour": "f",
+   "nom": {
+    "fr": "Cape",
+    "en": "Cape"
+   },
+   "description": {
+    "fr": "cape en laine",
+    "en": "wool cape"
+   },
+   "en": "wool cape"
+  },
+  {
+   "id": "baskets_blanches",
+   "rubrique": "chaussures",
+   "pour": "m",
+   "nom": {
+    "fr": "Baskets blanches",
+    "en": "White sneakers"
+   },
+   "description": {
+    "fr": "baskets blanches en cuir",
+    "en": "white leather sneakers"
+   },
+   "en": "white leather sneakers"
+  },
+  {
+   "id": "baskets_course",
+   "rubrique": "chaussures",
+   "pour": "m",
+   "nom": {
+    "fr": "Chaussures de course",
+    "en": "Running shoes"
+   },
+   "description": {
+    "fr": "chaussures de course légères",
+    "en": "light running shoes"
+   },
+   "en": "light running shoes"
+  },
+  {
+   "id": "mocassins",
+   "rubrique": "chaussures",
+   "pour": "m",
+   "nom": {
+    "fr": "Mocassins",
+    "en": "Loafers"
+   },
+   "description": {
+    "fr": "mocassins en cuir",
+    "en": "leather loafers"
+   },
+   "en": "leather loafers"
+  },
+  {
+   "id": "richelieus",
+   "rubrique": "chaussures",
+   "pour": "h",
+   "nom": {
+    "fr": "Richelieus",
+    "en": "Oxford shoes"
+   },
+   "description": {
+    "fr": "richelieus en cuir noir ciré",
+    "en": "polished black leather oxford shoes"
+   },
+   "en": "polished black leather oxford shoes"
+  },
+  {
+   "id": "derbies",
+   "rubrique": "chaussures",
+   "pour": "h",
+   "nom": {
+    "fr": "Derbies",
+    "en": "Derby shoes"
+   },
+   "description": {
+    "fr": "derbies en cuir marron",
+    "en": "brown leather derby shoes"
+   },
+   "en": "brown leather derby shoes"
+  },
+  {
+   "id": "bottines",
+   "rubrique": "chaussures",
+   "pour": "m",
+   "nom": {
+    "fr": "Bottines",
+    "en": "Ankle boots"
+   },
+   "description": {
+    "fr": "bottines en cuir",
+    "en": "leather ankle boots"
+   },
+   "en": "leather ankle boots"
+  },
+  {
+   "id": "bottes_hautes",
+   "rubrique": "chaussures",
+   "pour": "f",
+   "nom": {
+    "fr": "Bottes hautes",
+    "en": "Knee-high boots"
+   },
+   "description": {
+    "fr": "bottes hautes en cuir au genou",
+    "en": "knee-high leather boots"
+   },
+   "en": "knee-high leather boots"
+  },
+  {
+   "id": "santiags",
+   "rubrique": "chaussures",
+   "pour": "m",
+   "nom": {
+    "fr": "Santiags",
+    "en": "Cowboy boots"
+   },
+   "description": {
+    "fr": "santiags en cuir",
+    "en": "leather cowboy boots"
+   },
+   "en": "leather cowboy boots"
+  },
+  {
+   "id": "boots_chantier",
+   "rubrique": "chaussures",
+   "pour": "m",
+   "nom": {
+    "fr": "Chaussures de sécurité",
+    "en": "Work boots"
+   },
+   "description": {
+    "fr": "chaussures montantes de travail",
+    "en": "high work boots"
+   },
+   "en": "high work boots"
+  },
+  {
+   "id": "escarpins_hauts",
+   "rubrique": "chaussures",
+   "pour": "f",
+   "nom": {
+    "fr": "Escarpins talons hauts",
+    "en": "High-heeled pumps"
+   },
+   "description": {
+    "fr": "escarpins à talons hauts de 10 cm",
+    "en": "4-inch high-heeled pumps"
+   },
+   "en": "4-inch high-heeled pumps"
+  },
+  {
+   "id": "escarpins_moyens",
+   "rubrique": "chaussures",
+   "pour": "f",
+   "nom": {
+    "fr": "Escarpins talons moyens",
+    "en": "Mid-heel pumps"
+   },
+   "description": {
+    "fr": "escarpins à talons moyens de 6 cm",
+    "en": "mid-heel pumps"
+   },
+   "en": "mid-heel pumps"
+  },
+  {
+   "id": "talons_bas",
+   "rubrique": "chaussures",
+   "pour": "f",
+   "nom": {
+    "fr": "Petits talons",
+    "en": "Kitten heels"
+   },
+   "description": {
+    "fr": "chaussures à petits talons",
+    "en": "kitten heels"
+   },
+   "en": "kitten heels"
+  },
+  {
+   "id": "ballerines",
+   "rubrique": "chaussures",
+   "pour": "f",
+   "nom": {
+    "fr": "Ballerines",
+    "en": "Ballet flats"
+   },
+   "description": {
+    "fr": "ballerines plates",
+    "en": "flat ballet shoes"
+   },
+   "en": "flat ballet shoes"
+  },
+  {
+   "id": "sandales",
+   "rubrique": "chaussures",
+   "pour": "m",
+   "nom": {
+    "fr": "Sandales",
+    "en": "Sandals"
+   },
+   "description": {
+    "fr": "sandales en cuir",
+    "en": "leather sandals"
+   },
+   "en": "leather sandals"
+  },
+  {
+   "id": "sandales_talons",
+   "rubrique": "chaussures",
+   "pour": "f",
+   "nom": {
+    "fr": "Sandales à talons",
+    "en": "Heeled sandals"
+   },
+   "description": {
+    "fr": "sandales fines à talons",
+    "en": "strappy heeled sandals"
+   },
+   "en": "strappy heeled sandals"
+  },
+  {
+   "id": "espadrilles",
+   "rubrique": "chaussures",
+   "pour": "m",
+   "nom": {
+    "fr": "Espadrilles",
+    "en": "Espadrilles"
+   },
+   "description": {
+    "fr": "espadrilles en toile",
+    "en": "canvas espadrilles"
+   },
+   "en": "canvas espadrilles"
+  },
+  {
+   "id": "vernis",
+   "rubrique": "chaussures",
+   "pour": "h",
+   "nom": {
+    "fr": "Chaussures vernies",
+    "en": "Patent shoes"
+   },
+   "description": {
+    "fr": "chaussures vernies noires",
+    "en": "black patent shoes"
+   },
+   "en": "black patent shoes"
+  },
+  {
+   "id": "casquette",
+   "rubrique": "chapeau",
+   "pour": "m",
+   "nom": {
+    "fr": "Casquette",
+    "en": "Baseball cap"
+   },
+   "description": {
+    "fr": "casquette de baseball",
+    "en": "baseball cap"
+   },
+   "en": "baseball cap"
+  },
+  {
+   "id": "casquette_gavroche",
+   "rubrique": "chapeau",
+   "pour": "m",
+   "nom": {
+    "fr": "Casquette gavroche",
+    "en": "Newsboy cap"
+   },
+   "description": {
+    "fr": "casquette gavroche en tweed",
+    "en": "tweed newsboy cap"
+   },
+   "en": "tweed newsboy cap"
+  },
+  {
+   "id": "borsalino",
+   "rubrique": "chapeau",
+   "pour": "h",
+   "nom": {
+    "fr": "Borsalino",
+    "en": "Fedora"
+   },
+   "description": {
+    "fr": "chapeau feutre type borsalino",
+    "en": "felt fedora hat"
+   },
+   "en": "felt fedora hat"
+  },
+  {
+   "id": "texan",
+   "rubrique": "chapeau",
+   "pour": "m",
+   "nom": {
+    "fr": "Chapeau de cow-boy",
+    "en": "Cowboy hat"
+   },
+   "description": {
+    "fr": "chapeau texan en feutre",
+    "en": "felt cowboy hat"
+   },
+   "en": "felt cowboy hat"
+  },
+  {
+   "id": "panama",
+   "rubrique": "chapeau",
+   "pour": "m",
+   "nom": {
+    "fr": "Panama",
+    "en": "Panama hat"
+   },
+   "description": {
+    "fr": "chapeau panama en paille",
+    "en": "straw panama hat"
+   },
+   "en": "straw panama hat"
+  },
+  {
+   "id": "bonnet",
+   "rubrique": "chapeau",
+   "pour": "m",
+   "nom": {
+    "fr": "Bonnet",
+    "en": "Beanie"
+   },
+   "description": {
+    "fr": "bonnet en laine",
+    "en": "wool beanie"
+   },
+   "en": "wool beanie"
+  },
+  {
+   "id": "beret",
+   "rubrique": "chapeau",
+   "pour": "m",
+   "nom": {
+    "fr": "Béret",
+    "en": "Beret"
+   },
+   "description": {
+    "fr": "béret en laine",
+    "en": "wool beret"
+   },
+   "en": "wool beret"
+  },
+  {
+   "id": "capeline",
+   "rubrique": "chapeau",
+   "pour": "f",
+   "nom": {
+    "fr": "Capeline",
+    "en": "Wide-brimmed hat"
+   },
+   "description": {
+    "fr": "capeline à large bord",
+    "en": "wide-brimmed sun hat"
+   },
+   "en": "wide-brimmed sun hat"
+  },
+  {
+   "id": "chapeau_haut",
+   "rubrique": "chapeau",
+   "pour": "h",
+   "nom": {
+    "fr": "Haut-de-forme",
+    "en": "Top hat"
+   },
+   "description": {
+    "fr": "chapeau haut-de-forme noir",
+    "en": "black top hat"
+   },
+   "en": "black top hat"
+  },
+  {
+   "id": "casquette_pilote",
+   "rubrique": "chapeau",
+   "pour": "m",
+   "nom": {
+    "fr": "Casquette de pilote",
+    "en": "Pilot cap"
+   },
+   "description": {
+    "fr": "casquette d'uniforme de pilote",
+    "en": "pilot uniform cap"
+   },
+   "en": "pilot uniform cap"
+  },
+  {
+   "id": "lunettes_soleil",
+   "rubrique": "accessoire",
+   "pour": "m",
+   "nom": {
+    "fr": "Lunettes de soleil",
+    "en": "Sunglasses"
+   },
+   "description": {
+    "fr": "lunettes de soleil aviateur",
+    "en": "aviator sunglasses"
+   },
+   "en": "aviator sunglasses"
+  },
+  {
+   "id": "lunettes_vue",
+   "rubrique": "accessoire",
+   "pour": "m",
+   "nom": {
+    "fr": "Lunettes de vue",
+    "en": "Glasses"
+   },
+   "description": {
+    "fr": "lunettes de vue à monture fine",
+    "en": "thin-framed glasses"
+   },
+   "en": "thin-framed glasses"
+  },
+  {
+   "id": "cravate",
+   "rubrique": "accessoire",
+   "pour": "h",
+   "nom": {
+    "fr": "Cravate",
+    "en": "Tie"
+   },
+   "description": {
+    "fr": "cravate en soie unie",
+    "en": "plain silk tie"
+   },
+   "en": "plain silk tie"
+  },
+  {
+   "id": "noeud_pap",
+   "rubrique": "accessoire",
+   "pour": "h",
+   "nom": {
+    "fr": "Nœud papillon",
+    "en": "Bow tie"
+   },
+   "description": {
+    "fr": "nœud papillon noir",
+    "en": "black bow tie"
+   },
+   "en": "black bow tie"
+  },
+  {
+   "id": "echarpe",
+   "rubrique": "accessoire",
+   "pour": "m",
+   "nom": {
+    "fr": "Écharpe",
+    "en": "Scarf"
+   },
+   "description": {
+    "fr": "écharpe en laine",
+    "en": "wool scarf"
+   },
+   "en": "wool scarf"
+  },
+  {
+   "id": "foulard",
+   "rubrique": "accessoire",
+   "pour": "f",
+   "nom": {
+    "fr": "Foulard",
+    "en": "Silk scarf"
+   },
+   "description": {
+    "fr": "foulard en soie noué au cou",
+    "en": "silk scarf tied at the neck"
+   },
+   "en": "silk scarf tied at the neck"
+  },
+  {
+   "id": "sac_main",
+   "rubrique": "accessoire",
+   "pour": "f",
+   "nom": {
+    "fr": "Sac à main",
+    "en": "Handbag"
+   },
+   "description": {
+    "fr": "sac à main en cuir",
+    "en": "leather handbag"
+   },
+   "en": "leather handbag"
+  },
+  {
+   "id": "pochette",
+   "rubrique": "accessoire",
+   "pour": "f",
+   "nom": {
+    "fr": "Pochette",
+    "en": "Clutch"
+   },
+   "description": {
+    "fr": "pochette de soirée",
+    "en": "evening clutch"
+   },
+   "en": "evening clutch"
+  },
+  {
+   "id": "montre",
+   "rubrique": "accessoire",
+   "pour": "m",
+   "nom": {
+    "fr": "Montre",
+    "en": "Watch"
+   },
+   "description": {
+    "fr": "montre classique à bracelet cuir",
+    "en": "classic leather-strap watch"
+   },
+   "en": "classic leather-strap watch"
+  },
+  {
+   "id": "collier_perles",
+   "rubrique": "accessoire",
+   "pour": "f",
+   "nom": {
+    "fr": "Collier de perles",
+    "en": "Pearl necklace"
+   },
+   "description": {
+    "fr": "collier de perles",
+    "en": "pearl necklace"
+   },
+   "en": "pearl necklace"
+  },
+  {
+   "id": "gants_cuir",
+   "rubrique": "accessoire",
+   "pour": "m",
+   "nom": {
+    "fr": "Gants en cuir",
+    "en": "Leather gloves"
+   },
+   "description": {
+    "fr": "gants en cuir fins",
+    "en": "thin leather gloves"
+   },
+   "en": "thin leather gloves"
+  },
+  {
+   "id": "ceinture",
+   "rubrique": "accessoire",
+   "pour": "m",
+   "nom": {
+    "fr": "Ceinture",
+    "en": "Belt"
+   },
+   "description": {
+    "fr": "ceinture en cuir",
+    "en": "leather belt"
+   },
+   "en": "leather belt"
+  },
+  {
+   "id": "luxe",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Luxe",
+    "en": "Luxury"
+   },
+   "description": {
+    "fr": "finitions de luxe, coupe impeccable",
+    "en": "luxury finish, impeccable tailoring"
+   },
+   "en": "luxury finish, impeccable tailoring"
+  },
+  {
+   "id": "cachemire",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Cachemire",
+    "en": "Cashmere"
+   },
+   "description": {
+    "fr": "en cachemire",
+    "en": "made of cashmere"
+   },
+   "en": "made of cashmere"
+  },
+  {
+   "id": "cuir",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Cuir",
+    "en": "Leather"
+   },
+   "description": {
+    "fr": "en cuir",
+    "en": "made of leather"
+   },
+   "en": "made of leather"
+  },
+  {
+   "id": "daim",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Daim",
+    "en": "Suede"
+   },
+   "description": {
+    "fr": "en daim",
+    "en": "made of suede"
+   },
+   "en": "made of suede"
+  },
+  {
+   "id": "laine",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Laine",
+    "en": "Wool"
+   },
+   "description": {
+    "fr": "en laine",
+    "en": "made of wool"
+   },
+   "en": "made of wool"
+  },
+  {
+   "id": "lin",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Lin",
+    "en": "Linen"
+   },
+   "description": {
+    "fr": "en lin",
+    "en": "made of linen"
+   },
+   "en": "made of linen"
+  },
+  {
+   "id": "soie",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Soie",
+    "en": "Silk"
+   },
+   "description": {
+    "fr": "en soie",
+    "en": "made of silk"
+   },
+   "en": "made of silk"
+  },
+  {
+   "id": "velours",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Velours",
+    "en": "Velvet"
+   },
+   "description": {
+    "fr": "en velours",
+    "en": "made of velvet"
+   },
+   "en": "made of velvet"
+  },
+  {
+   "id": "denim",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Jean",
+    "en": "Denim"
+   },
+   "description": {
+    "fr": "en jean",
+    "en": "made of denim"
+   },
+   "en": "made of denim"
+  },
+  {
+   "id": "tweed",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Tweed",
+    "en": "Tweed"
+   },
+   "description": {
+    "fr": "en tweed",
+    "en": "made of tweed"
+   },
+   "en": "made of tweed"
+  },
+  {
+   "id": "satin",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Satin",
+    "en": "Satin"
+   },
+   "description": {
+    "fr": "en satin",
+    "en": "made of satin"
+   },
+   "en": "made of satin"
+  },
+  {
+   "id": "coton",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Coton",
+    "en": "Cotton"
+   },
+   "description": {
+    "fr": "en coton",
+    "en": "made of cotton"
+   },
+   "en": "made of cotton"
+  },
+  {
+   "id": "paillettes",
+   "rubrique": "matiere",
+   "pour": "m",
+   "nom": {
+    "fr": "Paillettes",
+    "en": "Sequins"
+   },
+   "description": {
+    "fr": "à paillettes",
+    "en": "with sequins"
+   },
+   "en": "with sequins"
+  },
+  {
+   "id": "t_tailleur_sombre",
+   "rubrique": "tenue",
+   "pour": "f",
+   "nom": {
+    "fr": "Tailleur sombre",
+    "en": "Dark trouser suit"
+   },
+   "description": {
+    "fr": "tailleur veste et pantalon bleu marine, chemisier blanc, escarpins noirs",
+    "en": "navy blue trouser suit, white blouse, black pumps"
+   },
+   "en": "navy blue trouser suit, white blouse, black pumps"
+  },
+  {
+   "id": "t_costume_cravate",
+   "rubrique": "tenue",
+   "pour": "h",
+   "nom": {
+    "fr": "Costume cravate",
+    "en": "Suit and tie"
+   },
+   "description": {
+    "fr": "costume gris anthracite, chemise blanche, cravate unie, richelieus noirs",
+    "en": "charcoal grey suit, white shirt, plain tie, black oxford shoes"
+   },
+   "en": "charcoal grey suit, white shirt, plain tie, black oxford shoes"
+  },
+  {
+   "id": "t_chic_decontracte",
+   "rubrique": "tenue",
+   "pour": "h",
+   "nom": {
+    "fr": "Chic décontracté",
+    "en": "Smart casual"
+   },
+   "description": {
+    "fr": "blazer bleu, chemise blanche ouverte, chino beige, mocassins",
+    "en": "navy blazer, open white shirt, beige chinos, loafers"
+   },
+   "en": "navy blazer, open white shirt, beige chinos, loafers"
+  },
+  {
+   "id": "t_robe_soiree",
+   "rubrique": "tenue",
+   "pour": "f",
+   "nom": {
+    "fr": "Robe de soirée",
+    "en": "Evening gown"
+   },
+   "description": {
+    "fr": "longue robe de soirée noire, bijoux discrets, sandales à talons",
+    "en": "long black evening gown, discreet jewellery, heeled sandals"
+   },
+   "en": "long black evening gown, discreet jewellery, heeled sandals"
+  },
+  {
+   "id": "t_smoking",
+   "rubrique": "tenue",
+   "pour": "h",
+   "nom": {
+    "fr": "Smoking",
+    "en": "Tuxedo"
+   },
+   "description": {
+    "fr": "smoking noir, chemise blanche, nœud papillon, chaussures vernies",
+    "en": "black tuxedo, white shirt, bow tie, patent shoes"
+   },
+   "en": "black tuxedo, white shirt, bow tie, patent shoes"
+  },
+  {
+   "id": "t_hiver_ville",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Hiver en ville",
+    "en": "Winter in town"
+   },
+   "description": {
+    "fr": "manteau en laine camel, écharpe, pull col roulé, bottines",
+    "en": "camel wool coat, scarf, turtleneck, ankle boots"
+   },
+   "en": "camel wool coat, scarf, turtleneck, ankle boots"
+  },
+  {
+   "id": "t_jean_baskets",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Jean et baskets",
+    "en": "Jeans and sneakers"
+   },
+   "description": {
+    "fr": "jean bleu, tee-shirt blanc, baskets blanches",
+    "en": "blue jeans, white t-shirt, white sneakers"
+   },
+   "en": "blue jeans, white t-shirt, white sneakers"
+  },
+  {
+   "id": "t_sport",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Sport",
+    "en": "Sport"
+   },
+   "description": {
+    "fr": "tenue de sport technique, chaussures de course",
+    "en": "technical sportswear, running shoes"
+   },
+   "en": "technical sportswear, running shoes"
+  },
+  {
+   "id": "t_plage",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Plage",
+    "en": "Beach"
+   },
+   "description": {
+    "fr": "chemise de lin ouverte, short, espadrilles, lunettes de soleil, panama",
+    "en": "open linen shirt, shorts, espadrilles, sunglasses, panama hat"
+   },
+   "en": "open linen shirt, shorts, espadrilles, sunglasses, panama hat"
+  },
+  {
+   "id": "t_western",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Western",
+    "en": "Western"
+   },
+   "description": {
+    "fr": "chemise en jean, jean, santiags, chapeau de cow-boy",
+    "en": "denim shirt, jeans, cowboy boots, cowboy hat"
+   },
+   "en": "denim shirt, jeans, cowboy boots, cowboy hat"
+  },
+  {
+   "id": "t_pilote_ligne",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Pilote de ligne",
+    "en": "Airline pilot"
+   },
+   "description": {
+    "fr": "uniforme de pilote bleu marine à galons dorés, chemise blanche, cravate, casquette",
+    "en": "navy airline pilot uniform with gold stripes, white shirt, tie, pilot cap"
+   },
+   "en": "navy airline pilot uniform with gold stripes, white shirt, tie, pilot cap"
+  },
+  {
+   "id": "t_pilote_prive",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Pilote privé",
+    "en": "Private pilot"
+   },
+   "description": {
+    "fr": "blouson d'aviateur en cuir, chemise, chino, lunettes aviateur, casque audio au cou",
+    "en": "leather flight jacket, shirt, chinos, aviator sunglasses, headset around the neck"
+   },
+   "en": "leather flight jacket, shirt, chinos, aviator sunglasses, headset around the neck"
+  },
+  {
+   "id": "t_medecin",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Médecin",
+    "en": "Doctor"
+   },
+   "description": {
+    "fr": "blouse blanche, stéthoscope, tenue de ville",
+    "en": "white coat, stethoscope, city clothes"
+   },
+   "en": "white coat, stethoscope, city clothes"
+  },
+  {
+   "id": "t_pharmacien",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Pharmacien",
+    "en": "Pharmacist"
+   },
+   "description": {
+    "fr": "blouse blanche de pharmacie, badge, chemise",
+    "en": "white pharmacy coat, name badge, shirt"
+   },
+   "en": "white pharmacy coat, name badge, shirt"
+  },
+  {
+   "id": "t_serveur",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Serveur",
+    "en": "Waiter"
+   },
+   "description": {
+    "fr": "chemise blanche, gilet noir, long tablier noir, nœud papillon",
+    "en": "white shirt, black waistcoat, long black apron, bow tie"
+   },
+   "en": "white shirt, black waistcoat, long black apron, bow tie"
+  },
+  {
+   "id": "t_chauffeur",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Chauffeur",
+    "en": "Chauffeur"
+   },
+   "description": {
+    "fr": "costume noir, casquette de chauffeur, gants",
+    "en": "black suit, chauffeur cap, gloves"
+   },
+   "en": "black suit, chauffeur cap, gloves"
+  },
+  {
+   "id": "t_cuisinier",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Cuisinier",
+    "en": "Chef"
+   },
+   "description": {
+    "fr": "veste de cuisinier blanche, tablier, toque",
+    "en": "white chef jacket, apron, chef hat"
+   },
+   "en": "white chef jacket, apron, chef hat"
+  },
+  {
+   "id": "t_hotesse",
+   "rubrique": "tenue",
+   "pour": "f",
+   "nom": {
+    "fr": "Hôtesse de l'air",
+    "en": "Flight attendant"
+   },
+   "description": {
+    "fr": "uniforme d'hôtesse, foulard noué, escarpins moyens",
+    "en": "flight attendant uniform, tied scarf, mid-heel pumps"
+   },
+   "en": "flight attendant uniform, tied scarf, mid-heel pumps"
+  },
+  {
+   "id": "t_ouvrier",
+   "rubrique": "tenue",
+   "pour": "m",
+   "nom": {
+    "fr": "Ouvrier",
+    "en": "Worker"
+   },
+   "description": {
+    "fr": "combinaison de travail, gilet fluorescent, chaussures de sécurité",
+    "en": "work overalls, high-visibility vest, safety boots"
+   },
+   "en": "work overalls, high-visibility vest, safety boots"
+  },
+  {
+   "id": "piscine",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Piscine",
+    "en": "Swimming pool"
+   },
+   "description": {
+    "fr": "piscine extérieure, eau turquoise, transats, plein soleil",
+    "en": "outdoor swimming pool, turquoise water, sun loungers, bright sun"
+   },
+   "en": "outdoor swimming pool, turquoise water, sun loungers, bright sun"
+  },
+  {
+   "id": "bord_mer",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Bord de mer",
+    "en": "Seaside"
+   },
+   "description": {
+    "fr": "promenade en bord de mer, sable clair, mer calme",
+    "en": "seaside promenade, light sand, calm sea"
+   },
+   "en": "seaside promenade, light sand, calm sea"
+  },
+  {
+   "id": "plage",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Plage",
+    "en": "Beach"
+   },
+   "description": {
+    "fr": "plage de sable fin, vagues douces",
+    "en": "fine sandy beach, gentle waves"
+   },
+   "en": "fine sandy beach, gentle waves"
+  },
+  {
+   "id": "port",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Port",
+    "en": "Harbour"
+   },
+   "description": {
+    "fr": "petit port avec bateaux de pêche et quais en pierre",
+    "en": "small harbour with fishing boats and stone quays"
+   },
+   "en": "small harbour with fishing boats and stone quays"
+  },
+  {
+   "id": "montagne",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Montagne",
+    "en": "Mountains"
+   },
+   "description": {
+    "fr": "sommets enneigés, prairie d'alpage",
+    "en": "snowy peaks, alpine meadow"
+   },
+   "en": "snowy peaks, alpine meadow"
+  },
+  {
+   "id": "foret",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Forêt",
+    "en": "Forest"
+   },
+   "description": {
+    "fr": "forêt de grands arbres, lumière filtrée",
+    "en": "forest of tall trees, filtered light"
+   },
+   "en": "forest of tall trees, filtered light"
+  },
+  {
+   "id": "campagne",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Campagne",
+    "en": "Countryside"
+   },
+   "description": {
+    "fr": "champs et collines, chemin de terre",
+    "en": "fields and hills, dirt road"
+   },
+   "en": "fields and hills, dirt road"
+  },
+  {
+   "id": "jardin",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Jardin",
+    "en": "Garden"
+   },
+   "description": {
+    "fr": "jardin fleuri avec pelouse et massifs",
+    "en": "flowering garden with lawn and flower beds"
+   },
+   "en": "flowering garden with lawn and flower beds"
+  },
+  {
+   "id": "terrasse",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Terrasse",
+    "en": "Terrace"
+   },
+   "description": {
+    "fr": "terrasse ensoleillée avec plantes en pots et vue",
+    "en": "sunny terrace with potted plants and a view"
+   },
+   "en": "sunny terrace with potted plants and a view"
+  },
+  {
+   "id": "maison_salon",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Salon",
+    "en": "Living room"
+   },
+   "description": {
+    "fr": "salon chaleureux, canapé, bibliothèque, lumière douce",
+    "en": "warm living room, sofa, bookshelves, soft light"
+   },
+   "en": "warm living room, sofa, bookshelves, soft light"
+  },
+  {
+   "id": "maison_cuisine",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Cuisine",
+    "en": "Kitchen"
+   },
+   "description": {
+    "fr": "cuisine claire et moderne, plan de travail",
+    "en": "bright modern kitchen, worktop"
+   },
+   "en": "bright modern kitchen, worktop"
+  },
+  {
+   "id": "maison_chambre",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Chambre",
+    "en": "Bedroom"
+   },
+   "description": {
+    "fr": "chambre calme, lit, lumière du matin",
+    "en": "quiet bedroom, bed, morning light"
+   },
+   "en": "quiet bedroom, bed, morning light"
+  },
+  {
+   "id": "villa",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Villa",
+    "en": "Villa"
+   },
+   "description": {
+    "fr": "villa méditerranéenne avec piscine et oliviers",
+    "en": "Mediterranean villa with pool and olive trees"
+   },
+   "en": "Mediterranean villa with pool and olive trees"
+  },
+  {
+   "id": "bureau",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Bureau de direction",
+    "en": "Executive office"
+   },
+   "description": {
+    "fr": "grand bureau de direction, baie vitrée, bois et cuir",
+    "en": "large executive office, picture window, wood and leather"
+   },
+   "en": "large executive office, picture window, wood and leather"
+  },
+  {
+   "id": "open_space",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Open space",
+    "en": "Open-plan office"
+   },
+   "description": {
+    "fr": "plateau de bureaux moderne, écrans",
+    "en": "modern open-plan office, screens"
+   },
+   "en": "modern open-plan office, screens"
+  },
+  {
+   "id": "salle_reunion",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Salle de réunion",
+    "en": "Meeting room"
+   },
+   "description": {
+    "fr": "salle de réunion, grande table, écran",
+    "en": "meeting room, long table, screen"
+   },
+   "en": "meeting room, long table, screen"
+  },
+  {
+   "id": "restaurant",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Restaurant",
+    "en": "Restaurant"
+   },
+   "description": {
+    "fr": "salle de restaurant élégante, tables dressées",
+    "en": "elegant restaurant dining room, set tables"
+   },
+   "en": "elegant restaurant dining room, set tables"
+  },
+  {
+   "id": "bar",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Bar",
+    "en": "Bar"
+   },
+   "description": {
+    "fr": "bar feutré, comptoir en bois, lumière tamisée",
+    "en": "cosy bar, wooden counter, dim light"
+   },
+   "en": "cosy bar, wooden counter, dim light"
+  },
+  {
+   "id": "hotel",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Hall d'hôtel",
+    "en": "Hotel lobby"
+   },
+   "description": {
+    "fr": "hall d'hôtel de luxe, marbre, lustres",
+    "en": "luxury hotel lobby, marble, chandeliers"
+   },
+   "en": "luxury hotel lobby, marble, chandeliers"
+  },
+  {
+   "id": "escalier_marbre",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Escalier d'honneur",
+    "en": "Grand staircase"
+   },
+   "description": {
+    "fr": "grand escalier en marbre, boiseries",
+    "en": "grand marble staircase, wood panelling"
+   },
+   "en": "grand marble staircase, wood panelling"
+  },
+  {
+   "id": "rue_nuit",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Rue de ville la nuit",
+    "en": "City street at night"
+   },
+   "description": {
+    "fr": "rue de ville la nuit, vitrines éclairées, pavés mouillés",
+    "en": "city street at night, lit shop windows, wet cobblestones"
+   },
+   "en": "city street at night, lit shop windows, wet cobblestones"
+  },
+  {
+   "id": "place_village",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Place de village",
+    "en": "Village square"
+   },
+   "description": {
+    "fr": "place de village avec fontaine et platanes",
+    "en": "village square with fountain and plane trees"
+   },
+   "en": "village square with fountain and plane trees"
+  },
+  {
+   "id": "parc",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Parc",
+    "en": "Park"
+   },
+   "description": {
+    "fr": "parc urbain, allées, bancs",
+    "en": "city park, paths, benches"
+   },
+   "en": "city park, paths, benches"
+  },
+  {
+   "id": "aeroport",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Aéroport",
+    "en": "Airport"
+   },
+   "description": {
+    "fr": "terminal d'aéroport lumineux, grandes baies",
+    "en": "bright airport terminal, large windows"
+   },
+   "en": "bright airport terminal, large windows"
+  },
+  {
+   "id": "aerodrome",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Aérodrome",
+    "en": "Airfield"
+   },
+   "description": {
+    "fr": "petit aérodrome, piste en herbe, manche à air",
+    "en": "small airfield, grass runway, windsock"
+   },
+   "en": "small airfield, grass runway, windsock"
+  },
+  {
+   "id": "hangar",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Hangar",
+    "en": "Hangar"
+   },
+   "description": {
+    "fr": "hangar d'aviation avec avion léger",
+    "en": "aircraft hangar with a light aircraft"
+   },
+   "en": "aircraft hangar with a light aircraft"
+  },
+  {
+   "id": "gare",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Gare",
+    "en": "Railway station"
+   },
+   "description": {
+    "fr": "hall de gare avec verrière",
+    "en": "station hall with glass roof"
+   },
+   "en": "station hall with glass roof"
+  },
+  {
+   "id": "cathedrale",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Cathédrale",
+    "en": "Cathedral"
+   },
+   "description": {
+    "fr": "cathédrale gothique, vitraux, voûtes",
+    "en": "gothic cathedral, stained glass, vaults"
+   },
+   "en": "gothic cathedral, stained glass, vaults"
+  },
+  {
+   "id": "chateau",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Château",
+    "en": "Castle"
+   },
+   "description": {
+    "fr": "château avec jardins à la française",
+    "en": "château with formal French gardens"
+   },
+   "en": "château with formal French gardens"
+  },
+  {
+   "id": "tour_eiffel",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Tour Eiffel",
+    "en": "Eiffel Tower"
+   },
+   "description": {
+    "fr": "vue sur la tour Eiffel à Paris",
+    "en": "view of the Eiffel Tower in Paris"
+   },
+   "en": "view of the Eiffel Tower in Paris"
+  },
+  {
+   "id": "colisee",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Colisée",
+    "en": "Colosseum"
+   },
+   "description": {
+    "fr": "le Colisée à Rome",
+    "en": "the Colosseum in Rome"
+   },
+   "en": "the Colosseum in Rome"
+  },
+  {
+   "id": "pont_ville",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Pont en ville",
+    "en": "City bridge"
+   },
+   "description": {
+    "fr": "pont de pierre sur un fleuve en ville",
+    "en": "stone bridge over a river in a city"
+   },
+   "en": "stone bridge over a river in a city"
+  },
+  {
+   "id": "pharmacie",
+   "rubrique": "lieu",
+   "pour": "m",
+   "nom": {
+    "fr": "Pharmacie",
+    "en": "Pharmacy"
+   },
+   "description": {
+    "fr": "officine moderne, comptoir, rayonnages lumineux",
+    "en": "modern pharmacy, counter, bright shelves"
+   },
+   "en": "modern pharmacy, counter, bright shelves"
+  },
+  {
+   "id": "limousine",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Limousine",
+    "en": "Limousine"
+   },
+   "description": {
+    "fr": "longue limousine noire, carrosserie brillante",
+    "en": "long black limousine, glossy bodywork"
+   },
+   "en": "long black limousine, glossy bodywork"
+  },
+  {
+   "id": "sportive",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Voiture de sport",
+    "en": "Sports car"
+   },
+   "description": {
+    "fr": "voiture de sport rouge, basse et profilée",
+    "en": "low sleek red sports car"
+   },
+   "en": "low sleek red sports car"
+  },
+  {
+   "id": "citadine",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Citadine",
+    "en": "City car"
+   },
+   "description": {
+    "fr": "petite citadine moderne",
+    "en": "small modern city car"
+   },
+   "en": "small modern city car"
+  },
+  {
+   "id": "berline",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Berline",
+    "en": "Saloon"
+   },
+   "description": {
+    "fr": "grande berline sombre",
+    "en": "large dark saloon car"
+   },
+   "en": "large dark saloon car"
+  },
+  {
+   "id": "suv",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "SUV",
+    "en": "SUV"
+   },
+   "description": {
+    "fr": "SUV haut et robuste",
+    "en": "tall rugged SUV"
+   },
+   "en": "tall rugged SUV"
+  },
+  {
+   "id": "cabriolet",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Cabriolet",
+    "en": "Convertible"
+   },
+   "description": {
+    "fr": "cabriolet décapoté",
+    "en": "convertible with the top down"
+   },
+   "en": "convertible with the top down"
+  },
+  {
+   "id": "ancienne",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Voiture ancienne",
+    "en": "Classic car"
+   },
+   "description": {
+    "fr": "voiture de collection des années 1960",
+    "en": "1960s classic car"
+   },
+   "en": "1960s classic car"
+  },
+  {
+   "id": "pickup",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Pick-up",
+    "en": "Pick-up truck"
+   },
+   "description": {
+    "fr": "pick-up américain",
+    "en": "American pick-up truck"
+   },
+   "en": "American pick-up truck"
+  },
+  {
+   "id": "taxi",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Taxi",
+    "en": "Taxi"
+   },
+   "description": {
+    "fr": "taxi avec lumineux sur le toit",
+    "en": "taxi with roof sign"
+   },
+   "en": "taxi with roof sign"
+  },
+  {
+   "id": "van",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Fourgon",
+    "en": "Van"
+   },
+   "description": {
+    "fr": "fourgon utilitaire blanc",
+    "en": "white delivery van"
+   },
+   "en": "white delivery van"
+  },
+  {
+   "id": "moto",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Moto",
+    "en": "Motorbike"
+   },
+   "description": {
+    "fr": "moto routière",
+    "en": "road motorbike"
+   },
+   "en": "road motorbike"
+  },
+  {
+   "id": "scooter",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Scooter",
+    "en": "Scooter"
+   },
+   "description": {
+    "fr": "scooter urbain",
+    "en": "city scooter"
+   },
+   "en": "city scooter"
+  },
+  {
+   "id": "velo",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Vélo",
+    "en": "Bicycle"
+   },
+   "description": {
+    "fr": "vélo de ville",
+    "en": "city bicycle"
+   },
+   "en": "city bicycle"
+  },
+  {
+   "id": "bus",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Autobus",
+    "en": "Bus"
+   },
+   "description": {
+    "fr": "autobus de ville",
+    "en": "city bus"
+   },
+   "en": "city bus"
+  },
+  {
+   "id": "camion",
+   "rubrique": "vehicule",
+   "pour": "m",
+   "nom": {
+    "fr": "Camion",
+    "en": "Lorry"
+   },
+   "description": {
+    "fr": "camion semi-remorque",
+    "en": "articulated lorry"
+   },
+   "en": "articulated lorry"
+  },
+  {
+   "id": "avion_ligne",
+   "rubrique": "air",
+   "pour": "m",
+   "nom": {
+    "fr": "Avion de ligne",
+    "en": "Airliner"
+   },
+   "description": {
+    "fr": "avion de ligne biréacteur",
+    "en": "twin-engine airliner"
+   },
+   "en": "twin-engine airliner"
+  },
+  {
+   "id": "avion_leger",
+   "rubrique": "air",
+   "pour": "m",
+   "nom": {
+    "fr": "Avion léger",
+    "en": "Light aircraft"
+   },
+   "description": {
+    "fr": "avion léger monomoteur à aile haute",
+    "en": "high-wing single-engine light aircraft"
+   },
+   "en": "high-wing single-engine light aircraft"
+  },
+  {
+   "id": "jet_prive",
+   "rubrique": "air",
+   "pour": "m",
+   "nom": {
+    "fr": "Jet privé",
+    "en": "Private jet"
+   },
+   "description": {
+    "fr": "jet privé d'affaires",
+    "en": "private business jet"
+   },
+   "en": "private business jet"
+  },
+  {
+   "id": "helicoptere",
+   "rubrique": "air",
+   "pour": "m",
+   "nom": {
+    "fr": "Hélicoptère",
+    "en": "Helicopter"
+   },
+   "description": {
+    "fr": "hélicoptère léger",
+    "en": "light helicopter"
+   },
+   "en": "light helicopter"
+  },
+  {
+   "id": "planeur",
+   "rubrique": "air",
+   "pour": "m",
+   "nom": {
+    "fr": "Planeur",
+    "en": "Glider"
+   },
+   "description": {
+    "fr": "planeur blanc aux longues ailes",
+    "en": "white glider with long wings"
+   },
+   "en": "white glider with long wings"
+  },
+  {
+   "id": "ulm",
+   "rubrique": "air",
+   "pour": "m",
+   "nom": {
+    "fr": "ULM",
+    "en": "Microlight"
+   },
+   "description": {
+    "fr": "ULM pendulaire",
+    "en": "weight-shift microlight"
+   },
+   "en": "weight-shift microlight"
+  },
+  {
+   "id": "montgolfiere",
+   "rubrique": "air",
+   "pour": "m",
+   "nom": {
+    "fr": "Montgolfière",
+    "en": "Hot-air balloon"
+   },
+   "description": {
+    "fr": "montgolfière colorée",
+    "en": "colourful hot-air balloon"
+   },
+   "en": "colourful hot-air balloon"
+  },
+  {
+   "id": "hydravion",
+   "rubrique": "air",
+   "pour": "m",
+   "nom": {
+    "fr": "Hydravion",
+    "en": "Seaplane"
+   },
+   "description": {
+    "fr": "hydravion sur flotteurs",
+    "en": "seaplane on floats"
+   },
+   "en": "seaplane on floats"
+  },
+  {
+   "id": "voilier",
+   "rubrique": "air",
+   "pour": "m",
+   "nom": {
+    "fr": "Voilier",
+    "en": "Sailing boat"
+   },
+   "description": {
+    "fr": "voilier de croisière",
+    "en": "cruising sailing boat"
+   },
+   "en": "cruising sailing boat"
+  },
+  {
+   "id": "yacht",
+   "rubrique": "air",
+   "pour": "m",
+   "nom": {
+    "fr": "Yacht",
+    "en": "Yacht"
+   },
+   "description": {
+    "fr": "yacht de luxe",
+    "en": "luxury yacht"
+   },
+   "en": "luxury yacht"
+  },
+  {
+   "id": "train",
+   "rubrique": "air",
+   "pour": "m",
+   "nom": {
+    "fr": "Train",
+    "en": "Train"
+   },
+   "description": {
+    "fr": "train à grande vitesse",
+    "en": "high-speed train"
+   },
+   "en": "high-speed train"
+  },
+  {
+   "id": "directrice",
+   "rubrique": "personnage",
+   "pour": "f",
+   "nom": {
+    "fr": "Directrice",
+    "en": "Director (woman)"
+   },
+   "description": {
+    "fr": "femme d'une cinquantaine d'années, cheveux courts gris, regard assuré, allure élégante",
+    "en": "woman in her fifties, short grey hair, confident look, elegant bearing"
+   },
+   "en": "woman in her fifties, short grey hair, confident look, elegant bearing"
+  },
+  {
+   "id": "directeur",
+   "rubrique": "personnage",
+   "pour": "h",
+   "nom": {
+    "fr": "Directeur",
+    "en": "Director (man)"
+   },
+   "description": {
+    "fr": "homme d'une cinquantaine d'années, tempes grisonnantes, allure posée",
+    "en": "man in his fifties, greying temples, composed bearing"
+   },
+   "en": "man in his fifties, greying temples, composed bearing"
+  },
+  {
+   "id": "secretaire",
+   "rubrique": "personnage",
+   "pour": "f",
+   "nom": {
+    "fr": "Assistante",
+    "en": "Assistant (woman)"
+   },
+   "description": {
+    "fr": "jeune femme d'une trentaine d'années, cheveux bruns en chignon, sourire",
+    "en": "woman in her thirties, dark hair in a bun, smiling"
+   },
+   "en": "woman in her thirties, dark hair in a bun, smiling"
+  },
+  {
+   "id": "assistant",
+   "rubrique": "personnage",
+   "pour": "h",
+   "nom": {
+    "fr": "Assistant",
+    "en": "Assistant (man)"
+   },
+   "description": {
+    "fr": "jeune homme d'une trentaine d'années, cheveux courts, lunettes",
+    "en": "man in his thirties, short hair, glasses"
+   },
+   "en": "man in his thirties, short hair, glasses"
+  },
+  {
+   "id": "chef_cuisine",
+   "rubrique": "personnage",
+   "pour": "m",
+   "nom": {
+    "fr": "Chef cuisinier",
+    "en": "Chef"
+   },
+   "description": {
+    "fr": "cuisinier d'une quarantaine d'années, barbe courte",
+    "en": "cook in his forties, short beard"
+   },
+   "en": "cook in his forties, short beard"
+  },
+  {
+   "id": "serveur",
+   "rubrique": "personnage",
+   "pour": "m",
+   "nom": {
+    "fr": "Serveur",
+    "en": "Waiter"
+   },
+   "description": {
+    "fr": "serveur d'une vingtaine d'années, cheveux courts",
+    "en": "waiter in his twenties, short hair"
+   },
+   "en": "waiter in his twenties, short hair"
+  },
+  {
+   "id": "medecin",
+   "rubrique": "personnage",
+   "pour": "m",
+   "nom": {
+    "fr": "Médecin",
+    "en": "Doctor"
+   },
+   "description": {
+    "fr": "médecin d'une quarantaine d'années, air rassurant",
+    "en": "doctor in their forties, reassuring look"
+   },
+   "en": "doctor in their forties, reassuring look"
+  },
+  {
+   "id": "pilote",
+   "rubrique": "personnage",
+   "pour": "m",
+   "nom": {
+    "fr": "Pilote",
+    "en": "Pilot"
+   },
+   "description": {
+    "fr": "pilote d'une quarantaine d'années, hâlé, regard concentré",
+    "en": "pilot in their forties, tanned, focused look"
+   },
+   "en": "pilot in their forties, tanned, focused look"
+  },
+  {
+   "id": "enfant",
+   "rubrique": "personnage",
+   "pour": "m",
+   "nom": {
+    "fr": "Enfant",
+    "en": "Child"
+   },
+   "description": {
+    "fr": "enfant de huit ans, joyeux",
+    "en": "eight-year-old child, cheerful"
+   },
+   "en": "eight-year-old child, cheerful"
+  },
+  {
+   "id": "adolescent",
+   "rubrique": "personnage",
+   "pour": "m",
+   "nom": {
+    "fr": "Adolescent",
+    "en": "Teenager"
+   },
+   "description": {
+    "fr": "adolescent de quinze ans, décontracté",
+    "en": "fifteen-year-old teenager, relaxed"
+   },
+   "en": "fifteen-year-old teenager, relaxed"
+  },
+  {
+   "id": "grand_mere",
+   "rubrique": "personnage",
+   "pour": "f",
+   "nom": {
+    "fr": "Grand-mère",
+    "en": "Grandmother"
+   },
+   "description": {
+    "fr": "femme de soixante-quinze ans, cheveux blancs, sourire doux",
+    "en": "seventy-five-year-old woman, white hair, gentle smile"
+   },
+   "en": "seventy-five-year-old woman, white hair, gentle smile"
+  },
+  {
+   "id": "grand_pere",
+   "rubrique": "personnage",
+   "pour": "h",
+   "nom": {
+    "fr": "Grand-père",
+    "en": "Grandfather"
+   },
+   "description": {
+    "fr": "homme de soixante-quinze ans, moustache blanche",
+    "en": "seventy-five-year-old man, white moustache"
+   },
+   "en": "seventy-five-year-old man, white moustache"
+  },
+  {
+   "id": "sportif",
+   "rubrique": "personnage",
+   "pour": "m",
+   "nom": {
+    "fr": "Sportif",
+    "en": "Athlete"
+   },
+   "description": {
+    "fr": "sportif d'une trentaine d'années, silhouette athlétique",
+    "en": "athlete in their thirties, athletic build"
+   },
+   "en": "athlete in their thirties, athletic build"
+  },
+  {
+   "id": "touriste",
+   "rubrique": "personnage",
+   "pour": "m",
+   "nom": {
+    "fr": "Touriste",
+    "en": "Tourist"
+   },
+   "description": {
+    "fr": "touriste avec sac à dos et appareil photo",
+    "en": "tourist with backpack and camera"
+   },
+   "en": "tourist with backpack and camera"
+  }
+ ]
+}

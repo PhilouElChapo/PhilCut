@@ -175,11 +175,29 @@ def _guides_integres():
              {"texte": _("Nom, description (« ✨ Améliorer »), « Création » : réel, inspiré de photos ou inventé.")},
              {"texte": _("« Ajouter des photos… » ou « Image d'un rush… » (ligne rouge sur un rush, puis encadrez) : plusieurs "
                          "angles donnent un meilleur résultat. Pour une personne réelle ou inspirée, cochez l'accord.")},
-             {"texte": _("Tenue : « Tenues toutes faites… » (bureau, soirée, décontracté, uniformes et métiers) ou une tenue à vous ; "
-                         "choisissez-la sur le personnage.")},
+             {"texte": _("Tenue : « Toute faite… », « Composer… » pièce par pièce, ou une tenue à vous ; choisissez-la sur le "
+                         "personnage.")},
              {"texte": _("« Faire sa fiche » (personnage, objet) ou « Faire sa planche » (lieu) : quatre vues, environ 0,04 $, "
                          "puis « Enregistrer ».")},
              {"texte": _("Dans l'assistant, sur chaque carte : « Dans ma bibliothèque », et « Tenue dans cette scène ».")},
+         ]},
+        {"id": "bibliotheque_toute_faite", "etat": "ok",
+         "titre": _("Prendre une description toute faite (tenue, lieu, véhicule, avion, personnage type) ou composer une tenue"),
+         "mots": "toute faite pret catalogue prompt description tenue vetement chaussures chapeau matiere lieu piscine plage "
+                 "monument vehicule limousine berline suv avion helicoptere personnage composer",
+         "intro": _("PhilCut contient une bibliothèque toute faite : tenues complètes, pièces (hauts, bas, robes, vestes, "
+                    "chaussures, chapeaux, accessoires, matières), lieux, véhicules, avions et autres transports, personnages "
+                    "types inventés. Chaque description a ses mots anglais pour les IA. Prenez-en une : elle devient la vôtre, "
+                    "modifiable ; vos propres créations s'ajoutent à côté."),
+         "etapes": [
+             {"texte": _("Fabrique IA › « Ma bibliothèque de créations… » › « Toute faite… »."),
+              "fait": "fenetre:DialogueBibliothequeCreations"},
+             {"texte": _("Choisissez la rubrique, Femme ou Homme, ou cherchez un mot (piscine, cuir, berline…) ; l'image "
+                         "d'exemple montre le résultat.")},
+             {"texte": _("« Ajouter à ma bibliothèque » : modifiez la description si vous voulez, ajoutez vos photos, faites sa "
+                         "fiche ou sa planche.")},
+             {"texte": _("Pour une tenue sur mesure : sur une tenue, « Composer… » ; choisissez pièce par pièce et la matière.")},
+             {"texte": _("Dans l'assistant, sur chaque carte : « Dans ma bibliothèque » › « Toute faite… ».")},
          ]},
         {"id": "relier_rushes", "etat": "ok",
          "titre": _("Recréer ce qui n'a pas été filmé entre deux rushes (relier deux plans)"),

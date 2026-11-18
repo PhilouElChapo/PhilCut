@@ -1,0 +1,38 @@
+# Images d'exemple de la bibliotheque toute faite (0.9.89) : a la main seulement, apres accord sur le prix (environ 0,04 $
+# l'image, cle du secret GEMINI_API_KEY, jamais affichee). Les images vont dans catalogue/exemples (pas de refabrication de
+# PhilCut : catalogue/** est ignore par la fabrication) et arrivent chez les utilisateurs par le catalogue en ligne.
+name: Images d'exemple du catalogue
+
+on:
+  workflow_dispatch:
+    inputs:
+      rubriques:
+        description: "Rubriques (virgules), vide = toutes : tenue,lieu,vehicule,air,personnage,haut,bas,robe,veste,chaussures,chapeau,accessoire"
+        required: false
+        default: "tenue,lieu,vehicule,air,personnage"
+
+permissions:
+  contents: write
+
+jobs:
+  images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -q pillow
+      - name: Images
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: python outils_dev/exemples_prompts.py "${{ github.event.inputs.rubriques }}"
+      - name: Enregistrement
+        run: |
+          git config user.name "PhilCut catalogue"
+          git config user.email "catalogue@users.noreply.github.com"
+          git add catalogue/exemples
+          git diff --cached --quiet && exit 0
+          git commit -m "Catalogue : images d'exemple"
+          git pull -q --rebase origin main
+          git push -q origin main

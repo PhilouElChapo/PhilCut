@@ -356,7 +356,7 @@ def planche_lieu(seq, li, params):
     from . import ia
     mode = li.get("mode") or ("reel" if li.get("images") else "invente")
     refs = [i for i in li.get("images") or [] if os.path.exists(i)] if mode != "invente" else []
-    d = _anglais((li.get("description") or "").strip(), True)
+    d = li.get("en") or _anglais((li.get("description") or "").strip(), True)
     if not refs and not d:
         raise ValueError(_("Ajoutez d'abord une photo ou une description du lieu « {n} ».", n=li.get("nom") or "?"))
     base = ("Location reference sheet: the SAME place shown in four views in a 2x2 grid: wide establishing view, view from "
@@ -383,7 +383,7 @@ def planche_personnage(seq, p, params):
     from . import ia
     mode = p.get("mode") or ("reel" if p.get("images") else "invente")
     refs = [i for i in p.get("images") or [] if os.path.exists(i)] if mode != "invente" else []
-    d = _anglais((p.get("description") or "").strip(), True)
+    d = p.get("en") or _anglais((p.get("description") or "").strip(), True)      # 0.9.89 : mots anglais du catalogue
     if not refs and not d:
         raise ValueError(_("Ajoutez d'abord une image ou une description du personnage « {n} ».", n=p.get("nom") or "?"))
     allure = jeu_du_style(p.get("style", ""), params)       # « à la manière de » : une allure, jamais un visage

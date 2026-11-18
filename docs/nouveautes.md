@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.88 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.89 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.89 (bibliotheque toute faite)
+- "Toute faite…" dans Ma bibliotheque de creations et sur les cartes de l'assistant : 188 descriptions pretes, avec leurs mots anglais pour les IA. Tenues completes ; pieces : hauts, bas, robes, vestes et manteaux, chaussures (baskets, mocassins, bottines, bottes, santiags, escarpins talons hauts, moyens ou petits, ballerines…), chapeaux (casquette, bonnet, borsalino, texan, panama…), accessoires, matieres (luxe, cachemire, cuir, daim, soie…) ; 33 lieux (piscine, bord de mer, monuments, maison, jardin…) ; vehicules (limousine, sportive, citadine, berline, SUV…) ; avions et autres transports (avion de ligne, jet, helicoptere…) ; personnages types inventes.
+- Filtre Femme / Homme et recherche par mot ; image d'exemple quand elle existe. Une description prise devient la votre, modifiable ; vos creations s'ajoutent a cote.
+- Tenue : "Composer…" piece par piece (haut, bas ou robe, veste, chaussures, chapeau, accessoire, matiere).
+
 
 ### 0.9.88 (atelier de creation : personnages, lieux, tenues)
 - Ma bibliotheque de creations : chaque personnage, objet ou lieu se cree "Reel" (vos photos), "Inspire de photos" (ressemblance gardee, adapte par la description) ou "Invente" (description). Plusieurs photos par element ; "Image d'un rush…" prend une image a la ligne rouge dans n'importe quel rush, a encadrer. L'accord de la personne est demande pour "Reel" et "Inspire".

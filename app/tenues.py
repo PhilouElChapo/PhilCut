@@ -84,6 +84,15 @@ def toutes(params):
         pass
     for x in pretes():
         out.append(dict(x, image="", source="pret"))
+    try:                                           # 0.9.89 : les tenues complètes de la bibliothèque toute faite
+        from . import catalogue_prompts as CP
+        vus = {_net(x["nom"]) for x in out}
+        for e in CP.entrees("tenue"):
+            if _net(e["nom_affiche"]) not in vus:
+                out.append({"id": "cat:" + e["id"], "nom": e["nom_affiche"], "description": e["description_affichee"], "en": e["en"],
+                            "image": CP.image(e), "source": "pret", "famille": "tenue"})
+    except Exception:          # noqa: BLE001
+        pass
     return out
 
 
