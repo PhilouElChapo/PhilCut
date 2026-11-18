@@ -637,6 +637,128 @@ def fabriquer_plan(seq, i, params, moteur_video, progression=None, arret=lambda:
     return sortie
 
 
+# ------------------------------------------------------------------ 0.9.90 : séquences continues
+MAX_CONTINU = 15          # secondes d'un seul calcul (Kling O3)
+MAX_PLANS_CONTINU = 6     # plans d'un seul calcul
+
+
+def continu_possible(seq, moteur_video, params):
+    """Plusieurs plans d'un même moment peuvent-ils se faire d'un seul calcul ? (moteur « multi », réglage oui)"""
+    if moteur_video in ("locale", "flow") or not seq.get("continu", params.get("sequence_continue", True)):
+        return False
+    from . import generateurs_video as GV
+    return bool((GV.modele(moteur_video, params) or {}).get("multi"))
+
+
+def _depart_fixe(pl):
+    return bool(pl.get("image") and os.path.exists(pl["image"]) and not pl.get("image_enchainee"))
+
+
+def groupe_continu(seq, i, a_faire, moteur_video, params):
+    """Les plans faits d'un seul calcul à partir du plan i : ceux qui suivent, enchaînés, à faire, sans image de départ à
+    eux, jusqu'à la prochaine image clef (incluse), 15 s et 6 plans au plus. Un seul plan si ce n'est pas possible."""
+    groupe = [i]
+    if not continu_possible(seq, moteur_video, params):
+        return groupe
+    plans = seq["plans"]
+    total = int(plans[i].get("duree") or DUREE_PLAN)
+    if plans[i].get("clef") or plans[i].get("fin_reelle"):
+        return groupe
+    k = i + 1
+    while k < len(plans) and k in a_faire and len(groupe) < MAX_PLANS_CONTINU:
+        pl = plans[k]
+        d = int(pl.get("duree") or DUREE_PLAN)
+        if not pl.get("enchainer", True) or _depart_fixe(pl) or total + d > MAX_CONTINU:
+            break
+        groupe.append(k)
+        total += d
+        if pl.get("clef") or pl.get("fin_reelle"):
+            break                                    # une image clef ferme le moment
+        k += 1
+    return groupe
+
+
+def groupes_continus(seq, indices, moteur_video, params):
+    """Les indices à faire, rangés en groupes (chacun d'un seul calcul)."""
+    reste, out = sorted(indices), []
+    while reste:
+        g = groupe_continu(seq, reste[0], reste, moteur_video, params)
+        out.append(g)
+        reste = [x for x in reste if x not in g]
+    return out
+
+
+def references_du_groupe(seq, indices):
+    """Les personnes et objets de tous les plans du groupe (quatre au plus), chacun une seule fois."""
+    out, vus = [], set()
+    for i in indices:
+        for nom, images in references_du_plan(seq, seq["plans"][i]):
+            if nom not in vus:
+                vus.add(nom)
+                out.append((nom, images))
+    return out[:4]
+
+
+def decouper_video(video, durees, sortie_de):
+    """Coupe la vidéo d'un groupe en ses plans (durées voulues, mises à l'échelle de la durée réelle). [chemins]"""
+    from . import moteur
+    vraie = float((moteur.sonder(video) or {}).get("duree") or 0) or float(sum(durees))
+    k = vraie / max(0.1, float(sum(durees)))
+    out, t = [], 0.0
+    for n, d in enumerate(durees):
+        d = float(d) * k
+        f = sortie_de(n)
+        moteur.lancer(["-y", "-ss", f"{t:.3f}", "-i", video, "-t", f"{d:.3f}", "-c:v", "libx264", "-crf", "15", "-preset",
+                       "veryfast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", f])
+        out.append(f)
+        t += d
+    return out
+
+
+def fabriquer_groupe(seq, indices, params, moteur_video, progression=None, arret=lambda: False):
+    """0.9.90 : les plans `indices` (un même moment) d'un seul calcul : départ = vraie fin de la vidéo d'avant (ou image
+    du premier plan), arrivée = image clef du dernier s'il en a une, une consigne et une durée par plan ; la vidéo est
+    ensuite coupée en ses plans. Les gestes s'enchaînent sans arrêt entre les plans. Renvoie [chemins]."""
+    if len(indices) == 1:
+        return [fabriquer_plan(seq, indices[0], params, moteur_video, progression, arret)]
+    from . import generateurs_video as GV
+    premier, dernier = seq["plans"][indices[0]], seq["plans"][indices[-1]]
+    image = premier.get("image") if premier.get("image") and os.path.exists(premier["image"]) else None
+    if image is None:
+        image = depart_enchaine(seq, indices[0]) or None
+    if image is None and seq.get("image_auto", True) and params.get("clef_gemini") and images_du_plan(seq, premier):
+        progression and progression(0.02)
+        image = image_depart(seq, indices[0], params, "gemini")
+        premier["image"] = image
+    fin = dernier.get("image_fin") if dernier.get("image_fin") and os.path.exists(dernier["image_fin"]) \
+        and not dernier.get("sans_fin") else None
+    if fin is None and (dernier.get("clef") or dernier.get("fin_reelle")) and seq.get("image_fin_auto", True) \
+            and params.get("clef_gemini") and not dernier.get("sans_fin"):
+        progression and progression(0.04)
+        fin = image_arrivee(seq, indices[-1], params)
+    multi = [(seq["plans"][i].get("consigne") or consigne(seq, seq["plans"][i], params),
+              int(seq["plans"][i].get("duree") or DUREE_PLAN)) for i in indices]
+    ident = f"{indices[0] + 1:02d}-{indices[-1] + 1:02d}_{int(time.time())}"
+    video = os.path.join(dossier(seq), f"plans{ident}.mp4")
+    GV.generer(params, moteur_video, multi[0][0], video, sum(d for _t, d in multi), seq.get("format", "16:9"), image,
+               progression, arret, son=seq.get("voix") == "moteur", references=references_du_groupe(seq, indices),
+               image_fin=fin, multi=multi)
+    fichiers = decouper_video(video, [d for _t, d in multi],
+                              lambda n: os.path.join(dossier(seq), f"plan{indices[n] + 1:02d}_{int(time.time())}_{n}.mp4"))
+    for i, f in zip(indices, fichiers):
+        seq["plans"][i]["fichier"] = f
+        seq["plans"][i]["groupe"] = ident
+    return fichiers
+
+
+def plans_du_groupe_apres(seq, i):
+    """Le plan i et ceux qui le suivent dans son calcul continu (à refaire avec lui : ils partent de sa fin)."""
+    g = seq["plans"][i].get("groupe")
+    if not g:
+        return [i]
+    return [k for k in range(i, len(seq["plans"])) if seq["plans"][k].get("groupe") == g]
+
+
 def voix_du_plan(seq, i, params, moteur_voix="local"):
     """Répliques du plan i dites avec la manière de parler de chaque personnage : [(décalage s, wav)]."""
     from . import diction as D, moteur

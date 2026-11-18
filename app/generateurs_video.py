@@ -37,7 +37,7 @@ MODELES = [
      "modele_image": "fal-ai/kling-video/v3/pro/image-to-video", "prix_s": 0.112, "prix_s_son": 0.168, "durees": [5, 10], "son_param": "generate_audio",
      "note": _("mouvements réalistes, personnes")},
     {"id": "kling-o3-ref", "fournisseur": "fal", "nom": "Kling O3 Référence : personnage fidèle (fal)",
-     "modele": "fal-ai/kling-video/o3/standard/reference-to-video", "references": True, "image_fin": True,
+     "modele": "fal-ai/kling-video/o3/standard/reference-to-video", "references": True, "image_fin": True, "multi": True,
      "prix_s": 0.084, "prix_s_son": 0.112, "durees": list(range(3, 16)), "son_param": "generate_audio",
      "note": _("garde le visage et la tenue d'après la fiche du personnage, image de départ et d'arrivée, jusqu'à 15 s")},
     {"id": "seedance-2", "fournisseur": "fal", "nom": "Seedance 2.0 (fal)", "modele": "bytedance/seedance-2.0/text-to-video",
@@ -118,12 +118,14 @@ def duree_reelle(m, duree):
 
 # ------------------------------------------------------------------ génération
 def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None, progression=None, arret=lambda: False, son=False,
-            references=None, image_fin=None):
+            references=None, image_fin=None, multi=None):
     """son : le moteur fabrique aussi le son et fait parler (un seul réglage, « Répliques » de la Séquence IA) ; sinon, chez
     les moteurs qui le permettent, aucun son n'est fabriqué (PhilCut pose le sien ; Omni en fabrique toujours un, coupé au
     montage).
     references (0.9.72, moteurs « Référence ») : [(nom, [images])] — un « élément » par personnage, que le moteur garde
-    identique ; image_fin : la dernière image imposée (le plan doit y arriver)."""
+    identique ; image_fin : la dernière image imposée (le plan doit y arriver).
+    multi (0.9.90, moteurs « multi ») : [(consigne, durée)] — plusieurs plans d'un même moment faits d'un seul calcul ; la
+    durée totale est leur somme (15 s au plus)."""
     m = modele(ident, params)
     if not m:
         raise ErreurGenerateur(_("Modèle inconnu : {m}", m=ident))
@@ -141,21 +143,29 @@ def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None
                 return generer_omni(k, consigne, sortie, m["repli"], duree, format_, image, m.get("resolution", "720p"), progression, arret)
             raise
     if m.get("references"):
-        return generer_reference(k, m, consigne, sortie, duree, format_, image, image_fin, references, progression, arret, son)
+        return generer_reference(k, m, consigne, sortie, duree, format_, image, image_fin, references, progression, arret, son,
+                                 multi if m.get("multi") else None)
     return generer_fal(k, m, consigne, sortie, duree, format_, image, progression, arret, son)
 
 
-def corps_reference(consigne, duree, format_, depart_url=None, fin_url=None, elements=None, m=None, son=False):
+def corps_reference(consigne, duree, format_, depart_url=None, fin_url=None, elements=None, m=None, son=False, multi=None):
     """Demande « reference to video » (Kling O1/O3) : chaque personnage est un élément (@Element1…) avec une image de face et
     des images d'appui ; le texte commence par dire qui est qui, pour que le moteur relie les noms aux images."""
     elements = [e for e in (elements or []) if e.get("frontal_image_url")][:4]
     noms = [f"@Element{i + 1} is {e['nom']}" for i, e in enumerate(elements) if e.get("nom")]
-    texte = ("; ".join(noms) + ". " if noms else "") + consigne
-    if elements:
-        texte += " Keep @" + ", @".join(f"Element{i + 1}" for i in range(len(elements))) + \
-                 " exactly identical to the reference images: same face, hair, body and outfit."
-    corps = {"prompt": texte, "duration": str(int(duree_reelle(m or {"durees": list(range(3, 16))}, duree))),
+    avant = "; ".join(noms) + ". " if noms else ""
+    apres = (" Keep @" + ", @".join(f"Element{i + 1}" for i in range(len(elements))) +
+             " exactly identical to the reference images: same face, hair, body and outfit.") if elements else ""
+    corps = {"prompt": avant + consigne + apres, "duration": str(int(duree_reelle(m or {"durees": list(range(3, 16))}, duree))),
              "aspect_ratio": "9:16" if format_ == "9:16" else "16:9"}
+    if multi:
+        # 0.9.90 : un plan par élément, durées entières de 1 à 15 s, somme ≤ 15 ; le moteur les enchaîne en gardant gestes,
+        # lumière et visages d'un plan à l'autre (« prompt » et « multi_prompt » s'excluent)
+        plans = [(t, max(1, int(round(float(d))))) for t, d in multi][:6]
+        corps.pop("prompt")
+        corps["multi_prompt"] = [{"prompt": avant + t + apres, "duration": str(d)} for t, d in plans]
+        corps["duration"] = str(min(15, max(3, sum(d for _t, d in plans))))
+        corps["shot_type"] = "customize"
     if elements:
         corps["elements"] = [{"frontal_image_url": e["frontal_image_url"],
                               "reference_image_urls": list(e.get("reference_image_urls") or [])[:3]} for e in elements]
@@ -187,13 +197,13 @@ def assez_grande(chemin, mini=MINI_FAL):
 
 
 def generer_reference(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, image_fin=None, references=None,
-                      progression=None, arret=lambda: False, son=False):
+                      progression=None, arret=lambda: False, son=False, multi=None):
     """Moteur « Référence » : images envoyées sur le stockage fal, puis la demande ; la planche du personnage sert d'image de
     face, ses autres images d'appui."""
     av = progression or (lambda f: None)
     av(0.01)
     elements = []
-    for nom, images in (references or [])[:3]:
+    for nom, images in (references or [])[:4]:
         images = [i for i in images if i and os.path.exists(i)]
         if not images:
             continue
@@ -201,7 +211,7 @@ def generer_reference(cle, m, consigne, sortie, duree=5, format_="16:9", image=N
         elements.append({"nom": nom, "frontal_image_url": urls[0], "reference_image_urls": urls[1:]})
     depart = televerser(cle, assez_grande(image)) if image and os.path.exists(image) else None
     fin = televerser(cle, assez_grande(image_fin)) if image_fin and os.path.exists(image_fin) else None
-    corps = corps_reference(consigne, duree, format_, depart, fin, elements, m, son)
+    corps = corps_reference(consigne, duree, format_, depart, fin, elements, m, son, multi)
     return attendre_fal(cle, m["modele"], corps, sortie, progression, arret)
 
 

@@ -626,6 +626,11 @@ class DialoguePreferences(QDialog):
         self.assistant_images_par.setCurrentIndex(max(0, self.assistant_images_par.findData(
             self.params.get("assistant_images_par", "gemini"))))
         f.addRow(_("Images de contrôle de l'assistant"), self.assistant_images_par)
+        self.sequence_continue = QCheckBox(_("Faire d'un seul calcul les plans d'un même moment"))   # 0.9.90
+        self.sequence_continue.setToolTip(_("Kling O3 : les plans entre deux images clefs (15 s au plus) sont fabriqués "
+                                            "ensemble, les gestes s'enchaînent sans arrêt ; décoché : plan par plan."))
+        self.sequence_continue.setChecked(bool(self.params.get("sequence_continue", True)))
+        f.addRow("", self.sequence_continue)
         h = QHBoxLayout()                              # 0.9.85 : mises à jour des IA (locales et cloud)
         self.ia_maj_verifier = QCheckBox(_("Chercher les mises à jour des IA (une fois par semaine, jamais installées sans vous)"))
         self.ia_maj_verifier.setChecked(self.params.get("ia_maj_verifier", True))
@@ -1152,6 +1157,8 @@ class DialoguePreferences(QDialog):
             p["ia_maj_verifier"] = self.ia_maj_verifier.isChecked()
         if hasattr(self, "assistant_images_par"):
             p["assistant_images_par"] = self.assistant_images_par.currentData()
+        if hasattr(self, "sequence_continue"):
+            p["sequence_continue"] = self.sequence_continue.isChecked()
         gestion = getattr(self.fenetre, "telechargements", None)
         a_installer = [k for k, c in self.cases_ia.items() if c.isChecked() and not packs_ia.installe(k)
                        and not (gestion is not None and gestion.en_file(k))]

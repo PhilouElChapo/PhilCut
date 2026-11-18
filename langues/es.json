@@ -8570,5 +8570,17 @@
  "Choisissez la rubrique, Femme ou Homme, ou cherchez un mot (piscine, cuir, berline…) ; l'image d'exemple montre le résultat.": "Elija la sección, Mujer u Hombre, o busque una palabra (piscina, cuero, berlina…); la imagen de ejemplo muestra el resultado.",
  "« Ajouter à ma bibliothèque » : modifiez la description si vous voulez, ajoutez vos photos, faites sa fiche ou sa planche.": "«Añadir a mi biblioteca»: modifique la descripción si quiere, añada sus fotos, haga su ficha o su plancha.",
  "Pour une tenue sur mesure : sur une tenue, « Composer… » ; choisissez pièce par pièce et la matière.": "Para un atuendo a medida: en un atuendo, «Componer…»; elija pieza a pieza y el material.",
- "Dans l'assistant, sur chaque carte : « Dans ma bibliothèque » › « Toute faite… ».": "En el asistente, en cada tarjeta: «En mi biblioteca» › «Ya hecho…»."
+ "Dans l'assistant, sur chaque carte : « Dans ma bibliothèque » › « Toute faite… ».": "En el asistente, en cada tarjeta: «En mi biblioteca» › «Ya hecho…».",
+ "Fabrication des plans {a} à {b} d'un seul tenant": "Fabricación de los planos {a} a {b} de una sola vez",
+ "d'un seul tenant avec le plan suivant": "de una sola vez con el plano siguiente",
+ "plans {a} à {b}": "planos {a} a {b}",
+ "Les plans {l}, faits d'un seul tenant avec lui, sont refaits aussi (ils partent de sa fin).": "Los planos {l}, hechos de una sola vez con él, también se rehacen (parten de su final).",
+ "Fabriquer d'un seul tenant les plans d'un même moment (gestes enchaînés)": "Fabricar de una sola vez los planos de un mismo momento (gestos encadenados)",
+ "Avec Kling O3 Référence, les plans qui se suivent jusqu'à la prochaine image clef (15 s et six plans au plus) sont fabriqués en un seul calcul : les gestes continuent d'un plan à l'autre, sans arrêt ni saut, puis la vidéo est coupée en ses plans. Le prix est le même (à la seconde).": "Con Kling O3 Referencia, los planos que se suceden hasta la siguiente imagen clave (15 s y seis planos como máximo) se fabrican en un solo cálculo: los gestos continúan de un plano a otro, sin pararse ni saltar, y luego el vídeo se corta en sus planos. El precio es el mismo (por segundo).",
+ "Dans l'assistant, à l'étape des images, cochez « Image clef » là où la scène doit être respectée : chaque image clef ferme un moment.": "En el asistente, en la etapa de las imágenes, marque «Imagen clave» donde deba respetarse la escena: cada imagen clave cierra un momento.",
+ "Lancez la vidéo : « Fabrication des plans 2 à 4 d'un seul tenant » ; dans la liste, ⛓ relie les plans faits ensemble.": "Lance el vídeo: «Fabricación de los planos 2 a 4 de una sola vez»; en la lista, ⛓ une los planos hechos juntos.",
+ "« Refaire ce plan… » refait aussi les plans suivants du même calcul (ils partent de sa fin).": "«Rehacer este plano…» rehace también los planos siguientes del mismo cálculo (parten de su final).",
+ "Pour revenir au plan par plan : Edition › Préférences › IA locale, décochez « Faire d'un seul calcul les plans d'un même moment ».": "Para volver al plano a plano: Edición › Preferencias › IA local, desmarque «Fabricar en un solo cálculo los planos de un mismo momento».",
+ "Faire d'un seul calcul les plans d'un même moment": "Fabricar en un solo cálculo los planos de un mismo momento",
+ "Kling O3 : les plans entre deux images clefs (15 s au plus) sont fabriqués ensemble, les gestes s'enchaînent sans arrêt ; décoché : plan par plan.": "Kling O3: los planos entre dos imágenes clave (15 s como máximo) se fabrican juntos, los gestos se encadenan sin pararse; desmarcado: plano a plano."
 }

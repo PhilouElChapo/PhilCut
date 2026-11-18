@@ -199,6 +199,21 @@ def _guides_integres():
              {"texte": _("Pour une tenue sur mesure : sur une tenue, « Composer… » ; choisissez pièce par pièce et la matière.")},
              {"texte": _("Dans l'assistant, sur chaque carte : « Dans ma bibliothèque » › « Toute faite… ».")},
          ]},
+        {"id": "sequence_continue", "etat": "ok",
+         "titre": _("Fabriquer d'un seul tenant les plans d'un même moment (gestes enchaînés)"),
+         "mots": "continu seul tenant enchaine gestes moment plusieurs plans un calcul kling multi sequence continue",
+         "intro": _("Avec Kling O3 Référence, les plans qui se suivent jusqu'à la prochaine image clef (15 s et six plans au "
+                    "plus) sont fabriqués en un seul calcul : les gestes continuent d'un plan à l'autre, sans arrêt ni saut, "
+                    "puis la vidéo est coupée en ses plans. Le prix est le même (à la seconde)."),
+         "etapes": [
+             {"texte": _("Dans l'assistant, à l'étape des images, cochez « Image clef » là où la scène doit être respectée : "
+                         "chaque image clef ferme un moment.")},
+             {"texte": _("Lancez la vidéo : « Fabrication des plans 2 à 4 d'un seul tenant » ; dans la liste, ⛓ relie les plans "
+                         "faits ensemble.")},
+             {"texte": _("« Refaire ce plan… » refait aussi les plans suivants du même calcul (ils partent de sa fin).")},
+             {"texte": _("Pour revenir au plan par plan : Edition › Préférences › IA locale, décochez « Faire d'un seul "
+                         "calcul les plans d'un même moment ».")},
+         ]},
         {"id": "relier_rushes", "etat": "ok",
          "titre": _("Recréer ce qui n'a pas été filmé entre deux rushes (relier deux plans)"),
          "mots": "relier raccord trou manquant pas filme entre deux rushes jonction reconstituer scene image clef keyframe sortie "

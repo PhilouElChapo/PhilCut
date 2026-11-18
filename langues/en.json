@@ -8579,5 +8579,17 @@
  "Choisissez la rubrique, Femme ou Homme, ou cherchez un mot (piscine, cuir, berline…) ; l'image d'exemple montre le résultat.": "Choose the section, Woman or Man, or search for a word (pool, leather, sedan…); the example image shows the result.",
  "« Ajouter à ma bibliothèque » : modifiez la description si vous voulez, ajoutez vos photos, faites sa fiche ou sa planche.": "“Add to my library”: change the description if you like, add your photos, make its sheet or its board.",
  "Pour une tenue sur mesure : sur une tenue, « Composer… » ; choisissez pièce par pièce et la matière.": "For a made-to-measure outfit: on an outfit, “Compose…”; choose piece by piece and the material.",
- "Dans l'assistant, sur chaque carte : « Dans ma bibliothèque » › « Toute faite… ».": "In the assistant, on each card: “In my library” › “Ready-made…”."
+ "Dans l'assistant, sur chaque carte : « Dans ma bibliothèque » › « Toute faite… ».": "In the assistant, on each card: “In my library” › “Ready-made…”.",
+ "Fabrication des plans {a} à {b} d'un seul tenant": "Making shots {a} to {b} in one go",
+ "d'un seul tenant avec le plan suivant": "in one go with the next shot",
+ "plans {a} à {b}": "shots {a} to {b}",
+ "Les plans {l}, faits d'un seul tenant avec lui, sont refaits aussi (ils partent de sa fin).": "Shots {l}, made in one go with it, are redone too (they start from its end).",
+ "Fabriquer d'un seul tenant les plans d'un même moment (gestes enchaînés)": "Make the shots of a same moment in one go (continuous gestures)",
+ "Avec Kling O3 Référence, les plans qui se suivent jusqu'à la prochaine image clef (15 s et six plans au plus) sont fabriqués en un seul calcul : les gestes continuent d'un plan à l'autre, sans arrêt ni saut, puis la vidéo est coupée en ses plans. Le prix est le même (à la seconde).": "With Kling O3 Reference, the shots that follow each other up to the next key image (15 s and six shots at most) are made in a single computation: gestures continue from one shot to the next, without stopping or jumping, then the video is cut into its shots. The price is the same (per second).",
+ "Dans l'assistant, à l'étape des images, cochez « Image clef » là où la scène doit être respectée : chaque image clef ferme un moment.": "In the assistant, at the images step, tick “Key image” where the scene must be respected: each key image closes a moment.",
+ "Lancez la vidéo : « Fabrication des plans 2 à 4 d'un seul tenant » ; dans la liste, ⛓ relie les plans faits ensemble.": "Start the video: “Making shots 2 to 4 in one go”; in the list, ⛓ links the shots made together.",
+ "« Refaire ce plan… » refait aussi les plans suivants du même calcul (ils partent de sa fin).": "“Redo this clip…” also redoes the following shots of the same computation (they start from its end).",
+ "Pour revenir au plan par plan : Edition › Préférences › IA locale, décochez « Faire d'un seul calcul les plans d'un même moment ».": "To go back to shot by shot: Edit › Preferences › Local AI, untick “Make the shots of a same moment in a single computation”.",
+ "Faire d'un seul calcul les plans d'un même moment": "Make the shots of a same moment in a single computation",
+ "Kling O3 : les plans entre deux images clefs (15 s au plus) sont fabriqués ensemble, les gestes s'enchaînent sans arrêt ; décoché : plan par plan.": "Kling O3: the shots between two key images (15 s at most) are made together, gestures follow on without stopping; unticked: shot by shot."
 }

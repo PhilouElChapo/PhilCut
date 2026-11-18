@@ -23,6 +23,17 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T100 — 0.9.90 : séquences continues
+
+Il faut une clef fal.ai avec un peu de crédit.
+
+1. Assistant : reprendre l'essai limousine (ou le restaurant) avec le moteur « Kling O3 Référence ». A l'étape des images, une seule « Image clef » au milieu (là où la scène doit être respectée).
+2. Lancer la vidéo : la barre dit « Fabrication des plans 1 à 3 d'un seul tenant » ; dans la liste, ⛓ relie les plans faits ensemble.
+3. Regarder les plans à la suite : les gestes continuent-ils d'un plan à l'autre, sans arrêt ni saut ? Les visages restent-ils ceux des fiches ?
+4. « Refaire ce plan… » sur le 2e plan d'un groupe : le message dit que les suivants du même calcul sont refaits aussi ; le prix les compte.
+5. Préférences › IA locale : décocher « Faire d'un seul calcul les plans d'un même moment », refaire un essai : plan par plan comme avant.
+6. Bibliothèque toute faite : chaque entrée (sauf les matières) montre son image d'exemple.
+
 ## T99 — 0.9.89 : bibliothèque toute faite
 
 1. Fabrique IA › « Ma bibliothèque de créations… » › « Toute faite… » : rubrique « Chaussures », « Femme » : escarpins à talons hauts, moyens, petits talons, ballerines… ; chercher « hélicoptère », puis « piscine ».

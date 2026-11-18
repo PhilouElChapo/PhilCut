@@ -970,22 +970,28 @@ class DialogueSequence(QDialog):
         seq = copy.deepcopy(self.seq)
 
         def travail(tache):
-            faits, erreur = {}, None
-            for k, i in enumerate(indices):
+            faits, erreur, k = {}, None, 0
+            for groupe in Q.groupes_continus(seq, indices, m, self.params):     # 0.9.90 : un même moment d'un seul calcul
                 if tache.arret:
                     break
-                tache.avancer(k / len(indices), _("plan {i} ({k} sur {n})", i=i + 1, k=k + 1, n=len(indices)))
+                i = groupe[0]
+                tache.avancer(k / len(indices), _("plans {a} à {b}", a=i + 1, b=groupe[-1] + 1) if len(groupe) > 1 else
+                              _("plan {i} ({k} sur {n})", i=i + 1, k=k + 1, n=len(indices)))
                 try:
-                    Q.planches_manquantes(seq, seq["plans"][i], self.params, m)
-                    f = Q.fabriquer_plan(seq, i, self.params, m,
-                                         progression=lambda f, k=k: tache.avancer((k + f) / len(indices)), arret=lambda: tache.arret)
+                    for j in groupe:
+                        Q.planches_manquantes(seq, seq["plans"][j], self.params, m)
+                    fichiers = Q.fabriquer_groupe(seq, groupe, self.params, m, progression=lambda f, k=k, g=len(groupe):
+                                                  tache.avancer((k + f * g) / len(indices)), arret=lambda: tache.arret)
                 except InterruptedError:
                     break
                 except Exception as e:      # noqa: BLE001 : les plans déjà payés sont gardés, l'erreur est dite
                     erreur = e
                     break
-                seq["plans"][i]["fichier"] = f                    # le plan suivant peut démarrer sur sa dernière image
-                faits[i] = (f, seq["plans"][i].get("image", ""), seq["plans"][i].get("image_fin", ""))
+                for j, f in zip(groupe, fichiers):
+                    seq["plans"][j]["fichier"] = f                # le plan suivant peut démarrer sur sa dernière image
+                    faits[j] = (f, seq["plans"][j].get("image", ""), seq["plans"][j].get("image_fin", ""),
+                                seq["plans"][j].get("groupe", ""))
+                k += len(groupe)
             return {"faits": faits, "erreur": erreur, "planches": {p["nom"]: p.get("planche", "") for p in seq["personnages"]}}
         t = Tache(travail, _("Séquence IA"))
         self.taches.append(t)
@@ -999,8 +1005,12 @@ class DialogueSequence(QDialog):
             self.suivi.finir()
             r = r or {}
             e = e or r.get("erreur")
-            for i, (chemin, image, image_fin) in (r.get("faits") or {}).items():
+            for i, (chemin, image, image_fin, groupe) in (r.get("faits") or {}).items():
                 self.seq["plans"][i]["fichier"] = chemin
+                if groupe:
+                    self.seq["plans"][i]["groupe"] = groupe
+                else:
+                    self.seq["plans"][i].pop("groupe", None)
                 if image:
                     self.seq["plans"][i]["image"] = image
                 if image_fin:

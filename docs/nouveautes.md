@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.89 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.90 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.90 (sequences continues)
+- Avec Kling O3 Reference, les plans qui se suivent jusqu'a la prochaine image clef (15 s et six plans au plus) sont fabriques d'un seul calcul : les gestes continuent d'un plan a l'autre, sans arret ni saut ; la video est ensuite coupee en ses plans. Meme prix (a la seconde).
+- Dans la liste des plans, ⛓ relie les plans faits ensemble ; "Refaire ce plan…" refait aussi les plans suivants du meme calcul (ils partent de sa fin).
+- Meme chose dans la Sequence IA. Preferences › IA locale : "Faire d'un seul calcul les plans d'un meme moment" (decoche = plan par plan).
+- Images d'exemple de la bibliotheque toute faite : 175 images (tenues, pieces, lieux, vehicules, avions, personnages types).
+
 
 ### 0.9.89 (bibliotheque toute faite)
 - "Toute faite…" dans Ma bibliotheque de creations et sur les cartes de l'assistant : 188 descriptions pretes, avec leurs mots anglais pour les IA. Tenues completes ; pieces : hauts, bas, robes, vestes et manteaux, chaussures (baskets, mocassins, bottines, bottes, santiags, escarpins talons hauts, moyens ou petits, ballerines…), chapeaux (casquette, bonnet, borsalino, texan, panama…), accessoires, matieres (luxe, cachemire, cuir, daim, soie…) ; 33 lieux (piscine, bord de mer, monuments, maison, jardin…) ; vehicules (limousine, sportive, citadine, berline, SUV…) ; avions et autres transports (avion de ligne, jet, helicoptere…) ; personnages types inventes.

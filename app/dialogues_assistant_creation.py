@@ -1447,7 +1447,15 @@ class DialogueAssistant(QDialog):
     def _precision(self, titre, question, defaut=""):
         if getattr(self, "_test_precision", None) is not None:
             return self._test_precision or defaut, True
-        return QInputDialog.getText(self, titre, question, QLineEdit.Normal, defaut)
+        d = QInputDialog(self)                       # 0.9.90 : question à la ligne (jamais plus large que l'écran)
+        d.setWindowTitle(titre)
+        d.setLabelText(question)
+        d.setTextValue(defaut)
+        for l in d.findChildren(QLabel):
+            l.setWordWrap(True)
+        d.resize(560, d.sizeHint().height())
+        ok = d.exec() == QDialog.Accepted
+        return d.textValue(), ok
 
     def _garder_fiche(self, k):
         p = self.seq["personnages"][k]
@@ -1524,13 +1532,17 @@ class DialogueAssistant(QDialog):
             etat = A.texte_verdict(pl.get("verdict"))
         elif pl.get("erreur"):
             etat = "✕ " + pl["erreur"]
-        elif i in self.file or self._plan_en_cours == i:
-            etat = _("en fabrication…") if self._plan_en_cours == i else _("en attente")
+        elif i in self.file or self._plan_en_cours == i or i in self._groupe_en_cours:
+            etat = _("en fabrication…") if (self._plan_en_cours == i or i in self._groupe_en_cours) else _("en attente")
         else:
             etat = _("à fabriquer")
-        return _("Plan {i} ({d} s) : {a}", i=i + 1, d=pl.get("duree"), a=pl.get("action", "")) + "\n      " + etat
+        lien = ""
+        if pl.get("groupe") and i + 1 < len(self.seq["plans"]) and self.seq["plans"][i + 1].get("groupe") == pl["groupe"]:
+            lien = "  ⛓ " + _("d'un seul tenant avec le plan suivant")
+        return _("Plan {i} ({d} s) : {a}", i=i + 1, d=pl.get("duree"), a=pl.get("action", "")) + "\n      " + etat + lien
 
     _plan_en_cours = -1
+    _groupe_en_cours = []
 
     def _remplir_video(self):
         r = self.l_plans.currentRow()
@@ -1566,11 +1578,15 @@ class DialogueAssistant(QDialog):
                               _("Terminé : regardez les plans, puis « Poser dans le film »."))
             self._maj()
             return
-        i = self.file.pop(0)
+        moteur_video, niveau = self.seq.get("moteur") or self.moteur.currentData(), self._niveau()
+        # 0.9.90 : les plans d'un même moment (jusqu'à la prochaine image clef) se font d'un seul calcul, gestes enchaînés
+        groupe = Q.groupe_continu(self.seq, self.file[0], self.file, moteur_video, self.params)
+        self.file = [x for x in self.file if x not in groupe]
+        i = groupe[0]
         self._plan_en_cours = i
+        self._groupe_en_cours = groupe
         self._remplir_video()
         seq = copy.deepcopy(self.seq)
-        moteur_video, niveau = self.seq.get("moteur") or self.moteur.currentData(), self._niveau()
 
         def travail(t):
             pl = seq["plans"][i]
@@ -1578,45 +1594,63 @@ class DialogueAssistant(QDialog):
                 depart = Q.depart_prevu(seq, i)
                 if depart:
                     pl["image"] = depart                 # tout moteur part de l'image validée
-            f = Q.fabriquer_plan(seq, i, self.params, moteur_video, lambda x: t.avancer(0.9 * x, _("plan {i}", i=i + 1)), t.arret_demande)
-            pl["fichier"] = f
-            t.avancer(0.92, _("relecture du plan {i}", i=i + 1))
-            try:
-                verdict = A.verifier(self.params, seq, i, niveau)
-            except Exception:      # noqa: BLE001 : la relecture est un plus, jamais un blocage
-                verdict = None
-            return f, verdict
+            nom = _("plans {a} à {b}", a=i + 1, b=groupe[-1] + 1) if len(groupe) > 1 else _("plan {i}", i=i + 1)
+            fichiers = Q.fabriquer_groupe(seq, groupe, self.params, moteur_video, lambda x: t.avancer(0.85 * x, nom), t.arret_demande)
+            out = []
+            for k, (j, f) in enumerate(zip(groupe, fichiers)):
+                seq["plans"][j]["fichier"] = f
+                t.avancer(0.86 + 0.13 * k / len(groupe), _("relecture du plan {i}", i=j + 1))
+                try:
+                    verdict = A.verifier(self.params, seq, j, niveau)
+                except Exception:      # noqa: BLE001 : la relecture est un plus, jamais un blocage
+                    verdict = None
+                out.append((j, f, verdict, seq["plans"][j].get("groupe", "")))
+            return out
 
         def fin(r, e):
-            pl = self.seq["plans"][i]
             self._plan_en_cours = -1
+            self._groupe_en_cours = []
             if e or not r:
-                pl["erreur"] = texte_erreur(e)[:200] if e else _("rien n'a été fabriqué")
+                self.seq["plans"][i]["erreur"] = texte_erreur(e)[:200] if e else _("rien n'a été fabriqué")
                 self.file = []
                 self._remplir_video()
                 return
-            pl["fichier"], pl["verdict"] = r
-            A.depenser(self.seq, _("Plan {i}", i=i + 1), A.prix_plan(self.seq, i, moteur_video, self.params))
-            if r[1] is not None and self._cloud():
-                A.depenser(self.seq, _("Relecture"), A.PRIX_LECTURE)
+            for j, f, verdict, g in r:
+                pl = self.seq["plans"][j]
+                pl["fichier"], pl["verdict"] = f, verdict
+                if g:
+                    pl["groupe"] = g
+                else:
+                    pl.pop("groupe", None)
+                A.depenser(self.seq, _("Plan {i}", i=j + 1), A.prix_plan(self.seq, j, moteur_video, self.params))
+                if verdict is not None and self._cloud():
+                    A.depenser(self.seq, _("Relecture"), A.PRIX_LECTURE)
             Q.enregistrer(self.seq)
             self._remplir_video()
             self.l_plans.setCurrentRow(i)
             self._suivant_de_la_file()
-        self._lancer(travail, _("Fabrication du plan {i} sur {n}", i=i + 1, n=len(self.seq["plans"])), fin)
+        titre = _("Fabrication des plans {a} à {b} d'un seul tenant", a=i + 1, b=groupe[-1] + 1) if len(groupe) > 1 else \
+            _("Fabrication du plan {i} sur {n}", i=i + 1, n=len(self.seq["plans"]))
+        self._lancer(travail, titre, fin)
 
     def refaire_plan(self):
         i = self.l_plans.currentRow()
         if i < 0 or self._en_calcul():
             return
-        prix = A.prix_plan(self.seq, i, self.seq.get("moteur") or self.moteur.currentData(), self.params)
+        a_refaire = Q.plans_du_groupe_apres(self.seq, i)      # 0.9.90 : ceux du même calcul partent de sa fin
+        prix = sum(A.prix_plan(self.seq, j, self.seq.get("moteur") or self.moteur.currentData(), self.params) for j in a_refaire)
+        aussi = (" " + _("Les plans {l}, faits d'un seul tenant avec lui, sont refaits aussi (ils partent de sa fin).",
+                         l=", ".join(str(j + 1) for j in a_refaire[1:]))) if len(a_refaire) > 1 else ""
         texte, ok = self._precision(_("Refaire le plan {i}", i=i + 1), _(
-            "Environ {p}. Ce qu'il faut changer dans l'image d'arrivée (facultatif ; vide = même images, nouvel essai) :", p=A.argent(prix)))
+            "Environ {p}. Ce qu'il faut changer dans l'image d'arrivée (facultatif ; vide = même images, nouvel essai) :",
+            p=A.argent(prix)) + aussi)
         if not ok:
             return
         self.apercu.arreter()
+        for j in a_refaire:
+            self.seq["plans"][j]["fichier"], self.seq["plans"][j]["verdict"] = "", None
+            self.seq["plans"][j].pop("groupe", None)
         pl = self.seq["plans"][i]
-        pl["fichier"], pl["verdict"] = "", None
         if texte.strip() and A.images_par(self.seq, self.params) != "aucune":
             seq = copy.deepcopy(self.seq)
 
