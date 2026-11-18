@@ -23,6 +23,18 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T96 — 0.9.86 : assistant corrigé, image par image
+
+1. Timeline : agrandir, ◀| et |▶ avancent d'une image ; [ puis ] sur la même image : « Supprimer 1 image(s) » ; Maj + flèche droite deux fois : « Supprimer 3 image(s) » ; supprimer : la suite se recolle ; Ctrl+Z.
+2. Reprendre l'essai de la photo avec Claude : plus d'erreur 400 ; la page 2 montre les cartes ; la petite découpe est sur fond blanc.
+3. « ‹ Précédent » jusqu'à la page 1, puis « Voir ce qu'il faut » sans rien changer : tout est retrouvé tel quel. Clic sur « 2. Qui et quoi » dans le fil du haut : idem.
+4. Page des plans : colonnes « Qui » et « Cadrage » remplies ; dans les plans après la montée en voiture, les passagères ne sont plus dans « Qui » (survol : où elles sont). « ✨ Vérifier la continuité » sur une histoire modifiée.
+5. « Images de contrôle » : essayer « IA de ce poste » (gratuit) puis revenir à Gemini.
+6. Préparer les images : la vidéo part sans « image too small ». Corriger une arrivée : la fenêtre se place sur l'image refaite, entourée en orange ; la question pour l'image suivante arrive.
+7. En bas : « Assistant : » change l'IA à toute étape ; crédits de Claude, Gemini, fal.ai avec « Recharger… ».
+8. « Régler moi-même… » puis, dans la Séquence IA, « ‹ Retour à l'assistant » : les réglages sont là.
+9. Page 1 : les exemples du champ sont neutres (tasse, ballon rouge, chanson pop, intro cuisine).
+
 ## T95 — 0.9.85 : mises à jour des IA (locales et cloud)
 
 1. Aide › « Mises à jour des IA (locales et cloud)… » : la fenêtre tient dans l'écran, sans défilement horizontal. Onglet « Sur ce poste » : « Tout est à jour » ou une liste (ce qui change, pourquoi, taille), toutes cochées.

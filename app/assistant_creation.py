@@ -30,7 +30,9 @@ A partir de l'histoire de l'utilisateur, rends un objet JSON :
 "centre" ou "", "boite": [x0, y0, x1, y1] en pourcentages de l'image (0 à 100) pour ce qui est sur l'image, sinon [],
 "description": "..."}}],
  "lieux": [{{"nom": "...", "sur_image": true si c'est le décor de l'image de départ, "description": "lumière, matières, détails"}}],
- "plans": [{{"action": "...", "personnages": ["nom", ...], "lieu": "nom du lieu ou vide", "duree": 4 à 10, "camera": "..."}}],
+ "plans": [{{"action": "...", "personnages": ["nom", ...], "hors_champ": "où sont ceux qu'on ne voit plus, ou vide",
+ "lieu": "nom du lieu ou vide", "duree": 4 à 10, "camera": "cadrage et mouvement : plan large, plan moyen, gros plan ; fixe,
+ recule, s'approche, accompagne…"}}],
  "remarques": "une phrase pour l'utilisateur, ou vide"}}
 Règles impératives :
 - Un personnage = UNE seule personne (jamais « les deux femmes » comme un seul personnage). Donne à chacun un nom court et
@@ -42,7 +44,12 @@ Règles impératives :
   forme), sans marque.
 - UNE SEULE action simple par plan, physiquement possible, 4 à 10 secondes ; découpe « puis », « pour que », « pendant
   que » en plans séparés. Quand quelqu'un apparaît (un chauffeur), fais-le entrer dans un plan à lui avant qu'il agisse.
-- Chaque plan liste tous les personnages et objets qu'on y voit, par leur nom exact.
+- Chaque plan liste seulement les personnages et objets qu'on y VOIT, par leur nom exact. Suis la continuité d'un plan à
+  l'autre : quelqu'un qui monte dans un véhicule, entre dans un bâtiment ou sort du champ n'apparaît plus dans les plans
+  suivants tant que l'histoire ne le fait pas ressortir ; dis où il est dans « hors_champ » (« les deux femmes sont dans la
+  voiture »). Une liste vide = on ne voit aucun personnage (seulement le décor ou un objet).
+- Le cadrage suit l'action : plan large quand on se déplace d'un lieu à l'autre ou quand un véhicule doit tenir dans
+  l'image, plus serré pour un geste ; dis-le dans « camera ».
 - Caméra : simple et stable (recule, accompagne de côté, fixe) ; jamais de dos quand les visages doivent rester
   reconnaissables.
 - Un lieu = un décor où se passent un ou plusieurs plans (l'escalier, la rue devant l'entrée…) ; au plus 4 lieux.
@@ -146,7 +153,8 @@ def lire_analyse(d):
         noms = [n for n in (_texte(x, 40) for x in (pl.get("personnages") or []) if x) if n.lower() in vus]
         lieu = _texte(pl.get("lieu"), 40)
         plans.append({"action": _texte(pl.get("action"), 300), "personnages": noms, "duree": max(3, min(15, duree)),
-                      "camera": _texte(pl.get("camera"), 120), "lieu": lieu if lieu.lower() in vus_l else ""})
+                      "camera": _texte(pl.get("camera"), 160), "lieu": lieu if lieu.lower() in vus_l else "",
+                      "hors_champ": _texte(pl.get("hors_champ"), 200), "visibles_fixes": True})
     return {"personnages": persos, "lieux": lieux, "plans": plans, "remarques": _texte(d.get("remarques") or d.get("message"), 300)}
 
 
@@ -179,7 +187,7 @@ def boite_autour(x, y, larg=0.3, haut=0.85):
     return [round(x0, 4), round(y0, 4), round(x0 + larg, 4), round(y0 + haut, 4)]
 
 
-def decouper(image, boite, sortie, marge=0.12):
+def decouper(image, boite, sortie, marge=0.12, detourer=True):
     """La personne ou l'objet découpé dans l'image (avec un peu de marge) : c'est cette découpe qui fait la fiche, et non
     plus toute la photo de groupe."""
     from . import moteur
@@ -193,7 +201,51 @@ def decouper(image, boite, sortie, marge=0.12):
     x0, y0, x1, y1 = max(0.0, x0 - mx), max(0.0, y0 - my), min(1.0, x1 + mx), min(1.0, y1 + my)
     cw, ch = max(16, int((x1 - x0) * w)) // 2 * 2, max(16, int((y1 - y0) * h)) // 2 * 2
     moteur.lancer(["-y", "-i", image, "-vf", f"crop={cw}:{ch}:{int(x0 * w)}:{int(y0 * h)}", "-frames:v", "1", sortie])
-    return sortie if os.path.exists(sortie) else ""
+    if not os.path.exists(sortie):
+        return ""
+    if detourer:
+        detourer_decoupe(sortie, marge / (1 + 2 * marge))
+    return sortie
+
+
+def detourer_decoupe(chemin, marge=0.1):
+    """0.9.86 : le cadre seul est imprécis (bout de la voisine, décor) : la personne est détourée dans son cadre (GrabCut,
+    sur ce poste ; modèle de détourage s'il est installé) et posée sur un fond blanc uni, ce que les IA lisent le mieux.
+    Renvoie True si le détourage a réussi (sinon la découpe reste telle quelle)."""
+    try:
+        import cv2
+        import numpy as np
+        img = cv2.imread(chemin)
+        if img is None:
+            return False
+        H, L = img.shape[:2]
+        mx, my = int(L * marge), int(H * marge)
+        gc = np.full((H, L), cv2.GC_BGD, np.uint8)
+        gc[my:H - my, mx:L - mx] = cv2.GC_PR_FGD
+        bg, fg = np.zeros((1, 65), np.float64), np.zeros((1, 65), np.float64)
+        echelle = min(1.0, 480 / max(H, L))
+        petit = cv2.resize(img, None, fx=echelle, fy=echelle, interpolation=cv2.INTER_AREA) if echelle < 1 else img
+        g2 = cv2.resize(gc, (petit.shape[1], petit.shape[0]), interpolation=cv2.INTER_NEAREST)
+        cv2.grabCut(petit, g2, None, bg, fg, 5, cv2.GC_INIT_WITH_MASK)
+        m = np.where((g2 == cv2.GC_FGD) | (g2 == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
+        m = cv2.resize(m, (L, H), interpolation=cv2.INTER_LINEAR)
+        try:
+            from . import segmentation
+            if segmentation._portable():
+                mp = segmentation.masque_image(img)
+                if mp is not None and (mp > 127).sum() > 0.15 * L * H:
+                    m = mp
+        except Exception:      # noqa: BLE001
+            pass
+        part = (m > 127).mean()
+        if not 0.12 < part < 0.97:            # rien ou tout : on garde la découpe
+            return False
+        a = cv2.GaussianBlur(m, (0, 0), 1.2).astype(np.float32)[..., None] / 255.0
+        blanc = np.full_like(img, 255)
+        cv2.imwrite(chemin, (img * a + blanc * (1 - a)).astype(np.uint8))
+        return True
+    except Exception:          # noqa: BLE001
+        return False
 
 
 CONSIGNE_DECRIRE = """Tu aides à décrire {quoi} pour qu'une IA le dessine puis le garde identique d'un plan vidéo à l'autre. Voici ce
@@ -217,11 +269,55 @@ def analyser(params, histoire, image=None, niveau="claude"):
     contexte = ("L'image jointe est la DERNIERE image d'un plan déjà tourné : la séquence en est la suite directe ; le premier plan "
                 "part exactement de cette image." if image else
                 "Il n'y a pas d'image de départ : tous les personnages sont inventés (sur_image = false).")
-    r = lire_analyse(demander(params, CONSIGNE_ANALYSE.format(contexte=contexte, langue=_langue()),
-                              "Histoire : " + histoire.strip(), [image] if image else [], niveau))
+    try:
+        r = lire_analyse(demander(params, CONSIGNE_ANALYSE.format(contexte=contexte, langue=_langue()),
+                                  "Histoire : " + histoire.strip(), [image] if image else [], niveau))
+    except Exception as e:      # noqa: BLE001 : 0.9.86 : image refusée → on redemande sans l'image avant d'abandonner
+        if not image or "clef" in str(e).lower() or "refusée" in str(e).lower():
+            raise
+        contexte = ("L'image de départ n'a pas pu être lue : déduis les personnes de l'histoire (sur_image = true pour celles "
+                    "qui y sont déjà au début, position et boîte vides).")
+        r = lire_analyse(demander(params, CONSIGNE_ANALYSE.format(contexte=contexte, langue=_langue()),
+                                  "Histoire : " + histoire.strip(), [], niveau))
     if not r["plans"]:
         raise ErreurAssistant(_("L'IA n'a pas proposé de plan utilisable : reformulez l'histoire, ou changez d'IA."))
     return r
+
+
+CONSIGNE_CONTINUITE = """Tu es scripte (continuité) sur une séquence vidéo fabriquée par une IA, plan par plan. Voici les
+personnages et objets (noms exacts) et les plans dans l'ordre. Pour CHAQUE plan, dis qui et quoi on VOIT réellement à l'image,
+en suivant l'histoire : quelqu'un qui monte dans un véhicule, entre quelque part ou sort du champ n'est plus visible dans les
+plans suivants tant qu'il n'en ressort pas. Dis où sont ceux qu'on ne voit pas. Propose le cadrage qui permet l'action (plan
+large pour un déplacement ou un véhicule entier, plus serré pour un geste ; fixe, recule, s'approche, accompagne).
+Rends un objet JSON {{"plans": [{{"personnages": ["nom", ...], "hors_champ": "...", "camera": "..."}}]}} avec exactement
+{n} plans, dans le même ordre. Ecris en {langue}."""
+
+
+def continuite(params, seq, niveau="claude"):
+    """0.9.86 : la scripte. Remplit, plan par plan, qui est visible, où sont les autres, et le cadrage (texte seul, peu
+    coûteux). Les plans gardent leur action. Renvoie le nombre de plans changés."""
+    noms = [p["nom"] for p in seq["personnages"]]
+    texte = ("Personnages et objets : " + "; ".join(f"{p['nom']} ({(p.get('description') or '')[:120]})" for p in seq["personnages"]) +
+             "\nPlans :\n" + "\n".join(f"{i + 1}. {pl.get('action', '')}" for i, pl in enumerate(seq["plans"])))
+    r = demander(params, CONSIGNE_CONTINUITE.format(n=len(seq["plans"]), langue=_langue()), texte, [], niveau, max_jetons=1500)
+    lignes = (r or {}).get("plans") if isinstance(r, dict) else None
+    if not isinstance(lignes, list) or len(lignes) != len(seq["plans"]):
+        raise ErreurAssistant(_("La continuité n'a pas pu être établie : réessayez, ou remplissez la colonne « Qui »."))
+    bas = {n.lower(): n for n in noms}
+    change = 0
+    for pl, l in zip(seq["plans"], lignes):
+        if not isinstance(l, dict):
+            continue
+        vus = [bas[x.lower()] for x in (_texte(y, 40) for y in l.get("personnages") or [] if y) if x.lower() in bas]
+        avant = (pl.get("personnages"), pl.get("hors_champ"), pl.get("camera"))
+        pl["personnages"] = vus
+        pl["hors_champ"] = _texte(l.get("hors_champ"), 200)
+        if l.get("camera"):
+            pl["camera"] = _texte(l.get("camera"), 160)
+        pl["visibles_fixes"] = True
+        if avant != (pl["personnages"], pl["hors_champ"], pl.get("camera")):
+            change += 1
+    return change
 
 
 def analyse_simple(histoire):
@@ -300,11 +396,19 @@ def appliquer(seq, analyse, image=None):
                 li["biblio"] = a.get("biblio") or vieux.get("biblio", "")
             lieux.append(li)
         seq["lieux"] = lieux
-    vieux_plans = {(pl.get("action"), tuple(pl.get("personnages") or [])): pl for pl in seq.get("plans") or []}
+    cle_plan = lambda pl: (pl.get("action"), tuple(pl.get("personnages") or []), pl.get("camera") or "")
+    vieux_plans = {cle_plan(pl): pl for pl in seq.get("plans") or []}
     plans = []
+    precedent_change = False
     for a in analyse["plans"]:
         pl = Q.plan(a["action"], a["personnages"], a.get("lieu", ""), a["duree"], camera=a.get("camera", ""))
-        vieux = vieux_plans.get((a["action"], tuple(a["personnages"])))
+        for cle in ("hors_champ", "visibles_fixes"):
+            if a.get(cle):
+                pl[cle] = a[cle]
+        vieux = vieux_plans.get(cle_plan(a))
+        if vieux and precedent_change and vieux.get("enchainer", True):
+            vieux = dict(vieux, image_fin="", images_ok=False, fichier="", verdict=None)    # son départ a changé : arrivée à refaire
+        precedent_change = not vieux                # 0.9.86 : seul ce qui a changé (et le plan qui en part) est refait
         if vieux:
             for cle in ("image", "image_fin", "images_ok", "sans_fin", "fichier", "verdict", "consigne"):
                 if cle in vieux:
@@ -319,7 +423,7 @@ def appliquer(seq, analyse, image=None):
 
 def uniformiser(seq, image=None):
     """Les règles que l'utilisateur n'a plus à connaître : actions doubles coupées, premier plan parti de l'image du rush,
-    plans enchaînés, plans sans personnage = tout le monde."""
+    plans enchaînés."""
     i = 0
     while i < len(seq["plans"]) and len(seq["plans"]) < 12:
         if Q.actions_multiples(seq["plans"][i].get("action", "")) and not seq["plans"][i].get("fichier"):
@@ -348,7 +452,8 @@ def etat(seq):
             "lieux": [{"nom": x["nom"], "sur_image": x.get("source") == "image", "description": x.get("description", "")}
                       for x in seq.get("lieux") or []],
             "plans": [{"action": pl["action"], "personnages": pl.get("personnages") or [], "duree": pl.get("duree"),
-                       "camera": pl.get("camera", ""), "lieu": pl.get("lieu", "")} for pl in seq["plans"]]}
+                       "camera": pl.get("camera", ""), "lieu": pl.get("lieu", ""), "hors_champ": pl.get("hors_champ", ""),
+                       "visibles_fixes": bool(pl.get("visibles_fixes"))} for pl in seq["plans"]]}
 
 
 def modifier(params, seq, demande, niveau="claude", image=None):
@@ -386,12 +491,35 @@ def manques(params):
     return out
 
 
+IMAGES_PAR = ("gemini", "locale", "aucune")
+
+
+def images_par(seq, params):
+    """Qui fait les images de préparation (0.9.86) : gemini (fidèle aux visages, 0,04 $ l'image), locale (IA de ce
+    poste, gratuite, visages approximatifs, sans fiche) ou aucune (la vidéo part sans images de contrôle)."""
+    voulu = seq.get("images_par") or params.get("assistant_images_par") or "gemini"
+    if voulu == "gemini" and not params.get("clef_gemini"):
+        voulu = "locale" if image_locale_possible(params) else "aucune"
+    if voulu == "locale" and not image_locale_possible(params):
+        voulu = "aucune"
+    return voulu
+
+
+def image_locale_possible(params):
+    from . import packs_ia as P
+    try:
+        return bool(P.modele_actif("image", params))
+    except Exception:          # noqa: BLE001
+        return False
+
+
 def a_preparer(seq, params):
     """(fiches à faire, images de départ à composer, images d'arrivée à composer)."""
-    if not params.get("clef_gemini"):
+    par = images_par(seq, params)
+    if par == "aucune":
         return 0, 0, 0
     tous = list(range(len(seq["plans"])))
-    fiches = len(Q.sans_planche(seq, tous)) if tous else 0
+    fiches = len(Q.sans_planche(seq, tous)) if tous and par == "gemini" else 0
     depart = sum(1 for i in tous if not Q.depart_prevu(seq, i) and not (i > 0 and seq["plans"][i].get("enchainer", True)))
     arrivee = sum(1 for pl in seq["plans"] if not (pl.get("image_fin") and os.path.exists(pl["image_fin"])) and not pl.get("sans_fin"))
     return fiches, depart, arrivee
@@ -411,8 +539,9 @@ def estimer(seq, moteur_video, params, niveau="claude"):
     restants = [i for i, pl in enumerate(seq["plans"]) if not (pl.get("fichier") and os.path.exists(pl["fichier"]))]
     videos = sum(prix_plan(seq, i, moteur_video, params) for i in restants)
     lectures = PRIX_LECTURE * len(restants) if niveau != "locale" else 0.0
-    images = PRIX_IMAGE * (f + d + a)
-    reserve = PRIX_IMAGE * 3 if (images or videos) and params.get("clef_gemini") else 0.0     # trois corrections d'images
+    gemini = images_par(seq, params) == "gemini"
+    images = PRIX_IMAGE * (f + d + a) if gemini else 0.0
+    reserve = PRIX_IMAGE * 3 if (images or videos) and gemini else 0.0     # trois corrections d'images
     return {"images": round(images, 2), "videos": round(videos, 2), "lectures": round(lectures, 2), "reserve": round(reserve, 2),
             "total": round(images + videos + lectures + reserve, 2)}
 
@@ -459,7 +588,8 @@ def preparer(seq, params, progression=None, arret=lambda: False):
     av = progression or (lambda f, t="": None)
     n_avant, images_avant = _images_faites(seq)
     tous = list(range(len(seq["plans"])))
-    a_ficher = Q.sans_planche(seq, tous)
+    seq["images_par"] = images_par(seq, params)
+    a_ficher = Q.sans_planche(seq, tous) if seq["images_par"] == "gemini" else []
     etapes = len(a_ficher) + len(tous)
     k = 0
     for p in a_ficher:

@@ -9,7 +9,7 @@ import copy
 import os
 import time
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (QAbstractItemView, QButtonGroup, QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QGridLayout, QHBoxLayout,
                                QHeaderView, QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMessageBox,
@@ -104,6 +104,9 @@ class DialogueAssistant(QDialog):
         v = QVBoxLayout(self)
         self.fil = QLabel("")
         self.fil.setWordWrap(True)
+        self.fil.setTextFormat(Qt.RichText)
+        self.fil.setToolTip(_("Cliquez une étape déjà vue pour y revenir : rien n'est perdu ni refait"))
+        self.fil.linkActivated.connect(lambda lien: self.revenir_a(int(lien)))
         v.addWidget(self.fil)
         self.pages = QStackedWidget()
         for fabrique in (self._page_idee, self._page_qui, self._page_plans, self._page_images, self._page_video,
@@ -114,13 +117,34 @@ class DialogueAssistant(QDialog):
         # --- toujours là : écrire librement, budget, état, navigation
         hl = QHBoxLayout()
         self.libre = QLineEdit()
-        self.libre.setPlaceholderText(_("Ou dites-le en clair : « le chauffeur plus âgé », « le passage lent plus long »…"))
+        self.libre.setPlaceholderText(_("Ou dites-le en clair : « le plan 3 plus court », « ajoute un plan où il salue », « une voix plus grave »…"))
         self.libre.returnPressed.connect(self.dire)
+        self.libre.setToolTip(_("Pour changer quelque chose sans chercher où : écrivez ce que vous voulez, l'assistant modifie lui-même "
+                                "les cartes, les plans ou la musique, puis vous montre le résultat. A la page 1, la phrase "
+                                "s'ajoute à votre idée."))
+        aide_libre = QLabel("ⓘ")
+        aide_libre.setToolTip(self.libre.toolTip())
+        hl.addWidget(aide_libre)
         hl.addWidget(self.libre, 1)
         self.b_dire = QPushButton(_("Envoyer"))
         self.b_dire.clicked.connect(self.dire)
         hl.addWidget(self.b_dire)
+        hl.addWidget(QLabel(_("Assistant :")))
+        self.niveau_bas = QComboBox()                   # 0.9.86 : le cerveau se voit et se change à chaque étape
+        self.niveau_bas.setModel(self.niveau.model())
+        self.niveau_bas.setCurrentIndex(self.niveau.currentIndex())
+        self.niveau_bas.setToolTip(_("Qui lit l'idée, découpe en plans, vérifie la continuité, relit et améliore les textes. Les "
+                                     "images sont faites par Gemini, la vidéo par le moteur choisi."))
+        self.niveau_bas.currentIndexChanged.connect(lambda i: self.niveau.setCurrentIndex(i))
+        self.niveau.currentIndexChanged.connect(lambda i: (self.niveau_bas.setCurrentIndex(i), self._maj_credits()))
+        hl.addWidget(self.niveau_bas)
         v.addLayout(hl)
+        from .credit_ia import LigneCredit
+        hc = QHBoxLayout()                              # 0.9.86 : crédit et « Recharger » de chaque IA utilisée
+        self.credits = [LigneCredit(self.params, None, compact=True) for _i in range(3)]
+        for c in self.credits:
+            hc.addWidget(c, 1)
+        v.addLayout(hc)
         self.l_budget = QLabel("")
         self.l_budget.setTextFormat(Qt.RichText)
         self.l_budget.setWordWrap(True)
@@ -154,6 +178,26 @@ class DialogueAssistant(QDialog):
         v.addLayout(hn)
         self._preparer_depart()
         self.aller(P_IDEE)
+
+    def _maj_credits(self):
+        """Les comptes réellement utilisés : le cerveau, Gemini pour les images (vidéo), le moteur vidéo."""
+        if not hasattr(self, "credits"):
+            return
+        from .credit_ia import fournisseur_du_moteur
+        f = {"claude": "anthropic", "gemini": "google"}.get(self._niveau())
+        voulus = [f]
+        if self.genre == "video":
+            voulus.append("google" if A.images_par(self.seq, self.params) == "gemini" else None)
+            m = self.moteur.currentData() if hasattr(self, "moteur") else None
+            voulus.append(fournisseur_du_moteur(m, self.params))
+        vus = []
+        for x in voulus:
+            if x and x not in vus:
+                vus.append(x)
+        for i, c in enumerate(self.credits):
+            nouveau = vus[i] if i < len(vus) else None
+            if nouveau != c.fournisseur:
+                c.montrer(nouveau)
 
     # ------------------------------------------------------------------ outils de page
     def _titre(self, texte):
@@ -194,9 +238,10 @@ class DialogueAssistant(QDialog):
                                  "objets, style, voix, paroles…) et le déroulé ; vous n'aurez plus qu'à valider ou corriger, carte par "
                                  "carte.")))
         self.c_histoire = ChampAmeliorable("", "idee", 0, self.ameliorer,
-                                           _("ex. : Les deux femmes descendent les marches puis vont vers une limousine noire ; un chauffeur "
-                                             "leur ouvre la portière et la limousine s'éloigne.\nou : une ballade rock de 3 minutes, rapide au "
-                                             "début, avec au milieu un long passage lent et entraînant, voix chaude."))
+                                           _("Exemples :\n· la suite de ce plan : il pose sa tasse, se lève et sort par la porte du "
+                                             "jardin\n· une scène : un enfant lâche un ballon rouge qui s'envole au-dessus des toits, sa mère "
+                                             "le console\n· une chanson pop joyeuse de 2 minutes, voix d'homme, refrain qui monte\n· une "
+                                             "intro de 4 s pour ma chaîne de cuisine, avec mon logo et un petit son"))
         self.histoire = self.c_histoire.t
         self.c_histoire.change.connect(self._deviner)
         v.addWidget(self.c_histoire, 1)
@@ -571,7 +616,7 @@ class DialogueAssistant(QDialog):
             p = next((x for x in self.seq["personnages"] if x["nom"].lower() == (e.get("nom") or "").lower()), None)
             planche = (p or {}).get("planche", "")
         nom, ok = self._precision(_("Garder dans ma bibliothèque"), _("Nom sous lequel le retrouver (ex. : « Chanteuse rock chaude », "
-                                                                     "« Chauffeur de limousine ») :"), e.get("nom", ""))
+                                                                     "« Vieux marin à la barbe blanche ») :"), e.get("nom", ""))
         if not ok or not nom.strip():
             return
         try:
@@ -592,15 +637,18 @@ class DialogueAssistant(QDialog):
         w = QWidget()
         v = QVBoxLayout(w)
         v.addWidget(self._titre(_("Voici les plans : une seule action simple par plan")))
-        v.addWidget(self._aide(_("Corrigez le texte, la durée, ou qui apparaît (noms séparés par une virgule ; vide = tout le monde). Un "
-                                 "plan à deux actions est coupé en deux tout seul. « ✨ Améliorer le plan choisi » reformule son action.")))
-        self.t_plans = QTableWidget(0, 3)
-        self.t_plans.setHorizontalHeaderLabels([_("Ce qu'on voit"), _("Qui"), _("Durée (s)")])
-        self._table(self.t_plans, (1, 2), 0)
+        v.addWidget(self._aide(_("Corrigez le texte, qui on voit (noms séparés par une virgule ; vide = personne, seulement le décor "
+                                 "ou un objet), le cadrage ou la durée. Les personnes qui ne sont plus visibles (dans la voiture, "
+                                 "sorties) ne reviennent pas : survolez « Qui » pour voir où elles sont. Un plan à deux actions est "
+                                 "coupé en deux tout seul.")))
+        self.t_plans = QTableWidget(0, 4)
+        self.t_plans.setHorizontalHeaderLabels([_("Ce qu'on voit"), _("Qui"), _("Cadrage"), _("Durée (s)")])
+        self._table(self.t_plans, (1, 3), 0)
         v.addWidget(self.t_plans, 1)
         h = QHBoxLayout()
         for lib, fn in ((_("Ajouter un plan"), self._ajouter_plan), (_("Retirer"), lambda: self._retirer(self.t_plans)),
-                        (_("✨ Améliorer le plan choisi"), self._ameliorer_plan)):
+                        (_("✨ Améliorer le plan choisi"), self._ameliorer_plan),
+                        (_("✨ Vérifier la continuité"), self.verifier_continuite)):
             b = QPushButton(lib)
             b.clicked.connect(fn)
             h.addWidget(b)
@@ -615,13 +663,41 @@ class DialogueAssistant(QDialog):
         for m in sorted(GV.disponibles(self.params), key=lambda m: m["nom"].lower()):
             self.moteur.addItem(m["nom"] + ("  ★ " + _("conseillé") if m["id"] == conseil else ""), m["id"])
         self.moteur.setCurrentIndex(max(0, self.moteur.findData(conseil)))
-        self.moteur.currentIndexChanged.connect(lambda _i: self._maj_prix())
+        self.moteur.currentIndexChanged.connect(lambda _i: (self._maj_prix(), self._maj_credits()))
         hm.addWidget(self.moteur, 1)
         v.addLayout(hm)
+        hi = QHBoxLayout()                              # 0.9.86 : qui fait les images de contrôle
+        hi.addWidget(QLabel(_("Images de contrôle")))
+        self.images_par = QComboBox()
+        for k, lib in (("gemini", _("Gemini : visages fidèles, environ 0,04 $ l'image")),
+                       ("locale", _("IA de ce poste : gratuite, visages approximatifs")),
+                       ("aucune", _("Aucune : la vidéo part directement"))):
+            self.images_par.addItem(lib, k)
+        self.images_par.setToolTip(_("Avant la vidéo, une image de départ et une image d'arrivée par plan, à regarder et corriger. "
+                                     "Gemini garde les visages des fiches ; l'IA de ce poste ne coûte rien mais les visages "
+                                     "changent ; sans images, le moteur vidéo invente tout seul la fin de chaque plan."))
+        self.images_par.setCurrentIndex(max(0, self.images_par.findData(A.images_par(self.seq, self.params))))
+        self.images_par.currentIndexChanged.connect(self._images_par_change)
+        hi.addWidget(self.images_par, 1)
+        v.addLayout(hi)
         self.l_prix = QLabel("")
         self.l_prix.setWordWrap(True)
         v.addWidget(self.l_prix)
         return w
+
+    def _images_par_change(self, _i=None):
+        voulu = self.images_par.currentData()
+        if voulu == "gemini" and not self.params.get("clef_gemini"):
+            self.etat.setText(_("Il faut une clef Gemini (Préférences › IA › Connecter une IA)."))
+        elif voulu == "locale" and not A.image_locale_possible(self.params):
+            self.etat.setText(_("Aucun modèle d'image sur ce poste : Préférences › IA locale."))
+        self.seq["images_par"] = voulu
+        self.params["assistant_images_par"] = voulu
+        self.images_par.blockSignals(True)
+        self.images_par.setCurrentIndex(max(0, self.images_par.findData(A.images_par(self.seq, self.params))))
+        self.images_par.blockSignals(False)
+        self._maj_prix()
+        self._maj_credits()
 
     def _ameliorer_plan(self):
         r = self.t_plans.currentRow()
@@ -653,9 +729,36 @@ class DialogueAssistant(QDialog):
         t = self.t_plans
         r = t.rowCount()
         t.insertRow(r)
-        t.setItem(r, 0, QTableWidgetItem(pl.get("action", "")))
-        t.setItem(r, 1, QTableWidgetItem(", ".join(pl.get("personnages") or [])))
-        t.setItem(r, 2, QTableWidgetItem(str(int(pl.get("duree") or Q.DUREE_PLAN))))
+        it = QTableWidgetItem(pl.get("action", ""))
+        it.setData(Qt.UserRole, {k: pl.get(k) for k in ("hors_champ", "visibles_fixes") if pl.get(k)})
+        t.setItem(r, 0, it)
+        qui = QTableWidgetItem(", ".join(pl.get("personnages") or []) if (pl.get("personnages") or pl.get("visibles_fixes"))
+                               else ", ".join(p["nom"] for p in self.seq.get("personnages") or []))
+        if pl.get("hors_champ"):
+            qui.setToolTip(_("Pas visibles : {t}", t=pl["hors_champ"]))
+        t.setItem(r, 1, qui)
+        t.setItem(r, 2, QTableWidgetItem(pl.get("camera", "")))
+        t.setItem(r, 3, QTableWidgetItem(str(int(pl.get("duree") or Q.DUREE_PLAN))))
+
+    def verifier_continuite(self):
+        """La scripte (0.9.86) : qui est visible plan par plan, où sont les autres, quel cadrage."""
+        if self._en_calcul():
+            return
+        self._lire()
+        seq, niveau = copy.deepcopy(self.seq), self._niveau()
+
+        def fin(r, e):
+            if e or r is None:
+                return
+            for a, b in zip(self.seq["plans"], seq["plans"]):
+                for k in ("personnages", "hors_champ", "camera", "visibles_fixes"):
+                    a[k] = b.get(k)
+            if self._cloud():
+                A.depenser(self.seq, _("Continuité"), A.PRIX_LECTURE)
+            self._remplir_plans()
+            self._maj_prix()
+            self.etat.setText(_("✓ Continuité vérifiée : {n} plan(s) corrigé(s). Vérifiez « Qui » et « Cadrage ».", n=r))
+        self._lancer(lambda _t: A.continuite(self.params, seq, niveau), _("L'assistant vérifie qui est visible dans chaque plan"), fin)
 
     def _ajouter_plan(self):
         self._ligne_plan({"action": "", "duree": Q.DUREE_PLAN})
@@ -685,13 +788,14 @@ class DialogueAssistant(QDialog):
                 qui = [noms[n.strip().lower()] for n in (self.t_plans.item(r, 1).text() if self.t_plans.item(r, 1) else "").split(",")
                        if n.strip().lower() in noms]
                 try:
-                    duree = int(float((self.t_plans.item(r, 2).text() or "").replace(",", ".")))
+                    duree = int(float((self.t_plans.item(r, 3).text() or "").replace(",", ".")))
                 except (ValueError, AttributeError):
                     duree = Q.DUREE_PLAN
-                plans.append({"action": action, "personnages": qui, "duree": max(3, min(15, duree)), "camera": ""})
-            cameras = {pl["action"]: pl.get("camera", "") for pl in self.seq["plans"]}
-            for pl in plans:
-                pl["camera"] = cameras.get(pl["action"], "")
+                camera = (self.t_plans.item(r, 2).text() if self.t_plans.item(r, 2) else "").strip()
+                pl = {"action": action, "personnages": qui, "duree": max(3, min(15, duree)), "camera": camera,
+                      "visibles_fixes": True}                 # 0.9.86 : ce que montre « Qui » fait foi (vide = personne)
+                pl.update({k: v for k, v in (self.t_plans.item(r, 0).data(Qt.UserRole) or {}).items() if k == "hors_champ"})
+                plans.append(pl)
         else:
             plans = A.etat(self.seq)["plans"]
             for pl in plans:
@@ -753,9 +857,12 @@ class DialogueAssistant(QDialog):
     def aller(self, k):
         self.pages.setCurrentIndex(k)
         etapes = ETAPES.get(self.genre, ETAPES["video"])
-        self.fil.setText("   ›   ".join(f"<b>{e}</b>" if p == k else e for p, e in etapes))
+        self._vues = getattr(self, "_vues", set()) | {k}
+        self.fil.setText("   ›   ".join(f"<b>{e}</b>" if p == k else (f"<a href='{p}'>{e}</a>" if p in self._vues else e)
+                                        for p, e in etapes))
         self.b_suiv.setText(BOUTONS[k])
         self._maj()
+        self._maj_credits()
 
     def _en_calcul(self):
         return self.tache is not None and self.tache.isRunning()
@@ -763,7 +870,7 @@ class DialogueAssistant(QDialog):
     def _maj(self):
         calc = self._en_calcul()
         k = self.pages.currentIndex()
-        self.b_prec.setEnabled(k > P_IDEE and not calc)
+        self.b_prec.setEnabled(k > P_IDEE and (not calc or k in (P_IMAGES, P_VIDEO)))
         pret = True
         if k == P_VIDEO:
             pret = any(pl.get("fichier") and os.path.exists(pl["fichier"]) for pl in self.seq["plans"])
@@ -794,6 +901,30 @@ class DialogueAssistant(QDialog):
                                     d=f"<b style='color:#e5484d'>{dep}</b> ⚠ " + _("dépassé") if rouge else f"<b>{dep}</b>"))
         else:
             self.l_budget.setText("")
+
+    def revenir_a(self, cible):
+        """Clic sur une étape du fil (0.9.86) : on y revient, ce qui est fait est gardé ; en avançant, seul ce qui a changé est
+        refait."""
+        k = self.pages.currentIndex()
+        if cible == k:
+            return
+        if self._en_calcul() and k in (P_QUI, P_PLANS):
+            self.etat.setText(_("L'assistant calcule : attendez la fin, ou « Réduire »."))
+            return
+        if k in (P_QUI, P_PLANS) and not self._en_calcul():
+            self._lire()
+        if k in (P_M_DEROULE, P_M_PAROLES):
+            self._lire_musique()
+        if cible == P_QUI:
+            self._remplir_cartes()
+        elif cible == P_PLANS:
+            self._remplir_plans()
+            self._maj_prix()
+        elif cible == P_IMAGES:
+            self._remplir_images()
+        elif cible == P_VIDEO:
+            self._remplir_video()
+        self.aller(cible)
 
     def precedent(self):
         k = self.pages.currentIndex()
@@ -829,6 +960,17 @@ class DialogueAssistant(QDialog):
                 self.analyser_musique()
             else:
                 self.genre = "video"
+                if self.seq.get("plans") and self.seq.get("histoire") == self.c_histoire.texte() and \
+                        getattr(self, "_lue_avec", None) == (self._suite(), self._niveau()):
+                    self.aller(P_QUI)              # 0.9.86 : rien n'a changé : on retrouve tout tel quel
+                    return
+                if self.seq.get("plans") and getattr(self, "_lue_avec", None) and getattr(self, "_test_oui", None) is None \
+                        and QMessageBox.question(
+                        self, _("Assistant de création"),
+                        _("Votre idée a changé. Relire l'idée ? Les cartes et les plans seront refaits ; les fiches, images et "
+                          "vidéos des plans qui ne changent pas sont gardées.\n\n« Non » garde tout tel quel.")) != QMessageBox.Yes:
+                    self.aller(P_QUI)
+                    return
                 self.analyser()
         elif k == P_QUI:
             if not self._cartes_completes():
@@ -840,6 +982,8 @@ class DialogueAssistant(QDialog):
             self._remplir_plans()
             self.aller(P_PLANS)
             self._maj_prix()
+            if self.seq["personnages"] and not any(pl.get("visibles_fixes") for pl in self.seq["plans"]):
+                self.verifier_continuite()        # 0.9.86 : découpage fait sans l'IA : la scripte passe d'office
         elif k == P_PLANS:
             self.preparer()
         elif k == P_IMAGES:
@@ -935,13 +1079,16 @@ class DialogueAssistant(QDialog):
             if self._cloud() and not souci:
                 A.depenser(self.seq, _("Lecture de l'histoire"), A.PRIX_LECTURE)
             A.appliquer(self.seq, analyse, image)
+            self._lue_avec = (bool(image), niveau) if not souci else None     # lecture ratée : « Suivant » réessaie
             self._remplir_cartes()
             self._remplir_plans()
             self.aller(P_QUI)
             if self.cartes:
                 self._activer(self.cartes[0])
-            self.etat.setText(_("L'IA n'a pas répondu ({e}) : l'histoire est découpée simplement, ajoutez les personnes avec « + Une "
-                                "personne ».", e=texte_erreur(souci)[:160]) if souci else
+            self.etat.setText(_("⚠ L'assistant n'a pas pu lire votre idée ({e}). PhilCut l'a découpée sans IA, phrase par phrase : "
+                                "ajoutez les personnes avec « + Une personne » ; à l'étape des plans, l'assistant vérifiera qui "
+                                "est visible dans chaque plan. Ou « ‹ Précédent » pour réessayer, ou changer d'assistant.",
+                                e=texte_erreur(souci)[:160]) if souci else
                               (analyse.get("remarques") or _("Vérifiez chaque carte, corrigez ce qui ne va pas, puis continuez.")))
         self._lancer(travail, _("L'assistant lit votre idée et regarde l'image") if image else _("L'assistant lit votre idée"), fin)
 
@@ -991,6 +1138,11 @@ class DialogueAssistant(QDialog):
         self._remplir_plans()
         moteur_video = self.moteur.currentData()
         self.seq["moteur"] = moteur_video
+        if A.images_par(self.seq, self.params) != "aucune" and sum(A.a_preparer(self.seq, self.params)) == 0:
+            self._remplir_images()                 # 0.9.86 : tout est déjà fait : rien à repayer
+            self.aller(P_IMAGES)
+            self.etat.setText(_("Les fiches et images sont déjà faites : rien n'a été refait."))
+            return
         e = A.estimer(self.seq, moteur_video, self.params, self._niveau())
         if e["total"] > 0 and getattr(self, "_test_oui", None) is None and QMessageBox.question(
                 self, _("Assistant de création"),
@@ -1001,7 +1153,7 @@ class DialogueAssistant(QDialog):
                   r=A.argent(e["reserve"]))) != QMessageBox.Yes:
             return
         A.prevoir(self.seq, e["total"])
-        if not self.params.get("clef_gemini"):               # pas d'images de contrôle possibles : droit à la vidéo
+        if A.images_par(self.seq, self.params) == "aucune":     # pas d'images de contrôle : droit à la vidéo
             self._remplir_video()
             self.aller(P_VIDEO)
             self.fabriquer()
@@ -1034,7 +1186,9 @@ class DialogueAssistant(QDialog):
                 if cle in b:
                     a[cle] = b[cle]
 
-    def _remplir_images(self):
+    def _remplir_images(self, cible=None):
+        """cible = (plan, "depart" / "arrivee") : l'image qu'on vient de refaire, montrée et entourée (0.9.86)."""
+        self._vignettes_plans = {}
         w = QWidget()
         g = QGridLayout(w)
         ligne = 0
@@ -1070,6 +1224,10 @@ class DialogueAssistant(QDialog):
                 bloc = QVBoxLayout()
                 vg = Vignette(chemin, 230, vide)
                 vg.clic.connect(lambda ch: agrandir(self, ch))
+                self._vignettes_plans[(i, quoi)] = vg
+                if cible == (i, quoi):
+                    vg.setStyleSheet("border: 3px solid #f5a524; border-radius: 6px;")
+                    vg.setToolTip(_("L'image refaite"))
                 bloc.addWidget(vg)
                 enchaine = quoi == "depart" and i > 0 and not pl.get("image")
                 b = QPushButton(_("Corriger l'arrivée…") if quoi == "arrivee" else _("Corriger le départ…"))
@@ -1082,6 +1240,9 @@ class DialogueAssistant(QDialog):
         g.setColumnStretch(1, 1)
         g.setRowStretch(ligne, 1)
         self.zone_images.setWidget(w)
+        if cible in self._vignettes_plans:
+            vg = self._vignettes_plans[cible]
+            QTimer.singleShot(0, lambda: self.zone_images.ensureWidgetVisible(vg, 40, 120))
 
     def _precision(self, titre, question, defaut=""):
         if getattr(self, "_test_precision", None) is not None:
@@ -1121,11 +1282,13 @@ class DialogueAssistant(QDialog):
                 self.etat.setText(_("Fiche refaite. Si elle change beaucoup, corrigez aussi les images des plans où on le voit."))
         self._lancer(travail, _("Nouvelle fiche de « {n} »", n=p["nom"]), fin)
 
-    def corriger_image(self, i, quoi):
-        texte, ok = self._precision(_("Corriger l'image"), _("Ce qui ne va pas, ou ce que vous voulez voir (ex. : assise, l'ordinateur "
-                                                             "ouvert, face caméra) ; environ 0,04 $ :"))
-        if not ok:
-            return
+    def corriger_image(self, i, quoi, texte=None):
+        if texte is None:
+            texte, ok = self._precision(_("Corriger l'image"), _("Ce qui ne va pas, ou ce que vous voulez voir. Le cadrage compte : "
+                                                                 "« plan large, on voit tout le véhicule », « plus près des mains », "
+                                                                 "« elle n'est plus là ». Environ 0,04 $ :"))
+            if not ok:
+                return
         seq = copy.deepcopy(self.seq)
 
         def travail(_t):
@@ -1139,8 +1302,18 @@ class DialogueAssistant(QDialog):
                 self._reprendre_images(r)
                 self.seq["plans"][i]["fichier"] = ""
                 A.depenser(self.seq, _("Image refaite"), A.PRIX_IMAGE)
-                self._remplir_images()
-                self.etat.setText(_("Image refaite : regardez-la."))
+                self._remplir_images((i, quoi))
+                self.etat.setText(_("Image refaite : regardez-la (entourée en orange)."))
+                suivant = i + 1
+                if quoi == "arrivee" and suivant < len(self.seq["plans"]) and self.seq["plans"][suivant].get("enchainer", True) \
+                        and not self.seq["plans"][suivant].get("image"):
+                    nxt = self.seq["plans"][suivant]       # 0.9.86 : cette arrivée est le départ du plan suivant
+                    nxt["fichier"], nxt["images_ok"] = "", False
+                    if nxt.get("image_fin") and (getattr(self, "_test_oui", None) is not None or QMessageBox.question(
+                            self, _("Assistant de création"),
+                            _("Cette image est aussi le départ du plan {n}. Refaire son arrivée pour qu'elle suive (environ "
+                              "0,04 $) ?", n=suivant + 1)) == QMessageBox.Yes):
+                        QTimer.singleShot(0, lambda: self.corriger_image(suivant, "arrivee", ""))
         self._lancer(travail, _("Nouvelle image du plan {i}", i=i + 1), fin)
 
     # ------------------------------------------------------------------ 6. vidéo
@@ -1243,7 +1416,7 @@ class DialogueAssistant(QDialog):
         self.apercu.arreter()
         pl = self.seq["plans"][i]
         pl["fichier"], pl["verdict"] = "", None
-        if texte.strip() and self.params.get("clef_gemini"):
+        if texte.strip() and A.images_par(self.seq, self.params) != "aucune":
             seq = copy.deepcopy(self.seq)
 
             def fin(r, e):
@@ -2160,7 +2333,7 @@ class DialogueAssistant(QDialog):
         v = QVBoxLayout()
         v.addWidget(self._titre(_("Le texte et le rendu")))
         v.addWidget(QLabel(_("Titre")))
-        self.c_titre = ChampAmeliorable("", "titre", 1, self.ameliorer, _("ex. : Mes vols du dimanche"))
+        self.c_titre = ChampAmeliorable("", "titre", 1, self.ameliorer, _("ex. : Cuisine du marché"))
         v.addWidget(self.c_titre)
         v.addWidget(QLabel(_("Sous-titre (facultatif)")))
         self.c_sous = ChampAmeliorable("", "titre", 1, self.ameliorer, _("ex. : épisode 3"))
@@ -2347,6 +2520,22 @@ class DialogueAssistant(QDialog):
         p = self.ed.projet
         p.d["sequences_ia"] = [s for s in p.d.get("sequences_ia") or [] if s.get("cree") != self.seq.get("cree")] + [copy.deepcopy(self.seq)]
         Q.enregistrer(self.seq)
+
+    def reprendre_sequence(self, seq):
+        """Retour du réglage manuel : la séquence réglée à la main reprend sa place dans l'assistant."""
+        import copy as _c
+        self.genre = "video"
+        self.seq = _c.deepcopy(seq)
+        self._lue_avec = (self._suite(), self._niveau())
+        if self.seq.get("histoire"):
+            self.c_histoire.mettre(self.seq["histoire"])
+        self._remplir_cartes()
+        self._remplir_plans()
+        self.aller(P_PLANS)
+        self._maj_prix()
+        self.show()
+        self.raise_()
+        self.etat.setText(_("De retour dans l'assistant, avec vos réglages."))
 
     def mode_manuel(self):
         """Ce qui est préparé, dans la fenêtre habituelle : la Séquence IA (vidéo), la Fabrique musique ou la Fabrique (intro),

@@ -148,8 +148,15 @@ class CarteElement(QFrame):
             b.clicked.connect(lambda: retirer(self))
             h.addWidget(b)
         v.addLayout(h)
-        self.desc = ChampAmeliorable(element.get("description", ""), element.get("genre") or element.get("type", "idee"), 2, ameliorer,
-                                     _("Ce qu'on doit voir ou entendre…"))
+        g = element.get("genre") or element.get("type", "idee")
+        indic = {"personne": _("Sa description, pour que l'IA le dessine pareil dans chaque plan : âge, cheveux, visage, tenue "
+                               "(ex. : femme d'une trentaine d'années, cheveux bruns longs, manteau noir)"),
+                 "objet": _("Sa description : couleur, forme, matière (ex. : vélo rouge ancien, panier en osier)"),
+                 "lieu": _("Le décor : lumière, matières, détails (ex. : cuisine claire, carrelage blanc, matin)")}.get(
+            g, _("Ce qu'on doit voir ou entendre : la description qui sert à le fabriquer"))
+        self.desc = ChampAmeliorable(element.get("description", ""), g, 2, ameliorer, indic)
+        self.desc.setToolTip(_("Cette description part avec chaque demande à l'IA : plus elle est précise, plus il reste "
+                               "identique d'un plan à l'autre. « ✨ Améliorer » la reformule."))
         self.desc.change.connect(self._modifie)
         v.addWidget(self.desc)
         v.addWidget(QLabel(_("D'où vient-il ?")))

@@ -78,6 +78,10 @@ def couper_plan(seq, i):
     elif not sujet and pl.get("personnages") and len(pl["personnages"]) == 1 and not re.match(
             r"(?i)(?:le|la|les|l'|un|une|des|il|elle|ils|elles|on|the|a|an|he|she|they)\b", b):
         b = f"{pl['personnages'][0]} {b}"         # « s'assoit » → « Hélène s'assoit » ; pas devant un sujet déjà là
+    elif not sujet and not re.match(r"(?i)(?:le|la|les|l'|un|une|des|il|elle|ils|elles|on|the|a|an|he|she|they)\b", b):
+        g = re.match(r"(?i)((?:le|la|les|l'|un|une|des|the|a|an)\s*[^\s,]+)", a)     # 0.9.86 : « s'éloigne » → « La voiture s'éloigne »
+        if g:
+            b = f"{g.group(1)} {b}"
     d = max(3, int(round(float(pl.get("duree") or DUREE_PLAN) / 2 + 0.5)))
     p1 = dict(pl, action=a[0].upper() + a[1:], duree=d, consigne="", fichier="", image="")
     p2 = dict(pl, action=b[0].upper() + b[1:], duree=d, consigne="", fichier="", image="", repliques=[], voix=[])
@@ -227,6 +231,12 @@ def consigne(seq, pl, params=None, traduire=True):
     if persos:
         morceaux.append(" ".join(x.rstrip(".") + "." for x in persos))
     morceaux.append("Action: " + action.rstrip(".") + ".")
+    vus = {n.lower() for n in visibles(seq, pl)}
+    caches = [f"Character {chr(65 + i)}" for n, i in rangs.items() if n not in vus]
+    if caches and seq["personnages"]:               # 0.9.86 : continuité, ceux qui sont sortis ne reviennent pas
+        hors = _anglais(pl.get("hors_champ") or "", traduire).rstrip(".")
+        morceaux.append("Not visible in this shot: " + ", ".join(caches) + (f" ({hors})" if hors else "") +
+                        ". Nobody else appears.")
     if pl.get("camera"):
         morceaux.append("Camera: " + _anglais(pl["camera"], traduire).rstrip(".") + ".")
     if seq.get("voix") == "aucune":                  # 0.9.68 : histoire sans voix
@@ -281,10 +291,19 @@ def enregistrer(seq):
     return chemin
 
 
+def visibles(seq, pl):
+    """Noms des personnages qu'on VOIT dans le plan. 0.9.86 : une fois la continuité établie (`visibles_fixes`), une liste
+    vide veut dire « personne » (la voiture qui démarre, les passagères déjà dedans) ; avant, vide = tout le monde."""
+    noms = [n for n in pl.get("personnages") or [] if n.strip()]
+    if noms or pl.get("visibles_fixes"):
+        return noms
+    return [x["nom"] for x in seq["personnages"]]
+
+
 def images_du_plan(seq, pl):
     """Images de référence utiles au plan : celles des personnages présents, puis celles du lieu (au plus 4)."""
     out = []
-    noms = [n for n in pl.get("personnages") or [] if n.strip()] or [x["nom"] for x in seq["personnages"]]
+    noms = visibles(seq, pl)
     for n in noms:
         p = next((x for x in seq["personnages"] if x["nom"].lower() == n.lower()), None)
         out += [i for i in (p or {}).get("images") or [] if os.path.exists(i)]
@@ -383,15 +402,23 @@ def planches_manquantes(seq, pl, params, moteur_video):
         planche_personnage(seq, p, params)
 
 
+def _photo_de_groupe(seq, chemin):
+    """L'image est-elle partagée par plusieurs personnages (photo de groupe d'où sortent les découpes) ?"""
+    return sum(1 for p in seq["personnages"] if chemin in (p.get("images") or [])) > 1
+
+
 def references_du_plan(seq, pl):
     """[(« Character A », [planche, images…])] des personnages du plan, pour les moteurs « Référence »."""
     out = []
-    noms = [n.lower() for n in pl.get("personnages") or [] if n.strip()]
+    noms = [n.lower() for n in visibles(seq, pl)]
     for k, p in enumerate(seq["personnages"]):
-        if noms and p["nom"].lower() not in noms:     # 0.9.77 : champ vide = tous les personnages (avant : aucun, visages perdus)
+        if p["nom"].lower() not in noms:              # 0.9.86 : seulement ceux qu'on voit (continuité)
             continue
-        imgs = ([p["planche"]] if p.get("planche") and os.path.exists(p["planche"]) else []) + \
-               [i for i in p.get("images") or [] if os.path.exists(i)]
+        autres = [i for i in p.get("images") or [] if os.path.exists(i)]
+        if p.get("decoupe") and os.path.exists(p["decoupe"]):     # 0.9.86 : la découpe, pas la photo de groupe (visages mêlés)
+            autres = [p["decoupe"]] + [i for i in autres if i != p["decoupe"] and i != p.get("image_source")
+                                       and not _photo_de_groupe(seq, i)]
+        imgs = ([p["planche"]] if p.get("planche") and os.path.exists(p["planche"]) else []) + autres
         if imgs:
             out.append((f"Character {chr(65 + k)}", imgs[:4]))
     return out
@@ -431,12 +458,29 @@ def image_arrivee(seq, i, params, depart=None, precision=""):
     png = (ia.generer_image_refs if refs else lambda prm, c, r=None: ia.generer_image(prm, c))(
         params, "LAST frame of this video shot, when the action is completely finished (final pose, physically plausible). The "
                 "first reference images are the character sheets: every face, hairstyle and outfit must match them exactly. The next "
-                "image is the first frame of the shot: same place, light and positions, but if a face there differs from its sheet, "
-                "follow the sheet. One photorealistic still image, no text. " + action +
+                "image is the first frame of the shot: same place and light, but the camera framing follows the Camera line (it may "
+                "move, widen or come closer) and people move as the action says: whoever got into a vehicle, left or is listed as not "
+                "visible must NOT appear. If a face differs from its sheet, follow the sheet. One photorealistic still image, no "
+                "text. " + action +
         ((" Precisely, at the end: " + _anglais(precision, True)) if precision else ""), refs[:4])
     sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_arrivee_{int(time.time() * 1000) % 10 ** 9}.png")
     with open(sortie, "wb") as f:
         f.write(png)
+    pl["image_fin"] = sortie
+    return sortie
+
+
+def image_arrivee_locale(seq, i, params, depart=None, precision=""):
+    """0.9.86 : arrivée faite sur ce poste (gratuite) : l'image de départ retravaillée d'après l'action ; les visages sont
+    moins fidèles qu'avec Gemini."""
+    from . import creatif
+    pl = seq["plans"][i]
+    texte = "Last frame of this shot, action finished. " + consigne(seq, pl, params) + \
+        ((" Precisely, at the end: " + _anglais(precision, True)) if precision else "")
+    L, H = (512, 912) if seq.get("format") == "9:16" else (912, 512)
+    sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_arrivee_{int(time.time() * 1000) % 10 ** 9}.png")
+    creatif.image(texte, sortie, params, largeur=L, hauteur=H, init=depart if depart and os.path.exists(depart) else None,
+                  force=0.6)
     pl["image_fin"] = sortie
     return sortie
 
@@ -460,13 +504,18 @@ def depart_prevu(seq, i):
 def preparer_images(seq, i, params, quoi=("depart", "arrivee"), precision="", force=False):
     """Compose (Gemini) l'image de départ et/ou d'arrivée du plan i ; une image refaite n'est plus validée."""
     pl = seq["plans"][i]
-    if seq.get("image_fin_auto", True) and params.get("clef_gemini"):
+    par = seq.get("images_par") or "gemini"
+    if par == "gemini" and seq.get("image_fin_auto", True) and params.get("clef_gemini"):
         for p in sans_planche(seq, [i]):                  # la fiche du personnage d'abord : les deux images s'en servent
             planche_personnage(seq, p, params)
     if "depart" in quoi and (force or precision or not (i > 0 and pl.get("enchainer", True) and depart_prevu(seq, i))):
-        pl["image"] = image_depart(seq, i, params, "gemini", precision if quoi == ("depart",) else "")
+        pl["image"] = image_depart(seq, i, params, "gemini" if par == "gemini" else "locale",
+                                   precision if quoi == ("depart",) else "")
     if "arrivee" in quoi:
-        image_arrivee(seq, i, params, depart_prevu(seq, i) or None, precision if quoi == ("arrivee",) else "")
+        if par == "gemini":
+            image_arrivee(seq, i, params, depart_prevu(seq, i) or None, precision if quoi == ("arrivee",) else "")
+        else:
+            image_arrivee_locale(seq, i, params, depart_prevu(seq, i) or None, precision if quoi == ("arrivee",) else "")
     pl["images_ok"] = False
     return pl
 

@@ -295,8 +295,20 @@ def _modeles_gemini_secours(clef):
     return _modeles_trouves["gemini_secours"]
 
 
+def type_image(octets):
+    """Type réel d'une image d'après ses premiers octets (0.9.86 : une photo JPEG annoncée PNG est refusée par Claude)."""
+    o = bytes(octets[:12])
+    if o.startswith(b"\xff\xd8"):
+        return "image/jpeg"
+    if o.startswith(b"RIFF") and o[8:12] == b"WEBP":
+        return "image/webp"
+    if o.startswith(b"GIF8"):
+        return "image/gif"
+    return "image/png"
+
+
 def _claude(clef, params, consignes, texte, images, max_jetons):
-    contenu = [{"type": "image", "source": {"type": "base64", "media_type": "image/png",
+    contenu = [{"type": "image", "source": {"type": "base64", "media_type": type_image(i),
                                              "data": base64.b64encode(i).decode()}} for i in images or []]
     contenu.append({"type": "text", "text": texte})
     corps = lambda m: {"model": m, "max_tokens": max_jetons, "system": consignes,
@@ -326,7 +338,7 @@ def _claude(clef, params, consignes, texte, images, max_jetons):
 
 
 def _gemini(clef, params, consignes, texte, images, max_jetons, json_attendu):
-    parts = [{"inline_data": {"mime_type": "image/png", "data": base64.b64encode(i).decode()}} for i in images or []]
+    parts = [{"inline_data": {"mime_type": type_image(i), "data": base64.b64encode(i).decode()}} for i in images or []]
     parts.append({"text": texte})
     corps = {"system_instruction": {"parts": [{"text": consignes}]}, "contents": [{"role": "user", "parts": parts}],
              "generationConfig": {"maxOutputTokens": max_jetons}}
@@ -415,7 +427,7 @@ def generer_image_refs(params, consigne, images, delai=240):
     for chemin in images[:4]:
         with open(chemin, "rb") as f:
             donnees = f.read()
-        mime = "image/png" if chemin.lower().endswith(".png") else ("image/webp" if chemin.lower().endswith(".webp") else "image/jpeg")
+        mime = type_image(donnees)
         parts.append({"inline_data": {"mime_type": mime, "data": base64.b64encode(donnees).decode()}})
     parts.append({"text": consigne})
     corps = {"contents": [{"role": "user", "parts": parts}], "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}}
@@ -445,9 +457,9 @@ def retoucher_image(params, png, consigne, zones_png=None, delai=240):
     clef = nettoyer_clef(params.get("clef_gemini", ""))
     if not clef:
         raise ErreurIA(_("Il faut une clef Gemini (Edition › Préférences › IA) : Claude ne sait pas modifier une image."))
-    parts = [{"inline_data": {"mime_type": "image/png", "data": base64.b64encode(png).decode()}}]
+    parts = [{"inline_data": {"mime_type": type_image(png), "data": base64.b64encode(png).decode()}}]
     if zones_png:
-        parts.append({"inline_data": {"mime_type": "image/png", "data": base64.b64encode(zones_png).decode()}})
+        parts.append({"inline_data": {"mime_type": type_image(zones_png), "data": base64.b64encode(zones_png).decode()}})
     parts.append({"text": consigne})
     corps = {"contents": [{"role": "user", "parts": parts}],
              "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}}

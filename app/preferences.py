@@ -618,6 +618,14 @@ class DialoguePreferences(QDialog):
         h.addWidget(bt)
         h.addWidget(bo)
         f.addRow(h)
+        self.assistant_images_par = QComboBox()        # 0.9.86 : images de contrôle de l'assistant de création
+        for k, lib in (("gemini", _("Gemini : visages fidèles, environ 0,04 $ l'image")),
+                       ("locale", _("IA de ce poste : gratuite, visages approximatifs")),
+                       ("aucune", _("Aucune : la vidéo part directement"))):
+            self.assistant_images_par.addItem(lib, k)
+        self.assistant_images_par.setCurrentIndex(max(0, self.assistant_images_par.findData(
+            self.params.get("assistant_images_par", "gemini"))))
+        f.addRow(_("Images de contrôle de l'assistant"), self.assistant_images_par)
         h = QHBoxLayout()                              # 0.9.85 : mises à jour des IA (locales et cloud)
         self.ia_maj_verifier = QCheckBox(_("Chercher les mises à jour des IA (une fois par semaine, jamais installées sans vous)"))
         self.ia_maj_verifier.setChecked(self.params.get("ia_maj_verifier", True))
@@ -1142,6 +1150,8 @@ class DialoguePreferences(QDialog):
         p["ia_gpu"] = self.ia_gpu.isChecked()
         if hasattr(self, "ia_maj_verifier"):
             p["ia_maj_verifier"] = self.ia_maj_verifier.isChecked()
+        if hasattr(self, "assistant_images_par"):
+            p["assistant_images_par"] = self.assistant_images_par.currentData()
         gestion = getattr(self.fenetre, "telechargements", None)
         a_installer = [k for k, c in self.cases_ia.items() if c.isChecked() and not packs_ia.installe(k)
                        and not (gestion is not None and gestion.en_file(k))]

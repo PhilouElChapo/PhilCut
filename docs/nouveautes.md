@@ -4,7 +4,20 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.85 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.86 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.86 (corrections de l'assistant de creation, image par image)
+- Timeline : au-dessus des pistes, ◀| et |▶ avancent d'une image exactement, [ et ] choisissent les images (une seule image possible), "Supprimer N image(s)" les retire et recolle la suite. Maj + fleches : une image de plus ou de moins.
+- Assistant : les images envoyees au moteur video sont agrandies si elles sont trop petites (fal refusait les decoupes : "image too small") ; la photo JPEG n'est plus annoncee PNG a Claude (erreur 400) ; si l'image est refusee, l'idee est relue sans elle.
+- Les personnes decoupees sont detourees sur fond blanc ; la photo de groupe n'est plus envoyee comme reference d'une seule personne.
+- Continuite : chaque plan dit qui on voit ("Qui", vide = personne) et ou sont les autres (au survol) ; nouvelle colonne "Cadrage" (plan large, serre, mouvement) ; "✨ Verifier la continuite". Les personnes montees en voiture ne reapparaissent plus ; l'image d'arrivee suit le cadrage.
+- Revenir en arriere ne perd plus rien : "‹ Precedent" puis "Suivant" sans changement retrouve tout ; clic sur une etape du fil en haut ; seul ce qui a change est refait (et le plan qui en part).
+- Une image corrigee est montree et entouree en orange ; l'assistant propose de refaire l'image suivante qui en part ; la consigne de correction parle du cadrage.
+- "Images de controle" au choix : Gemini (fidele, payant), IA de ce poste (gratuite), aucune ; aussi dans Preferences › IA locale.
+- Assistant visible et modifiable a chaque etape ; credits et "Recharger…" des IA utilisees (Claude, Gemini, fal.ai) ; explication de la phrase "dites-le en clair".
+- "Regler moi-meme…" puis "‹ Retour a l'assistant" depuis la Sequence IA, avec les reglages faits.
+- Exemples des champs neutres et varies (plus d'exemples personnels).
+
 
 ### 0.9.85 (catalogue des IA et mises a jour)
 - Aide (ou Fabrique IA) › "Mises a jour des IA (locales et cloud)..." : onglet "Sur ce poste", les moteurs et modeles de l'IA locale qui ont une nouvelle version (ce qui change, pourquoi, taille) ; on coche, "Mettre a jour la selection". Le telechargement se fait en fond (fermer ou "Reduire" ne l'arrete pas), puis l'IA est essayee : si l'essai rate, l'ancienne version revient toute seule.

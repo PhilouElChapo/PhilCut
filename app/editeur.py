@@ -746,6 +746,29 @@ class Editeur(QWidget):
                 b.setContextMenuPolicy(Qt.CustomContextMenu)
                 b.customContextMenuRequested.connect(lambda _p: self.timeline.hauteur_images(1 / 1.3))
             barre_tl.addWidget(b)
+        barre_tl.addSpacing(10)                         # 0.9.86 : image par image, à la souris
+        for texte, aide, f in (("◀|", _("Image précédente (flèche gauche)"), lambda: self.timeline.pas_image(-1)),
+                               ("|▶", _("Image suivante (flèche droite)"), lambda: self.timeline.pas_image(1)),
+                               ("[", _("La partie jaune commence à cette image (touche I)"), lambda: self.timeline.marquer_zone(0)),
+                               ("]", _("La partie jaune finit après cette image, comprise (touche O). Maj + flèches : une image de "
+                                       "plus ou de moins"), lambda: self.timeline.marquer_zone(1))):
+            b = QToolButton()
+            b.setText(texte)
+            b.setToolTip(aide)
+            b.setAutoRaise(True)
+            b.setMinimumWidth(26)
+            b.setAutoRepeat(texte in ("◀|", "|▶"))
+            b.clicked.connect(f)
+            barre_tl.addWidget(b)
+        self.b_suppr_images = QToolButton()
+        self.b_suppr_images.setText(_("Supprimer ces images"))
+        self.b_suppr_images.setToolTip(_("Retire les images de la partie jaune (sur tous les plans qu'elle traverse) et recolle la "
+                                         "suite ; Ctrl+Z revient"))
+        self.b_suppr_images.setAutoRaise(True)
+        self.b_suppr_images.clicked.connect(lambda: self.partie(False))
+        self.b_suppr_images.setEnabled(False)
+        barre_tl.addWidget(self.b_suppr_images)
+        self.timeline.zone_changee.connect(self._maj_images_zone)
         self.info_tl = QLabel("")
         self.info_tl.setStyleSheet(f"color:{theme.COULEURS['texte2']}")
         barre_tl.addSpacing(10)
@@ -916,6 +939,14 @@ class Editeur(QWidget):
         c.setdefault("fondu_sortie", 1.5)
         self.rafraichir()
         self.encart.message(_("Son coupé à {t}, avec un fondu de sortie (réglable dans l'Inspecteur).", t=_tc(t)))
+
+    def _maj_images_zone(self):
+        n = self.timeline.images_zone()
+        try:
+            self.b_suppr_images.setEnabled(n > 0)
+            self.b_suppr_images.setText(_("Supprimer {n} image(s)", n=n) if n else _("Supprimer ces images"))
+        except (RuntimeError, AttributeError):
+            pass
 
     def _aller_fin(self):
         fin = self.projet.duree()
@@ -2080,6 +2111,7 @@ class Editeur(QWidget):
         self.projet.marquer()
         if self.projet.partie(z[0], z[1], garder):
             self.timeline.zone = [None, None]
+            self._maj_images_zone()
             self.rafraichir()
             self.timeline.aller_a(0.0 if garder else z[0])
             self.encart.message(_("Seule la partie sélectionnée est gardée (Annuler pour revenir).") if garder else
@@ -2760,6 +2792,15 @@ class Editeur(QWidget):
         from .dialogues_bibliotheque_creations import DialogueBibliothequeCreations
         from .widgets import non_bloquante
         return non_bloquante(self, "bibliotheque_creations", lambda: DialogueBibliothequeCreations(self))
+
+    def assistant_creation_reprendre(self, seq):
+        """0.9.86 : retour du réglage manuel (Séquence IA) vers le mode assisté, avec la séquence telle qu'elle a été réglée."""
+        from .dialogues_assistant_creation import DialogueAssistant
+        from .widgets import non_bloquante
+        d = non_bloquante(self, "assistant_creation", lambda: DialogueAssistant(self, None))
+        if d is not None:
+            d.reprendre_sequence(seq)
+        return d
 
     def sequence_ia(self, nouvelle=False):
         """Séquence IA : histoire en plusieurs plans (personnages constants, répliques, musique) ; reprend la dernière du projet."""

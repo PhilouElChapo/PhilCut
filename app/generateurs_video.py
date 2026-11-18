@@ -168,6 +168,24 @@ def corps_reference(consigne, duree, format_, depart_url=None, fin_url=None, ele
     return corps
 
 
+MINI_FAL = 512        # fal refuse une image de référence de moins de 300 px de côté : marge prise
+
+
+def assez_grande(chemin, mini=MINI_FAL):
+    """L'image si ses deux côtés font au moins `mini` px, sinon une copie agrandie (côté court = mini, bords nets,
+    PNG à côté). 0.9.86 : les découpes de personnes partaient trop petites (« image_too_small »)."""
+    from PySide6.QtGui import QImage
+    from PySide6.QtCore import Qt
+    img = QImage(chemin)
+    if img.isNull() or min(img.width(), img.height()) >= mini:
+        return chemin
+    k = mini / max(1, min(img.width(), img.height()))
+    grande = img.scaled(round(img.width() * k), round(img.height() * k), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+    sortie = os.path.splitext(chemin)[0] + f"_{mini}.png"
+    grande.save(sortie)
+    return sortie
+
+
 def generer_reference(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, image_fin=None, references=None,
                       progression=None, arret=lambda: False, son=False):
     """Moteur « Référence » : images envoyées sur le stockage fal, puis la demande ; la planche du personnage sert d'image de
@@ -179,16 +197,17 @@ def generer_reference(cle, m, consigne, sortie, duree=5, format_="16:9", image=N
         images = [i for i in images if i and os.path.exists(i)]
         if not images:
             continue
-        urls = [televerser(cle, i) for i in images[:4]]
+        urls = [televerser(cle, assez_grande(i)) for i in images[:4]]
         elements.append({"nom": nom, "frontal_image_url": urls[0], "reference_image_urls": urls[1:]})
-    depart = televerser(cle, image) if image and os.path.exists(image) else None
-    fin = televerser(cle, image_fin) if image_fin and os.path.exists(image_fin) else None
+    depart = televerser(cle, assez_grande(image)) if image and os.path.exists(image) else None
+    fin = televerser(cle, assez_grande(image_fin)) if image_fin and os.path.exists(image_fin) else None
     corps = corps_reference(consigne, duree, format_, depart, fin, elements, m, son)
     return attendre_fal(cle, m["modele"], corps, sortie, progression, arret)
 
 
 # ------------------------------------------------------------------ crédit restant (0.9.72)
-PAGES_CREDIT = {"fal": "https://fal.ai/dashboard/usage-billing/credits", "google": "https://aistudio.google.com/usage"}
+PAGES_CREDIT = {"anthropic": "https://console.anthropic.com/settings/billing", "fal": "https://fal.ai/dashboard/usage-billing/credits",
+                "google": "https://aistudio.google.com/usage"}
 
 
 def credit(params, fournisseur):
@@ -225,9 +244,10 @@ def _http(url, cle, corps=None, methode=None, delai=120):
 
 
 def _data_uri(chemin):
-    mime = "image/png" if chemin.lower().endswith(".png") else "image/jpeg"
+    from .ia import type_image
     with open(chemin, "rb") as f:
-        return f"data:{mime};base64," + base64.b64encode(f.read()).decode()
+        o = f.read()
+    return f"data:{type_image(o)};base64," + base64.b64encode(o).decode()
 
 
 def generer_fal(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, progression=None, arret=lambda: False, son=False):
@@ -300,6 +320,9 @@ def televerser(cle, chemin):
     typ = TYPES_FICHIERS.get(ext, "application/octet-stream")
     with open(chemin, "rb") as f:
         donnees = f.read()
+    if typ.startswith("image/"):
+        from .ia import type_image
+        typ = type_image(donnees)
     nom = os.path.basename(chemin)
     try:
         jeton = _http(f"{FAL_REST}/storage/auth/token?storage_type=fal-cdn-v3", cle, {})

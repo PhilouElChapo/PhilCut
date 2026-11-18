@@ -134,7 +134,7 @@ def _guides_integres():
         {"id": "assistant_creation", "etat": "ok",
          "titre": _("Etre guidé pour continuer un rush ou créer une scène par IA (mode assisté)"),
          "mots": "assistant assiste guide aide pas a pas continuer rallonger rush suite scene histoire personnages plans budget "
-                 "facile automatique limousine idee carte fiche chauffeur cadre ameliorer reformuler",
+                 "facile automatique idee carte fiche cadre ameliorer reformuler continuite",
          "intro": _("Vous dites en quelques mots ce que vous voulez ; l'assistant (Claude, Gemini ou l'IA de ce poste) regarde la "
                     "dernière image, en déduit une carte par personne et par objet (cadre proposé sur l'image), et les plans d'une "
                     "action. Vous validez ou corrigez carte par carte : dans l'image, une photo à vous, ou inventé d'après la "
@@ -148,17 +148,36 @@ def _guides_integres():
                          "l'assistant comprend, puis « Voir ce qu'il faut ».")},
              {"texte": _("Une carte par personne et par objet : pas la bonne personne ? Cliquez la carte puis la personne sur l'image (ou "
                          "tracez son cadre). Choisissez d'où vient chacun ; « Compléter la description » aide pour les inventés.")},
-             {"texte": _("Les plans : corrigez dans le tableau ou en clair en bas ; « ✨ Améliorer le plan choisi » reformule une action.")},
-             {"texte": _("Confirmez le budget : l'assistant prépare fiches et images. Regardez-les, « Corriger… » celles qui ne vont pas, "
-                         "puis lancez la vidéo.")},
+             {"texte": _("Les plans : « Qui » dit qui on voit (vide = personne ; survolez pour savoir où sont les autres), « Cadrage » "
+                         "dit plan large, serré, ce que fait la caméra. « ✨ Vérifier la continuité » les remplit d'après l'histoire "
+                         "(quelqu'un monté en voiture ne réapparaît pas). Corrigez dans le tableau ou en clair en bas.")},
+             {"texte": _("« Images de contrôle » : Gemini (visages fidèles, payant), l'IA de ce poste (gratuite, visages "
+                         "approximatifs) ou aucune. Puis confirmez le budget : l'assistant prépare fiches et images.")},
+             {"texte": _("Regardez chaque image, « Corriger… » celles qui ne vont pas (dites aussi le cadrage : « plan large, on voit "
+                         "toute la voiture ») : l'image refaite est entourée en orange, et l'assistant propose de refaire l'image "
+                         "suivante qui en part. Puis lancez la vidéo.")},
+             {"texte": _("Revenir en arrière : « ‹ Précédent » ou un clic sur une étape du fil en haut ; en avançant à nouveau, seul ce "
+                         "qui a changé est refait. « Régler moi-même… » ouvre la Séquence IA, et « ‹ Retour à l'assistant » y "
+                         "ramène.")},
              {"texte": _("Chaque plan est relu : ✓ ou ⚠ avec la raison. « Refaire ce plan… » si besoin, puis « Poser dans le film ».")},
+         ]},
+        {"id": "images_une_a_une", "etat": "ok",
+         "titre": _("Avancer image par image et supprimer quelques images d'un rush"),
+         "mots": "image par image frame trame avancer reculer supprimer images couper precis une image rush debut fin partie jaune",
+         "intro": _("Au-dessus de la timeline, ◀| et |▶ avancent d'une image exactement ; [ et ] choisissent les images à retirer "
+                    "(la partie jaune, l'image affichée comprise) ; « Supprimer N image(s) » les retire et recolle la suite."),
+         "etapes": [
+             {"texte": _("Agrandissez la timeline (+ ou molette) pour bien voir les images.")},
+             {"texte": _("◀| ou |▶ (ou les flèches du clavier) jusqu'à la première image à retirer, puis [ .")},
+             {"texte": _("|▶ jusqu'à la dernière image à retirer, puis ] (Maj + flèche : une image de plus ou de moins).")},
+             {"texte": _("« Supprimer N image(s) » : la suite se recolle. Ctrl+Z revient.")},
          ]},
         {"id": "assistant_musique", "etat": "ok",
          "titre": _("Créer une musique ou une chanson guidé pas à pas (style d'un groupe, voix, paroles, passage lent)"),
          "mots": "assistant musique chanson ballade rock style groupe a la maniere voix feminine chaude paroles tempo lent rapide "
-                 "partie deroule reorchestrer morceau archangel guide",
-         "intro": _("Dites en quelques mots la musique voulue (« une ballade rock de 3 minutes, rapide, avec au milieu un long passage "
-                    "lent, le style de mon groupe et sa voix en plus féminine »). L'assistant en déduit trois cartes (style, voix, "
+                 "partie deroule reorchestrer morceau guide",
+         "intro": _("Dites en quelques mots la musique voulue (« une chanson pop de 2 minutes, joyeuse, avec un passage calme au "
+                    "milieu, dans le style d'un de mes morceaux, voix de femme »). L'assistant en déduit trois cartes (style, voix, "
                     "paroles) et le déroulé ; pour chaque carte vous choisissez d'où elle vient, chaque possibilité expliquée. La "
                     "musique est créée partie par partie à son tempo, sur ce poste, puis enchaînée."),
          "etapes": [

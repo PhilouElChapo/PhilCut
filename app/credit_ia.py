@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
 from .langue import _
 
-NOMS = {"fal": "fal.ai", "google": "Gemini"}
+NOMS = {"anthropic": "Claude", "fal": "fal.ai", "google": "Gemini"}
 
 
 def fournisseur_du_moteur(ident, params=None):
@@ -22,11 +22,34 @@ def fournisseur_du_moteur(ident, params=None):
     return (m or {}).get("fournisseur")
 
 
+def a_clef(params, fournisseur):
+    if fournisseur == "anthropic":
+        from .ia import nettoyer_clef
+        return bool(nettoyer_clef((params or {}).get("clef_claude", "")))
+    from . import generateurs_video as GV
+    try:
+        return bool(GV.clef(params, fournisseur))
+    except KeyError:
+        return False
+
+
+def texte_court(fournisseur, solde):
+    """Une ligne étroite (0.9.86, plusieurs comptes côte à côte) : « fal.ai : 12,40 $ », « Claude : solde non donné »."""
+    nom = NOMS.get(fournisseur, fournisseur)
+    if solde is None:
+        return _("{n} : solde non donné", n=nom)
+    montant, devise = solde
+    return f"{nom} : " + f"{montant:.2f}".replace(".", ",") + " " + ("$" if devise == "USD" else devise) + \
+        ("  ⚠" if montant < 2 else "")
+
+
 def texte_credit(fournisseur, solde):
     nom = NOMS.get(fournisseur, fournisseur)
     if solde is None:
         if fournisseur == "google":
             return _("Crédit {n} : Google ne le donne pas ici ; « Recharger » ouvre le suivi des dépenses.", n=nom)
+        if fournisseur == "anthropic":
+            return _("Crédit {n} : Anthropic ne le donne pas ici ; « Recharger » ouvre votre compte.", n=nom)
         return _("Crédit {n} : inconnu (clef sans droit de lecture du solde, ou hors ligne).", n=nom)
     montant, devise = solde
     m = f"{montant:.2f}".replace(".", ",")
@@ -37,9 +60,10 @@ def texte_credit(fournisseur, solde):
 class LigneCredit(QWidget):
     """« Crédit fal.ai restant : 12,40 $ [Recharger…] » ; se met à jour quand le moteur change (montrer(fournisseur))."""
 
-    def __init__(self, params, fournisseur=None, parent=None):
+    def __init__(self, params, fournisseur=None, parent=None, compact=False):
         super().__init__(parent)
         self.params, self.fournisseur, self.tache = params, None, None
+        self.compact = compact
         h = QHBoxLayout(self)
         h.setContentsMargins(0, 0, 0, 0)
         self.lbl = QLabel("")
@@ -58,7 +82,7 @@ class LigneCredit(QWidget):
         if not fournisseur:
             return
         from . import generateurs_video as GV
-        if not GV.clef(self.params, fournisseur):
+        if not a_clef(self.params, fournisseur):
             self.lbl.setText(_("Pas de clef {n} sur ce poste : Préférences › IA › Connecter une IA.", n=NOMS.get(fournisseur, fournisseur)))
             return
         self.lbl.setText(_("Crédit {n} : lecture…", n=NOMS.get(fournisseur, fournisseur)))
@@ -68,7 +92,7 @@ class LigneCredit(QWidget):
 
         def lire(f=fournisseur):
             try:
-                res["r"] = GV.credit(self.params, f)
+                res["r"] = None if f == "anthropic" else GV.credit(self.params, f)
             except Exception:      # noqa: BLE001
                 res["r"] = None
             res["fini"] = True
@@ -78,7 +102,8 @@ class LigneCredit(QWidget):
             try:
                 if res.get("fini"):
                     if f == self.fournisseur:
-                        self.lbl.setText(texte_credit(f, res.get("r")))
+                        self.lbl.setText(texte_court(f, res.get("r")) if self.compact else texte_credit(f, res.get("r")))
+                        self.lbl.setToolTip(texte_credit(f, res.get("r")))
                     return
                 n[0] += 1
                 if n[0] < 100:

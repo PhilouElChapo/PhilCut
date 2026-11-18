@@ -302,7 +302,7 @@ class Projet:
     def couper(self, ident, t):
         """Coupe le clip a l'instant t de la timeline : deux clips, le second commence a t."""
         c = self.clip(ident)
-        if not c or not (c["debut"] + 0.04 < t < fin_clip(c) - 0.04):
+        if not c or not (c["debut"] + 0.01 < t < fin_clip(c) - 0.01):
             return None
         dans_src = c["src_debut"] + (t - c["debut"]) * c["vitesse"]
         droite = copy.deepcopy(c)
@@ -333,19 +333,20 @@ class Projet:
         garder=False : on la supprime et la suite se recolle. Toutes les pistes, textes et Goodies compris, sauf les
         pistes de « sauf » (la musique qui continue sous un montage par le texte, 0.9.23)."""
         a, b = sorted((max(0.0, a), max(0.0, b)))
-        if b - a < 0.04:
+        eps = min(0.02, 0.25 / max(1.0, float(getattr(self, "cadence", 30) or 30)))     # 0.9.86 : une seule image se retire
+        if b - a < 2 * eps:
             return False
         for piste in self.toutes_pistes():
             if piste in sauf:
                 continue
             for t in (a, b):
                 for c in list(self.clips_piste(piste)):
-                    if c["debut"] + 0.04 < t < fin_clip(c) - 0.04:
+                    if c["debut"] + eps < t < fin_clip(c) - eps:
                         self.couper(c["id"], t)
         largeur = b - a
 
         def dedans(d, f):
-            return d >= a - 0.02 and f <= b + 0.02
+            return d >= a - eps and f <= b + eps
         clips = []
         for c in self.clips:
             d, f = c["debut"], fin_clip(c)
@@ -359,7 +360,7 @@ class Projet:
             else:
                 if dedans(d, f):
                     continue
-                if d >= b - 0.02:
+                if d >= b - eps:
                     c["debut"] = d - largeur
                 clips.append(c)
         self.d["clips"] = clips

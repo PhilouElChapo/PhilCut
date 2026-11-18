@@ -55,7 +55,7 @@ class TestMoteurReference(unittest.TestCase):
         point, corps = demandes[0]
         self.assertIn("reference-to-video", point)
         self.assertEqual(len(envoyes), 4)                         # 2 images du personnage, départ, arrivée
-        self.assertEqual(corps["elements"][0]["reference_image_urls"], ["https://cdn/perso.png"])
+        self.assertEqual(corps["elements"][0]["reference_image_urls"], ["https://cdn/perso_512.png"])     # 0.9.86 : agrandie (300 px au moins)
 
 
 class TestSequenceFidele(unittest.TestCase):

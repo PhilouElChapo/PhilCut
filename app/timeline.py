@@ -1439,12 +1439,45 @@ class Timeline(QGraphicsView):
             self.aller_a(0)
         elif k == Qt.Key_End:
             self.aller_a(self.projet.duree() if self.projet else 0)
-        elif k == Qt.Key_Left:
-            self.aller_a(self.position - (1.0 if e.modifiers() & Qt.ShiftModifier else 1.0 / (self.projet.cadence if self.projet else 30)))
-        elif k == Qt.Key_Right:
-            self.aller_a(self.position + (1.0 if e.modifiers() & Qt.ShiftModifier else 1.0 / (self.projet.cadence if self.projet else 30)))
+        elif k in (Qt.Key_Left, Qt.Key_Right):
+            sens = -1 if k == Qt.Key_Left else 1
+            if e.modifiers() & Qt.ControlModifier:      # Ctrl : une seconde
+                self.aller_a(max(0.0, self.position + sens))
+            elif e.modifiers() & Qt.ShiftModifier:      # Maj : la partie jaune grandit ou rétrécit d'une image (0.9.86)
+                self.etendre_zone(sens)
+            else:
+                self.pas_image(sens)
         else:
             super().keyPressEvent(e)
+
+    def pas_image(self, sens=1):
+        """Une image en avant ou en arrière, calée exactement sur les images (0.9.86)."""
+        d = self.duree_image()
+        t = self.caler_image(self.position + d * 0.5) + sens * d
+        fin = self.projet.duree() if self.projet else t
+        self.aller_a(max(0.0, min(t, max(0.0, fin - d * 0.5))))
+
+    def etendre_zone(self, sens=1):
+        """Maj + flèche : la partie jaune part de l'image affichée et s'étend image par image."""
+        d = self.duree_image()
+        if self.zone[0] is None or self.zone[1] is None:
+            t = self.caler_image(self.position + d * 0.5)
+            self.zone = [t, round(t + d, 6)]
+        else:
+            a, b = self.zone
+            if sens > 0:
+                b = round(b + d, 6)
+            else:
+                b = round(max(a + d, b - d), 6)
+            self.zone = [a, b]
+        self.aller_a(max(0.0, self.zone[1] - d))
+        self.zone_changee.emit()
+        self.viewport().update()
+
+    def images_zone(self):
+        """Nombre d'images de la partie jaune."""
+        z = self.zone_valide()
+        return int(round((z[1] - z[0]) / self.duree_image())) if z else 0
 
     def effacer_zone(self):
         self.zone = [None, None]
@@ -1532,8 +1565,19 @@ class Timeline(QGraphicsView):
         p.restore()
 
     # ---- partie sélectionnée (entrée / sortie)
+    def duree_image(self):
+        return 1.0 / float((self.projet.cadence if self.projet else 30) or 30)
+
+    def caler_image(self, t):
+        """Le début de l'image qui contient t (0.9.86 : travail image par image)."""
+        d = self.duree_image()
+        return round(int(t / d + 1e-6) * d, 6)
+
     def marquer_zone(self, i):
-        self.zone[i] = self.position
+        """I : la partie jaune commence au début de l'image affichée ; O : elle finit APRÈS l'image affichée (elle est comprise).
+        Ainsi une seule image peut être choisie (I puis O sur la même image)."""
+        t = self.caler_image(self.position)
+        self.zone[i] = t if i == 0 else round(t + self.duree_image(), 6)
         a, b = self.zone
         if a is not None and b is not None and b < a:
             self.zone = [b, a]
@@ -1542,7 +1586,7 @@ class Timeline(QGraphicsView):
 
     def zone_valide(self):
         a, b = self.zone
-        return (a, b) if a is not None and b is not None and b - a > 0.04 else None
+        return (a, b) if a is not None and b is not None and b - a > 0.5 * self.duree_image() else None
 
     # ---- actions
     def selection(self):

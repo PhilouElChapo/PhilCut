@@ -124,9 +124,14 @@ class DialogueSequence(QDialog):
         self.etat.setWordWrap(True)
         v.addWidget(self.etat)
         hb = QHBoxLayout()
-        b_nv = QPushButton(_("Nouvelle histoire…"))
-        b_nv.setToolTip(_("Repartir d'une histoire vide ; les séquences déjà montées restent dans le projet."))
-        b_nv.clicked.connect(self._nouvelle)
+        if self.seq.get("assistant"):                 # 0.9.86 : venue de l'assistant : on peut y revenir, réglages compris
+            b_nv = QPushButton(_("‹ Retour à l'assistant"))
+            b_nv.setToolTip(_("Revient au mode assisté avec tout ce que vous avez réglé ici (plans, personnages, images)."))
+            b_nv.clicked.connect(self.retour_assistant)
+        else:
+            b_nv = QPushButton(_("Nouvelle histoire…"))
+            b_nv.setToolTip(_("Repartir d'une histoire vide ; les séquences déjà montées restent dans le projet."))
+            b_nv.clicked.connect(self._nouvelle)
         hb.addWidget(b_nv)
         self.b_tout = QPushButton(_("Fabriquer les plans manquants"))
         self.b_tout.setToolTip(_("Chaque plan sans vidéo est fabriqué l'un après l'autre ; vous les regardez ensuite dans l'onglet Plans"))
@@ -188,9 +193,8 @@ class DialogueSequence(QDialog):
         v = QVBoxLayout(w)
         self.histoire = QPlainTextEdit(self.seq.get("histoire", ""))
         self.histoire.setPlaceholderText(_(
-            "ex. : Deux pilotes arrivent sur un petit aérodrome au printemps. Ils se préparent dans le hangar, puis font la visite "
-            "prévol de l'avion. L'un, à la manière d'Alain Delon, parle peu ; l'autre, à la manière de Simon Templar, plaisante. "
-            "Enfin on les voit décoller."))
+            "ex. : Deux amies arrivent au marché un matin d'été. L'une choisit des tomates, l'autre goûte un fromage et rit. "
+            "Puis elles s'assoient à la terrasse d'un café. Une fillette passe en courant avec un cerf-volant."))
         v.addWidget(self.histoire, 1)
         h = QHBoxLayout()
         for lib, niveau, aide in ((_("Découper en plans (IA de ce poste)"), "locale", _("Rien ne sort de ce poste")),
@@ -250,7 +254,7 @@ class DialogueSequence(QDialog):
         v = QVBoxLayout(w)
         avert = QLabel(_("<b>Images de référence</b> : seulement des personnes qui ont donné leur accord (vous, vos proches, vos acteurs), "
                          "jamais la photo d'une célébrité : pour l'allure d'un acteur, le « style » suffit. Pour les lieux : vos photos "
-                         "(aérodrome, avion, paysage)."))
+                         "(une rue, une plage, une cuisine)."))
         avert.setWordWrap(True)
         v.addWidget(avert)
         v.addWidget(QLabel("<b>" + _("Personnages") + "</b>"))
@@ -1158,6 +1162,16 @@ class DialogueSequence(QDialog):
             self.accept()
         t.fini.connect(fin, Qt.QueuedConnection)
         t.start()
+
+    def retour_assistant(self):
+        if any(t.isRunning() for t in self.taches):
+            self.etat.setText(_("Une fabrication est en cours : attendez la fin, ou « Arrêter »."))
+            return
+        self._lire_tables()
+        self.seq["histoire"] = self.histoire.toPlainText().strip()
+        seq = self.seq
+        self.reject()
+        self.ed.assistant_creation_reprendre(seq)
 
     def done(self, r):
         if garder_calcul(self, any(t.isRunning() for t in self.taches)):     # 0.9.64 : rangée, le calcul continue
