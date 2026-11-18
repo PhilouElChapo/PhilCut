@@ -209,7 +209,9 @@ def fiche_personnage(p, params=None, traduire=True):
     desc = _anglais((p.get("description") or "").strip(), traduire)
     jeu = jeu_du_style(p.get("style", ""), params)
     lettre = chr(65 + max(0, int(p.get("_rang", 0))))
-    bouts = [x for x in (desc, jeu) if x]
+    tenue = p.get("tenue") or {}
+    t_en = tenue.get("en") or _anglais(tenue.get("description", ""), traduire)
+    bouts = [x for x in (desc, jeu, ("wearing " + t_en) if t_en else "") if x]     # 0.9.88 : la tenue de la scène
     return f"Character {lettre}: " + ("; ".join(bouts) if bouts else "a person")
 
 
@@ -310,6 +312,8 @@ def images_du_plan(seq, pl):
         p = next((x for x in seq["personnages"] if x["nom"].lower() == n.lower()), None)
         out += [i for i in (p or {}).get("images") or [] if os.path.exists(i)]
     li = next((x for x in seq["lieux"] if x["nom"].lower() == (pl.get("lieu") or "").lower()), None)
+    if li and li.get("planche") and os.path.exists(li["planche"]):
+        out.append(li["planche"])                 # 0.9.88 : la planche du lieu (quatre vues) en premier
     out += [i for i in (li or {}).get("images") or [] if os.path.exists(i)]
     return out[:4]
 
@@ -346,17 +350,56 @@ CONSIGNE_PLANCHE = ("If the reference photo shows several people, draw ONLY the 
                     "side profile, full body standing. Even soft studio light, photorealistic, sharp, no text, no labels. {d}")
 
 
+def planche_lieu(seq, li, params):
+    """Planche d'un lieu (0.9.88) : quatre vues du même endroit, même lumière (large, côté, vers l'entrée, détail), d'après ses
+    photos (réel, ou inspiré) ou sa description (inventé). Elle sert de décor aux images clefs."""
+    from . import ia
+    mode = li.get("mode") or ("reel" if li.get("images") else "invente")
+    refs = [i for i in li.get("images") or [] if os.path.exists(i)] if mode != "invente" else []
+    d = _anglais((li.get("description") or "").strip(), True)
+    if not refs and not d:
+        raise ValueError(_("Ajoutez d'abord une photo ou une description du lieu « {n} ».", n=li.get("nom") or "?"))
+    base = ("Location reference sheet: the SAME place shown in four views in a 2x2 grid: wide establishing view, view from "
+            "the side, view toward the entrance or exit, close detail of materials. Same light and time of day in all four, "
+            "photorealistic, no people, no text, no labels. ")
+    if refs and mode == "reel":
+        png = ia.generer_image_refs(params, base + "Exactly the place of the reference photos: same layout, furniture, materials, "
+                                    "colours and light. " + d, refs[:4])
+    elif refs:
+        png = ia.generer_image_refs(params, base + "A place INSPIRED by the reference photos (same mood and style, new place) : " + d,
+                                    refs[:4])
+    else:
+        png = ia.generer_image(params, base + "An invented place: " + d)
+    sortie = os.path.join(dossier(seq), "lieu_" + re.sub(r"[^\w-]+", "_", li.get("nom") or "lieu")[:30] + ".png")
+    with open(sortie, "wb") as f:
+        f.write(png)
+    li["planche"] = sortie
+    return sortie
+
+
 def planche_personnage(seq, p, params):
     """Fiche du personnage (0.9.72) : une planche face, trois quarts, profil, en pied, d'après ses images (Gemini). Une image
     se contrôle bien mieux qu'une vidéo : c'est elle que le moteur « Référence » garde ensuite à l'identique."""
     from . import ia
-    refs = [i for i in p.get("images") or [] if os.path.exists(i)]
+    mode = p.get("mode") or ("reel" if p.get("images") else "invente")
+    refs = [i for i in p.get("images") or [] if os.path.exists(i)] if mode != "invente" else []
     d = _anglais((p.get("description") or "").strip(), True)
     if not refs and not d:
         raise ValueError(_("Ajoutez d'abord une image ou une description du personnage « {n} ».", n=p.get("nom") or "?"))
     allure = jeu_du_style(p.get("style", ""), params)       # « à la manière de » : une allure, jamais un visage
     if allure and not refs:
         d = "; ".join(x for x in (d, allure) if x)
+    tenue = p.get("tenue") or {}                            # 0.9.88 : la tenue choisie remplace celle des photos
+    t_en = tenue.get("en") or _anglais(tenue.get("description", ""), True)
+    t_img = tenue.get("image") if tenue.get("image") and os.path.exists(tenue.get("image")) else ""
+    if t_en:
+        d = "; ".join(x for x in (d, "OUTFIT to wear (replaces the clothes of the photos): " + t_en +
+                                  (", exactly as in the last reference image" if t_img else "")) if x)
+    if t_img:
+        refs = refs[:3] + [t_img]
+    if mode == "inspire" and refs and p.get("genre") != "objet":
+        d = ("A person who LOOKS LIKE the person in the reference photos (same face and features, recognisable), adapted as "
+             "described: " + d) if d else "A person who looks like the person in the reference photos"
     if p.get("genre") == "objet":                            # 0.9.79 : un objet qui revient (véhicule…) a aussi sa fiche
         consigne_objet = ("Reference sheet of ONE object: " + d + ". Four views side by side on a plain light grey background: "
                           "front, three-quarter, side, rear. Even soft studio light, photorealistic, sharp, no text, no logo, no "
@@ -373,6 +416,7 @@ def planche_personnage(seq, p, params):
     with open(sortie, "wb") as f:
         f.write(png)
     p["planche"] = sortie
+    p["planche_tenue"] = tenue.get("id", "")           # 0.9.88 : une autre tenue demandera une nouvelle fiche
     return sortie
 
 
@@ -388,8 +432,15 @@ def groupes_suspects(seq):
 def sans_planche(seq, indices):
     """Personnages présents dans ces plans, avec des images, mais sans planche encore."""
     noms = {n.lower() for i in indices for n in (seq["plans"][i].get("personnages") or [x["nom"] for x in seq["personnages"]])}
-    return [p for p in seq["personnages"] if p["nom"].lower() in noms and not (p.get("planche") and os.path.exists(p["planche"]))
+    return [p for p in seq["personnages"] if p["nom"].lower() in noms and not (p.get("planche") and os.path.exists(p["planche"])
+                                                                             and _tenue_de_la_fiche(p))
             and ([x for x in p.get("images") or [] if os.path.exists(x)] or (p.get("description") or "").strip())]
+
+
+def _tenue_de_la_fiche(p):
+    """La fiche a-t-elle été faite avec la tenue demandée maintenant ? (une fiche sans tenue choisie reste bonne)"""
+    voulue = (p.get("tenue") or {}).get("id", "")
+    return not voulue or voulue == p.get("planche_tenue", "")
 
 
 def planches_manquantes(seq, pl, params, moteur_video):

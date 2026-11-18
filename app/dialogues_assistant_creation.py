@@ -425,7 +425,8 @@ class DialogueAssistant(QDialog):
                          p.get("source") or ("image" if p.get("sur_image") else "inventer"), genre=p.get("genre", "personne"),
                          boite=p.get("boite"), photo=p.get("photo", ""), decoupe=p.get("decoupe", ""), style=p.get("style", ""),
                          position=p.get("position", ""), biblio=p.get("biblio", ""), planche=p.get("planche", ""),
-                         images=list(p.get("images") or []) if p.get("source") == "bibliotheque" else [])
+                         images=list(p.get("images") or []) if p.get("source") == "bibliotheque" else [],
+                         tenue=p.get("tenue") or None, mode=p.get("mode", ""))
 
     def _remplir_cartes(self):
         vider(self.v_cartes)
@@ -538,6 +539,10 @@ class DialogueAssistant(QDialog):
             b = QPushButton(_("Choisir la photo…"))
             b.clicked.connect(lambda: self._choisir_photo(carte))
             h.addWidget(b)
+            br = QPushButton(_("Image d'un rush…"))
+            br.setToolTip(_("Placez la ligne rouge sur un rush (ou une photo du montage) où on le voit, puis encadrez-le"))
+            br.clicked.connect(lambda: self._photo_ligne_rouge(carte))
+            h.addWidget(br)
             h.addWidget(QLabel(os.path.basename(e.get("photo") or "") or _("aucune")), 1)
             v.addLayout(h)
         if e["type"] == "lieu":
@@ -555,6 +560,24 @@ class DialogueAssistant(QDialog):
             h.addWidget(QLabel(_("Style : {s}", s=e["style"])), 1)
         h.addStretch(1)
         v.addLayout(h)
+        if e.get("type") == "personne":
+            from . import tenues as T
+            ht = QHBoxLayout()
+            ht.addWidget(QLabel(_("Tenue dans cette scène")))
+            ct = QComboBox()
+            ct.addItem(_("Celle de l'image ou de la description"), "")
+            for x in T.toutes(self.params):
+                ct.addItem(("★ " if x["source"] == "biblio" else "") + x["nom"], x["id"])
+            ct.setCurrentIndex(max(0, ct.findData((e.get("tenue") or {}).get("id", ""))))
+            ct.setToolTip(_("★ = votre bibliothèque. Sa fiche est dessinée avec cette tenue, et chaque plan la rappelle."))
+
+            def tenue(_i, ct=ct, carte=carte):
+                t = T.trouver(self.params, ct.currentData())
+                carte.e["tenue"] = {"id": t["id"], "nom": t["nom"], "description": t["description"], "en": t.get("en", ""),
+                                    "image": t.get("image", "")} if t else None
+            ct.currentIndexChanged.connect(tenue)
+            ht.addWidget(ct, 1)
+            v.addLayout(ht)
         return w
 
     def _choisir_photo(self, carte):
@@ -564,6 +587,29 @@ class DialogueAssistant(QDialog):
         if ch:
             carte.e["photo"] = ch
             carte.rafraichir()
+
+    def _photo_ligne_rouge(self, carte):
+        """0.9.88 : la personne, l'objet ou le lieu pris dans n'importe quel rush (ligne rouge), puis encadré."""
+        from .cartes_assistant import encadrer, image_ligne_rouge
+        t = self.ed.timeline.position
+        image = image_ligne_rouge(self.ed)
+        if not image:
+            self.etat.setText(_("Placez la ligne rouge sur une image d'un rush ou d'une photo, puis recommencez."))
+            return
+        if carte.e.get("type") == "lieu":
+            carte.e["photo"] = image
+            carte.rafraichir()
+            return
+        boite = getattr(self, "_test_boite", None)
+        if boite is None:
+            boite = encadrer(self, image, _("Encadrez « {n} »", n=carte.e.get("nom", "")))
+            if not boite:
+                return
+        dec = A.decouper(image, boite, os.path.join(Q.dossier(self.seq), f"rush_{id(carte) % 10 ** 6}_{int(t * 1000)}.png"))
+        if dec:
+            carte.e["photo"] = dec
+            carte.rafraichir()
+            self.etat.setText(_("✓ Pris dans le rush : sa fiche sera faite d'après cette image."))
 
     def _style_carte(self, carte):
         from .dialogues_creatif import choisir_style
@@ -607,7 +653,8 @@ class DialogueAssistant(QDialog):
                            "planche": e.get("planche", "") if e.get("source") == "bibliotheque" else None,
                            "images": e.get("images") if e.get("source") == "bibliotheque" else None,
                            "accord": (bool(self.accord.isChecked()) and e.get("source") in ("image", "photo")) or
-                                     (e.get("source") == "bibliotheque" and bool(e.get("accord")))})
+                                     (e.get("source") == "bibliotheque" and bool(e.get("accord"))),
+                           "tenue": e.get("tenue") or None, "mode": e.get("mode", "")})
         return persos
 
     def _avec_personnes_reelles(self):
@@ -1309,6 +1356,8 @@ class DialogueAssistant(QDialog):
                                   "Décochée : le moteur enchaîne librement les gestes (souvent plus naturel)."))
                 case.toggled.connect(lambda on, i=i: self._basculer_clef(i, on))
                 bloc.addWidget(case)
+                if pl.get("clef_pourquoi") and not pl.get("sans_fin"):
+                    bloc.addWidget(self._aide(_("Pourquoi : {p}", p=pl["clef_pourquoi"])))
                 if not pl.get("sans_fin"):
                     vg = Vignette(pl.get("image_fin", ""), 200, _("Image clef à créer"))
                     vg.clic.connect(lambda ch: agrandir(self, ch))

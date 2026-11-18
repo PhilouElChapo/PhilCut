@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T98 — 0.9.88 : atelier de création (personnages, lieux, tenues)
+
+1. Fabrique IA › « Ma bibliothèque de créations… » › « Nouveau… » › Personnage « Directrice » : « Création » = Inventé, description, « ✨ Améliorer », « Faire sa fiche (Gemini)… » : la fiche (quatre vues) apparaît.
+2. « Nouveau… » › Personnage « Secrétaire » : « Ajouter des photos… » (deux photos d'inspiration), « Création » = Inspiré de photos ; sans l'accord, « Enregistrer » refuse ; cocher, décrire (« plus jeune, chignon »), « Faire sa fiche ».
+3. « Image d'un rush… » : placer la ligne rouge sur un rush où l'on voit une personne, encadrer : une photo de plus s'ajoute.
+4. « Tenues toutes faites… » › Uniformes et métiers › Pilote de ligne : la tenue arrive dans la liste ; « Faire son image ». Sur la secrétaire, « Tenue » = Tailleur sombre, « Faire sa fiche » : elle porte bien le tailleur ?
+5. « Nouveau… » › Lieu « Mon bureau » : trois photos de ton bureau (ou « Image d'un rush… »), « Faire sa planche (Gemini)… » : quatre vues fidèles ?
+6. Assistant : une scène avec la directrice et la secrétaire dans ton bureau : cartes « Dans ma bibliothèque » ; « Tenue dans cette scène » = Robe de soirée sur l'une : la fiche est refaite avec la robe ; les images clefs disent « Pourquoi : … ».
+
 ## T97 — 0.9.87 : images clefs, relier deux rushes
 
 1. Poser le rush « discussion au restaurant » puis, juste après, le rush « parvis ». Clic droit sur le premier › « Continuer ce plan avec l'assistant IA… » : à gauche, la fin du rush et le début du suivant ; choisir « Ce qui n'a pas été filmé entre ce plan et le suivant ».

@@ -32,7 +32,8 @@ A partir de l'histoire de l'utilisateur, rends un objet JSON :
  "lieux": [{{"nom": "...", "sur_image": true si c'est le décor de l'image de départ, "description": "lumière, matières, détails"}}],
  "plans": [{{"action": "...", "personnages": ["nom", ...], "hors_champ": "où sont ceux qu'on ne voit plus, ou vide",
  "lieu": "nom du lieu ou vide", "duree": 4 à 10, "camera": "cadrage et mouvement : plan large, plan moyen, gros plan ; fixe,
- recule, s'approche, accompagne…", "image_clef": true ou false}}],
+ recule, s'approche, accompagne…", "image_clef": true ou false, "pourquoi_clef": "si image_clef : en quelques mots, ce
+ qu'elle doit fixer (« elles sont déjà dans la voiture »), sinon vide"}}],
  "remarques": "une phrase pour l'utilisateur, ou vide"}}
 Règles impératives :
 - Un personnage = UNE seule personne (jamais « les deux femmes » comme un seul personnage). Donne à chacun un nom court et
@@ -159,7 +160,7 @@ def lire_analyse(d):
         plans.append({"action": _texte(pl.get("action"), 300), "personnages": noms, "duree": max(3, min(15, duree)),
                       "camera": _texte(pl.get("camera"), 160), "lieu": lieu if lieu.lower() in vus_l else "",
                       "hors_champ": _texte(pl.get("hors_champ"), 200), "visibles_fixes": True,
-                      "clef": bool(pl.get("image_clef"))})
+                      "clef": bool(pl.get("image_clef")), "clef_pourquoi": _texte(pl.get("pourquoi_clef"), 160)})
     return {"personnages": persos, "lieux": lieux, "plans": plans, "remarques": _texte(d.get("remarques") or d.get("message"), 300)}
 
 
@@ -382,12 +383,16 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
     for a in analyse["personnages"]:
         p = Q.personnage(a["nom"], description_complete(a), a.get("style", ""))
         vieux = anciens.get(a["nom"].lower())
-        for cle in ("source", "boite", "photo", "decoupe", "accord", "biblio", "planche", "images"):     # ce que la carte a fixé suit
+        for cle in ("source", "boite", "photo", "decoupe", "accord", "biblio", "planche", "images", "tenue", "mode"):     # ce que la carte a fixé suit
             if a.get(cle) is None and vieux and vieux.get(cle) is not None:
                 if cle == "decoupe" and (a.get("boite") or vieux.get("boite")) != vieux.get("boite"):
                     continue                              # cadre changé : la découpe est refaite
                 a[cle] = vieux[cle]
         source = a.get("source") or ("image" if a["sur_image"] and image else "inventer")
+        for cle in ("tenue", "mode", "planche_tenue"):        # 0.9.88 : tenue de la scène, façon de créer
+            val = a[cle] if cle in a and cle != "planche_tenue" else (vieux or {}).get(cle)
+            if val:
+                p[cle] = val
         p.update(genre=a["genre"], sur_image=source == "image", position=a.get("position", ""), brut=a.get("description", ""),
                  source=source, boite=a.get("boite") or (boite_par_defaut(a) if source == "image" else None))
         if source == "bibliotheque":                      # 0.9.81 : repris tel quel de la bibliothèque (fiche comprise)
@@ -432,6 +437,8 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
             elif source == "bibliotheque":
                 li["images"] = [x for x in (a.get("images") or vieux.get("images") or []) if os.path.exists(x)]
                 li["biblio"] = a.get("biblio") or vieux.get("biblio", "")
+                if (a.get("planche") or vieux.get("planche")) and os.path.exists(a.get("planche") or vieux.get("planche")):
+                    li["planche"] = a.get("planche") or vieux.get("planche")      # 0.9.88 : la planche du lieu suit
             lieux.append(li)
         seq["lieux"] = lieux
     cle_plan = lambda pl: (pl.get("action"), tuple(pl.get("personnages") or []), pl.get("camera") or "")
@@ -444,13 +451,15 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
             if a.get(cle):
                 pl[cle] = a[cle]
         pl["clef"] = bool(a.get("clef"))            # 0.9.87 : image de fin imposée seulement aux images clefs
+        pl["clef_pourquoi"] = a.get("clef_pourquoi", "")
         pl["sans_fin"] = not pl["clef"]
         vieux = vieux_plans.get(cle_plan(a))
         if vieux and precedent_change and vieux.get("enchainer", True):
             vieux = dict(vieux, image_fin="", images_ok=False, fichier="", verdict=None)    # son départ a changé : arrivée à refaire
         precedent_change = not vieux                # 0.9.86 : seul ce qui a changé (et le plan qui en part) est refait
         if vieux:
-            for cle in ("image", "image_fin", "images_ok", "sans_fin", "clef", "fin_reelle", "fichier", "verdict", "consigne"):
+            for cle in ("image", "image_fin", "images_ok", "sans_fin", "clef", "clef_pourquoi", "fin_reelle", "fichier", "verdict",
+                        "consigne"):
                 if cle in vieux:
                     pl[cle] = vieux[cle]
             if int(vieux.get("duree") or 0) != pl["duree"]:

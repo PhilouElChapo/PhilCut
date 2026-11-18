@@ -161,6 +161,26 @@ def _guides_integres():
                          "ramène.")},
              {"texte": _("Chaque plan est relu : ✓ ou ⚠ avec la raison. « Refaire ce plan… » si besoin, puis « Poser dans le film ».")},
          ]},
+        {"id": "atelier_bibliotheque", "etat": "ok",
+         "titre": _("Créer ses personnages, lieux et tenues dans la bibliothèque (réels, inspirés ou inventés)"),
+         "mots": "creer personnage lieu tenue vetement habit costume bibliotheque atelier invente inspire photo reel directrice "
+                 "secretaire bureau planche fiche rush",
+         "intro": _("Ce que vous créez une fois se réutilise partout. Un personnage ou un lieu est réel (vos photos, plusieurs "
+                    "angles), inspiré de photos (ressemblance gardée, adapté par la description) ou inventé (description). Les "
+                    "photos peuvent venir de vos fichiers ou de n'importe quel rush (ligne rouge). Les tenues se rangent à part et "
+                    "se mettent à n'importe quel personnage."),
+         "etapes": [
+             {"texte": _("Fabrique IA › « Ma bibliothèque de créations… » › « Nouveau… » › Personnage (ou Lieu, Objet, Tenue)."),
+              "fait": "fenetre:DialogueBibliothequeCreations"},
+             {"texte": _("Nom, description (« ✨ Améliorer »), « Création » : réel, inspiré de photos ou inventé.")},
+             {"texte": _("« Ajouter des photos… » ou « Image d'un rush… » (ligne rouge sur un rush, puis encadrez) : plusieurs "
+                         "angles donnent un meilleur résultat. Pour une personne réelle ou inspirée, cochez l'accord.")},
+             {"texte": _("Tenue : « Tenues toutes faites… » (bureau, soirée, décontracté, uniformes et métiers) ou une tenue à vous ; "
+                         "choisissez-la sur le personnage.")},
+             {"texte": _("« Faire sa fiche » (personnage, objet) ou « Faire sa planche » (lieu) : quatre vues, environ 0,04 $, "
+                         "puis « Enregistrer ».")},
+             {"texte": _("Dans l'assistant, sur chaque carte : « Dans ma bibliothèque », et « Tenue dans cette scène ».")},
+         ]},
         {"id": "relier_rushes", "etat": "ok",
          "titre": _("Recréer ce qui n'a pas été filmé entre deux rushes (relier deux plans)"),
          "mots": "relier raccord trou manquant pas filme entre deux rushes jonction reconstituer scene image clef keyframe sortie "

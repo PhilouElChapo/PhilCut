@@ -289,3 +289,43 @@ class ImageCadres(QLabel):
             a, b = self._depart, self._courant
             p.drawRect(QRectF(QPointF(a[0] * w, a[1] * h), QPointF(b[0] * w, b[1] * h)))
         p.end()
+
+
+# ------------------------------------------------------------------ 0.9.88 : prendre un élément dans un rush
+def image_ligne_rouge(ed):
+    """L'image affichée à la ligne rouge (rush vidéo ou photo du montage), en PNG pleine définition ; "" sinon."""
+    import os
+    p, t = ed.projet, ed.timeline.position
+    c = p.plan_visible(t)
+    m = p.media(c["media"]) if c else None
+    if not (c and m and os.path.exists(m.get("chemin") or "")):
+        return ""
+    if m.get("genre") == "image":
+        return m["chemin"]
+    from . import images_plan
+    src = float(c.get("src_debut") or 0.0) + (t - c["debut"]) * float(c.get("vitesse") or 1.0)
+    r = images_plan.extraire(p, c, [src])
+    return r[0] if r else ""
+
+
+def encadrer(parent, image, titre):
+    """Fenêtre où l'on clique ou trace la personne / l'objet sur l'image ; renvoie la boîte [x0, y0, x1, y1] ou None."""
+    from PySide6.QtWidgets import QDialog, QDialogButtonBox
+    dl = QDialog(parent)
+    dl.setWindowTitle(titre)
+    v = QVBoxLayout(dl)
+    v.addWidget(aide(_("Cliquez la personne ou l'objet, ou tracez son cadre ; puis OK.")))
+    ic = ImageCadres(image, 560)
+    choix = {}
+
+    def trace(b):
+        choix["b"] = b
+        ic.cadres, ic.actif = [("1", "#f5a524", b)], 0
+        ic.update()
+    ic.trace.connect(trace)
+    v.addWidget(ic)
+    bb = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+    bb.accepted.connect(dl.accept)
+    bb.rejected.connect(dl.reject)
+    v.addWidget(bb)
+    return choix.get("b") if dl.exec() == QDialog.Accepted else None

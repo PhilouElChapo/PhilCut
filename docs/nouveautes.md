@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.87 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.88 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.88 (atelier de creation : personnages, lieux, tenues)
+- Ma bibliotheque de creations : chaque personnage, objet ou lieu se cree "Reel" (vos photos), "Inspire de photos" (ressemblance gardee, adapte par la description) ou "Invente" (description). Plusieurs photos par element ; "Image d'un rush…" prend une image a la ligne rouge dans n'importe quel rush, a encadrer. L'accord de la personne est demande pour "Reel" et "Inspire".
+- Lieux : "Faire sa planche (Gemini)…" : quatre vues du meme lieu, meme lumiere ; elle sert de decor aux images clefs.
+- Tenues : nouveau genre "Tenue" ; "Tenues toutes faites…" (bureau et ville, soiree, decontracte et sport, uniformes et metiers) ; image de la tenue par Gemini. Un personnage a sa tenue habituelle ; dans l'assistant, "Tenue dans cette scene" sur chaque carte de personne (la fiche est refaite avec la nouvelle tenue).
+- Assistant : sur une carte, "Une photo a moi" › "Image d'un rush…" ; les images clefs disent pourquoi elles sont la.
+
 
 ### 0.9.87 (images clefs, relier deux rushes)
 - Nouvelle facon de fabriquer : chaque plan part de la vraie fin de la video du plan d'avant (plus d'image de depart inventee) ; une image de fin n'est imposee qu'aux images clefs (nouveau lieu, quelqu'un qui attend ou arrive, la fin). Les gestes s'enchainent naturellement, les visages restent ceux des fiches.

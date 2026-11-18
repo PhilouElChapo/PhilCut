@@ -6,7 +6,7 @@ import os
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMenu,
-                               QMessageBox, QPushButton, QSplitter, QVBoxLayout, QWidget)
+                               QMessageBox, QPushButton, QScrollArea, QSplitter, QToolButton, QVBoxLayout, QWidget)
 
 from . import bibliotheque_creations as B
 from .cartes_assistant import ChampAmeliorable, aide, choisir_proposition, vider
@@ -60,6 +60,18 @@ class DialogueBibliothequeCreations(QDialog):
         m.setToolTipsVisible(True)
         b.setMenu(m)
         hb.addWidget(b)
+        bt = QPushButton(_("Tenues toutes faites…"))
+        mt = QMenu(bt)
+        from . import tenues as T
+        for k, lib in T.FAMILLES:
+            sm = mt.addMenu(lib)
+            for x in T.pretes(k):
+                a = sm.addAction(x["nom"], lambda x=x: self.ajouter_tenue_prete(x))
+                a.setToolTip(x["description"])
+            sm.setToolTipsVisible(True)
+        bt.setMenu(mt)
+        bt.setToolTip(_("Ajoute une tenue toute faite à la bibliothèque, pour la modifier ou la mettre à vos personnages"))
+        hb.addWidget(bt)
         self.b_retirer = QPushButton(_("Retirer"))
         self.b_retirer.setToolTip(_("L'entrée va dans la corbeille de la bibliothèque : rien n'est effacé"))
         self.b_retirer.clicked.connect(self.retirer)
@@ -69,7 +81,11 @@ class DialogueBibliothequeCreations(QDialog):
         sp.addWidget(g)
         self.droite = QWidget()
         self.v_detail = QVBoxLayout(self.droite)
-        sp.addWidget(self.droite)
+        zone = QScrollArea()                           # 0.9.88 : le détail grandit (photos, mode, tenue) : il défile
+        zone.setWidgetResizable(True)
+        zone.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        zone.setWidget(self.droite)
+        sp.addWidget(zone)
         sp.setSizes([360, 600])
         v.addWidget(sp, 1)
         self.etat = QLabel("")
@@ -140,6 +156,49 @@ class DialogueBibliothequeCreations(QDialog):
                                      3, self._ameliorer, _("Description"))
         self.v_detail.addWidget(self.desc)
         self.extra = {}
+        if e["genre"] in ("personnage", "objet", "lieu"):
+            h = QHBoxLayout()
+            h.addWidget(QLabel(_("Création")))
+            cm = QComboBox()
+            for k, lib, expl in B.MODES:
+                cm.addItem(lib, k)
+                cm.setItemData(cm.count() - 1, expl, Qt.ToolTipRole)
+            mode = d.get("mode") or ("reel" if self._photos(e) else "invente")
+            cm.setCurrentIndex(max(0, cm.findData(mode)))
+            self.extra["mode"] = cm
+            h.addWidget(cm, 1)
+            self.v_detail.addLayout(h)
+            self.l_mode = aide(dict((k, x) for k, _l, x in B.MODES).get(mode, ""))
+            cm.currentIndexChanged.connect(lambda _i: self.l_mode.setText(dict((k, x) for k, _l, x in B.MODES)
+                                                                         .get(cm.currentData(), "")))
+            self.v_detail.addWidget(self.l_mode)
+            self._bande_photos(e)
+        if e["genre"] == "personnage":
+            from . import tenues as T
+            h = QHBoxLayout()
+            h.addWidget(QLabel(_("Tenue")))
+            ct = QComboBox()
+            ct.addItem(_("Celle des photos (ou de la description)"), "")
+            for x in T.toutes(self.params):
+                ct.addItem(("★ " if x["source"] == "biblio" else "") + x["nom"], x["id"])
+            actuelle = (d.get("tenue") or {}).get("id", "")
+            ct.setCurrentIndex(max(0, ct.findData(actuelle)))
+            ct.setToolTip(_("La fiche est dessinée avec cette tenue ; dans l'assistant, chaque scène peut en choisir une autre"))
+            self.extra["tenue"] = ct
+            h.addWidget(ct, 1)
+            self.v_detail.addLayout(h)
+        if e["genre"] == "tenue":
+            from . import tenues as T
+            h = QHBoxLayout()
+            h.addWidget(QLabel(_("Famille")))
+            cf = QComboBox()
+            cf.addItem(_("Autre"), "")
+            for k, lib in T.FAMILLES:
+                cf.addItem(lib, k)
+            cf.setCurrentIndex(max(0, cf.findData(d.get("famille", ""))))
+            self.extra["famille"] = cf
+            h.addWidget(cf, 1)
+            self.v_detail.addLayout(h)
         if e["genre"] == "musicien":
             h = QHBoxLayout()
             h.addWidget(QLabel(_("Instrument")))
@@ -160,7 +219,8 @@ class DialogueBibliothequeCreations(QDialog):
             if (d.get("voix_decrite") or {}).get("fr"):
                 self.v_detail.addWidget(aide(_("Voix décrite : {d}", d=d["voix_decrite"]["fr"])))
         if e["genre"] in ("personnage", "musicien", "voix"):
-            self.extra["accord"] = QCheckBox(_("La personne est d'accord pour être reprise par l'IA (ou c'est moi)"))
+            self.extra["accord"] = QCheckBox(_("Accord de la personne des photos (ou c'est moi)"))
+            self.extra["accord"].setToolTip(_("Obligatoire pour « Réel » et « Inspiré de photos » : la ressemblance est gardée."))
             self.extra["accord"].setChecked(bool(d.get("accord")))
             self.v_detail.addWidget(self.extra["accord"])
         if e["genre"] == "style_musical" and (d.get("inspiration") or {}).get("resume"):
@@ -178,8 +238,20 @@ class DialogueBibliothequeCreations(QDialog):
         h.addWidget(b)
         if e["genre"] in ("personnage", "musicien", "objet"):
             b = QPushButton(_("Faire sa fiche (Gemini)…"))
-            b.setToolTip(_("Face, trois quarts, profil, en pied, d'après ses images ou sa description ; environ 0,04 $"))
+            b.setToolTip(_("Face, trois quarts, profil, en pied, d'après ses photos (selon « Création »), sa description et sa "
+                           "tenue ; environ 0,04 $"))
             b.clicked.connect(self.faire_fiche)
+            h.addWidget(b)
+        if e["genre"] == "lieu":
+            b = QPushButton(_("Faire sa planche (Gemini)…"))
+            b.setToolTip(_("Quatre vues du même lieu, même lumière, d'après ses photos ou sa description ; environ 0,04 $. Elle sert "
+                           "de décor aux images clefs."))
+            b.clicked.connect(self.faire_planche_lieu)
+            h.addWidget(b)
+        if e["genre"] == "tenue":
+            b = QPushButton(_("Faire son image (Gemini)…"))
+            b.setToolTip(_("La tenue seule, sur fond neutre, d'après sa description ; environ 0,04 $"))
+            b.clicked.connect(self.faire_image_tenue)
             h.addWidget(b)
         if e["genre"] == "voix":
             b = QPushButton(_("Décrire d'après un morceau…"))
@@ -207,6 +279,15 @@ class DialogueBibliothequeCreations(QDialog):
             d["role"] = self.extra["role"].currentData()
         if "accord" in self.extra:
             d["accord"] = self.extra["accord"].isChecked()
+        if "mode" in self.extra:
+            d["mode"] = self.extra["mode"].currentData()
+        if "famille" in self.extra:
+            d["famille"] = self.extra["famille"].currentData()
+        if "tenue" in self.extra:
+            from . import tenues as T
+            t = T.trouver(self.params, self.extra["tenue"].currentData())
+            d["tenue"] = {"id": t["id"], "nom": t["nom"], "description": t["description"], "en": t.get("en", ""),
+                          "image": t.get("image", "")} if t else None
         return d
 
     def enregistrer(self, fichiers=None, donnees=None):
@@ -214,6 +295,11 @@ class DialogueBibliothequeCreations(QDialog):
         if e is None:
             return
         d = self._donnees()
+        if d.get("mode") in ("reel", "inspire") and e["genre"] in ("personnage", "musicien") and self._photos(e) \
+                and not d.get("accord"):
+            self.etat.setText(_("✕ « Réel » et « Inspiré de photos » gardent la ressemblance : cochez d'abord l'accord de la "
+                                "personne (ou que c'est vous)."))
+            return
         d.update(donnees or {})
         try:
             x = B.garder(self.params, e["genre"], self.nom.text(), self.desc.texte(), fichiers, d, e["id"])
@@ -243,6 +329,139 @@ class DialogueBibliothequeCreations(QDialog):
         B.retirer(self.params, e)
         self.courante = None
         self.remplir()
+
+    # ------------------------------------------------------------------ photos, tenues, planches (0.9.88)
+    @staticmethod
+    def _photos(e):
+        return [(r, p) for r, p in sorted((e.get("fichiers") or {}).items())
+                if r not in ("planche", "image_tenue") and p.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))]
+
+    def _bande_photos(self, e):
+        photos = self._photos(e)
+        self.v_detail.addWidget(QLabel(_("Photos ({n}) : plusieurs angles donnent un meilleur résultat", n=len(photos))))
+        h = QHBoxLayout()
+        for role, p in photos[:8]:
+            col = QVBoxLayout()
+            im = QLabel()
+            im.setPixmap(QPixmap(p).scaled(72, 72, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            im.setToolTip(os.path.basename(p))
+            col.addWidget(im)
+            bx = QToolButton()
+            bx.setText("✕")
+            bx.setToolTip(_("Retirer cette photo"))
+            bx.clicked.connect(lambda _c=False, r=role: self.retirer_photo(r))
+            col.addWidget(bx, 0, Qt.AlignHCenter)
+            h.addLayout(col)
+        b = QPushButton(_("Ajouter des photos…"))
+        b.clicked.connect(self.ajouter_photos)
+        h.addWidget(b)
+        br = QPushButton(_("Image d'un rush…"))
+        br.setToolTip(_("Placez la ligne rouge sur un rush (ou une photo du montage) où on le voit : PhilCut prend l'image, vous "
+                        "l'encadrez. Recommencez avec d'autres rushes pour d'autres angles."))
+        br.clicked.connect(self.photo_ligne_rouge)
+        h.addWidget(br)
+        h.addStretch(1)
+        self.v_detail.addLayout(h)
+
+    @staticmethod
+    def _prochain(e):
+        """Numéro libre pour une nouvelle photo (jamais une photo écrasée)."""
+        import re as _re
+        nums = [int(m.group(1)) for r in (e.get("_fichiers") or e.get("fichiers") or {}) for m in [_re.match(r"image(\d+)$", r)] if m]
+        return max(nums, default=0) + 1
+
+    def _mode_reel(self):
+        """Des photos arrivent sur une entrée « Inventé » : elle devient « Réel » (on peut rechanger)."""
+        cm = self.extra.get("mode")
+        if cm is not None and cm.currentData() == "invente":
+            cm.setCurrentIndex(max(0, cm.findData("reel")))
+
+    def ajouter_photos(self):
+        from .widgets import ouvrir_fichiers
+        e = self.courante
+        if e is None:
+            return
+        chemins = ouvrir_fichiers(self, _("Photos"), IMAGES, "image", self.params)
+        if chemins:
+            self._mode_reel()
+            n = self._prochain(e)
+            self.enregistrer({f"image{n + k}": c for k, c in enumerate(chemins)})
+
+    def photo_ligne_rouge(self):
+        """0.9.88 : une photo prise dans n'importe quel rush (ligne rouge) ; une personne ou un objet est encadré."""
+        from . import assistant_creation as A
+        from .cartes_assistant import encadrer, image_ligne_rouge
+        e = self.courante
+        if e is None:
+            return
+        image = image_ligne_rouge(self.ed)
+        if not image:
+            self.etat.setText(_("Placez la ligne rouge sur une image d'un rush ou d'une photo, puis recommencez."))
+            return
+        if e["genre"] in ("personnage", "musicien", "objet", "tenue"):
+            boite = getattr(self, "_test_boite", None) or encadrer(self, image, _("Encadrez « {n} »", n=e["nom"]))
+            if not boite:
+                return
+            import tempfile
+            image = A.decouper(image, boite, os.path.join(tempfile.mkdtemp(), "rush.png"), detourer=e["genre"] != "tenue")
+        if image:
+            self._mode_reel()
+            self.enregistrer({f"image{self._prochain(e)}": image})
+
+    def retirer_photo(self, role):
+        e = self.courante
+        if e is None:
+            return
+        d = e["dossier"]
+        ent = B.lire(self.params, e["genre"], e["id"]) or e
+        f = dict(ent.get("_fichiers") or {})
+        nom = f.pop(role, None)
+        ent["_fichiers"] = f
+        B._ecrire({k: v for k, v in ent.items() if k not in ("dossier", "fichiers")}, d)
+        if nom and os.path.exists(os.path.join(d, nom)):
+            os.replace(os.path.join(d, nom), os.path.join(d, "." + nom + ".retire"))
+        self.remplir(e["id"])
+
+    def ajouter_tenue_prete(self, x):
+        t = B.garder(self.params, "tenue", x["nom"], x["description"], None, {"famille": x["famille"], "en": x["en"]})
+        self.filtre.setCurrentIndex(0)
+        self.remplir(t["id"])
+        self.etat.setText(_("✓ Tenue « {n} » ajoutée : modifiez-la si vous voulez, puis mettez-la à vos personnages.", n=x["nom"]))
+
+    def faire_planche_lieu(self):
+        from . import sequence_ia as Q
+        e = copy.deepcopy(self.courante)
+        if getattr(self, "_test_oui", None) is None and QMessageBox.question(
+                self, _("Faire sa planche"), _("La planche est dessinée par Gemini (votre clef), environ 0,04 $. Continuer ?")) != QMessageBox.Yes:
+            return
+        li = {"nom": self.nom.text(), "description": self.desc.texte(), "images": [p for _r, p in self._photos(e)],
+              "mode": self.extra["mode"].currentData() if "mode" in self.extra else ""}
+        seq, params = Q.nouvelle(), self.params
+
+        def travail(t):
+            t.avancer(0.1, _("dessin du lieu"))
+            return Q.planche_lieu(seq, li, params)
+        self._lancer(travail, _("Planche de « {n} »", n=li["nom"]), lambda r: r and self.enregistrer({"planche": r}))
+
+    def faire_image_tenue(self):
+        from . import ia, sequence_ia as Q
+        e = self.courante
+        if getattr(self, "_test_oui", None) is None and QMessageBox.question(
+                self, _("Faire son image"), _("L'image est dessinée par Gemini (votre clef), environ 0,04 $. Continuer ?")) != QMessageBox.Yes:
+            return
+        texte = (e.get("donnees") or {}).get("en") or Q._anglais(self.desc.texte(), True)
+        params, dossier = self.params, e["dossier"]
+
+        def travail(t):
+            t.avancer(0.1, _("dessin de la tenue"))
+            png = ia.generer_image(params, "Fashion reference image of ONE outfit, on an invisible mannequin, plain light grey "
+                                           "background, front view, even studio light, photorealistic, no person, no face, no text, no "
+                                           "logo: " + texte)
+            sortie = os.path.join(dossier, "_tenue_tmp.png")
+            with open(sortie, "wb") as f:
+                f.write(png)
+            return sortie
+        self._lancer(travail, _("Image de « {n} »", n=self.nom.text()), lambda r: r and self.enregistrer({"image_tenue": r}))
 
     def ajouter_fichier(self):
         from .widgets import ouvrir_fichier
@@ -293,13 +512,20 @@ class DialogueBibliothequeCreations(QDialog):
     def faire_fiche(self):
         from . import sequence_ia as Q
         e = copy.deepcopy(self.courante)
-        images = [p for r, p in (e.get("fichiers") or {}).items() if r != "planche" and p.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))]
+        images = [p for _r, p in self._photos(e)]
         if getattr(self, "_test_oui", None) is None and QMessageBox.question(
                 self, _("Faire sa fiche"), _("La fiche est dessinée par Gemini (votre clef), environ 0,04 $. Continuer ?")) != QMessageBox.Yes:
             return
         p = Q.personnage(self.nom.text(), self.desc.texte(), (e.get("donnees") or {}).get("style", ""))
         p["genre"] = "objet" if e["genre"] == "objet" else "personne"
         p["images"] = images
+        d = self._donnees()
+        p["mode"] = d.get("mode") or ""
+        if d.get("tenue"):
+            p["tenue"] = d["tenue"]
+        if p["mode"] in ("reel", "inspire") and images and e["genre"] != "objet" and not d.get("accord"):
+            self.etat.setText(_("✕ Cochez d'abord l'accord de la personne des photos (ou que c'est vous)."))
+            return
         seq = Q.nouvelle()
         params = self.params
         def travail(t):

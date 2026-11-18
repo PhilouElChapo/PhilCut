@@ -29,12 +29,18 @@ GENRES = {
     "lieu": (_("Lieu"), _("Un endroit, un décor : ses images et sa description.")),
     "voix": (_("Voix"), _("Chanteur, chanteuse, narration : une voix décrite, ou un timbre gardé (avec l'accord de la personne).")),
     "style_musical": (_("Style musical"), _("Un style nommé : ce que PhilCut a entendu d'un morceau, ou une description.")),
+    "tenue": (_("Tenue"), _("Des vêtements décrits une fois (et une image si vous voulez), à mettre à n'importe quel personnage.")),
     "style_visuel": (_("Style visuel"), _("Une allure, un rendu « à la manière de » : décrit, jamais un visage copié.")),
     "logo": (_("Logo"), _("Un logo prêt à poser (image), fait dans l'Atelier, dessiné par l'IA ou à vous.")),
     "style_intro": (_("Style d'intro"), _("Une intro nommée : son modèle d'animation, ses couleurs, son fond.")),
     "musique": (_("Musique"), _("Un morceau créé, avec ce qui a servi à le créer.")),
     "image": (_("Image"), _("Une image créée ou gardée pour resservir.")),
 }
+MODES = (("reel", _("Réel"), _("D'après vos photos (plusieurs : face, profil, en pied, ou plusieurs angles) : c'est lui, tel quel.")),
+         ("inspire", _("Inspiré de photos"), _("L'IA crée une version nouvelle qui garde la ressemblance des photos, adaptée par la "
+                                                 "description (âge, coiffure, allure).")),
+         ("invente", _("Inventé"), _("Seulement d'après la description, aucune personne réelle. « ✨ Améliorer » aide "
+                                      "à la préciser.")))
 ROLES_VOIX = (("chanteuse", _("Chanteuse")), ("chanteur", _("Chanteur")), ("narration", _("Narration")), ("autre", _("Autre")))
 
 
@@ -170,7 +176,7 @@ def retirer(params, e):
 def apercu(e):
     """Le fichier à montrer en vignette : planche, découpe, photo, image ; sinon rien."""
     f = e.get("fichiers") or {}
-    for role in ("planche", "decoupe", "photo", "image1", "image", "vignette"):
+    for role in ("planche", "decoupe", "photo", "image1", "image", "vignette", "image_tenue"):
         if f.get(role):
             return f[role]
     return next((c for c in f.values() if c.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))), "")
@@ -214,7 +220,8 @@ def depuis_carte(params, e, nom=None, planche=""):
         for k, v in enumerate(e.get("images") or []):
             if v and os.path.exists(v) and v not in fichiers.values():
                 fichiers[f"image{k + 1}"] = v
-        donnees.update(style=e.get("style", ""), accord=bool(e.get("accord")))
+        donnees.update(style=e.get("style", ""), accord=bool(e.get("accord")), mode=e.get("mode", ""),
+                       tenue=e.get("tenue") or None)
     elif t == "voix":
         donnees.update(voix_decrite=e.get("voix_decrite") or None, retouche=e.get("retouche", ""), choix=e.get("choix", ""),
                        role=e.get("role") or "", accord=bool(e.get("accord")))
@@ -238,9 +245,13 @@ def vers_carte(entree, e):
     e.update(biblio=entree["id"], biblio_genre=entree["genre"], nom=entree["nom"], description=entree.get("description", ""))
     if e.get("type") in ("personne", "objet", "lieu"):
         e["planche"] = f.get("planche", "")
-        e["images"] = [p for r, p in sorted(f.items()) if r != "planche" and p.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))]
+        e["images"] = [p for r, p in sorted(f.items()) if r not in ("planche", "image_tenue")
+                       and p.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))]
         e["style"] = d.get("style", "")
         e["accord"] = bool(d.get("accord"))
+        e["mode"] = d.get("mode", "")
+        if d.get("tenue"):
+            e["tenue"] = d["tenue"]
     elif e.get("type") == "voix":
         e["voix_decrite"] = d.get("voix_decrite") or None
         e["retouche"] = d.get("retouche", e.get("retouche", ""))
