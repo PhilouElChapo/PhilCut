@@ -111,6 +111,9 @@ class LigneCredit(QWidget):
         self.lbl = QLabel("")
         self.lbl.setWordWrap(True)
         self.lbl.setStyleSheet("color:#9aa4b2")
+        from PySide6.QtWidgets import QSizePolicy        # 0.9.96 : le texte passe à la ligne, il n'élargit jamais la fenêtre
+        self.lbl.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        self.lbl.setMinimumWidth(120)
         h.addWidget(self.lbl, 1)
         self.b = QPushButton(_("Recharger…"))
         self.b.setToolTip(_("Ouvre la page de votre compte pour ajouter du crédit"))
