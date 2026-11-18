@@ -3,7 +3,7 @@
 import copy
 import os
 
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, QTimer
 from PySide6.QtGui import QIcon, QPixmap
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMenu,
                                QMessageBox, QPushButton, QScrollArea, QSplitter, QToolButton, QVBoxLayout, QWidget)
@@ -314,9 +314,15 @@ class DialogueBibliothequeCreations(QDialog):
         self.filtre.setCurrentIndex(0)
         self.cherche.clear()
         self.remplir(x["id"])
-        self.nom.setFocus()
-        self.nom.selectAll()
         self.etat.setText(B.GENRES[genre][1])
+
+        def ecrire_tout_de_suite():               # 0.9.96 : après la fermeture du menu « Nouveau… », qui reprenait le focus
+            if hasattr(self, "nom"):
+                self.activateWindow()
+                self.nom.setFocus(Qt.OtherFocusReason)
+                self.nom.selectAll()
+        ecrire_tout_de_suite()
+        QTimer.singleShot(120, ecrire_tout_de_suite)
 
     def retirer(self):
         e = self.courante
@@ -403,10 +409,54 @@ class DialogueBibliothequeCreations(QDialog):
             if not boite:
                 return
             import tempfile
-            image = A.decouper(image, boite, os.path.join(tempfile.mkdtemp(), "rush.png"), detourer=e["genre"] != "tenue")
+            image = A.decouper(image, boite, os.path.join(tempfile.mkdtemp(), "rush.png"), detourer=False)
+            if not image:
+                return
+            methode = getattr(self, "_test_isoler", None) or self.choisir_isolement(e, image)
+            if not methode:
+                return
+            if methode == "local":
+                A.detourer_decoupe(image)
+            elif methode == "gemini":
+                quoi = {"objet": "object", "tenue": "outfit"}.get(e["genre"], "person")
+                cle = f"image{self._prochain(e)}"
+
+                def fin(chemin):
+                    self._mode_reel()
+                    self.enregistrer({cle: chemin})
+                self._lancer(lambda t: A.isoler_gemini(image, quoi, self.params), _("Gemini isole « {n} »", n=e["nom"]), fin)
+                return
         if image:
             self._mode_reel()
             self.enregistrer({f"image{self._prochain(e)}": image})
+
+    def choisir_isolement(self, e, image):
+        """0.9.96 : comment garder ce qui est encadré : le cadre tel quel, détouré sur ce poste (personnes, avec le modèle de
+        détourage), ou isolé par Gemini sur fond blanc (le plus propre, environ 0,04 $). "" = annulé."""
+        from PySide6.QtGui import QPixmap
+        from . import assistant_creation as A
+        m = QMessageBox(self)
+        m.setWindowTitle(_("Garder ce qui est encadré"))
+        m.setText(_("Comment garder « {n} » ?", n=e["nom"]))
+        m.setInformativeText(_("Le plus propre : Gemini garde seulement le sujet du cadre, entier, sur fond blanc (les voisins et "
+                               "le décor disparaissent), sans le changer. Le cadre tel quel convient aussi : les IA s'y "
+                               "retrouvent si le sujet le remplit bien."))
+        px = QPixmap(image)
+        if not px.isNull():
+            m.setIconPixmap(px.scaled(200, 200, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        boutons = {}
+        if self.params.get("clef_gemini"):
+            boutons["gemini"] = m.addButton(_("Isoler par Gemini (environ {p})", p="0,04 $"), QMessageBox.AcceptRole)
+        if e["genre"] in ("personnage", "musicien") and A.detourage_local_possible():
+            boutons["local"] = m.addButton(_("Détourer sur ce poste (gratuit)"), QMessageBox.AcceptRole)
+        boutons["cadre"] = m.addButton(_("Garder le cadre tel quel"), QMessageBox.AcceptRole)
+        annuler = m.addButton(_("Annuler"), QMessageBox.RejectRole)
+        m.setDefaultButton(boutons.get("gemini") or boutons["cadre"])
+        m.exec()
+        clique = m.clickedButton()
+        if clique is annuler:
+            return ""
+        return next((k for k, b in boutons.items() if b is clique), "")
 
     def retirer_photo(self, role):
         e = self.courante

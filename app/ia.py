@@ -341,7 +341,9 @@ def _gemini(clef, params, consignes, texte, images, max_jetons, json_attendu):
     parts = [{"inline_data": {"mime_type": type_image(i), "data": base64.b64encode(i).decode()}} for i in images or []]
     parts.append({"text": texte})
     corps = {"system_instruction": {"parts": [{"text": consignes}]}, "contents": [{"role": "user", "parts": parts}],
-             "generationConfig": {"maxOutputTokens": max_jetons}}
+             # 0.9.96 : les Gemini récents « réfléchissent » avant de répondre et cette réflexion compte dans maxOutputTokens :
+             # avec 700 jetons, la réponse était coupée au milieu (« Réponse de l'IA illisible ») ; on laisse la place
+             "generationConfig": {"maxOutputTokens": max_jetons + 8192}}
     if json_attendu:
         corps["generationConfig"]["responseMimeType"] = "application/json"
     from .journal import ecrire
@@ -357,7 +359,10 @@ def _gemini(clef, params, consignes, texte, images, max_jetons, json_attendu):
             if not cands:
                 raise ErreurIA(_("Gemini n'a pas répondu ({raison}).", raison=(d.get("promptFeedback") or {}).get("blockReason", "?")))
             _modeles_trouves["gemini"] = modele
-            return "".join(p.get("text", "") for p in (cands[0].get("content") or {}).get("parts", []))
+            if cands[0].get("finishReason") == "MAX_TOKENS":
+                ecrire("IA gemini", f"modèle {modele} : réponse coupée (MAX_TOKENS)")
+            return "".join(p.get("text", "") for p in (cands[0].get("content") or {}).get("parts", [])
+                           if not p.get("thought"))
         except ErreurIA as e:
             code = getattr(e, "code", 0)
             if code in (400, 403) and "API key" in str(e):
@@ -525,7 +530,18 @@ def demander(params, consignes, texte, images=None, json_attendu=False, max_jeto
             dernier.update(moteur=m, modele=_modeles_trouves.get(m, "?"), secours=m != ms[0][0], premier=ms[0][0])
             ecrire("IA " + m, f"réponse en {_t.time() - debut:.1f} s, modèle {_modeles_trouves.get(m, '?')}, "
                               f"{len(texte)} car. envoyés{', ' + str(len(images)) + ' image(s)' if images else ''}")
-            return lire_json(r) if json_attendu else r.strip()
+            if json_attendu:
+                try:
+                    return lire_json(r)
+                except ErreurIA:
+                    # 0.9.96 : une réponse mal formée : noté au journal (début et fin), puis une seconde demande, plus large
+                    ecrire("IA " + m, f"JSON illisible ({len(r or '')} car.) : {str(r)[:200]!r} … {str(r)[-120:]!r}")
+                    r = _claude(clef, params, consignes + "\n\nATTENTION : ta réponse précédente n'était pas un JSON valide et "
+                                "complet. Réponds par un JSON court, valide, complet.", texte, images, max_jetons * 2) \
+                        if m == "claude" else _gemini(clef, params, consignes + "\n\nRéponds par un JSON valide et complet.",
+                                                     texte, images, max_jetons * 2, json_attendu)
+                    return lire_json(r)
+            return r.strip()
         except ErreurIA as e:
             ecrire("IA " + m, f"✕ après {_t.time() - debut:.1f} s : {e}")
             derniere = e
@@ -549,7 +565,46 @@ def lire_json(texte):
                 return json.loads(m.group())
             except ValueError:
                 pass
+    reparee = reparer_json(t)                   # 0.9.96 : virgules en trop, guillemets typographiques, fin coupée
+    if reparee is not None:
+        return reparee
     raise ErreurIA(_("Réponse de l'IA illisible."))
+
+
+def reparer_json(t):
+    """Essaie de remettre d'aplomb un JSON presque juste : virgule avant } ou ], guillemets “ ”, réponse coupée en route
+    (chaîne et accolades refermées). Renvoie l'objet, ou None."""
+    debut = min([i for i in (t.find("{"), t.find("[")) if i >= 0] or [-1])
+    if debut < 0:
+        return None
+    t = t[debut:].replace("“", '"').replace("”", '"')
+    t = re.sub(r",\s*([}\]])", r"\1", t)
+    try:
+        return json.loads(t)
+    except ValueError:
+        pass
+    pile, chaine, echap = [], False, False
+    for c in t:
+        if chaine:
+            if echap:
+                echap = False
+            elif c == "\\":
+                echap = True
+            elif c == '"':
+                chaine = False
+        elif c == '"':
+            chaine = True
+        elif c in "{[":
+            pile.append("}" if c == "{" else "]")
+        elif c in "}]" and pile:
+            pile.pop()
+    fin = t + ('"' if chaine else "")
+    fin = re.sub(r",\s*$", "", fin.rstrip())
+    fin = re.sub(r',\s*"[^"]*"\s*:?\s*$', "", fin)       # une clef commencée sans valeur
+    try:
+        return json.loads(fin + "".join(reversed(pile)))
+    except ValueError:
+        return None
 
 
 def texte_document(doc, max_car=120000):
@@ -564,3 +619,22 @@ def texte_document(doc, max_car=120000):
                 morceaux.append(_("[... document tronqué ...]"))
                 break
     return "\n\n".join(morceaux)
+
+
+# 0.9.96 : chaque image Gemini réussie est notée (environ 0,04 $) dans « dépensé ce mois par PhilCut »
+def _compter_image(f):
+    def g(*a, **k):
+        r = f(*a, **k)
+        try:
+            from .credit_ia import noter_depense
+            noter_depense("google", 0.04)
+        except Exception:      # noqa: BLE001
+            pass
+        return r
+    g.__wrapped__ = f
+    return g
+
+
+generer_image = _compter_image(generer_image)
+generer_image_refs = _compter_image(generer_image_refs)
+retoucher_image = _compter_image(retoucher_image)

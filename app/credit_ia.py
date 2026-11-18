@@ -33,11 +33,51 @@ def a_clef(params, fournisseur):
         return False
 
 
+# ------------------------------------------------------------------ 0.9.96 : ce que PhilCut a dépensé (les soldes manquent)
+def _fichier_depenses():
+    import os
+    from .config import dossier_donnees
+    return os.path.join(dossier_donnees(), "depenses_ia.json")
+
+
+def noter_depense(fournisseur, montant):
+    """Ajoute une dépense payante faite par PhilCut sur ce poste au mois en cours (images, vidéos, lèvres…)."""
+    import json, os, time
+    if not montant or montant <= 0:
+        return
+    f = _fichier_depenses()
+    try:
+        d = json.load(open(f, encoding="utf-8")) if os.path.exists(f) else {}
+    except (OSError, ValueError):
+        d = {}
+    mois = d.setdefault(time.strftime("%Y-%m"), {})
+    mois[fournisseur] = round(float(mois.get(fournisseur, 0)) + float(montant), 4)
+    try:
+        os.makedirs(os.path.dirname(f), exist_ok=True)
+        json.dump(d, open(f, "w", encoding="utf-8"), indent=1)
+    except OSError:
+        pass
+
+
+def depense_du_mois(fournisseur):
+    import json, os, time
+    try:
+        d = json.load(open(_fichier_depenses(), encoding="utf-8"))
+        return float((d.get(time.strftime("%Y-%m")) or {}).get(fournisseur, 0))
+    except (OSError, ValueError):
+        return 0.0
+
+
+def _ce_mois(fournisseur):
+    m = depense_du_mois(fournisseur)
+    return _("dépensé ce mois par PhilCut : {m} $", m=f"{m:.2f}".replace(".", ","))
+
+
 def texte_court(fournisseur, solde):
     """Une ligne étroite (0.9.86, plusieurs comptes côte à côte) : « fal.ai : 12,40 $ », « Claude : solde non donné »."""
     nom = NOMS.get(fournisseur, fournisseur)
     if solde is None:
-        return _("{n} : solde non donné", n=nom)
+        return _("{n} : solde non donné ; {d}", n=nom, d=_ce_mois(fournisseur))
     montant, devise = solde
     return f"{nom} : " + f"{montant:.2f}".replace(".", ",") + " " + ("$" if devise == "USD" else devise) + \
         ("  ⚠" if montant < 2 else "")
@@ -47,10 +87,12 @@ def texte_credit(fournisseur, solde):
     nom = NOMS.get(fournisseur, fournisseur)
     if solde is None:
         if fournisseur == "google":
-            return _("Crédit {n} : Google ne le donne pas ici ; « Recharger » ouvre le suivi des dépenses.", n=nom)
+            return _("Crédit {n} : Google ne donne pas le solde aux logiciels ; « Recharger » ouvre le suivi ({d}).", n=nom,
+                     d=_ce_mois(fournisseur))
         if fournisseur == "anthropic":
-            return _("Crédit {n} : Anthropic ne le donne pas ici ; « Recharger » ouvre votre compte.", n=nom)
-        return _("Crédit {n} : inconnu (clef sans droit de lecture du solde, ou hors ligne).", n=nom)
+            return _("Crédit {n} : Anthropic ne donne pas le solde aux logiciels ; « Recharger » ouvre votre compte.", n=nom)
+        return _("Crédit {n} : fal.ai ne donne le solde qu'à une clef de portée « ADMIN » (à créer sur fal.ai, Keys) ; {d}.",
+                 n=nom, d=_ce_mois(fournisseur))
     montant, devise = solde
     m = f"{montant:.2f}".replace(".", ",")
     return _("Crédit {n} restant : {m} {d}", n=nom, m=m, d="$" if devise == "USD" else devise) + \

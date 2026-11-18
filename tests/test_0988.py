@@ -101,6 +101,7 @@ class TestBibliotheque(unittest.TestCase):
         ed.projet.ajouter_clip(m["id"], "video", 0.0)
         ed.timeline.aller_a(1.0)
         dl._test_boite = [0.1, 0.1, 0.6, 0.9]
+        dl._test_isoler = "cadre"
         dl.photo_ligne_rouge()                                            # une image prise dans un rush
         self.assertEqual(len(dl._photos(dl.courante)), 2)
         from app import tenues as T

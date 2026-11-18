@@ -193,9 +193,10 @@ def boite_autour(x, y, larg=0.3, haut=0.85):
     return [round(x0, 4), round(y0, 4), round(x0 + larg, 4), round(y0 + haut, 4)]
 
 
-def decouper(image, boite, sortie, marge=0.12, detourer=True):
+def decouper(image, boite, sortie, marge=0.12, detourer=True, personne=True):
     """La personne ou l'objet découpé dans l'image (avec un peu de marge) : c'est cette découpe qui fait la fiche, et non
-    plus toute la photo de groupe."""
+    plus toute la photo de groupe. 0.9.96 : détourée seulement pour une personne et avec le modèle « Détourage de personne »
+    de ce poste ; sinon le cadre reste tel quel (le détourage approximatif mélangeait les voisins à l'objet)."""
     from . import moteur
     from PySide6.QtGui import QImage
     q = QImage(image)
@@ -209,40 +210,37 @@ def decouper(image, boite, sortie, marge=0.12, detourer=True):
     moteur.lancer(["-y", "-i", image, "-vf", f"crop={cw}:{ch}:{int(x0 * w)}:{int(y0 * h)}", "-frames:v", "1", sortie])
     if not os.path.exists(sortie):
         return ""
-    if detourer:
+    if detourer and personne:
         detourer_decoupe(sortie, marge / (1 + 2 * marge))
     return sortie
 
 
+def detourage_local_possible():
+    """Le modèle « Détourage de personne » est-il installé ? (sans lui, pas de détourage sur ce poste)"""
+    try:
+        from . import segmentation
+        return bool(segmentation._portable())
+    except Exception:      # noqa: BLE001
+        return False
+
+
 def detourer_decoupe(chemin, marge=0.1):
-    """0.9.86 : le cadre seul est imprécis (bout de la voisine, décor) : la personne est détourée dans son cadre (GrabCut,
-    sur ce poste ; modèle de détourage s'il est installé) et posée sur un fond blanc uni, ce que les IA lisent le mieux.
-    Renvoie True si le détourage a réussi (sinon la découpe reste telle quelle)."""
+    """Une personne détourée dans son cadre par le modèle « Détourage de personne » de ce poste, posée sur un fond blanc uni,
+    ce que les IA lisent le mieux. 0.9.96 : plus de GrabCut (il gardait des morceaux de décor et de voisins). Renvoie True si
+    le détourage a été fait (sinon la découpe reste telle quelle)."""
     try:
         import cv2
         import numpy as np
+        from . import segmentation
+        if not segmentation._portable():
+            return False
         img = cv2.imread(chemin)
         if img is None:
             return False
         H, L = img.shape[:2]
-        mx, my = int(L * marge), int(H * marge)
-        gc = np.full((H, L), cv2.GC_BGD, np.uint8)
-        gc[my:H - my, mx:L - mx] = cv2.GC_PR_FGD
-        bg, fg = np.zeros((1, 65), np.float64), np.zeros((1, 65), np.float64)
-        echelle = min(1.0, 480 / max(H, L))
-        petit = cv2.resize(img, None, fx=echelle, fy=echelle, interpolation=cv2.INTER_AREA) if echelle < 1 else img
-        g2 = cv2.resize(gc, (petit.shape[1], petit.shape[0]), interpolation=cv2.INTER_NEAREST)
-        cv2.grabCut(petit, g2, None, bg, fg, 5, cv2.GC_INIT_WITH_MASK)
-        m = np.where((g2 == cv2.GC_FGD) | (g2 == cv2.GC_PR_FGD), 255, 0).astype(np.uint8)
-        m = cv2.resize(m, (L, H), interpolation=cv2.INTER_LINEAR)
-        try:
-            from . import segmentation
-            if segmentation._portable():
-                mp = segmentation.masque_image(img)
-                if mp is not None and (mp > 127).sum() > 0.15 * L * H:
-                    m = mp
-        except Exception:      # noqa: BLE001
-            pass
+        m = segmentation.masque_image(img)
+        if m is None:
+            return False
         part = (m > 127).mean()
         if not 0.12 < part < 0.97:            # rien ou tout : on garde la découpe
             return False
@@ -252,6 +250,26 @@ def detourer_decoupe(chemin, marge=0.1):
         return True
     except Exception:          # noqa: BLE001
         return False
+
+
+CONSIGNE_ISOLER = ("Keep ONLY the main {quoi} in the centre of this image, exactly identical: same face, hair, body, clothes, "
+                   "colours, shape, markings and proportions. Remove everything else (other people, other objects, background) "
+                   "and place it whole, not cropped, on a plain pure white background, same angle. Do not change, beautify or "
+                   "redraw it; no text.")
+PRIX_ISOLER = 0.04
+
+
+def isoler_gemini(chemin, quoi, params):
+    """0.9.96 : Gemini garde seulement le sujet du cadre, entier, sur fond blanc (environ 0,04 $) ; remplace le fichier."""
+    from . import ia
+    with open(chemin, "rb") as f:
+        octets = f.read()
+    r = ia.retoucher_image(params, octets, CONSIGNE_ISOLER.format(quoi=quoi))
+    if not r:
+        raise ErreurAssistant(_("Gemini n'a pas rendu d'image."))
+    with open(chemin, "wb") as f:
+        f.write(r)
+    return chemin
 
 
 CONSIGNE_DECRIRE = """Tu aides à décrire {quoi} pour qu'une IA le dessine puis le garde identique d'un plan vidéo à l'autre. Voici ce
@@ -404,7 +422,7 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
             dec = a.get("decoupe") if a.get("decoupe") and os.path.exists(a["decoupe"]) else ""
             if not dec and p["boite"]:
                 try:
-                    dec = decouper(image_cartes or image, p["boite"], os.path.join(Q.dossier(seq), "decoupe_" + re.sub(r"[^\w-]+", "_", a["nom"])[:30] + ".png"))
+                    dec = decouper(image_cartes or image, p["boite"], os.path.join(Q.dossier(seq), "decoupe_" + re.sub(r"[^\w-]+", "_", a["nom"])[:30] + ".png"), personne=a.get("genre") != "objet")
                 except Exception:      # noqa: BLE001 : sans découpe, la photo entière et la position suffisent
                     dec = ""
             p["decoupe"] = dec
@@ -639,6 +657,19 @@ def _images_faites(seq):
             {(i, c): pl.get(c) for i, pl in enumerate(seq["plans"]) for c in ("image", "image_fin")})
 
 
+def _deux_fois(f):
+    """0.9.96 : un délai dépassé (réseau lent, serveur chargé) : on réessaie une fois avant d'abandonner."""
+    from . import ia
+    try:
+        return f()
+    except ia.ErreurIA as e:
+        if not (getattr(e, "delai", False) or "injoignable" in str(e) or "timed out" in str(e)):
+            raise
+        from .journal import ecrire
+        ecrire("assistant", f"délai dépassé, nouvel essai : {e}")
+        return f()
+
+
 def preparer(seq, params, progression=None, arret=lambda: False):
     """Fiches des personnages et objets, puis image de départ et d'arrivée de chaque plan à fabriquer. Renvoie le nombre
     d'images composées (pour le budget)."""
@@ -653,7 +684,7 @@ def preparer(seq, params, progression=None, arret=lambda: False):
         if arret():
             raise InterruptedError()
         av(k / max(1, etapes), _("Fiche de « {n} »", n=p["nom"]))
-        Q.planche_personnage(seq, p, params)
+        _deux_fois(lambda: Q.planche_personnage(seq, p, params))
         k += 1
     for i in tous:
         if arret():
@@ -669,7 +700,7 @@ def preparer(seq, params, progression=None, arret=lambda: False):
         if not (pl.get("image_fin") and os.path.exists(pl["image_fin"])) and not pl.get("sans_fin") and not pl.get("fin_reelle"):
             quoi.append("arrivee")
         if quoi:
-            Q.preparer_images(seq, i, params, tuple(quoi))
+            _deux_fois(lambda: Q.preparer_images(seq, i, params, tuple(quoi)))
     n_apres, images_apres = _images_faites(seq)
     return (n_apres - n_avant) + sum(1 for c, v in images_apres.items() if v and v != images_avant.get(c))
 

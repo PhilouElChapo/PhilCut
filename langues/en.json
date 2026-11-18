@@ -8624,5 +8624,20 @@
  "Lèvres synchronisées sur ce poste (carte NVIDIA)": "Lip sync on this computer (NVIDIA card)",
  "Crédit Gemini épuisé (prépaiement de Google AI Studio) : rien n'a été fait ni facturé. Rechargez-le sur https://aistudio.google.com (Facturation, « Billing »), puis recommencez.": "Gemini credit used up (Google AI Studio prepayment): nothing was done or charged. Top it up on https://aistudio.google.com (Billing), then try again.",
  "Crédit Claude épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://console.anthropic.com (Billing), puis recommencez.": "Claude credit used up: nothing was done or charged. Top it up on https://console.anthropic.com (Billing), then try again.",
- "Crédit fal.ai épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://fal.ai/dashboard/billing, puis recommencez.": "fal.ai credit used up: nothing was done or charged. Top it up on https://fal.ai/dashboard/billing, then try again."
+ "Crédit fal.ai épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://fal.ai/dashboard/billing, puis recommencez.": "fal.ai credit used up: nothing was done or charged. Top it up on https://fal.ai/dashboard/billing, then try again.",
+ "Gemini n'a pas rendu d'image.": "Gemini returned no image.",
+ "dépensé ce mois par PhilCut : {m} $": "spent this month by PhilCut: {m} $",
+ "{n} : solde non donné ; {d}": "{n}: balance not given; {d}",
+ "Crédit {n} : fal.ai ne donne le solde qu'à une clef de portée « ADMIN » (à créer sur fal.ai, Keys) ; {d}.": "{n} credit: fal.ai gives the balance only to a key with “ADMIN” scope (to create on fal.ai, Keys); {d}.",
+ "Crédit {n} : Google ne donne pas le solde aux logiciels ; « Recharger » ouvre le suivi ({d}).": "{n} credit: Google does not give the balance to software; “Top up” opens the tracking page ({d}).",
+ "Crédit {n} : Anthropic ne donne pas le solde aux logiciels ; « Recharger » ouvre votre compte.": "{n} credit: Anthropic does not give the balance to software; “Top up” opens your account.",
+ "arrêté": "stopped",
+ "{n} fiche(s) ou image(s) faite(s) et gardée(s), puis : {e}. « ‹ Précédent » puis « Préparer les images » ne refait que ce qui manque.": "{n} sheet(s) or image(s) made and kept, then: {e}. “‹ Previous” then “Prepare the images” only redoes what is missing.",
+ "Garder ce qui est encadré": "Keep what is framed",
+ "Comment garder « {n} » ?": "How should “{n}” be kept?",
+ "Le plus propre : Gemini garde seulement le sujet du cadre, entier, sur fond blanc (les voisins et le décor disparaissent), sans le changer. Le cadre tel quel convient aussi : les IA s'y retrouvent si le sujet le remplit bien.": "The cleanest: Gemini keeps only the subject of the frame, whole, on a white background (neighbours and setting disappear), without changing it. The frame as it is also works: the AIs manage if the subject fills it well.",
+ "Garder le cadre tel quel": "Keep the frame as it is",
+ "Isoler par Gemini (environ {p})": "Isolate with Gemini (about {p})",
+ "Détourer sur ce poste (gratuit)": "Cut out on this computer (free)",
+ "Gemini isole « {n} »": "Gemini isolates “{n}”"
 }

@@ -4,7 +4,16 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.95 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.96 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.96 (retours du premier vrai essai)
+- Fabrication d'un seul tenant : plus d'erreur 422 de Kling (« Prompt must not exceed 512 characters ») : chaque plan d'un meme calcul a une consigne courte (l'action d'abord ; visages et objets tenus par les fiches).
+- « Reponse de l'IA illisible » : Gemini reflechit avant de repondre et cette reflexion mangeait la reponse ; la place est laissee, une reponse abimee est reparee ou redemandee une fois.
+- Preparer les images : une erreur en route (reseau, credit) ne fait plus perdre les fiches et images deja faites ; un delai depasse est reessaye une fois.
+- Bibliotheque, « Image d'un rush… » : apres le cadre, choix « Isoler par Gemini » (le sujet seul, entier, sur fond blanc, environ 0,04 $), « Garder le cadre tel quel » ou, pour une personne avec le modele installe, « Detourer sur ce poste ». Le detourage approximatif (qui melangeait le pilote et l'avion) est retire.
+- « Nouveau… » : le nom se tape tout de suite.
+- Credits : a cote de chaque service, ce que PhilCut a depense ce mois (images, videos) ; fal.ai ne donne son solde qu'a une clef de portee « ADMIN ».
+
 
 ### 0.9.95 (credit et Recharger partout)
 - Les fenetres qui utilisent une IA payante montrent le credit restant et un bouton « Recharger… » : Ma bibliotheque de creations (Gemini, Claude), Clip de groupe et Narration (Gemini, fal.ai), Plan de liaison (Gemini, Claude), Atelier de logo et Fabrique musique (Claude, Gemini) ; deja la : assistant, Sequence IA, Prolonger, Faire parler, Transformer la voix, Tampons.

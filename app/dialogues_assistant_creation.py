@@ -509,7 +509,8 @@ class DialogueAssistant(QDialog):
         if c.e.get("source") != "image":
             c.radios["image"].setChecked(True)
         try:
-            c.e["decoupe"] = A.decouper(self._image_cartes(), c.e["boite"], os.path.join(Q.dossier(self.seq), f"decoupe_carte_{id(c) % 10 ** 6}.png"))
+            c.e["decoupe"] = A.decouper(self._image_cartes(), c.e["boite"], os.path.join(Q.dossier(self.seq), f"decoupe_carte_{id(c) % 10 ** 6}.png"),
+                                         personne=c.e.get("type") != "objet" and c.e.get("genre") != "objet")
         except Exception:      # noqa: BLE001
             c.e["decoupe"] = ""
         c.rafraichir()
@@ -605,7 +606,8 @@ class DialogueAssistant(QDialog):
             boite = encadrer(self, image, _("Encadrez « {n} »", n=carte.e.get("nom", "")))
             if not boite:
                 return
-        dec = A.decouper(image, boite, os.path.join(Q.dossier(self.seq), f"rush_{id(carte) % 10 ** 6}_{int(t * 1000)}.png"))
+        dec = A.decouper(image, boite, os.path.join(Q.dossier(self.seq), f"rush_{id(carte) % 10 ** 6}_{int(t * 1000)}.png"),
+                         personne=carte.e.get("type") != "objet" and carte.e.get("genre") != "objet")
         if dec:
             carte.e["photo"] = dec
             carte.rafraichir()
@@ -1371,19 +1373,31 @@ class DialogueAssistant(QDialog):
         seq = copy.deepcopy(self.seq)
 
         def travail(t):
-            n = A.preparer(seq, self.params, t.avancer, t.arret_demande)
-            return seq, n
+            # 0.9.96 : une image ratée en route (réseau, crédit) ne fait plus perdre celles déjà faites : on les garde
+            avant = sum(A.a_preparer(seq, self.params))
+            try:
+                A.preparer(seq, self.params, t.avancer, t.arret_demande)
+                erreur = None
+            except InterruptedError:
+                erreur = _("arrêté")
+            except Exception as e:      # noqa: BLE001
+                erreur = texte_erreur(e)
+            return seq, max(0, avant - sum(A.a_preparer(seq, self.params))), erreur
 
         def fin(r, err):
-            if r:
-                self._reprendre_images(r[0])
-                A.depenser(self.seq, _("Fiches et images"), A.PRIX_IMAGE * r[1])
-            if err and not r:
+            if not r:
                 return
+            self._reprendre_images(r[0])
+            if r[1]:
+                A.depenser(self.seq, _("Fiches et images"), A.PRIX_IMAGE * r[1])
             Q.enregistrer(self.seq)
             self._remplir_images()
             self.aller(P_IMAGES)
-            self.etat.setText(_("Regardez chaque image ; corrigez celles qui ne vont pas, puis lancez la vidéo."))
+            if r[2]:
+                self.etat.setText("✕ " + _("{n} fiche(s) ou image(s) faite(s) et gardée(s), puis : {e}. « ‹ Précédent » puis "
+                                          "« Préparer les images » ne refait que ce qui manque.", n=r[1], e=r[2]))
+            else:
+                self.etat.setText(_("Regardez chaque image ; corrigez celles qui ne vont pas, puis lancez la vidéo."))
         self._lancer(travail, _("L'assistant prépare les fiches et les images"), fin)
 
     def _reprendre_images(self, autre):

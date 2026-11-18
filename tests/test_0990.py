@@ -34,7 +34,7 @@ class TestCorps(unittest.TestCase):
         self.assertEqual([x["duration"] for x in c["multi_prompt"]], ["4", "5"])
         self.assertEqual(c["duration"], "9")
         self.assertEqual(c["shot_type"], "customize")
-        self.assertTrue(all("@Element1 is Character A" in x["prompt"] and "identical" in x["prompt"] for x in c["multi_prompt"]))
+        self.assertTrue(all("@Element1=Character A" in x["prompt"] and "identical" in x["prompt"] for x in c["multi_prompt"]))
         self.assertEqual((c["start_image_url"], c["end_image_url"]), ("dep", "fin"))
         c1 = GV.corps_reference("x", 5, "16:9", m=m)
         self.assertIn("prompt", c1)

@@ -8615,5 +8615,20 @@
  "Lèvres synchronisées sur ce poste (carte NVIDIA)": "Labbra sincronizzate su questo computer (scheda NVIDIA)",
  "Crédit Gemini épuisé (prépaiement de Google AI Studio) : rien n'a été fait ni facturé. Rechargez-le sur https://aistudio.google.com (Facturation, « Billing »), puis recommencez.": "Credito Gemini esaurito (prepagato di Google AI Studio): nulla è stato fatto né addebitato. Ricaricatelo su https://aistudio.google.com (Billing), poi riprovate.",
  "Crédit Claude épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://console.anthropic.com (Billing), puis recommencez.": "Credito Claude esaurito: nulla è stato fatto né addebitato. Ricaricatelo su https://console.anthropic.com (Billing), poi riprovate.",
- "Crédit fal.ai épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://fal.ai/dashboard/billing, puis recommencez.": "Credito fal.ai esaurito: nulla è stato fatto né addebitato. Ricaricatelo su https://fal.ai/dashboard/billing, poi riprovate."
+ "Crédit fal.ai épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://fal.ai/dashboard/billing, puis recommencez.": "Credito fal.ai esaurito: nulla è stato fatto né addebitato. Ricaricatelo su https://fal.ai/dashboard/billing, poi riprovate.",
+ "Gemini n'a pas rendu d'image.": "Gemini non ha restituito alcuna immagine.",
+ "dépensé ce mois par PhilCut : {m} $": "speso questo mese da PhilCut: {m} $",
+ "{n} : solde non donné ; {d}": "{n}: saldo non fornito; {d}",
+ "Crédit {n} : fal.ai ne donne le solde qu'à une clef de portée « ADMIN » (à créer sur fal.ai, Keys) ; {d}.": "Credito {n}: fal.ai fornisce il saldo solo a una chiave con ambito «ADMIN» (da creare su fal.ai, Keys); {d}.",
+ "Crédit {n} : Google ne donne pas le solde aux logiciels ; « Recharger » ouvre le suivi ({d}).": "Credito {n}: Google non fornisce il saldo ai programmi; «Ricarica» apre il monitoraggio ({d}).",
+ "Crédit {n} : Anthropic ne donne pas le solde aux logiciels ; « Recharger » ouvre votre compte.": "Credito {n}: Anthropic non fornisce il saldo ai programmi; «Ricarica» apre il vostro account.",
+ "arrêté": "interrotto",
+ "{n} fiche(s) ou image(s) faite(s) et gardée(s), puis : {e}. « ‹ Précédent » puis « Préparer les images » ne refait que ce qui manque.": "{n} scheda/e o immagine/i fatta/e e conservata/e, poi: {e}. «‹ Precedente» e poi «Prepara le immagini» rifà solo ciò che manca.",
+ "Garder ce qui est encadré": "Conservare ciò che è inquadrato",
+ "Comment garder « {n} » ?": "Come conservare «{n}»?",
+ "Le plus propre : Gemini garde seulement le sujet du cadre, entier, sur fond blanc (les voisins et le décor disparaissent), sans le changer. Le cadre tel quel convient aussi : les IA s'y retrouvent si le sujet le remplit bien.": "La cosa più pulita: Gemini conserva solo il soggetto dell'inquadratura, intero, su fondo bianco (vicini e sfondo spariscono), senza cambiarlo. Anche l'inquadratura così com'è va bene: le IA si orientano se il soggetto la riempie bene.",
+ "Garder le cadre tel quel": "Conservare l'inquadratura così com'è",
+ "Isoler par Gemini (environ {p})": "Isolare con Gemini (circa {p})",
+ "Détourer sur ce poste (gratuit)": "Scontornare su questo computer (gratis)",
+ "Gemini isole « {n} »": "Gemini isola «{n}»"
 }

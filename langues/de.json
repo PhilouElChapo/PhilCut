@@ -8615,5 +8615,20 @@
  "Lèvres synchronisées sur ce poste (carte NVIDIA)": "Lippensynchronisation auf diesem Rechner (NVIDIA-Karte)",
  "Crédit Gemini épuisé (prépaiement de Google AI Studio) : rien n'a été fait ni facturé. Rechargez-le sur https://aistudio.google.com (Facturation, « Billing »), puis recommencez.": "Gemini-Guthaben aufgebraucht (Vorauszahlung bei Google AI Studio): Nichts wurde gemacht oder berechnet. Laden Sie es auf https://aistudio.google.com (Billing) auf und versuchen Sie es erneut.",
  "Crédit Claude épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://console.anthropic.com (Billing), puis recommencez.": "Claude-Guthaben aufgebraucht: Nichts wurde gemacht oder berechnet. Laden Sie es auf https://console.anthropic.com (Billing) auf und versuchen Sie es erneut.",
- "Crédit fal.ai épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://fal.ai/dashboard/billing, puis recommencez.": "fal.ai-Guthaben aufgebraucht: Nichts wurde gemacht oder berechnet. Laden Sie es auf https://fal.ai/dashboard/billing auf und versuchen Sie es erneut."
+ "Crédit fal.ai épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://fal.ai/dashboard/billing, puis recommencez.": "fal.ai-Guthaben aufgebraucht: Nichts wurde gemacht oder berechnet. Laden Sie es auf https://fal.ai/dashboard/billing auf und versuchen Sie es erneut.",
+ "Gemini n'a pas rendu d'image.": "Gemini hat kein Bild geliefert.",
+ "dépensé ce mois par PhilCut : {m} $": "diesen Monat von PhilCut ausgegeben: {m} $",
+ "{n} : solde non donné ; {d}": "{n}: Guthaben nicht angegeben; {d}",
+ "Crédit {n} : fal.ai ne donne le solde qu'à une clef de portée « ADMIN » (à créer sur fal.ai, Keys) ; {d}.": "{n}-Guthaben: fal.ai gibt das Guthaben nur einem Schlüssel mit Bereich „ADMIN“ (auf fal.ai unter Keys anzulegen); {d}.",
+ "Crédit {n} : Google ne donne pas le solde aux logiciels ; « Recharger » ouvre le suivi ({d}).": "{n}-Guthaben: Google gibt Programmen das Guthaben nicht; „Aufladen“ öffnet die Übersicht ({d}).",
+ "Crédit {n} : Anthropic ne donne pas le solde aux logiciels ; « Recharger » ouvre votre compte.": "{n}-Guthaben: Anthropic gibt Programmen das Guthaben nicht; „Aufladen“ öffnet Ihr Konto.",
+ "arrêté": "angehalten",
+ "{n} fiche(s) ou image(s) faite(s) et gardée(s), puis : {e}. « ‹ Précédent » puis « Préparer les images » ne refait que ce qui manque.": "{n} Steckbrief(e) oder Bild(er) erstellt und behalten, dann: {e}. „‹ Zurück“ und dann „Bilder vorbereiten“ macht nur, was fehlt.",
+ "Garder ce qui est encadré": "Das Eingerahmte behalten",
+ "Comment garder « {n} » ?": "Wie soll „{n}“ behalten werden?",
+ "Le plus propre : Gemini garde seulement le sujet du cadre, entier, sur fond blanc (les voisins et le décor disparaissent), sans le changer. Le cadre tel quel convient aussi : les IA s'y retrouvent si le sujet le remplit bien.": "Am saubersten: Gemini behält nur das Motiv des Rahmens, vollständig, auf weißem Hintergrund (Nachbarn und Umgebung verschwinden), ohne es zu verändern. Der Rahmen so, wie er ist, geht auch: Die KIs kommen zurecht, wenn das Motiv ihn gut ausfüllt.",
+ "Garder le cadre tel quel": "Den Rahmen so lassen",
+ "Isoler par Gemini (environ {p})": "Mit Gemini freistellen (etwa {p})",
+ "Détourer sur ce poste (gratuit)": "Auf diesem Rechner freistellen (kostenlos)",
+ "Gemini isole « {n} »": "Gemini stellt „{n}“ frei"
 }

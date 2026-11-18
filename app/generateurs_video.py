@@ -148,6 +148,21 @@ def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None
     return generer_fal(k, m, consigne, sortie, duree, format_, image, progression, arret, son)
 
 
+MAX_PROMPT_PLAN = 500      # Kling O3, chaque plan d'un multi_prompt : 512 caractères au plus (marge gardée)
+
+
+def raccourcir(texte, n):
+    """Le texte en n caractères au plus, coupé à la fin d'une phrase entière si possible, sinon à un mot."""
+    t = " ".join(str(texte or "").split())
+    if len(t) <= n:
+        return t
+    coupe = t[:n]
+    fin = max(coupe.rfind(". "), coupe.rfind("! "), coupe.rfind("? "))
+    if fin > n * 0.5:
+        return coupe[:fin + 1]
+    return coupe[:coupe.rfind(" ")].rstrip(",;:") if " " in coupe else coupe
+
+
 def corps_reference(consigne, duree, format_, depart_url=None, fin_url=None, elements=None, m=None, son=False, multi=None):
     """Demande « reference to video » (Kling O1/O3) : chaque personnage est un élément (@Element1…) avec une image de face et
     des images d'appui ; le texte commence par dire qui est qui, pour que le moteur relie les noms aux images."""
@@ -163,7 +178,14 @@ def corps_reference(consigne, duree, format_, depart_url=None, fin_url=None, ele
         # lumière et visages d'un plan à l'autre (« prompt » et « multi_prompt » s'excluent)
         plans = [(t, max(1, int(round(float(d))))) for t, d in multi][:6]
         corps.pop("prompt")
-        corps["multi_prompt"] = [{"prompt": avant + t + apres, "duration": str(d)} for t, d in plans]
+        # 0.9.96 : Kling refuse un plan de plus de 512 caractères (erreur 422) : noms des éléments en abrégé, rappel court,
+        # consigne raccourcie à la dernière phrase entière qui tient
+        avant_c = "; ".join(f"@Element{i + 1}={n}" for i, n in enumerate(x.get("nom", "") for x in (elements or []))) \
+            if elements else ""
+        avant_c = (avant_c + ". ") if avant_c else ""
+        apres_c = " Keep elements identical to references." if elements else ""
+        corps["multi_prompt"] = [{"prompt": avant_c + raccourcir(t, MAX_PROMPT_PLAN - len(avant_c) - len(apres_c)) + apres_c,
+                                  "duration": str(d)} for t, d in plans]
         corps["duration"] = str(min(15, max(3, sum(d for _t, d in plans))))
         corps["shot_type"] = "customize"
     if elements:
@@ -381,3 +403,21 @@ def tester_clef(fournisseur, cle):
     except Exception as e:      # noqa: BLE001
         return False, _("Test impossible : {e}", e=e)
     return False, "?"
+
+
+# 0.9.96 : chaque vidéo payante réussie est notée (« dépensé ce mois par PhilCut »), les soldes n'étant pas toujours donnés
+_generer_sans_compte = generer
+
+
+def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None, progression=None, arret=lambda: False,
+            son=False, references=None, image_fin=None, multi=None):
+    r = _generer_sans_compte(params, ident, consigne, sortie, duree, format_, image, progression, arret, son=son,
+                             references=references, image_fin=image_fin, multi=multi)
+    try:
+        m = modele(ident, params)
+        if m and m.get("fournisseur") in ("fal", "google"):
+            from .credit_ia import noter_depense
+            noter_depense(m["fournisseur"], prix(m, duree, son) + (0.0 if not image_fin else 0.0))
+    except Exception:      # noqa: BLE001 : le compte est un plus
+        pass
+    return r

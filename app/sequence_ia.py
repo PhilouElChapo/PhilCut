@@ -260,6 +260,26 @@ def consigne(seq, pl, params=None, traduire=True):
     return " ".join(morceaux)
 
 
+def consigne_courte(seq, pl, params=None, traduire=True):
+    """0.9.96 : la consigne d'un plan dans un calcul continu (Kling : 512 caractères par plan) : l'action d'abord, puis qui
+    n'est pas là, la caméra, la parole. Les visages, tenues et objets sont tenus par les éléments, le décor par l'image."""
+    rangs = {p["nom"].lower(): i for i, p in enumerate(seq["personnages"])}
+    action = pl.get("action", "")
+    for n, i in rangs.items():
+        action = re.sub(r"(?i)\b" + re.escape(n) + r"\b", f"Character {chr(65 + i)}", action)
+    morceaux = ["Action: " + _anglais(action, traduire).rstrip(".") + "."]
+    vus = {n.lower() for n in visibles(seq, pl)}
+    caches = [f"Character {chr(65 + i)}" for n, i in rangs.items() if n not in vus]
+    if caches and seq["personnages"]:
+        morceaux.append("Not visible: " + ", ".join(caches) + ".")
+    if pl.get("camera"):
+        morceaux.append("Camera: " + _anglais(pl["camera"], traduire).rstrip(".") + ".")
+    if seq.get("voix") == "aucune":
+        morceaux.append("Nobody speaks.")
+    morceaux.append("Natural, physically plausible motion, continuous with the previous shot. No text, no logo.")
+    return " ".join(morceaux)
+
+
 CONSIGNE_AMELIORER = """You improve a prompt for an AI video generator. Keep EXACTLY, word for word, every "Character X: ..." description
 and the "Setting:" sentence (continuity between shots). Make the action, camera movement, lighting, lens and atmosphere more
 precise and cinematic, in English, under 110 words. Keep ONE single simple, slow, physically plausible action (people walk around
@@ -736,8 +756,7 @@ def fabriquer_groupe(seq, indices, params, moteur_video, progression=None, arret
             and params.get("clef_gemini") and not dernier.get("sans_fin"):
         progression and progression(0.04)
         fin = image_arrivee(seq, indices[-1], params)
-    multi = [(seq["plans"][i].get("consigne") or consigne(seq, seq["plans"][i], params),
-              int(seq["plans"][i].get("duree") or DUREE_PLAN)) for i in indices]
+    multi = [(consigne_courte(seq, seq["plans"][i], params), int(seq["plans"][i].get("duree") or DUREE_PLAN)) for i in indices]
     ident = f"{indices[0] + 1:02d}-{indices[-1] + 1:02d}_{int(time.time())}"
     video = os.path.join(dossier(seq), f"plans{ident}.mp4")
     GV.generer(params, moteur_video, multi[0][0], video, sum(d for _t, d in multi), seq.get("format", "16:9"), image,
