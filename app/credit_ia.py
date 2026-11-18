@@ -118,6 +118,7 @@ class LigneCredit(QWidget):
         self.b = QPushButton(_("Recharger…"))
         self.b.setToolTip(_("Ouvre la page de votre compte pour ajouter du crédit"))
         self.b.clicked.connect(self.recharger)
+        self.b.setMinimumWidth(self.b.sizeHint().width())     # jamais écrasé (« Recharger… » coupé)
         h.addWidget(self.b)
         self.montrer(fournisseur)
 

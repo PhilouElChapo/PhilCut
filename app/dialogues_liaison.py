@@ -171,7 +171,7 @@ class DialogueLiaison(QDialog):
         self.b_fermer.clicked.connect(self.close)
         hb.addWidget(self.b_fermer)
         racine.addLayout(hb)
-        self.resize(680, 700)
+        self.resize(720, 720)                     # 0.9.96 : place pour la barre de défilement verticale (G7)
         self.preparer()
 
     # ------------------------------------------------------------------ état
