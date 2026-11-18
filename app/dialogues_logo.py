@@ -170,6 +170,11 @@ class DialogueLogo(QDialog):
         b = QPushButton(_("Fermer"))
         b.clicked.connect(self.reject)
         hb2.addWidget(b)
+        from .credit_ia import LignesCredit           # 0.9.95 : logo dessiné par Claude ou Gemini
+        self.credits = LignesCredit(params, ["anthropic", "google"], self)
+        if isinstance(getattr(self, "etat", None), QLabel):
+            self.credits.surveiller(self.etat)
+        v.addWidget(self.credits)
         v.addLayout(hb2)
         self._remplir_liste()
 

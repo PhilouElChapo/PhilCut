@@ -119,3 +119,52 @@ class LigneCredit(QWidget):
             self._test_ouvert.append(url)
             return
         webbrowser.open(url)
+
+
+# ------------------------------------------------------------------ 0.9.95 : crédit et « Recharger… » partout
+def fournisseur_epuise(texte):
+    """Le service dont le crédit est épuisé d'après un message d'erreur ("google", "anthropic", "fal"), sinon ""."""
+    from .taches import credit_epuise
+    t = credit_epuise(texte or "")
+    if not t:
+        return ""
+    return "google" if "Gemini" in t else ("anthropic" if "Claude" in t else "fal")
+
+
+class LignesCredit(QWidget):
+    """Les lignes de crédit des services qu'une fenêtre utilise (compactes, chacune avec « Recharger… »). signaler(texte) :
+    après une erreur de crédit épuisé, la ligne du service est relue et son bouton mis en avant."""
+
+    def __init__(self, params, fournisseurs, parent=None):
+        super().__init__(parent)
+        from PySide6.QtWidgets import QVBoxLayout
+        v = QVBoxLayout(self)
+        v.setContentsMargins(0, 0, 0, 0)
+        v.setSpacing(2)
+        self.lignes = {}
+        for f in fournisseurs:
+            ligne = LigneCredit(params, f, self, compact=True)
+            self.lignes[f] = ligne
+            v.addWidget(ligne)
+
+    def signaler(self, texte):
+        f = fournisseur_epuise(texte)
+        ligne = self.lignes.get(f)
+        if ligne is None:
+            return False
+        ligne.montrer(f)
+        ligne.b.setStyleSheet("background:#c62828;color:white;font-weight:600")
+        return True
+
+    def surveiller(self, etiquette):
+        """Chaque message posé dans `etiquette` (la ligne d'état de la fenêtre) est lu : crédit épuisé = ligne mise en avant."""
+        origine = etiquette.setText
+
+        def poser(texte):
+            origine(texte)
+            try:
+                self.signaler(texte)
+            except RuntimeError:              # fenêtre détruite
+                pass
+        etiquette.setText = poser
+        return self

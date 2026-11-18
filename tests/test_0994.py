@@ -21,5 +21,29 @@ class TestCredit(unittest.TestCase):
         self.assertEqual(texte_erreur(RuntimeError("délai dépassé")), "délai dépassé")
 
 
+    def test_lignes_et_bouton_mis_en_avant(self):
+        from PySide6.QtWidgets import QLabel, QWidget
+        from app.credit_ia import LignesCredit, fournisseur_epuise
+        self.assertEqual(fournisseur_epuise("402 : Your prepayment credits are depleted"), "google")
+        self.assertEqual(fournisseur_epuise("rien"), "")
+        w = QWidget()
+        etat = QLabel(w)
+        lc = LignesCredit({}, ["google", "anthropic"], w).surveiller(etat)
+        self.assertEqual(set(lc.lignes), {"google", "anthropic"})
+        etat.setText("✕ 402 : Your prepayment credits are depleted. Go to AI Studio billing")
+        self.assertIn("c62828", lc.lignes["google"].b.styleSheet())
+        self.assertEqual(lc.lignes["anthropic"].b.styleSheet(), "")
+
+    def test_bibliotheque_a_ses_credits(self):
+        from app.dialogues_bibliotheque_creations import DialogueBibliothequeCreations
+        from PySide6.QtWidgets import QWidget
+        ed = QWidget()
+        ed.params = {}
+        d = DialogueBibliothequeCreations(ed)
+        self.assertEqual(set(d.credits.lignes), {"google", "anthropic"})
+        d.etat.setText("✕ " + "402 : Your prepayment credits are depleted.")
+        self.assertIn("c62828", d.credits.lignes["google"].b.styleSheet())
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -7,7 +7,7 @@ et rien n'est ecrit ailleurs sur le PC ni dans le registre.
 import json, os, platform, sys
 
 APP = "PhilCut"
-VERSION = "0.9.94"
+VERSION = "0.9.95"
 
 
 def dossier_programme():

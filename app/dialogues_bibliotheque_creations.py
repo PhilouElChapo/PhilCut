@@ -84,6 +84,9 @@ class DialogueBibliothequeCreations(QDialog):
         self.etat = QLabel("")
         self.etat.setWordWrap(True)
         v.addWidget(self.etat)
+        from .credit_ia import LignesCredit           # 0.9.95 : fiches et images par Gemini, textes par Claude ou Gemini
+        self.credits = LignesCredit(self.params, ["google", "anthropic"], self).surveiller(self.etat)
+        v.addWidget(self.credits)
         hn = QHBoxLayout()
         hn.addStretch(1)
         self.b_reduire = QPushButton(_("Réduire"))

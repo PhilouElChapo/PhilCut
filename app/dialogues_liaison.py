@@ -143,6 +143,9 @@ class DialogueLiaison(QDialog):
         self.etat = QLabel("")
         self.etat.setWordWrap(True)
         v.addWidget(self.etat)
+        from .credit_ia import LignesCredit           # 0.9.95 : Omni (Gemini), analyse par Claude ou Gemini
+        self.credits = LignesCredit(self.ed.params, ["google", "anthropic"], self).surveiller(self.etat)
+        v.addWidget(self.credits)
         from .dialogues_creatif import ApercuCreation
         self.apercu = ApercuCreation(self)
         self.apercu.hide()

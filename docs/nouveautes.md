@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.94 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.95 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.95 (credit et Recharger partout)
+- Les fenetres qui utilisent une IA payante montrent le credit restant et un bouton « Recharger… » : Ma bibliotheque de creations (Gemini, Claude), Clip de groupe et Narration (Gemini, fal.ai), Plan de liaison (Gemini, Claude), Atelier de logo et Fabrique musique (Claude, Gemini) ; deja la : assistant, Sequence IA, Prolonger, Faire parler, Transformer la voix, Tampons.
+- Credit epuise : le bouton « Recharger… » du service concerne passe en rouge.
+
 
 ### 0.9.94 (credit epuise dit en clair)
 - Quand le credit Gemini, Claude ou fal.ai est epuise, le message le dit en francais, precise que rien n'a ete fait ni facture et donne l'adresse ou recharger (au lieu de « 402 : Your prepayment credits are depleted… »).

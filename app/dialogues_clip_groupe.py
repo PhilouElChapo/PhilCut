@@ -214,6 +214,9 @@ class DialogueClipGroupe(QDialog):
         self.etat = QLabel("")
         self.etat.setWordWrap(True)
         racine.addWidget(self.etat)
+        from .credit_ia import LignesCredit           # 0.9.95
+        self.credits = LignesCredit(self.ed.params, ["google", "fal"], self).surveiller(self.etat)
+        racine.addWidget(self.credits)
         hb = QHBoxLayout()
         self.b_fabriquer = QPushButton(_("Fabriquer les plans"))
         self.b_fabriquer.setStyleSheet("font-weight:600")
