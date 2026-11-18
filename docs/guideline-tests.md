@@ -23,6 +23,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T101 — 0.9.91 : brouillon de toute la séquence
+
+1. Assistant, essai restaurant ou limousine, étape « 4. Les images » : « Brouillon de toute la séquence… » › « Images et textes, plan par plan » : la séquence se regarde aussitôt ; chaque plan a son numéro, son action, sa durée ; fondu vers l'image clef.
+2. « Fermer », puis « Revoir le brouillon » : il revient.
+3. Avec l'IA vidéo de ce poste installée : même chose en vraie vidéo (lent ; noter le temps).
+4. « Gemini Omni 360p » : le prix est demandé ; le brouillon arrive, chaque plan à sa durée ; le dépensé de la création monte.
+5. Rien n'a été posé dans le film ; « Tout me convient : fabriquer la vidéo » part comme avant.
+
 ## T100 — 0.9.90 : séquences continues
 
 Il faut une clef fal.ai avec un peu de crédit.

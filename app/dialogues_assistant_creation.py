@@ -12,7 +12,7 @@ import time
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (QAbstractItemView, QButtonGroup, QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QGridLayout, QHBoxLayout,
-                               QHeaderView, QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMessageBox,
+                               QHeaderView, QInputDialog, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMenu, QMessageBox,
                                QPushButton, QRadioButton, QScrollArea, QStackedWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
 
 from . import assistant_creation as A
@@ -944,7 +944,93 @@ class DialogueAssistant(QDialog):
         self.zone_images.setWidgetResizable(True)
         self.zone_images.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         v.addWidget(self.zone_images, 1)
+        h = QHBoxLayout()                                # 0.9.91 : voir toute la séquence avant de payer la vraie qualité
+        self.b_brouillon = QPushButton(_("Brouillon de toute la séquence…"))
+        self.b_brouillon.setToolTip(_("Voir la séquence entière avant la vraie fabrication : images et textes (gratuit), "
+                                      "IA de ce poste (gratuit, lent) ou un modèle cloud bon marché"))
+        self.b_brouillon.clicked.connect(self.menu_brouillon)
+        h.addWidget(self.b_brouillon)
+        self.b_voir_brouillon = QPushButton(_("Revoir le brouillon"))
+        self.b_voir_brouillon.clicked.connect(lambda: self.voir_brouillon((self.seq.get("brouillon") or {}).get("fichier", "")))
+        h.addWidget(self.b_voir_brouillon)
+        h.addStretch(1)
+        v.addLayout(h)
         return w
+
+    # ------------------------------------------------------------------ 0.9.91 : brouillon
+    def modes_brouillon(self):
+        """[(mode, libellé, prix, possible)] dans l'ordre : gratuit d'abord."""
+        from . import brouillon as B, packs_ia
+        out = [("animatique", _("Images et textes, plan par plan (gratuit, tout de suite)"), 0.0, True)]
+        locale = bool(packs_ia.modele_actif("video", self.params))
+        out.append(("locale", _("IA vidéo de ce poste (gratuit, quelques minutes par plan)") if locale else
+                    _("IA vidéo de ce poste : à installer dans Préférences › IA locale"), 0.0, locale))
+        cloud = bool(self.params.get("clef_gemini"))
+        p = B.prix(self.seq, "omni-360p", self.params)
+        out.append(("omni-360p", _("Gemini Omni 360p, vidéo bon marché (environ {p})", p=A.argent(p)) if cloud else
+                    _("Gemini Omni 360p : clef Gemini à mettre dans Préférences"), p, cloud))
+        return out
+
+    def menu_brouillon(self):
+        m = QMenu(self)
+        for mode, lib, _p, ok in self.modes_brouillon():
+            a = m.addAction(lib)
+            a.setEnabled(ok)
+            a.triggered.connect(lambda _c=False, x=mode: self.faire_brouillon(x))
+        m.exec(self.b_brouillon.mapToGlobal(self.b_brouillon.rect().bottomLeft()))
+
+    def faire_brouillon(self, mode):
+        from . import brouillon as B
+        p = B.prix(self.seq, mode, self.params)
+        if p > 0 and getattr(self, "_test_oui", None) is None and QMessageBox.question(
+                self, _("Brouillon de toute la séquence"),
+                _("Le brouillon en Gemini Omni 360p coûte environ {p} sur votre compte Google (hors budget de la création). "
+                  "Rien n'est posé dans le film. Continuer ?", p=A.argent(p))) != QMessageBox.Yes:
+            return
+        seq = copy.deepcopy(self.seq)
+
+        def travail(t):
+            f = B.fabriquer(seq, mode, self.params, lambda x: t.avancer(x, _("brouillon")), t.arret_demande)
+            return f, seq.get("brouillon")
+
+        def fin(r, e):
+            if e or not r:
+                self.etat.setText("✕ " + (texte_erreur(e) if e else _("rien n'a été fabriqué")))
+                return
+            self.seq["brouillon"] = r[1]
+            if p > 0:
+                A.depenser(self.seq, _("Brouillon"), p)
+            Q.enregistrer(self.seq)
+            self._maj_brouillon()
+            self.voir_brouillon(r[0])
+        self._lancer(travail, _("Brouillon de toute la séquence"), fin)
+
+    def _maj_brouillon(self):
+        if hasattr(self, "b_voir_brouillon"):
+            f = (self.seq.get("brouillon") or {}).get("fichier", "")
+            self.b_voir_brouillon.setVisible(bool(f and os.path.exists(f)))
+
+    def voir_brouillon(self, chemin):
+        if not chemin or not os.path.exists(chemin):
+            return
+        from .dialogues_creatif import ApercuCreation
+        d = QDialog(self)
+        d.setWindowTitle(_("Brouillon de toute la séquence"))
+        v = QVBoxLayout(d)
+        l = QLabel(_("Brouillon : rien n'est posé dans le film. Si un plan ne va pas, revenez à « 3. Les plans » ou corrigez "
+                     "ses images ; sinon, lancez la vraie fabrication."))
+        l.setWordWrap(True)
+        v.addWidget(l)
+        ap = ApercuCreation(d)
+        ap.charger(chemin, video=True)
+        v.addWidget(ap, 1)
+        b = QPushButton(_("Fermer"))
+        b.clicked.connect(d.close)
+        v.addWidget(b, 0, Qt.AlignRight)
+        d.resize(760, 560)
+        d.finished.connect(ap.arreter)
+        self._dlg_brouillon = d
+        d.show()
 
     def _page_video(self):
         w = QWidget()
@@ -1312,6 +1398,7 @@ class DialogueAssistant(QDialog):
 
     def _remplir_images(self, cible=None):
         """cible = (plan, "depart" / "arrivee") : l'image qu'on vient de refaire, montrée et entourée (0.9.86)."""
+        self._maj_brouillon()
         self._vignettes_plans = {}
         w = QWidget()
         g = QGridLayout(w)

@@ -199,6 +199,19 @@ def _guides_integres():
              {"texte": _("Pour une tenue sur mesure : sur une tenue, « Composer… » ; choisissez pièce par pièce et la matière.")},
              {"texte": _("Dans l'assistant, sur chaque carte : « Dans ma bibliothèque » › « Toute faite… ».")},
          ]},
+        {"id": "brouillon_sequence", "etat": "ok",
+         "titre": _("Voir un brouillon de toute la séquence avant de payer la vraie fabrication"),
+         "mots": "brouillon animatique apercu essai sequence entiere avant payer gratuit omni 360p ia locale",
+         "intro": _("Le brouillon montre la séquence entière, plan après plan, à la bonne durée. Rien n'est posé dans le film : "
+                    "on corrige ce qui ne va pas, puis on lance la vraie fabrication."),
+         "etapes": [
+             {"texte": _("Dans l'assistant, à l'étape « 4. Les images » : « Brouillon de toute la séquence… ».")},
+             {"texte": _("« Images et textes, plan par plan » : gratuit et immédiat ; chaque plan montre son image connue, son "
+                         "action et sa durée, en fondu vers son image clef.")},
+             {"texte": _("« IA vidéo de ce poste » (gratuit, lent) ou « Gemini Omni 360p » (prix demandé) : une vraie vidéo, en "
+                         "petite qualité.")},
+             {"texte": _("« Revoir le brouillon » le rouvre ; si tout va bien, « Tout me convient : fabriquer la vidéo ».")},
+         ]},
         {"id": "sequence_continue", "etat": "ok",
          "titre": _("Fabriquer d'un seul tenant les plans d'un même moment (gestes enchaînés)"),
          "mots": "continu seul tenant enchaine gestes moment plusieurs plans un calcul kling multi sequence continue",

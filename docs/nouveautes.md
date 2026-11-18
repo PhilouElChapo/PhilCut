@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.90 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.91 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.91 (brouillon de toute la sequence)
+- Assistant, etape des images : "Brouillon de toute la sequence…" pour voir la sequence entiere, a la bonne duree, avant de payer la vraie fabrication. Rien n'est pose dans le film.
+- Trois facons : images et textes plan par plan (gratuit, immediat ; fondu vers l'image clef), IA video de ce poste (gratuit, lent), Gemini Omni 360p (video bon marche, prix demande).
+- "Revoir le brouillon" le rouvre.
+
 
 ### 0.9.90 (sequences continues)
 - Avec Kling O3 Reference, les plans qui se suivent jusqu'a la prochaine image clef (15 s et six plans au plus) sont fabriques d'un seul calcul : les gestes continuent d'un plan a l'autre, sans arret ni saut ; la video est ensuite coupee en ses plans. Meme prix (a la seconde).
