@@ -23,6 +23,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T102 — 0.9.92 : lèvres sur ce poste (RTX 3070)
+
+1. Edition › Préférences › IA locale : « Lèvres synchronisées sur ce poste » ; l'installer (environ 6 Go : programme en parties, puis modèles) ; la barre du bas suit ; « Réduire » ; à la fin la case est cochée.
+2. Un plan où l'on voit un visage net (personnage IA ou toi), la voix posée dessous. Clic droit › « Faire parler ce plan sur le son dessous… » : le moteur « LatentSync 1.5 sur ce poste (gratuit) » est choisi ; « Calcul sur ce poste : gratuit ».
+3. Cocher la case du visage, « Faire parler » : aucune question de prix ; la barre dit « Repérage du visage », « Calcul des lèvres », « Recollage ». Noter le temps pour 10 s.
+4. Les lèvres suivent-elles la voix ? Le reste de l'image est-il intact ? « Poser à la place du plan ».
+5. Si erreur : le message (mémoire de la carte, visage introuvable) et Outils › Journal des plantages et erreurs (ligne « levres ») : me l'envoyer.
+
 ## T101 — 0.9.91 : brouillon de toute la séquence
 
 1. Assistant, essai restaurant ou limousine, étape « 4. Les images » : « Brouillon de toute la séquence… » › « Images et textes, plan par plan » : la séquence se regarde aussitôt ; chaque plan a son numéro, son action, sa durée ; fondu vers l'image clef.

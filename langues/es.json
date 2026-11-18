@@ -8602,5 +8602,15 @@
  "Dans l'assistant, à l'étape « 4. Les images » : « Brouillon de toute la séquence… ».": "En el asistente, en la etapa «4. Las imágenes»: «Borrador de toda la secuencia…».",
  "« Images et textes, plan par plan » : gratuit et immédiat ; chaque plan montre son image connue, son action et sa durée, en fondu vers son image clef.": "«Imágenes y textos, plano a plano»: gratis e inmediato; cada plano muestra su imagen conocida, su acción y su duración, con fundido hacia su imagen clave.",
  "« IA vidéo de ce poste » (gratuit, lent) ou « Gemini Omni 360p » (prix demandé) : une vraie vidéo, en petite qualité.": "«IA de vídeo de este equipo» (gratis, lenta) o «Gemini Omni 360p» (precio preguntado): un vídeo real, en baja calidad.",
- "« Revoir le brouillon » le rouvre ; si tout va bien, « Tout me convient : fabriquer la vidéo ».": "«Volver a ver el borrador» lo vuelve a abrir; si todo va bien, «Todo me vale: fabricar el vídeo»."
+ "« Revoir le brouillon » le rouvre ; si tout va bien, « Tout me convient : fabriquer la vidéo ».": "«Volver a ver el borrador» lo vuelve a abrir; si todo va bien, «Todo me vale: fabricar el vídeo».",
+ "Calcul sur ce poste : gratuit ({d} s de son).": "Cálculo en este equipo: gratis ({d} s de sonido).",
+ "Gratuit sur ce poste (Windows, carte NVIDIA de 8 Go) : installez une fois « Lèvres synchronisées sur ce poste » dans Edition › Préférences › IA locale (environ 6 Go), puis choisissez le moteur « LatentSync 1.5 sur ce poste ».": "Gratis en este equipo (Windows, tarjeta NVIDIA de 8 GB): instale una vez «Labios sincronizados en este equipo» en Edición › Preferencias › IA local (unos 6 GB) y luego elija el motor «LatentSync 1.5 en este equipo».",
+ "Refait seulement la bouche du plan, sur votre carte NVIDIA (8 Go) : gratuit, environ une à deux minutes de calcul pour 10 s de vidéo. A installer une fois dans Préférences › IA locale (environ 6 Go).": "Rehace solo la boca del plano, en su tarjeta NVIDIA (8 GB): gratis, de uno a dos minutos de cálculo por 10 s de vídeo. A instalar una vez en Preferencias › IA local (unos 6 GB).",
+ "Les lèvres sur ce poste existent pour l'instant sous Windows seulement.": "Los labios en este equipo solo existen por ahora en Windows.",
+ "A installer une fois : Préférences › IA locale, « Lèvres synchronisées sur ce poste » (environ 6 Go).": "A instalar una vez: Preferencias › IA local, «Labios sincronizados en este equipo» (unos 6 GB).",
+ "Il faut une carte NVIDIA (8 Go) : celle de ce poste ne convient pas.": "Hace falta una tarjeta NVIDIA (8 GB): la de este equipo no sirve.",
+ "Démarrage du calcul des lèvres sur ce poste…": "Inicio del cálculo de los labios en este equipo…",
+ "Finition…": "Acabado…",
+ "Le calcul des lèvres sur ce poste a échoué (voir le journal des plantages et erreurs).": "El cálculo de los labios en este equipo ha fallado (vea el registro de fallos y errores).",
+ "Lèvres synchronisées sur ce poste (carte NVIDIA)": "Labios sincronizados en este equipo (tarjeta NVIDIA)"
 }

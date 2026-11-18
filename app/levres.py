@@ -4,8 +4,8 @@ son et fabrique les lèvres dessus. Deux façons :
 - « video » : un plan déjà fait (plan IA, vidéo) dont seule la bouche est refaite pour coller au son.
 
 Le son est celui qui passe SOUS le plan dans la timeline (voix, musiques, aux mêmes instants), ou un fichier ; il peut
-être isolé d'abord (voix seule) pour que les lèvres suivent mieux. Calcul : fal.ai (payant, coût annoncé et confirmé) ;
-le calcul sur ce poste viendra ensuite. Jamais une personnalité : un personnage fictif, son propre visage, ou celui
+être isolé d'abord (voix seule) pour que les lèvres suivent mieux. Calcul : fal.ai (payant, coût annoncé et confirmé) ou,
+depuis 0.9.92, sur ce poste (LatentSync 1.5, gratuit, carte NVIDIA de 8 Go, à installer dans Préférences › IA locale). Jamais une personnalité : un personnage fictif, son propre visage, ou celui
 d'une personne d'accord (case qui engage l'auteur)."""
 import os
 import tempfile
@@ -19,6 +19,12 @@ MOTEURS = {
                    "explication": _("Refait seulement la bouche du plan. Le moins cher : 0,20 $ jusqu'à 40 s.")},
     "lipsync2": {"nom": "Sync lipsync-2 (fal.ai)", "genre": "video", "modele": "fal-ai/sync-lipsync/v2", "prix_s": 0.05, "max_s": 300.0,
                  "explication": _("Refait seulement la bouche du plan. Le plus précis : 3 $ la minute.")},
+    # 0.9.92 : sur ce poste, gratuit (LatentSync 1.5 dans un Python portable, carte NVIDIA de 8 Go)
+    "latentsync_local": {"nom": "LatentSync 1.5 sur ce poste (gratuit)", "genre": "video", "local": True, "prix_s": 0.0,
+                         "max_s": 120.0,
+                         "explication": _("Refait seulement la bouche du plan, sur votre carte NVIDIA (8 Go) : gratuit, environ "
+                                          "une à deux minutes de calcul pour 10 s de vidéo. A installer une fois dans "
+                                          "Préférences › IA locale (environ 6 Go).")},
     "omnihuman": {"nom": "OmniHuman 1.5 (fal.ai)", "genre": "image", "modele": "fal-ai/bytedance/omnihuman/v1.5", "prix_s": 0.16,
                   "max_s": 60.0, "max_1080": 30.0,
                   "explication": _("Anime une image : lèvres, tête, regard, gestes. 0,16 $ la seconde ; 30 s au plus en 1080p, "
@@ -30,6 +36,8 @@ def moteur_ia(ident):
     """Le moteur, corrigé par le catalogue des IA (adresse, prix, remplaçant d'un service retiré)."""
     from . import catalogue_ia as CI
     m = dict(MOTEURS[ident])
+    if m.get("local"):
+        return m
     role = "levres_" + ident
     m["modele"] = CI.point(role, m["modele"])
     if "prix_fixe" in m:
@@ -49,6 +57,8 @@ def moteurs(genre):
 def prix(ident, duree):
     """Prix estimé en $ pour `duree` secondes."""
     m = moteur_ia(ident)
+    if m.get("local"):
+        return 0.0
     if "prix_fixe" in m:
         return round(m["prix_fixe"] + max(0.0, duree - m["seuil"]) * m["prix_s"], 2)
     return round(duree * m["prix_s"], 2)
@@ -137,6 +147,8 @@ def fabriquer(params, moteur_id, son, sortie, image=None, video=None, consigne="
     """Envoie le son et l'image (ou la vidéo) à fal.ai, attend, télécharge la vidéo ; renvoie le chemin."""
     from . import generateurs_video as GV, moteur
     m = moteur_ia(moteur_id)
+    if m.get("local"):
+        return fabriquer_local(params, son, video, sortie, progression, arret)
     cle = clef(params)
     if not cle:
         raise GV.ErreurGenerateur(_("Pas de clef fal.ai : Préférences › Assistant et IA, « Clef fal.ai » (ou « Connecter une IA »)."))
@@ -164,6 +176,116 @@ def fabriquer(params, moteur_id, son, sortie, image=None, video=None, consigne="
     return GV.attendre_fal(cle, m["modele"], corps, sortie,
                            progression=lambda f: av(0.1 + 0.88 * f, _("fal.ai calcule les lèvres…")), arret=arret,
                            attente=max(120.0, duree * 20))
+
+
+# ------------------------------------------------------------------ 0.9.92 : sur ce poste (LatentSync 1.5)
+MODELE_LOCAL = "levres_local"
+
+
+def local_pret():
+    """Le moteur et ses modèles sont-ils installés ?"""
+    from . import packs_ia as P
+    return P.installe(MODELE_LOCAL) and P.moteur_installe("levres")
+
+
+def local_manque():
+    """Phrase qui dit ce qui manque pour calculer sur ce poste, ou "" (Windows et carte NVIDIA)."""
+    from . import packs_ia as P
+    import sys
+    if sys.platform != "win32":
+        return _("Les lèvres sur ce poste existent pour l'instant sous Windows seulement.")
+    if not local_pret():
+        return _("A installer une fois : Préférences › IA locale, « Lèvres synchronisées sur ce poste » (environ 6 Go).")
+    carte = (P.carte_graphique() or "").lower() if hasattr(P, "carte_graphique") else ""
+    if carte and "nvidia" not in carte and "geforce" not in carte and "rtx" not in carte:
+        return _("Il faut une carte NVIDIA (8 Go) : celle de ce poste ne convient pas.")
+    return ""
+
+
+def commande_locale(params, son, video, sortie, etapes=20, guidance=1.5):
+    """La ligne de commande du moteur (chemins des modèles installés)."""
+    from . import packs_ia as P
+    roles = (P.etat().get(MODELE_LOCAL) or {}).get("roles") or {}
+    d = P.dossier_modele(MODELE_LOCAL)
+    f = lambda r: os.path.join(d, roles.get(r, ""))
+    exe = P.executable("levres")
+    script = os.path.join(P.dossier_moteur("levres"), "philcut_levres.py")
+    return [exe, script, "--video", video, "--audio", son, "--sortie", sortie, "--unet", f("unet"), "--whisper", f("whisper"),
+            "--vae", d, "--visages", f("visages"), "--etapes", str(int(etapes)),
+            "--guidance", f"{float(guidance):.2f}", "--deepcache"]
+
+
+def lire_ligne(ligne):
+    """« PHILCUT 0.250 texte » → (0.25, "texte") ; « PHILCUT_ERREUR texte » → (None, "texte") ; sinon None."""
+    ligne = ligne.strip()
+    if ligne.startswith("PHILCUT_ERREUR "):
+        return None, ligne[len("PHILCUT_ERREUR "):]
+    if ligne.startswith("PHILCUT "):
+        morceaux = ligne.split(" ", 2)
+        try:
+            return float(morceaux[1]), (morceaux[2] if len(morceaux) > 2 else "")
+        except ValueError:
+            return None
+    return None
+
+
+def fabriquer_local(params, son, video, sortie, progression=None, arret=lambda: False, commande=None):
+    """Refait la bouche de `video` sur `son` avec LatentSync 1.5 sur ce poste ; renvoie `sortie`. Le son est remis tel quel
+    (le moteur le rééchantillonne) ; la vidéo est d'abord ramenée à 25 images/s, comme le moteur l'attend."""
+    import subprocess
+    from . import moteur
+    from .journal import ecrire
+    manque = local_manque() if commande is None else ""
+    if manque:
+        raise RuntimeError(manque)
+    av = lambda f, t="": progression and progression(f, t)
+    tmp = tempfile.mkdtemp(prefix="philcut-levres-")
+    v25 = os.path.join(tmp, "plan25.mp4")
+    moteur.lancer(["-y", "-v", "error", "-i", video, "-an", "-r", "25", "-c:v", "libx264", "-preset", "veryfast", "-crf", "16",
+                   "-pix_fmt", "yuv420p", v25])
+    s16 = os.path.join(tmp, "son.wav")
+    moteur.lancer(["-y", "-v", "error", "-i", son, "-ac", "1", "-ar", "16000", s16])
+    brut = os.path.join(tmp, "levres.mp4")
+    cmd = commande(s16, v25, brut) if commande else commande_locale(params, s16, v25, brut)
+    env = dict(os.environ)
+    ff = os.path.dirname(moteur.ffmpeg()) if hasattr(moteur, "ffmpeg") else ""
+    if ff:
+        env["PATH"] = ff + os.pathsep + env.get("PATH", "")      # LatentSync appelle « ffmpeg » lui-même
+    env["PYTHONUNBUFFERED"] = "1"
+    av(0.01, _("Démarrage du calcul des lèvres sur ce poste…"))
+    options = {}
+    if os.name == "nt":
+        options["creationflags"] = 0x08000000                  # pas de fenêtre noire
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding="utf-8", errors="replace",
+                         env=env, cwd=os.path.dirname(cmd[1]) if len(cmd) > 1 else None, **options)
+    message, fin = "", []
+    try:
+        for ligne in p.stdout:
+            fin = (fin + [ligne.rstrip()])[-40:]
+            if arret():
+                p.kill()
+                raise InterruptedError
+            lu = lire_ligne(ligne)
+            if lu is None:
+                continue
+            f, texte = lu
+            if f is None:
+                message = texte
+            else:
+                av(0.02 + 0.93 * f, texte)
+        code = p.wait()
+    finally:
+        if p.poll() is None:
+            p.kill()
+    if code != 0 or not os.path.exists(brut):
+        ecrire("levres", "LatentSync sur ce poste : " + " | ".join(fin[-12:]))
+        raise RuntimeError(message or _("Le calcul des lèvres sur ce poste a échoué (voir le journal des plantages et "
+                                        "erreurs)."))
+    av(0.96, _("Finition…"))
+    moteur.lancer(["-y", "-v", "error", "-i", brut, "-an", "-c:v", "libx264", "-preset", "veryfast", "-crf", "17",
+                   "-pix_fmt", "yuv420p", sortie])
+    av(1.0, _("Terminé"))
+    return sortie
 
 
 def dossier_sorties():

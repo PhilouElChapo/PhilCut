@@ -66,7 +66,7 @@ class TestLevres(unittest.TestCase):
         self.assertEqual(LV.prix("latentsync", 30), 0.20)
         self.assertEqual(LV.prix("latentsync", 60), 0.30)
         self.assertEqual(LV.prix("omnihuman", 10), 1.6)
-        self.assertEqual([k for k, _m in LV.moteurs("video")], ["latentsync", "lipsync2"])
+        self.assertEqual([k for k, _m in LV.moteurs("video")], ["latentsync", "latentsync_local", "lipsync2"])
 
     def test_fal_envoi_et_file(self):
         from app import generateurs_video as GV

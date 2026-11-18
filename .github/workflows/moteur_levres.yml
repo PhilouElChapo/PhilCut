@@ -1,0 +1,86 @@
+# 0.9.92 : moteur « lèvres sur ce poste » (LatentSync 1.5) pour Windows : Python 3.10 portable + PyTorch CUDA 12.1 + code
+# de LatentSync (commit 7b380d6) + outils_dev/philcut_levres.py ; vérifié (imports, modèles de visage chargés), découpé en
+# parties de moins de 2 Go et publié dans la release « moteurs-ia » avec son catalogue.
+name: Moteur levres
+
+on:
+  push:
+    paths:
+      - .github/workflows/moteur_levres.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10.11"
+      - name: Roue InsightFace (compilée ici, aucun compilateur chez l'utilisateur)
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip wheel setuptools cython "numpy==1.26.4"
+          python -m pip wheel "insightface==0.7.3" --no-deps --no-build-isolation -w roues
+          Get-ChildItem roues
+      - name: Python portable et bibliothèques
+        shell: pwsh
+        run: |
+          $m = "moteur"
+          New-Item -ItemType Directory -Force "$m\python" | Out-Null
+          curl.exe -sSL -o py.zip https://www.python.org/ftp/python/3.10.11/python-3.10.11-embed-amd64.zip
+          Expand-Archive py.zip -DestinationPath "$m\python"
+          Set-Content "$m\python\python310._pth" "python310.zip`n.`nLib\site-packages`n..`nimport site"
+          curl.exe -sSL -o get-pip.py https://bootstrap.pypa.io/get-pip.py
+          & "$m\python\python.exe" get-pip.py --no-warn-script-location
+          $py = "$m\python\python.exe"
+          & $py -m pip install --no-warn-script-location --no-cache-dir "torch==2.5.1" "torchvision==0.20.1" --index-url https://download.pytorch.org/whl/cu121
+          & $py -m pip install --no-warn-script-location --no-cache-dir "numpy==1.26.4" "diffusers==0.32.2" "transformers==4.48.0" `
+            "decord==0.6.0" "accelerate==0.26.1" "einops==0.7.0" "omegaconf==2.3.0" "opencv-python==4.9.0.80" `
+            "python_speech_features==0.6" "librosa==0.10.1" "ffmpeg-python==0.2.0" "imageio==2.31.1" "imageio-ffmpeg==0.5.1" `
+            "huggingface-hub==0.30.2" "kornia==0.8.0" "onnxruntime-gpu==1.21.0" "DeepCache==0.1.1" matplotlib scipy soundfile `
+            more_itertools regex requests tqdm scikit-image albumentations prettytable easydict onnx
+          & $py -m pip install --no-warn-script-location --no-deps (Get-ChildItem roues\insightface-*.whl).FullName
+          & $py -m pip list
+      - name: Code de LatentSync et script PhilCut
+        shell: pwsh
+        run: |
+          git clone -q https://github.com/bytedance/LatentSync.git ls
+          git -C ls checkout -q 7b380d6
+          Copy-Item -Recurse ls\latentsync moteur\latentsync
+          Copy-Item -Recurse ls\configs moteur\configs
+          Copy-Item ls\LICENSE moteur\LICENSE-LatentSync.txt
+          Copy-Item outils_dev\philcut_levres.py moteur\philcut_levres.py
+          Get-ChildItem -Recurse -Include __pycache__ moteur | Remove-Item -Recurse -Force
+      - name: Vérification
+        shell: pwsh
+        run: |
+          & moteur\python\python.exe moteur\philcut_levres.py --verifier
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          curl.exe -sSL -o buffalo_l.zip https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip
+          & moteur\python\python.exe -c "import zipfile,os,insightface; from insightface.app import FaceAnalysis; d='aux/models/buffalo_l'; os.makedirs(d,exist_ok=True); [open(os.path.join(d,os.path.basename(n)),'wb').write(zipfile.ZipFile('buffalo_l.zip').read(n)) for n in zipfile.ZipFile('buffalo_l.zip').namelist() if n.endswith('.onnx')]; a=FaceAnalysis(allowed_modules=['detection','landmark_2d_106'],root='aux',providers=['CPUExecutionProvider']); a.prepare(ctx_id=-1,det_size=(512,512)); import numpy as np; print('visages :', len(a.get(np.zeros((512,512,3),np.uint8))), 'sur une image noire (0 attendu)')"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Archive en parties
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          7z a -tzip -mx=5 dist\philcut-levres-windows-x64.zip .\moteur\* | Select-Object -Last 3
+          python outils_dev/moteur_levres.py decouper dist/philcut-levres-windows-x64.zip 1900
+          Remove-Item dist\philcut-levres-windows-x64.zip
+          Copy-Item buffalo_l.zip dist\buffalo_l.zip
+          Get-ChildItem dist
+      - name: Catalogue et publication
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download moteurs-ia -p moteurs-creatifs.json -D dist --clobber
+          python outils_dev/moteur_levres.py catalogue dist dist/buffalo_l.zip
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $parties = (Get-ChildItem dist\philcut-levres-windows-x64.zip.*).FullName
+          gh release upload moteurs-ia @parties --clobber
+          gh release upload moteurs-ia dist\moteurs-creatifs.json --clobber

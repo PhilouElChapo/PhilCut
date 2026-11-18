@@ -24,7 +24,8 @@ GENRES = {"vision": _("Vision (idées de montage)"), "whisper": _("Voix (sous-ti
           "anime": _("Effet dessin animé (vidéo)"), "profondeur": _("Profondeur (photo 3D, flou d'arrière-plan)"),
           "upscale": _("Agrandissement IA (vidéo, image)"), "interpolation": _("Ralenti fluide IA"),
           "separation": _("Voix seule d'un morceau (voix de référence de la musique, expérimental)"),
-          "stems": _("Séparer voix, musique et bruits"), "voix_clone": _("Continuer avec ma voix")}
+          "stems": _("Séparer voix, musique et bruits"), "voix_clone": _("Continuer avec ma voix"),
+          "levres": _("Lèvres synchronisées sur ce poste (carte NVIDIA)")}
 DEFAUT = {"vision": "vision_leger", "whisper": "whisper_leger", "detourage": "detourage_leger", "voix": "voix_fr_femme"}
 MOTEURS_GENRE = ("vision", "whisper", "voix")          # genres qui ont un programme à télécharger
 UA = {"User-Agent": "PhilCut"}
@@ -56,7 +57,8 @@ def dossier_moteur(genre):
 def executable(genre):
     noms = {"vision": "llama-server", "vision_gpu": "llama-server", "whisper": "whisper-cli", "voix": "piper", "image": "sd-cli",
             "image_gpu": "sd-cli", "musique": "ace-synth", "musique_gpu": "ace-synth", "upscale": "realesrgan-ncnn-vulkan",
-            "interpolation": "rife-ncnn-vulkan"}
+            "interpolation": "rife-ncnn-vulkan",
+            "levres": "python/python" if sys.platform == "win32" else "python/bin/python3"}   # 0.9.92 : Python portable
     base = os.path.join(dossier_moteur(genre), _exe(noms[genre]))
     if not os.path.exists(base) and genre in ("image", "image_gpu"):           # anciennes versions : « sd »
         ancien = os.path.join(dossier_moteur(genre), _exe("sd"))
@@ -493,8 +495,30 @@ def installer_moteur(genre, progression=None, arret=lambda: False):
     tmp = os.path.join(dossier(), "tmp")
     archive = os.path.join(tmp, info["fichier"])
     source = os.environ.get("PHILCUT_IA_ARCHIVES")
-    url = os.path.join(source, info["fichier"]) if source else info["url"]
-    _telecharger(url, archive, info.get("taille", 0), info.get("sha256", ""), progression, arret)
+    if info.get("parties"):
+        # 0.9.92 : gros moteur (plus de 2 Go) publié en parties ; chacune reprend où elle s'est arrêtée, puis on les recolle
+        total = sum(int(x.get("taille") or 0) for x in info["parties"]) or 1
+        fait = 0
+        morceaux = []
+        for x in info["parties"]:
+            f = os.path.join(tmp, x["fichier"])
+            if not (os.path.exists(f) and os.path.getsize(f) == int(x.get("taille") or -1)):
+                url = os.path.join(source, x["fichier"]) if source else x["url"]
+                _telecharger(url, f, x.get("taille", 0), x.get("sha256", ""),
+                             (lambda v, a=fait, t=int(x.get("taille") or 0): progression((a + v * t) / total)) if progression else None,
+                             arret)
+            fait += int(x.get("taille") or 0)
+            progression and progression(fait / total)
+            morceaux.append(f)
+        with open(archive, "wb") as o:
+            for f in morceaux:
+                with open(f, "rb") as i:
+                    shutil.copyfileobj(i, o, 1 << 22)
+        for f in morceaux:
+            os.remove(f)
+    else:
+        url = os.path.join(source, info["fichier"]) if source else info["url"]
+        _telecharger(url, archive, info.get("taille", 0), info.get("sha256", ""), progression, arret)
     cible = dossier_moteur(genre)
     shutil.rmtree(cible, ignore_errors=True)
     os.makedirs(cible, exist_ok=True)

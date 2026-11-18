@@ -114,6 +114,8 @@ class DialogueLevres(QDialog):
         self.moteur = QComboBox()
         for k, m in LV.moteurs(genre):
             self.moteur.addItem(m["nom"], k)
+        if genre == "video" and LV.local_pret():                # 0.9.92 : gratuit sur ce poste, proposé d'abord
+            self.moteur.setCurrentIndex(max(0, self.moteur.findData("latentsync_local")))
         self.moteur.currentIndexChanged.connect(self._maj)
         hm.addWidget(self.moteur, 1)
         self.resolution = QComboBox()
@@ -217,7 +219,10 @@ class DialogueLevres(QDialog):
         d = self.duree()
         self.expl.setText(m["explication"])
         manque = None
-        if not LV.clef(self.ed.params):
+        local = bool(m.get("local"))
+        if local:
+            manque = LV.local_manque() or None                 # 0.9.92 : sur ce poste, rien à payer
+        elif not LV.clef(self.ed.params):
             manque = _("Il faut une clef fal.ai : Préférences › Assistant et IA, « Clef fal.ai » (ou « Connecter une IA ») ; paiement "
                        "à l'usage, sans abonnement.")
         elif d > m["max_s"]:
@@ -228,8 +233,12 @@ class DialogueLevres(QDialog):
             manque = _("Pas de son à faire dire.")
         elif not self.accord.isChecked():
             manque = _("Pour lancer : cochez la case du visage ci-dessus (personnage inventé, vous, ou une personne d'accord).")
-        self.cout.setText(manque or _("Coût annoncé par fal.ai : environ {p} $ pour {d} s (demandé avant de lancer).",
-                                      p=f"{LV.prix(k, d):.2f}".replace(".", ","), d=int(round(d))))
+        if local:
+            texte = _("Calcul sur ce poste : gratuit ({d} s de son).", d=int(round(d)))
+        else:
+            texte = _("Coût annoncé par fal.ai : environ {p} $ pour {d} s (demandé avant de lancer).",
+                      p=f"{LV.prix(k, d):.2f}".replace(".", ","), d=int(round(d)))
+        self.cout.setText(manque or texte)
         self.cout.setStyleSheet("font-weight:600;color:#c98a00" if manque else "font-weight:600")
         self.b_fabriquer.setEnabled(not manque and self.accord.isChecked() and not self._en_calcul())
         self.b_fabriquer.setToolTip("" if self.accord.isChecked() else _("Cochez d'abord la case du visage"))
@@ -277,7 +286,7 @@ class DialogueLevres(QDialog):
             return
         k, d = self.moteur.currentData(), self.duree()
         p = LV.prix(k, d)
-        if QMessageBox.question(self, _("Faire parler"), _("Faire calculer les lèvres par {m} pour environ {p} $ ({d} s), facturés sur "
+        if p > 0 and QMessageBox.question(self, _("Faire parler"), _("Faire calculer les lèvres par {m} pour environ {p} $ ({d} s), facturés sur "
                                                          "votre compte fal.ai ?", m=LV.moteur_ia(k)["nom"],
                                                          p=f"{p:.2f}".replace(".", ","), d=int(round(d)))) != QMessageBox.Yes:
             return

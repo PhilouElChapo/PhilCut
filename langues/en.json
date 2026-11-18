@@ -8611,5 +8611,15 @@
  "Dans l'assistant, à l'étape « 4. Les images » : « Brouillon de toute la séquence… ».": "In the assistant, at step “4. The images”: “Draft of the whole sequence…”.",
  "« Images et textes, plan par plan » : gratuit et immédiat ; chaque plan montre son image connue, son action et sa durée, en fondu vers son image clef.": "“Images and texts, clip by clip”: free and immediate; each clip shows its known image, its action and its length, fading into its key image.",
  "« IA vidéo de ce poste » (gratuit, lent) ou « Gemini Omni 360p » (prix demandé) : une vraie vidéo, en petite qualité.": "“This computer's video AI” (free, slow) or “Gemini Omni 360p” (price asked): a real video, in low quality.",
- "« Revoir le brouillon » le rouvre ; si tout va bien, « Tout me convient : fabriquer la vidéo ».": "“See the draft again” reopens it; if all is well, “All good: make the video”."
+ "« Revoir le brouillon » le rouvre ; si tout va bien, « Tout me convient : fabriquer la vidéo ».": "“See the draft again” reopens it; if all is well, “All good: make the video”.",
+ "Calcul sur ce poste : gratuit ({d} s de son).": "Computed on this computer: free ({d} s of sound).",
+ "Gratuit sur ce poste (Windows, carte NVIDIA de 8 Go) : installez une fois « Lèvres synchronisées sur ce poste » dans Edition › Préférences › IA locale (environ 6 Go), puis choisissez le moteur « LatentSync 1.5 sur ce poste ».": "Free on this computer (Windows, 8 GB NVIDIA card): install “Lip sync on this computer” once in Edit › Preferences › Local AI (about 6 GB), then choose the engine “LatentSync 1.5 on this computer”.",
+ "Refait seulement la bouche du plan, sur votre carte NVIDIA (8 Go) : gratuit, environ une à deux minutes de calcul pour 10 s de vidéo. A installer une fois dans Préférences › IA locale (environ 6 Go).": "Redoes only the mouth of the clip, on your NVIDIA card (8 GB): free, about one to two minutes of computing for 10 s of video. To install once in Preferences › Local AI (about 6 GB).",
+ "Les lèvres sur ce poste existent pour l'instant sous Windows seulement.": "Lip sync on this computer is for now available on Windows only.",
+ "A installer une fois : Préférences › IA locale, « Lèvres synchronisées sur ce poste » (environ 6 Go).": "To install once: Preferences › Local AI, “Lip sync on this computer” (about 6 GB).",
+ "Il faut une carte NVIDIA (8 Go) : celle de ce poste ne convient pas.": "An NVIDIA card (8 GB) is needed: this computer's card is not suitable.",
+ "Démarrage du calcul des lèvres sur ce poste…": "Starting the lip computation on this computer…",
+ "Finition…": "Finishing…",
+ "Le calcul des lèvres sur ce poste a échoué (voir le journal des plantages et erreurs).": "The lip computation on this computer failed (see the crash and error log).",
+ "Lèvres synchronisées sur ce poste (carte NVIDIA)": "Lip sync on this computer (NVIDIA card)"
 }

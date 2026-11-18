@@ -460,6 +460,9 @@ def _guides_integres():
                          "fermer la fenêtre : la barre du bas suit le calcul.")},
              {"texte": _("Regardez le résultat, puis « Poser à la place du plan » (ou « au-dessus du film ») : le son reste celui "
                          "de la timeline. Edition › Annuler pour revenir.")},
+             {"texte": _("Gratuit sur ce poste (Windows, carte NVIDIA de 8 Go) : installez une fois « Lèvres synchronisées sur ce "
+                         "poste » dans Edition › Préférences › IA locale (environ 6 Go), puis choisissez le moteur « LatentSync 1.5 "
+                         "sur ce poste ».")},
          ]},
         {"id": "musique_maniere", "etat": "ok",
          "titre": _("Créer une musique à la manière de… (style, voix, passage d'un morceau)"),
