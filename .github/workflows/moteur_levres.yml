@@ -1,3 +1,4 @@
+# (Windows : « aux » est un nom réservé, le dossier des visages s'appelle « visages ».)
 # 0.9.92 : moteur « lèvres sur ce poste » (LatentSync 1.5) pour Windows : Python 3.10 portable + PyTorch CUDA 12.1 + code
 # de LatentSync (commit 7b380d6) + outils_dev/philcut_levres.py ; vérifié (imports, modèles de visage chargés), découpé en
 # parties de moins de 2 Go et publié dans la release « moteurs-ia » avec son catalogue.
@@ -62,7 +63,7 @@ jobs:
           & moteur\python\python.exe moteur\philcut_levres.py --verifier
           if ($LASTEXITCODE -ne 0) { exit 1 }
           curl.exe -sSL -o buffalo_l.zip https://github.com/deepinsight/insightface/releases/download/v0.7/buffalo_l.zip
-          & moteur\python\python.exe -c "import zipfile,os,insightface; from insightface.app import FaceAnalysis; d='aux/models/buffalo_l'; os.makedirs(d,exist_ok=True); [open(os.path.join(d,os.path.basename(n)),'wb').write(zipfile.ZipFile('buffalo_l.zip').read(n)) for n in zipfile.ZipFile('buffalo_l.zip').namelist() if n.endswith('.onnx')]; a=FaceAnalysis(allowed_modules=['detection','landmark_2d_106'],root='aux',providers=['CPUExecutionProvider']); a.prepare(ctx_id=-1,det_size=(512,512)); import numpy as np; print('visages :', len(a.get(np.zeros((512,512,3),np.uint8))), 'sur une image noire (0 attendu)')"
+          & moteur\python\python.exe -c "import zipfile,os,insightface; from insightface.app import FaceAnalysis; d='visages/models/buffalo_l'; os.makedirs(d,exist_ok=True); [open(os.path.join(d,os.path.basename(n)),'wb').write(zipfile.ZipFile('buffalo_l.zip').read(n)) for n in zipfile.ZipFile('buffalo_l.zip').namelist() if n.endswith('.onnx')]; a=FaceAnalysis(allowed_modules=['detection','landmark_2d_106'],root='visages',providers=['CPUExecutionProvider']); a.prepare(ctx_id=-1,det_size=(512,512)); import numpy as np; print('visages :', len(a.get(np.zeros((512,512,3),np.uint8))), 'sur une image noire (0 attendu)')"
           if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: Archive en parties
         shell: pwsh
