@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.93 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.94 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.94 (credit epuise dit en clair)
+- Quand le credit Gemini, Claude ou fal.ai est epuise, le message le dit en francais, precise que rien n'a ete fait ni facture et donne l'adresse ou recharger (au lieu de « 402 : Your prepayment credits are depleted… »).
+
 
 ### 0.9.92 et 0.9.93 (levres sur ce poste)
 - Faire parler un plan sur votre son, gratuitement, sur votre carte NVIDIA de 8 Go : moteur "LatentSync 1.5 sur ce poste" (Windows). A installer une fois dans Preferences › IA locale, "Levres synchronisees sur ce poste" (environ 9 Go : programme et modeles).

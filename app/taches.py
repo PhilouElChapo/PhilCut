@@ -101,7 +101,26 @@ def texte_erreur(e):
     """Le message d'une erreur, jamais vide (certaines erreurs n'ont pas de texte : on dit au moins leur nature)."""
     from .langue import _
     t = str(e or "").strip()
+    credit = credit_epuise(t)
+    if credit:
+        return credit
     return t or _("erreur {n} sans message (détail : Outils › Journal des plantages et erreurs)", n=type(e).__name__)
+
+
+def credit_epuise(t):
+    """0.9.94 : un service payant qui refuse faute de crédit, dit en clair avec l'endroit où recharger ; sinon ""."""
+    from .langue import _
+    b = (t or "").lower()
+    if "prepayment credits are depleted" in b or ("402" in b and ("gemini" in b or "ai.studio" in b or "billing" in b)):
+        return _("Crédit Gemini épuisé (prépaiement de Google AI Studio) : rien n'a été fait ni facturé. Rechargez-le sur "
+                 "https://aistudio.google.com (Facturation, « Billing »), puis recommencez.")
+    if "credit balance is too low" in b:
+        return _("Crédit Claude épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://console.anthropic.com "
+                 "(Billing), puis recommencez.")
+    if "exhausted balance" in b or ("fal" in b and ("user is locked" in b or "insufficient" in b and "balance" in b)):
+        return _("Crédit fal.ai épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://fal.ai/dashboard/billing, puis "
+                 "recommencez.")
+    return ""
 
 
 def importer_media(tache, chemin, params, avec_proxy=True):

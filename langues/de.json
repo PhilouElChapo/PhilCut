@@ -8612,5 +8612,8 @@
  "Démarrage du calcul des lèvres sur ce poste…": "Start der Lippenberechnung auf diesem Rechner…",
  "Finition…": "Fertigstellung…",
  "Le calcul des lèvres sur ce poste a échoué (voir le journal des plantages et erreurs).": "Die Lippenberechnung auf diesem Rechner ist fehlgeschlagen (siehe Absturz- und Fehlerprotokoll).",
- "Lèvres synchronisées sur ce poste (carte NVIDIA)": "Lippensynchronisation auf diesem Rechner (NVIDIA-Karte)"
+ "Lèvres synchronisées sur ce poste (carte NVIDIA)": "Lippensynchronisation auf diesem Rechner (NVIDIA-Karte)",
+ "Crédit Gemini épuisé (prépaiement de Google AI Studio) : rien n'a été fait ni facturé. Rechargez-le sur https://aistudio.google.com (Facturation, « Billing »), puis recommencez.": "Gemini-Guthaben aufgebraucht (Vorauszahlung bei Google AI Studio): Nichts wurde gemacht oder berechnet. Laden Sie es auf https://aistudio.google.com (Billing) auf und versuchen Sie es erneut.",
+ "Crédit Claude épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://console.anthropic.com (Billing), puis recommencez.": "Claude-Guthaben aufgebraucht: Nichts wurde gemacht oder berechnet. Laden Sie es auf https://console.anthropic.com (Billing) auf und versuchen Sie es erneut.",
+ "Crédit fal.ai épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://fal.ai/dashboard/billing, puis recommencez.": "fal.ai-Guthaben aufgebraucht: Nichts wurde gemacht oder berechnet. Laden Sie es auf https://fal.ai/dashboard/billing auf und versuchen Sie es erneut."
 }

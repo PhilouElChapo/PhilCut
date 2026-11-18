@@ -8612,5 +8612,8 @@
  "Démarrage du calcul des lèvres sur ce poste…": "Avvio del calcolo delle labbra su questo computer…",
  "Finition…": "Rifinitura…",
  "Le calcul des lèvres sur ce poste a échoué (voir le journal des plantages et erreurs).": "Il calcolo delle labbra su questo computer non è riuscito (vedere il registro di arresti ed errori).",
- "Lèvres synchronisées sur ce poste (carte NVIDIA)": "Labbra sincronizzate su questo computer (scheda NVIDIA)"
+ "Lèvres synchronisées sur ce poste (carte NVIDIA)": "Labbra sincronizzate su questo computer (scheda NVIDIA)",
+ "Crédit Gemini épuisé (prépaiement de Google AI Studio) : rien n'a été fait ni facturé. Rechargez-le sur https://aistudio.google.com (Facturation, « Billing »), puis recommencez.": "Credito Gemini esaurito (prepagato di Google AI Studio): nulla è stato fatto né addebitato. Ricaricatelo su https://aistudio.google.com (Billing), poi riprovate.",
+ "Crédit Claude épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://console.anthropic.com (Billing), puis recommencez.": "Credito Claude esaurito: nulla è stato fatto né addebitato. Ricaricatelo su https://console.anthropic.com (Billing), poi riprovate.",
+ "Crédit fal.ai épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://fal.ai/dashboard/billing, puis recommencez.": "Credito fal.ai esaurito: nulla è stato fatto né addebitato. Ricaricatelo su https://fal.ai/dashboard/billing, poi riprovate."
 }
