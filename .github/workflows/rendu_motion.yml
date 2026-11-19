@@ -16,6 +16,9 @@ on:
         description: "Composition"
         default: "Chiffres"
 
+permissions:
+  contents: write
+
 jobs:
   rendu:
     runs-on: ubuntu-latest
@@ -44,3 +47,12 @@ jobs:
         with:
           name: motion-${{ env.PROJET }}
           path: motion/${{ env.PROJET }}/out/
+      - name: Rendus sur la branche motion-rendus (pour les regarder sans artefact)
+        run: |
+          mkdir /tmp/r && cp motion/$PROJET/out/* /tmp/r/
+          git config user.name "rendu-motion" && git config user.email "rendu-motion@users.noreply.github.com"
+          git checkout --orphan motion-rendus
+          git rm -rfq . && rm -rf motion
+          mkdir -p "$PROJET" && cp /tmp/r/* "$PROJET/"
+          git add "$PROJET" && git commit -qm "Rendu $PROJET/$COMPO"
+          git push -fq origin motion-rendus
