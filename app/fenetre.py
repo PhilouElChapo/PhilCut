@@ -691,7 +691,10 @@ class Fenetre(QMainWindow):
                     self._apres_fermeture = None
                     e.ignore()
                     return
-        en_cours = [t for t in self.taches + sum((ed.taches for ed in self.editeurs()), []) if t.isRunning()]
+        # 0.9.97 : la synchronisation de fond s'interrompt sans rien perdre (elle reprend au prochain lancement) : elle ne
+        # bloque plus la sortie (Philippe, 19/11 : « il me met toujours ça alors qu'il n'y a pas de synchro »)
+        en_cours = [t for t in self.taches + sum((ed.taches for ed in self.editeurs()), [])
+                    if t.isRunning() and not getattr(t, "interruptible", False)]
         if self.telechargements.tache is not None:
             en_cours.append(self.telechargements.tache)
         if en_cours and not self._quitter_malgre(en_cours):
@@ -2341,6 +2344,7 @@ class Fenetre(QMainWindow):
                     miroir.journal(f"rushes {miroir.libelle_compte(rc)} : {e}")
             return r
         t = Tache(travail, _("Synchronisation"))
+        t.interruptible = True                       # copie de travail locale : rien n'est perdu si on quitte en route
         self._tache_synchro = t
         self.taches.append(t)
         if not silencieux:

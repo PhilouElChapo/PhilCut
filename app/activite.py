@@ -141,6 +141,14 @@ class FenetreActivite(QDialog):
         self.table.setSelectionMode(QTableWidget.NoSelection)
         from .telechargements import colonnes_reglables
         colonnes_reglables(self.table, getattr(centre.telechargements, "params", None), "colonnes_activite", [300, 140, 100, 170, 110, 200])
+        # 0.9.97 : jamais de défilement horizontal ni de bouton coupé (« Installer et… ») : la colonne Tâche prend la place
+        # restante et passe à la ligne, la colonne des boutons prend la largeur de ses boutons
+        from PySide6.QtWidgets import QHeaderView
+        h = self.table.horizontalHeader()
+        h.setSectionResizeMode(0, QHeaderView.Stretch)
+        h.setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.table.setWordWrap(True)
         v.addWidget(self.table, 1)
         self.resume = QLabel("")
         v.addWidget(self.resume)
@@ -181,7 +189,9 @@ class FenetreActivite(QDialog):
         self.table.setRowCount(len(lignes))
         self._barres = []
         for i, l in enumerate(lignes):
-            self.table.setItem(i, 0, QTableWidgetItem(l["titre"]))
+            it = QTableWidgetItem(l["titre"])
+            it.setToolTip(l["titre"])
+            self.table.setItem(i, 0, it)
             b = QProgressBar()
             b.setRange(0, 1000)
             self.table.setCellWidget(i, 1, b)
@@ -209,6 +219,7 @@ class FenetreActivite(QDialog):
                 self.table.setCellWidget(i, 5, None)
                 self.table.setItem(i, 5, QTableWidgetItem(""))
         self._courantes = lignes
+        self.table.resizeRowsToContents()
         self.actualiser()
 
     def actualiser(self):

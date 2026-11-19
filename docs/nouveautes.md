@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.96 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.97 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.97 (synchronisation et Centre d'activite)
+- Quitter : la synchronisation de fond ne bloque plus la sortie (elle reprend au prochain lancement, rien n'est perdu).
+- Synchronisation avec Google Drive environ deux fois plus rapide (un dossier demande une fois au lieu de deux).
+- Centre d'activite : plus de defilement horizontal ni de bouton coupe ; la colonne Tache passe a la ligne.
+
 
 ### 0.9.96 (retours du premier vrai essai)
 - Fabrication d'un seul tenant : plus d'erreur 422 de Kling (« Prompt must not exceed 512 characters ») : chaque plan d'un meme calcul a une consigne courte (l'action d'abord ; visages et objets tenus par les fiches).

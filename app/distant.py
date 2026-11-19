@@ -847,8 +847,13 @@ class GoogleDrive(_DriveOAuth):
         i = self._id(dossier)
         if i is None:
             return {}
-        return {f["name"]: (int(f.get("size") or 0), f.get("modifiedTime", ""), f.get("mimeType") == DOSSIER_MIME)
-                for f in self._appel("GET", self._q(f"'{i}' in parents and trashed = false")).get("files", [])}
+        out = {}
+        for f in self._appel("GET", self._q(f"'{i}' in parents and trashed = false")).get("files", []):
+            # 0.9.97 : l'identifiant de chaque enfant est retenu : le parcours ne redemande plus chaque sous-dossier par son
+            # nom (deux requêtes par dossier au lieu d'une : la synchronisation de Philippe passait des minutes à 20 %)
+            self._ids["/" + "/".join(p for p in _joindre(dossier, f["name"]).split("/") if p)] = f["id"]
+            out[f["name"]] = (int(f.get("size") or 0), f.get("modifiedTime", ""), f.get("mimeType") == DOSSIER_MIME)
+        return out
 
     def qui(self):
         u = self._appel("GET", f"{DRIVE_API}/about?fields=user(emailAddress,displayName)").get("user", {})
