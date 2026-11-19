@@ -167,6 +167,11 @@ class DialogueAssistant(QDialog):
                                    "réglable, rien n'est perdu"))
         self.b_manuel.clicked.connect(self.mode_manuel)
         hn.addWidget(self.b_manuel)
+        self.b_relancer = QPushButton(_("Relancer le Réalisateur"))
+        self.b_relancer.setToolTip(_("Il reprend là où vous êtes et enchaîne jusqu'au prochain arrêt (brouillon, prix)"))
+        self.b_relancer.clicked.connect(self.relancer_realisateur)
+        self.b_relancer.hide()
+        hn.addWidget(self.b_relancer)
         self.b_reduire = QPushButton(_("Réduire"))
         self.b_reduire.setToolTip(_("Le calcul continue ; « Afficher la fenêtre » dans la barre du bas la rouvre"))
         self.b_reduire.clicked.connect(self.hide)
@@ -270,6 +275,13 @@ class DialogueAssistant(QDialog):
         self.niveau.setCurrentIndex(max(0, self.niveau.findData(voulu)) if voulu else 0)
         h2.addWidget(self.niveau, 1)
         v.addLayout(h2)
+        self.c_realisateur = QCheckBox(_("Le Réalisateur enchaîne tout : il s'arrête seulement sur le brouillon et avant de payer"))
+        self.c_realisateur.setToolTip(_("Il prend dans votre bibliothèque ce qui porte le même nom, prépare les plans et les images "
+                                        "clefs, montre le brouillon gratuit, puis fabrique quand vous dites « Tout me va ». "
+                                        "« ‹ Précédent » le met en pause ; « Relancer le Réalisateur » le reprend."))
+        self.c_realisateur.setChecked(bool(self.params.get("assistant_realisateur", A.REALISATEUR_DEFAUT)))
+        self.c_realisateur.toggled.connect(lambda x: self.params.__setitem__("assistant_realisateur", bool(x)))
+        v.addWidget(self.c_realisateur)
         self.l_manques = QLabel("")
         self.l_manques.setWordWrap(True)
         self.l_manques.setStyleSheet("color:#c98a00")
@@ -981,7 +993,7 @@ class DialogueAssistant(QDialog):
             a.triggered.connect(lambda _c=False, x=mode: self.faire_brouillon(x))
         m.exec(self.b_brouillon.mapToGlobal(self.b_brouillon.rect().bottomLeft()))
 
-    def faire_brouillon(self, mode):
+    def faire_brouillon(self, mode, realisateur=False):
         from . import brouillon as B
         p = B.prix(self.seq, mode, self.params)
         if p > 0 and getattr(self, "_test_oui", None) is None and QMessageBox.question(
@@ -1004,7 +1016,7 @@ class DialogueAssistant(QDialog):
                 A.depenser(self.seq, _("Brouillon"), p)
             Q.enregistrer(self.seq)
             self._maj_brouillon()
-            self.voir_brouillon(r[0])
+            self.voir_brouillon(r[0], realisateur)
         self._lancer(travail, _("Brouillon de toute la séquence"), fin)
 
     def _maj_brouillon(self):
@@ -1012,7 +1024,7 @@ class DialogueAssistant(QDialog):
             f = (self.seq.get("brouillon") or {}).get("fichier", "")
             self.b_voir_brouillon.setVisible(bool(f and os.path.exists(f)))
 
-    def voir_brouillon(self, chemin):
+    def voir_brouillon(self, chemin, realisateur=False):
         if not chemin or not os.path.exists(chemin):
             return
         from .dialogues_creatif import ApercuCreation
@@ -1026,9 +1038,21 @@ class DialogueAssistant(QDialog):
         ap = ApercuCreation(d)
         ap.charger(chemin, video=True)
         v.addWidget(ap, 1)
-        b = QPushButton(_("Fermer"))
-        b.clicked.connect(d.close)
-        v.addWidget(b, 0, Qt.AlignRight)
+        hb = QHBoxLayout()
+        hb.addStretch(1)
+        if self.pages.currentIndex() == P_IMAGES:
+            # 0.9.98 : l'arrêt du Réalisateur : on regarde, puis on fabrique (ou on corrige d'abord)
+            bo = QPushButton(_("Tout me va : fabriquer la vidéo"))
+            bo.clicked.connect(lambda: (d.close(), self.suivant()))
+            hb.addWidget(bo)
+            bc = QPushButton(_("Je corrige d'abord"))
+            bc.clicked.connect(lambda: (setattr(self, "_realisateur_pause", True), d.close(), self._maj()))
+            hb.addWidget(bc)
+        else:
+            b = QPushButton(_("Fermer"))
+            b.clicked.connect(d.close)
+            hb.addWidget(b)
+        v.addLayout(hb)
         d.resize(760, 560)
         d.finished.connect(ap.arreter)
         self._dlg_brouillon = d
@@ -1056,6 +1080,37 @@ class DialogueAssistant(QDialog):
         h.addWidget(self.b_reprendre)
         h.addStretch(1)
         v.addLayout(h)
+        # 0.9.98 : le correcteur : ce qui ne va pas (relu par l'IA ou écrit par vous), puis une correction proposée
+        v.addWidget(QLabel("<b>" + _("Ce qui ne va pas") + "</b>"))
+        self.l_defauts = QListWidget()
+        self.l_defauts.setWordWrap(True)
+        self.l_defauts.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.l_defauts.setMaximumHeight(110)
+        self.l_defauts.itemDoubleClicked.connect(lambda _i: self.proposer_correction())
+        v.addWidget(self.l_defauts)
+        hr = QHBoxLayout()
+        self.e_remarque = QLineEdit()
+        self.e_remarque.setPlaceholderText(_("Ce qui ne va pas, à l'instant de l'aperçu (ou écrivez l'instant : « à 0:12 le pilote "
+                                             "n'a plus sa barbe »)"))
+        self.e_remarque.returnPressed.connect(self.ajouter_remarque)
+        hr.addWidget(self.e_remarque, 1)
+        b = QPushButton(_("Ajouter"))
+        b.clicked.connect(self.ajouter_remarque)
+        hr.addWidget(b)
+        v.addLayout(hr)
+        hc = QHBoxLayout()
+        self.b_relire = QPushButton(_("Relire les plans par l'IA…"))
+        self.b_relire.setToolTip(_("L'IA compare chaque plan aux fiches et à l'action (visages, objets, gestes, raccords) et note "
+                                   "les défauts avec leur instant ; environ 0,01 $ par plan"))
+        self.b_relire.clicked.connect(lambda: self.relire_plans(None))
+        hc.addWidget(self.b_relire)
+        self.b_corriger = QPushButton(_("Proposer une correction"))
+        self.b_corriger.setToolTip(_("Pour le défaut choisi : la cause probable, ce qui est refait et le prix ; rien n'est payé sans "
+                                     "votre accord"))
+        self.b_corriger.clicked.connect(self.proposer_correction)
+        hc.addWidget(self.b_corriger)
+        hc.addStretch(1)
+        v.addLayout(hc)
         return w
 
     # ------------------------------------------------------------------ navigation
@@ -1068,9 +1123,85 @@ class DialogueAssistant(QDialog):
         self.b_suiv.setText(BOUTONS[k])
         self._maj()
         self._maj_credits()
+        if self._realisateur_actif() and self.genre == "video":
+            QTimer.singleShot(400, lambda k=k: self._enchainer(k))
 
     def _en_calcul(self):
         return self.tache is not None and self.tache.isRunning()
+
+    # ------------------------------------------------------------------ 0.9.98 : le Réalisateur
+    def _realisateur_actif(self):
+        return bool(self.params.get("assistant_realisateur", A.REALISATEUR_DEFAUT)) and not getattr(self, "_realisateur_pause", False)
+
+    def relancer_realisateur(self):
+        self._realisateur_pause = False
+        self._auto_fait = set()
+        self._maj()
+        self._enchainer(self.pages.currentIndex())
+
+    def _enchainer(self, k):
+        """Le Réalisateur passe à l'étape suivante tout seul, sauf aux arrêts : accord des personnes réelles, carte incomplète,
+        prix (posé par la préparation), brouillon (« Tout me va » pour fabriquer)."""
+        if not self._realisateur_actif() or self._en_calcul() or self.pages.currentIndex() != k or not self.isVisible():
+            return
+        fait = getattr(self, "_auto_fait", set())
+        if k in fait:
+            return
+        self._auto_fait = fait | {k}
+        if k == P_QUI:
+            pris = self._bibliotheque_auto()
+            if pris:
+                self.etat.setText(_("Réalisateur : pris dans votre bibliothèque : {l}.", l=", ".join(pris)))
+            if not self._cartes_completes():
+                self._realisateur_pause = True
+                self._maj()
+                return
+            if self._avec_personnes_reelles() and not self.accord.isChecked():
+                self._realisateur_pause = True
+                self.etat.setText(_("Réalisateur en pause : cochez l'accord des personnes réelles, puis « Relancer le Réalisateur »."))
+                self._maj()
+                return
+            self.suivant()
+        elif k == P_PLANS:
+            self.suivant()                              # la préparation demande le prix : premier arrêt
+        elif k == P_IMAGES:
+            if any(not pl.get("fichier") for pl in self.seq["plans"]):
+                self.faire_brouillon("animatique", realisateur=True)
+
+    def _bibliotheque_auto(self):
+        """Chaque carte dont le nom correspond à une entrée de la bibliothèque (même genre, accents ignorés) la prend. Renvoie
+        les noms pris."""
+        from . import bibliotheque_creations as B
+        import unicodedata
+
+        def net(t):
+            t = unicodedata.normalize("NFD", (t or "").lower())
+            return " ".join("".join(c for c in t if unicodedata.category(c) != "Mn" and (c.isalnum() or c == " ")).split())
+        pris = []
+        for c in self.cartes:
+            e = c.e
+            if e.get("source") == "bibliotheque" or e.get("source") in ("image", "photo") and e.get("decoupe"):
+                continue
+            entrees = B.lister(self.params, B.CARTES_POUR.get(e.get("type"), ()))
+            n = net(e.get("nom"))
+            if not n:
+                continue
+            x = next((y for y in entrees if net(y["nom"]) == n), None) or \
+                next((y for y in entrees if len(net(y["nom"])) > 3 and (net(y["nom"]) in n or n in net(y["nom"]))), None)
+            if x is None:
+                continue
+            B.vers_carte(x, e)
+            e["source"] = "bibliotheque"
+            try:
+                c.nom.blockSignals(True)
+                c.nom.setText(e["nom"])
+                c.nom.blockSignals(False)
+                c.mettre_description(e.get("description", ""))
+                c.rafraichir()
+            except (AttributeError, RuntimeError):
+                pass
+            pris.append(x["nom"])
+        return pris
 
     def _maj(self):
         calc = self._en_calcul()
@@ -1087,6 +1218,8 @@ class DialogueAssistant(QDialog):
         self.b_dire.setEnabled(not calc)
         self.b_reduire.setVisible(calc)
         self.b_manuel.setEnabled(not calc and k != P_IDEE)
+        self.b_relancer.setVisible(bool(self.params.get("assistant_realisateur", A.REALISATEUR_DEFAUT)) and self.genre == "video" and
+                                   k not in (P_IDEE, P_VIDEO) and getattr(self, "_realisateur_pause", False) and not calc)
         if k == P_VIDEO:
             self.b_refaire.setEnabled(not calc and self.l_plans.currentRow() >= 0)
             self.b_reprendre.setVisible(not calc and any(not pl.get("fichier") for pl in self.seq["plans"]))
@@ -1132,6 +1265,7 @@ class DialogueAssistant(QDialog):
         self.aller(cible)
 
     def precedent(self):
+        self._realisateur_pause = True            # 0.9.98 : on revient en arrière : le Réalisateur attend
         k = self.pages.currentIndex()
         if k in (P_QUI, P_PLANS):
             self._lire()
@@ -1350,13 +1484,17 @@ class DialogueAssistant(QDialog):
         self._remplir_plans()
         moteur_video = self.moteur.currentData()
         self.seq["moteur"] = moteur_video
+        correction = getattr(self, "_apres_preparation", None) is not None    # 0.9.98 : prix déjà accepté
         if A.images_par(self.seq, self.params) != "aucune" and sum(A.a_preparer(self.seq, self.params)) == 0:
+            if correction:
+                self._apres_preparation = None
+                return self.fabriquer()
             self._remplir_images()                 # 0.9.86 : tout est déjà fait : rien à repayer
             self.aller(P_IMAGES)
             self.etat.setText(_("Les fiches et images sont déjà faites : rien n'a été refait."))
             return
         e = A.estimer(self.seq, moteur_video, self.params, self._niveau())
-        if e["total"] > 0 and getattr(self, "_test_oui", None) is None and QMessageBox.question(
+        if e["total"] > 0 and not correction and getattr(self, "_test_oui", None) is None and QMessageBox.question(
                 self, _("Assistant de création"),
                 _("Budget prévu pour cette création : {t} sur vos comptes ({i} d'images de préparation, {v} de vidéo, {l} de "
                   "relectures, {r} de réserve pour trois corrections d'images).\n\nD'abord les fiches et les images ({i}) : vous "
@@ -1364,7 +1502,8 @@ class DialogueAssistant(QDialog):
                   "Continuer ?", t=A.argent(e["total"]), i=A.argent(e["images"]), v=A.argent(e["videos"]), l=A.argent(e["lectures"]),
                   r=A.argent(e["reserve"]))) != QMessageBox.Yes:
             return
-        A.prevoir(self.seq, e["total"])
+        if not correction:
+            A.prevoir(self.seq, e["total"])
         if A.images_par(self.seq, self.params) == "aucune":     # pas d'images de contrôle : droit à la vidéo
             self._remplir_video()
             self.aller(P_VIDEO)
@@ -1392,6 +1531,11 @@ class DialogueAssistant(QDialog):
                 A.depenser(self.seq, _("Fiches et images"), A.PRIX_IMAGE * r[1])
             Q.enregistrer(self.seq)
             self._remplir_images()
+            apres = getattr(self, "_apres_preparation", None)
+            self._apres_preparation = None
+            if apres is not None and not r[2]:          # 0.9.98 : correction : la fiche refaite, on refabrique tout de suite
+                apres()
+                return
             self.aller(P_IMAGES)
             if r[2]:
                 self.etat.setText("✕ " + _("{n} fiche(s) ou image(s) faite(s) et gardée(s), puis : {e}. « ‹ Précédent » puis "
@@ -1654,6 +1798,141 @@ class DialogueAssistant(QDialog):
         self.l_plans.blockSignals(False)
         if 0 <= r < self.l_plans.count():
             self.l_plans.setCurrentRow(r)
+        self._remplir_defauts()
+
+    # ------------------------------------------------------------------ 0.9.98 : le correcteur
+    def _remplir_defauts(self):
+        if not hasattr(self, "l_defauts"):
+            return
+        self.l_defauts.clear()
+        for d in self.seq.get("defauts") or []:
+            m, sec = divmod(d.get("t_seq", 0), 60)
+            qui = _("IA") if d["source"] == "ia" else _("vous")
+            it = QListWidgetItem(("✓ " if d.get("fait") else "• ") + _("Plan {p}, {t} ({q}) : {x}", p=d["plan"] + 1,
+                                                                        t=f"{int(m)}:{int(sec):02d}", q=qui, x=d["texte"]))
+            it.setData(Qt.UserRole, d["id"])
+            self.l_defauts.addItem(it)
+        if hasattr(self, "b_corriger"):
+            self.b_corriger.setEnabled(self.l_defauts.count() > 0)
+
+    def _instant_apercu(self):
+        """L'instant de la ligne rouge de l'aperçu, dans toute la séquence."""
+        from . import correcteur as C
+        i = self.l_plans.currentRow()
+        if i < 0:
+            return 0.0
+        pos = 0.0
+        try:
+            pos = float(self.apercu.position() or 0)
+        except Exception:      # noqa: BLE001
+            pos = 0.0
+        return C.debuts(self.seq)[i] + pos
+
+    def ajouter_remarque(self):
+        from . import correcteur as C
+        texte = self.e_remarque.text().strip()
+        if not texte or not self.seq.get("plans"):
+            return
+        d = C.remarque(self.seq, texte, self._instant_apercu())
+        self.e_remarque.clear()
+        Q.enregistrer(self.seq)
+        self._remplir_defauts()
+        self.l_defauts.setCurrentRow(self.l_defauts.count() - 1)
+        self.etat.setText(_("Noté au plan {p}. « Proposer une correction » dit ce qu'il faut refaire et le prix.", p=d["plan"] + 1))
+        self._proposer_de_retenir()
+
+    def _proposer_de_retenir(self):
+        """Deux remarques sur le même élément : l'écrire dans sa fiche pour que ça ne revienne plus."""
+        from . import correcteur as C
+        for element, textes in C.a_retenir(self.seq):
+            self.seq.setdefault("retenus", []).append(element)
+            ok = getattr(self, "_test_oui", None)
+            if ok is None:
+                ok = QMessageBox.question(self, _("Retenir dans la fiche"), _(
+                    "Deux remarques sur « {e} » :\n· {l}\n\nL'écrire dans sa fiche (et dans votre bibliothèque si elle en vient) pour "
+                    "que ça ne revienne plus ?", e=element, l="\n· ".join(textes[-3:]))) == QMessageBox.Yes
+            if ok:
+                self._retenir_dans_fiche(element, " ; ".join(textes[-3:]))
+
+    def _retenir_dans_fiche(self, element, ajout):
+        from . import bibliotheque_creations as B
+        p = next((x for x in self.seq["personnages"] if x["nom"] == element), None)
+        if p is None:
+            return
+        p["description"] = ((p.get("description") or "") + " " + ajout).strip()
+        if p.get("biblio"):
+            try:
+                genre = "objet" if p.get("genre") == "objet" else "personnage"
+                x = B.lire(self.params, genre, p["biblio"])
+                if x:
+                    B.garder(self.params, genre, x["nom"], ((x.get("description") or "") + " " + ajout).strip(), ident=p["biblio"])
+            except Exception:      # noqa: BLE001 : la séquence a déjà la précision
+                pass
+        Q.enregistrer(self.seq)
+        self.etat.setText(_("✓ Retenu dans la fiche de « {e} ».", e=element))
+
+    def relire_plans(self, plans=None):
+        from . import correcteur as C
+        faits = [i for i, pl in enumerate(self.seq["plans"]) if pl.get("fichier") and os.path.exists(pl["fichier"])]
+        plans = faits if plans is None else plans
+        if not plans:
+            return
+        if getattr(self, "_test_oui", None) is None and QMessageBox.question(
+                self, _("Relecture des plans"), _("Faire relire {n} plan(s) par l'IA (environ {p}) ?", n=len(plans),
+                                                  p=A.argent(A.PRIX_LECTURE * len(plans)))) != QMessageBox.Yes:
+            return
+        seq, niveau = copy.deepcopy(self.seq), self._niveau()
+
+        def travail(t):
+            for k, i in enumerate(plans):
+                t.avancer(k / len(plans), _("relecture du plan {i}", i=i + 1))
+                C.relire(self.params, seq, i, niveau)
+            return seq
+
+        def fin(r, e):
+            if e or not r:
+                self.etat.setText("✕ " + (texte_erreur(e) if e else _("rien n'a été relu")))
+                return
+            self.seq["defauts"] = r.get("defauts") or []
+            for i in plans:
+                self.seq["plans"][i]["verdict"] = r["plans"][i].get("verdict")
+            A.depenser(self.seq, _("Relecture"), A.PRIX_LECTURE * len(plans))
+            Q.enregistrer(self.seq)
+            self._remplir_video()
+            n = sum(1 for d in self.seq["defauts"] if d["source"] == "ia" and not d.get("fait"))
+            self.etat.setText(_("Relecture : {n} défaut(s) noté(s).", n=n) if n else _("Relecture : rien à signaler."))
+        self._lancer(travail, _("Relecture des plans par l'IA"), fin)
+
+    def proposer_correction(self):
+        from . import correcteur as C
+        it = self.l_defauts.currentItem() or (self.l_defauts.item(0) if self.l_defauts.count() else None)
+        if it is None:
+            return
+        d = next((x for x in self.seq.get("defauts") or [] if x["id"] == it.data(Qt.UserRole)), None)
+        if d is None:
+            return
+        seq, niveau = copy.deepcopy(self.seq), self._niveau()
+
+        def fin(p, e):
+            if e or not p:
+                self.etat.setText("✕ " + (texte_erreur(e) if e else _("pas de correction proposée")))
+                return
+            ok = getattr(self, "_test_oui", None)
+            if ok is None:
+                ok = QMessageBox.question(self, _("Correction proposée"), C.texte_proposition(p) + "\n\n" +
+                                          _("La faire ? (rien n'est payé sans votre accord)")) == QMessageBox.Yes
+            if not ok:
+                return
+            C.appliquer(self.seq, p)
+            Q.enregistrer(self.seq)
+            self._remplir_video()
+            if Q.sans_planche(self.seq, range(len(self.seq["plans"]))) or any(
+                    pl.get("clef") and not pl.get("image_fin") and not pl.get("sans_fin") for pl in self.seq["plans"]):
+                self._apres_preparation = self.fabriquer            # la fiche ou l'image clef d'abord, puis la vidéo
+                self.preparer()
+            else:
+                self.fabriquer()
+        self._lancer(lambda t: C.proposer(self.params, seq, d, niveau), _("Le correcteur cherche la cause"), fin)
 
     def _voir_plan(self, r):
         if 0 <= r < len(self.seq["plans"]):
@@ -1665,6 +1944,14 @@ class DialogueAssistant(QDialog):
 
     def fabriquer(self):
         self.file = [i for i, pl in enumerate(self.seq["plans"]) if not (pl.get("fichier") and os.path.exists(pl["fichier"]))]
+        if self.file and "relire" not in self.seq:
+            # 0.9.98 : la relecture de chaque plan par l'IA est proposée (pas d'office), une fois par création
+            n = len(self.file)
+            self.seq["relire"] = getattr(self, "_test_relire", None) if getattr(self, "_test_relire", None) is not None else \
+                False if not A.REALISATEUR_DEFAUT else QMessageBox.question(self, _("Relecture des plans"), _(
+                    "Faire relire chaque plan fabriqué par l'IA ? Elle compare visages, objets, gestes et raccords aux fiches et "
+                    "note chaque défaut avec son instant. Environ {p} pour {n} plan(s).", p=A.argent(A.PRIX_LECTURE * n), n=n)
+                ) == QMessageBox.Yes
         for i in self.file:
             self.seq["plans"][i].pop("erreur", None)
         self._suivant_de_la_file()
@@ -1701,11 +1988,16 @@ class DialogueAssistant(QDialog):
             for k, (j, f) in enumerate(zip(groupe, fichiers)):
                 seq["plans"][j]["fichier"] = f
                 t.avancer(0.86 + 0.13 * k / len(groupe), _("relecture du plan {i}", i=j + 1))
-                try:
-                    verdict = A.verifier(self.params, seq, j, niveau)
-                except Exception:      # noqa: BLE001 : la relecture est un plus, jamais un blocage
-                    verdict = None
-                out.append((j, f, verdict, seq["plans"][j].get("groupe", "")))
+                verdict = None
+                if seq.get("relire"):
+                    try:
+                        from . import correcteur as C
+                        C.relire(self.params, seq, j, niveau)
+                        verdict = seq["plans"][j].get("verdict")
+                    except Exception:      # noqa: BLE001 : la relecture est un plus, jamais un blocage
+                        verdict = None
+                out.append((j, f, verdict, seq["plans"][j].get("groupe", ""),
+                            [d for d in seq.get("defauts") or [] if d["plan"] == j and d["source"] == "ia"]))
             return out
 
         def fin(r, e):
@@ -1716,9 +2008,11 @@ class DialogueAssistant(QDialog):
                 self.file = []
                 self._remplir_video()
                 return
-            for j, f, verdict, g in r:
+            for j, f, verdict, g, defauts in r:
                 pl = self.seq["plans"][j]
                 pl["fichier"], pl["verdict"] = f, verdict
+                self.seq["defauts"] = [d for d in self.seq.get("defauts") or [] if not (d["plan"] == j and d["source"] == "ia")] \
+                    + defauts
                 if g:
                     pl["groupe"] = g
                 else:

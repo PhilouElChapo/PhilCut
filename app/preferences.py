@@ -631,6 +631,12 @@ class DialoguePreferences(QDialog):
                                             "ensemble, les gestes s'enchaînent sans arrêt ; décoché : plan par plan."))
         self.sequence_continue.setChecked(bool(self.params.get("sequence_continue", True)))
         f.addRow("", self.sequence_continue)
+        self.assistant_realisateur = QCheckBox(_("Le Réalisateur enchaîne tout (arrêts : brouillon, prix)"))   # 0.9.98
+        self.assistant_realisateur.setToolTip(_("Dans l'assistant de création : bibliothèque prise par les noms, plans, images "
+                                                "clefs et brouillon enchaînés ; décoché : étape par étape."))
+        from .assistant_creation import REALISATEUR_DEFAUT
+        self.assistant_realisateur.setChecked(bool(self.params.get("assistant_realisateur", REALISATEUR_DEFAUT)))
+        f.addRow("", self.assistant_realisateur)
         h = QHBoxLayout()                              # 0.9.85 : mises à jour des IA (locales et cloud)
         self.ia_maj_verifier = QCheckBox(_("Chercher les mises à jour des IA (une fois par semaine, jamais installées sans vous)"))
         self.ia_maj_verifier.setChecked(self.params.get("ia_maj_verifier", True))
@@ -1159,6 +1165,8 @@ class DialoguePreferences(QDialog):
             p["assistant_images_par"] = self.assistant_images_par.currentData()
         if hasattr(self, "sequence_continue"):
             p["sequence_continue"] = self.sequence_continue.isChecked()
+        if hasattr(self, "assistant_realisateur"):
+            p["assistant_realisateur"] = self.assistant_realisateur.isChecked()
         gestion = getattr(self.fenetre, "telechargements", None)
         a_installer = [k for k, c in self.cases_ia.items() if c.isChecked() and not packs_ia.installe(k)
                        and not (gestion is not None and gestion.en_file(k))]

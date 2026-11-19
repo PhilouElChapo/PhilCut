@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.97 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.98 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.98 (le Realisateur et son correcteur)
+- Assistant de creation : « Le Realisateur enchaine tout » (coche en premiere page, et dans Preferences). Il prend dans la bibliotheque ce qui porte le meme nom, prepare plans et images clefs, montre le brouillon gratuit et ne s'arrete que sur le brouillon et avant de payer. « ‹ Precedent » le met en pause, « Relancer le Realisateur » le reprend.
+- Relecture des plans par l'IA (proposee apres la fabrication, environ 0,01 $ par plan) : visages, objets, gestes, raccords ; chaque defaut est note avec son instant.
+- « Ce qui ne va pas » : vos remarques ecrites a l'instant de l'apercu, ou avec l'instant dans le texte (« a 0:12 le pilote n'a plus sa barbe »).
+- « Proposer une correction » : la cause probable (plan, fiche ou image clef), ce qui est refait et le prix ; rien n'est paye sans votre accord.
+- Deux remarques sur le meme element : proposition de l'ecrire dans sa fiche et dans la bibliotheque.
 
 ### 0.9.97 (synchronisation et Centre d'activite)
 - Quitter : la synchronisation de fond ne bloque plus la sortie (elle reprend au prochain lancement, rien n'est perdu).

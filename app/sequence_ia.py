@@ -228,6 +228,8 @@ def consigne(seq, pl, params=None, traduire=True):
     for n, i in rangs.items():                       # les prénoms deviennent « Character A » : le moteur ne voit pas de nom
         action = re.sub(r"(?i)\b" + re.escape(n) + r"\b", f"Character {chr(65 + i)}", action)
     action = _anglais(action, traduire)
+    if pl.get("precision"):                         # 0.9.98 : correction demandée par le correcteur
+        action += " Important: " + _anglais(pl["precision"], traduire).rstrip(".") + "."
     f = "vertical 9:16" if seq.get("format") == "9:16" else "widescreen 16:9"
     morceaux = [f"Cinematic shot, {f}, about {int(pl.get('duree') or DUREE_PLAN)} seconds."]
     if li:
@@ -277,6 +279,8 @@ def consigne_courte(seq, pl, params=None, traduire=True):
     if seq.get("voix") == "aucune":
         morceaux.append("Nobody speaks.")
     morceaux.append("Natural, physically plausible motion, continuous with the previous shot. No text, no logo.")
+    if pl.get("precision"):                     # 0.9.98 : correction demandée (correcteur), en tête de ce qu'il faut tenir
+        morceaux.insert(1, "Important: " + _anglais(pl["precision"], traduire).rstrip(".") + ".")
     return " ".join(morceaux)
 
 
@@ -534,6 +538,7 @@ def image_connue_avant(seq, i):
 def image_arrivee(seq, i, params, depart=None, precision=""):
     """Image d'arrivée du plan i (0.9.72) : la pose quand l'action est finie, composée d'après l'image de départ et les
     références. Le moteur doit la rejoindre : il ne peut plus faire traverser la table ni changer de visage en route."""
+    precision = precision or seq["plans"][i].get("precision_fin", "")      # 0.9.98 : correction d'une image clef
     from . import ia
     pl = seq["plans"][i]
     fiches = [x for _n, im in references_du_plan(seq, pl) for x in im[:1]]

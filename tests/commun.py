@@ -3,6 +3,7 @@ import os, sys, tempfile
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("PHILCUT_SANS_MULTIMEDIA", "1")
 os.environ.setdefault("PHILCUT_APERCU_FIDELE", "0")
+os.environ.setdefault("PHILCUT_REALISATEUR", "0")         # le Réalisateur n'enchaîne pas seul pendant les tests
 os.environ.setdefault("PHILCUT_LANGUE", "fr")                 # les tests lisent les textes en français
 os.environ.setdefault("PHILCUT_SANS_RESEAU", "1")         # pas de catalogue en ligne pendant les tests
 os.environ.setdefault("PHILCUT_SANS_IA_COMMUNE", "1")     # pas de question sur le dossier commun des IA pendant les tests

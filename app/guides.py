@@ -199,6 +199,24 @@ def _guides_integres():
              {"texte": _("Pour une tenue sur mesure : sur une tenue, « Composer… » ; choisissez pièce par pièce et la matière.")},
              {"texte": _("Dans l'assistant, sur chaque carte : « Dans ma bibliothèque » › « Toute faite… ».")},
          ]},
+        {"id": "realisateur_correcteur", "etat": "ok",
+         "titre": _("Laisser le Réalisateur enchaîner et corriger ce qui ne va pas"),
+         "mots": "realisateur correcteur defaut remarque relecture corriger refaire plan fiche barbe raccord enchainer automatique",
+         "intro": _("Le Réalisateur fait les étapes à votre place et ne s'arrête que sur le brouillon et avant de payer. Le "
+                    "correcteur note ce qui ne va pas, trouve la cause et propose une correction avec son prix."),
+         "etapes": [
+             {"texte": _("Dans l'assistant, première page : laissez cochée « Le Réalisateur enchaîne tout ». Décrivez la scène et "
+                         "faites « Suivant » : il prend dans votre bibliothèque ce qui porte le même nom et prépare tout.")},
+             {"texte": _("Sur le brouillon : « Tout me va : fabriquer la vidéo », ou « Je corrige d'abord ».")},
+             {"texte": _("Après la fabrication, il demande s'il faut faire relire chaque plan par l'IA (environ 0,01 $ par plan) : "
+                         "les défauts trouvés s'ajoutent à la liste « Ce qui ne va pas ».")},
+             {"texte": _("Vos remarques : arrêtez l'aperçu au bon instant et écrivez ce qui ne va pas, ou écrivez l'instant "
+                         "vous-même (« à 0:12 le pilote n'a plus sa barbe »), puis « Ajouter ».")},
+             {"texte": _("Choisissez un défaut, « Proposer une correction » : la cause, ce qui sera refait et le prix ; rien ne "
+                         "part sans votre accord.")},
+             {"texte": _("Deux remarques sur le même personnage ou objet : il propose de l'écrire dans sa fiche (et dans votre "
+                         "bibliothèque) pour que ça ne revienne plus.")},
+         ]},
         {"id": "brouillon_sequence", "etat": "ok",
          "titre": _("Voir un brouillon de toute la séquence avant de payer la vraie fabrication"),
          "mots": "brouillon animatique apercu essai sequence entiere avant payer gratuit omni 360p ia locale",

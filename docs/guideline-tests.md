@@ -23,6 +23,17 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T103 — 0.9.98 : Réalisateur et correcteur (scène du tarmac)
+
+1. Assistant de création, première page : « Le Réalisateur enchaîne tout » est cochée. Décrire la scène (pilote, hôtesse, Falcon, deux femmes sur le tarmac) avec les mêmes noms que dans la bibliothèque, « Suivant ».
+2. La barre dit ce qui est pris dans la bibliothèque ; il enchaîne plans et images clefs ; il s'arrête au prix (accepter) puis sur le brouillon gratuit.
+3. « ‹ Précédent » : il se met en pause ; « Relancer le Réalisateur » le reprend.
+4. Sur le brouillon, « Tout me va : fabriquer la vidéo » ; à la fin il demande « Relecture des plans » : accepter ; la liste « Ce qui ne va pas » montre les défauts trouvés avec plan et instant.
+5. Arrêter l'aperçu sur un défaut, écrire ce qui ne va pas, « Ajouter » ; puis écrire « à 0:12 … » sans bouger l'aperçu : la ligne note le bon plan.
+6. Choisir un défaut, « Proposer une correction » : cause, ce qui sera refait, prix. Accepter : seuls les plans concernés repartent (et la fiche ou l'image clef si c'est la cause).
+7. Deux remarques sur le pilote : il propose de l'écrire dans sa fiche ; accepter, vérifier dans la bibliothèque.
+8. Edition › Préférences : la même case existe ; la décocher : l'assistant redevient étape par étape.
+
 ## T102 — 0.9.92 : lèvres sur ce poste (RTX 3070)
 
 1. Edition › Préférences › IA locale : « Lèvres synchronisées sur ce poste » ; l'installer (environ 9 Go : programme en parties, puis modèles) ; la barre du bas suit ; « Réduire » ; à la fin la case est cochée.

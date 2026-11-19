@@ -16,6 +16,8 @@ from . import sequence_ia as Q
 from .langue import _
 
 PRIX_IMAGE = 0.04
+# 0.9.98 : le Réalisateur enchaîne tout par défaut ; les tests le coupent (PHILCUT_REALISATEUR=0), ainsi que la question de relecture
+REALISATEUR_DEFAUT = os.environ.get("PHILCUT_REALISATEUR", "1") == "1"
 PRIX_LECTURE = 0.01            # une lecture par l'IA cloud (analyse, correction, vérification) : ordre de grandeur
 
 
@@ -476,7 +478,7 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
             vieux = dict(vieux, image_fin="", images_ok=False, fichier="", verdict=None)    # son départ a changé : arrivée à refaire
         precedent_change = not vieux                # 0.9.86 : seul ce qui a changé (et le plan qui en part) est refait
         if vieux:
-            for cle in ("image", "image_fin", "images_ok", "sans_fin", "clef", "clef_pourquoi", "fin_reelle", "fichier", "verdict",
+            for cle in ("image", "image_fin", "images_ok", "sans_fin", "clef", "clef_pourquoi", "fin_reelle", "fichier", "verdict", "precision", "precision_fin",
                         "consigne"):
                 if cle in vieux:
                     pl[cle] = vieux[cle]

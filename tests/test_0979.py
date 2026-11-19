@@ -100,6 +100,8 @@ class TestFenetre(unittest.TestCase):
 
         def faux_demander(params, consigne, texte, images=(), niveau="claude", max_jetons=3000):
             demandes.append((consigne[:30], len(list(images))))
+            if "comme une scripte" in consigne:                         # 0.9.98 : relecture du correcteur
+                return {"defauts": [] if len(demandes) % 2 == 0 else [{"t": 1, "quoi": "visage", "texte": "visage différent"}]}
             if "contrôles un plan" in consigne:
                 return {"visages": len(demandes) % 2 == 0, "action": True, "probleme": "visage différent"}
             if "Demande :" in texte:
@@ -120,6 +122,7 @@ class TestFenetre(unittest.TestCase):
         try:
             dl = ed.assistant_creation(c)
             dl._test_oui, dl._test_precision = True, "plus souriant"
+            dl._test_relire = True                                        # 0.9.98 : relecture proposée, ici acceptée
             dl.apercu.charger = lambda *a, **k: None
             dl.apercu.arreter = lambda: None
             self.assertTrue(dl.r_suite.isChecked() and os.path.exists(dl.image))
