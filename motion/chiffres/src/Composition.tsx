@@ -162,12 +162,14 @@ const Barres: React.FC = () => {
             const record = i === VALEURS.length - 1;
             const halo = record ? interpolate(f, [2.6 * fps, 3.2 * fps], [0, 1], borne) : 0;
             return (
-              <div key={MOIS[i]} style={{ flex: 1, height: "100%", display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center" }}>
-                <div style={{ fontFamily: grotesk, fontWeight: 700, fontSize: 32, color: record ? CYAN : TEXTE, marginBottom: 12, opacity: p, fontVariantNumeric: "tabular-nums" }}>
+              <div key={MOIS[i]} style={{ flex: 1, height: "100%", position: "relative" }}>
+                <div style={{ position: "absolute", left: 0, right: 0, bottom: (val / max) * H * p + 12, textAlign: "center", fontFamily: grotesk, fontWeight: 700, fontSize: 32, color: record ? CYAN : TEXTE, opacity: p, fontVariantNumeric: "tabular-nums" }}>
                   {nombre(val * p)}
                 </div>
                 <div
                   style={{
+                    position: "absolute",
+                    bottom: 0,
                     width: "100%",
                     height: (val / max) * H * p,
                     borderRadius: "18px 18px 6px 6px",
