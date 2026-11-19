@@ -1,0 +1,46 @@
+# Motion design (Remotion) : rend une composition de motion/<projet> en MP4 (et trois images de contrôle), en artefact.
+# Les essais servent d'étalon pour le futur moteur Motion de PhilCut (comparaison Remotion / PhilCut dans les docs).
+name: Rendu motion
+
+on:
+  push:
+    paths:
+      - "motion/**"
+      - .github/workflows/rendu_motion.yml
+  workflow_dispatch:
+    inputs:
+      projet:
+        description: "Dossier dans motion/"
+        default: "chiffres"
+      composition:
+        description: "Composition"
+        default: "Chiffres"
+
+jobs:
+  rendu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      PROJET: ${{ inputs.projet || 'chiffres' }}
+      COMPO: ${{ inputs.composition || 'Chiffres' }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Installation
+        run: |
+          cd "motion/$PROJET"
+          npm ci || npm i
+          npx remotion browser ensure
+      - name: Rendu
+        run: |
+          cd "motion/$PROJET"
+          npx tsc --noEmit
+          npx remotion render "$COMPO" "out/$COMPO.mp4" --codec h264 --crf 18
+          for t in 60 200 380; do npx remotion still "$COMPO" "out/${COMPO}_$t.png" --frame=$t; done
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: motion-${{ env.PROJET }}
+          path: motion/${{ env.PROJET }}/out/
