@@ -1688,6 +1688,10 @@ class Timeline(QGraphicsView):
                 sm.addAction(_("Corriger le suivi à la ligne rouge…"), lambda: self.demande_menu.emit(clip["id"], "corriger"))
             a = m.addAction(_("Continuer ce plan avec l'assistant IA…"), lambda: self.demande_menu.emit(clip["id"], "assistant"))
             a.setToolTip(_("Racontez la suite : l'assistant prépare personnages, plans et images, fabrique et relit, budget affiché"))
+            a = m.addAction(_("Remplacer un élément de l'image par un de ma bibliothèque…"),
+                            lambda: self.demande_menu.emit(clip["id"], "remplacer"))
+            a.setToolTip(_("Un avion, une voiture, un objet de l'image remplacé par un élément de votre bibliothèque ; le reste ne "
+                           "change pas (Gemini, environ 0,04 $)"))                                      # 1.0.5
             a = m.addAction(_("Faire parler ce plan sur le son dessous…"), lambda: self.demande_menu.emit(clip["id"], "levres"))
             a.setToolTip(_("Les lèvres du personnage suivent la voix ou la chanson posée sous ce plan"))
             a = m.addAction(_("Prolonger ce plan (image tenue, ralenti ou IA)…"), lambda: self.demande_menu.emit(clip["id"], "prolonger"))

@@ -161,6 +161,64 @@ class Test1004(unittest.TestCase):
         self.assertTrue(gc.isenabled())
 
 
+class Test1005(unittest.TestCase):
+    def test_remplacer_element(self):
+        from PySide6.QtGui import QImage, QColor
+        from PySide6.QtCore import QBuffer, QByteArray, QIODevice
+        from app.fenetre import Fenetre
+        from app import bibliotheque_creations as B, ia, moteur, remplacer_element as R
+        d = tempfile.mkdtemp()
+        src, ref = os.path.join(d, "photo.png"), os.path.join(d, "fiche.png")
+        q = QImage(640, 360, QImage.Format_RGB32)
+        q.fill(QColor("#888888"))
+        q.save(src)
+        q.fill(QColor("#2255aa"))
+        q.save(ref)
+        f = Fenetre()
+        f.bienvenue = lambda *a, **k: None
+        B.garder(f.params, "objet", "Avion d'essai", "Avion bleu", fichiers={"planche": ref})
+        ed = f.nouveau_projet("16:9")
+        m = ed.projet.ajouter_media(src, moteur.sonder(src))
+        c = ed.projet.ajouter_clip(m["id"], "video", 0.0, 0.0, 5.0)
+        dl = ed.remplacer_element(c)
+        dl._test_oui = True
+        self.assertFalse(dl.b_go.isEnabled())
+        dl._zone([0.1, 0.1, 0.6, 0.5])
+        dl.quoi.setText("la voiture")
+        self.assertFalse(dl.b_go.isEnabled())              # l'accord manque
+        dl.accord.setChecked(True)
+        self.assertTrue(dl.b_go.isEnabled())
+        recu = {}
+
+        def faux(params, consigne, images, delai=240):
+            recu.update(c=consigne, i=images)
+            r = QImage(1024, 1024, QImage.Format_RGB32)
+            r.fill(QColor("#aa3333"))
+            ba = QByteArray()
+            b = QBuffer(ba)
+            b.open(QIODevice.WriteOnly)
+            r.save(b, "PNG")
+            return bytes(ba)
+        anc = ia.generer_image_refs
+        ia.generer_image_refs = faux
+        try:
+            dl.lancer()
+            dl.tache.wait(20000)
+            for _ in range(20):
+                app.processEvents()
+        finally:
+            ia.generer_image_refs = anc
+        self.assertTrue(dl.resultat)
+        self.assertEqual((QImage(dl.resultat).width(), QImage(dl.resultat).height()), (640, 360))
+        self.assertEqual(recu["i"][0], src)
+        self.assertTrue(any(p.endswith("planche.png") for p in recu["i"][2:]))
+        self.assertIn("« la voiture »", recu["c"])
+        self.assertTrue(dl.poser())
+        self.assertEqual(ed.projet.media(ed.projet.clip(c["id"])["media"])["chemin"], dl.resultat)
+        ed.projet.modifie = False
+        self.assertIn("red", R.CONSIGNE)
+
+
 class TestRecharger(unittest.TestCase):
     def test_fabrique_suit_le_modele(self):
         from app.fenetre import Fenetre

@@ -1857,6 +1857,10 @@ class Editeur(QWidget):
             c = self.projet.clip(ident)
             if c:
                 self.prolonger_plan(c)
+        elif quoi == "remplacer":                         # 1.0.5
+            c = self.projet.clip(ident)
+            if c:
+                self.remplacer_element(c)
         elif quoi == "recreer_ia":
             self.reprendre_creation(clip_id=ident)
         elif quoi == "copie":
@@ -2879,6 +2883,12 @@ class Editeur(QWidget):
         from .dialogues_modeles import DialogueModeles
         from .widgets import non_bloquante
         return non_bloquante(self, "modeles", lambda: DialogueModeles(self))
+
+    def remplacer_element(self, clip):
+        """1.0.5 : remplacer un élément de l'image (un avion, une voiture…) par un élément de ma bibliothèque, par Gemini."""
+        from .dialogues_remplacer import DialogueRemplacer
+        from .widgets import non_bloquante
+        return non_bloquante(self, ("remplacer", clip["id"]), lambda: DialogueRemplacer(self, clip))
 
     def prolonger_plan(self, clip):
         """Quelques secondes de plus au début ou à la fin d'un plan (image tenue, ralenti ou IA), regardées avant d'être posées."""
