@@ -92,7 +92,7 @@ def texte_credit(fournisseur, solde):
         if fournisseur == "anthropic":
             return _("Crédit {n} : Anthropic ne donne pas le solde aux logiciels ; « Recharger » ouvre votre compte.", n=nom)
         if fournisseur == "higgsfield":                 # 1.0.2 : la console de l'API, pas le compte du site (crédits séparés)
-            return _("Crédit {n} : solde non donné aux logiciels ; « Recharger » ouvre la console de l'API, console.higgsfield.ai "
+            return _("Crédit {n} : solde non donné aux logiciels ; « Recharger » ouvre la console développeur, open.higgsfield.ai "
                      "(les crédits du site higgsfield.ai ne servent pas à l'API) ({d}).", n=nom, d=_ce_mois(fournisseur))
         if fournisseur in ("higgsfield", "heygen"):
             return _("Crédit {n} : solde non donné aux logiciels ; « Recharger » ouvre la console ({d}).", n=nom, d=_ce_mois(fournisseur))

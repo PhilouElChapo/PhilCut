@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.0.2 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.0.3 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.0.3 (Higgsfield : Seedance 2.5, console developpeur)
+- Nouveau moteur video « Seedance 2.5 (Higgsfield) » : texte vers video, 4 a 30 s, 720p, tous les formats (9:16 compris), son du moteur seulement si demande.
+- « Recharger… » et « Connecter » de Higgsfield ouvrent la console developpeur (open.higgsfield.ai, cles d'API et solde).
 
 ### 1.0.2 (retours du 20/11)
 - Sous-titres animes en 9:16 plus gros d'office (texte une fois et un tiers plus grand, lignes plus courtes pour tenir dans l'ecran).

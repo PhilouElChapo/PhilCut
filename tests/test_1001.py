@@ -109,8 +109,26 @@ class Test1002(unittest.TestCase):
 
     def test_higgsfield_console(self):
         from app import credit_ia, generateurs_video as GV
-        self.assertIn("console.higgsfield.ai", credit_ia.texte_credit("higgsfield", None))
-        self.assertEqual(GV.PAGES_CREDIT["higgsfield"], "https://console.higgsfield.ai")
+        self.assertIn("open.higgsfield.ai", credit_ia.texte_credit("higgsfield", None))
+        self.assertEqual(GV.PAGES_CREDIT["higgsfield"], "https://open.higgsfield.ai/api-keys")
+        m = GV.modele("hf-seedance-25", {})
+        self.assertEqual(m["modele"], "bytedance/seedance-2.5/text-to-video")
+        envoye = {}
+
+        def faux(url, cle, corps=None, delai=120):
+            if corps is not None and "prompt" in corps:
+                envoye.update(corps, url=url)
+                return {"status_url": "https://api.higgsfield.ai/requests/x/status"}
+            return {"status": "completed", "video": {"url": "https://x/v.mp4"}}
+        anc_h, anc_t, anc_s = GV._http_hf, GV.telecharger, GV.time.sleep
+        GV._http_hf, GV.telecharger, GV.time.sleep = faux, (lambda u, s: s), (lambda s: None)
+        try:
+            GV.generer_higgsfield("a:b", m, "A cinematic scene at sunset", "/tmp/v.mp4", 5, image="/tmp/x.png", format_="9:16")
+        finally:
+            GV._http_hf, GV.telecharger, GV.time.sleep = anc_h, anc_t, anc_s
+        self.assertEqual((envoye["url"], envoye["duration"], envoye["aspect_ratio"], envoye["resolution"], envoye["generate_audio"]),
+                         ("https://api.higgsfield.ai/bytedance/seedance-2.5/text-to-video", 5, "9:16", "720p", False))
+        self.assertNotIn("image_url", envoye)
 
 
 class TestRecharger(unittest.TestCase):
@@ -144,7 +162,7 @@ class TestRecharger(unittest.TestCase):
         self.assertEqual(sorted(d.boutons_recharge), sorted(["anthropic", "fal", "google", "heygen", "higgsfield"]))
         d._test_ouvert = []
         d.boutons_recharge["higgsfield"].click()
-        self.assertEqual(d._test_ouvert, ["https://console.higgsfield.ai"])
+        self.assertEqual(d._test_ouvert, ["https://open.higgsfield.ai/api-keys"])
         d.close()
 
     def test_fenetre_credits(self):

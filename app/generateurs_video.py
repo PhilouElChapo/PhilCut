@@ -23,8 +23,8 @@ FOURNISSEURS = {
                        _("Copiez la clef (forme « identifiant:secret ») et collez-la ici.")]},
     # 0.9.99 : Higgsfield, paiement à l'usage en dollars (recharge de 5 $ au moins), sans abonnement : l'API est un produit
     # séparé de l'abonnement du site (les crédits de l'un ne paient pas l'autre)
-    "higgsfield": {"nom": "Higgsfield (Kling, Hailuo et autres)", "clef": "clef_higgsfield", "page": "https://console.higgsfield.ai",
-                   "etapes": [_("Ouvrez la console de l'API, console.higgsfield.ai (pas le site higgsfield.ai : ses crédits et son abonnement ne "
+    "higgsfield": {"nom": "Higgsfield (Kling, Hailuo et autres)", "clef": "clef_higgsfield", "page": "https://open.higgsfield.ai/api-keys",
+                   "etapes": [_("Ouvrez la console développeur de l'API, open.higgsfield.ai (pas le site higgsfield.ai : ses crédits et son abonnement ne "
                                 "servent pas à l'API), créez le compte et rechargez le solde en dollars (5 $ au moins, sans abonnement)."),
                               _("Menu « API keys » › créez une clef nommée PhilCut : elle a un identifiant et un secret."),
                               _("Collez « identifiant:secret » ici (les deux, séparés par deux-points).")]},
@@ -61,6 +61,12 @@ MODELES = [
     {"id": "hf-kling-25-pro", "fournisseur": "higgsfield", "nom": "Kling 2.5 Turbo Pro (Higgsfield)",
      "modele": "kling-video/v2.5-turbo/pro/text-to-video", "modele_image": "kling-video/v2.5-turbo/pro/image-to-video",
      "prix_s": 0.07, "durees": [5, 10], "note": _("prix indicatif ; vérifiez-le dans la console Higgsfield")},
+    # 1.0.2 : Seedance 2.5 (texte → vidéo seulement ; page de la console relevée le 20/11/2026 : 4 à 30 s, 480p ou 720p,
+    # formats 16:9, 4:3, 1:1, 3:4, 9:16, 21:9, son par generate_audio, « from 0.144 / s »)
+    {"id": "hf-seedance-25", "fournisseur": "higgsfield", "nom": "Seedance 2.5 (Higgsfield)",
+     "modele": "bytedance/seedance-2.5/text-to-video", "prix_s": 0.144, "durees": list(range(4, 31)), "resolution": "720p",
+     "formats": ["16:9", "4:3", "1:1", "3:4", "9:16", "21:9"], "son_param": "generate_audio",
+     "note": _("texte seulement (pas d'image de départ), jusqu'à 30 s ; prix indicatif")},
     {"id": "hf-hailuo-23", "fournisseur": "higgsfield", "nom": "Hailuo 2.3 (Higgsfield)",
      "modele": "minimax/hailuo-2.3/standard/text-to-video", "modele_image": "minimax/hailuo-2.3/standard/image-to-video",
      "prix_s": 0.05, "durees": [6, 10], "note": _("mouvements vifs ; prix indicatif")},
@@ -164,7 +170,7 @@ def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None
                 return generer_omni(k, consigne, sortie, m["repli"], duree, format_, image, m.get("resolution", "720p"), progression, arret)
             raise
     if m["fournisseur"] == "higgsfield":
-        return generer_higgsfield(k, m, consigne, sortie, duree, image, progression, arret)
+        return generer_higgsfield(k, m, consigne, sortie, duree, image, progression, arret, format_=format_, son=son)
     if m.get("references"):
         return generer_reference(k, m, consigne, sortie, duree, format_, image, image_fin, references, progression, arret, son,
                                  multi if m.get("multi") else None)
@@ -263,7 +269,7 @@ def generer_reference(cle, m, consigne, sortie, duree=5, format_="16:9", image=N
 # ------------------------------------------------------------------ crédit restant (0.9.72)
 PAGES_CREDIT = {"anthropic": "https://console.anthropic.com/settings/billing", "fal": "https://fal.ai/dashboard/usage-billing/credits",
                 "google": "https://aistudio.google.com/usage", "heygen": "https://app.heygen.com/settings?nav=API",
-                "higgsfield": "https://console.higgsfield.ai"}
+                "higgsfield": "https://open.higgsfield.ai/api-keys"}
 
 
 def credit(params, fournisseur):
@@ -326,12 +332,19 @@ def _http_hf(url, cle, corps=None, delai=120):
         raise ErreurGenerateur(f"Higgsfield HTTP {e.code} : {detail}") from e
 
 
-def generer_higgsfield(cle, m, consigne, sortie, duree=5, image=None, progression=None, arret=lambda: False, attente=600.0):
+def generer_higgsfield(cle, m, consigne, sortie, duree=5, image=None, progression=None, arret=lambda: False, attente=600.0,
+                       format_="16:9", son=False):
     """File d'attente Higgsfield : envoi, suivi (status_url), vidéo téléchargée (video.url)."""
     point = (m.get("modele_image") if image and m.get("modele_image") else m["modele"]).strip("/")
     corps = {"prompt": consigne, "duration": int(duree_reelle(m, duree))}
-    if image:
+    if image and m.get("modele_image"):
         corps["image_url"] = _data_uri(image)
+    if m.get("formats"):                          # 1.0.2 : Seedance 2.5 (page de la console) : format, définition, son
+        corps["aspect_ratio"] = format_ if format_ in m["formats"] else "16:9"
+    if m.get("resolution"):
+        corps["resolution"] = m["resolution"]
+    if m.get("son_param"):
+        corps[m["son_param"]] = bool(son)
     r = _http_hf(f"{HIGGSFIELD}/{point}", cle, corps)
     url_etat = r.get("status_url") or f"{HIGGSFIELD}/requests/{r.get('request_id')}/status"
     debut = time.time()
