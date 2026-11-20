@@ -627,11 +627,11 @@ class Rendu:
             p.fillPath(path, self.C["accent2"] if len(txt) > 6 else self.C["texte"])
             p.restore()
             return
-        lignes = M.lignes_st(mots, max_car=22 if self.vertical else 32)
+        lignes = M.lignes_st(mots, max_car=M.ST_VERTICAL_CAR if self.vertical else M.ST_HORIZONTAL_CAR)
         ligne = next((l for l in lignes if l["t0"] - 0.05 <= t < l["t1"] + 0.25), None)
         if not ligne:
             return
-        f = self.police(True, 64 * u * (0.95 if self.vertical else 1.0), 800)
+        f = self.police(True, 64 * u * (M.ST_VERTICAL_TAILLE if self.vertical else 1.0), 800)
         fm = QFontMetricsF(f)
         textes = [(m[2].upper() if maj else m[2]) for m in ligne["mots"]]
         esp = fm.horizontalAdvance(" ")

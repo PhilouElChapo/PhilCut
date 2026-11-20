@@ -9038,5 +9038,8 @@
  "S'abonner": "Subscribe",
  "sur l'année": "over the year",
  "Abonné ✓": "Subscribed ✓",
- "Le crédit de chaque service, ce que PhilCut y a dépensé ce mois, et à quoi il sert": "The credit of each service, what PhilCut spent there this month, and what it is for"
+ "Le crédit de chaque service, ce que PhilCut y a dépensé ce mois, et à quoi il sert": "The credit of each service, what PhilCut spent there this month, and what it is for",
+ "Crédit {n} : solde non donné aux logiciels ; « Recharger » ouvre la console de l'API, console.higgsfield.ai (les crédits du site higgsfield.ai ne servent pas à l'API) ({d}).": "Credit {n}: balance not given to software; “Top up” opens the API console, console.higgsfield.ai (credits from the higgsfield.ai website do not work for the API) ({d}).",
+ "La vidéo, payée à l'usage en dollars sur la console de l'API (console.higgsfield.ai). Les crédits du site higgsfield.ai ne servent pas ici. Modèles :": "Video, paid as you go in dollars on the API console (console.higgsfield.ai). Credits from the higgsfield.ai website do not work here. Models:",
+ "Ouvrez la console de l'API, console.higgsfield.ai (pas le site higgsfield.ai : ses crédits et son abonnement ne servent pas à l'API), créez le compte et rechargez le solde en dollars (5 $ au moins, sans abonnement).": "Open the API console, console.higgsfield.ai (not the higgsfield.ai website: its credits and subscription do not work for the API), create the account and top up the balance in dollars (at least $5, no subscription)."
 }

@@ -90,7 +90,8 @@ def mise_en_page(anim):
             "police_titre": ch.get("police_titre") or "Poppins", "police_texte": ch.get("police_texte") or "Poppins",
             "horaire": M.horaire(anim), "coins": float(ch.get("coins", 0.6)), "panneau": (anim.get("genre") or "chiffres") not in M.HABILLAGE,
             "mots": anim.get("mots") or [], "style_st": anim.get("style_st") or "surligne", "majuscules": anim.get("majuscules", True),
-            "lignes_st": M.lignes_st(anim.get("mots") or [], 22 if vertical else 32), "chapitres": anim.get("chapitres") or [],
+            "lignes_st": M.lignes_st(anim.get("mots") or [], M.ST_VERTICAL_CAR if vertical else M.ST_HORIZONTAL_CAR),
+            "st_taille": M.ST_VERTICAL_TAILLE if vertical else 1.0, "chapitres": anim.get("chapitres") or [],
             "image": anim.get("_html_image") or "", "image_ratio": float(anim.get("_html_ratio") or 0),
             "elements": [[_insecable(str(l)), (float(v) if v is not None else None), _insecable(str(t or "")),
                           _insecable(M.nombre_texte(anim, v) if v is not None else "")] for l, v, t in M.elements(anim)],
@@ -354,7 +355,7 @@ function sous_titres() {
   A.lignes_st.forEach((l) => {
     const y = A.zy + A.zh * (A.vertical ? 0.74 : 0.80);
     const box = $("div", `position:absolute;left:${A.zx}px;width:${A.zw}px;text-align:center;top:${y - 70 * uu}px;opacity:0;` +
-      `font-size:${64 * uu * (A.vertical ? 0.95 : 1)}px;font-weight:800;white-space:nowrap`);
+      `font-size:${64 * uu * (A.st_taille || 1)}px;font-weight:800;white-space:nowrap`);
     box.className = "titre";
     tl.set(box, { opacity: 1 }, Math.max(0, l.t0 - 0.05));
     tl.set(box, { opacity: 0 }, l.t1 + 0.25);

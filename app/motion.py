@@ -524,6 +524,10 @@ def chapitres(projet, debut=0.0, duree=None):
 
 
 # ------------------------------------------------------------------ sous-titres : les lignes
+# 1.0.2 : sous-titres en 9:16 plus gros d'office (Philippe, 20/11 16h15) : texte ×1,3, lignes plus courtes pour tenir
+ST_VERTICAL_TAILLE, ST_VERTICAL_CAR, ST_HORIZONTAL_CAR = 1.3, 16, 32
+
+
 def lignes_st(mots, max_car=28, max_mots=6, pause=0.7):
     """Les mots regroupés en courtes lignes (au plus max_car caractères, coupées aux pauses) : [{t0, t1, mots: [[t0, t1, mot]]}]."""
     out, cour = [], []

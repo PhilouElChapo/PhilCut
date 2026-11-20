@@ -24,7 +24,8 @@ FOURNISSEURS = {
     # 0.9.99 : Higgsfield, paiement à l'usage en dollars (recharge de 5 $ au moins), sans abonnement : l'API est un produit
     # séparé de l'abonnement du site (les crédits de l'un ne paient pas l'autre)
     "higgsfield": {"nom": "Higgsfield (Kling, Hailuo et autres)", "clef": "clef_higgsfield", "page": "https://console.higgsfield.ai",
-                   "etapes": [_("Créez un compte API sur Higgsfield (console) et rechargez le solde (5 $ au moins, sans abonnement)."),
+                   "etapes": [_("Ouvrez la console de l'API, console.higgsfield.ai (pas le site higgsfield.ai : ses crédits et son abonnement ne "
+                                "servent pas à l'API), créez le compte et rechargez le solde en dollars (5 $ au moins, sans abonnement)."),
                               _("Menu « API keys » › créez une clef nommée PhilCut : elle a un identifiant et un secret."),
                               _("Collez « identifiant:secret » ici (les deux, séparés par deux-points).")]},
     # 0.9.99 : HeyGen, pour le rendu cloud des animations HyperFrames (pas de plans vidéo ici)

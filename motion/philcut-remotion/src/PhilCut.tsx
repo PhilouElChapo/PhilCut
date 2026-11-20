@@ -15,7 +15,7 @@ export type Animation = {
   polices?: [string, string, number][]; logo?: string;
   // 1.0.0 : horaire commun (secondes de l'animation), sous-titres animés, habillage
   horaire?: Horaire; coins?: number; panneau?: boolean; mots?: [number, number, string][]; style_st?: string; majuscules?: boolean;
-  lignes_st?: { t0: number; t1: number; mots: [number, number, string][] }[]; chapitres?: [number, string][]; image?: string;
+  lignes_st?: { t0: number; t1: number; mots: [number, number, string][] }[]; chapitres?: [number, string][]; image?: string; st_taille?: number;
   image_ratio?: number;
   // 1.0.1 : neuf types de plus
   elements?: [string, number | null, string, string][]; palette?: string[]; bouton?: string; bouton_fait?: string;
@@ -331,7 +331,7 @@ const SousTitres: React.FC<SceneProps> = ({ A }) => {
   if (!l) return null;
   return (
     <div style={{ position: "absolute", left: A.zx, width: A.zw, textAlign: "center", top: A.zy + A.zh * (A.vertical ? 0.74 : 0.8) - 70 * u, fontFamily: titreF(A),
-      fontWeight: 800, fontSize: 64 * u * (A.vertical ? 0.95 : 1), whiteSpace: "nowrap" }}>
+      fontWeight: 800, fontSize: 64 * u * (A.st_taille || 1), whiteSpace: "nowrap" }}>
       {l.mots.map(([t0, t1, w], i) => {
         const dit = t0 <= t, courant = t0 <= t && t < Math.max(t1, t0 + 0.15);
         const k = st === "saute" ? (dit ? ressortT(A, (t - t0) * 1.3, 260) : 0) : 1;

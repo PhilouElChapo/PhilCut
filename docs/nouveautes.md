@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.0.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.0.2 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.0.2 (retours du 20/11)
+- Sous-titres animes en 9:16 plus gros d'office (texte une fois et un tiers plus grand, lignes plus courtes pour tenir dans l'ecran).
+- Higgsfield : PhilCut precise que l'API se recharge sur la console (console.higgsfield.ai), en dollars ; les credits du site higgsfield.ai ne servent pas a l'API.
 
 ### 1.0.1 (neuf types d'animation de plus, « Recharger… » pour chaque modele)
 - Animation : camembert (parts d'un total), jauge en pourcentage, comparaison avant / apres (avec l'evolution en %), classement en barres horizontales, chiffres clefs en tuiles, chronologie (frise, une ligne par date), liste a points, citation (mot par mot, puis l'auteur), appel a l'action (un bouton « S'abonner » que la souris vient cliquer, pose au-dessus du film).

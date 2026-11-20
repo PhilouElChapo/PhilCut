@@ -9029,5 +9029,8 @@
  "S'abonner": "Iscriviti",
  "sur l'année": "nell'anno",
  "Abonné ✓": "Iscritto ✓",
- "Le crédit de chaque service, ce que PhilCut y a dépensé ce mois, et à quoi il sert": "Il credito di ogni servizio, quanto PhilCut vi ha speso questo mese, e a cosa serve"
+ "Le crédit de chaque service, ce que PhilCut y a dépensé ce mois, et à quoi il sert": "Il credito di ogni servizio, quanto PhilCut vi ha speso questo mese, e a cosa serve",
+ "Crédit {n} : solde non donné aux logiciels ; « Recharger » ouvre la console de l'API, console.higgsfield.ai (les crédits du site higgsfield.ai ne servent pas à l'API) ({d}).": "Credito {n}: il saldo non viene fornito ai programmi; «Ricarica» apre la console dell'API, console.higgsfield.ai (i crediti del sito higgsfield.ai non valgono per l'API) ({d}).",
+ "La vidéo, payée à l'usage en dollars sur la console de l'API (console.higgsfield.ai). Les crédits du site higgsfield.ai ne servent pas ici. Modèles :": "Il video, a consumo in dollari sulla console dell'API (console.higgsfield.ai). I crediti del sito higgsfield.ai non valgono qui. Modelli:",
+ "Ouvrez la console de l'API, console.higgsfield.ai (pas le site higgsfield.ai : ses crédits et son abonnement ne servent pas à l'API), créez le compte et rechargez le solde en dollars (5 $ au moins, sans abonnement).": "Aprite la console dell'API, console.higgsfield.ai (non il sito higgsfield.ai: i suoi crediti e il suo abbonamento non valgono per l'API), create l'account e ricaricate il saldo in dollari (almeno 5 $, senza abbonamento)."
 }

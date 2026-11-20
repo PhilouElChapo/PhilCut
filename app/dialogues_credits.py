@@ -19,7 +19,8 @@ def usages(params, fournisseur):
     fixes = {"anthropic": _("Le cerveau des assistants : scénarios, plans, animations préparées et corrigées, Réalisateur."),
              "google": _("Le cerveau des assistants (si Gemini est choisi), les images dessinées, les voix, et la vidéo :"),
              "fal": _("La vidéo, les lèvres qui suivent le son, la transformation de voix :"),
-             "higgsfield": _("La vidéo, payée à l'usage (sans abonnement) :"),
+             "higgsfield": _("La vidéo, payée à l'usage en dollars sur la console de l'API (console.higgsfield.ai). Les crédits du "
+                            "site higgsfield.ai ne servent pas ici. Modèles :"),
              "heygen": _("Le rendu dans le cloud des animations HyperFrames (motion design).")}
     noms = sorted(m["nom"] for m in GV.modeles(params) if m.get("fournisseur") == fournisseur)
     return fixes.get(fournisseur, ""), noms

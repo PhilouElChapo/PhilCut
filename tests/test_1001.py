@@ -97,6 +97,22 @@ class TestTypes(unittest.TestCase):
             MR.dossier = anc
 
 
+class Test1002(unittest.TestCase):
+    def test_sous_titres_verticaux_plus_gros(self):
+        from app import motion as M, motion_html as MH
+        a = M.preparer_genre(M.nouvelle(taille=(1080, 1920)), "sous_titres")
+        a["mots"] = [[0.3 * i, 0.3 * i + 0.28, w] for i, w in enumerate("un deux trois quatre cinq six sept huit neuf dix".split())]
+        mp = MH.mise_en_page(a)
+        self.assertGreater(mp["st_taille"], 1.0)
+        self.assertTrue(all(len(" ".join(m[2] for m in l["mots"])) <= M.ST_VERTICAL_CAR for l in mp["lignes_st"]))
+        self.assertEqual(MH.mise_en_page(M.preparer_genre(M.nouvelle(), "sous_titres"))["st_taille"], 1.0)
+
+    def test_higgsfield_console(self):
+        from app import credit_ia, generateurs_video as GV
+        self.assertIn("console.higgsfield.ai", credit_ia.texte_credit("higgsfield", None))
+        self.assertEqual(GV.PAGES_CREDIT["higgsfield"], "https://console.higgsfield.ai")
+
+
 class TestRecharger(unittest.TestCase):
     def test_fabrique_suit_le_modele(self):
         from app.fenetre import Fenetre
