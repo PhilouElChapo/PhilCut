@@ -230,6 +230,27 @@ class Test1006(unittest.TestCase):
         self.assertEqual(s["plans"][1]["action"], "Les deux femmes marchent côte à côte")
         self.assertEqual(GV.PAGES_CREDIT["heygen"], "https://platform.heygen.com/billing")
 
+    def test_remplacer_fichier_patient(self):
+        from app import config
+        d = tempfile.mkdtemp()
+        a, b = os.path.join(d, "x.tmp"), os.path.join(d, "x")
+        open(a, "w").write("neuf")
+        open(b, "w").write("vieux")
+        vrai, n = os.replace, [0]
+
+        def bloque(s, c):
+            n[0] += 1
+            if n[0] < 3:
+                raise PermissionError(32, "utilisé par un autre processus")
+            return vrai(s, c)
+        os.replace = bloque
+        try:
+            config.remplacer_fichier(a, b, pause=0.01)
+        finally:
+            os.replace = vrai
+        self.assertEqual(open(b).read(), "neuf")
+        self.assertEqual(n[0], 3)
+
 
 class TestRecharger(unittest.TestCase):
     def test_fabrique_suit_le_modele(self):

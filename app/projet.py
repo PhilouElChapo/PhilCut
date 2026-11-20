@@ -517,7 +517,8 @@ class Projet:
         tmp = chemin + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(d, f, ensure_ascii=False, indent=1)
-        os.replace(tmp, chemin)
+        from .config import remplacer_fichier
+        remplacer_fichier(tmp, chemin)            # 1.0.6 : WinError 32 quand Drive ou l'antivirus lit le fichier
         self.chemin = chemin
         self.modifie = False
         return chemin

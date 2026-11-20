@@ -7,7 +7,7 @@ et rien n'est ecrit ailleurs sur le PC ni dans le registre.
 import json, os, platform, sys
 
 APP = "PhilCut"
-VERSION = "1.0.6"
+VERSION = "1.0.7"
 
 
 def dossier_programme():
@@ -18,6 +18,28 @@ def dossier_programme():
 
 def est_portable():
     return os.path.exists(os.path.join(dossier_programme(), "portable.txt"))
+
+
+def remplacer_fichier(tmp, cible, essais=25, pause=0.2):
+    """1.0.6 : os.replace avec patience. Sous Windows, un autre programme (Google Drive pour ordinateur, OneDrive, l'antivirus,
+    l'indexation) qui lit le fichier à cet instant fait échouer le remplacement (WinError 32, « utilisé par un autre
+    processus ») : on réessaie quelques secondes ; en dernier recours on écrit le contenu par-dessus."""
+    import time
+    derniere = None
+    for _i in range(essais):
+        try:
+            os.replace(tmp, cible)
+            return cible
+        except PermissionError as e:
+            derniere = e
+            time.sleep(pause)
+    try:
+        import shutil
+        shutil.copyfile(tmp, cible)
+        os.remove(tmp)
+        return cible
+    except OSError:
+        raise derniere
 
 
 def dossier_donnees():
@@ -149,7 +171,7 @@ class Parametres(dict):
         try:
             with open(self.chemin + ".tmp", "w", encoding="utf-8") as f:
                 json.dump(donnees, f, ensure_ascii=False, indent=2)
-            os.replace(self.chemin + ".tmp", self.chemin)
+            remplacer_fichier(self.chemin + ".tmp", self.chemin)
         except OSError:
             pass
 

@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.0.6 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.0.7 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.0.7 (enregistrement)
+- « Enregistrer » ne s'arrete plus sur « WinError 32 : le fichier est utilise par un autre processus » (Google Drive, OneDrive ou l'antivirus qui lit le projet a ce moment-la) : PhilCut reessaie quelques secondes.
 
 ### 1.0.6 (retours du test du tarmac)
 - Assistant : une carte renommee en la prenant dans la bibliotheque (« Maxime » devenu « Pilote Maxime ») garde ses plans ; avant, le personnage disparaissait des plans et n'avait pas de fiche.
