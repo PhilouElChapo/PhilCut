@@ -43,7 +43,26 @@ GENRES = {
                                                                "chapitres (vos repères) : on sait où l'on en est.")},
     "defilement": {"nom": _("Capture qui défile"), "aide": _("Une capture (page web, document, conversation) dans un cadre, qui "
                                                             "défile doucement de haut en bas.")},
+    # 1.0.1 : plus de types (Philippe, 20/11 13h09 « il en faut plus »)
+    "camembert": {"nom": _("Camembert (parts d'un total)"), "aide": _("Un anneau qui se remplit part par part, avec la légende et "
+                                                                      "les pourcentages : la répartition d'un budget, d'un public…")},
+    "jauge": {"nom": _("Jauge en pourcentage"), "aide": _("Un anneau qui se remplit jusqu'au pourcentage pendant que le chiffre "
+                                                          "monte : un taux, un objectif atteint.")},
+    "comparaison": {"nom": _("Comparaison avant / après"), "aide": _("Deux chiffres face à face (les deux premières lignes de vos "
+                                                                     "données), leurs barres, et l'évolution en pourcentage.")},
+    "classement": {"nom": _("Classement (barres horizontales)"), "aide": _("Vos lignes rangées de la plus grande à la plus petite, "
+                                                                          "avec leur rang : un palmarès, un top 5.")},
+    "chiffres_cles": {"nom": _("Chiffres clefs (2 à 4 tuiles)"), "aide": _("Deux à quatre chiffres dans des tuiles, qui montent "
+                                                                         "l'un après l'autre : le résumé d'une année.")},
+    "chronologie": {"nom": _("Chronologie (frise)"), "aide": _("Une frise qui se trace, une date et un texte par ligne : « 1998 : "
+                                                              "ouverture »…")},
+    "liste": {"nom": _("Liste à points"), "aide": _("Les points arrivent un par un avec une coche : étapes, conseils, avantages.")},
+    "citation": {"nom": _("Citation"), "aide": _("Une phrase en grand avec ses guillemets, mot par mot, puis son auteur.")},
+    "appel": {"nom": _("Appel à l'action (s'abonner…)"), "aide": _("Un bouton que la souris vient cliquer : « S'abonner », « Lien en "
+                                                                  "description », « Réserver »…")},
 }
+A_LIGNES = ("chronologie", "liste")                        # genres qui prennent des lignes de texte (anim["lignes"])
+A_DONNEES = ("compteur", "barres", "courbe", "chiffres", "camembert", "comparaison", "classement", "chiffres_cles")
 STYLES_ST = {"surligne": _("Mot surligné (le mot dit dans une boîte de couleur)"), "saute": _("Mots qui sautent, un à un"),
              "un_mot": _("Un grand mot à la fois, au centre"), "karaoke": _("Karaoké (la ligne se colore au fil des mots)")}
 CALAGES = {"": _("Rien (horaire par défaut)"), "voix": _("La voix : quand le chiffre, le mois, le mot est dit"),
@@ -58,6 +77,12 @@ REGLAGES = [  # (clef, libellé, minimum, maximum, défaut) : les curseurs de la
     ("taille_texte", _("Taille du texte"), 0.6, 1.4, 1.0),
 ]
 EXEMPLE = [["Janv.", 3120], ["Févr.", 4380], ["Mars", 3960], ["Avr.", 5870], ["Mai", 7240], ["Juin", 9820]]   # neutre
+
+
+def TITRES_EXEMPLE():
+    """Les titres d'exemple : on les remplace en changeant de type, jamais le texte de l'utilisateur."""
+    return (_("Visiteurs, premier semestre"), _("Camille Martin"), _("S'abonner pour la suite"), _("La simplicité est la sophistication suprême."),
+            _("Objectif atteint"), _("Avant / après"), _("Le semestre en chiffres"), _("Notre histoire"), _("Pourquoi l'essayer"))
 
 
 def nouvelle(genre="chiffres", charte=None, taille=(1920, 1080)):
@@ -81,7 +106,45 @@ def instant_vignette(anim):
         g, D * (0.5 if g == "chiffres" else 0.55))
 
 
-HABILLAGE = ("sous_titres", "bandeau", "progression")      # posés sur le film : transparents d'office
+def elements(anim):
+    """Les éléments qui arrivent un à un : [(libellé, valeur ou None, texte)] selon le genre."""
+    g = anim.get("genre")
+    d = [x for x in anim.get("donnees") or [] if len(x) >= 2] or [list(x) for x in EXEMPLE]
+    if g in A_LIGNES:
+        out = []
+        for l in anim.get("lignes") or []:
+            l = str(l).strip()
+            if not l:
+                continue
+            m = re.match(r"^(.{1,24}?)\s*(?:[:—–]|\s-\s)\s*(.+)$", l) if g == "chronologie" else None
+            out.append((m.group(1), None, m.group(2)) if m else (l if g == "liste" else "", None, l if g == "liste" else l))
+        return out[:12]
+    if g == "classement":
+        return [(l, float(v), "") for l, v in sorted(d, key=lambda x: -float(x[1]))][:10]
+    if g == "chiffres_cles":
+        return [(l, float(v), "") for l, v in d][:4]
+    if g == "comparaison":
+        return [(l, float(v), "") for l, v in d][:2]
+    if g == "camembert":
+        return [(l, float(v), "") for l, v in d if float(v) > 0][:8]
+    return [(l, float(v), "") for l, v in d]
+
+
+def palette(charte, n):
+    """n couleurs de la charte pour les parts d'un camembert : de l'accent au second accent, puis plus claires."""
+    from . import charte as CH
+    c = CH.complete(charte)["couleurs"]
+    out = []
+    for i in range(max(1, n)):
+        x = i / max(1, n - 1)
+        coul = CH.melanger(c["accent"], c["accent2"], x)
+        if i % 2 and n > 3:
+            coul = CH.melanger(coul, c["texte"], 0.25)
+        out.append(coul)
+    return out
+
+
+HABILLAGE = ("sous_titres", "bandeau", "progression", "appel")   # posés sur le film : transparents d'office
 
 
 def preparer_genre(anim, genre):
@@ -91,14 +154,45 @@ def preparer_genre(anim, genre):
     anim["horaire"] = None
     if genre in HABILLAGE:
         anim["transparent"] = True
-    if genre == "bandeau" and anim.get("titre") == _("Visiteurs, premier semestre"):
+    exemple = anim.get("titre") in TITRES_EXEMPLE()
+    exemple_donnees = anim.get("donnees") in ([list(x) for x in EXEMPLE], [[_("2025"), 120.0], [_("2026"), 150.0]])
+    if exemple and genre not in ("bandeau", "citation", "appel", "jauge", "comparaison", "chronologie", "liste"):
+        anim["titre"], anim["sous_titre"] = _("Visiteurs, premier semestre"), _("Visiteurs par mois")
+        if exemple_donnees:
+            anim["donnees"] = [list(x) for x in EXEMPLE]
+            anim["valeur"], anim["suffixe"] = sum(v for _l, v in EXEMPLE), ""
+    if genre == "chiffres_cles" and exemple:
+        anim["titre"], anim["sous_titre"] = _("Le semestre en chiffres"), ""
+    elif genre == "chronologie" and exemple:
+        anim["titre"], anim["sous_titre"] = _("Notre histoire"), ""
+    elif genre == "liste" and exemple:
+        anim["titre"], anim["sous_titre"] = _("Pourquoi l'essayer"), ""
+    elif genre == "bandeau" and exemple:
         anim["titre"], anim["sous_titre"] = _("Camille Martin"), _("Responsable de l'atelier")
+    elif genre == "citation" and exemple:
+        anim["titre"], anim["sous_titre"] = _("La simplicité est la sophistication suprême."), _("proverbe")
+    elif genre == "appel" and exemple:
+        anim["titre"], anim["sous_titre"], anim["bouton"] = _("S'abonner pour la suite"), _("une vidéo chaque semaine"), _("S'abonner")
+    elif genre == "jauge" and exemple:
+        anim.update(titre=_("Objectif atteint"), sous_titre=_("sur l'année"))
+        if exemple_donnees:
+            anim.update(valeur=72, suffixe=" %")
+    elif genre == "comparaison" and exemple:
+        anim.update(titre=_("Avant / après"), sous_titre="")
+        if exemple_donnees:
+            anim["donnees"] = [[_("2025"), 120.0], [_("2026"), 150.0]]
+    if genre in A_LIGNES and not anim.get("lignes"):
+        anim["lignes"] = ([_("1998 : ouverture de l'atelier"), _("2010 : deuxième atelier"), _("2020 : boutique en ligne"),
+                           _("2026 : 10 000 clients")] if genre == "chronologie" else
+                          [_("Simple à prendre en main"), _("Rapide, même sur un portable"), _("Vos couleurs partout"),
+                           _("Rien n'est payé sans votre accord")])
     return anim
 
 
 def duree_conseillee(genre):
     return {"compteur": 4.5, "barres": 5.5, "courbe": 5.0, "titre": 4.0, "chiffres": 14.0, "bandeau": 5.0, "progression": 30.0,
-            "defilement": 8.0, "sous_titres": 10.0}.get(genre, 6.0)
+            "defilement": 8.0, "sous_titres": 10.0, "camembert": 6.0, "jauge": 4.5, "comparaison": 5.0, "classement": 6.0,
+            "chiffres_cles": 5.5, "chronologie": 7.0, "liste": 6.0, "citation": 6.0, "appel": 4.5}.get(genre, 6.0)
 
 
 # ------------------------------------------------------------------ l'horaire : quand chaque élément arrive (1.0.0)
@@ -142,6 +236,20 @@ def horaire(anim):
         h["bandeau"] = {"entree": 0.1 / V, "texte": 0.35 / V, "sortie": max(0.8, D - 0.7 / V)}
     elif g in ("progression", "defilement", "sous_titres"):
         h["scenes"][g] = [0, D]
+    elif g == "jauge":
+        h["scenes"][g] = [0, D]
+        h[g] = {"debut": 0.4 / V, "fin": 2.6 / V}
+    elif g == "citation":
+        mots = (anim.get("titre") or "").split()
+        h["scenes"][g] = [0, D]
+        h[g] = {"mots": [(0.4 + k * dec * 0.6) / V for k in range(len(mots))], "auteur": (0.8 + len(mots) * dec * 0.6) / V}
+    elif g == "appel":
+        h["scenes"][g] = [0, D]
+        h[g] = {"entree": 0.2 / V, "curseur": 0.9 / V, "clic": 1.9 / V}
+    elif g in ("camembert", "comparaison", "classement", "chiffres_cles", "chronologie", "liste"):
+        k = len(elements(anim))
+        h["scenes"][g] = [0, D]
+        h[g] = {"entrees": [(0.5 + i * dec * 2.2) / V for i in range(k)], "fin": (0.5 + k * dec * 2.2 + 0.6) / V}
     else:
         compteur(0, D * 4.3 / 14)
         barres(D * 4.0 / 14, D * 9.4 / 14)
@@ -222,6 +330,36 @@ def caler_voix(anim, mots):
             c["record"] = max(t, c["debut"] + 0.8)
             c["fin"] = max(c["debut"] + 0.8, min(c["fin"], c["record"]))
             trouves += 1
+    g = anim.get("genre")
+    if g in ("camembert", "comparaison", "classement", "chiffres_cles", "chronologie", "liste") and g in h:
+        apres = -1.0
+        e = h[g]["entrees"]
+        for i, (lib, _v, txt) in enumerate(elements(anim)):
+            mot = (str(lib or txt).split() or [""])[0]
+            cle = _norm(mot)[:4]
+            t = chercher(lambda w, c=cle: len(c) >= 2 and _norm(w).startswith(c), apres) if cle else None
+            if t is not None and i < len(e):
+                e[i] = t
+                apres = t
+                trouves += 1
+            elif 0 < i < len(e):
+                e[i] = max(e[i], e[i - 1] + 0.35)
+        h[g]["fin"] = max(h[g]["fin"], (e[-1] + 0.6) if e else 0)
+    if g == "jauge":
+        v = anim.get("valeur")
+        t = chercher(lambda w: _nombre_dit(w, v)) if v is not None else None
+        if t is not None:
+            h[g].update(fin=t + 0.25, debut=max(0.1, t + 0.25 - 2.2))
+            trouves += 1
+    if g == "citation":
+        cit = [_norm(w) for w in (anim.get("titre") or "").split()]
+        apres = 0.0
+        for k, m in enumerate(cit):
+            t = chercher(lambda w, m=m: m and _norm(w) == m, apres)
+            if t is not None:
+                h[g]["mots"][k] = t
+                apres = t
+                trouves += 1
     if "titre" in h:
         titre = [_norm(w) for w in (anim.get("titre") or "").split()]
         apres = 0.0
@@ -288,6 +426,26 @@ def caler_musique(anim, temps, forts=()):
             n += len(e)
     if "bandeau" in h:
         h["bandeau"]["entree"] = proche(h["bandeau"]["entree"], forts)
+        n += 1
+    for g in ("camembert", "comparaison", "classement", "chiffres_cles", "chronologie", "liste"):
+        if g in h and h[g]["entrees"]:
+            e = suivants(h[g]["entrees"][0], len(h[g]["entrees"]))
+            if e:
+                h[g]["entrees"] = e
+                h[g]["fin"] = e[-1] + ecart
+                n += len(e)
+    if "jauge" in h:
+        h["jauge"]["fin"] = proche(h["jauge"]["fin"], forts)
+        h["jauge"]["debut"] = max(0.1, h["jauge"]["fin"] - 2.2)
+        n += 1
+    if "citation" in h and h["citation"]["mots"]:
+        e = suivants(h["citation"]["mots"][0], len(h["citation"]["mots"]))
+        if e:
+            h["citation"]["mots"] = e
+            h["citation"]["auteur"] = e[-1] + ecart
+            n += len(e)
+    if "appel" in h:
+        h["appel"]["clic"] = proche(h["appel"]["clic"], forts)
         n += 1
     for k in list(h["scenes"]):
         a, b = h["scenes"][k]
@@ -606,18 +764,22 @@ def recette(chemin):
 # ------------------------------------------------------------------ l'IA prépare, l'IA corrige
 CONSIGNE_IA = """Tu prépares une animation de motion design pour une vidéo (chiffres, graphiques, titres). L'utilisateur décrit ce
 qu'il veut ; tu remplis la fiche. Réponds en JSON seul :
-{{"genre": "compteur|barres|courbe|titre|chiffres", "titre": "...", "sous_titre": "...", "valeur": nombre ou null,
+{{"genre": "compteur|barres|courbe|titre|chiffres|camembert|jauge|comparaison|classement|chiffres_cles|chronologie|liste|citation|appel",
+"titre": "...", "sous_titre": "...", "valeur": nombre ou null, "lignes": ["...", ...], "bouton": "texte du bouton",
 "prefixe": "", "suffixe": " €" ou " %" ou "", "badge": "texte court ou vide", "titre_barres": "...", "titre_courbe": "...",
 "sous_titre_courbe": "...", "donnees": [["libellé", nombre], ...], "source": "source des chiffres si donnée, sinon vide",
 "duree": secondes, "reglages": {{"vitesse": 0.5..2, "rebond": 0..1, "decalage": 0..1, "epaisseur": 0.2..1, "lueur": 0..1,
 "taille_texte": 0.6..1.4}}, "message": "ce que tu as compris, en une phrase"}}
+Genres : camembert (parts d'un tout), jauge (un pourcentage, valeur de 0 à 100), comparaison (deux valeurs, avant/après),
+classement (du plus grand au plus petit), chiffres_cles (2 à 4 chiffres en cartes), chronologie (lignes « 2020 : fait »),
+liste (lignes de points clefs), citation (titre = la citation, sous_titre = l'auteur), appel (titre, sous_titre, bouton).
 Règles : n'invente jamais de chiffres ; si l'utilisateur n'en donne pas, garde ceux de la fiche actuelle. Textes courts (un
 titre tient sur une ligne), dans la langue de l'utilisateur ({langue}). Chiffres arrondis comme il les a écrits.
 Fiche actuelle : {fiche}"""
 
 
 def _fiche_ia(anim):
-    return json.dumps({k: anim.get(k) for k in ("genre", "titre", "sous_titre", "valeur", "prefixe", "suffixe", "badge",
+    return json.dumps({k: anim.get(k) for k in ("genre", "titre", "sous_titre", "valeur", "prefixe", "suffixe", "badge", "lignes", "bouton",
                                                  "titre_barres", "titre_courbe", "sous_titre_courbe", "donnees", "source", "duree",
                                                  "reglages")}, ensure_ascii=False)
 
@@ -628,9 +790,13 @@ def appliquer_ia(anim, r):
         return a
     if r.get("genre") in GENRES:
         a["genre"] = r["genre"]
-    for k in ("titre", "sous_titre", "prefixe", "suffixe", "badge", "titre_barres", "titre_courbe", "sous_titre_courbe", "source"):
+    for k in ("titre", "sous_titre", "prefixe", "suffixe", "badge", "titre_barres", "titre_courbe", "sous_titre_courbe", "source", "bouton"):
         if isinstance(r.get(k), str):
             a[k] = r[k][:120]
+    if isinstance(r.get("lignes"), list):
+        lg = [str(x).strip()[:90] for x in r["lignes"] if str(x).strip()]
+        if lg:
+            a["lignes"] = lg[:8]
     if isinstance(r.get("valeur"), (int, float)):
         a["valeur"] = float(r["valeur"])
     d = []

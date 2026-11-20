@@ -217,7 +217,8 @@ def _guides_integres():
         {"id": "animation_motion", "etat": "ok",
          "titre": _("Animer des chiffres, des graphiques ou un titre (motion design)"),
          "mots": "animation motion design chiffre compteur barres graphique courbe infographie titre anime charte couleurs logo "
-                 "hyperframes remotion heygen tableau excel",
+                 "hyperframes remotion heygen tableau excel camembert jauge pourcentage comparaison avant apres classement "
+                 "chiffres cles chronologie frise liste points citation appel action abonner bouton",
          "intro": _("Un chiffre qui monte, des barres qui poussent, une courbe qui se trace ou un titre animé, aux couleurs de votre "
                     "charte. PhilCut dessine l'aperçu tout de suite et conseille le moteur ; vous choisissez."),
          "etapes": [
@@ -225,11 +226,27 @@ def _guides_integres():
                          "corrigez, OK. Une fois pour toutes.")},
              {"texte": _("Fabrique IA › Animation › « Animation de chiffres, graphiques ou titre… » : écrivez ce que vous voulez et "
                          "« ✨ Préparer avec l'IA », ou remplissez la fiche ; « Coller un tableau » prend vos lignes d'Excel.")},
+             {"texte": _("Le type : chiffre, barres, courbe, camembert (parts d'un tout), jauge (un pourcentage), comparaison "
+                         "avant / après, classement, chiffres clefs en cartes, chronologie, liste de points, citation, titre ou "
+                         "appel à l'action (« S'abonner », cliqué par la souris). Chronologie et liste : une ligne par élément.")},
              {"texte": _("Regardez (▶), choisissez une des trois propositions, réglez les curseurs ; une remarque à l'instant "
                          "(« à 0:03 la barre est trop rouge ») et « Corriger par l'IA ».")},
              {"texte": _("Moteur : celui marqué ★ est conseillé. HyperFrames et Remotion s'installent une fois (« Installer… ») ; "
                          "HeyGen demande votre clef et affiche son prix ; Remotion demande de confirmer votre droit à sa licence.")},
              {"texte": _("« Fabriquer », regardez, puis « Poser au-dessus du film » (transparent) ou « Insérer à la ligne rouge ».")},
+         ]},
+        {"id": "credits_recharges", "etat": "ok",
+         "titre": _("Voir le crédit de chaque IA payante et le recharger"),
+         "mots": "credit solde recharger recharge payer compte depense mois claude gemini fal higgsfield heygen clef modele",
+         "intro": _("Chaque service payant se paie avec votre compte. PhilCut montre son crédit quand le service le donne, ce qu'il "
+                    "y a dépensé ce mois sur ce poste, et ouvre la page de votre compte pour recharger."),
+         "etapes": [
+             {"texte": _("Fabrique IA › « Crédits et recharges des IA… » : un cadre par service, à quoi il sert, ses modèles, son "
+                         "crédit, « Recharger… » et « Connecter… ».")},
+             {"texte": _("Dans la Fabrique (plan généré par IA), la ligne de crédit suit le modèle choisi : changer de modèle "
+                         "montre le service qui le fabrique et son bouton « Recharger… ».")},
+             {"texte": _("Préférences › Assistant et IA : « Recharger… » à côté de chaque clef.")},
+             {"texte": _("Si un service répond « crédit épuisé », rien n'est payé et son bouton « Recharger… » passe en rouge.")},
          ]},
         {"id": "realisateur_correcteur", "etat": "ok",
          "titre": _("Laisser le Réalisateur enchaîner et corriger ce qui ne va pas"),

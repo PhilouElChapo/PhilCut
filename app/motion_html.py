@@ -91,7 +91,11 @@ def mise_en_page(anim):
             "horaire": M.horaire(anim), "coins": float(ch.get("coins", 0.6)), "panneau": (anim.get("genre") or "chiffres") not in M.HABILLAGE,
             "mots": anim.get("mots") or [], "style_st": anim.get("style_st") or "surligne", "majuscules": anim.get("majuscules", True),
             "lignes_st": M.lignes_st(anim.get("mots") or [], 22 if vertical else 32), "chapitres": anim.get("chapitres") or [],
-            "image": anim.get("_html_image") or "", "image_ratio": float(anim.get("_html_ratio") or 0)}
+            "image": anim.get("_html_image") or "", "image_ratio": float(anim.get("_html_ratio") or 0),
+            "elements": [[_insecable(str(l)), (float(v) if v is not None else None), _insecable(str(t or "")),
+                          _insecable(M.nombre_texte(anim, v) if v is not None else "")] for l, v, t in M.elements(anim)],
+            "palette": M.palette(ch, len(M.elements(anim))),
+            "bouton": anim.get("bouton") or _("S'abonner"), "bouton_fait": anim.get("bouton_fait") or _("Abonné ✓")}
 
 
 def _insecable(t):
@@ -363,8 +367,220 @@ function sous_titres() {
     });
   });
 }
+// 1.0.1 : neuf types de plus
+const pct = (v) => Number(v).toLocaleString(A.langue === "fr" ? "fr-FR" : A.langue, { maximumFractionDigits: 0 }) + " %";
+const E = A.elements || [];
+function titreHaut(z) {
+  const t = $("div", `position:absolute;left:0;top:0;font-size:${64 * u}px`, z, A.titre); t.className = "titre";
+  if (A.sous_titre) $("div", `position:absolute;left:0;top:${80 * u}px;font-size:${30 * u}px;color:${C.doux}`, z, A.sous_titre);
+}
+function camembert(debut, fin, dernier) {
+  const h = Hr.camembert, z = scene(debut, fin, dernier); titreHaut(z);
+  const tot = E.reduce((s, e) => s + e[1], 0) || 1;
+  const cx = A.vertical ? A.zw / 2 : A.zw * 0.3, cy = A.vertical ? A.zh * 0.42 : A.zh * 0.58;
+  const rr = A.vertical ? Math.min(A.zw * 0.36, A.zh * 0.22) : Math.min(A.zh * 0.32, A.zw * 0.22), ep = rr * (0.22 + 0.3 * A.epaisseur);
+  const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("width", A.zw); svg.setAttribute("height", A.zh); svg.setAttribute("style", "position:absolute;left:0;top:0;overflow:visible"); z.appendChild(svg);
+  const circ = 2 * Math.PI * rr;
+  const fondC = document.createElementNS(ns, "circle"); [["cx", cx], ["cy", cy], ["r", rr], ["fill", "none"], ["stroke", C.texte + "14"], ["stroke-width", ep]]
+    .forEach(([k, v]) => fondC.setAttribute(k, v)); svg.appendChild(fondC);
+  let cumul = 0, rec = 0;
+  E.forEach((e, i) => {
+    if (e[1] > E[rec][1]) rec = i;
+    const part = e[1] / tot, c = document.createElementNS(ns, "circle");
+    [["cx", cx], ["cy", cy], ["r", rr], ["fill", "none"], ["stroke", A.palette[i]], ["stroke-width", ep], ["stroke-dasharray", `0 ${circ}`],
+     ["transform", `rotate(${-90 + cumul * 360} ${cx} ${cy})`]].forEach(([k, v]) => c.setAttribute(k, v));
+    svg.appendChild(c);
+    const o = { k: 0 };
+    tl.to(o, { k: 1, duration: T(0.7), ease: sortie, modifiers: { k: (k) => { c.setAttribute("stroke-dasharray", `${circ * part * k} ${circ}`); return k; } } }, h.entrees[i]);
+    cumul += part;
+    const lx = A.vertical ? (i % 2) * A.zw / 2 : A.zw * 0.6, ly = A.vertical ? cy + rr + ep + 60 * u + Math.floor(i / 2) * 56 * u : A.zh * 0.28 + i * 62 * u;
+    const lg = $("div", `position:absolute;left:${lx}px;top:${ly - 30 * u}px;width:${A.vertical ? A.zw / 2 - 30 * u : A.zw * 0.4}px;height:${40 * u}px;` +
+      `display:flex;align-items:center;font-size:${30 * u}px`, z);
+    $("div", `width:${26 * u}px;height:${26 * u}px;border-radius:${6 * u}px;background:${A.palette[i]};margin-right:${18 * u}px;flex:none`, lg);
+    $("div", `flex:1;white-space:nowrap`, lg, e[0]);
+    $("div", `font-weight:700;color:${C.accent2}`, lg, pct(100 * e[1] / tot));
+    tl.from(lg, { opacity: 0, duration: T(0.5) }, h.entrees[i]);
+  });
+  if (E.length) {
+    const m = $("div", `position:absolute;left:${cx - rr}px;width:${2 * rr}px;top:${cy - 50 * u}px;text-align:center`, z);
+    const g = $("div", `font-size:${72 * u}px;line-height:1.1`, m, pct(100 * E[rec][1] / tot)); g.className = "titre";
+    $("div", `font-size:${26 * u}px;color:${C.doux}`, m, E[rec][0]);
+    tl.from(m, { opacity: 0, duration: T(0.6) }, h.fin - T(0.4));
+  }
+}
+function jauge(debut, fin, dernier) {
+  const h = Hr.jauge, z = scene(debut, fin, dernier);
+  const cx = A.zw / 2, cy = A.zh / 2, rr = Math.min(A.zw, A.zh) * 0.3, ep = rr * (0.12 + 0.18 * A.epaisseur);
+  const v = Math.max(0, Math.min(100, A.valeur));
+  const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("width", A.zw); svg.setAttribute("height", A.zh); svg.setAttribute("style", "position:absolute;left:0;top:0;overflow:visible"); z.appendChild(svg);
+  const circ = 2 * Math.PI * rr;
+  svg.innerHTML = `<defs><linearGradient id="jg" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stop-color="${C.accent2}"/><stop offset="100%" stop-color="${C.accent}"/></linearGradient></defs>` +
+    `<circle cx="${cx}" cy="${cy}" r="${rr}" fill="none" stroke="${C.texte}1a" stroke-width="${ep}"/>` +
+    `<circle id="arc" cx="${cx}" cy="${cy}" r="${rr}" fill="none" stroke="url(#jg)" stroke-width="${ep}" stroke-linecap="round" stroke-dasharray="0 ${circ}"` +
+    ` transform="rotate(-90 ${cx} ${cy})" style="filter:drop-shadow(0 0 ${18 * u * A.lueur}px ${C.accent}aa)"/>`;
+  const arc = svg.querySelector("#arc");
+  const ch = $("div", `position:absolute;left:0;right:0;top:${cy - rr * 0.32}px;text-align:center;font-size:${rr * 0.55}px;line-height:1.1;color:${C.texte}`, z, nombre(0));
+  ch.className = "titre";
+  const o = { k: 0 };
+  tl.to(o, { k: 1, duration: Math.max(0.2, h.fin - h.debut), ease: "power2.inOut", modifiers: { k: (k) => {
+    arc.setAttribute("stroke-dasharray", k > 0 ? `${circ * v / 100 * k} ${circ}` : `0 ${circ}`); ch.textContent = nombre(Math.round(v * k)); return k; } } }, h.debut);
+  const t = $("div", `position:absolute;left:0;right:0;top:${cy - rr - ep - 100 * u}px;text-align:center;font-size:${56 * u}px`, z, A.titre); t.className = "titre";
+  if (A.sous_titre) { const st = $("div", `position:absolute;left:0;right:0;top:${cy + rr + ep + 24 * u}px;text-align:center;font-size:${32 * u}px;color:${C.doux}`, z, A.sous_titre);
+    tl.from(st, { opacity: 0, duration: T(0.6) }, h.fin - 0.3); }
+}
+function comparaison(debut, fin, dernier) {
+  const h = Hr.comparaison, z = scene(debut, fin, dernier); titreHaut(z);
+  const el = E.slice(0, 2); while (el.length < 2) el.push(["", 0, "", nombre(0)]);
+  const vmax = Math.max(1e-9, ...el.map((e) => e[1])), bas = A.zh - 60 * u, hb0 = A.zh * (A.vertical ? 0.3 : 0.38);
+  el.forEach((e, i) => {
+    const cx = A.zw * (i ? 0.73 : 0.27), hb = hb0 * e[1] / vmax, lb = A.zw * 0.16 * (0.6 + 0.6 * A.epaisseur);
+    const b = $("div", `position:absolute;left:${cx - lb / 2}px;width:${lb}px;top:${bas - hb}px;height:${hb}px;border-radius:${16 * u}px;transform-origin:bottom;` +
+      `background:linear-gradient(180deg, ${i ? C.accent2 : C.accent + "e6"}, ${C.accent}4d)`, z);
+    const n = $("div", `position:absolute;left:${cx - A.zw / 4}px;width:${A.zw / 2}px;text-align:center;top:${bas - hb0 - 190 * u}px;font-size:${96 * u}px;color:${i ? C.accent2 : C.texte}`, z, nombre(0));
+    n.className = "titre";
+    $("div", `position:absolute;left:${cx - A.zw / 4}px;width:${A.zw / 2}px;text-align:center;top:${bas + 14 * u}px;font-size:${32 * u}px;font-weight:600;color:${C.doux}`, z, e[0]);
+    const o = { k: 0 };
+    tl.from(b, { scaleY: 0, duration: T(1.0), ease: ressort }, h.entrees[i]);
+    tl.to(o, { k: 1, duration: T(1.0), ease: sortie, modifiers: { k: (k) => { n.textContent = nombre(e[1] * k); return k; } } }, h.entrees[i]);
+  });
+  if (el[0][1]) {
+    const d = (el[1][1] - el[0][1]) / Math.abs(el[0][1]) * 100;
+    const txt = (d >= 0 ? "▲ +" : "▼ ") + Number(d).toLocaleString(A.langue === "fr" ? "fr-FR" : A.langue, { maximumFractionDigits: Math.abs(d) >= 10 ? 0 : 1 }).replace("-", "") + " %";
+    const p = $("div", `position:absolute;left:0;right:0;top:${bas - hb0 * 0.5 - 36 * u}px;text-align:center`, z);
+    const q = $("div", `padding:${10 * u}px ${25 * u}px;font-size:${44 * u}px;font-weight:700`, p, txt); q.className = "pastille";
+    if (d < 0) q.style.background = C.accent;
+    tl.from(q, { scale: 0, opacity: 0, duration: T(0.8), ease: ressort }, h.fin);
+  }
+}
+function classement(debut, fin, dernier) {
+  const h = Hr.classement, z = scene(debut, fin, dernier); titreHaut(z);
+  const n = Math.max(1, E.length), y0 = 170 * u, pas = Math.min(110 * u, (A.zh - 30 * u - y0) / n);
+  const vmax = Math.max(1e-9, ...E.map((e) => e[1])), g0 = 90 * u + A.zw * 0.22, larg = A.zw - 170 * u - g0;
+  E.forEach((e, i) => {
+    const y = y0 + i * pas, hb = pas * (0.35 + 0.35 * A.epaisseur), w = larg * e[1] / vmax;
+    const r = $("div", `position:absolute;left:0;top:${y}px;width:${A.zw}px;height:${hb}px`, z);
+    const rond = $("div", `position:absolute;left:${4 * u}px;top:${hb / 2 - 26 * u}px;width:${52 * u}px;height:${52 * u}px;border-radius:50%;` +
+      `background:${i ? C.accent : C.accent2};color:${C.fond};font-size:${30 * u}px;line-height:${52 * u}px;text-align:center`, r, String(i + 1)); rond.className = "titre";
+    rond.style.color = C.fond;
+    $("div", `position:absolute;left:${80 * u}px;top:${hb / 2 - 22 * u}px;font-size:${32 * u}px;font-weight:600;white-space:nowrap`, r, e[0]);
+    const b = $("div", `position:absolute;left:${g0}px;top:0;width:${w}px;height:${hb}px;border-radius:${hb / 2}px;transform-origin:left;` +
+      `background:linear-gradient(90deg, ${C.accent}, ${C.accent2})`, r);
+    const v = $("div", `position:absolute;left:${g0 + w + 16 * u}px;top:${hb / 2 - 22 * u}px;font-size:${32 * u}px`, r, e[3]); v.className = "titre";
+    tl.from(r, { opacity: 0, x: -40 * u, duration: T(0.6), ease: sortie }, h.entrees[i]);
+    tl.from(b, { scaleX: 0, duration: T(0.9), ease: ressort }, h.entrees[i]);
+    tl.from(v, { x: -w, duration: T(0.9), ease: ressort }, h.entrees[i]);
+  });
+}
+function chiffres_cles(debut, fin, dernier) {
+  const h = Hr.chiffres_cles, z = scene(debut, fin, dernier); titreHaut(z);
+  const n = Math.max(1, E.length), top = 170 * u, gap = 30 * u;
+  const [cols, rows] = A.vertical ? [1, n] : (n <= 3 ? [n, 1] : [2, 2]);
+  const tw = (A.zw - gap * (cols - 1)) / cols, th = Math.min((A.zh - top - gap * (rows - 1)) / rows, 360 * u);
+  E.forEach((e, i) => {
+    const x = (i % cols) * (tw + gap), y = top + Math.floor(i / cols) * (th + gap);
+    const c = $("div", `position:absolute;left:${x}px;top:${y}px;width:${tw}px;height:${th}px;border-radius:${24 * u}px;background:${C.texte}12;overflow:hidden`, z);
+    $("div", `position:absolute;left:0;top:0;bottom:0;width:${10 * u}px;background:${i % 2 ? C.accent2 : C.accent}`, c);
+    const taille = Math.min(th * 0.42, tw / Math.max(4, e[3].length) * 1.5);
+    const ch = $("div", `position:absolute;left:0;right:0;top:${th * 0.55 - taille * 0.85}px;text-align:center;font-size:${taille}px;line-height:1.1`, c, nombre(0)); ch.className = "titre";
+    $("div", `position:absolute;left:0;right:0;top:${th * 0.55 + 22 * u}px;text-align:center;font-size:${36 * u}px;font-weight:500;opacity:0.75`, c, e[0]);
+    const o = { k: 0 };
+    tl.from(c, { opacity: 0, y: 40 * u, duration: T(0.7), ease: ressort }, h.entrees[i]);
+    tl.to(o, { k: 1, duration: T(1.4), ease: "power2.inOut", modifiers: { k: (k) => { ch.textContent = nombre(e[1] * k); return k; } } }, h.entrees[i]);
+  });
+}
+function chronologie(debut, fin, dernier) {
+  const h = Hr.chronologie, z = scene(debut, fin, dernier); titreHaut(z);
+  const n = Math.max(1, E.length), ep = 6 * u * (0.5 + A.epaisseur), t0 = (h.entrees[0] || debut) - 0.3;
+  if (A.vertical) {
+    const x = 40 * u, y0 = 190 * u, y1 = A.zh - 40 * u;
+    const l = $("div", `position:absolute;left:${x - ep / 2}px;top:${y0}px;width:${ep}px;height:${y1 - y0}px;border-radius:${ep}px;background:${C.accent};transform-origin:top`, z);
+    tl.from(l, { scaleY: 0, duration: Math.max(0.3, h.fin - t0), ease: "power1.inOut" }, t0);
+    E.forEach((e, i) => {
+      const y = y0 + (y1 - y0) * (i + 0.5) / n;
+      const pt = $("div", `position:absolute;left:${x - 14 * u}px;top:${y - 14 * u}px;width:${28 * u}px;height:${28 * u}px;border-radius:50%;background:${C.accent2}`, z);
+      const b = $("div", `position:absolute;left:${x + 40 * u}px;top:${y - 44 * u}px;width:${A.zw - 80 * u}px`, z);
+      const d = $("div", `font-size:${40 * u}px;color:${C.accent2}`, b, e[0]); d.className = "titre";
+      $("div", `font-size:${30 * u}px;line-height:1.2`, b, e[2]);
+      tl.from(pt, { scale: 0, duration: T(0.6), ease: ressort }, h.entrees[i]);
+      tl.from(b, { opacity: 0, x: -30 * u, duration: T(0.6), ease: sortie }, h.entrees[i]);
+    });
+  } else {
+    const y = A.zh * 0.52, x0 = 20 * u, x1 = A.zw - 20 * u, larg = (x1 - x0) / n;
+    const l = $("div", `position:absolute;left:${x0}px;top:${y - ep / 2}px;width:${x1 - x0}px;height:${ep}px;border-radius:${ep}px;background:${C.accent};transform-origin:left`, z);
+    tl.from(l, { scaleX: 0, duration: Math.max(0.3, h.fin - t0), ease: "power1.inOut" }, t0);
+    E.forEach((e, i) => {
+      const x = x0 + larg * (i + 0.5), haut_ = i % 2 === 0;
+      const pt = $("div", `position:absolute;left:${x - 16 * u}px;top:${y - 16 * u}px;width:${32 * u}px;height:${32 * u}px;border-radius:50%;background:${C.accent2}`, z);
+      const b = $("div", `position:absolute;left:${x - larg / 2 + 10 * u}px;width:${larg - 20 * u}px;text-align:center;` +
+        (haut_ ? `bottom:${A.zh - y + 30 * u}px;display:flex;flex-direction:column-reverse` : `top:${y + 34 * u}px`), z);
+      const d = $("div", `font-size:${44 * u}px;color:${C.accent2}`, b, e[0]); d.className = "titre";
+      $("div", `font-size:${28 * u}px;line-height:1.2`, b, e[2]);
+      tl.from(pt, { scale: 0, duration: T(0.6), ease: ressort }, h.entrees[i]);
+      tl.from(b, { opacity: 0, y: (haut_ ? 30 : -30) * u, duration: T(0.6), ease: sortie }, h.entrees[i]);
+    });
+  }
+}
+function liste(debut, fin, dernier) {
+  const h = Hr.liste, z = scene(debut, fin, dernier); titreHaut(z);
+  const n = Math.max(1, E.length), y0 = 200 * u, pas = Math.min(120 * u, (A.zh - y0) / n);
+  E.forEach((e, i) => {
+    const r = $("div", `position:absolute;left:0;top:${y0 + i * pas - 52 * u}px;width:${A.zw}px;display:flex;align-items:center;` +
+      `font-size:${40 * u * (A.vertical ? 0.9 : 1)}px;font-weight:600`, z);
+    const c = $("div", `width:${48 * u}px;height:${48 * u}px;border-radius:50%;background:${C.accent};margin-right:${28 * u}px;flex:none;` +
+      `color:${C.fond};font-size:${30 * u}px;font-weight:800;line-height:${48 * u}px;text-align:center`, r, "✓");
+    $("div", "white-space:nowrap;overflow:hidden;text-overflow:clip", r, e[2]);
+    tl.from(r, { opacity: 0, x: -60 * u, duration: T(0.6), ease: sortie }, h.entrees[i]);
+    tl.from(c, { scale: 0, duration: T(0.6), ease: ressort }, h.entrees[i]);
+  });
+}
+function citation(debut, fin, dernier) {
+  const h = Hr.citation, z = scene(debut, fin, dernier);
+  const bloc = $("div", `position:absolute;left:${A.zw * 0.07}px;right:${A.zw * 0.07}px;top:50%;transform:translateY(-50%);text-align:center`, z);
+  const g = $("div", `position:absolute;left:${-A.zw * 0.02}px;top:${-150 * u}px;font-size:${220 * u}px;color:${C.accent};opacity:0.9`, bloc, "«"); g.className = "titre";
+  tl.from(g, { opacity: 0, scale: 0.6, duration: T(0.8), ease: ressort }, debut + 0.1);
+  const ligne = $("div", `font-size:${70 * u * (A.vertical ? 0.85 : 1)}px;font-weight:600;line-height:1.15;white-space:normal`, bloc); ligne.className = "titre";
+  A.titre.split(/\s+/).filter(Boolean).forEach((m, k) => {
+    const s = $("span", `display:inline-block;margin:0 ${10 * u}px`, ligne, m);
+    tl.from(s, { opacity: 0, y: 30 * u, duration: T(0.6), ease: sortie }, h.mots[Math.min(k, h.mots.length - 1)] || debut);
+  });
+  if (A.sous_titre) {
+    const a = $("div", `margin-top:${30 * u}px;font-size:${36 * u}px;color:${C.doux}`, bloc, "— " + A.sous_titre);
+    tl.from(a, { opacity: 0, duration: T(0.6) }, h.auteur);
+  }
+}
+function appel(debut, fin, dernier) {
+  const h = Hr.appel, uu = u * 1.2;
+  const z = $("div", ""); z.className = "zone";
+  const cx = A.zw / 2, cy = A.zh * (A.vertical ? 0.55 : 0.62);
+  if (A.transparent) { const lw = A.zw * (A.vertical ? 0.95 : 0.6);
+    $("div", `position:absolute;left:${cx - lw / 2}px;top:${cy - 230 * uu}px;width:${lw}px;height:${360 * uu}px;border-radius:${30 * uu}px;background:${C.fond}bf`, z); }
+  const t = $("div", `position:absolute;left:0;right:0;top:${cy - 190 * uu}px;text-align:center;font-size:${56 * uu}px`, z, A.titre); t.className = "titre";
+  const b = $("div", `position:absolute;left:${cx}px;top:${cy}px;transform:translate(-50%,-50%);height:${100 * uu}px;padding:0 ${60 * uu}px;` +
+    `border-radius:${50 * uu * A.coins + 8 * uu}px;background:${C.accent};color:${C.fond};font-size:${46 * uu}px;line-height:${100 * uu}px;white-space:nowrap`, z);
+  b.className = "titre";
+  const l1 = $("span", `color:${C.fond}`, b, A.bouton), l2 = $("span", `display:none;color:${C.texte}`, b, A.bouton_fait);
+  if (A.sous_titre) $("div", `position:absolute;left:0;right:0;top:${cy + 80 * uu}px;text-align:center;font-size:${32 * uu}px;color:${C.doux}`, z, A.sous_titre);
+  const fl = $("div", `position:absolute;left:${cx}px;top:${cy}px;width:${36 * uu}px;height:${54 * uu}px;opacity:0`, z);
+  fl.innerHTML = `<svg viewBox="0 0 36 54" width="${36 * uu}" height="${54 * uu}"><path d="M0 0 L0 46 L12 35 L21 54 L29 50 L20 32 L36 32 Z" fill="#fff" stroke="#000c" stroke-width="3"/></svg>`;
+  const onde = $("div", `position:absolute;left:${cx + 40 * uu}px;top:${cy + 10 * uu}px;width:${120 * uu}px;height:${120 * uu}px;margin:${-60 * uu}px 0 0 ${-60 * uu}px;` +
+    `border-radius:50%;border:${4 * uu}px solid ${C.accent2};opacity:0`, z);
+  tl.from(z, { opacity: 0, scale: 0.8, duration: T(0.6), ease: ressort }, h.entree);
+  tl.fromTo(fl, { opacity: 1, x: A.zw * 0.35, y: A.zh * 0.3 }, { x: 40 * uu, y: 10 * uu, duration: Math.max(0.2, h.clic - h.curseur), ease: "power3.out", immediateRender: false }, h.curseur);
+  tl.set(fl, { opacity: 0 }, 0);
+  tl.set(fl, { opacity: 1 }, h.curseur);
+  tl.to(b, { scale: 0.92, duration: 0.08 }, h.clic - 0.08);
+  tl.to(b, { scale: 1, duration: 0.2, ease: ressort }, h.clic);
+  tl.set(l1, { display: "none" }, h.clic); tl.set(l2, { display: "inline" }, h.clic);
+  tl.set(b, { backgroundColor: C.doux + "80" }, h.clic);
+  tl.fromTo(onde, { opacity: 1, scale: 0 }, { opacity: 0, scale: 1, duration: 0.5, immediateRender: false }, h.clic);
+  tl.set(fl, { opacity: 0 }, h.clic + 0.9);
+  tl.to(z, { opacity: 0, duration: T(0.5) }, fin - T(0.5));
+}
 Object.entries(Hr.scenes).sort((a, b) => a[1][0] - b[1][0]).forEach(([nom, [a, b]]) => {
-  const f = { compteur, barres, courbe, titre, bandeau, progression, defilement, sous_titres }[nom];
+  const f = { compteur, barres, courbe, titre, bandeau, progression, defilement, sous_titres, camembert, jauge, comparaison, classement,
+    chiffres_cles, chronologie, liste, citation, appel }[nom];
   if (f) f(a, b, b >= fins - 1e-6);
 });
 '''

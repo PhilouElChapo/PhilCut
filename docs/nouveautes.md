@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.0.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.0.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.0.1 (neuf types d'animation de plus, « Recharger… » pour chaque modele)
+- Animation : camembert (parts d'un total), jauge en pourcentage, comparaison avant / apres (avec l'evolution en %), classement en barres horizontales, chiffres clefs en tuiles, chronologie (frise, une ligne par date), liste a points, citation (mot par mot, puis l'auteur), appel a l'action (un bouton « S'abonner » que la souris vient cliquer, pose au-dessus du film).
+- Ces types se calent eux aussi sur la voix (chaque element arrive quand il est dit) ou sur la musique, et sortent pareil avec les quatre moteurs (PhilCut, HyperFrames sur ce poste ou chez HeyGen, Remotion).
+- « Preparer avec l'IA » connait les nouveaux types (lignes, texte du bouton) ; les vignettes des propositions gardent leurs proportions.
+- Fabrique IA › « Credits et recharges des IA… » : chaque service payant (Claude, Gemini, fal.ai, Higgsfield, HeyGen), a quoi il sert, ses modeles, son credit, ce que PhilCut y a depense ce mois, « Recharger… » et « Connecter… ».
+- Fabrique (plan genere par IA) : la ligne de credit suit le modele choisi ; Preferences › Assistant et IA : « Recharger… » a cote de chaque clef ; fenetre Animation : le credit de l'IA qui prepare et corrige.
+- Remotion : le projet installe se met a jour tout seul avec PhilCut (pas besoin de reinstaller le moteur).
 
 ### 1.0.0 (sous-titres animes, habillage, animations calees sur la voix ou la musique)
 - Sous-titres animes : les mots dits du montage (transcrits sur ce poste si besoin), en mot surligne, mots qui sautent, un grand mot a la fois ou karaoke ; poses au-dessus du film, exactement sous la voix.

@@ -249,26 +249,33 @@ class DialoguePreferences(QDialog):
         self.clef_claude = QLineEdit(self.params.get("clef_claude", ""))
         self.clef_claude.setEchoMode(QLineEdit.Password)
         oeil(self.clef_claude)
-        fg.addRow(_("Clef Claude (sk-ant-…)"), self.clef_claude)
+        fg.addRow(_("Clef Claude (sk-ant-…)"), self._avec_recharge(self.clef_claude, "anthropic"))
         self.clef_gemini = QLineEdit(self.params.get("clef_gemini", ""))
         self.clef_gemini.setEchoMode(QLineEdit.Password)
         oeil(self.clef_gemini)
-        fg.addRow(_("Clef Gemini (Google AI Studio)"), self.clef_gemini)
+        fg.addRow(_("Clef Gemini (Google AI Studio)"), self._avec_recharge(self.clef_gemini, "google"))
         self.clef_fal = QLineEdit(self.params.get("clef_fal", ""))
         self.clef_fal.setEchoMode(QLineEdit.Password)
         oeil(self.clef_fal)
-        fg.addRow(_("Clef fal.ai (Kling, Seedance…)"), self.clef_fal)
+        fg.addRow(_("Clef fal.ai (Kling, Seedance…)"), self._avec_recharge(self.clef_fal, "fal"))
         self.clef_higgsfield = QLineEdit(self.params.get("clef_higgsfield", ""))       # 0.9.99
         self.clef_higgsfield.setEchoMode(QLineEdit.Password)
         oeil(self.clef_higgsfield)
-        fg.addRow(_("Clef Higgsfield (identifiant:secret)"), self.clef_higgsfield)
+        fg.addRow(_("Clef Higgsfield (identifiant:secret)"), self._avec_recharge(self.clef_higgsfield, "higgsfield"))
         self.clef_heygen = QLineEdit(self.params.get("clef_heygen", ""))
         self.clef_heygen.setEchoMode(QLineEdit.Password)
         oeil(self.clef_heygen)
-        fg.addRow(_("Clef HeyGen (animations dans le cloud)"), self.clef_heygen)
+        fg.addRow(_("Clef HeyGen (animations dans le cloud)"), self._avec_recharge(self.clef_heygen, "heygen"))
         b_conn = QPushButton(_("Connecter une IA : obtenir et tester ma clef…"))
         b_conn.clicked.connect(self._connecter)
-        fg.addRow(a_gauche(b_conn))
+        b_cred = QPushButton(_("Crédits et recharges des IA…"))
+        b_cred.setToolTip(_("Le crédit de chaque service, ce que PhilCut y a dépensé ce mois, et à quoi il sert"))
+        b_cred.clicked.connect(self._credits)
+        hc = QHBoxLayout()
+        hc.addWidget(b_conn)
+        hc.addWidget(b_cred)
+        hc.addStretch(1)
+        fg.addRow(hc)
         fg.addRow(QLabel(_("<span style='color:#999'>Rien n'est envoyé sans votre clic. Avant chaque envoi, PhilCut vérifie s'il y a des données sensibles et vous demande confirmation. "
                            "Les clefs vont dans le coffre du système, jamais dans un fichier en clair. Pour les retrouver sur vos autres postes : "
                            "Comptes et synchro › « Synchroniser aussi les mots de passe et clefs » (phrase secrète).</span>")))
@@ -704,6 +711,37 @@ class DialoguePreferences(QDialog):
     def _charte(self):
         from .dialogues_motion import DialogueCharte
         DialogueCharte(self, self.params).exec()
+
+    def _avec_recharge(self, champ, fournisseur):
+        """1.0.1 : la clef et, à côté, « Recharger… » qui ouvre la page du compte chez le service."""
+        w = QWidget()
+        h = QHBoxLayout(w)
+        h.setContentsMargins(0, 0, 0, 0)
+        h.addWidget(champ, 1)
+        b = QPushButton(_("Recharger…"))
+        b.setToolTip(_("Ouvre la page de votre compte pour ajouter du crédit"))
+        b.clicked.connect(lambda _c=False, f=fournisseur: self._recharger(f))
+        h.addWidget(b)
+        self.__dict__.setdefault("boutons_recharge", {})[fournisseur] = b
+        return w
+
+    def _recharger(self, fournisseur):
+        from . import generateurs_video as GV
+        url = GV.PAGES_CREDIT.get(fournisseur)
+        if getattr(self, "_test_ouvert", None) is not None:
+            self._test_ouvert.append(url)
+            return
+        import webbrowser
+        webbrowser.open(url)
+
+    def _credits(self):
+        par = self.parent()
+        if par is not None and hasattr(par, "credits_ia"):
+            return par.credits_ia()
+        from .dialogues_credits import DialogueCredits
+        d = DialogueCredits(self, self.params)
+        d.show()
+        return d
 
     def _connecter(self):
         from .dialogues_connexion_ia import DialogueConnexionIA

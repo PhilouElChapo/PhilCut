@@ -964,8 +964,9 @@ class Fenetre(QMainWindow):
              _("Chiffres qui montent, barres qui poussent, courbe qui se trace, titres animés, aux couleurs de votre charte : "
                "moteur de PhilCut, HyperFrames, HeyGen ou Remotion, au choix (PhilCut conseille)."), [
                 ent(icone("fabrique"), _("Animation de chiffres, graphiques ou titre…"),
-                    _("Dites ce que vous voulez ou collez vos chiffres ; trois propositions, des curseurs, l'aperçu immédiat ; "
-                      "puis le moteur conseillé fabrique, vous regardez, vous posez."), quand(lambda e: e.animation())),
+                    _("Chiffres, barres, courbe, camembert, jauge, comparaison, classement, chronologie, liste, citation, titre ou "
+                      "appel à l'action : dites ce que vous voulez ou collez vos chiffres ; trois propositions, des curseurs, l'aperçu "
+                      "immédiat ; puis le moteur conseillé fabrique, vous regardez, vous posez."), quand(lambda e: e.animation())),
                 ent(icone("fabrique"), _("Sous-titres animés (les mots dits)…"),
                     _("Mettez la partie en jaune sur ce qui est dit : mot surligné, mots qui sautent, un mot à la fois ou karaoké, "
                       "posés au-dessus du film au bon moment."), quand(lambda e: e.animation(genre="sous_titres"))),
@@ -1056,6 +1057,9 @@ class Fenetre(QMainWindow):
                           (lambda: ed.bibliotheque_creations()) if ed is not None else (lambda: self._ed(lambda e: e.bibliotheque_creations())))
         a_.setToolTip(_("Ce que vous avez gardé pour le réutiliser tel quel : personnages et musiciens avec leur fiche, objets, lieux, "
                         "voix (chanteur, chanteuse, narration), styles nommés, musiques, images. Elle vous suit sur vos autres postes."))
+        a_ = fb.addAction(_("Crédits et recharges des IA…"), self.credits_ia)
+        a_.setToolTip(_("Chaque service payant (Claude, Gemini, fal.ai, Higgsfield, HeyGen) : à quoi il sert, son crédit, ce que "
+                        "PhilCut y a dépensé ce mois, « Recharger… » et « Connecter… »."))
         a_ = fb.addAction(_("Mises à jour des IA (locales et cloud)…"), self.maj_ia)
         a_.setToolTip(_("Moteurs et modèles de l'IA locale à mettre à jour (essayés, retour arrière possible) ; "
                         "adresses, prix et état des IA cloud."))
@@ -2107,6 +2111,12 @@ class Fenetre(QMainWindow):
             return None
 
     # ---------------------------------------------------------------- mises à jour des IA (0.9.85)
+    def credits_ia(self):
+        """« Crédits et recharges des IA » (1.0.1) : une seule fenêtre, non bloquante."""
+        from .dialogues_credits import DialogueCredits
+        from .widgets import non_bloquante
+        return non_bloquante(self, "credits_ia", lambda: DialogueCredits(self, self.params))
+
     def maj_ia(self):
         """« Mises à jour des IA » : une seule fenêtre, non bloquante."""
         from .dialogues_maj_ia import DialogueMajIA

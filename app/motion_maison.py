@@ -673,6 +673,397 @@ class Rendu:
             p.restore()
             x += w + esp
 
+    # -------------------------------------------------- 1.0.1 : plus de types
+    def _titre_haut(self, p):
+        u = self.u
+        self.texte(p, self.zx, self.zy + 60 * u, self.a.get("titre") or "", self.police(True, 64 * u, 700), self.C["texte"])
+        if self.a.get("sous_titre"):
+            self.texte(p, self.zx, self.zy + 110 * u, self.a["sous_titre"], self.police(False, 30 * u, 400), self.C["doux"])
+
+    def _lignes(self, texte, font, largeur):
+        from PySide6.QtGui import QFontMetricsF
+        fm = QFontMetricsF(font)
+        lignes, cour = [], []
+        for m in str(texte).split():
+            if cour and fm.horizontalAdvance(" ".join(cour + [m])) > largeur:
+                lignes.append(" ".join(cour))
+                cour = []
+            cour.append(m)
+        if cour:
+            lignes.append(" ".join(cour))
+        return lignes
+
+    def _couleur_hex(self, c, alpha=1.0):
+        from PySide6.QtGui import QColor
+        q = QColor(c)
+        q.setAlphaF(alpha)
+        return q
+
+    def scene_camembert(self, p, t, a, b, dernier):
+        from PySide6.QtGui import QPainterPath, QPen
+        from PySide6.QtCore import QPointF, QRectF, Qt
+        h, u, V = self.h["camembert"], self.u, self.vitesse
+        el = M.elements(self.a)
+        tot = sum(v for _l, v, _t in el) or 1.0
+        cols = M.palette(self.ch, len(el))
+        op, _s = self._fondu(p, t, a, b, dernier)
+        p.save()
+        p.setOpacity(op)
+        self.panneau(p, 1.0)
+        self._titre_haut(p)
+        if self.vertical:
+            cx, cy, rr = self.zx + self.zw / 2, self.zy + self.zh * 0.42, min(self.zw * 0.36, self.zh * 0.22)
+        else:
+            cx, cy, rr = self.zx + self.zw * 0.3, self.zy + self.zh * 0.58, min(self.zh * 0.32, self.zw * 0.22)
+        ep = rr * (0.22 + 0.3 * self.epaisseur)
+        p.setPen(QPen(self.couleur("texte", 0.08), ep, Qt.SolidLine, Qt.FlatCap))
+        p.drawEllipse(QPointF(cx, cy), rr, rr)
+        angle = 90.0
+        for i, (lib, v, _x) in enumerate(el):
+            k = entre(t, h["entrees"][i], h["entrees"][i] + 0.7 / V, SORTIE)
+            balay = -360.0 * v / tot
+            if k > 0:
+                pen = QPen(self._couleur_hex(cols[i]), ep, Qt.SolidLine, Qt.FlatCap)
+                p.setPen(pen)
+                p.drawArc(QRectF(cx - rr, cy - rr, 2 * rr, 2 * rr), int(angle * 16), int(balay * k * 16))
+            angle += balay
+            # légende
+            if self.vertical:
+                lx, ly = self.zx + (i % 2) * self.zw / 2, cy + rr + ep + 60 * u + (i // 2) * 56 * u
+            else:
+                lx, ly = self.zx + self.zw * 0.6, self.zy + self.zh * 0.28 + i * 62 * u
+            ap = entre(t, h["entrees"][i], h["entrees"][i] + 0.5 / V)
+            p.setPen(Qt.NoPen)
+            p.setBrush(self._couleur_hex(cols[i], ap))
+            p.drawRoundedRect(QRectF(lx, ly - 22 * u, 26 * u, 26 * u), 6 * u, 6 * u)
+            self.texte(p, lx + 44 * u, ly, lib, self.police(False, 30 * u, 400), self.C["texte"], opacite=ap)
+            self.texte(p, lx + (self.zw / 2 - 30 * u if self.vertical else self.zw * 0.4), ly, f"{M.nombre(100 * v / tot, 0)} %",
+                       self.police(True, 30 * u, 700), self.C["accent2"], "droite", opacite=ap)
+        rec = max(range(len(el)), key=lambda i: el[i][1]) if el else 0
+        if el:
+            kf = entre(t, h["fin"] - 0.4 / V, h["fin"] + 0.2 / V)
+            self.texte(p, cx, cy + 20 * u, f"{M.nombre(100 * el[rec][1] / tot, 0)} %", self.police(True, 72 * u, 700), self.C["texte"],
+                       "centre", opacite=kf)
+            self.texte(p, cx, cy + 62 * u, el[rec][0], self.police(False, 26 * u, 400), self.C["doux"], "centre", opacite=kf)
+        self.source(p, 1.0)
+        p.restore()
+
+    def scene_jauge(self, p, t, a, b, dernier):
+        from PySide6.QtGui import QPen, QConicalGradient
+        from PySide6.QtCore import QPointF, QRectF, Qt
+        h, u = self.h["jauge"], self.u
+        op, _s = self._fondu(p, t, a, b, dernier)
+        p.save()
+        p.setOpacity(op)
+        self.panneau(p, 1.0)
+        cx, cy = self.zx + self.zw / 2, self.zy + self.zh * 0.5
+        rr = min(self.zw, self.zh) * 0.3
+        ep = rr * (0.12 + 0.18 * self.epaisseur)
+        v = max(0.0, min(100.0, float(self.a.get("valeur") or 0)))
+        k = entre(t, h["debut"], h["fin"], DOUCE)
+        p.setPen(QPen(self.couleur("texte", 0.1), ep, Qt.SolidLine, Qt.RoundCap))
+        p.drawEllipse(QPointF(cx, cy), rr, rr)
+        g = QConicalGradient(QPointF(cx, cy), 90)
+        g.setColorAt(0, self.C["accent2"])
+        g.setColorAt(1, self.C["accent"])
+        if k > 0:
+            from PySide6.QtGui import QPainterPath
+            arc = QPainterPath()
+            arc.arcMoveTo(QRectF(cx - rr, cy - rr, 2 * rr, 2 * rr), 90)
+            arc.arcTo(QRectF(cx - rr, cy - rr, 2 * rr, 2 * rr), 90, -3.6 * v * k)
+            self.lueur_chemin(p, arc, "accent", 0.6 * self.lueur)
+            p.strokePath(arc, QPen(g, ep, Qt.SolidLine, Qt.RoundCap))
+        path = self.chemin_chiffres(M.nombre_texte(self.a, round(v * k)), self.police(True, rr * 0.55, 700), cx, cy + rr * 0.18)
+        p.fillPath(path, self.C["texte"])
+        self.texte(p, cx, cy - rr - ep - 40 * u, self.a.get("titre") or "", self.police(True, 56 * u, 700), self.C["texte"], "centre")
+        self.texte(p, cx, cy + rr + ep + 60 * u, self.a.get("sous_titre") or "", self.police(False, 32 * u, 400), self.C["doux"], "centre",
+                   opacite=entre(t, h["fin"] - 0.3, h["fin"] + 0.3))
+        p.restore()
+
+    def scene_comparaison(self, p, t, a, b, dernier):
+        from PySide6.QtGui import QLinearGradient
+        from PySide6.QtCore import QPointF, QRectF, Qt
+        h, u, V = self.h["comparaison"], self.u, self.vitesse
+        el = M.elements(self.a)
+        if len(el) < 2:
+            el = el + [("", 0.0, "")] * (2 - len(el))
+        op, _s = self._fondu(p, t, a, b, dernier)
+        p.save()
+        p.setOpacity(op)
+        self.panneau(p, 1.0)
+        self._titre_haut(p)
+        vmax = max(1e-9, max(v for _l, v, _x in el))
+        bas = self.zy + self.zh - 60 * u
+        haut_barres = self.zh * (0.38 if not self.vertical else 0.3)
+        for i, (lib, v, _x) in enumerate(el[:2]):
+            k = self._k(t, h["entrees"][i], 110)
+            cx = self.zx + self.zw * (0.27 if i == 0 else 0.73)
+            hb = haut_barres * v / vmax * min(1.0, k)
+            lb = self.zw * 0.16 * (0.6 + 0.6 * self.epaisseur)
+            g = QLinearGradient(QPointF(0, bas - hb), QPointF(0, bas))
+            g.setColorAt(0, self.C["accent2"] if i else self.couleur("accent", 0.9))
+            g.setColorAt(1, self.couleur("accent", 0.3))
+            p.setPen(Qt.NoPen)
+            p.setBrush(g)
+            p.drawRoundedRect(QRectF(cx - lb / 2, bas - hb, lb, hb), 16 * u, 16 * u)
+            self.texte(p, cx, bas - haut_barres - 110 * u, M.nombre_texte(self.a, v * min(1.0, k)), self.police(True, 96 * u, 700),
+                       self.C["accent2"] if i else self.C["texte"], "centre", opacite=min(1.0, k))
+            self.texte(p, cx, bas + 44 * u, lib, self.police(False, 32 * u, 600), self.C["doux"], "centre")
+        if el[0][1]:
+            d = (el[1][1] - el[0][1]) / abs(el[0][1]) * 100
+            kb = self._k(t, h["fin"], 160)
+            if kb > 0.001:
+                txt = ("▲ +" if d >= 0 else "▼ ") + M.nombre(d, 0 if abs(d) >= 10 else 1) + " %"
+                f = self.police(True, 44 * u, 700)
+                from PySide6.QtGui import QFontMetricsF
+                w = QFontMetricsF(f).horizontalAdvance(txt) + 50 * u
+                cx, cy = self.zx + self.zw / 2, bas - haut_barres * 0.5
+                p.save()
+                p.translate(cx, cy)
+                p.scale(min(1.2, kb), min(1.2, kb))
+                p.setBrush(self.C["accent2"] if d >= 0 else self.C["accent"])
+                p.drawRoundedRect(QRectF(-w / 2, -36 * u, w, 72 * u), 36 * u, 36 * u)
+                self.texte(p, 0, 15 * u, txt, f, self.C["fond"], "centre")
+                p.restore()
+        self.source(p, 1.0)
+        p.restore()
+
+    def scene_classement(self, p, t, a, b, dernier):
+        from PySide6.QtGui import QLinearGradient
+        from PySide6.QtCore import QPointF, QRectF, Qt
+        h, u = self.h["classement"], self.u
+        el = M.elements(self.a)
+        op, _s = self._fondu(p, t, a, b, dernier)
+        p.save()
+        p.setOpacity(op)
+        self.panneau(p, 1.0)
+        self._titre_haut(p)
+        n = max(1, len(el))
+        y0 = self.zy + 170 * u
+        pas = min(110 * u, (self.zy + self.zh - 30 * u - y0) / n)
+        vmax = max(1e-9, max(v for _l, v, _x in el)) if el else 1
+        g0 = self.zx + 90 * u + self.zw * 0.22
+        largeur = self.zx + self.zw - 170 * u - g0
+        for i, (lib, v, _x) in enumerate(el):
+            k = self._k(t, h["entrees"][i], 100)
+            y = y0 + i * pas
+            hb = pas * (0.35 + 0.35 * self.epaisseur)
+            ap = min(1.0, max(0.0, k))
+            p.setPen(Qt.NoPen)
+            p.setBrush(self._couleur_hex(self.ch["couleurs"]["accent2" if i == 0 else "accent"], ap))
+            p.drawEllipse(QPointF(self.zx + 30 * u, y + hb / 2), 26 * u, 26 * u)
+            self.texte(p, self.zx + 30 * u, y + hb / 2 + 11 * u, str(i + 1), self.police(True, 30 * u, 700), self.C["fond"], "centre", opacite=ap)
+            self.texte(p, self.zx + 80 * u, y + hb / 2 + 11 * u, lib, self.police(False, 32 * u, 600), self.C["texte"], opacite=ap)
+            w = largeur * v / vmax * min(1.0, k)
+            g = QLinearGradient(QPointF(g0, 0), QPointF(g0 + largeur, 0))
+            g.setColorAt(0, self.C["accent"])
+            g.setColorAt(1, self.C["accent2"])
+            p.setBrush(g)
+            p.drawRoundedRect(QRectF(g0, y, max(0.0, w), hb), hb / 2, hb / 2)
+            self.texte(p, g0 + w + 16 * u, y + hb / 2 + 11 * u, M.nombre_texte(self.a, v * min(1.0, k)), self.police(True, 32 * u, 700),
+                       self.C["texte"], opacite=ap)
+        self.source(p, 1.0)
+        p.restore()
+
+    def scene_chiffres_cles(self, p, t, a, b, dernier):
+        from PySide6.QtCore import QRectF, Qt
+        h, u = self.h["chiffres_cles"], self.u
+        el = M.elements(self.a)
+        op, _s = self._fondu(p, t, a, b, dernier)
+        p.save()
+        p.setOpacity(op)
+        self.panneau(p, 1.0)
+        self._titre_haut(p)
+        n = max(1, len(el))
+        top = self.zy + 170 * u
+        if self.vertical:
+            cols, rows = 1, n
+        else:
+            cols, rows = (n, 1) if n <= 3 else (2, 2)
+        gap = 30 * u
+        tw = (self.zw - gap * (cols - 1)) / cols
+        th = min((self.zy + self.zh - top - gap * (rows - 1)) / rows, 360 * u)
+        for i, (lib, v, _x) in enumerate(el):
+            k = self._k(t, h["entrees"][i], 120)
+            x = self.zx + (i % cols) * (tw + gap)
+            y = top + (i // cols) * (th + gap) + (1 - min(1.0, k)) * 40 * u
+            ap = min(1.0, max(0.0, k))
+            p.setPen(Qt.NoPen)
+            p.setBrush(self.couleur("texte", 0.07 * ap))
+            p.drawRoundedRect(QRectF(x, y, tw, th), 24 * u, 24 * u)
+            p.setBrush(self._couleur_hex(self.ch["couleurs"]["accent2" if i % 2 else "accent"], ap))
+            p.drawRoundedRect(QRectF(x, y, 10 * u, th), 5 * u, 5 * u)
+            cpt = entre(t, h["entrees"][i], h["entrees"][i] + 1.4 / self.vitesse, DOUCE)
+            taille = min(th * 0.42, tw / max(4, len(M.nombre_texte(self.a, v))) * 1.5)
+            self.texte(p, x + tw / 2, y + th * 0.55, M.nombre_texte(self.a, v * cpt), self.police(True, taille, 700),
+                       self.C["texte"], "centre", opacite=ap)
+            self.texte(p, x + tw / 2, y + th * 0.55 + 56 * u, lib, self.police(False, 36 * u, 500), self.C["texte"], "centre", opacite=ap * 0.75)
+        p.restore()
+
+    def scene_chronologie(self, p, t, a, b, dernier):
+        from PySide6.QtGui import QPen
+        from PySide6.QtCore import QPointF, Qt
+        h, u = self.h["chronologie"], self.u
+        el = M.elements(self.a)
+        op, _s = self._fondu(p, t, a, b, dernier)
+        p.save()
+        p.setOpacity(op)
+        self.panneau(p, 1.0)
+        self._titre_haut(p)
+        n = max(1, len(el))
+        prog = entre(t, h["entrees"][0] - 0.3 if el else a, h["fin"], ALLER_RETOUR)
+        if self.vertical:
+            x, y0, y1 = self.zx + 40 * u, self.zy + 190 * u, self.zy + self.zh - 40 * u
+            p.setPen(QPen(self.C["accent"], 6 * u * (0.5 + self.epaisseur), Qt.SolidLine, Qt.RoundCap))
+            p.drawLine(QPointF(x, y0), QPointF(x, y0 + (y1 - y0) * prog))
+            for i, (d, _v, txt) in enumerate(el):
+                y = y0 + (y1 - y0) * (i + 0.5) / n
+                k = self._k(t, h["entrees"][i], 140)
+                ap = min(1.0, max(0.0, k))
+                p.setPen(Qt.NoPen)
+                p.setBrush(self._couleur_hex(self.ch["couleurs"]["accent2"], ap))
+                p.drawEllipse(QPointF(x, y), 14 * u * min(1.2, k), 14 * u * min(1.2, k))
+                self.texte(p, x + 40 * u, y - 6 * u, d, self.police(True, 40 * u, 700), self.C["accent2"], opacite=ap)
+                for j, l in enumerate(self._lignes(txt, self.police(False, 30 * u, 400), self.zw - 80 * u)[:2]):
+                    self.texte(p, x + 40 * u, y + 36 * u + j * 36 * u, l, self.police(False, 30 * u, 400), self.C["texte"], opacite=ap)
+        else:
+            y, x0, x1 = self.zy + self.zh * 0.52, self.zx + 20 * u, self.zx + self.zw - 20 * u
+            p.setPen(QPen(self.C["accent"], 6 * u * (0.5 + self.epaisseur), Qt.SolidLine, Qt.RoundCap))
+            p.drawLine(QPointF(x0, y), QPointF(x0 + (x1 - x0) * prog, y))
+            larg = (x1 - x0) / n
+            for i, (d, _v, txt) in enumerate(el):
+                x = x0 + larg * (i + 0.5)
+                k = self._k(t, h["entrees"][i], 140)
+                ap = min(1.0, max(0.0, k))
+                p.setPen(Qt.NoPen)
+                p.setBrush(self._couleur_hex(self.ch["couleurs"]["accent2"], ap))
+                p.drawEllipse(QPointF(x, y), 16 * u * min(1.2, k), 16 * u * min(1.2, k))
+                haut = i % 2 == 0
+                self.texte(p, x, y - 60 * u if haut else y + 80 * u, d, self.police(True, 44 * u, 700), self.C["accent2"], "centre",
+                           opacite=ap)
+                lignes = self._lignes(txt, self.police(False, 28 * u, 400), larg - 20 * u)[:3]
+                for j, l in enumerate(lignes):
+                    yy = (y - 120 * u - (len(lignes) - 1 - j) * 34 * u) if haut else (y + 126 * u + j * 34 * u)
+                    self.texte(p, x, yy, l, self.police(False, 28 * u, 400), self.C["texte"], "centre", opacite=ap)
+        p.restore()
+
+    def scene_liste(self, p, t, a, b, dernier):
+        from PySide6.QtGui import QPen, QPainterPath
+        from PySide6.QtCore import QPointF, Qt
+        h, u = self.h["liste"], self.u
+        el = M.elements(self.a)
+        op, _s = self._fondu(p, t, a, b, dernier)
+        p.save()
+        p.setOpacity(op)
+        self.panneau(p, 1.0)
+        self._titre_haut(p)
+        n = max(1, len(el))
+        y0 = self.zy + 200 * u
+        pas = min(120 * u, (self.zy + self.zh - y0) / n)
+        f = self.police(False, 40 * u * (0.9 if self.vertical else 1.0), 600)
+        for i, (_d, _v, txt) in enumerate(el):
+            k = self._k(t, h["entrees"][i], 130)
+            ap = min(1.0, max(0.0, k))
+            y = y0 + i * pas
+            dx = (1 - min(1.0, k)) * -60 * u
+            p.setPen(Qt.NoPen)
+            p.setBrush(self._couleur_hex(self.ch["couleurs"]["accent"], ap))
+            c = QPointF(self.zx + 26 * u + dx, y - 14 * u)
+            p.drawEllipse(c, 24 * u, 24 * u)
+            coche = QPainterPath(QPointF(c.x() - 10 * u, c.y()))
+            coche.lineTo(QPointF(c.x() - 2 * u, c.y() + 8 * u))
+            coche.lineTo(QPointF(c.x() + 11 * u, c.y() - 9 * u))
+            p.strokePath(coche, QPen(self._couleur_hex(self.ch["couleurs"]["fond"], ap), 5 * u, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            l = self._lignes(txt, f, self.zw - 90 * u)
+            self.texte(p, self.zx + 76 * u + dx, y, l[0] if l else "", f, self.C["texte"], opacite=ap)
+        p.restore()
+
+    def scene_citation(self, p, t, a, b, dernier):
+        from PySide6.QtGui import QFontMetricsF
+        from PySide6.QtCore import QRectF, Qt
+        h, u, V = self.h["citation"], self.u, self.vitesse
+        sortie = entre(t, b - 0.6 / V, b, lambda x: x ** 3)
+        p.save()
+        p.setOpacity(1 - sortie)
+        self.panneau(p, 1.0)
+        f = self.police(True, 70 * u * (0.85 if self.vertical else 1.0), 600)
+        fm = QFontMetricsF(f)
+        lignes = self._lignes(self.a.get("titre") or "", f, self.zw * 0.86)
+        hl = fm.height() * 1.15
+        y = self.zy + self.zh / 2 - hl * len(lignes) / 2 + fm.ascent()
+        kq = self._k(t, a + 0.1, 120)
+        self.texte(p, self.zx + self.zw * 0.05, y - fm.ascent() * 0.2, "«", self.police(True, 220 * u, 700), self.C["accent"],
+                   opacite=min(1.0, max(0.0, kq)) * 0.9)
+        k = 0
+        for l in lignes:
+            x = self.zx + (self.zw - fm.horizontalAdvance(l)) / 2
+            for m in l.split():
+                r = self._k(t, h["mots"][k] if k < len(h["mots"]) else a, 150)
+                self.texte(p, x, y + (1 - min(1.0, r)) * 30 * u, m, f, self.C["texte"], opacite=min(1.0, max(0.0, r)))
+                x += fm.horizontalAdvance(m + " ")
+                k += 1
+            y += hl
+        auteur = self.a.get("sous_titre") or ""
+        if auteur:
+            ka = entre(t, h["auteur"], h["auteur"] + 0.6 / V, SORTIE)
+            p.setPen(Qt.NoPen)
+            p.setBrush(self.C["accent2"])
+            p.drawRoundedRect(QRectF(self.zx + self.zw / 2 - 160 * u, y - 10 * u, 60 * u * ka, 5 * u), 2 * u, 2 * u)
+            self.texte(p, self.zx + self.zw / 2 - 80 * u, y + 2 * u, auteur, self.police(False, 36 * u, 400), self.C["doux"], opacite=ka)
+        p.restore()
+
+    def scene_appel(self, p, t, a, b, dernier):
+        from PySide6.QtGui import QFontMetricsF, QPainterPath, QColor, QPen
+        from PySide6.QtCore import QPointF, QRectF, Qt
+        h, u, V = self.h["appel"], self.u * 1.2, self.vitesse
+        sortie = entre(t, b - 0.5 / V, b)
+        k = self._k(t, h["entree"], 150)
+        if k <= 0.001:
+            return
+        p.save()
+        p.setOpacity((1 - sortie) * min(1.0, k))
+        cx, cy = self.zx + self.zw / 2, self.zy + self.zh * (0.62 if not self.vertical else 0.55)
+        if self.a.get("transparent"):                     # posé sur le film : un fond discret pour qu'il se lise
+            lw = self.zw * (0.95 if self.vertical else 0.6)
+            p.setPen(Qt.NoPen)
+            p.setBrush(self.couleur("fond", 0.75))
+            p.drawRoundedRect(QRectF(cx - lw / 2, cy - 230 * u, lw, 360 * u), 30 * u, 30 * u)
+        self.texte(p, cx, cy - 130 * u, self.a.get("titre") or "", self.police(True, 56 * u, 700), self.C["texte"], "centre")
+        clique = t >= h["clic"]
+        txt = (self.a.get("bouton_fait") or _("Abonné ✓")) if clique else (self.a.get("bouton") or _("S'abonner"))
+        f = self.police(True, 46 * u, 700)
+        w = QFontMetricsF(f).horizontalAdvance(txt) + 120 * u
+        hb = 100 * u
+        appui = 1 - 0.08 * math.sin(math.pi * entre(t, h["clic"] - 0.08, h["clic"] + 0.18))
+        p.save()
+        p.translate(cx, cy)
+        p.scale(min(1.15, k) * appui, min(1.15, k) * appui)
+        p.setPen(Qt.NoPen)
+        p.setBrush(self.couleur("doux", 0.5) if clique else self.C["accent"])
+        p.drawRoundedRect(QRectF(-w / 2, -hb / 2, w, hb), hb / 2 * self.ch.get("coins", 0.6) + 8 * u, hb / 2 * self.ch.get("coins", 0.6) + 8 * u)
+        self.texte(p, 0, 16 * u, txt, f, self.C["fond"] if not clique else self.C["texte"], "centre")
+        p.restore()
+        if self.a.get("sous_titre"):
+            self.texte(p, cx, cy + hb / 2 + 60 * u, self.a["sous_titre"], self.police(False, 32 * u, 400), self.C["doux"], "centre")
+        # la souris arrive sur le bouton, clique, repart
+        kc = entre(t, h["curseur"], h["clic"] - 0.05, SORTIE)
+        if kc > 0 and t < h["clic"] + 0.9:
+            px = cx + w * 0.25 + (1 - kc) * self.zw * 0.35
+            py = cy + 10 * u + (1 - kc) * self.zh * 0.3
+            fl = QPainterPath(QPointF(px, py))
+            for dx, dy in ((0, 46), (12, 35), (21, 54), (29, 50), (20, 32), (36, 32)):
+                fl.lineTo(QPointF(px + dx * u, py + dy * u))
+            fl.closeSubpath()
+            p.setPen(QPen(QColor(0, 0, 0, 200), 3 * u))
+            p.setBrush(QColor("#FFFFFF"))
+            p.drawPath(fl)
+            if clique:
+                r = entre(t, h["clic"], h["clic"] + 0.5) * 60 * u
+                p.setPen(QPen(self._couleur_hex(self.ch["couleurs"]["accent2"], 1 - r / (60 * u)), 4 * u))
+                p.setBrush(Qt.NoBrush)
+                p.drawEllipse(QPointF(px, py), r, r)
+        p.restore()
+
     # -------------------------------------------------- une image
     def dessiner(self, p, t):
         """L'image à l'instant t (en secondes de l'animation), sur l'horaire commun."""

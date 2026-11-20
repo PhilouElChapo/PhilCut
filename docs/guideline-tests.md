@@ -23,6 +23,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T106 — 1.0.1 : neuf types d'animation, « Recharger… » pour chaque modèle
+
+1. Fabrique IA › Animation › « Animation de chiffres, graphiques ou titre… » : dans « Animation », choisir tour à tour Camembert, Jauge, Comparaison, Classement, Chiffres clefs, Chronologie, Liste, Citation, Appel à l'action. Pour chacun : ▶, les trois propositions, rien de coupé, rien qui se chevauche ; en 9:16 aussi.
+2. Chronologie et Liste : modifier les lignes (« 2020 : … ») ; l'aperçu suit. Appel : changer le texte du bouton ; la souris clique au bon moment ?
+3. Ecrire « la part de chaque canal : YouTube 45, Instagram 30, TikTok 25 » et « ✨ Préparer avec l'IA » : le type Camembert est-il choisi, sans chiffre inventé ?
+4. « Caler sur » la voix pour une liste ou une chronologie dites à voix haute : chaque ligne arrive quand elle est dite ?
+5. Même animation avec HyperFrames et Remotion (déjà installés) : même film ? Remotion ne demande pas de réinstallation.
+6. Fabrique IA › « Crédits et recharges des IA… » : cinq cadres, les modèles listés, le crédit lu quand la clef existe ; « Recharger… » ouvre la bonne page ; « Connecter… » ouvre le bon onglet.
+7. Fabrique › « Plan généré par IA » : changer de modèle (Gemini, fal, Higgsfield) : la ligne de crédit change de service. Préférences › Assistant et IA : « Recharger… » à côté de chaque clef.
+
 ## T105 — 1.0.0 : sous-titres animés, habillage, calage sur la voix et la musique
 
 1. Un rush où tu parles : partie en jaune sur 10 à 20 s de parole. Fabrique IA › Animation › « Sous-titres animés… » › « Prendre les mots dits » (la transcription se fait si besoin, barre du bas) : « n mot(s) pris ».

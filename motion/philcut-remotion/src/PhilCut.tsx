@@ -17,6 +17,8 @@ export type Animation = {
   horaire?: Horaire; coins?: number; panneau?: boolean; mots?: [number, number, string][]; style_st?: string; majuscules?: boolean;
   lignes_st?: { t0: number; t1: number; mots: [number, number, string][] }[]; chapitres?: [number, string][]; image?: string;
   image_ratio?: number;
+  // 1.0.1 : neuf types de plus
+  elements?: [string, number | null, string, string][]; palette?: string[]; bouton?: string; bouton_fait?: string;
 };
 
 export type Horaire = {
@@ -24,7 +26,12 @@ export type Horaire = {
   compteur?: { debut: number; fin: number; badge: number }; barres?: { grille: number; entrees: number[]; halo: number };
   courbe?: { debut: number; fin: number; record: number }; titre?: { mots: number[]; trait: number; sous_titre: number };
   bandeau?: { entree: number; texte: number; sortie: number };
+  // 1.0.1
+  jauge?: { debut: number; fin: number }; citation?: { mots: number[]; auteur: number };
+  appel?: { entree: number; curseur: number; clic: number };
+  camembert?: Entrees; comparaison?: Entrees; classement?: Entrees; chiffres_cles?: Entrees; chronologie?: Entrees; liste?: Entrees;
 };
+type Entrees = { entrees: number[]; fin: number };
 
 export const EXEMPLE: Animation = {
   L: 1920, H: 1080, cadence: 30, duree: 14, zx: 153, zy: 97, zw: 1612, zh: 885, u: 1, vertical: false, genre: "chiffres",
@@ -337,8 +344,283 @@ const SousTitres: React.FC<SceneProps> = ({ A }) => {
   );
 };
 
+// ---------------------------------------------------------------- 1.0.1 : neuf types de plus
+const pct = (A: Animation, v: number) => v.toLocaleString(A.langue === "fr" ? "fr-FR" : A.langue, { maximumFractionDigits: 0 }) + " %";
+const els = (A: Animation) => (A.elements || []).map(([l, v, x, tv]) => [l, v ?? 0, x, tv] as [string, number, string, string]);
+const TitreHaut: React.FC<{ A: Animation }> = ({ A }) => (
+  <>
+    <div style={{ position: "absolute", left: 0, top: 0, fontFamily: titreF(A), fontWeight: 700, fontSize: 64 * A.u, whiteSpace: "nowrap" }}>{A.titre}</div>
+    {A.sous_titre ? <div style={{ position: "absolute", left: 0, top: 80 * A.u, fontSize: 30 * A.u, color: A.couleurs.doux }}>{A.sous_titre}</div> : null}
+  </>
+);
+const ent = (H: Entrees, i: number) => H.entrees[Math.min(i, H.entrees.length - 1)] ?? 0;
+
+const Camembert: React.FC<SceneProps> = ({ A, h, a, b, dernier }) => {
+  const t = useT(), u = A.u, C = A.couleurs, V = A.vitesse, H = h.camembert!, E = els(A), pal = A.palette || [];
+  const tot = E.reduce((s, e) => s + e[1], 0) || 1;
+  const cx = A.vertical ? A.zw / 2 : A.zw * 0.3, cy = A.vertical ? A.zh * 0.42 : A.zh * 0.58;
+  const rr = A.vertical ? Math.min(A.zw * 0.36, A.zh * 0.22) : Math.min(A.zh * 0.32, A.zw * 0.22), ep = rr * (0.22 + 0.3 * A.epaisseur);
+  const circ = 2 * Math.PI * rr;
+  let cumul = 0, rec = 0;
+  E.forEach((e, i) => { if (e[1] > E[rec][1]) rec = i; });
+  const kf = entre(t, H.fin - 0.4 / V, H.fin + 0.2 / V);
+  return (
+    <Scene A={A} a={a} b={b} dernier={dernier}>
+      <TitreHaut A={A} />
+      <svg width={A.zw} height={A.zh} style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}>
+        <circle cx={cx} cy={cy} r={rr} fill="none" stroke={C.texte + "14"} strokeWidth={ep} />
+        {E.map((e, i) => {
+          const part = e[1] / tot, rot = -90 + cumul * 360; cumul += part;
+          const k = entre(t, ent(H, i), ent(H, i) + 0.7 / V, SORTIE);
+          return <circle key={i} cx={cx} cy={cy} r={rr} fill="none" stroke={pal[i] || C.accent} strokeWidth={ep}
+            strokeDasharray={`${circ * part * k} ${circ}`} transform={`rotate(${rot} ${cx} ${cy})`} />;
+        })}
+      </svg>
+      {E.map((e, i) => {
+        const lx = A.vertical ? (i % 2) * A.zw / 2 : A.zw * 0.6, ly = A.vertical ? cy + rr + ep + 60 * u + Math.floor(i / 2) * 56 * u : A.zh * 0.28 + i * 62 * u;
+        return (
+          <div key={i} style={{ position: "absolute", left: lx, top: ly - 30 * u, width: A.vertical ? A.zw / 2 - 30 * u : A.zw * 0.4, height: 40 * u, display: "flex",
+            alignItems: "center", fontSize: 30 * u, opacity: entre(t, ent(H, i), ent(H, i) + 0.5 / V) }}>
+            <div style={{ width: 26 * u, height: 26 * u, borderRadius: 6 * u, background: pal[i] || C.accent, marginRight: 18 * u, flex: "none" }} />
+            <div style={{ flex: 1, whiteSpace: "nowrap" }}>{e[0]}</div>
+            <div style={{ fontWeight: 700, color: C.accent2 }}>{pct(A, (100 * e[1]) / tot)}</div>
+          </div>
+        );
+      })}
+      {E.length ? (
+        <div style={{ position: "absolute", left: cx - rr, width: 2 * rr, top: cy - 50 * u, textAlign: "center", opacity: kf }}>
+          <div style={{ fontFamily: titreF(A), fontWeight: 700, fontSize: 72 * u, lineHeight: 1.1 }}>{pct(A, (100 * E[rec][1]) / tot)}</div>
+          <div style={{ fontSize: 26 * u, color: C.doux }}>{E[rec][0]}</div>
+        </div>
+      ) : null}
+    </Scene>
+  );
+};
+
+const Jauge: React.FC<SceneProps> = ({ A, h, a, b, dernier }) => {
+  const t = useT(), u = A.u, C = A.couleurs, H = h.jauge!;
+  const cx = A.zw / 2, cy = A.zh / 2, rr = Math.min(A.zw, A.zh) * 0.3, ep = rr * (0.12 + 0.18 * A.epaisseur), circ = 2 * Math.PI * rr;
+  const v = Math.max(0, Math.min(100, A.valeur)), k = entre(t, H.debut, H.fin, Easing.inOut(Easing.quad));
+  return (
+    <Scene A={A} a={a} b={b} dernier={dernier}>
+      <svg width={A.zw} height={A.zh} style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}>
+        <defs><linearGradient id="jg" x1="0" x2="1" y1="0" y2="1"><stop offset="0%" stopColor={C.accent2} /><stop offset="100%" stopColor={C.accent} /></linearGradient></defs>
+        <circle cx={cx} cy={cy} r={rr} fill="none" stroke={C.texte + "1a"} strokeWidth={ep} />
+        <circle cx={cx} cy={cy} r={rr} fill="none" stroke="url(#jg)" strokeWidth={ep} strokeLinecap="round" strokeDasharray={k > 0 ? `${(circ * v * k) / 100} ${circ}` : `0 ${circ}`}
+          transform={`rotate(-90 ${cx} ${cy})`} style={{ filter: `drop-shadow(0 0 ${18 * u * A.lueur}px ${C.accent}aa)` }} />
+      </svg>
+      <div style={{ position: "absolute", left: 0, right: 0, top: cy - rr * 0.32, textAlign: "center", fontFamily: titreF(A), fontWeight: 700, fontSize: rr * 0.55, lineHeight: 1.1 }}>
+        {nombre(A, Math.round(v * k))}</div>
+      <div style={{ position: "absolute", left: 0, right: 0, top: cy - rr - ep - 100 * u, textAlign: "center", fontFamily: titreF(A), fontWeight: 700, fontSize: 56 * u }}>{A.titre}</div>
+      {A.sous_titre ? <div style={{ position: "absolute", left: 0, right: 0, top: cy + rr + ep + 24 * u, textAlign: "center", fontSize: 32 * u, color: C.doux,
+        opacity: entre(t, H.fin - 0.3, H.fin + 0.3) }}>{A.sous_titre}</div> : null}
+    </Scene>
+  );
+};
+
+const Comparaison: React.FC<SceneProps> = ({ A, h, a, b, dernier }) => {
+  const t = useT(), u = A.u, C = A.couleurs, H = h.comparaison!, E = els(A).slice(0, 2);
+  while (E.length < 2) E.push(["", 0, "", ""]);
+  const vmax = Math.max(1e-9, ...E.map((e) => e[1])), bas = A.zh - 60 * u, hb0 = A.zh * (A.vertical ? 0.3 : 0.38);
+  const d = E[0][1] ? ((E[1][1] - E[0][1]) / Math.abs(E[0][1])) * 100 : null;
+  const kb = res(A, t, H.fin, 160);
+  return (
+    <Scene A={A} a={a} b={b} dernier={dernier}>
+      <TitreHaut A={A} />
+      {E.map((e, i) => {
+        const k = res(A, t, ent(H, i), 110), cx = A.zw * (i ? 0.73 : 0.27), hb = (hb0 * e[1]) / vmax * Math.min(1, k), lb = A.zw * 0.16 * (0.6 + 0.6 * A.epaisseur);
+        return (
+          <React.Fragment key={i}>
+            <div style={{ position: "absolute", left: cx - lb / 2, width: lb, top: bas - hb, height: hb, borderRadius: 16 * u,
+              background: `linear-gradient(180deg, ${i ? C.accent2 : C.accent + "e6"}, ${C.accent}4d)` }} />
+            <div style={{ position: "absolute", left: cx - A.zw / 4, width: A.zw / 2, textAlign: "center", top: bas - hb0 - 190 * u, fontFamily: titreF(A), fontWeight: 700,
+              fontSize: 96 * u, color: i ? C.accent2 : C.texte, opacity: Math.min(1, k) }}>{nombre(A, e[1] * Math.min(1, k))}</div>
+            <div style={{ position: "absolute", left: cx - A.zw / 4, width: A.zw / 2, textAlign: "center", top: bas + 14 * u, fontSize: 32 * u, fontWeight: 600, color: C.doux }}>{e[0]}</div>
+          </React.Fragment>
+        );
+      })}
+      {d !== null && kb > 0.001 ? (
+        <div style={{ position: "absolute", left: 0, right: 0, top: bas - hb0 * 0.5 - 36 * u, textAlign: "center" }}>
+          <div style={{ display: "inline-block", padding: `${10 * u}px ${25 * u}px`, borderRadius: 999, fontWeight: 700, fontSize: 44 * u, color: C.fond,
+            background: d >= 0 ? `linear-gradient(90deg, ${C.accent2}, ${C.accent})` : C.accent, scale: String(Math.min(1.2, kb)) }}>
+            {(d >= 0 ? "▲ +" : "▼ ") + Math.abs(d).toLocaleString(A.langue === "fr" ? "fr-FR" : A.langue, { maximumFractionDigits: Math.abs(d) >= 10 ? 0 : 1 }) + " %"}
+          </div>
+        </div>
+      ) : null}
+    </Scene>
+  );
+};
+
+const Classement: React.FC<SceneProps> = ({ A, h, a, b, dernier }) => {
+  const t = useT(), u = A.u, C = A.couleurs, H = h.classement!, E = els(A);
+  const n = Math.max(1, E.length), y0 = 170 * u, pas = Math.min(110 * u, (A.zh - 30 * u - y0) / n);
+  const vmax = Math.max(1e-9, ...E.map((e) => e[1])), g0 = 90 * u + A.zw * 0.22, larg = A.zw - 170 * u - g0;
+  return (
+    <Scene A={A} a={a} b={b} dernier={dernier}>
+      <TitreHaut A={A} />
+      {E.map((e, i) => {
+        const k = res(A, t, ent(H, i), 100), ap = Math.max(0, Math.min(1, k)), hb = pas * (0.35 + 0.35 * A.epaisseur), w = ((larg * e[1]) / vmax) * Math.min(1, k);
+        return (
+          <div key={i} style={{ position: "absolute", left: 0, top: y0 + i * pas, width: A.zw, height: hb, opacity: ap }}>
+            <div style={{ position: "absolute", left: 4 * u, top: hb / 2 - 26 * u, width: 52 * u, height: 52 * u, borderRadius: "50%", background: i ? C.accent : C.accent2,
+              color: C.fond, fontFamily: titreF(A), fontWeight: 700, fontSize: 30 * u, lineHeight: `${52 * u}px`, textAlign: "center" }}>{i + 1}</div>
+            <div style={{ position: "absolute", left: 80 * u, top: hb / 2 - 22 * u, fontSize: 32 * u, fontWeight: 600, whiteSpace: "nowrap" }}>{e[0]}</div>
+            <div style={{ position: "absolute", left: g0, top: 0, width: Math.max(0, w), height: hb, borderRadius: hb / 2, background: `linear-gradient(90deg, ${C.accent}, ${C.accent2})` }} />
+            <div style={{ position: "absolute", left: g0 + w + 16 * u, top: hb / 2 - 22 * u, fontFamily: titreF(A), fontWeight: 700, fontSize: 32 * u }}>{nombre(A, e[1] * Math.min(1, k))}</div>
+          </div>
+        );
+      })}
+    </Scene>
+  );
+};
+
+const ChiffresCles: React.FC<SceneProps> = ({ A, h, a, b, dernier }) => {
+  const t = useT(), u = A.u, C = A.couleurs, V = A.vitesse, H = h.chiffres_cles!, E = els(A);
+  const n = Math.max(1, E.length), top = 170 * u, gap = 30 * u;
+  const [cols, rows] = A.vertical ? [1, n] : n <= 3 ? [n, 1] : [2, 2];
+  const tw = (A.zw - gap * (cols - 1)) / cols, th = Math.min((A.zh - top - gap * (rows - 1)) / rows, 360 * u);
+  return (
+    <Scene A={A} a={a} b={b} dernier={dernier}>
+      <TitreHaut A={A} />
+      {E.map((e, i) => {
+        const k = res(A, t, ent(H, i), 120), ap = Math.max(0, Math.min(1, k)), cpt = entre(t, ent(H, i), ent(H, i) + 1.4 / V, Easing.inOut(Easing.quad));
+        const taille = Math.min(th * 0.42, (tw / Math.max(4, e[3].length)) * 1.5);
+        return (
+          <div key={i} style={{ position: "absolute", left: (i % cols) * (tw + gap), top: top + Math.floor(i / cols) * (th + gap) + (1 - Math.min(1, k)) * 40 * u,
+            width: tw, height: th, borderRadius: 24 * u, background: C.texte + "12", overflow: "hidden", opacity: ap }}>
+            <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 10 * u, background: i % 2 ? C.accent2 : C.accent }} />
+            <div style={{ position: "absolute", left: 0, right: 0, top: th * 0.55 - taille * 0.85, textAlign: "center", fontFamily: titreF(A), fontWeight: 700,
+              fontSize: taille, lineHeight: 1.1 }}>{nombre(A, e[1] * cpt)}</div>
+            <div style={{ position: "absolute", left: 0, right: 0, top: th * 0.55 + 22 * u, textAlign: "center", fontSize: 36 * u, fontWeight: 500, opacity: 0.75 }}>{e[0]}</div>
+          </div>
+        );
+      })}
+    </Scene>
+  );
+};
+
+const Chronologie: React.FC<SceneProps> = ({ A, h, a, b, dernier }) => {
+  const t = useT(), u = A.u, C = A.couleurs, V = A.vitesse, H = h.chronologie!, E = els(A);
+  const n = Math.max(1, E.length), ep = 6 * u * (0.5 + A.epaisseur), t0 = (H.entrees[0] ?? a) - 0.3;
+  const prog = entre(t, t0, H.fin, Easing.inOut(Easing.quad));
+  const pastille = (i: number) => res(A, t, ent(H, i), 140);
+  if (A.vertical) {
+    const x = 40 * u, y0 = 190 * u, y1 = A.zh - 40 * u;
+    return (
+      <Scene A={A} a={a} b={b} dernier={dernier}>
+        <TitreHaut A={A} />
+        <div style={{ position: "absolute", left: x - ep / 2, top: y0, width: ep, height: (y1 - y0) * prog, borderRadius: ep, background: C.accent }} />
+        {E.map((e, i) => {
+          const y = y0 + ((y1 - y0) * (i + 0.5)) / n, k = pastille(i), ap = Math.max(0, Math.min(1, k));
+          return (
+            <React.Fragment key={i}>
+              <div style={{ position: "absolute", left: x - 14 * u, top: y - 14 * u, width: 28 * u, height: 28 * u, borderRadius: "50%", background: C.accent2, scale: String(Math.min(1.2, k)) }} />
+              <div style={{ position: "absolute", left: x + 40 * u, top: y - 44 * u, width: A.zw - 80 * u, opacity: ap, translate: `${(1 - ap) * -30 * u}px 0px` }}>
+                <div style={{ fontFamily: titreF(A), fontWeight: 700, fontSize: 40 * u, color: C.accent2 }}>{e[0]}</div>
+                <div style={{ fontSize: 30 * u, lineHeight: 1.2 }}>{e[2]}</div>
+              </div>
+            </React.Fragment>
+          );
+        })}
+      </Scene>
+    );
+  }
+  const y = A.zh * 0.52, x0 = 20 * u, x1 = A.zw - 20 * u, larg = (x1 - x0) / n;
+  void V;
+  return (
+    <Scene A={A} a={a} b={b} dernier={dernier}>
+      <TitreHaut A={A} />
+      <div style={{ position: "absolute", left: x0, top: y - ep / 2, width: (x1 - x0) * prog, height: ep, borderRadius: ep, background: C.accent }} />
+      {E.map((e, i) => {
+        const x = x0 + larg * (i + 0.5), k = pastille(i), ap = Math.max(0, Math.min(1, k)), dessus = i % 2 === 0;
+        return (
+          <React.Fragment key={i}>
+            <div style={{ position: "absolute", left: x - 16 * u, top: y - 16 * u, width: 32 * u, height: 32 * u, borderRadius: "50%", background: C.accent2, scale: String(Math.min(1.2, k)) }} />
+            <div style={{ position: "absolute", left: x - larg / 2 + 10 * u, width: larg - 20 * u, textAlign: "center", opacity: ap,
+              translate: `0px ${(1 - ap) * (dessus ? 30 : -30) * u}px`, display: "flex", flexDirection: dessus ? "column-reverse" : "column",
+              ...(dessus ? { bottom: A.zh - y + 30 * u } : { top: y + 34 * u }) }}>
+              <div style={{ fontFamily: titreF(A), fontWeight: 700, fontSize: 44 * u, color: C.accent2 }}>{e[0]}</div>
+              <div style={{ fontSize: 28 * u, lineHeight: 1.2 }}>{e[2]}</div>
+            </div>
+          </React.Fragment>
+        );
+      })}
+    </Scene>
+  );
+};
+
+const Liste: React.FC<SceneProps> = ({ A, h, a, b, dernier }) => {
+  const t = useT(), u = A.u, C = A.couleurs, H = h.liste!, E = els(A);
+  const n = Math.max(1, E.length), y0 = 200 * u, pas = Math.min(120 * u, (A.zh - y0) / n);
+  return (
+    <Scene A={A} a={a} b={b} dernier={dernier}>
+      <TitreHaut A={A} />
+      {E.map((e, i) => {
+        const k = res(A, t, ent(H, i), 130), ap = Math.max(0, Math.min(1, k));
+        return (
+          <div key={i} style={{ position: "absolute", left: (1 - Math.min(1, k)) * -60 * u, top: y0 + i * pas - 52 * u, width: A.zw, display: "flex", alignItems: "center",
+            fontSize: 40 * u * (A.vertical ? 0.9 : 1), fontWeight: 600, opacity: ap }}>
+            <div style={{ width: 48 * u, height: 48 * u, borderRadius: "50%", background: C.accent, marginRight: 28 * u, flex: "none", color: C.fond, fontSize: 30 * u,
+              fontWeight: 800, lineHeight: `${48 * u}px`, textAlign: "center" }}>✓</div>
+            <div style={{ whiteSpace: "nowrap", overflow: "hidden" }}>{e[2]}</div>
+          </div>
+        );
+      })}
+    </Scene>
+  );
+};
+
+const Citation: React.FC<SceneProps> = ({ A, h, a, b, dernier }) => {
+  const t = useT(), u = A.u, C = A.couleurs, V = A.vitesse, H = h.citation!;
+  const mots = A.titre.split(/\s+/).filter(Boolean), kq = res(A, t, a + 0.1, 120);
+  return (
+    <Scene A={A} a={a} b={b} dernier={dernier}>
+      <div style={{ position: "absolute", left: A.zw * 0.07, right: A.zw * 0.07, top: "50%", transform: "translateY(-50%)", textAlign: "center" }}>
+        <div style={{ position: "absolute", left: -A.zw * 0.02, top: -150 * u, fontFamily: titreF(A), fontWeight: 700, fontSize: 220 * u, color: C.accent,
+          opacity: 0.9 * Math.max(0, Math.min(1, kq)) }}>«</div>
+        <div style={{ fontFamily: titreF(A), fontWeight: 600, fontSize: 70 * u * (A.vertical ? 0.85 : 1), lineHeight: 1.15 }}>
+          {mots.map((m, i) => {
+            const k = entre(t, H.mots[Math.min(i, H.mots.length - 1)] ?? a, (H.mots[Math.min(i, H.mots.length - 1)] ?? a) + 0.6 / V, SORTIE);
+            return <span key={i} style={{ display: "inline-block", margin: `0 ${10 * u}px`, opacity: k, translate: `0px ${(1 - k) * 30 * u}px` }}>{m}</span>;
+          })}
+        </div>
+        {A.sous_titre ? <div style={{ marginTop: 30 * u, fontSize: 36 * u, color: C.doux, opacity: entre(t, H.auteur, H.auteur + 0.6 / V) }}>{"— " + A.sous_titre}</div> : null}
+      </div>
+    </Scene>
+  );
+};
+
+const Appel: React.FC<SceneProps> = ({ A, h, b }) => {
+  const t = useT(), uu = A.u * 1.2, C = A.couleurs, V = A.vitesse, H = h.appel!;
+  const k = res(A, t, H.entree, 150);
+  if (k <= 0.001) return null;
+  const cx = A.zw / 2, cy = A.zh * (A.vertical ? 0.55 : 0.62), clique = t >= H.clic;
+  const appui = 1 - 0.08 * Math.sin(Math.PI * entre(t, H.clic - 0.08, H.clic + 0.18));
+  const kc = entre(t, H.curseur, H.clic - 0.05, SORTIE), onde = entre(t, H.clic, H.clic + 0.5);
+  return (
+    <div style={{ position: "absolute", left: A.zx, top: A.zy, width: A.zw, height: A.zh, opacity: Math.min(1, k) * (1 - entre(t, b - 0.5 / V, b)),
+      fontFamily: `"${A.police_texte}", "Poppins", sans-serif`, color: C.texte }}>
+      {A.transparent ? <div style={{ position: "absolute", left: cx - (A.zw * (A.vertical ? 0.95 : 0.6)) / 2, top: cy - 230 * uu, width: A.zw * (A.vertical ? 0.95 : 0.6),
+        height: 360 * uu, borderRadius: 30 * uu, background: C.fond + "bf" }} /> : null}
+      <div style={{ position: "absolute", left: 0, right: 0, top: cy - 190 * uu, textAlign: "center", fontFamily: titreF(A), fontWeight: 700, fontSize: 56 * uu }}>{A.titre}</div>
+      <div style={{ position: "absolute", left: cx, top: cy, transform: "translate(-50%,-50%)", scale: String(Math.min(1.15, k) * appui), height: 100 * uu, padding: `0 ${60 * uu}px`,
+        borderRadius: 50 * uu * (A.coins ?? 0.6) + 8 * uu, background: clique ? C.doux + "80" : C.accent, color: clique ? C.texte : C.fond, fontFamily: titreF(A),
+        fontWeight: 700, fontSize: 46 * uu, lineHeight: `${100 * uu}px`, whiteSpace: "nowrap" }}>{clique ? A.bouton_fait : A.bouton}</div>
+      {A.sous_titre ? <div style={{ position: "absolute", left: 0, right: 0, top: cy + 80 * uu, textAlign: "center", fontSize: 32 * uu, color: C.doux }}>{A.sous_titre}</div> : null}
+      {kc > 0 && t < H.clic + 0.9 ? (
+        <svg viewBox="0 0 36 54" width={36 * uu} height={54 * uu} style={{ position: "absolute", left: cx + 40 * uu + (1 - kc) * A.zw * 0.35, top: cy + 10 * uu + (1 - kc) * A.zh * 0.3 }}>
+          <path d="M0 0 L0 46 L12 35 L21 54 L29 50 L20 32 L36 32 Z" fill="#fff" stroke="#000c" strokeWidth={3} />
+        </svg>
+      ) : null}
+      {clique && onde < 1 ? <div style={{ position: "absolute", left: cx + 40 * uu - 60 * uu * onde, top: cy + 10 * uu - 60 * uu * onde, width: 120 * uu * onde, height: 120 * uu * onde,
+        borderRadius: "50%", border: `${4 * uu}px solid ${C.accent2}`, opacity: 1 - onde }} /> : null}
+    </div>
+  );
+};
+
 const SCENES: Record<string, React.FC<SceneProps>> = { compteur: Compteur, barres: Barres, courbe: Courbe, titre: Titre, bandeau: Bandeau,
-  progression: Progression, defilement: Defilement, sous_titres: SousTitres };
+  progression: Progression, defilement: Defilement, sous_titres: SousTitres, camembert: Camembert, jauge: Jauge, comparaison: Comparaison,
+  classement: Classement, chiffres_cles: ChiffresCles, chronologie: Chronologie, liste: Liste, citation: Citation, appel: Appel };
 
 export const PhilCut: React.FC<{ A: Animation }> = ({ A }) => {
   const t = useT();

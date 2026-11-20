@@ -60,8 +60,12 @@ jobs:
           python outils_dev/moteur_motion.py composition essai_st sous_titres 1080 1920
           python outils_dev/moteur_motion.py composition essai_bd bandeau 1920 1080
           python outils_dev/moteur_motion.py composition essai_pg progression 1920 1080
+          python outils_dev/moteur_motion.py composition essai_cm camembert 1920 1080
+          python outils_dev/moteur_motion.py composition essai_ch chronologie 1080 1920
+          python outils_dev/moteur_motion.py composition essai_ap appel 1920 1080
+          python outils_dev/moteur_motion.py composition essai_ck chiffres_cles 1920 1080
           mkdir -p out
-          for d in essai_h essai_v essai_st essai_bd essai_pg; do
+          for d in essai_h essai_v essai_st essai_bd essai_pg essai_cm essai_ch essai_ap essai_ck; do
             sed -i "s#https://cdn.jsdelivr.net/npm/gsap@[0-9.]*/dist/gsap.min.js#assets/gsap.min.js#" $d/index.html
             cp m/app/node_modules/gsap/dist/gsap.min.js $d/assets/
             node m/app/node_modules/hyperframes/bin/hyperframes.mjs lint $d
@@ -76,8 +80,8 @@ jobs:
           CH=$(find "$PWD/m/chrome" -name chrome-headless-shell -type f | head -1)
           cp -r m/remotion /tmp/remotion && cd /tmp/remotion
           npm install --omit=dev --no-audit --no-fund
-          for g in chiffres sous_titres bandeau; do
-            if [ "$g" = sous_titres ]; then python $GITHUB_WORKSPACE/outils_dev/moteur_motion.py props props.json $g 1080 1920;
+          for g in chiffres sous_titres bandeau camembert chronologie citation appel classement; do
+            if [ "$g" = sous_titres ] || [ "$g" = chronologie ]; then python $GITHUB_WORKSPACE/outils_dev/moteur_motion.py props props.json $g 1080 1920;
             else python $GITHUB_WORKSPACE/outils_dev/moteur_motion.py props props.json $g; fi
             node node_modules/@remotion/cli/remotion-cli.js render src/index.ts PhilCut "$GITHUB_WORKSPACE/out/remotion_$g.mp4" \
               --props=props.json --browser-executable="$CH" --codec=h264 --crf=16

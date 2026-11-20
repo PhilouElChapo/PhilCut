@@ -1150,6 +1150,10 @@ class DialogueFabrique(QDialog):
         f2.addRow(_("Modèle"), hm)
         self.prix = QLabel("")
         f2.addRow(self.prix)
+        # 1.0.1 : le crédit du service du modèle choisi, avec « Recharger… » (fal.ai, Gemini, Higgsfield…)
+        from .credit_ia import LigneCredit
+        self.credit = LigneCredit(params, None, w2)
+        f2.addRow(self.credit)
         f2.addRow(self.voie_flow)
         f2.addRow(self.aide_flow)
         self.modele_veo.currentIndexChanged.connect(self._prix)
@@ -1310,6 +1314,9 @@ class DialogueFabrique(QDialog):
     def _prix(self):
         from . import generateurs_video as GV
         m = GV.modele(self.modele_veo.currentData() or "", self.params)
+        f = (m or {}).get("fournisseur")
+        if hasattr(self, "credit") and f != self.credit.fournisseur:
+            self.credit.montrer(f)
         if not m:
             self.prix.setText("")
             return

@@ -1,4 +1,4 @@
-"""Le moteur Remotion des animations (1.0.2) : la même fiche que le moteur maison et HyperFrames, dessinée par Remotion (React)
+"""Le moteur Remotion des animations (0.9.99) : la même fiche que le moteur maison et HyperFrames, dessinée par Remotion (React)
 avec le look de l'étalon « Chiffres ».
 
 Licence de Remotion (vérifiée le 20/11/2026) : gratuite pour un particulier, une structure de 3 personnes au plus, une
@@ -75,9 +75,44 @@ def installer(params, progression=None, arret=lambda: False):
     return True
 
 
+def sources_livrees():
+    """Le projet Remotion livré avec PhilCut (src/) : il suit la version de PhilCut, pas celle du moteur installé."""
+    base = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    return os.path.join(base, "motion", "philcut-remotion", "src")
+
+
+def mettre_a_jour_sources():
+    """1.0.1 : les nouveaux types d'animation sont dans PhilCut.tsx ; le moteur installé avant les reçoit sans réinstallation."""
+    src, dst = sources_livrees(), os.path.join(dossier(), "src")
+    if not os.path.isdir(src) or not os.path.isdir(os.path.dirname(dst)):
+        return 0
+    n = 0
+    os.makedirs(dst, exist_ok=True)
+    for f in os.listdir(src):
+        a, b = os.path.join(src, f), os.path.join(dst, f)
+        if not os.path.isfile(a):
+            continue
+        with open(a, "rb") as x:
+            neuf = x.read()
+        try:
+            with open(b, "rb") as y:
+                if y.read() == neuf:
+                    continue
+        except OSError:
+            pass
+        with open(b, "wb") as y:
+            y.write(neuf)
+        n += 1
+    return n
+
+
 def preparer(anim):
-    """La fiche passée à Remotion (--props) ; polices et logo copiés dans public/."""
+    """La fiche passée à Remotion (--props) ; polices et logo copiés dans public/ ; les sources mises à la version de PhilCut."""
     from . import charte as CH, motion_html as MH
+    try:
+        mettre_a_jour_sources()
+    except OSError:
+        pass
     pub = os.path.join(dossier(), "public")
     os.makedirs(pub, exist_ok=True)
     if anim.get("genre") == "defilement" and anim.get("image") and os.path.exists(anim["image"]):

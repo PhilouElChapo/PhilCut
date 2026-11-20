@@ -285,6 +285,10 @@ class DialogueMotion(QDialog):
                                "elle n'invente aucun chiffre"))
         self.b_ia.clicked.connect(self.preparer_ia)
         hi.addWidget(self.b_ia)
+        # 1.0.1 : le crédit de l'IA qui prépare et corrige (Claude ou Gemini), avec « Recharger… »
+        from .credit_ia import LigneCredit
+        self.credit_cerveau = LigneCredit(self.params, {"claude": "anthropic", "gemini": "google"}.get(self._niveau()), self, compact=True)
+        hi.addWidget(self.credit_cerveau, 1)
         hi.addStretch(1)
         gv.addLayout(hi)
         f = QFormLayout()
@@ -312,6 +316,14 @@ class DialogueMotion(QDialog):
         hv.setContentsMargins(0, 0, 0, 0)
         f.addRow(_("Chiffre"), self.w_chiffre)
         f.addRow(_("Pastille"), self.badge)
+        # 1.0.1 : les lignes (chronologie, liste) et le bouton (appel à l'action)
+        self.lignes = QPlainTextEdit()
+        self.lignes.setPlaceholderText(_("Une ligne par élément ; pour une chronologie : « 2020 : ce qui s'est passé »"))
+        self.lignes.setFixedHeight(110)
+        f.addRow(_("Lignes"), self.lignes)
+        self.bouton = QLineEdit()
+        self.bouton.setPlaceholderText(_("le texte du bouton"))
+        f.addRow(_("Bouton"), self.bouton)
         self.form1 = f
         gv.addLayout(f)
         # 1.0.0 : sous-titres animés, habillage, calage sur la voix ou la musique
@@ -547,7 +559,7 @@ class DialogueMotion(QDialog):
         self._minuterie.timeout.connect(self._avancer)
         self._remplir_chartes()
         self.charger(self.anim)
-        for w in (self.titre, self.sous_titre, self.badge, self.prefixe, self.suffixe, self.valeur, self.source):
+        for w in (self.titre, self.sous_titre, self.badge, self.prefixe, self.suffixe, self.valeur, self.source, self.bouton, self.lignes):
             w.textChanged.connect(self._lire_et_dessiner)
         self.genre.currentIndexChanged.connect(self._genre_change)
         self.charte.currentIndexChanged.connect(self._lire_et_dessiner)
@@ -577,6 +589,8 @@ class DialogueMotion(QDialog):
         self.titre.setText(a.get("titre") or "")
         self.sous_titre.setText(a.get("sous_titre") or "")
         self.badge.setText(a.get("badge") or "")
+        self.lignes.setPlainText("\n".join(a.get("lignes") or []))
+        self.bouton.setText(a.get("bouton") or "")
         self.prefixe.setText(a.get("prefixe") or "")
         self.suffixe.setText(a.get("suffixe") or "")
         self.valeur.setText(M.nombre(a["valeur"]) if a.get("valeur") is not None else "")
@@ -608,6 +622,8 @@ class DialogueMotion(QDialog):
         a["genre"] = self.genre.currentData()
         a["titre"], a["sous_titre"], a["badge"] = self.titre.text(), self.sous_titre.text(), self.badge.text()
         a["prefixe"], a["suffixe"], a["source"] = self.prefixe.text(), self.suffixe.text(), self.source.text()
+        a["lignes"] = [l.strip() for l in self.lignes.toPlainText().splitlines() if l.strip()]
+        a["bouton"] = self.bouton.text()
         d = []
         for r in range(self.table.rowCount()):
             lib = (self.table.item(r, 0).text() if self.table.item(r, 0) else "").strip()
@@ -664,12 +680,14 @@ class DialogueMotion(QDialog):
     # ---------------------------------------------- 1.0.0 : dans le film
     def _contexte(self):
         g = self.anim.get("genre")
-        chiffres = g in ("compteur", "barres", "courbe", "chiffres")
+        chiffres = g in M.A_DONNEES
         for w in (self.table, self.w_donnees):
             w.setVisible(chiffres)
-        for w in (self.w_chiffre, self.badge):
-            w.setVisible(g in ("compteur", "chiffres"))
-            self.form1.labelForField(w).setVisible(g in ("compteur", "chiffres"))
+        for w, vu in ((self.w_chiffre, g in ("compteur", "chiffres", "jauge")), (self.badge, g in ("compteur", "chiffres")),
+                      (self.lignes, g in M.A_LIGNES), (self.bouton, g == "appel")):
+            w.setVisible(vu)
+            self.form1.labelForField(w).setVisible(vu)
+        self.valeur.setPlaceholderText(_("de 0 à 100") if g == "jauge" else _("le total des données"))
         st = g == "sous_titres"
         for w in (self.style_st, self.w_mots, self.l_mots):
             w.setVisible(st)
@@ -680,15 +698,16 @@ class DialogueMotion(QDialog):
         self.form_ctx.labelForField(self.b_capture).setVisible(g == "defilement")
         self.b_toute.setVisible(g == "progression")
         self.form_ctx.labelForField(self.b_toute).setVisible(g == "progression")
-        cal = g in ("compteur", "barres", "courbe", "chiffres", "titre", "bandeau")
+        cal = g in ("compteur", "barres", "courbe", "chiffres", "titre", "bandeau", "camembert", "jauge", "comparaison", "classement",
+                    "chiffres_cles", "chronologie", "liste", "citation", "appel")
         self.w_calage.setVisible(cal)
         self.form_ctx.labelForField(self.w_calage).setVisible(cal)
         for w in (self.titre, self.sous_titre):
             vu = g not in ("sous_titres", "progression", "defilement")
             w.setVisible(vu)
             self.form1.labelForField(w).setVisible(vu)
-        self.titre.setPlaceholderText(_("le nom") if g == "bandeau" else "")
-        self.sous_titre.setPlaceholderText(_("la fonction") if g == "bandeau" else "")
+        self.titre.setPlaceholderText({"bandeau": _("le nom"), "citation": _("la citation")}.get(g, ""))
+        self.sous_titre.setPlaceholderText({"bandeau": _("la fonction"), "citation": _("l'auteur")}.get(g, ""))
         p = float(self.anim.get("pose") if self.anim.get("pose") is not None else self.ed.timeline.position)
         m, sec = divmod(p, 60)
         cal_txt = {"voix": _(" ; calée sur la voix"), "musique": _(" ; calée sur la musique")}.get(self.anim.get("cale") or "", "")
@@ -812,7 +831,8 @@ class DialogueMotion(QDialog):
         t = M.instant_vignette(self.anim)
         for k, b in enumerate(self.props):
             a = M.avec_variante(dict(self.anim, reglages=dict(self.anim.get("reglages") or {})), k)
-            b.setIcon(QPixmap.fromImage(MM.apercu_image(a, t, (144, 81))))
+            # dessinée trois fois plus grande puis réduite : les petits textes gardent leurs proportions (pas de taille plancher)
+            b.setIcon(QPixmap.fromImage(MM.apercu_image(a, t, (432, 243)).scaled(144, 81, Qt.KeepAspectRatio, Qt.SmoothTransformation)))
             from PySide6.QtCore import QSize
             b.setIconSize(QSize(144, 81))
 

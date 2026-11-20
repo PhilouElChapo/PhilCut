@@ -204,6 +204,8 @@ class G7RienDeTronque(unittest.TestCase):
                ("Narration", DialogueNarration(ed))]
         from app.dialogues_motion import DialogueMotion, DialogueCharte          # 0.9.99
         fen += [("Animation", DialogueMotion(ed)), ("Ma charte", DialogueCharte(ed, ed.params))]
+        from app.dialogues_credits import DialogueCredits                       # 1.0.1
+        fen += [("Crédits et recharges des IA", DialogueCredits(f, f.params))]
         fautes = []
         for nom, d in fen:
             d.show()

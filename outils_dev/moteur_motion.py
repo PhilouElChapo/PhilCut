@@ -22,7 +22,7 @@ def _anim(genre="chiffres", L=1920, H=1080):
     a["source"] = "Exemple neutre"
     if genre == "titre":
         a.update(titre="Une soirée au bord du lac", sous_titre="Chapitre 2")
-    if genre in M.HABILLAGE or genre == "defilement":
+    if genre in M.HABILLAGE or genre == "defilement" or genre not in ("chiffres", "compteur", "barres", "courbe", "titre"):
         M.preparer_genre(a, genre)
         a["transparent"] = False                 # vérification : sur le fond, pour voir
     if genre == "sous_titres":
