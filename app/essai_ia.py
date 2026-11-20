@@ -24,6 +24,7 @@ ESSAIS = {
     "voix": _("une phrase lue à voix haute"),
     "musique": _("5 secondes de musique"),
     "video": _("une très courte vidéo (long : plusieurs minutes)"),
+    "motion": _("une seconde d'animation rendue par HyperFrames"),
 }
 
 
@@ -117,6 +118,11 @@ def tester(genre, params=None, progression=None, arret=lambda: False):
         elif genre == "video":
             C.video("a calm lake at sunset", os.path.join(dossier, "essai.mp4"), params=params, secondes=0.5, largeur=256, hauteur=160,
                     progression=avance, arret=arret)
+        elif genre == "motion":
+            from . import motion as M, motion_html as MH
+            a = M.nouvelle("titre", taille=(320, 180))
+            a.update(duree=1.0, titre=_("Essai"), sous_titre="")
+            MH.rendre_local(params, a, os.path.join(dossier, "essai.mp4"), avance, arret)
         res["ok"] = True
         res["secondes"] = round(time.time() - debut, 1)
         res["message"] = _("Fonctionne : {q} en {s} s.", q=ESSAIS[genre], s=res["secondes"])

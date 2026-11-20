@@ -1,0 +1,169 @@
+# 0.9.99 : moteur « motion » (animations HTML) pour Windows et Linux : Node portable 22 + HyperFrames + GSAP + Chrome sans
+# fenêtre (chrome-headless-shell, la version attendue par HyperFrames) + le projet Remotion de PhilCut SANS ses bibliothèques
+# (Remotion s'installe chez l'utilisateur depuis npm, après sa confirmation de licence). Vérifié par un vrai rendu
+# HyperFrames (et Remotion sous Linux), images de contrôle poussées sur la branche motion-rendus, publié dans « moteurs-ia ».
+name: Moteur motion
+
+on:
+  push:
+    paths:
+      - .github/workflows/moteur_motion.yml
+      - outils_dev/moteur_motion.py
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  HYPERFRAMES: "0.9.72"
+  GSAP: "3.15.0"
+  HYPERFRAMES_NO_TELEMETRY: "1"
+  HYPERFRAMES_NO_UPDATE_CHECK: "1"
+  HYPERFRAMES_SKIP_SKILLS: "1"
+  REMOTION_DISABLE_TELEMETRY: "1"
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Node portable, HyperFrames, GSAP, Chrome
+        run: |
+          set -e
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg fonts-noto-color-emoji > /dev/null
+          V=$(curl -sSL https://nodejs.org/dist/latest-v22.x/SHASUMS256.txt | grep -o 'node-v22[^ ]*-linux-x64.tar.xz' | head -1)
+          echo "Node : $V"
+          mkdir -p m && curl -sSL "https://nodejs.org/dist/latest-v22.x/$V" | tar -xJ -C m && mv m/node-v22* m/node
+          export PATH="$PWD/m/node/bin:$PATH"
+          mkdir -p m/app && cd m/app
+          echo '{"name":"philcut-motion","private":true}' > package.json
+          npm install --no-audit --no-fund "hyperframes@$HYPERFRAMES" "gsap@$GSAP"
+          CV=$(grep -rhoE 'CHROME_VERSION = "[0-9.]+"' node_modules/hyperframes/dist | head -1 | grep -oE '[0-9.]+')
+          echo "Chrome : $CV"
+          node node_modules/@puppeteer/browsers/lib/main-cli.js install "chrome-headless-shell@$CV" --path ../chrome
+          cd ../.. && cp -r motion/philcut-remotion m/remotion && rm -rf m/remotion/node_modules
+          echo "HyperFrames $HYPERFRAMES, GSAP $GSAP, Chrome $CV, $V" > version-motion.txt
+          du -sh m m/*
+      - name: "Vérification : rendu HyperFrames"
+        run: |
+          set -e
+          export PATH="$PWD/m/node/bin:$PATH"
+          CH=$(find "$PWD/m/chrome" -name chrome-headless-shell -type f | head -1)
+          export HYPERFRAMES_BROWSER_PATH="$CH" PRODUCER_HEADLESS_SHELL_PATH="$CH"
+          python outils_dev/moteur_motion.py composition essai_h chiffres 1920 1080
+          python outils_dev/moteur_motion.py composition essai_v titre 1080 1920
+          mkdir -p out
+          for d in essai_h essai_v; do
+            sed -i "s#https://cdn.jsdelivr.net/npm/gsap@[0-9.]*/dist/gsap.min.js#assets/gsap.min.js#" $d/index.html
+            cp m/app/node_modules/gsap/dist/gsap.min.js $d/assets/
+            node m/app/node_modules/hyperframes/bin/hyperframes.mjs lint $d
+            node m/app/node_modules/hyperframes/bin/hyperframes.mjs render $d -o "$PWD/out/hyperframes_$d.mp4" --quality delivery --no-wait
+          done
+          node m/app/node_modules/hyperframes/bin/hyperframes.mjs render essai_h -o "$PWD/out/hyperframes_transparent.mov" --format mov --no-wait || echo "::warning::rendu MOV transparent en échec"
+          ls -la out
+      - name: "Vérification : Remotion (installé à part, comme chez l'utilisateur)"
+        run: |
+          set -e
+          export PATH="$PWD/m/node/bin:$PATH"
+          CH=$(find "$PWD/m/chrome" -name chrome-headless-shell -type f | head -1)
+          cp -r m/remotion /tmp/remotion && cd /tmp/remotion
+          npm install --omit=dev --no-audit --no-fund
+          python $GITHUB_WORKSPACE/outils_dev/moteur_motion.py props props.json chiffres
+          node node_modules/@remotion/cli/remotion-cli.js render src/index.ts PhilCut "$GITHUB_WORKSPACE/out/remotion_chiffres.mp4" \
+            --props=props.json --browser-executable="$CH" --codec=h264 --crf=16
+      - name: Images de contrôle (branche motion-rendus)
+        run: |
+          set -e
+          for f in out/*.mp4; do
+            b=$(basename "$f" .mp4)
+            for t in 2.8 7 13; do ffmpeg -loglevel error -y -ss $t -i "$f" -frames:v 1 -vf scale=960:-2 "out/${b}_${t}.jpg" || true; done
+          done
+          git config user.name "moteur-motion" && git config user.email "moteur-motion@users.noreply.github.com"
+          if git fetch -q origin motion-rendus; then git worktree add -q /tmp/rendus FETCH_HEAD && git -C /tmp/rendus checkout -q -B motion-rendus;
+          else git worktree add -q --orphan -b motion-rendus /tmp/rendus; fi
+          mkdir -p /tmp/rendus/moteur && cp out/*.jpg out/*.mp4 /tmp/rendus/moteur/ 2>/dev/null || true
+          cd /tmp/rendus && git add moteur && git commit -qm "Moteur motion : images de contrôle" && git push -q origin motion-rendus || echo "::warning::images non poussées"
+      - name: Archive
+        run: |
+          mkdir -p dist && tar -czf dist/philcut-motion-linux-x64.tar.gz -C m . && cp version-motion.txt dist/ && ls -la dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: motion-linux
+          path: dist/
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Node portable, HyperFrames, GSAP, Chrome
+        shell: pwsh
+        run: |
+          $V = ((Invoke-WebRequest -UseBasicParsing https://nodejs.org/dist/latest-v22.x/SHASUMS256.txt).Content -split "`n" |
+                Select-String -Pattern 'node-v22[^ ]*-win-x64\.zip' | Select-Object -First 1).Matches[0].Value
+          Write-Host "Node : $V"
+          curl.exe -sSL -o node.zip "https://nodejs.org/dist/latest-v22.x/$V"
+          Expand-Archive node.zip -DestinationPath m
+          Rename-Item (Get-ChildItem m -Directory | Select-Object -First 1).FullName node
+          $env:PATH = "$PWD\m\node;$env:PATH"
+          New-Item -ItemType Directory -Force m\app | Out-Null
+          Set-Content m\app\package.json '{"name":"philcut-motion","private":true}'
+          Push-Location m\app
+          & ..\node\node.exe ..\node\node_modules\npm\bin\npm-cli.js install --no-audit --no-fund "hyperframes@$env:HYPERFRAMES" "gsap@$env:GSAP"
+          $CV = (Select-String -Path node_modules\hyperframes\dist\*.js -Pattern 'CHROME_VERSION = "([0-9.]+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
+          Write-Host "Chrome : $CV"
+          & ..\node\node.exe node_modules\@puppeteer\browsers\lib\main-cli.js install "chrome-headless-shell@$CV" --path ..\chrome
+          Pop-Location
+          Copy-Item -Recurse motion\philcut-remotion m\remotion
+          if (Test-Path m\remotion\node_modules) { Remove-Item -Recurse -Force m\remotion\node_modules }
+          choco install ffmpeg -y --no-progress | Out-Null
+      - name: "Vérification : rendu HyperFrames"
+        shell: pwsh
+        run: |
+          $CH = (Get-ChildItem -Recurse m\chrome -Filter chrome-headless-shell.exe | Select-Object -First 1).FullName
+          $env:HYPERFRAMES_BROWSER_PATH = $CH
+          $env:PRODUCER_HEADLESS_SHELL_PATH = $CH
+          $env:PATH = "$PWD\m\node;$env:PATH"
+          python outils_dev/moteur_motion.py composition essai_h compteur 1920 1080
+          (Get-Content essai_h\index.html -Raw) -replace 'https://cdn.jsdelivr.net/npm/gsap@[0-9.]*/dist/gsap.min.js', 'assets/gsap.min.js' | Set-Content essai_h\index.html -Encoding utf8
+          Copy-Item m\app\node_modules\gsap\dist\gsap.min.js essai_h\assets\
+          New-Item -ItemType Directory -Force out | Out-Null
+          & m\node\node.exe m\app\node_modules\hyperframes\bin\hyperframes.mjs render essai_h -o "$PWD\out\hyperframes_windows.mp4" --quality delivery --no-wait
+          if (-not (Test-Path out\hyperframes_windows.mp4)) { Write-Host "::error::rendu HyperFrames Windows en échec"; exit 1 }
+          Get-ChildItem out
+      - name: Archive
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force dist | Out-Null
+          7z a -tzip -mx=5 dist\philcut-motion-windows-x64.zip .\m\* | Select-Object -Last 3
+          Get-ChildItem dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: motion-windows
+          path: dist/
+
+  publier:
+    needs: [linux, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          path: art
+      - name: Catalogue et publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          mkdir -p dist && cp art/motion-linux/* art/motion-windows/* dist/
+          gh release download moteurs-ia -p moteurs-creatifs.json -D dist --clobber
+          python outils_dev/moteur_motion.py catalogue dist
+          gh release upload moteurs-ia dist/philcut-motion-linux-x64.tar.gz dist/philcut-motion-windows-x64.zip --clobber
+          gh release upload moteurs-ia dist/moteurs-creatifs.json --clobber

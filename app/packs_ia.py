@@ -25,7 +25,8 @@ GENRES = {"vision": _("Vision (idées de montage)"), "whisper": _("Voix (sous-ti
           "upscale": _("Agrandissement IA (vidéo, image)"), "interpolation": _("Ralenti fluide IA"),
           "separation": _("Voix seule d'un morceau (voix de référence de la musique, expérimental)"),
           "stems": _("Séparer voix, musique et bruits"), "voix_clone": _("Continuer avec ma voix"),
-          "levres": _("Lèvres synchronisées sur ce poste (carte NVIDIA)")}
+          "levres": _("Lèvres synchronisées sur ce poste (carte NVIDIA)"),
+          "motion": _("Animations HyperFrames et Remotion (motion design)")}
 DEFAUT = {"vision": "vision_leger", "whisper": "whisper_leger", "detourage": "detourage_leger", "voix": "voix_fr_femme"}
 MOTEURS_GENRE = ("vision", "whisper", "voix")          # genres qui ont un programme à télécharger
 UA = {"User-Agent": "PhilCut"}
@@ -58,7 +59,8 @@ def executable(genre):
     noms = {"vision": "llama-server", "vision_gpu": "llama-server", "whisper": "whisper-cli", "voix": "piper", "image": "sd-cli",
             "image_gpu": "sd-cli", "musique": "ace-synth", "musique_gpu": "ace-synth", "upscale": "realesrgan-ncnn-vulkan",
             "interpolation": "rife-ncnn-vulkan",
-            "levres": "python/python" if sys.platform == "win32" else "python/bin/python3"}   # 0.9.92 : Python portable
+            "levres": "python/python" if sys.platform == "win32" else "python/bin/python3",   # 0.9.92 : Python portable
+            "motion": "node/node" if sys.platform == "win32" else "node/bin/node"}             # 0.9.99 : Node portable
     base = os.path.join(dossier_moteur(genre), _exe(noms[genre]))
     if not os.path.exists(base) and genre in ("image", "image_gpu"):           # anciennes versions : « sd »
         ancien = os.path.join(dossier_moteur(genre), _exe("sd"))
