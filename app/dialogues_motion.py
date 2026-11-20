@@ -264,6 +264,8 @@ class DialogueMotion(QDialog):
         self.resize(1000, 720)
         taille = tuple(getattr(ed.projet, "taille", (1920, 1080)) or (1920, 1080))
         self.anim = anim or M.nouvelle("chiffres", CH.active(self.params), taille)
+        if self.anim.get("pose") is None:
+            self.anim["pose"] = float(ed.timeline.position)
         self.anim["cadence"] = int(round(float(getattr(ed.projet, "cadence", 30) or 30))) if not anim else self.anim.get("cadence", 30)
         racine = QVBoxLayout(self)
         corps = QHBoxLayout()
@@ -305,9 +307,71 @@ class DialogueMotion(QDialog):
         hv.addWidget(self.prefixe)
         hv.addWidget(self.valeur, 1)
         hv.addWidget(self.suffixe)
-        f.addRow(_("Chiffre"), hv)
+        self.w_chiffre = QWidget()
+        self.w_chiffre.setLayout(hv)
+        hv.setContentsMargins(0, 0, 0, 0)
+        f.addRow(_("Chiffre"), self.w_chiffre)
         f.addRow(_("Pastille"), self.badge)
+        self.form1 = f
         gv.addLayout(f)
+        # 1.0.0 : sous-titres animés, habillage, calage sur la voix ou la musique
+        self.g_contexte = QGroupBox(_("Dans le film"))
+        fc = QFormLayout(self.g_contexte)
+        hp = QHBoxLayout()
+        self.l_pose = QLabel("")
+        self.l_pose.setWordWrap(True)
+        hp.addWidget(self.l_pose, 1)
+        b = QPushButton(_("Reprendre"))
+        b.setToolTip(_("La partie en jaune si elle existe, sinon la ligne rouge : là où l'animation sera posée"))
+        b.clicked.connect(self.prendre_position)
+        hp.addWidget(b)
+        fc.addRow(_("Posée à"), hp)
+        self.style_st = QComboBox()
+        for k, lib in M.STYLES_ST.items():
+            self.style_st.addItem(lib, k)
+        self.majuscules = QCheckBox(_("En majuscules"))
+        self.b_mots = QPushButton(_("Prendre les mots dits"))
+        self.b_mots.setToolTip(_("Les mots transcrits du montage, de la partie en jaune (ou de la ligne rouge jusqu'à la prochaine "
+                                 "pause) ; PhilCut transcrit d'abord ce qui ne l'est pas encore (sur ce poste, gratuit)"))
+        self.b_mots.clicked.connect(self.prendre_mots)
+        self.l_mots = QLabel("")
+        self.l_mots.setWordWrap(True)
+        fc.addRow(_("Style"), self.style_st)
+        hm2 = QHBoxLayout()
+        hm2.addWidget(self.majuscules)
+        hm2.addWidget(self.b_mots)
+        self.w_mots = QWidget()
+        self.w_mots.setLayout(hm2)
+        hm2.setContentsMargins(0, 0, 0, 0)
+        fc.addRow("", self.w_mots)
+        fc.addRow("", self.l_mots)
+        self.b_capture = QPushButton(_("Choisir la capture…"))
+        self.b_capture.clicked.connect(self.choisir_capture)
+        fc.addRow(_("Capture"), self.b_capture)
+        self.b_toute = QPushButton(_("Toute la vidéo, avec les repères comme chapitres"))
+        self.b_toute.clicked.connect(self.toute_la_video)
+        fc.addRow(_("Durée"), self.b_toute)
+        hcal = QHBoxLayout()
+        self.calage = QComboBox()
+        for k, lib in M.CALAGES.items():
+            self.calage.addItem(lib, k)
+        hcal.addWidget(self.calage, 1)
+        self.b_caler = QPushButton(_("Caler"))
+        self.b_caler.setToolTip(_("Recalcule quand chaque élément arrive : quand le chiffre, le mois ou le mot est dit, ou sur les temps "
+                                  "de la musique du montage"))
+        self.b_caler.clicked.connect(self.caler)
+        hcal.addWidget(self.b_caler)
+        self.w_calage = QWidget()
+        self.w_calage.setLayout(hcal)
+        hcal.setContentsMargins(0, 0, 0, 0)
+        fc.addRow(_("Caler sur"), self.w_calage)
+        self.form_ctx = fc
+        gv.addWidget(self.g_contexte)
+        for c in (self.style_st, self.calage, self.genre):                 # G7 : les longs libellés ne dictent pas la largeur
+            c.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+            c.setMinimumContentsLength(16)
+        self.style_st.currentIndexChanged.connect(self._lire_et_dessiner)
+        self.majuscules.toggled.connect(self._lire_et_dessiner)
         self.table = QTableWidget(0, 2)
         self.table.setHorizontalHeaderLabels([_("Libellé"), _("Valeur")])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
@@ -324,7 +388,10 @@ class DialogueMotion(QDialog):
             b.setToolTip(aide)
             b.clicked.connect(fn)
             hd.addWidget(b)
-        gv.addLayout(hd)
+        self.w_donnees = QWidget()
+        self.w_donnees.setLayout(hd)
+        hd.setContentsMargins(0, 0, 0, 0)
+        gv.addWidget(self.w_donnees)
         f2 = QFormLayout()
         self.source = QLineEdit()
         self.source.setPlaceholderText(_("d'où viennent les chiffres (affiché en petit)"))
@@ -528,7 +595,11 @@ class DialogueMotion(QDialog):
         for cle, (s, lo, hi) in self.curseurs.items():
             s.setValue(int(round((M.reglage(a, cle) - lo) / (hi - lo) * 100)))
         self.props[int(a.get("variante") or 0)].setChecked(True)
+        self.style_st.setCurrentIndex(max(0, self.style_st.findData(a.get("style_st") or "surligne")))
+        self.majuscules.setChecked(bool(a.get("majuscules", True)))
+        self.calage.setCurrentIndex(max(0, self.calage.findData(a.get("cale") or "")))
         self._charge = False
+        self._contexte()
         self._lire_et_dessiner()
         self._vignettes()
 
@@ -556,6 +627,11 @@ class DialogueMotion(QDialog):
         a["duree"] = float(self.duree.value())
         a["transparent"] = self.transparent.isChecked()
         a["zones_sures"] = self.zones.isChecked()
+        a["style_st"] = self.style_st.currentData()
+        a["majuscules"] = self.majuscules.isChecked()
+        h = a.get("horaire")
+        if isinstance(h, dict) and abs(float(h.get("duree", 0)) - a["duree"]) > 0.05:
+            a["horaire"], a["cale"] = None, ""          # la durée a changé : le calage est à refaire
         return a
 
     def _lire_et_dessiner(self, *_a):
@@ -577,9 +653,139 @@ class DialogueMotion(QDialog):
     def _genre_change(self):
         if getattr(self, "_charge", False):
             return
-        g = self.genre.currentData()
-        self.duree.setValue(M.duree_conseillee(g))
-        self._lire_et_dessiner()
+        a = M.preparer_genre(self.lire_fiche(), self.genre.currentData())
+        if a["genre"] == "progression" and self.ed.projet.duree() > 1:
+            a.update(pose=0.0, duree=round(self.ed.projet.duree(), 2), chapitres=M.chapitres(self.ed.projet, 0.0))
+        self.charger(a)
+        if a["genre"] == "sous_titres" and not a.get("mots"):
+            self.etat.setText(_("Sous-titres : mettez la partie en jaune sur ce qui est dit (ou la ligne rouge au début), puis "
+                                "« Prendre les mots dits »."))
+
+    # ---------------------------------------------- 1.0.0 : dans le film
+    def _contexte(self):
+        g = self.anim.get("genre")
+        chiffres = g in ("compteur", "barres", "courbe", "chiffres")
+        for w in (self.table, self.w_donnees):
+            w.setVisible(chiffres)
+        for w in (self.w_chiffre, self.badge):
+            w.setVisible(g in ("compteur", "chiffres"))
+            self.form1.labelForField(w).setVisible(g in ("compteur", "chiffres"))
+        st = g == "sous_titres"
+        for w in (self.style_st, self.w_mots, self.l_mots):
+            w.setVisible(st)
+            lab = self.form_ctx.labelForField(w)
+            if lab:
+                lab.setVisible(st)
+        self.b_capture.setVisible(g == "defilement")
+        self.form_ctx.labelForField(self.b_capture).setVisible(g == "defilement")
+        self.b_toute.setVisible(g == "progression")
+        self.form_ctx.labelForField(self.b_toute).setVisible(g == "progression")
+        cal = g in ("compteur", "barres", "courbe", "chiffres", "titre", "bandeau")
+        self.w_calage.setVisible(cal)
+        self.form_ctx.labelForField(self.w_calage).setVisible(cal)
+        for w in (self.titre, self.sous_titre):
+            vu = g not in ("sous_titres", "progression", "defilement")
+            w.setVisible(vu)
+            self.form1.labelForField(w).setVisible(vu)
+        self.titre.setPlaceholderText(_("le nom") if g == "bandeau" else "")
+        self.sous_titre.setPlaceholderText(_("la fonction") if g == "bandeau" else "")
+        p = float(self.anim.get("pose") if self.anim.get("pose") is not None else self.ed.timeline.position)
+        m, sec = divmod(p, 60)
+        cal_txt = {"voix": _(" ; calée sur la voix"), "musique": _(" ; calée sur la musique")}.get(self.anim.get("cale") or "", "")
+        self.l_pose.setText(f"{int(m)}:{sec:04.1f}".replace(".", ",") + cal_txt)
+        n = len(self.anim.get("mots") or [])
+        self.l_mots.setText(_("{n} mot(s) pris.", n=n) if n else _("Aucun mot pour l'instant."))
+        if hasattr(self, "r_moteurs"):
+            self._moteur_change(self._moteur())
+
+    def _position(self):
+        tl = self.ed.timeline
+        z = getattr(tl, "zone", [None, None])
+        if z and z[0] is not None and z[1] is not None and z[1] - z[0] > 0.2:
+            return float(z[0]), float(z[1])
+        return float(tl.position), None
+
+    def prendre_position(self):
+        a = self.lire_fiche()
+        a["pose"], fin = self._position()
+        if fin is not None and a.get("genre") in M.HABILLAGE + ("titre",):
+            a["duree"] = round(fin - a["pose"], 2)
+        a["horaire"], a["cale"] = None, ""
+        self.charger(a)
+
+    def prendre_mots(self):
+        projet = self.ed.projet
+        debut, fin = self._position()
+
+        def poser(r=None, e=None):
+            if e:
+                self.etat.setText("✕ " + texte_erreur(e))
+                return
+            mots, duree = M.mots_pour_sous_titres(projet, debut, fin)
+            if not mots:
+                self.etat.setText(_("Aucun mot dit à cet endroit (ou la transcription n'a rien trouvé)."))
+                return
+            a = self.lire_fiche()
+            a.update(mots=mots, duree=duree, pose=debut, horaire=None)
+            self.charger(a)
+            self.etat.setText(_("{n} mot(s) sur {d} s : regardez (▶).", n=len(mots), d=f"{duree:.1f}".replace(".", ",")))
+        if M.a_transcrire(projet):
+            from . import sous_titres as ST
+            if not ST.disponible():
+                self.etat.setText(_("La transcription demande le modèle de voix (Préférences › IA locale)."))
+                return
+            self._lancer(lambda t: M.transcrire(projet, self.params, t.avancer, t.arret_demande), _("Transcription des paroles"), poser)
+        else:
+            poser()
+
+    def choisir_capture(self):
+        from .widgets import ouvrir_fichier
+        f = ouvrir_fichier(self, _("Capture à faire défiler"), _("Images (*.png *.jpg *.jpeg *.webp)"), "images", self.params)
+        if f:
+            a = self.lire_fiche()
+            a["image"] = f
+            self.charger(a)
+
+    def toute_la_video(self):
+        a = self.lire_fiche()
+        a.update(pose=0.0, duree=round(max(2.0, self.ed.projet.duree()), 2), chapitres=M.chapitres(self.ed.projet, 0.0), horaire=None)
+        self.charger(a)
+        self.etat.setText(_("{n} chapitre(s) tirés de vos repères (touche M sur la timeline).", n=len(a["chapitres"])))
+
+    def caler(self):
+        quoi = self.calage.currentData()
+        a = self.lire_fiche()
+        if a.get("pose") is None:
+            a["pose"] = self._position()[0]
+        if not quoi:
+            a["horaire"], a["cale"] = None, ""
+            self.charger(a)
+            self.etat.setText(_("Horaire par défaut."))
+            return
+        projet, debut = self.ed.projet, float(a["pose"])
+
+        def appliquer(r, e):
+            if e:
+                self.etat.setText("✕ " + texte_erreur(e))
+                return
+            h, n = r
+            if not n:
+                self.etat.setText(_("Rien à caler : aucun mot reconnu ici.") if quoi == "voix" else _("Pas de musique rythmée sous l'animation."))
+                return
+            b = self.lire_fiche()
+            b.update(horaire=h, cale=quoi, pose=debut)
+            self.charger(b)
+            self.etat.setText(_("✓ Calée : {n} élément(s) suivent la {q}. Regardez (▶).", n=n, q=_("voix") if quoi == "voix" else _("musique")))
+
+        def travail(t):
+            if quoi == "voix":
+                if M.a_transcrire(projet):
+                    M.transcrire(projet, self.params, t.avancer, t.arret_demande)
+                return M.caler_voix(a, M.mots_dans(M.mots_montage(projet), debut, float(a["duree"])))
+            temps, forts = M.temps_musique(projet)
+            rel = lambda l: [x - debut for x in l if debut <= x <= debut + float(a["duree"])]
+            return M.caler_musique(a, rel(temps), rel(forts))
+        self._lancer(travail, _("Calage de l'animation"), appliquer)
 
     def _curseur(self, cle):
         if getattr(self, "_charge", False):
@@ -603,7 +809,7 @@ class DialogueMotion(QDialog):
 
     def _vignettes(self):
         from . import motion_maison as MM
-        t = float(self.anim.get("duree") or 6) * (0.55 if self.anim.get("genre") != "chiffres" else 0.5)
+        t = M.instant_vignette(self.anim)
         for k, b in enumerate(self.props):
             a = M.avec_variante(dict(self.anim, reglages=dict(self.anim.get("reglages") or {})), k)
             b.setIcon(QPixmap.fromImage(MM.apercu_image(a, t, (144, 81))))
@@ -873,7 +1079,9 @@ class ResultatAnimation(QDialog):
 
     def dessus(self):
         self.apercu.arreter()
-        self.ed.poser_au_dessus(self.chemin, self.ed.timeline.position, M.GENRES.get(self.anim.get("genre"), {}).get("nom", ""),
+        pose = self.anim.get("pose")
+        self.ed.poser_au_dessus(self.chemin, float(pose) if pose is not None else self.ed.timeline.position,
+                                M.GENRES.get(self.anim.get("genre"), {}).get("nom", ""),
                                 float(self.anim.get("duree") or 0) or None)
         self.accept()
 

@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.99 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.0.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.0.0 (sous-titres animes, habillage, animations calees sur la voix ou la musique)
+- Sous-titres animes : les mots dits du montage (transcrits sur ce poste si besoin), en mot surligne, mots qui sautent, un grand mot a la fois ou karaoke ; poses au-dessus du film, exactement sous la voix.
+- Habillage : bandeau nom et fonction, barre de progression sur toute la video avec vos reperes comme chapitres, capture qui defile dans un cadre.
+- « Caler sur » la voix (le chiffre finit de monter quand il est dit, chaque barre arrive quand son mois est dit, le record quand il est dit) ou sur les temps de la musique du montage.
+- Un seul horaire commun : le moteur PhilCut, HyperFrames (poste ou HeyGen) et Remotion donnent le meme film, cale au meme instant.
 
 ### 0.9.99 (animations : motion design dans PhilCut)
 - Fabrique IA › Animation (motion design) : chiffre qui monte, barres qui poussent, courbe qui se trace, titre anime, ou les trois a la suite. On ecrit ce qu'on veut (« Preparer avec l'IA » remplit la fiche sans inventer de chiffres) ou on colle ses donnees (Excel, Sheets, CSV) ; apercu immediat, trois propositions (style de la charte, plus vif, plus sobre), curseurs (vitesse, rebond, decalage, epaisseur, lueur, taille du texte), remarque a l'instant corrigee par l'IA.

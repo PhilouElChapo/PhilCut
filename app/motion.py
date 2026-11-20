@@ -34,7 +34,20 @@ GENRES = {
                                                 "annonce, citation.")},
     "chiffres": {"nom": _("Les trois à la suite (chiffre, barres, courbe)"),
                  "aide": _("Le chiffre total, puis les barres, puis la courbe : une petite séquence complète sur vos données.")},
+    # 1.0.0 : sous-titres animés et habillage
+    "sous_titres": {"nom": _("Sous-titres animés"), "aide": _("Les mots dits dans le montage, animés au rythme de la voix : mot "
+                                                             "surligné, mots qui sautent, un mot à la fois ou karaoké.")},
+    "bandeau": {"nom": _("Bandeau nom et fonction"), "aide": _("Le nom et la fonction de la personne qui parle, en bas de "
+                                                              "l'image : il arrive, reste, puis s'en va.")},
+    "progression": {"nom": _("Barre de progression"), "aide": _("Une barre fine qui avance sur toute la vidéo, avec les "
+                                                               "chapitres (vos repères) : on sait où l'on en est.")},
+    "defilement": {"nom": _("Capture qui défile"), "aide": _("Une capture (page web, document, conversation) dans un cadre, qui "
+                                                            "défile doucement de haut en bas.")},
 }
+STYLES_ST = {"surligne": _("Mot surligné (le mot dit dans une boîte de couleur)"), "saute": _("Mots qui sautent, un à un"),
+             "un_mot": _("Un grand mot à la fois, au centre"), "karaoke": _("Karaoké (la ligne se colore au fil des mots)")}
+CALAGES = {"": _("Rien (horaire par défaut)"), "voix": _("La voix : quand le chiffre, le mois, le mot est dit"),
+           "musique": _("La musique : sur les temps")}
 VARIANTES = {0: _("Dans le style de la charte"), 1: _("Plus vif"), 2: _("Plus sobre")}
 REGLAGES = [  # (clef, libellé, minimum, maximum, défaut) : les curseurs de la fenêtre, communs à tous les moteurs
     ("vitesse", _("Vitesse"), 0.5, 2.0, 1.0),
@@ -58,8 +71,314 @@ def nouvelle(genre="chiffres", charte=None, taille=(1920, 1080)):
             "reglages": {k: d_ for k, _l, _a, _b, d_ in REGLAGES}, "variante": 0, "zones_sures": taille[1] > taille[0]}
 
 
+def instant_vignette(anim):
+    """L'instant le plus parlant pour les vignettes des propositions."""
+    g, D = anim.get("genre"), float(anim.get("duree") or 6)
+    if g == "sous_titres" and anim.get("mots"):
+        m = anim["mots"][min(len(anim["mots"]) - 1, 3)]
+        return float(m[0]) + 0.05
+    return {"bandeau": min(D * 0.5, 2.0), "progression": D * 0.4, "defilement": D * 0.4, "titre": D * 0.55}.get(
+        g, D * (0.5 if g == "chiffres" else 0.55))
+
+
+HABILLAGE = ("sous_titres", "bandeau", "progression")      # posés sur le film : transparents d'office
+
+
+def preparer_genre(anim, genre):
+    """Ce qui change avec le genre : durée conseillée, transparence de l'habillage, textes d'exemple neutres."""
+    anim["genre"] = genre
+    anim["duree"] = duree_conseillee(genre)
+    anim["horaire"] = None
+    if genre in HABILLAGE:
+        anim["transparent"] = True
+    if genre == "bandeau" and anim.get("titre") == _("Visiteurs, premier semestre"):
+        anim["titre"], anim["sous_titre"] = _("Camille Martin"), _("Responsable de l'atelier")
+    return anim
+
+
 def duree_conseillee(genre):
-    return {"compteur": 4.5, "barres": 5.5, "courbe": 5.0, "titre": 4.0, "chiffres": 14.0}.get(genre, 6.0)
+    return {"compteur": 4.5, "barres": 5.5, "courbe": 5.0, "titre": 4.0, "chiffres": 14.0, "bandeau": 5.0, "progression": 30.0,
+            "defilement": 8.0, "sous_titres": 10.0}.get(genre, 6.0)
+
+
+# ------------------------------------------------------------------ l'horaire : quand chaque élément arrive (1.0.0)
+def horaire(anim):
+    """Les instants (en secondes de l'animation) de chaque élément, communs aux trois moteurs. Par défaut ils suivent la
+    vitesse et le décalage ; « Caler sur la voix ou la musique » les remplace (anim["horaire"], figé)."""
+    if isinstance(anim.get("horaire"), dict) and anim["horaire"].get("genre") == anim.get("genre"):
+        return anim["horaire"]
+    D = float(anim.get("duree") or duree_conseillee(anim.get("genre")))
+    V = max(0.1, reglage(anim, "vitesse"))
+    dec = 0.06 + 0.22 * reglage(anim, "decalage")
+    g = anim.get("genre") or "chiffres"
+    n = len(anim.get("donnees") or EXEMPLE)
+    h = {"genre": g, "duree": D, "scenes": {}}
+
+    def compteur(a, b):
+        h["scenes"]["compteur"] = [a, b]
+        h["compteur"] = {"debut": a + 0.3 / V, "fin": a + 2.6 / V, "badge": a + 2.4 / V}
+
+    def barres(a, b):
+        h["scenes"]["barres"] = [a, b]
+        h["barres"] = {"grille": a + 0.2 / V, "entrees": [a + (0.6 + i * dec) / V for i in range(n)], "halo": a + 2.6 / V}
+
+    def courbe(a, b):
+        h["scenes"]["courbe"] = [a, b]
+        h["courbe"] = {"debut": a + 0.4 / V, "fin": a + 2.8 / V, "record": a + 2.8 / V}
+
+    if g == "compteur":
+        compteur(0, D)
+    elif g == "barres":
+        barres(0, D)
+    elif g == "courbe":
+        courbe(0, D)
+    elif g == "titre":
+        mots = (anim.get("titre") or "").split()
+        h["scenes"]["titre"] = [0, D]
+        h["titre"] = {"mots": [(0.15 + k * dec) / V for k in range(len(mots))], "trait": (0.4 + len(mots) * dec * 0.5) / V,
+                      "sous_titre": 0.8 / V}
+    elif g == "bandeau":
+        h["scenes"]["bandeau"] = [0, D]
+        h["bandeau"] = {"entree": 0.1 / V, "texte": 0.35 / V, "sortie": max(0.8, D - 0.7 / V)}
+    elif g in ("progression", "defilement", "sous_titres"):
+        h["scenes"][g] = [0, D]
+    else:
+        compteur(0, D * 4.3 / 14)
+        barres(D * 4.0 / 14, D * 9.4 / 14)
+        courbe(D * 9.2 / 14, D)
+    return h
+
+
+def _norm(t):
+    import unicodedata
+    t = "".join(x for x in unicodedata.normalize("NFD", str(t)) if unicodedata.category(x) != "Mn").lower()
+    return re.sub(r"[^a-z0-9]", "", t)
+
+
+def _nombre_dit(mot, valeur):
+    """Le mot dit est-il ce chiffre (« 34 390 », « 34390 », « 34 000 » pour 34 390 arrondi, « 1,2 » million…) ?"""
+    t = re.sub(r"[^\d,.]", "", str(mot))
+    if not t or not any(c.isdigit() for c in t):
+        return False
+    try:
+        v = _valeur(t)
+    except ValueError:
+        return False
+    if not valeur:
+        return False
+    for k in (1, 1000, 1_000_000):
+        if abs(v * k - valeur) <= max(1.0, abs(valeur) * 0.05):
+            return True
+    return False
+
+
+def mots_dans(mots_montage, debut, duree):
+    """Les mots du montage entendus pendant l'animation (posée à `debut`), en temps de l'animation : [[t0, t1, mot]]."""
+    out = []
+    for m in mots_montage or []:
+        t0, t1 = float(m["t0"]) - debut, float(m["t1"]) - debut
+        if t1 > 0 and t0 < duree:
+            out.append([round(max(0.0, t0), 3), round(min(duree, t1), 3), m["mot"]])
+    return out
+
+
+def caler_voix(anim, mots):
+    """Horaire calé sur la voix (mots en temps de l'animation) : le compteur finit quand le chiffre est dit, chaque barre
+    arrive quand son libellé est dit, le record quand il est dit ; les scènes s'ouvrent juste avant. (horaire, trouvés)"""
+    h = json.loads(json.dumps(horaire(dict(anim, horaire=None))))
+    V = max(0.1, reglage(anim, "vitesse"))
+    trouves = 0
+    mots = [(float(a), float(b), w) for a, b, w in mots or []]
+
+    def chercher(cond, apres=-1.0):
+        return next((a for a, _b, w in mots if a >= apres and cond(w)), None)
+    if "compteur" in h:
+        v = anim.get("valeur")
+        t = chercher(lambda w: _nombre_dit(w, v)) if v is not None else None
+        if t is not None:
+            fin = t + 0.25
+            h["compteur"].update(fin=fin, debut=max(h["scenes"]["compteur"][0] + 0.1, fin - 2.3 / V), badge=fin - 0.1)
+            trouves += 1
+    if "barres" in h:
+        apres = h["scenes"]["barres"][0] - 1.0
+        e = h["barres"]["entrees"]
+        for i, (lib, _v) in enumerate(anim.get("donnees") or []):
+            cle = _norm(lib)[:4]
+            t = chercher(lambda w, c=cle: len(c) >= 3 and _norm(w).startswith(c), apres) if cle else None
+            if t is not None:
+                e[i] = t
+                apres = t
+                trouves += 1
+            elif i:
+                e[i] = max(e[i], e[i - 1] + 0.35)          # pas dit : juste après la précédente
+    if "courbe" in h:
+        d = anim.get("donnees") or []
+        rec = max(range(len(d)), key=lambda i: d[i][1]) if d else 0
+        cle = _norm(d[rec][0])[:4] if d else ""
+        t = chercher(lambda w: _norm(w).startswith("record") or (len(cle) >= 3 and _norm(w).startswith(cle)),
+                     h["scenes"]["courbe"][0] - 0.5)
+        if t is not None:
+            c = h["courbe"]
+            c["record"] = max(t, c["debut"] + 0.8)
+            c["fin"] = max(c["debut"] + 0.8, min(c["fin"], c["record"]))
+            trouves += 1
+    if "titre" in h:
+        titre = [_norm(w) for w in (anim.get("titre") or "").split()]
+        apres = 0.0
+        for k, m in enumerate(titre):
+            t = chercher(lambda w, m=m: m and _norm(w) == m, apres)
+            if t is not None:
+                h["titre"]["mots"][k] = t
+                apres = t
+                trouves += 1
+    _ouvrir_scenes(h)
+    return h, trouves
+
+
+def _ouvrir_scenes(h):
+    """Chaque scène s'ouvre au plus tard 0,6 s avant son premier élément, et la précédente se ferme en fondu juste après."""
+    ordre = [k for k in ("compteur", "barres", "courbe") if k in h.get("scenes", {})]
+    premiers = {"compteur": lambda: h["compteur"]["debut"] - 0.3, "barres": lambda: min(h["barres"]["entrees"] or [0]) - 0.6,
+                "courbe": lambda: h["courbe"]["debut"] - 0.4}
+    for i, k in enumerate(ordre):
+        a, b = h["scenes"][k]
+        a = max(0.0, min(a, premiers[k]()))
+        if i:
+            prec = ordre[i - 1]
+            a = max(a, h["scenes"][prec][0] + 1.0)
+            h["scenes"][prec][1] = min(h["scenes"][prec][1], a + 0.4)
+        h["scenes"][k] = [round(a, 3), round(b, 3)]
+
+
+def caler_musique(anim, temps, forts=()):
+    """Horaire calé sur la musique (temps et temps forts, en temps de l'animation) : scènes et fin du compteur sur les temps
+    forts, barres une par temps, mots du titre un par temps. (horaire, nombre de calages)"""
+    h = json.loads(json.dumps(horaire(dict(anim, horaire=None))))
+    temps = sorted(float(t) for t in temps or [] if 0 <= float(t) <= h["duree"])
+    forts = sorted(float(t) for t in forts or [] if 0 <= float(t) <= h["duree"]) or temps
+    if len(temps) < 2:
+        return h, 0
+    ecart = (temps[-1] - temps[0]) / max(1, len(temps) - 1)
+    pas = 2 if ecart < 0.3 else 1                      # tempo rapide : un élément tous les deux temps
+
+    def proche(t, grille):
+        return min(grille, key=lambda x: abs(x - t))
+
+    def suivants(t, k):
+        g = [x for x in temps if x >= t - 0.02][::pas]
+        return (g + [g[-1] + ecart * pas * (j + 1) for j in range(k)])[:k] if g else []
+    n = 0
+    if "compteur" in h:
+        fin = proche(h["compteur"]["fin"], forts)
+        h["compteur"].update(fin=fin, debut=max(0.1, fin - 2.3), badge=proche(fin + 0.1, temps))
+        n += 1
+    if "barres" in h:
+        e = suivants(h["barres"]["entrees"][0], len(h["barres"]["entrees"]))
+        if e:
+            h["barres"]["entrees"] = e
+            h["barres"]["halo"] = proche(e[-1] + ecart, temps)
+            n += len(e)
+    if "courbe" in h:
+        h["courbe"]["record"] = proche(h["courbe"]["record"], forts)
+        n += 1
+    if "titre" in h:
+        e = suivants(h["titre"]["mots"][0] if h["titre"]["mots"] else 0.15, len(h["titre"]["mots"]))
+        if e:
+            h["titre"]["mots"] = e
+            n += len(e)
+    if "bandeau" in h:
+        h["bandeau"]["entree"] = proche(h["bandeau"]["entree"], forts)
+        n += 1
+    for k in list(h["scenes"]):
+        a, b = h["scenes"][k]
+        if a > 0:
+            h["scenes"][k][0] = proche(a, forts)
+    _ouvrir_scenes(h)
+    return h, n
+
+
+# ------------------------------------------------------------------ ce que le montage fournit (1.0.0)
+def mots_montage(projet):
+    """Tous les mots transcrits du montage (piste vidéo et piste Voix), dans l'ordre : [{t0, t1, mot}]."""
+    from . import montage_texte as MT
+    out = []
+    for piste in ("video", "voix"):
+        try:
+            out += MT.mots_du_montage(projet, piste)
+        except Exception:      # noqa: BLE001 : une piste sans transcription
+            pass
+    return sorted(out, key=lambda m: m["t0"])
+
+
+def a_transcrire(projet):
+    from . import montage_texte as MT
+    return sum(len(MT.rushes_a_transcrire(projet, p)) for p in ("video", "voix"))
+
+
+def transcrire(projet, params, progression=None, arret=lambda: False):
+    from . import montage_texte as MT
+    n = 0
+    for p in ("video", "voix"):
+        n += MT.transcrire(projet, params, progression=progression, arret=arret, piste=p)
+    return n
+
+
+def mots_pour_sous_titres(projet, debut, fin=None, pause_fin=3.0, maxi=90.0):
+    """Les mots à sous-titrer à partir de `debut` (jusqu'à `fin`, sinon jusqu'à une pause de 3 s) : (mots en temps de
+    l'animation, durée)."""
+    tous = [m for m in mots_montage(projet) if m["t1"] > debut]
+    choisis = []
+    for m in tous:
+        if fin is not None and m["t0"] >= fin:
+            break
+        if fin is None and choisis and (m["t0"] - choisis[-1]["t1"] > pause_fin or m["t1"] - debut > maxi):
+            break
+        choisis.append(m)
+    if not choisis:
+        return [], 0.0
+    duree = (fin - debut) if fin is not None else (choisis[-1]["t1"] - debut + 0.4)
+    return mots_dans(choisis, debut, duree), round(max(1.0, duree), 2)
+
+
+def temps_musique(projet):
+    """Temps et temps forts de la première musique du montage, en temps de la timeline : (temps, forts)."""
+    from . import rythme
+    for c in sorted(projet.clips_piste("audio"), key=lambda x: x["debut"]):
+        m = projet.media(c["media"])
+        if not m:
+            continue
+        an = m.get("rythme")
+        if not an:
+            an = rythme.analyser(m["chemin"])
+            m["rythme"] = an
+        return rythme.temps_montage(c, an, False), rythme.temps_montage(c, an, True)
+    return [], []
+
+
+def chapitres(projet, debut=0.0, duree=None):
+    """Les repères du montage comme chapitres de la barre de progression : [[t, nom]] en temps de l'animation."""
+    out = []
+    for m in sorted(getattr(projet, "marqueurs", []) or [], key=lambda x: x.get("t", 0)):
+        t = float(m.get("t", 0)) - debut
+        if 0 <= t < (duree if duree else 1e9):
+            out.append([round(t, 2), m.get("texte") or _("Chapitre")])
+    return out
+
+
+# ------------------------------------------------------------------ sous-titres : les lignes
+def lignes_st(mots, max_car=28, max_mots=6, pause=0.7):
+    """Les mots regroupés en courtes lignes (au plus max_car caractères, coupées aux pauses) : [{t0, t1, mots: [[t0, t1, mot]]}]."""
+    out, cour = [], []
+    for m in mots or []:
+        txt = " ".join(x[2] for x in cour + [m])
+        if cour and (len(txt) > max_car or len(cour) >= max_mots or m[0] - cour[-1][1] > pause
+                     or cour[-1][2].rstrip()[-1:] in ".!?"):
+            out.append(cour)
+            cour = []
+        cour.append(list(m))
+    if cour:
+        out.append(cour)
+    return [{"t0": l[0][0], "t1": max(l[-1][1], l[0][0] + 0.5), "mots": l} for l in out]
 
 
 def reglage(anim, cle):
@@ -226,6 +545,10 @@ def etat(moteur, params=None):
 
 def conseiller(anim, params=None):
     """(moteur, raison) : le moteur conseillé pour cette animation sur ce poste."""
+    if anim.get("genre") in ("sous_titres", "bandeau", "progression", "defilement"):
+        if etat("hyperframes_local", params)[0]:
+            return "hyperframes_local", _("installé ici, gratuit : le plus fin pour le texte animé et l'habillage")
+        return "maison", _("l'habillage se fait bien ici : gratuit, rien à installer, aperçu immédiat")
     if anim.get("genre") in GENRES and not anim.get("html"):
         if etat("hyperframes_local", params)[0] and float(reglage(anim, "lueur")) > 0.7:
             return "hyperframes_local", _("installé ici, gratuit, et le plus fin pour les lueurs et les dégradés")

@@ -90,6 +90,8 @@ class Rendu:
         self.vertical = self.H > self.L
         self._grille = None
         self._logo = None
+        self._capture = None
+        self.h = M.horaire(anim)
         d = [x for x in anim.get("donnees") or [] if len(x) >= 2]
         self.donnees = [(str(l), float(v)) for l, v in d] or [(l, float(v)) for l, v in M.EXEMPLE]
 
@@ -241,28 +243,39 @@ class Rendu:
             self.texte(p, self.zx, self.zy + self.zh + 40 * self.u, _("Source : {s}", s=s), self.police(False, 22 * self.u, 400),
                        self.C["doux"], opacite=opacite)
 
-    # -------------------------------------------------- scènes
-    def scene_compteur(self, p, t, D, dernier=False):
-        from PySide6.QtGui import QLinearGradient, QPainterPath
+    # -------------------------------------------------- scènes (1.0.0 : sur l'horaire commun, en secondes de l'animation)
+    def _k(self, t, debut, raideur=120.0):
+        """Ressort à partir de « debut », au rythme de la vitesse."""
+        return ressort((t - debut) * self.vitesse, self.rebond, raideur)
+
+    def _fondu(self, p, t, a, b, dernier):
+        V = self.vitesse
+        entree = entre(t, a, a + 0.5 / V, SORTIE)
+        sortie = 0.0 if dernier else entre(t, b - 0.5 / V, b, lambda x: x ** 3)
+        return entree * (1 - sortie), sortie
+
+    def scene_compteur(self, p, t, a, b, dernier):
+        from PySide6.QtGui import QLinearGradient, QFontMetricsF
         from PySide6.QtCore import QPointF, QRectF, Qt
-        u, cx = self.u, self.zx + self.zw / 2
+        h = self.h["compteur"]
+        u, cx, V = self.u, self.zx + self.zw / 2, self.vitesse
         cy = self.zy + self.zh * (0.48 if not self.vertical else 0.42)
-        sortie = 0.0 if dernier else entre(t, D - 0.6, D, lambda x: x ** 3)
+        sortie = 0.0 if dernier else entre(t, b - 0.6 / V, b, lambda x: x ** 3)
         p.save()
         p.setOpacity(1 - sortie)
         p.translate(cx, cy)
         p.scale(1 - sortie * 0.08, 1 - sortie * 0.08)
         p.translate(-cx, -cy)
         self.panneau(p, 1.0)
-        a0 = entre(t, 0, 0.6)
-        lab_y = cy - 170 * u + (1 - entre(t, 0, 0.6, SORTIE)) * 20 * u
+        a0 = entre(t, a, a + 0.6 / V)
+        lab_y = cy - 170 * u + (1 - entre(t, a, a + 0.6 / V, SORTIE)) * 20 * u
         self.texte(p, cx, lab_y, (self.a.get("titre") or "").upper(), self.police(False, 34 * u, 600), self.C["doux"], "centre",
                    espacement=6 * u, opacite=a0)
         v = float(self.a.get("valeur") if self.a.get("valeur") is not None else sum(x for _l, x in self.donnees))
-        n = v * entre(t, 0.3, 2.6, DOUCE)
+        n = v * entre(t, h["debut"], h["fin"], DOUCE)
         grand = self.police(True, 260 * u * (0.8 if self.vertical else 1.0), 700)
         path = self.chemin_chiffres(M.nombre_texte(self.a, round(n, self.a.get("decimales") or 0)), grand, cx, cy + 90 * u)
-        self.lueur_chemin(p, path, "accent", self.lueur * entre(t, 0.3, 1.2))
+        self.lueur_chemin(p, path, "accent", self.lueur * entre(t, h["debut"], h["debut"] + 0.9 / V))
         r = path.boundingRect()
         g = QLinearGradient(QPointF(r.left(), r.top()), QPointF(r.right(), r.bottom()))
         g.setColorAt(0.3, self.C["texte"])
@@ -271,36 +284,35 @@ class Rendu:
         p.fillPath(path, g)
         badge = (self.a.get("badge") or "").strip()
         if badge:
-            k = ressort(t - 2.4, self.rebond, 160)
+            k = self._k(t, h["badge"], 160)
             if k > 0.001:
                 f = self.police(False, 38 * u, 600)
-                from PySide6.QtGui import QFontMetricsF
                 w = QFontMetricsF(f).horizontalAdvance(badge) + 60 * u
-                h = 66 * u
+                hh = 66 * u
                 by = cy + 150 * u
                 p.save()
                 p.setOpacity(p.opacity() * min(1.0, k))
-                p.translate(cx, by + h / 2)
+                p.translate(cx, by + hh / 2)
                 p.scale(k, k)
                 gb = QLinearGradient(QPointF(-w / 2, 0), QPointF(w / 2, 0))
                 gb.setColorAt(0, self.C["accent2"])
                 gb.setColorAt(1, self.C["accent"])
                 p.setPen(Qt.NoPen)
                 p.setBrush(gb)
-                p.drawRoundedRect(QRectF(-w / 2, -h / 2, w, h), h / 2, h / 2)
+                p.drawRoundedRect(QRectF(-w / 2, -hh / 2, w, hh), hh / 2, hh / 2)
                 self.texte(p, 0, 13 * u, badge, f, self.C["fond"], "centre")
                 p.restore()
         self.source(p, a0)
         p.restore()
 
-    def scene_barres(self, p, t, D, dernier=False):
+    def scene_barres(self, p, t, a, b, dernier):
         from PySide6.QtGui import QLinearGradient, QPainterPath
-        from PySide6.QtCore import QPointF, QRectF, Qt
-        u = self.u
-        entree = entre(t, 0, 0.5, SORTIE)
-        sortie = 0.0 if dernier else entre(t, D - 0.5, D, lambda x: x ** 3)
+        from PySide6.QtCore import QPointF, QRectF
+        h = self.h["barres"]
+        u, V = self.u, self.vitesse
+        op, _s = self._fondu(p, t, a, b, dernier)
         p.save()
-        p.setOpacity(entree * (1 - sortie))
+        p.setOpacity(op)
         self.panneau(p, 1.0)
         x0, y0 = self.zx, self.zy
         self.texte(p, x0, y0 + 60 * u, self.a.get("titre_barres") or self.a.get("titre") or "", self.police(True, 64 * u, 700),
@@ -313,7 +325,8 @@ class Rendu:
         for i in range(5):
             gval = vmax * i / 4
             yy = bas - (gval / vmax) * H
-            trace = entre(t, 0.2 + i * 0.1, 0.9 + i * 0.1, SORTIE)
+            g0 = h["grille"] + i * 0.1 / V
+            trace = entre(t, g0, g0 + 0.7 / V, SORTIE)
             self.texte(p, x0, yy + 8 * u, M.nombre(gval), self.police(False, 22 * u, 400), self.C["doux"], opacite=trace)
             p.setPen(self.couleur("texte", 0.11))
             p.drawLine(QPointF(gauche, yy), QPointF(gauche + (self.zx + self.zw - gauche) * trace, yy))
@@ -322,14 +335,15 @@ class Rendu:
         larg = ((self.zx + self.zw - gauche) - ecart * (n - 1)) / n
         larg_barre = larg * (0.45 + 0.55 * self.epaisseur)
         rec = max(range(n), key=lambda i: self.donnees[i][1])
+        entrees = list(h["entrees"]) + [h["entrees"][-1] if h["entrees"] else a] * max(0, n - len(h["entrees"]))
         for i, (lib, val) in enumerate(self.donnees):
-            k = ressort(t - 0.6 - i * self.decalage, self.rebond, 90)
+            k = self._k(t, entrees[i], 90)
             bx = gauche + i * (larg + ecart) + (larg - larg_barre) / 2
-            h = (val / vmax) * H * k
+            hb = (val / vmax) * H * k
             record = i == rec
-            halo = entre(t, 2.6, 3.2) if record else 0.0
-            r = QRectF(bx, bas - h, larg_barre, max(0.0, h))
-            if h > 0.5:
+            halo = entre(t, h["halo"], h["halo"] + 0.6 / V) if record else 0.0
+            r = QRectF(bx, bas - hb, larg_barre, max(0.0, hb))
+            if hb > 0.5:
                 g = QLinearGradient(QPointF(0, r.top()), QPointF(0, r.bottom()))
                 if record:
                     g.setColorAt(0, self.C["accent2"])
@@ -338,12 +352,12 @@ class Rendu:
                     g.setColorAt(0, self.couleur("accent", 0.8))
                     g.setColorAt(1, self.couleur("accent", 0.27))
                 path = QPainterPath()
-                rr = min(18 * u, larg_barre / 2, h)
+                rr = min(18 * u, larg_barre / 2, hb)
                 path.addRoundedRect(r, rr, rr)
                 if record and halo > 0 and self.lueur > 0:
                     self.lueur_chemin(p, path, "accent2", halo * self.lueur)
                 p.fillPath(path, g)
-            self.texte(p, bx + larg_barre / 2, bas - h - 12 * u, M.nombre_texte(self.a, val * min(1.0, k)),
+            self.texte(p, bx + larg_barre / 2, bas - hb - 12 * u, M.nombre_texte(self.a, val * min(1.0, k)),
                        self.police(True, 32 * u * (0.8 if n > 8 else 1.0), 700),
                        self.C["accent2"] if record else self.C["texte"], "centre", opacite=min(1.0, k))
             self.texte(p, bx + larg_barre / 2, bas + 38 * u, lib, self.police(False, 26 * u * (0.8 if n > 8 else 1.0), 400),
@@ -351,14 +365,14 @@ class Rendu:
         self.source(p, 1.0)
         p.restore()
 
-    def scene_courbe(self, p, t, D, dernier=True):
+    def scene_courbe(self, p, t, a, b, dernier):
         from PySide6.QtGui import QLinearGradient, QPainterPath, QPen, QColor
         from PySide6.QtCore import QPointF, QRectF, Qt
+        h = self.h["courbe"]
         u = self.u
-        entree = entre(t, 0, 0.5, SORTIE)
-        sortie = 0.0 if dernier else entre(t, D - 0.5, D, lambda x: x ** 3)
+        op, _s = self._fondu(p, t, a, b, dernier)
         p.save()
-        p.setOpacity(entree * (1 - sortie))
+        p.setOpacity(op)
         self.panneau(p, 1.0)
         x0, y0 = self.zx, self.zy
         self.texte(p, x0, y0 + 60 * u, self.a.get("titre_courbe") or self.a.get("titre") or "", self.police(True, 64 * u, 700),
@@ -376,7 +390,7 @@ class Rendu:
             a_, b_ = pts[i - 1], pts[i]
             cxm = (a_.x() + b_.x()) / 2
             d.cubicTo(QPointF(cxm, a_.y()), QPointF(cxm, b_.y()), b_)
-        prog = entre(t, 0.4, 2.8, ALLER_RETOUR)
+        prog = entre(t, h["debut"], h["fin"], ALLER_RETOUR)
         k = min(n - 1, prog * (n - 1))
         i0 = int(math.floor(k))
         tt = k - i0
@@ -402,11 +416,11 @@ class Rendu:
         p.strokePath(d, pen)
         p.restore()
         for i, q in enumerate(pts):
-            if k >= i - 1e-6:
+            if prog > 0 and k >= i - 1e-6:
                 p.setPen(QPen(self.C["texte"], 3 * u))
                 p.setBrush(self.C["fond"])
                 p.drawEllipse(q, 7 * u, 7 * u)
-                self.texte(p, q.x(), bas + 40 * u, self.donnees[i][0], self.police(False, 24 * u, 400), self.C["doux"], "centre")
+            self.texte(p, q.x(), bas + 40 * u, self.donnees[i][0], self.police(False, 24 * u, 400), self.C["doux"], "centre")
         if prog > 0:
             for k2 in range(4, 0, -1):
                 p.setPen(Qt.NoPen)
@@ -415,17 +429,17 @@ class Rendu:
             p.setBrush(self.C["accent2"])
             p.drawEllipse(point, 16 * u, 16 * u)
         rec = max(range(n), key=lambda i: self.donnees[i][1])
-        r = ressort(t - 2.8, self.rebond, 140)
+        r = self._k(t, h["record"], 140)
         if r > 0.001:
             q = pts[rec]
-            w, h = 300 * u, 96 * u
+            w, hh = 300 * u, 96 * u
             x = min(max(self.zx, q.x() - w - 40 * u), self.zx + self.zw - w)
-            y = max(y0 + 130 * u, q.y() - 60 * u - h + (1 - min(1.0, r)) * 30 * u)
+            y = max(y0 + 130 * u, q.y() - 60 * u - hh + (1 - min(1.0, r)) * 30 * u)
             p.save()
             p.setOpacity(p.opacity() * min(1.0, r))
             p.setPen(QPen(QColor(255, 255, 255, 48), 1.5 * u))
             p.setBrush(QColor(255, 255, 255, 18))
-            p.drawRoundedRect(QRectF(x, y, w, h), 20 * u, 20 * u)
+            p.drawRoundedRect(QRectF(x, y, w, hh), 20 * u, 20 * u)
             self.texte(p, x + 28 * u, y + 40 * u, _("Record"), self.police(False, 24 * u, 400), self.C["doux"])
             self.texte(p, x + 28 * u, y + 78 * u, M.nombre_texte(self.a, self.donnees[rec][1]), self.police(True, 38 * u, 700),
                        self.C["texte"])
@@ -433,11 +447,12 @@ class Rendu:
         self.source(p, 1.0)
         p.restore()
 
-    def scene_titre(self, p, t, D, dernier=True):
+    def scene_titre(self, p, t, a, b, dernier):
         from PySide6.QtGui import QFontMetricsF
         from PySide6.QtCore import QRectF, Qt
-        u = self.u
-        sortie = 0.0 if not dernier else entre(t, D - 0.6, D, lambda x: x ** 3)
+        h = self.h["titre"]
+        u, V = self.u, self.vitesse
+        sortie = entre(t, b - 0.6 / V, b, lambda x: x ** 3)
         p.save()
         p.setOpacity(1 - sortie)
         self.panneau(p, 1.0)
@@ -459,7 +474,7 @@ class Rendu:
         for ligne in lignes:
             x = self.zx + (self.zw - fm.horizontalAdvance(" ".join(ligne))) / 2
             for m in ligne:
-                r = ressort(t - 0.15 - k * self.decalage, self.rebond, 150)
+                r = self._k(t, h["mots"][k] if k < len(h["mots"]) else a, 150)
                 op = min(1.0, max(0.0, r))
                 p.save()
                 p.translate(0, (1 - min(1.0, r)) * 60 * u)
@@ -468,7 +483,7 @@ class Rendu:
                 x += fm.horizontalAdvance(m + " ")
                 k += 1
             y += hl
-        trait = entre(t, 0.4 + k * self.decalage * 0.5, 1.2 + k * self.decalage * 0.5, SORTIE)
+        trait = entre(t, h["trait"], h["trait"] + 0.8 / V, SORTIE)
         lt = self.zw * 0.22 * trait
         p.setPen(Qt.NoPen)
         p.setBrush(self.C["accent2"])
@@ -476,33 +491,196 @@ class Rendu:
         st = self.a.get("sous_titre") or ""
         if st:
             self.texte(p, self.zx + self.zw / 2, y + 10 * u, st, self.police(False, 40 * u, 400), self.C["doux"], "centre",
-                       opacite=entre(t, 0.8, 1.4))
+                       opacite=entre(t, h["sous_titre"], h["sous_titre"] + 0.6 / V))
         p.restore()
+
+    # -------------------------------------------------- 1.0.0 : habillage
+    def scene_bandeau(self, p, t, a, b, dernier):
+        """Bandeau nom et fonction (tiers inférieur) : le trait d'accent glisse, le nom monte, la fonction suit ; sortie."""
+        from PySide6.QtGui import QFontMetricsF
+        from PySide6.QtCore import QRectF, Qt
+        h = self.h["bandeau"]
+        u, V = self.u * 1.15, self.vitesse
+        k = self._k(t, h["entree"], 160)
+        sortie = entre(t, h["sortie"], h["sortie"] + 0.5 / V, lambda x: x ** 3)
+        if k <= 0.001:
+            return
+        nom, fonction = self.a.get("titre") or "", self.a.get("sous_titre") or ""
+        fn, ff = self.police(True, 54 * u, 700), self.police(False, 32 * u, 400)
+        w = max(QFontMetricsF(fn).horizontalAdvance(nom), QFontMetricsF(ff).horizontalAdvance(fonction)) + 80 * u
+        x = self.zx
+        y = self.zy + self.zh - 170 * u
+        p.save()
+        p.setOpacity(1 - sortie)
+        p.setPen(Qt.NoPen)
+        largeur = w * min(1.0, k) * (1 - sortie * 0.3)
+        p.setBrush(self.couleur("fond", 0.86))
+        p.drawRoundedRect(QRectF(x, y, largeur, 150 * u), 14 * u * self.ch.get("coins", 0.6), 14 * u * self.ch.get("coins", 0.6))
+        p.setBrush(self.C["accent"])
+        p.drawRoundedRect(QRectF(x, y, 10 * u * (0.5 + self.epaisseur), 150 * u), 4 * u, 4 * u)
+        p.setClipRect(QRectF(x, y, largeur, 150 * u))
+        kt = self._k(t, h["texte"], 140)
+        self.texte(p, x + 40 * u, y + 70 * u + (1 - min(1.0, kt)) * 30 * u, nom, fn, self.C["texte"], opacite=min(1.0, kt))
+        kf = self._k(t, h["texte"] + 0.15 / V, 140)
+        self.texte(p, x + 40 * u, y + 120 * u + (1 - min(1.0, kf)) * 30 * u, fonction, ff, self.C["accent2"], opacite=min(1.0, kf))
+        p.restore()
+
+    def scene_progression(self, p, t, a, b, dernier):
+        """Barre de progression fine en bas (au-dessus des zones mortes en vertical), avec les chapitres."""
+        from PySide6.QtCore import QRectF, QPointF, Qt
+        from PySide6.QtGui import QLinearGradient
+        u = max(self.L, self.H) / 1920
+        haut = max(4.0, 8 * u * (0.5 + self.epaisseur))
+        y = (self.zy + self.zh + 40 * u) if self.vertical else (self.H - haut - 18 * u)
+        x0, x1 = 24 * u, self.L - 24 * u
+        prog = min(1.0, max(0.0, t / max(0.01, self.D)))
+        p.save()
+        p.setPen(Qt.NoPen)
+        p.setBrush(self.couleur("texte", 0.18))
+        p.drawRoundedRect(QRectF(x0, y, x1 - x0, haut), haut / 2, haut / 2)
+        g = QLinearGradient(QPointF(x0, 0), QPointF(x1, 0))
+        g.setColorAt(0, self.C["accent"])
+        g.setColorAt(1, self.C["accent2"])
+        p.setBrush(g)
+        p.drawRoundedRect(QRectF(x0, y, (x1 - x0) * prog, haut), haut / 2, haut / 2)
+        chap = [c for c in self.a.get("chapitres") or [] if 0 < float(c[0]) < self.D]
+        actif = None
+        for tc, nom in chap:
+            xc = x0 + (x1 - x0) * float(tc) / self.D
+            p.setBrush(self.C["fond"])
+            p.drawRect(QRectF(xc - 1.5 * u, y - 1, 3 * u, haut + 2))
+            if float(tc) <= t:
+                actif = nom
+        if actif is None and chap:
+            actif = None
+        if actif:
+            self.texte(p, x0, y - 14 * u, actif, self.police(False, 26 * u, 600), self.C["texte"],
+                       opacite=0.9 * min(1.0, 0.3 + prog * 10))
+        p.restore()
+
+    def scene_defilement(self, p, t, a, b, dernier):
+        """Une capture dans un cadre arrondi, qui entre en grossissant puis défile de haut en bas."""
+        from PySide6.QtGui import QImage, QPainterPath, QColor
+        from PySide6.QtCore import QRectF, Qt
+        V = self.vitesse
+        if self._capture is None:
+            img = QImage(self.a.get("image") or "")
+            self._capture = img if not img.isNull() else False
+        cadre_w = self.zw * (0.62 if not self.vertical else 0.92)
+        cadre_h = self.zh * 0.9
+        cx, cy = self.zx + self.zw / 2, self.zy + self.zh / 2
+        k = self._k(t, a + 0.1, 110)
+        p.save()
+        p.translate(cx, cy + (1 - min(1.0, k)) * 80 * self.u)
+        sc = 0.85 + 0.15 * min(1.2, k)
+        p.scale(sc, sc)
+        p.setOpacity(min(1.0, max(0.0, k)) * (1 - entre(t, b - 0.5 / V, b)))
+        r = QRectF(-cadre_w / 2, -cadre_h / 2, cadre_w, cadre_h)
+        rayon = 28 * self.u * (0.4 + self.ch.get("coins", 0.6))
+        for e in range(6, 0, -1):                       # ombre douce
+            p.setPen(Qt.NoPen)
+            p.setBrush(QColor(0, 0, 0, 14))
+            p.drawRoundedRect(r.adjusted(-e * 5 * self.u, -e * 3 * self.u, e * 5 * self.u, e * 7 * self.u), rayon + e * 5, rayon + e * 5)
+        chemin = QPainterPath()
+        chemin.addRoundedRect(r, rayon, rayon)
+        p.setClipPath(chemin)
+        p.fillRect(r, QColor("#FFFFFF"))
+        if self._capture:
+            img = self._capture
+            ech = cadre_w / img.width()
+            hi = img.height() * ech
+            prog = entre(t, a + 0.9 / V, b - 0.9 / V, ALLER_RETOUR)
+            dy = -max(0.0, hi - cadre_h) * prog
+            p.drawImage(QRectF(-cadre_w / 2, -cadre_h / 2 + dy, cadre_w, hi), img)
+        else:
+            self.texte(p, 0, 0, _("Choisissez une capture"), self.police(False, 40 * self.u, 400), QColor("#666666"), "centre")
+        p.setClipping(False)
+        p.setPen(self.couleur("accent", 0.9))
+        p.setBrush(Qt.NoBrush)
+        p.drawRoundedRect(r, rayon, rayon)
+        p.restore()
+
+    def scene_sous_titres(self, p, t, a, b, dernier):
+        """Les mots dits, animés au rythme de la voix (style choisi)."""
+        from PySide6.QtGui import QFontMetricsF, QColor
+        from PySide6.QtCore import QRectF, Qt
+        style = self.a.get("style_st") or "surligne"
+        maj = bool(self.a.get("majuscules", True))
+        mots = self.a.get("mots") or []
+        u = self.u * 1.1
+        if style == "un_mot":
+            m = next((x for x in mots if x[0] <= t < max(x[1], x[0] + 0.25)), None)
+            if not m:
+                return
+            k = ressort((t - m[0]) * 1.4, max(0.3, self.rebond), 220)
+            f = self.police(True, 150 * u * (0.8 if self.vertical else 1.0), 800)
+            txt = m[2].upper() if maj else m[2]
+            p.save()
+            cx, cy = self.zx + self.zw / 2, self.zy + self.zh * 0.62
+            p.translate(cx, cy)
+            p.scale(0.6 + 0.4 * min(1.2, k), 0.6 + 0.4 * min(1.2, k))
+            fm = QFontMetricsF(f)
+            from PySide6.QtGui import QPainterPath, QPen
+            path = QPainterPath()
+            path.addText(-fm.horizontalAdvance(txt) / 2, fm.ascent() / 3, f, txt)
+            p.strokePath(path, QPen(QColor(0, 0, 0, 200), 14 * u, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            p.fillPath(path, self.C["accent2"] if len(txt) > 6 else self.C["texte"])
+            p.restore()
+            return
+        lignes = M.lignes_st(mots, max_car=22 if self.vertical else 32)
+        ligne = next((l for l in lignes if l["t0"] - 0.05 <= t < l["t1"] + 0.25), None)
+        if not ligne:
+            return
+        f = self.police(True, 64 * u * (0.95 if self.vertical else 1.0), 800)
+        fm = QFontMetricsF(f)
+        textes = [(m[2].upper() if maj else m[2]) for m in ligne["mots"]]
+        esp = fm.horizontalAdvance(" ")
+        largeur = sum(fm.horizontalAdvance(x) for x in textes) + esp * (len(textes) - 1)
+        x = self.zx + (self.zw - largeur) / 2
+        y = self.zy + self.zh * (0.80 if not self.vertical else 0.74)
+        from PySide6.QtGui import QPainterPath, QPen
+        for (t0, t1, _w), txt in zip(ligne["mots"], textes):
+            w = fm.horizontalAdvance(txt)
+            dit = t0 <= t
+            courant = t0 <= t < max(t1, t0 + 0.15)
+            p.save()
+            if style == "saute":
+                if not dit:
+                    p.restore()
+                    x += w + esp
+                    continue
+                k = ressort((t - t0) * 1.3, max(0.3, self.rebond), 260)
+                p.translate(x + w / 2, y)
+                p.scale(min(1.25, 0.5 + 0.5 * k), min(1.25, 0.5 + 0.5 * k))
+                p.translate(-(x + w / 2), -y)
+            if style == "surligne" and courant:
+                k = entre(t, t0, t0 + 0.08)
+                p.setPen(Qt.NoPen)
+                p.setBrush(self.C["accent"])
+                m_ = 10 * u
+                p.drawRoundedRect(QRectF(x - m_, y - fm.ascent() * 0.86 - m_ * 0.4, (w + 2 * m_) * k, fm.ascent() * 1.05 + m_),
+                                  10 * u, 10 * u)
+            path = QPainterPath()
+            path.addText(x, y, f, txt)
+            p.strokePath(path, QPen(QColor(0, 0, 0, 190), 10 * u, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+            if style == "karaoke":
+                coul = self.C["accent2"] if dit else self.C["texte"]
+            elif style == "surligne":
+                coul = self.C["texte"]
+            else:
+                coul = self.C["accent2"] if courant else self.C["texte"]
+            p.fillPath(path, coul)
+            p.restore()
+            x += w + esp
 
     # -------------------------------------------------- une image
     def dessiner(self, p, t):
-        """L'image à l'instant t (en secondes du film)."""
-        tt = t * self.vitesse
-        D = self.D * self.vitesse
+        """L'image à l'instant t (en secondes de l'animation), sur l'horaire commun."""
         self.fond(p, t)
-        g = self.a.get("genre")
-        if g == "compteur":
-            self.scene_compteur(p, tt, D, dernier=True)
-        elif g == "barres":
-            self.scene_barres(p, tt, D, dernier=True)
-        elif g == "courbe":
-            self.scene_courbe(p, tt, D)
-        elif g == "titre":
-            self.scene_titre(p, tt, D)
-        else:                                          # chiffres : les trois à la suite (proportions de l'étalon : 4,3 + 5,4 + le reste)
-            d1, d2 = D * 4.3 / 14, D * 5.4 / 14
-            t2, t3 = D * 4.0 / 14, D * 9.2 / 14
-            if tt < d1:
-                self.scene_compteur(p, tt, d1)
-            if t2 <= tt < t2 + d2:
-                self.scene_barres(p, tt - t2, d2)
-            if tt >= t3:
-                self.scene_courbe(p, tt - t3, D - t3)
+        fins = max((b for _a, b in self.h["scenes"].values()), default=self.D)
+        for nom, (a, b) in sorted(self.h["scenes"].items(), key=lambda x: x[1][0]):
+            if a - 0.01 <= t <= b + 0.01:
+                getattr(self, "scene_" + nom)(p, t, a, b, b >= fins - 1e-6)
         self.logo(p)
 
 

@@ -199,6 +199,21 @@ def _guides_integres():
              {"texte": _("Pour une tenue sur mesure : sur une tenue, « Composer… » ; choisissez pièce par pièce et la matière.")},
              {"texte": _("Dans l'assistant, sur chaque carte : « Dans ma bibliothèque » › « Toute faite… ».")},
          ]},
+        {"id": "sous_titres_habillage", "etat": "ok",
+         "titre": _("Sous-titres animés, bandeau, barre de progression, et animations calées sur la voix ou la musique"),
+         "mots": "sous-titres animes karaoke mot surligne habillage bandeau nom fonction barre progression chapitres capture defile "
+                 "caler voix musique temps rythme",
+         "intro": _("Les mots dits s'animent au rythme de la voix ; le nom de qui parle, la progression de la vidéo et une capture qui "
+                    "défile habillent le film ; les chiffres arrivent quand ils sont dits, ou sur les temps de la musique."),
+         "etapes": [
+             {"texte": _("Sous-titres : mettez la partie en jaune sur ce qui est dit, Fabrique IA › Animation › « Sous-titres "
+                         "animés… », « Prendre les mots dits » (PhilCut transcrit si besoin), choisissez le style, regardez.")},
+             {"texte": _("Bandeau : « Habillage… », écrivez le nom et la fonction ; barre de progression : « Toute la vidéo, avec "
+                         "les repères comme chapitres » (posez des repères avec la touche M) ; capture : « Choisir la capture… ».")},
+             {"texte": _("Calage : sur une animation de chiffres, « Caler sur » › la voix (le chiffre finit de monter quand il est "
+                         "dit, chaque barre arrive quand son mois est dit) ou la musique (sur les temps), puis « Caler ».")},
+             {"texte": _("« Fabriquer », puis « Poser au-dessus du film » : l'animation tombe exactement là où elle a été calée.")},
+         ]},
         {"id": "animation_motion", "etat": "ok",
          "titre": _("Animer des chiffres, des graphiques ou un titre (motion design)"),
          "mots": "animation motion design chiffre compteur barres graphique courbe infographie titre anime charte couleurs logo "

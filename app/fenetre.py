@@ -966,6 +966,12 @@ class Fenetre(QMainWindow):
                 ent(icone("fabrique"), _("Animation de chiffres, graphiques ou titre…"),
                     _("Dites ce que vous voulez ou collez vos chiffres ; trois propositions, des curseurs, l'aperçu immédiat ; "
                       "puis le moteur conseillé fabrique, vous regardez, vous posez."), quand(lambda e: e.animation())),
+                ent(icone("fabrique"), _("Sous-titres animés (les mots dits)…"),
+                    _("Mettez la partie en jaune sur ce qui est dit : mot surligné, mots qui sautent, un mot à la fois ou karaoké, "
+                      "posés au-dessus du film au bon moment."), quand(lambda e: e.animation(genre="sous_titres"))),
+                ent(icone("fabrique"), _("Habillage : bandeau, barre de progression, capture qui défile…"),
+                    _("Le nom et la fonction de qui parle, une barre qui avance sur toute la vidéo avec vos chapitres, une capture "
+                      "qui défile dans un cadre."), quand(lambda e: e.animation(genre="bandeau"))),
                 ent(icone("logo"), _("Ma charte (couleurs, polices, logo)…"),
                     _("Renseignée une fois (ou tirée de votre logo ou de votre site), reprise par toutes les animations."),
                     quand(lambda e: e.ma_charte()))]),

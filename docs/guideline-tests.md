@@ -23,6 +23,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T105 — 1.0.0 : sous-titres animés, habillage, calage sur la voix et la musique
+
+1. Un rush où tu parles : partie en jaune sur 10 à 20 s de parole. Fabrique IA › Animation › « Sous-titres animés… » › « Prendre les mots dits » (la transcription se fait si besoin, barre du bas) : « n mot(s) pris ».
+2. ▶ : les mots suivent-ils la voix ? Essayer les quatre styles ; « En majuscules » ; « Fabriquer », « Poser au-dessus du film » : les sous-titres tombent pile sous la voix ?
+3. « Habillage… » : bandeau « nom, fonction » posé au début du rush ; puis barre de progression : poser deux ou trois repères (touche M) et les nommer, « Toute la vidéo, avec les repères comme chapitres », fabriquer, poser à 0:00.
+4. Capture qui défile : une longue capture d'écran (page web) : elle défile jusqu'en bas ?
+5. Calage voix : une voix qui dit un chiffre et des mois (« trente-quatre mille… en janvier… en juin, record ») ; animation « Les trois à la suite » posée sur ce passage, « Caler sur » › la voix, « Caler » : le chiffre finit de monter quand il est dit, les barres arrivent avec leurs mois ?
+6. Calage musique : sur un passage avec musique rythmée, « Caler sur » › la musique : les barres tombent-elles sur les temps ?
+7. Même animation avec HyperFrames et Remotion : même calage ?
+
 ## T104 — 0.9.99 : animations (motion design), charte, HeyGen, Higgsfield
 
 1. Fabrique IA › Animation (motion design) › « Ma charte… » : « Tirer de mon site… » (l'adresse d'un site que tu connais) puis « Tirer d'un logo ou d'une image… » ; les couleurs proposées te conviennent-elles ? Changer une couleur, « Rendre lisible » si l'orange apparaît, OK.

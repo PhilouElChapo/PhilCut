@@ -78,10 +78,14 @@ def installer(params, progression=None, arret=lambda: False):
 def preparer(anim):
     """La fiche passée à Remotion (--props) ; polices et logo copiés dans public/."""
     from . import charte as CH, motion_html as MH
-    m = MH.mise_en_page(anim)
-    m["cadence"] = int(anim.get("cadence") or 30)
     pub = os.path.join(dossier(), "public")
     os.makedirs(pub, exist_ok=True)
+    if anim.get("genre") == "defilement" and anim.get("image") and os.path.exists(anim["image"]):
+        nom = "capture" + os.path.splitext(anim["image"])[1].lower()
+        shutil.copy2(anim["image"], os.path.join(pub, nom))
+        anim = dict(anim, _html_image=nom, _html_ratio=MH._ratio(anim["image"]))
+    m = MH.mise_en_page(anim)
+    m["cadence"] = int(anim.get("cadence") or 30)
     ch = CH.complete(anim.get("charte"))
     polices = []
     for fam in {ch.get("police_titre") or "Poppins", ch.get("police_texte") or "Poppins", "Poppins"}:

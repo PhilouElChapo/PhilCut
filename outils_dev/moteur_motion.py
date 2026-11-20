@@ -22,6 +22,15 @@ def _anim(genre="chiffres", L=1920, H=1080):
     a["source"] = "Exemple neutre"
     if genre == "titre":
         a.update(titre="Une soirée au bord du lac", sous_titre="Chapitre 2")
+    if genre in M.HABILLAGE or genre == "defilement":
+        M.preparer_genre(a, genre)
+        a["transparent"] = False                 # vérification : sur le fond, pour voir
+    if genre == "sous_titres":
+        mots = "Aujourd'hui on parle de motion design pour vos vidéos et de la façon de caler chaque mot sur la voix".split()
+        a["mots"] = [[round(0.3 + k * 0.32, 2), round(0.3 + k * 0.32 + 0.28, 2), w] for k, w in enumerate(mots)]
+        a["duree"], a["style_st"] = 7.0, "surligne"
+    if genre == "progression":
+        a.update(duree=8.0, chapitres=[[0, "Intro"], [3, "Les chiffres"], [6, "La suite"]])
     return a
 
 
@@ -32,9 +41,9 @@ def composition(dossier, genre="chiffres", L=1920, H=1080):
     return 0
 
 
-def props(fichier, genre="chiffres"):
+def props(fichier, genre="chiffres", L=1920, H=1080):
     from app import motion_html as MH
-    m = MH.mise_en_page(_anim(genre))
+    m = MH.mise_en_page(_anim(genre, L, H))
     m["cadence"] = 30
     m["polices"] = []
     json.dump({"A": m}, open(fichier, "w", encoding="utf-8"), ensure_ascii=False)

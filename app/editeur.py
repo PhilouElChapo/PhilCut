@@ -2858,11 +2858,15 @@ class Editeur(QWidget):
         from .widgets import non_bloquante
         return non_bloquante(self, "presentation", lambda: DialoguePresentation(self, chemins))
 
-    def animation(self, anim=None):
-        """Animations de chiffres, graphiques et titres (0.9.99) : moteur maison, HyperFrames, HeyGen ou Remotion."""
+    def animation(self, anim=None, genre=None):
+        """Animations de chiffres, graphiques et titres (0.9.99), sous-titres animés et habillage (1.0.0) : moteur maison,
+        HyperFrames, HeyGen ou Remotion."""
         from .dialogues_motion import DialogueMotion
         from .widgets import non_bloquante
-        return non_bloquante(self, "animation", lambda: DialogueMotion(self, anim))
+        dlg = non_bloquante(self, "animation", lambda: DialogueMotion(self, anim))
+        if genre and dlg is not None and hasattr(dlg, "genre"):
+            dlg.genre.setCurrentIndex(max(0, dlg.genre.findData(genre)))
+        return dlg
 
     def ma_charte(self):
         from .dialogues_motion import DialogueCharte

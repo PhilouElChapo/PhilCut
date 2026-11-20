@@ -87,7 +87,11 @@ def mise_en_page(anim):
             "donnees": d, "valeur": valeur, "textes_valeurs": [_insecable(M.nombre_texte(anim, v)) for _l, v in d],
             "texte_valeur": _insecable(M.nombre_texte(anim, valeur)), "prefixe": anim.get("prefixe") or "", "suffixe": anim.get("suffixe") or "",
             "decimales": anim.get("decimales") or 0, "langue": M._langue_ui(), "record": _("Record"),
-            "police_titre": ch.get("police_titre") or "Poppins", "police_texte": ch.get("police_texte") or "Poppins"}
+            "police_titre": ch.get("police_titre") or "Poppins", "police_texte": ch.get("police_texte") or "Poppins",
+            "horaire": M.horaire(anim), "coins": float(ch.get("coins", 0.6)), "panneau": (anim.get("genre") or "chiffres") not in M.HABILLAGE,
+            "mots": anim.get("mots") or [], "style_st": anim.get("style_st") or "surligne", "majuscules": anim.get("majuscules", True),
+            "lignes_st": M.lignes_st(anim.get("mots") or [], 22 if vertical else 32), "chapitres": anim.get("chapitres") or [],
+            "image": anim.get("_html_image") or "", "image_ratio": float(anim.get("_html_ratio") or 0)}
 
 
 def _insecable(t):
@@ -164,126 +168,7 @@ if (!A.transparent) {{
     $("div", "", fond).className = "grille";
   }}
 }}
-function scene(debut, fin, dernier) {{
-  const s = $("div", "position:absolute;inset:0;opacity:0");
-  tl.to(s, {{ opacity: 1, duration: T(0.5), ease: sortie }}, debut);
-  if (!dernier) tl.to(s, {{ opacity: 0, scale: 0.94, duration: T(0.5), ease: "power3.in" }}, fin - T(0.5));
-  if (A.transparent) {{ const m = 30 * u; const p = $("div", "", s); p.className = "panneau"; }}
-  const z = $("div", "", s); z.className = "zone";
-  if (A.source) {{ const q = $("div", "", z, A.source); q.className = "source"; }}
-  return z;
-}}
-function compteur(debut, fin, dernier) {{
-  const z = scene(debut, fin, dernier);
-  const bloc = $("div", "position:absolute;left:0;right:0;top:" + (A.vertical ? 0.42 : 0.48) * A.zh + "px;transform:translateY(-50%);" +
-    "text-align:center", z);
-  const lab = $("div", `font-size:${{34 * u}}px;font-weight:600;letter-spacing:${{6 * u}}px;text-transform:uppercase;color:${{C.doux}}`, bloc, A.titre);
-  const ch = $("div", `font-size:${{260 * u * (A.vertical ? 0.8 : 1)}}px;line-height:1;margin-top:${{18 * u}}px;` +
-    `filter:drop-shadow(0 ${{20 * u}}px ${{60 * u}}px ${{C.accent}}${{Math.round(85 * A.lueur).toString(16).padStart(2, "0")}})`, bloc, nombre(0));
-  ch.className = "chiffre";
-  tl.from(lab, {{ opacity: 0, y: 20 * u, duration: T(0.6), ease: sortie }}, debut);
-  const o = {{ v: 0 }};
-  // modifiers (pas onUpdate) : appliqués à chaque rendu, même quand le moteur se place à un instant sans déclencher d'événements
-  tl.to(o, {{ v: A.valeur, duration: T(2.3), ease: "power3.out", modifiers: {{ v: (v) => {{ ch.textContent = nombre(v); return v; }} }} }}, debut + T(0.3));
-  if (A.badge) {{
-    const b = $("div", `margin-top:${{36 * u}}px;padding:${{14 * u}}px ${{30 * u}}px;font-size:${{38 * u}}px`, bloc, A.badge);
-    b.className = "pastille";
-    tl.from(b, {{ scale: 0, opacity: 0, duration: T(0.8), ease: ressort }}, debut + T(2.4));
-  }}
-}}
-function barres(debut, fin, dernier) {{
-  const z = scene(debut, fin, dernier);
-  const t = $("div", `position:absolute;left:0;top:${{0}}px;font-size:${{64 * u}}px`, z, A.titre_barres); t.className = "titre";
-  $("div", `position:absolute;left:0;top:${{80 * u}}px;font-size:${{30 * u}}px;color:${{C.doux}}`, z, A.sous_titre);
-  const top = 190 * u, bas = A.zh - 60 * u, Hc = bas - top, gauche = 110 * u;
-  const vmax = haut(Math.max(...A.donnees.map((d) => d[1])));
-  for (let i = 0; i < 5; i++) {{
-    const y = bas - (i / 4) * Hc;
-    const l = $("div", `position:absolute;left:${{gauche}}px;right:0;top:${{y}}px;height:1px;background:${{C.texte}}1c;transform-origin:left`, z);
-    const n = $("div", `position:absolute;left:0;top:${{y - 14 * u}}px;font-size:${{22 * u}}px;color:${{C.doux}}`, z, nombre(vmax * i / 4).replace(A.prefixe, "").replace(A.suffixe, ""));
-    tl.from(l, {{ scaleX: 0, duration: T(0.7), ease: sortie }}, debut + T(0.2 + i * 0.1));
-    tl.from(n, {{ opacity: 0, duration: T(0.7) }}, debut + T(0.2 + i * 0.1));
-  }}
-  const nb = A.donnees.length, ecart = 46 * u * (nb > 8 ? 0.6 : 1);
-  const larg = (A.zw - gauche - ecart * (nb - 1)) / nb, lb = larg * (0.45 + 0.55 * A.epaisseur);
-  let rec = 0; A.donnees.forEach((d, i) => {{ if (d[1] > A.donnees[rec][1]) rec = i; }});
-  A.donnees.forEach((d, i) => {{
-    const x = gauche + i * (larg + ecart) + (larg - lb) / 2, h = (d[1] / vmax) * Hc, record = i === rec;
-    const b = $("div", `position:absolute;left:${{x}}px;width:${{lb}}px;top:${{bas - h}}px;height:${{h}}px;transform-origin:bottom;` +
-      `border-radius:${{18 * u}}px ${{18 * u}}px ${{6 * u}}px ${{6 * u}}px;background:` +
-      (record ? `linear-gradient(180deg, ${{C.accent2}}, ${{C.accent}})` : `linear-gradient(180deg, ${{C.accent}}cc, ${{C.accent}}44)`), z);
-    const v = $("div", `position:absolute;left:${{x - 40 * u}}px;width:${{lb + 80 * u}}px;text-align:center;top:${{bas - h - 50 * u}}px;` +
-      `font-size:${{32 * u * (nb > 8 ? 0.8 : 1)}}px;color:${{record ? C.accent2 : C.texte}}`, z, A.textes_valeurs[i]); v.className = "titre";
-    $("div", `position:absolute;left:${{x - 40 * u}}px;width:${{lb + 80 * u}}px;text-align:center;top:${{bas + 12 * u}}px;` +
-      `font-size:${{26 * u * (nb > 8 ? 0.8 : 1)}}px;color:${{C.doux}}`, z, d[0]);
-    const t0 = debut + T(0.6 + i * A.decalage);
-    tl.from(b, {{ scaleY: 0, duration: T(1.0), ease: ressort }}, t0);
-    tl.from(v, {{ y: h, opacity: 0, duration: T(1.0), ease: ressort }}, t0);
-    if (record && A.lueur > 0) tl.to(b, {{ boxShadow: `0 0 ${{60 * u * A.lueur}}px ${{C.accent2}}88`, duration: T(0.6) }}, debut + T(2.6));
-  }});
-}}
-function courbe(debut, fin, dernier) {{
-  const z = scene(debut, fin, dernier);
-  const t = $("div", `position:absolute;left:0;top:0;font-size:${{64 * u}}px`, z, A.titre_courbe); t.className = "titre";
-  $("div", `position:absolute;left:0;top:${{80 * u}}px;font-size:${{30 * u}}px;color:${{C.doux}}`, z, A.sous_titre_courbe);
-  const top = 230 * u, bas = A.zh - 90 * u, g = 20 * u, d_ = A.zw - 20 * u;
-  const vmax = haut(Math.max(...A.donnees.map((d) => d[1]))), nb = A.donnees.length;
-  const pts = A.donnees.map((d, i) => [g + (i / Math.max(1, nb - 1)) * (d_ - g), bas - (d[1] / vmax) * (bas - top)]);
-  let dd = `M ${{pts[0][0]}} ${{pts[0][1]}}`;
-  for (let i = 1; i < nb; i++) {{ const [px, py] = pts[i - 1], [x, y] = pts[i], cx = (px + x) / 2; dd += ` C ${{cx}} ${{py}}, ${{cx}} ${{y}}, ${{x}} ${{y}}`; }}
-  const ns = "http://www.w3.org/2000/svg";
-  const svg = document.createElementNS(ns, "svg"); svg.setAttribute("width", A.zw); svg.setAttribute("height", A.zh);
-  svg.setAttribute("style", "position:absolute;left:0;top:0;overflow:visible"); z.appendChild(svg);
-  svg.innerHTML = `<defs><linearGradient id="trait" x1="0" x2="1"><stop offset="0%" stop-color="${{C.accent}}"/><stop offset="100%" stop-color="${{C.accent2}}"/></linearGradient>` +
-    `<linearGradient id="aire" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="${{C.accent}}" stop-opacity="0.35"/><stop offset="100%" stop-color="${{C.accent}}" stop-opacity="0"/></linearGradient>` +
-    `<clipPath id="revele"><rect id="rideau" x="0" y="-50" width="0" height="${{A.zh + 100}}"/></clipPath></defs>` +
-    `<path d="${{dd}} L ${{d_}} ${{bas}} L ${{g}} ${{bas}} Z" fill="url(#aire)" clip-path="url(#revele)"/>` +
-    `<path id="trace" d="${{dd}}" fill="none" stroke="url(#trait)" stroke-width="${{8 * u * (0.5 + A.epaisseur)}}" stroke-linecap="round" clip-path="url(#revele)"` +
-    ` style="filter:drop-shadow(0 0 ${{18 * u * A.lueur}}px ${{C.accent}}aa)"/>`;
-  const rideau = svg.querySelector("#rideau");
-  const pointsSvg = pts.map(([x, y]) => {{ const c = document.createElementNS(ns, "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y);
-    c.setAttribute("r", 7 * u); c.setAttribute("fill", C.fond); c.setAttribute("stroke", C.texte); c.setAttribute("stroke-width", 3 * u);
-    c.setAttribute("opacity", 0); svg.appendChild(c); return c; }});
-  A.donnees.forEach((d, i) => $("div", `position:absolute;left:${{pts[i][0] - 60 * u}}px;width:${{120 * u}}px;text-align:center;top:${{bas + 18 * u}}px;` +
-    `font-size:${{24 * u}}px;color:${{C.doux}}`, z, d[0]));
-  const pt = document.createElementNS(ns, "circle"); pt.setAttribute("r", 16 * u); pt.setAttribute("fill", C.accent2);
-  pt.setAttribute("style", `filter:drop-shadow(0 0 ${{20 * u}}px ${{C.accent2}})`); pt.setAttribute("opacity", 0); svg.appendChild(pt);
-  const o = {{ p: 0 }};
-  const placer = (p) => {{
-    const k = Math.min(nb - 1, p * (nb - 1)), i0 = Math.floor(k), f = k - i0, a = pts[i0], b = pts[Math.min(nb - 1, i0 + 1)];
-    const x = a[0] + (b[0] - a[0]) * f, y = a[1] + (b[1] - a[1]) * f;
-    rideau.setAttribute("width", x + 1); pt.setAttribute("cx", x); pt.setAttribute("cy", y); pt.setAttribute("opacity", p > 0 ? 1 : 0);
-    pointsSvg.forEach((c, i) => c.setAttribute("opacity", p > 0 && k >= i - 1e-6 ? 1 : 0)); return p; }};
-  tl.to(o, {{ p: 1, duration: T(2.4), ease: "power2.inOut", modifiers: {{ p: placer }} }}, debut + T(0.4));
-  let rec = 0; A.donnees.forEach((d, i) => {{ if (d[1] > A.donnees[rec][1]) rec = i; }});
-  const w = 300 * u, h = 96 * u, x = Math.min(Math.max(0, pts[rec][0] - w - 40 * u), A.zw - w), y = Math.max(130 * u, pts[rec][1] - 60 * u - h);
-  const carte = $("div", `position:absolute;left:${{x}}px;top:${{y}}px;width:${{w}}px;height:${{h}}px;border-radius:${{20 * u}}px;` +
-    `background:#ffffff12;border:1px solid #ffffff30;padding:${{14 * u}}px ${{28 * u}}px`, z);
-  $("div", `font-size:${{24 * u}}px;color:${{C.doux}}`, carte, A.record);
-  const cv = $("div", `font-size:${{38 * u}}px`, carte, A.textes_valeurs[rec]); cv.className = "titre";
-  tl.from(carte, {{ opacity: 0, y: 30 * u, duration: T(0.8), ease: ressort }}, debut + T(2.8));
-}}
-function titre(debut, fin, dernier) {{
-  const z = scene(debut, fin, true);
-  const bloc = $("div", "position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center", z);
-  const mots = A.titre.split(/\s+/).filter(Boolean);
-  const cle = mots.length > 2 ? mots.reduce((a, b) => (b.replace(/[.,;:!?«»"']/g, "").length > a.replace(/[.,;:!?«»"']/g, "").length ? b : a)) : "";
-  const ligne = $("div", `font-size:${{120 * u * (A.vertical ? 0.75 : 1)}}px;line-height:1.05;white-space:normal`, bloc); ligne.className = "titre";
-  mots.forEach((m, k) => {{ const s = $("span", `display:inline-block;margin:0 ${{14 * u}}px;color:${{m === cle ? C.accent : C.texte}}`, ligne, m);
-    tl.from(s, {{ y: 60 * u, opacity: 0, duration: T(0.8), ease: ressort }}, debut + T(0.15 + k * A.decalage)); }});
-  const trait = $("div", `width:${{A.zw * 0.22}}px;height:${{8 * u * (0.5 + A.epaisseur)}}px;border-radius:${{4 * u}}px;background:${{C.accent2}};` +
-    `margin:${{30 * u}}px auto 0;transform-origin:center`, bloc);
-  tl.from(trait, {{ scaleX: 0, duration: T(0.8), ease: sortie }}, debut + T(0.4 + mots.length * A.decalage * 0.5));
-  if (A.sous_titre) {{ const st = $("div", `font-size:${{40 * u}}px;color:${{C.doux}};margin-top:${{24 * u}}px`, bloc, A.sous_titre);
-    tl.from(st, {{ opacity: 0, duration: T(0.6) }}, debut + T(0.8)); }}
-  tl.to(bloc, {{ opacity: 0, duration: T(0.6), ease: "power3.in" }}, fin - T(0.6));
-}}
-const D = A.duree;
-if (A.genre === "compteur") compteur(0, D, true);
-else if (A.genre === "barres") barres(0, D, true);
-else if (A.genre === "courbe") courbe(0, D, true);
-else if (A.genre === "titre") titre(0, D, true);
-else {{ compteur(0, D * 4.3 / 14, false); barres(D * 4.0 / 14, D * 9.4 / 14, false); courbe(D * 9.2 / 14, D, true); }}
+{scenes}
 {logo}
 tl.set({{}}, {{}}, D);
 tl.seek(0);
@@ -291,6 +176,198 @@ tl.seek(0);
 </body>
 </html>
 """
+
+
+JS_SCENES = r'''
+// 1.0.0 : tout suit l'horaire commun (A.horaire, en secondes de l'animation) : calé sur la voix ou la musique s'il le faut
+const Hr = A.horaire, D = A.duree;
+const ressortDe = (k) => (A.rebond > 0.05 ? "back.out(" + (0.6 + 2.4 * A.rebond).toFixed(2) + ")" : "power3.out");
+const fins = Math.max(...Object.values(Hr.scenes).map((x) => x[1]));
+function scene(debut, fin, dernier) {
+  const s = $("div", "position:absolute;inset:0;opacity:0");
+  tl.to(s, { opacity: 1, duration: T(0.5), ease: sortie }, debut);
+  if (!dernier) tl.to(s, { opacity: 0, scale: 0.94, duration: T(0.5), ease: "power3.in" }, fin - T(0.5));
+  if (A.transparent && A.panneau) { const p = $("div", "", s); p.className = "panneau"; }
+  const z = $("div", "", s); z.className = "zone";
+  if (A.source) { const q = $("div", "", z, A.source); q.className = "source"; }
+  return z;
+}
+function compteur(debut, fin, dernier) {
+  const h = Hr.compteur, z = scene(debut, fin, dernier);
+  const bloc = $("div", "position:absolute;left:0;right:0;top:" + (A.vertical ? 0.42 : 0.48) * A.zh + "px;transform:translateY(-50%);text-align:center", z);
+  const lab = $("div", `font-size:${34 * u}px;font-weight:600;letter-spacing:${6 * u}px;text-transform:uppercase;color:${C.doux}`, bloc, A.titre);
+  const ch = $("div", `font-size:${260 * u * (A.vertical ? 0.8 : 1)}px;line-height:1;margin-top:${18 * u}px;` +
+    `filter:drop-shadow(0 ${20 * u}px ${60 * u}px ${C.accent}${Math.round(85 * A.lueur).toString(16).padStart(2, "0")})`, bloc, nombre(0));
+  ch.className = "chiffre";
+  tl.from(lab, { opacity: 0, y: 20 * u, duration: T(0.6), ease: sortie }, debut);
+  const o = { v: 0 };
+  // modifiers (pas onUpdate) : appliqués à chaque rendu, même quand le moteur se place à un instant sans déclencher d'événements
+  tl.to(o, { v: A.valeur, duration: Math.max(0.2, h.fin - h.debut), ease: "power3.out", modifiers: { v: (v) => { ch.textContent = nombre(v); return v; } } }, h.debut);
+  if (A.badge) {
+    const b = $("div", `margin-top:${36 * u}px;padding:${14 * u}px ${30 * u}px;font-size:${38 * u}px`, bloc, A.badge);
+    b.className = "pastille";
+    tl.from(b, { scale: 0, opacity: 0, duration: T(0.8), ease: ressort }, h.badge);
+  }
+}
+function barres(debut, fin, dernier) {
+  const h = Hr.barres, z = scene(debut, fin, dernier);
+  const t = $("div", `position:absolute;left:0;top:0;font-size:${64 * u}px`, z, A.titre_barres); t.className = "titre";
+  $("div", `position:absolute;left:0;top:${80 * u}px;font-size:${30 * u}px;color:${C.doux}`, z, A.sous_titre);
+  const top = 190 * u, bas = A.zh - 60 * u, Hc = bas - top, gauche = 110 * u;
+  const vmax = haut(Math.max(...A.donnees.map((d) => d[1])));
+  for (let i = 0; i < 5; i++) {
+    const y = bas - (i / 4) * Hc;
+    const l = $("div", `position:absolute;left:${gauche}px;right:0;top:${y}px;height:1px;background:${C.texte}1c;transform-origin:left`, z);
+    const n = $("div", `position:absolute;left:0;top:${y - 14 * u}px;font-size:${22 * u}px;color:${C.doux}`, z, nombre(vmax * i / 4).replace(A.prefixe, "").replace(A.suffixe, ""));
+    tl.from(l, { scaleX: 0, duration: T(0.7), ease: sortie }, h.grille + T(i * 0.1));
+    tl.from(n, { opacity: 0, duration: T(0.7) }, h.grille + T(i * 0.1));
+  }
+  const nb = A.donnees.length, ecart = 46 * u * (nb > 8 ? 0.6 : 1);
+  const larg = (A.zw - gauche - ecart * (nb - 1)) / nb, lb = larg * (0.45 + 0.55 * A.epaisseur);
+  let rec = 0; A.donnees.forEach((d, i) => { if (d[1] > A.donnees[rec][1]) rec = i; });
+  A.donnees.forEach((d, i) => {
+    const x = gauche + i * (larg + ecart) + (larg - lb) / 2, hh = (d[1] / vmax) * Hc, record = i === rec;
+    const b = $("div", `position:absolute;left:${x}px;width:${lb}px;top:${bas - hh}px;height:${hh}px;transform-origin:bottom;` +
+      `border-radius:${18 * u}px ${18 * u}px ${6 * u}px ${6 * u}px;background:` +
+      (record ? `linear-gradient(180deg, ${C.accent2}, ${C.accent})` : `linear-gradient(180deg, ${C.accent}cc, ${C.accent}44)`), z);
+    const v = $("div", `position:absolute;left:${x - 40 * u}px;width:${lb + 80 * u}px;text-align:center;top:${bas - hh - 50 * u}px;` +
+      `font-size:${32 * u * (nb > 8 ? 0.8 : 1)}px;color:${record ? C.accent2 : C.texte}`, z, A.textes_valeurs[i]); v.className = "titre";
+    $("div", `position:absolute;left:${x - 40 * u}px;width:${lb + 80 * u}px;text-align:center;top:${bas + 12 * u}px;` +
+      `font-size:${26 * u * (nb > 8 ? 0.8 : 1)}px;color:${C.doux}`, z, d[0]);
+    const t0 = h.entrees[Math.min(i, h.entrees.length - 1)];
+    tl.from(b, { scaleY: 0, duration: T(1.0), ease: ressort }, t0);
+    tl.from(v, { y: hh, opacity: 0, duration: T(1.0), ease: ressort }, t0);
+    if (record && A.lueur > 0) tl.to(b, { boxShadow: `0 0 ${60 * u * A.lueur}px ${C.accent2}88`, duration: T(0.6) }, h.halo);
+  });
+}
+function courbe(debut, fin, dernier) {
+  const h = Hr.courbe, z = scene(debut, fin, dernier);
+  const t = $("div", `position:absolute;left:0;top:0;font-size:${64 * u}px`, z, A.titre_courbe); t.className = "titre";
+  $("div", `position:absolute;left:0;top:${80 * u}px;font-size:${30 * u}px;color:${C.doux}`, z, A.sous_titre_courbe);
+  const top = 230 * u, bas = A.zh - 90 * u, g = 20 * u, d_ = A.zw - 20 * u;
+  const vmax = haut(Math.max(...A.donnees.map((d) => d[1]))), nb = A.donnees.length;
+  const pts = A.donnees.map((d, i) => [g + (i / Math.max(1, nb - 1)) * (d_ - g), bas - (d[1] / vmax) * (bas - top)]);
+  let dd = `M ${pts[0][0]} ${pts[0][1]}`;
+  for (let i = 1; i < nb; i++) { const [px, py] = pts[i - 1], [x, y] = pts[i], cx = (px + x) / 2; dd += ` C ${cx} ${py}, ${cx} ${y}, ${x} ${y}`; }
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg"); svg.setAttribute("width", A.zw); svg.setAttribute("height", A.zh);
+  svg.setAttribute("style", "position:absolute;left:0;top:0;overflow:visible"); z.appendChild(svg);
+  svg.innerHTML = `<defs><linearGradient id="trait" x1="0" x2="1"><stop offset="0%" stop-color="${C.accent}"/><stop offset="100%" stop-color="${C.accent2}"/></linearGradient>` +
+    `<linearGradient id="aire" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="${C.accent}" stop-opacity="0.35"/><stop offset="100%" stop-color="${C.accent}" stop-opacity="0"/></linearGradient>` +
+    `<clipPath id="revele"><rect id="rideau" x="0" y="-50" width="0" height="${A.zh + 100}"/></clipPath></defs>` +
+    `<path d="${dd} L ${d_} ${bas} L ${g} ${bas} Z" fill="url(#aire)" clip-path="url(#revele)"/>` +
+    `<path id="trace" d="${dd}" fill="none" stroke="url(#trait)" stroke-width="${8 * u * (0.5 + A.epaisseur)}" stroke-linecap="round" clip-path="url(#revele)"` +
+    ` style="filter:drop-shadow(0 0 ${18 * u * A.lueur}px ${C.accent}aa)"/>`;
+  const rideau = svg.querySelector("#rideau");
+  const pointsSvg = pts.map(([x, y]) => { const c = document.createElementNS(ns, "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y);
+    c.setAttribute("r", 7 * u); c.setAttribute("fill", C.fond); c.setAttribute("stroke", C.texte); c.setAttribute("stroke-width", 3 * u);
+    c.setAttribute("opacity", 0); svg.appendChild(c); return c; });
+  A.donnees.forEach((d, i) => $("div", `position:absolute;left:${pts[i][0] - 60 * u}px;width:${120 * u}px;text-align:center;top:${bas + 18 * u}px;` +
+    `font-size:${24 * u}px;color:${C.doux}`, z, d[0]));
+  const pt = document.createElementNS(ns, "circle"); pt.setAttribute("r", 16 * u); pt.setAttribute("fill", C.accent2);
+  pt.setAttribute("style", `filter:drop-shadow(0 0 ${20 * u}px ${C.accent2})`); pt.setAttribute("opacity", 0); svg.appendChild(pt);
+  const o = { p: 0 };
+  const placer = (p) => {
+    const k = Math.min(nb - 1, p * (nb - 1)), i0 = Math.floor(k), f = k - i0, a = pts[i0], b = pts[Math.min(nb - 1, i0 + 1)];
+    const x = a[0] + (b[0] - a[0]) * f, y = a[1] + (b[1] - a[1]) * f;
+    rideau.setAttribute("width", x + 1); pt.setAttribute("cx", x); pt.setAttribute("cy", y); pt.setAttribute("opacity", p > 0 ? 1 : 0);
+    pointsSvg.forEach((c, i) => c.setAttribute("opacity", p > 0 && k >= i - 1e-6 ? 1 : 0)); return p; };
+  tl.to(o, { p: 1, duration: Math.max(0.2, h.fin - h.debut), ease: "power2.inOut", modifiers: { p: placer } }, h.debut);
+  let rec = 0; A.donnees.forEach((d, i) => { if (d[1] > A.donnees[rec][1]) rec = i; });
+  const w = 300 * u, hh = 96 * u, x = Math.min(Math.max(0, pts[rec][0] - w - 40 * u), A.zw - w), y = Math.max(130 * u, pts[rec][1] - 60 * u - hh);
+  const carte = $("div", `position:absolute;left:${x}px;top:${y}px;width:${w}px;height:${hh}px;border-radius:${20 * u}px;` +
+    `background:#ffffff12;border:1px solid #ffffff30;padding:${14 * u}px ${28 * u}px`, z);
+  $("div", `font-size:${24 * u}px;color:${C.doux}`, carte, A.record);
+  const cv = $("div", `font-size:${38 * u}px`, carte, A.textes_valeurs[rec]); cv.className = "titre";
+  tl.from(carte, { opacity: 0, y: 30 * u, duration: T(0.8), ease: ressort }, h.record);
+}
+function titre(debut, fin, dernier) {
+  const h = Hr.titre, z = scene(debut, fin, true);
+  const bloc = $("div", "position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);text-align:center", z);
+  const mots = A.titre.split(/\s+/).filter(Boolean);
+  const cle = mots.length > 2 ? mots.reduce((a, b) => (b.replace(/[.,;:!?«»"']/g, "").length > a.replace(/[.,;:!?«»"']/g, "").length ? b : a)) : "";
+  const ligne = $("div", `font-size:${120 * u * (A.vertical ? 0.75 : 1)}px;line-height:1.05;white-space:normal`, bloc); ligne.className = "titre";
+  mots.forEach((m, k) => { const s = $("span", `display:inline-block;margin:0 ${14 * u}px;color:${m === cle ? C.accent : C.texte}`, ligne, m);
+    tl.from(s, { y: 60 * u, opacity: 0, duration: T(0.8), ease: ressort }, h.mots[Math.min(k, h.mots.length - 1)]); });
+  const trait = $("div", `width:${A.zw * 0.22}px;height:${8 * u * (0.5 + A.epaisseur)}px;border-radius:${4 * u}px;background:${C.accent2};` +
+    `margin:${30 * u}px auto 0;transform-origin:center`, bloc);
+  tl.from(trait, { scaleX: 0, duration: T(0.8), ease: sortie }, h.trait);
+  if (A.sous_titre) { const st = $("div", `font-size:${40 * u}px;color:${C.doux};margin-top:${24 * u}px`, bloc, A.sous_titre);
+    tl.from(st, { opacity: 0, duration: T(0.6) }, h.sous_titre); }
+  tl.to(bloc, { opacity: 0, duration: T(0.6), ease: "power3.in" }, fin - T(0.6));
+}
+function bandeau(debut, fin) {
+  const h = Hr.bandeau, uu = u * 1.15;
+  const b = $("div", `position:absolute;left:${A.zx}px;top:${A.zy + A.zh - 170 * uu}px;height:${150 * uu}px;overflow:hidden;` +
+    `border-radius:${14 * uu * A.coins}px;background:${C.fond}db;padding:0 ${40 * uu}px;border-left:${10 * uu * (0.5 + A.epaisseur)}px solid ${C.accent};transform-origin:left`);
+  const n = $("div", `font-size:${54 * uu}px;margin-top:${18 * uu}px;white-space:nowrap`, b, A.titre); n.className = "titre";
+  const f = $("div", `font-size:${32 * uu}px;color:${C.accent2};white-space:nowrap`, b, A.sous_titre);
+  tl.from(b, { scaleX: 0, duration: T(0.6), ease: ressort }, h.entree);
+  tl.from(n, { y: 30 * uu, opacity: 0, duration: T(0.6), ease: ressort }, h.texte);
+  tl.from(f, { y: 30 * uu, opacity: 0, duration: T(0.6), ease: ressort }, h.texte + T(0.15));
+  tl.to(b, { opacity: 0, scaleX: 0.7, duration: T(0.5), ease: "power3.in" }, h.sortie);
+}
+function progression() {
+  const e = Math.max(A.L, A.H) / 1920, hb = Math.max(4, 8 * e * (0.5 + A.epaisseur));
+  const y = A.vertical ? A.zy + A.zh + 40 * e : A.H - hb - 18 * e;
+  const fondB = $("div", `position:absolute;left:${24 * e}px;right:${24 * e}px;top:${y}px;height:${hb}px;border-radius:${hb}px;background:${C.texte}2e;overflow:hidden`);
+  const plein = $("div", `position:absolute;left:0;top:0;bottom:0;width:100%;transform-origin:left;background:linear-gradient(90deg, ${C.accent}, ${C.accent2})`, fondB);
+  tl.fromTo(plein, { scaleX: 0 }, { scaleX: 1, duration: D, ease: "none" }, 0);
+  (A.chapitres || []).forEach(([tc, nom]) => {
+    if (tc > 0 && tc < D) $("div", `position:absolute;left:${(tc / D) * 100}%;top:0;bottom:0;width:${3 * e}px;background:${C.fond}`, fondB);
+    const l = $("div", `position:absolute;left:${24 * e}px;top:${y - 40 * e}px;font-size:${26 * e}px;font-weight:600;color:${C.texte};opacity:0`, null, nom);
+    const suite = (A.chapitres.find((c) => c[0] > tc) || [D])[0];
+    tl.to(l, { opacity: 0.9, duration: 0.3 }, Math.max(0, tc));
+    tl.to(l, { opacity: 0, duration: 0.2 }, Math.max(0, suite - 0.2));
+  });
+}
+function defilement(debut, fin) {
+  const vert = A.vertical, cw = A.zw * (vert ? 0.92 : 0.62), chh = A.zh * 0.9, rayon = 28 * u * (0.4 + A.coins);
+  const cadre = $("div", `position:absolute;left:${A.zx + (A.zw - cw) / 2}px;top:${A.zy + (A.zh - chh) / 2}px;width:${cw}px;height:${chh}px;` +
+    `border-radius:${rayon}px;overflow:hidden;background:#fff;border:2px solid ${C.accent}e6;box-shadow:0 ${30 * u}px ${80 * u}px #0009`);
+  if (A.image) {
+    const im = $("img", `position:absolute;left:0;top:0;width:100%;`, cadre); im.src = A.image;
+    const hi = A.image_ratio ? cw * A.image_ratio : chh;
+    tl.to(im, { y: -Math.max(0, hi - chh), duration: Math.max(0.5, fin - debut - T(1.8)), ease: "power1.inOut" }, debut + T(0.9));
+  }
+  tl.from(cadre, { opacity: 0, y: 80 * u, scale: 0.85, duration: T(0.9), ease: ressort }, debut + T(0.1));
+  tl.to(cadre, { opacity: 0, duration: T(0.5) }, fin - T(0.5));
+}
+function sous_titres() {
+  const st = A.style_st || "surligne", maj = A.majuscules !== false, uu = u * 1.1;
+  const txt = (w) => (maj ? w.toUpperCase() : w);
+  const contour = `paint-order:stroke fill;-webkit-text-stroke:${10 * uu}px #000000c0`;
+  if (st === "un_mot") {
+    A.mots.forEach(([t0, t1, w]) => {
+      const e = $("div", `position:absolute;left:${A.zx}px;width:${A.zw}px;text-align:center;top:${A.zy + A.zh * 0.62 - 90 * uu}px;` +
+        `font-size:${150 * uu * (A.vertical ? 0.8 : 1)}px;font-weight:800;opacity:0;color:${txt(w).length > 6 ? C.accent2 : C.texte};${contour}`, null, txt(w));
+      e.className = "titre";
+      tl.fromTo(e, { opacity: 1, scale: 0.6 }, { scale: 1, duration: 0.25, ease: ressort }, t0);
+      tl.set(e, { opacity: 0 }, Math.max(t1, t0 + 0.25));
+    });
+    return;
+  }
+  A.lignes_st.forEach((l) => {
+    const y = A.zy + A.zh * (A.vertical ? 0.74 : 0.80);
+    const box = $("div", `position:absolute;left:${A.zx}px;width:${A.zw}px;text-align:center;top:${y - 70 * uu}px;opacity:0;` +
+      `font-size:${64 * uu * (A.vertical ? 0.95 : 1)}px;font-weight:800;white-space:nowrap`);
+    box.className = "titre";
+    tl.set(box, { opacity: 1 }, Math.max(0, l.t0 - 0.05));
+    tl.set(box, { opacity: 0 }, l.t1 + 0.25);
+    l.mots.forEach(([t0, t1, w], k) => {
+      const s = $("span", `display:inline-block;margin:0 ${8 * uu}px;padding:0 ${8 * uu}px;border-radius:${10 * uu}px;color:${C.texte};${contour}`, box, txt(w));
+      if (st === "saute") { tl.set(s, { opacity: 0 }, 0); tl.fromTo(s, { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.25, ease: ressort, immediateRender: false }, t0); }
+      if (st === "surligne") { tl.set(s, { backgroundColor: C.accent }, t0); tl.set(s, { backgroundColor: "transparent" }, Math.max(t1, t0 + 0.15)); }
+      if (st === "karaoke") tl.set(s, { color: C.accent2 }, t0);
+      if (st === "saute") { tl.set(s, { color: C.accent2 }, t0); tl.set(s, { color: C.texte }, Math.max(t1, t0 + 0.15)); }
+    });
+  });
+}
+Object.entries(Hr.scenes).sort((a, b) => a[1][0] - b[1][0]).forEach(([nom, [a, b]]) => {
+  const f = { compteur, barres, courbe, titre, bandeau, progression, defilement, sous_titres }[nom];
+  if (f) f(a, b, b >= fins - 1e-6);
+});
+'''
 
 
 def composition(anim, gsap="gsap.min.js", polices=(), logo=""):
@@ -314,7 +391,7 @@ def composition(anim, gsap="gsap.min.js", polices=(), logo=""):
         pas=max(20, int(80 * max(m["L"], m["H"]) / 1920)), zx=m["zx"], zy=m["zy"], zw=m["zw"], zh=m["zh"],
         px=int(m["zx"] - m30), py=int(m["zy"] - m30), pw=int(m["zw"] + 2 * m30), ph=int(m["zh"] + 2 * m30), pr=int(36 * m["u"]),
         s40=int(40 * m["u"]), s22=int(22 * m["u"]), duree=f"{m['duree']:g}", cadence=int(anim.get("cadence") or 30),
-        donnees=json.dumps(m, ensure_ascii=False).replace("</", "<\\/"), logo=js_logo)
+        donnees=json.dumps(m, ensure_ascii=False).replace("</", "<\\/"), logo=js_logo, scenes=JS_SCENES)
 
 
 POLICES_LIVREES = {"Poppins": [("Poppins-Regular.ttf", 400), ("Poppins-SemiBold.ttf", 600), ("Poppins-Bold.ttf", 700)],
@@ -325,6 +402,16 @@ POLICES_LIVREES = {"Poppins": [("Poppins-Regular.ttf", 400), ("Poppins-SemiBold.
 def _dossier_polices():
     base = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     return os.path.join(base, "fonts")
+
+
+def _ratio(chemin):
+    """Hauteur / largeur d'une image (pour faire défiler une capture jusqu'en bas)."""
+    try:
+        import cv2
+        img = cv2.imread(chemin, cv2.IMREAD_UNCHANGED)
+        return img.shape[0] / img.shape[1] if img is not None else 0.0
+    except Exception:      # noqa: BLE001
+        return 0.0
 
 
 def preparer_projet(anim, dossier, gsap_en_ligne=False):
@@ -348,6 +435,10 @@ def preparer_projet(anim, dossier, gsap_en_ligne=False):
         nom = "logo" + os.path.splitext(ch["logo"])[1].lower()
         shutil.copy2(ch["logo"], os.path.join(dossier, "assets", nom))
         logo = "assets/" + nom
+    if anim.get("genre") == "defilement" and anim.get("image") and os.path.exists(anim["image"]):
+        nom = "capture" + os.path.splitext(anim["image"])[1].lower()
+        shutil.copy2(anim["image"], os.path.join(dossier, "assets", nom))
+        anim = dict(anim, _html_image="assets/" + nom, _html_ratio=_ratio(anim["image"]))
     with open(os.path.join(dossier, "index.html"), "w", encoding="utf-8") as f:
         f.write(composition(anim, gsap, polices, logo))
     json.dump({"id": "philcut", "name": anim.get("titre") or "PhilCut"}, open(os.path.join(dossier, "meta.json"), "w", encoding="utf-8"))
