@@ -219,6 +219,18 @@ class Test1005(unittest.TestCase):
         self.assertIn("red", R.CONSIGNE)
 
 
+class Test1006(unittest.TestCase):
+    def test_noms_relies_et_sujet(self):
+        from app import assistant_creation as A, sequence_ia as Q
+        from app import generateurs_video as GV
+        self.assertEqual(A.relier_noms(["Maxime", "Le pilote", "Hôtesse", "Inconnu"], ["Pilote Maxime", "Hôtesse", "Femme brune"]),
+                         ["Pilote Maxime", "Hôtesse", "Inconnu"])
+        s = {"plans": [Q.plan("Les deux femmes baissent le téléphone et marchent côte à côte", ["A", "B"], "", 6)]}
+        Q.couper_plan(s, 0)
+        self.assertEqual(s["plans"][1]["action"], "Les deux femmes marchent côte à côte")
+        self.assertEqual(GV.PAGES_CREDIT["heygen"], "https://platform.heygen.com/billing")
+
+
 class TestRecharger(unittest.TestCase):
     def test_fabrique_suit_le_modele(self):
         from app.fenetre import Fenetre

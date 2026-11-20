@@ -396,6 +396,33 @@ def description_complete(p):
     return ", ".join(x for x in (pos, d) if x and not (pos and d.lower().startswith(pos.lower())))
 
 
+def _sans_accent(t):
+    import unicodedata
+    t = unicodedata.normalize("NFD", (t or "").lower())
+    return " ".join("".join(c for c in t if unicodedata.category(c) != "Mn" and (c.isalnum() or c == " ")).split())
+
+
+def relier_noms(noms, connus):
+    """1.0.6 : les noms cités par les plans, ramenés aux noms des cartes. Une carte renommée (prise dans la bibliothèque :
+    « Maxime » devenu « Pilote Maxime ») gardait ses plans sous l'ancien nom : le pilote n'apparaissait plus nulle part et
+    n'avait pas de fiche. Même nom sans accents, nom contenu dans l'autre, ou un mot de plus de 3 lettres en commun."""
+    vus, sortie = set(), []
+    nets = [(c, _sans_accent(c)) for c in connus]
+    for n in noms or []:
+        m = _sans_accent(n)
+        trouve = next((c for c, x in nets if x == m), None) or \
+            next((c for c, x in nets if len(m) > 3 and len(x) > 3 and (m in x or x in m)), None)
+        if trouve is None:
+            mots = {w for w in m.split() if len(w) > 3}
+            cand = [c for c, x in nets if mots & {w for w in x.split() if len(w) > 3}]
+            trouve = cand[0] if len(cand) == 1 else None
+        nom = trouve or n
+        if nom not in vus:
+            vus.add(nom)
+            sortie.append(nom)
+    return sortie
+
+
 def appliquer(seq, analyse, image=None, image_cartes=None):
     """Met l'analyse dans la séquence en gardant ce qui est déjà fait pour ce qui n'a pas changé (fiches, images, vidéos)."""
     anciens = {p["nom"].lower(): p for p in seq.get("personnages") or []}
@@ -465,7 +492,12 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
     vieux_plans = {cle_plan(pl): pl for pl in seq.get("plans") or []}
     plans = []
     precedent_change = False
+    connus = [x["nom"] for x in persos]
     for a in analyse["plans"]:
+        a["personnages"] = relier_noms(a.get("personnages"), connus)
+        for cle in ("hors_champ", "visibles_fixes"):
+            if isinstance(a.get(cle), list):
+                a[cle] = relier_noms(a[cle], connus)
         pl = Q.plan(a["action"], a["personnages"], a.get("lieu", ""), a["duree"], camera=a.get("camera", ""))
         for cle in ("hors_champ", "visibles_fixes"):
             if a.get(cle):

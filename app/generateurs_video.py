@@ -29,7 +29,7 @@ FOURNISSEURS = {
                               _("Menu « API keys » › créez une clef nommée PhilCut : elle a un identifiant et un secret."),
                               _("Collez « identifiant:secret » ici (les deux, séparés par deux-points).")]},
     # 0.9.99 : HeyGen, pour le rendu cloud des animations HyperFrames (pas de plans vidéo ici)
-    "heygen": {"nom": "HeyGen (rendu des animations HyperFrames)", "clef": "clef_heygen", "page": "https://app.heygen.com/settings?nav=API",
+    "heygen": {"nom": "HeyGen (rendu des animations HyperFrames)", "clef": "clef_heygen", "page": "https://platform.heygen.com/api-keys",
                "etapes": [_("Créez un compte HeyGen, puis ouvrez Paramètres › API."),
                           _("Achetez du crédit API (paiement à l'usage, sans abonnement) et créez une clef API."),
                           _("Copiez la clef et collez-la ici : le crédit restant s'affichera dans PhilCut.")]},
@@ -268,7 +268,7 @@ def generer_reference(cle, m, consigne, sortie, duree=5, format_="16:9", image=N
 
 # ------------------------------------------------------------------ crédit restant (0.9.72)
 PAGES_CREDIT = {"anthropic": "https://console.anthropic.com/settings/billing", "fal": "https://fal.ai/dashboard/usage-billing/credits",
-                "google": "https://aistudio.google.com/usage", "heygen": "https://app.heygen.com/settings?nav=API",
+                "google": "https://aistudio.google.com/usage", "heygen": "https://platform.heygen.com/billing",
                 "higgsfield": "https://open.higgsfield.ai/api-keys"}
 
 

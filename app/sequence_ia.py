@@ -61,6 +61,27 @@ def actions_multiples(action):
     return None
 
 
+def _sujet(a):
+    """1.0.6 : le groupe sujet au début d'une action : « La voiture », « Les deux femmes » (avant : « Les » seul, le « le » du
+    motif mangeait le début de « les »)."""
+    mots = (a or "").split()
+    if not mots:
+        return ""
+    d = mots[0].lower()
+    if d.startswith("l'") and len(d) > 2:
+        return mots[0]
+    if d not in ("le", "la", "les", "un", "une", "des", "the", "a", "an", "ces", "ses", "leurs"):
+        return ""
+    if d in ("les", "des", "ces", "ses", "leurs"):        # pluriel : jusqu'au verbe (… -ent), quatre mots au plus
+        g = [mots[0]]
+        for w in mots[1:4]:
+            if re.search(r"(?i)ent$", w) or w.lower() in ("se", "s'", "qui") or w.lower().startswith("s'"):
+                break
+            g.append(w)
+        return " ".join(g) if len(g) > 1 else ""
+    return " ".join(mots[:2]) if len(mots) > 1 else ""
+
+
 def couper_plan(seq, i):
     """Coupe le plan i en deux à l'enchaînement d'actions : deux plans d'une action chacun (durée partagée, mêmes
     personnages, lieu et caméra). Renvoie True si la coupe a eu lieu."""
@@ -69,6 +90,10 @@ def couper_plan(seq, i):
     if not pos:
         return False
     a, b = pl["action"][:pos[0]].strip(" ,"), pl["action"][pos[1]:].strip(" ,")
+    # 1.0.6 : « …qui attend, le pilote | s'avance » : le sujet resté à la fin de la première moitié passe dans la seconde
+    m = re.search(r"(?i),\s*((?:le|la|les|un|une|des)\s+[^\s,]+(?:\s+[^\s,]+)?|l'[^\s,]+)$", a)
+    if m and not re.match(r"(?i)(?:le|la|les|l'|un|une|des|il|elle|ils|elles|on)\b", b):
+        a, b = a[:m.start()].strip(" ,"), f"{m.group(1)} {b}"
     sujet = ""
     for n in pl.get("personnages") or []:
         if a.lower().startswith(n.lower()):
@@ -79,9 +104,9 @@ def couper_plan(seq, i):
             r"(?i)(?:le|la|les|l'|un|une|des|il|elle|ils|elles|on|the|a|an|he|she|they)\b", b):
         b = f"{pl['personnages'][0]} {b}"         # « s'assoit » → « Hélène s'assoit » ; pas devant un sujet déjà là
     elif not sujet and not re.match(r"(?i)(?:le|la|les|l'|un|une|des|il|elle|ils|elles|on|the|a|an|he|she|they)\b", b):
-        g = re.match(r"(?i)((?:le|la|les|l'|un|une|des|the|a|an)\s*[^\s,]+)", a)     # 0.9.86 : « s'éloigne » → « La voiture s'éloigne »
+        g = _sujet(a)                               # 0.9.86 : « s'éloigne » → « La voiture s'éloigne »
         if g:
-            b = f"{g.group(1)} {b}"
+            b = f"{g} {b}"
     d = max(3, int(round(float(pl.get("duree") or DUREE_PLAN) / 2 + 0.5)))
     p1 = dict(pl, action=a[0].upper() + a[1:], duree=d, consigne="", fichier="", image="")
     if "clef" in pl:                               # 0.9.87 : l'image clef reste à la fin de la seconde moitié
