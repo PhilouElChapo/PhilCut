@@ -10,7 +10,7 @@ from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QWidget
 
 from .langue import _
 
-NOMS = {"anthropic": "Claude", "fal": "fal.ai", "google": "Gemini"}
+NOMS = {"anthropic": "Claude", "fal": "fal.ai", "google": "Gemini", "heygen": "HeyGen", "higgsfield": "Higgsfield"}
 
 
 def fournisseur_du_moteur(ident, params=None):
@@ -91,6 +91,8 @@ def texte_credit(fournisseur, solde):
                      d=_ce_mois(fournisseur))
         if fournisseur == "anthropic":
             return _("Crédit {n} : Anthropic ne donne pas le solde aux logiciels ; « Recharger » ouvre votre compte.", n=nom)
+        if fournisseur in ("higgsfield", "heygen"):
+            return _("Crédit {n} : solde non donné aux logiciels ; « Recharger » ouvre la console ({d}).", n=nom, d=_ce_mois(fournisseur))
         return _("Crédit {n} : fal.ai ne donne le solde qu'à une clef de portée « ADMIN » (à créer sur fal.ai, Keys) ; {d}.",
                  n=nom, d=_ce_mois(fournisseur))
     montant, devise = solde
@@ -174,7 +176,10 @@ def fournisseur_epuise(texte):
     t = credit_epuise(texte or "")
     if not t:
         return ""
-    return "google" if "Gemini" in t else ("anthropic" if "Claude" in t else "fal")
+    for nom, f in (("Gemini", "google"), ("Claude", "anthropic"), ("Higgsfield", "higgsfield"), ("HeyGen", "heygen")):
+        if nom in t:
+            return f
+    return "fal"
 
 
 class LignesCredit(QWidget):

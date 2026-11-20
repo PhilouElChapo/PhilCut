@@ -960,6 +960,15 @@ class Fenetre(QMainWindow):
                 ent(icone("image"), _("Vignette de la vidéo (miniature YouTube)…"),
                     _("L'image qu'on voit sur YouTube avant de cliquer : à partir d'une image du film, avec titre, flèche et votre logo ; "
                       "elle part avec l'export et la publication."), quand(lambda e: e.vignette_composee("vignette")))]),
+            (icone("fabrique"), _("Animation (motion design)"),
+             _("Chiffres qui montent, barres qui poussent, courbe qui se trace, titres animés, aux couleurs de votre charte : "
+               "moteur de PhilCut, HyperFrames, HeyGen ou Remotion, au choix (PhilCut conseille)."), [
+                ent(icone("fabrique"), _("Animation de chiffres, graphiques ou titre…"),
+                    _("Dites ce que vous voulez ou collez vos chiffres ; trois propositions, des curseurs, l'aperçu immédiat ; "
+                      "puis le moteur conseillé fabrique, vous regardez, vous posez."), quand(lambda e: e.animation())),
+                ent(icone("logo"), _("Ma charte (couleurs, polices, logo)…"),
+                    _("Renseignée une fois (ou tirée de votre logo ou de votre site), reprise par toutes les animations."),
+                    quand(lambda e: e.ma_charte()))]),
             (icone("musique"), _("Musique"), _("Créer une musique sur ce poste (gratuit) ou en chercher une en ligne, avec ce qui est "
                                                  "permis expliqué."), [
                 ent(icone("assistant"), _("Assistant de création : une musique ou une chanson, guidé pas à pas…"),

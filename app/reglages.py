@@ -24,12 +24,13 @@ COMMUNS = ["auteur", "langue", "outils_epingles", "barre_rapide", "volet", "ia_m
            "musiques_dossier", "chaine_nom", "fabrique_style", "veo_actif", "ia_confirmer_cout", "modeles_video_perso",
            "tampons_guetter", "tampons_classement", "tampons_placement", "ytdlp_accord", "ytdlp_hauteur", "ytdlp_son_seul", "ytdlp_resultats", "tampons_langue_recherche",
            "musiques_classement", "styles_perso", "creations_purge_jours", "secours_minutes", "secours_versions", "export_autres", "nouveautes_vues", "lecture_effets",
-           "proposer_copie_legere", "creations_drive", "drive_purge_jours", "superpositions_alpha"]
+           "proposer_copie_legere", "creations_drive", "drive_purge_jours", "superpositions_alpha",
+           "chartes", "charte_active", "remotion_licence", "motion_moteur"]
 POSTE = ["secrets_refuses", "disposition_vue", "volet_largeur", "biblio_replies", "sessions_vues", "synchro_etat",
          "machine", "zoom", "racines", "nas", "dernier_dossier", "drive", "drive_compte", "association_video",
          "recherche_racines", "proxys", "ia_locale", "ia_poste_leger", "ia_gpu", "ia_locale_modeles", "ia_dossier_commun", "ia_partage", "ia_commun_propose", "dossier_flow", "dossier_proxys", "encodeur", "apercu_images", "ajout_auto", "dernier_dossier_export", "barre_taille", "dossier_images", "tailles_vue", "apercu_fidele", "preparation_auto", "secrets_empreinte", "dossier_rushes", "fenetre_geometrie", "fenetre_maximisee", "dossier_musique_import", "dossier_telechargements", "dossier_documents",
          "vulkan_carte", "moteurs_evites", "essais_ia"]
-CLEFS_IA = ["clef_claude", "clef_gemini", "clef_fal"]
+CLEFS_IA = ["clef_claude", "clef_gemini", "clef_fal", "clef_heygen", "clef_higgsfield"]
 COFFRE_PARTAGES = {"pixabay_cle": "Pixabay", "pexels_cle": "Pexels"}      # clefs rangées directement dans le coffre
 FICHIER_DRIVE = "preferences.json"
 
@@ -276,7 +277,8 @@ def synchro_secrets_auto(params):
 
 def nom_secret(params, k):
     """Le nom lisible d'un secret partagé (jamais sa valeur) : « Clef Claude », « pCloud — autorisation »…"""
-    noms_ia = {"clef_claude": _("Clef Claude"), "clef_gemini": _("Clef Gemini"), "clef_fal": _("Clef fal.ai")}
+    noms_ia = {"clef_claude": _("Clef Claude"), "clef_gemini": _("Clef Gemini"), "clef_fal": _("Clef fal.ai"),
+               "clef_heygen": _("Clef HeyGen"), "clef_higgsfield": _("Clef Higgsfield")}
     if k in noms_ia:
         return noms_ia[k]
     if k.startswith("coffre:"):

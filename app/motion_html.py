@@ -84,10 +84,15 @@ def mise_en_page(anim):
             "titre_barres": anim.get("titre_barres") or anim.get("titre") or "", "titre_courbe": anim.get("titre_courbe") or "",
             "sous_titre_courbe": anim.get("sous_titre_courbe") or anim.get("sous_titre") or "",
             "source": (_("Source : {s}", s=anim["source"]) if (anim.get("source") or "").strip() else ""),
-            "donnees": d, "valeur": valeur, "textes_valeurs": [M.nombre_texte(anim, v) for _l, v in d],
-            "texte_valeur": M.nombre_texte(anim, valeur), "prefixe": anim.get("prefixe") or "", "suffixe": anim.get("suffixe") or "",
+            "donnees": d, "valeur": valeur, "textes_valeurs": [_insecable(M.nombre_texte(anim, v)) for _l, v in d],
+            "texte_valeur": _insecable(M.nombre_texte(anim, valeur)), "prefixe": anim.get("prefixe") or "", "suffixe": anim.get("suffixe") or "",
             "decimales": anim.get("decimales") or 0, "langue": M._langue_ui(), "record": _("Record"),
             "police_titre": ch.get("police_titre") or "Poppins", "police_texte": ch.get("police_texte") or "Poppins"}
+
+
+def _insecable(t):
+    """L'espace fine insécable (U+202F) manque à certaines polices (Poppins) dans Chrome : espace insécable ordinaire."""
+    return (t or "").replace("\u202f", "\u00a0")
 
 
 GABARIT = r"""<!doctype html>
@@ -137,7 +142,7 @@ const $ = (tag, style, parent, texte) => {{ const e = document.createElement(tag
   if (texte !== undefined) e.textContent = texte; (parent || document.getElementById("scenes")).appendChild(e); return e; }};
 const nombre = (v) => {{ const t = Number(v).toLocaleString(A.langue === "fr" ? "fr-FR" : A.langue,
   {{ minimumFractionDigits: A.decimales, maximumFractionDigits: A.decimales }});
-  return A.prefixe + (A.langue === "fr" ? t.replace(/[  ]/g, " ") : t) + A.suffixe; }};
+  return A.prefixe + t.replace(/[\u202f ]/g, "\u00a0") + A.suffixe; }};
 const haut = (v) => {{ if (v <= 0) return 1; const e = Math.pow(10, Math.floor(Math.log10(v)));
   for (const m of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * e >= v) return m * e; return 10 * e; }};
 const ressort = A.rebond > 0.05 ? "back.out(" + (0.6 + 2.4 * A.rebond).toFixed(2) + ")" : "power3.out";

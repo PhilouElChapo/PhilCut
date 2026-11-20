@@ -199,6 +199,23 @@ def _guides_integres():
              {"texte": _("Pour une tenue sur mesure : sur une tenue, « Composer… » ; choisissez pièce par pièce et la matière.")},
              {"texte": _("Dans l'assistant, sur chaque carte : « Dans ma bibliothèque » › « Toute faite… ».")},
          ]},
+        {"id": "animation_motion", "etat": "ok",
+         "titre": _("Animer des chiffres, des graphiques ou un titre (motion design)"),
+         "mots": "animation motion design chiffre compteur barres graphique courbe infographie titre anime charte couleurs logo "
+                 "hyperframes remotion heygen tableau excel",
+         "intro": _("Un chiffre qui monte, des barres qui poussent, une courbe qui se trace ou un titre animé, aux couleurs de votre "
+                    "charte. PhilCut dessine l'aperçu tout de suite et conseille le moteur ; vous choisissez."),
+         "etapes": [
+             {"texte": _("Fabrique IA › Animation (motion design) › « Ma charte… » : tirez-la de votre logo ou de votre site, "
+                         "corrigez, OK. Une fois pour toutes.")},
+             {"texte": _("Fabrique IA › Animation › « Animation de chiffres, graphiques ou titre… » : écrivez ce que vous voulez et "
+                         "« ✨ Préparer avec l'IA », ou remplissez la fiche ; « Coller un tableau » prend vos lignes d'Excel.")},
+             {"texte": _("Regardez (▶), choisissez une des trois propositions, réglez les curseurs ; une remarque à l'instant "
+                         "(« à 0:03 la barre est trop rouge ») et « Corriger par l'IA ».")},
+             {"texte": _("Moteur : celui marqué ★ est conseillé. HyperFrames et Remotion s'installent une fois (« Installer… ») ; "
+                         "HeyGen demande votre clef et affiche son prix ; Remotion demande de confirmer votre droit à sa licence.")},
+             {"texte": _("« Fabriquer », regardez, puis « Poser au-dessus du film » (transparent) ou « Insérer à la ligne rouge ».")},
+         ]},
         {"id": "realisateur_correcteur", "etat": "ok",
          "titre": _("Laisser le Réalisateur enchaîner et corriger ce qui ne va pas"),
          "mots": "realisateur correcteur defaut remarque relecture corriger refaire plan fiche barbe raccord enchainer automatique",

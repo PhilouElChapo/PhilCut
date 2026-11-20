@@ -2858,6 +2858,18 @@ class Editeur(QWidget):
         from .widgets import non_bloquante
         return non_bloquante(self, "presentation", lambda: DialoguePresentation(self, chemins))
 
+    def animation(self, anim=None):
+        """Animations de chiffres, graphiques et titres (0.9.99) : moteur maison, HyperFrames, HeyGen ou Remotion."""
+        from .dialogues_motion import DialogueMotion
+        from .widgets import non_bloquante
+        return non_bloquante(self, "animation", lambda: DialogueMotion(self, anim))
+
+    def ma_charte(self):
+        from .dialogues_motion import DialogueCharte
+        d = DialogueCharte(self, self.params)
+        d.exec()
+        return d
+
     def modeles_montage(self):
         """Modèles de montage tout faits, avec les rushes du projet (0.9.25)."""
         from .dialogues_modeles import DialogueModeles

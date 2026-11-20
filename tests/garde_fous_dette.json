@@ -60,7 +60,9 @@
    "recents_distants",
    "envoi_export_dernier",
    "ia_maj_derniere",
-   "ia_maj_nombre"
+   "ia_maj_nombre",
+   "chartes",
+   "charte_active"
   ]
  },
  "G8_reglages_a_mettre_dans_preferences": [

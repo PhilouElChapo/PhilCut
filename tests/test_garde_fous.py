@@ -202,6 +202,8 @@ class G7RienDeTronque(unittest.TestCase):
                ("Personnage qui parle", DialogueLevres(ed, None, "image")),
                ("Clip de groupe", DialogueClipGroupe(ed, None, os.path.join(os.environ["APPDATA"], "x.wav"))),
                ("Narration", DialogueNarration(ed))]
+        from app.dialogues_motion import DialogueMotion, DialogueCharte          # 0.9.99
+        fen += [("Animation", DialogueMotion(ed)), ("Ma charte", DialogueCharte(ed, ed.params))]
         fautes = []
         for nom, d in fen:
             d.show()

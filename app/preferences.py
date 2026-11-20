@@ -258,6 +258,14 @@ class DialoguePreferences(QDialog):
         self.clef_fal.setEchoMode(QLineEdit.Password)
         oeil(self.clef_fal)
         fg.addRow(_("Clef fal.ai (Kling, Seedance…)"), self.clef_fal)
+        self.clef_higgsfield = QLineEdit(self.params.get("clef_higgsfield", ""))       # 0.9.99
+        self.clef_higgsfield.setEchoMode(QLineEdit.Password)
+        oeil(self.clef_higgsfield)
+        fg.addRow(_("Clef Higgsfield (identifiant:secret)"), self.clef_higgsfield)
+        self.clef_heygen = QLineEdit(self.params.get("clef_heygen", ""))
+        self.clef_heygen.setEchoMode(QLineEdit.Password)
+        oeil(self.clef_heygen)
+        fg.addRow(_("Clef HeyGen (animations dans le cloud)"), self.clef_heygen)
         b_conn = QPushButton(_("Connecter une IA : obtenir et tester ma clef…"))
         b_conn.clicked.connect(self._connecter)
         fg.addRow(a_gauche(b_conn))
@@ -637,6 +645,22 @@ class DialoguePreferences(QDialog):
         from .assistant_creation import REALISATEUR_DEFAUT
         self.assistant_realisateur.setChecked(bool(self.params.get("assistant_realisateur", REALISATEUR_DEFAUT)))
         f.addRow("", self.assistant_realisateur)
+        hm = QHBoxLayout()                             # 0.9.99 : animations (motion design)
+        self.motion_moteur = QComboBox()
+        from . import motion as MO
+        for k, d in MO.MOTEURS.items():
+            self.motion_moteur.addItem(d["nom"], k)
+        self.motion_moteur.setCurrentIndex(max(0, self.motion_moteur.findData(self.params.get("motion_moteur") or "maison")))
+        hm.addWidget(self.motion_moteur, 1)
+        bc = QPushButton(_("Ma charte…"))
+        bc.clicked.connect(self._charte)
+        hm.addWidget(bc)
+        f.addRow(_("Animations : moteur"), hm)
+        self.remotion_licence = QCheckBox(_("J'ai droit à la licence gratuite de Remotion (ou j'ai une licence entreprise)"))
+        self.remotion_licence.setToolTip(_("Gratuite pour un particulier, une structure de 3 personnes au plus ou une association ; "
+                                           "au-delà, licence entreprise Remotion obligatoire"))
+        self.remotion_licence.setChecked(bool(self.params.get("remotion_licence")))
+        f.addRow("", self.remotion_licence)
         h = QHBoxLayout()                              # 0.9.85 : mises à jour des IA (locales et cloud)
         self.ia_maj_verifier = QCheckBox(_("Chercher les mises à jour des IA (une fois par semaine, jamais installées sans vous)"))
         self.ia_maj_verifier.setChecked(self.params.get("ia_maj_verifier", True))
@@ -677,16 +701,23 @@ class DialoguePreferences(QDialog):
         from PySide6.QtGui import QDesktopServices
         QDesktopServices.openUrl(QUrl.fromLocalFile(chemin))
 
+    def _charte(self):
+        from .dialogues_motion import DialogueCharte
+        DialogueCharte(self, self.params).exec()
+
     def _connecter(self):
         from .dialogues_connexion_ia import DialogueConnexionIA
         from .ia import nettoyer_clef
-        for k, champ in (("clef_claude", self.clef_claude), ("clef_gemini", self.clef_gemini), ("clef_fal", self.clef_fal)):
+        for k, champ in (("clef_claude", self.clef_claude), ("clef_gemini", self.clef_gemini), ("clef_fal", self.clef_fal),
+                         ("clef_higgsfield", self.clef_higgsfield), ("clef_heygen", self.clef_heygen)):
             self.params[k] = nettoyer_clef(champ.text())
         d = DialogueConnexionIA(self, self.params)
         if d.exec() == QDialog.Accepted:
             self.clef_claude.setText(self.params.get("clef_claude", ""))
             self.clef_gemini.setText(self.params.get("clef_gemini", ""))
             self.clef_fal.setText(self.params.get("clef_fal", ""))
+            self.clef_higgsfield.setText(self.params.get("clef_higgsfield", ""))
+            self.clef_heygen.setText(self.params.get("clef_heygen", ""))
 
     def _tester_modeles(self, genres=None):
         from . import essai_ia
@@ -1141,6 +1172,8 @@ class DialoguePreferences(QDialog):
                 coffre.enregistrer(T.CLEFS[k], v) if v else coffre.supprimer(T.CLEFS[k])
         p["clef_gemini"] = self.clef_gemini.text().strip()
         p["clef_fal"] = self.clef_fal.text().strip()
+        p["clef_higgsfield"] = self.clef_higgsfield.text().strip()
+        p["clef_heygen"] = self.clef_heygen.text().strip()
         p["veo_actif"] = self.veo.isChecked()
         p["ia_confirmer_cout"] = self.confirmer_cout.isChecked()
         p["dossier_flow"] = self.flow.text().strip()
@@ -1167,6 +1200,9 @@ class DialoguePreferences(QDialog):
             p["sequence_continue"] = self.sequence_continue.isChecked()
         if hasattr(self, "assistant_realisateur"):
             p["assistant_realisateur"] = self.assistant_realisateur.isChecked()
+        if hasattr(self, "motion_moteur"):
+            p["motion_moteur"] = self.motion_moteur.currentData()
+            p["remotion_licence"] = self.remotion_licence.isChecked()
         gestion = getattr(self.fenetre, "telechargements", None)
         a_installer = [k for k, c in self.cases_ia.items() if c.isChecked() and not packs_ia.installe(k)
                        and not (gestion is not None and gestion.en_file(k))]

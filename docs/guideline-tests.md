@@ -23,6 +23,19 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T104 — 0.9.99 : animations (motion design), charte, HeyGen, Higgsfield
+
+1. Fabrique IA › Animation (motion design) › « Ma charte… » : « Tirer de mon site… » (l'adresse d'un site que tu connais) puis « Tirer d'un logo ou d'une image… » ; les couleurs proposées te conviennent-elles ? Changer une couleur, « Rendre lisible » si l'orange apparaît, OK.
+2. « Animation de chiffres, graphiques ou titre… » : la fenêtre tient dans l'écran, rien de coupé. Ecrire « les ventes 2026 : T1 120, T2 150, T3 170, T4 210 en milliers d'euros » et « ✨ Préparer avec l'IA » : la fiche et le tableau se remplissent, sans chiffre inventé.
+3. ▶ : l'aperçu bouge ; cliquer « Plus vif » puis « Plus sobre » ; bouger les curseurs (rebond, lueur, taille du texte).
+4. « Coller un tableau » après avoir copié deux colonnes dans Excel ; « Excel ou CSV… » avec un fichier.
+5. Moteur maison ★ : « Fabriquer (gratuit) », regarder, « Insérer à la ligne rouge » ; Ctrl+Z. Refaire en « Transparent » et 9:16, « Poser au-dessus du film ».
+6. HyperFrames sur ce poste : « Installer… » (environ 200 Mo, barre du bas), puis fabriquer la même animation : même film qu'avec le moteur maison ? Noter le temps.
+7. Remotion : cocher la case de licence (si tu y as droit), « Installer… » (npm, environ 250 Mo), fabriquer : même film ?
+8. HeyGen : Préférences › Assistant et IA › clef HeyGen ; dans la fenêtre, le crédit s'affiche avec « Recharger… » ; « Fabriquer (environ 0,10 $) » demande confirmation ; le film arrive.
+9. Higgsfield : clef « identifiant:secret » dans « Connecter une IA » › Higgsfield, « Tester (gratuit) » ; dans l'assistant ou la Séquence IA, le moteur « Kling 2.5 Turbo Pro (Higgsfield) » apparaît avec son prix.
+10. Une remarque à l'instant (« à 0:03 la barre de juin est trop rouge ») et « Corriger par l'IA ».
+
 ## T103 — 0.9.98 : Réalisateur et correcteur (scène du tarmac)
 
 1. Assistant de création, première page : « Le Réalisateur enchaîne tout » est cochée. Décrire la scène (pilote, hôtesse, Falcon, deux femmes sur le tarmac) avec les mêmes noms que dans la bibliothèque, « Suivant ».

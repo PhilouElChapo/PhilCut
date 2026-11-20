@@ -120,6 +120,12 @@ def credit_epuise(t):
     if "exhausted balance" in b or ("fal" in b and ("user is locked" in b or "insufficient" in b and "balance" in b)):
         return _("Crédit fal.ai épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://fal.ai/dashboard/billing, puis "
                  "recommencez.")
+    if "solde higgsfield épuisé" in b or "higgsfield balance exhausted" in b:
+        return _("Crédit Higgsfield épuisé : rien n'a été fait ni facturé. Rechargez-le sur https://console.higgsfield.ai, puis "
+                 "recommencez.")
+    if "crédit heygen épuisé" in b or "heygen credit exhausted" in b:
+        return _("Crédit HeyGen épuisé : rien n'a été rendu ni facturé. Rechargez votre crédit API sur https://app.heygen.com "
+                 "(Paramètres › API), puis recommencez.")
     return ""
 
 

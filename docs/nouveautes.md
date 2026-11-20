@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 0.9.98 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 0.9.99 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 0.9.99 (animations : motion design dans PhilCut)
+- Fabrique IA › Animation (motion design) : chiffre qui monte, barres qui poussent, courbe qui se trace, titre anime, ou les trois a la suite. On ecrit ce qu'on veut (« Preparer avec l'IA » remplit la fiche sans inventer de chiffres) ou on colle ses donnees (Excel, Sheets, CSV) ; apercu immediat, trois propositions (style de la charte, plus vif, plus sobre), curseurs (vitesse, rebond, decalage, epaisseur, lueur, taille du texte), remarque a l'instant corrigee par l'IA.
+- Quatre moteurs au choix, PhilCut conseille (★) et dit pourquoi : moteur maison (rien a installer), HyperFrames sur ce poste (gratuit, installe une fois, environ 200 Mo), HyperFrames chez HeyGen (cloud, environ 0,10 $ la minute, credit affiche et « Recharger… »), Remotion sur ce poste (licence gratuite a confirmer une fois ; installe depuis npm). Le meme film quel que soit le moteur.
+- Transparent (pose au-dessus du film, MOV ProRes 4444), formats 16:9, 9:16, 1:1, 4:5, zones sures de Reels, Shorts et TikTok, chiffres a la francaise (34 390), source affichee.
+- « Ma charte » : couleurs, polices, logo, allure, mouvement, a eviter ; tiree d'un logo, d'une image ou de votre site ; contraste verifie (« Rendre lisible ») ; elle suit sur vos autres postes.
+- « Projet HTML (HyperFrames, Claude Code)… » : pour qui veut retoucher l'animation a la main ; PhilCut suffit pour tout le reste.
+- Nouveaux fournisseurs avec leur clef et leur credit : HeyGen (rendu des animations) et Higgsfield (plans video Kling, Hailuo… en paiement a l'usage, sans abonnement).
 
 ### 0.9.98 (le Realisateur et son correcteur)
 - Assistant de creation : « Le Realisateur enchaine tout » (coche en premiere page, et dans Preferences). Il prend dans la bibliotheque ce qui porte le meme nom, prepare plans et images clefs, montre le brouillon gratuit et ne s'arrete que sur le brouillon et avant de payer. « ‹ Precedent » le met en pause, « Relancer le Realisateur » le reprend.

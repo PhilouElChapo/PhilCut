@@ -32,7 +32,7 @@ let policesChargees = false;
 
 const nombre = (A: Animation, v: number) => {
   const t = v.toLocaleString(A.langue === "fr" ? "fr-FR" : A.langue, { minimumFractionDigits: A.decimales, maximumFractionDigits: A.decimales });
-  return A.prefixe + (A.langue === "fr" ? t.replace(/[  ]/g, " ") : t) + A.suffixe;
+  return A.prefixe + t.replace(/[\u202f ]/g, "\u00a0") + A.suffixe;
 };
 const haut = (v: number) => {
   if (v <= 0) return 1;
@@ -79,7 +79,7 @@ const Scene: React.FC<{ A: Animation; duree: number; dernier: boolean; children:
     <AbsoluteFill style={{ opacity: entree * (1 - sortie), scale: String(1 - 0.06 * sortie) }}>
       {A.transparent ? <div style={{ position: "absolute", left: A.zx - m, top: A.zy - m, width: A.zw + 2 * m, height: A.zh + 2 * m,
         borderRadius: 36 * A.u, background: A.couleurs.fond + "b8" }} /> : null}
-      <div style={{ position: "absolute", left: A.zx, top: A.zy, width: A.zw, height: A.zh, fontFamily: A.police_texte, color: A.couleurs.texte }}>
+      <div style={{ position: "absolute", left: A.zx, top: A.zy, width: A.zw, height: A.zh, fontFamily: `"${A.police_texte}", "Poppins", sans-serif`, color: A.couleurs.texte }}>
         {children}
         {A.source ? <div style={{ position: "absolute", left: 0, bottom: -40 * A.u, fontSize: 22 * A.u, color: A.couleurs.doux }}>{A.source}</div> : null}
       </div>
@@ -99,7 +99,7 @@ const Compteur: React.FC<{ A: Animation; duree: number; dernier: boolean }> = ({
       <div style={{ position: "absolute", left: 0, right: 0, top: (A.vertical ? 0.42 : 0.48) * A.zh, transform: "translateY(-50%)", textAlign: "center" }}>
         <div style={{ fontSize: 34 * u, fontWeight: 600, letterSpacing: 6 * u, color: C.doux, textTransform: "uppercase", opacity: lab,
           translate: `0px ${(1 - SORTIE(lab)) * 20 * u}px` }}>{A.titre}</div>
-        <div style={{ fontFamily: A.police_titre, fontWeight: 700, fontSize: 260 * u * (A.vertical ? 0.8 : 1), lineHeight: 1, marginTop: 18 * u,
+        <div style={{ fontFamily: `"${A.police_titre}", "Poppins", sans-serif`, fontWeight: 700, fontSize: 260 * u * (A.vertical ? 0.8 : 1), lineHeight: 1, marginTop: 18 * u,
           fontVariantNumeric: "tabular-nums", backgroundImage: `linear-gradient(100deg, ${C.texte} 30%, ${C.accent} 70%, ${C.accent2})`,
           WebkitBackgroundClip: "text", color: "transparent", filter: `drop-shadow(0 ${20 * u}px ${60 * u}px ${C.accent}${hex2(85 * A.lueur)})` }}>
           {nombre(A, v)}
@@ -127,7 +127,7 @@ const Barres: React.FC<{ A: Animation; duree: number; dernier: boolean }> = ({ A
   A.donnees.forEach((d, i) => { if (d[1] > A.donnees[rec][1]) rec = i; });
   return (
     <Scene A={A} duree={duree} dernier={dernier}>
-      <div style={{ position: "absolute", left: 0, top: 0, fontFamily: A.police_titre, fontWeight: 700, fontSize: 64 * u, whiteSpace: "nowrap" }}>{A.titre_barres}</div>
+      <div style={{ position: "absolute", left: 0, top: 0, fontFamily: `"${A.police_titre}", "Poppins", sans-serif`, fontWeight: 700, fontSize: 64 * u, whiteSpace: "nowrap" }}>{A.titre_barres}</div>
       <div style={{ position: "absolute", left: 0, top: 80 * u, fontSize: 30 * u, color: C.doux }}>{A.sous_titre}</div>
       {[0, 1, 2, 3, 4].map((i) => {
         const tr = interpolate(f * V, [(0.2 + i * 0.1) * fps, (0.9 + i * 0.1) * fps], [0, 1], { ...borne, easing: SORTIE });
@@ -146,7 +146,7 @@ const Barres: React.FC<{ A: Animation; duree: number; dernier: boolean }> = ({ A
         return (
           <React.Fragment key={i}>
             <div style={{ position: "absolute", left: x - 40 * u, width: lb + 80 * u, textAlign: "center", top: bas - h - 50 * u, opacity: Math.min(1, p),
-              fontFamily: A.police_titre, fontWeight: 700, fontSize: 32 * u * (nb > 8 ? 0.8 : 1), color: record ? C.accent2 : C.texte }}>
+              fontFamily: `"${A.police_titre}", "Poppins", sans-serif`, fontWeight: 700, fontSize: 32 * u * (nb > 8 ? 0.8 : 1), color: record ? C.accent2 : C.texte }}>
               {nombre(A, d[1] * Math.min(1, p))}
             </div>
             <div style={{ position: "absolute", left: x, width: lb, top: bas - h, height: Math.max(0, h), borderRadius: `${18 * u}px ${18 * u}px ${6 * u}px ${6 * u}px`,
@@ -184,7 +184,7 @@ const Courbe: React.FC<{ A: Animation; duree: number; dernier: boolean }> = ({ A
   const cx = Math.min(Math.max(0, pts[rec][0] - w - 40 * u), A.zw - w), cy = Math.max(130 * u, pts[rec][1] - 60 * u - h);
   return (
     <Scene A={A} duree={duree} dernier={dernier}>
-      <div style={{ position: "absolute", left: 0, top: 0, fontFamily: A.police_titre, fontWeight: 700, fontSize: 64 * u, whiteSpace: "nowrap" }}>{A.titre_courbe}</div>
+      <div style={{ position: "absolute", left: 0, top: 0, fontFamily: `"${A.police_titre}", "Poppins", sans-serif`, fontWeight: 700, fontSize: 64 * u, whiteSpace: "nowrap" }}>{A.titre_courbe}</div>
       <div style={{ position: "absolute", left: 0, top: 80 * u, fontSize: 30 * u, color: C.doux }}>{A.sous_titre_courbe}</div>
       <svg width={A.zw} height={A.zh} style={{ position: "absolute", left: 0, top: 0, overflow: "visible" }}>
         <defs>
@@ -202,7 +202,7 @@ const Courbe: React.FC<{ A: Animation; duree: number; dernier: boolean }> = ({ A
       <div style={{ position: "absolute", left: cx, top: cy + (1 - Math.min(1, r)) * 30 * u, width: w, height: h, borderRadius: 20 * u, background: "#ffffff12",
         border: "1px solid #ffffff30", padding: `${14 * u}px ${28 * u}px`, opacity: Math.min(1, r) }}>
         <div style={{ fontSize: 24 * u, color: C.doux }}>{A.record}</div>
-        <div style={{ fontFamily: A.police_titre, fontWeight: 700, fontSize: 38 * u }}>{A.textes_valeurs[rec]}</div>
+        <div style={{ fontFamily: `"${A.police_titre}", "Poppins", sans-serif`, fontWeight: 700, fontSize: 38 * u }}>{A.textes_valeurs[rec]}</div>
       </div>
     </Scene>
   );
@@ -220,7 +220,7 @@ const Titre: React.FC<{ A: Animation; duree: number }> = ({ A, duree }) => {
   return (
     <Scene A={A} duree={duree} dernier>
       <div style={{ position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)", textAlign: "center", opacity: fin }}>
-        <div style={{ fontFamily: A.police_titre, fontWeight: 700, fontSize: 120 * u * (A.vertical ? 0.75 : 1), lineHeight: 1.05 }}>
+        <div style={{ fontFamily: `"${A.police_titre}", "Poppins", sans-serif`, fontWeight: 700, fontSize: 120 * u * (A.vertical ? 0.75 : 1), lineHeight: 1.05 }}>
           {mots.map((m, i) => {
             const p = ressort(A, f * V - (0.15 + i * A.decalage) * fps, fps, 150);
             return <span key={i} style={{ display: "inline-block", margin: `0 ${14 * u}px`, color: m === cle ? C.accent : C.texte, opacity: Math.min(1, p),

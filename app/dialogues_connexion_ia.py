@@ -24,14 +24,22 @@ FOURNISSEURS_TEXTE = {
     "fal": {"nom": GV.FOURNISSEURS["fal"]["nom"], "clef": "clef_fal", "page": GV.FOURNISSEURS["fal"]["page"],
             "role": _("Plans vidéo générés par d'autres modèles (Kling, Seedance…), paiement à l'usage, une seule clef."),
             "etapes": GV.FOURNISSEURS["fal"]["etapes"]},
+    "heygen": {"nom": "HeyGen", "clef": "clef_heygen", "page": GV.FOURNISSEURS["heygen"]["page"],
+               "role": _("Rendu cloud des animations HyperFrames (chiffres, graphiques, titres), payé à la minute : environ 0,10 $ "
+                         "la minute en 1080p. Crédit restant affiché dans PhilCut."),
+               "etapes": GV.FOURNISSEURS["heygen"]["etapes"]},
+    "higgsfield": {"nom": "Higgsfield", "clef": "clef_higgsfield", "page": GV.FOURNISSEURS["higgsfield"]["page"],
+                   "role": _("Plans vidéo générés (Kling, Hailuo…) en paiement à l'usage, sans abonnement : PhilCut compare le prix "
+                             "avec fal.ai quand le même modèle existe chez les deux."),
+                   "etapes": GV.FOURNISSEURS["higgsfield"]["etapes"]},
 }
 
 
 def tester(cle_fournisseur, cle):
     if cle_fournisseur == "gemini":
         return GV.tester_clef("google", cle)
-    if cle_fournisseur == "fal":
-        return GV.tester_clef("fal", cle)
+    if cle_fournisseur in ("fal", "heygen", "higgsfield"):
+        return GV.tester_clef(cle_fournisseur, cle)
     if not cle:
         return False, _("Aucune clef saisie.")
     req = urllib.request.Request("https://api.anthropic.com/v1/models?limit=5", headers={"x-api-key": cle, "anthropic-version": "2023-06-01"})

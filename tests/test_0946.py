@@ -34,7 +34,7 @@ class TestMenus(unittest.TestCase):
         f = _F([])
         ed = f._editeur_ou_nouveau()
         m = f.remplir_fabrique(QMenu(), ed)
-        self.assertEqual([a.text() for a in m.actions() if a.menu()], ["Image", "Logo, intro et vignette", "Musique", "Vidéo"])
+        self.assertEqual([a.text() for a in m.actions() if a.menu()], ["Animation (motion design)", "Image", "Logo, intro et vignette", "Musique", "Vidéo"])
         ed.projet.modifie = False
 
 

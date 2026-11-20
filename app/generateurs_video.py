@@ -21,7 +21,19 @@ FOURNISSEURS = {
             "etapes": [_("Créez un compte sur fal.ai (Google ou e-mail) et ajoutez du crédit (paiement à l'usage, sans abonnement)."),
                        _("Menu « Keys » › « Add key » : donnez-lui le nom PhilCut."),
                        _("Copiez la clef (forme « identifiant:secret ») et collez-la ici.")]},
+    # 0.9.99 : Higgsfield, paiement à l'usage en dollars (recharge de 5 $ au moins), sans abonnement : l'API est un produit
+    # séparé de l'abonnement du site (les crédits de l'un ne paient pas l'autre)
+    "higgsfield": {"nom": "Higgsfield (Kling, Hailuo et autres)", "clef": "clef_higgsfield", "page": "https://console.higgsfield.ai",
+                   "etapes": [_("Créez un compte API sur Higgsfield (console) et rechargez le solde (5 $ au moins, sans abonnement)."),
+                              _("Menu « API keys » › créez une clef nommée PhilCut : elle a un identifiant et un secret."),
+                              _("Collez « identifiant:secret » ici (les deux, séparés par deux-points).")]},
+    # 0.9.99 : HeyGen, pour le rendu cloud des animations HyperFrames (pas de plans vidéo ici)
+    "heygen": {"nom": "HeyGen (rendu des animations HyperFrames)", "clef": "clef_heygen", "page": "https://app.heygen.com/settings?nav=API",
+               "etapes": [_("Créez un compte HeyGen, puis ouvrez Paramètres › API."),
+                          _("Achetez du crédit API (paiement à l'usage, sans abonnement) et créez une clef API."),
+                          _("Copiez la clef et collez-la ici : le crédit restant s'affichera dans PhilCut.")]},
 }
+POUR_VIDEO = ("google", "fal", "higgsfield")        # fournisseurs qui fabriquent des plans vidéo
 
 MODELES = [
     {"id": "omni-360p", "fournisseur": "google", "nom": "Gemini Omni Flash 360p (brouillon)", "modele": "gemini-omni-1.1-flash",
@@ -43,6 +55,14 @@ MODELES = [
     {"id": "seedance-2", "fournisseur": "fal", "nom": "Seedance 2.0 (fal)", "modele": "bytedance/seedance-2.0/text-to-video",
      "modele_image": "bytedance/seedance-2.0/image-to-video", "prix_s": 0.30, "durees": list(range(4, 16)),
      "son_param": "generate_audio", "note": _("plans jusqu'à 15 s")},
+    # 0.9.99 : Higgsfield (API à l'usage) ; chemins de leur spécification OpenAPI ; prix indicatifs relevés le 20/11/2026,
+    # corrigés par le catalogue en ligne s'ils changent
+    {"id": "hf-kling-25-pro", "fournisseur": "higgsfield", "nom": "Kling 2.5 Turbo Pro (Higgsfield)",
+     "modele": "kling-video/v2.5-turbo/pro/text-to-video", "modele_image": "kling-video/v2.5-turbo/pro/image-to-video",
+     "prix_s": 0.07, "durees": [5, 10], "note": _("prix indicatif ; vérifiez-le dans la console Higgsfield")},
+    {"id": "hf-hailuo-23", "fournisseur": "higgsfield", "nom": "Hailuo 2.3 (Higgsfield)",
+     "modele": "minimax/hailuo-2.3/standard/text-to-video", "modele_image": "minimax/hailuo-2.3/standard/image-to-video",
+     "prix_s": 0.05, "durees": [6, 10], "note": _("mouvements vifs ; prix indicatif")},
 ]
 
 
@@ -142,6 +162,8 @@ def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None
             if m.get("repli") and (getattr(e, "code", None) == 404 or any(x in str(e) for x in ("404", "NOT_FOUND", "not found", "not supported"))):
                 return generer_omni(k, consigne, sortie, m["repli"], duree, format_, image, m.get("resolution", "720p"), progression, arret)
             raise
+    if m["fournisseur"] == "higgsfield":
+        return generer_higgsfield(k, m, consigne, sortie, duree, image, progression, arret)
     if m.get("references"):
         return generer_reference(k, m, consigne, sortie, duree, format_, image, image_fin, references, progression, arret, son,
                                  multi if m.get("multi") else None)
@@ -239,13 +261,17 @@ def generer_reference(cle, m, consigne, sortie, duree=5, format_="16:9", image=N
 
 # ------------------------------------------------------------------ crédit restant (0.9.72)
 PAGES_CREDIT = {"anthropic": "https://console.anthropic.com/settings/billing", "fal": "https://fal.ai/dashboard/usage-billing/credits",
-                "google": "https://aistudio.google.com/usage"}
+                "google": "https://aistudio.google.com/usage", "heygen": "https://app.heygen.com/settings?nav=API",
+                "higgsfield": "https://console.higgsfield.ai"}
 
 
 def credit(params, fournisseur):
     """Crédit restant quand le fournisseur le dit : (montant, devise) ou None. fal.ai le donne (API Platform) ; Google ne
     publie pas le solde d'une clef Gemini (facturation Cloud) : None, et le bouton mène à la page de suivi."""
     k = clef(params, fournisseur)
+    if k and fournisseur == "heygen":
+        from .motion_html import credit_heygen
+        return credit_heygen(k)
     if not k or fournisseur != "fal":
         return None
     try:
@@ -273,6 +299,64 @@ def _http(url, cle, corps=None, methode=None, delai=120):
         if e.code in (401, 403):
             raise ErreurGenerateur(_("Clef fal.ai refusée (vérifiez-la, et le crédit du compte) : {d}", d=detail)) from e
         raise ErreurGenerateur(f"HTTP {e.code} : {detail}") from e
+
+
+# ------------------------------------------------------------------ Higgsfield (0.9.99)
+HIGGSFIELD = "https://api.higgsfield.ai"
+
+
+def _http_hf(url, cle, corps=None, delai=120):
+    import uuid
+    entetes = {"Authorization": f"Key {cle}", "Content-Type": "application/json", "User-Agent": "PhilCut", "Accept": "application/json"}
+    if corps is not None:
+        entetes["Idempotency-Key"] = str(uuid.uuid4())
+    req = urllib.request.Request(url, data=json.dumps(corps).encode("utf-8") if corps is not None else None, headers=entetes,
+                                 method="POST" if corps is not None else "GET")
+    try:
+        with urllib.request.urlopen(req, timeout=delai) as r:
+            return json.loads(r.read().decode("utf-8") or "{}")
+    except urllib.error.HTTPError as e:
+        detail = e.read().decode("utf-8", "replace")[:300]
+        if e.code in (401, 403):
+            raise ErreurGenerateur(_("Clef Higgsfield refusée (forme « identifiant:secret ») : {d}", d=detail)) from e
+        if e.code == 402 or "balance" in detail.lower() or "insufficient" in detail.lower():
+            raise ErreurGenerateur(_("Solde Higgsfield épuisé (rien n'a été fabriqué ni payé) : rechargez-le dans la console. {d}",
+                                     d=detail)) from e
+        raise ErreurGenerateur(f"Higgsfield HTTP {e.code} : {detail}") from e
+
+
+def generer_higgsfield(cle, m, consigne, sortie, duree=5, image=None, progression=None, arret=lambda: False, attente=600.0):
+    """File d'attente Higgsfield : envoi, suivi (status_url), vidéo téléchargée (video.url)."""
+    point = (m.get("modele_image") if image and m.get("modele_image") else m["modele"]).strip("/")
+    corps = {"prompt": consigne, "duration": int(duree_reelle(m, duree))}
+    if image:
+        corps["image_url"] = _data_uri(image)
+    r = _http_hf(f"{HIGGSFIELD}/{point}", cle, corps)
+    url_etat = r.get("status_url") or f"{HIGGSFIELD}/requests/{r.get('request_id')}/status"
+    debut = time.time()
+    while True:
+        if arret():
+            try:
+                _http_hf(r.get("cancel_url") or url_etat.replace("/status", "/cancel"), cle, {})
+            except Exception:      # noqa: BLE001
+                pass
+            raise InterruptedError()
+        time.sleep(3)
+        e = _http_hf(url_etat, cle)
+        st = e.get("status")
+        if progression:
+            progression(min(0.95, (time.time() - debut) / 150), _("Higgsfield : {s}", s={"queued": _("en file d'attente"),
+                                                                                        "in_progress": _("fabrication")}.get(st, st or "…")))
+        if st == "completed":
+            break
+        if st in ("failed", "nsfw", "canceled"):
+            raise ErreurGenerateur(_("Higgsfield : plan refusé ou en échec ({s}) ; rien n'est facturé pour un échec.", s=st))
+        if time.time() - debut > attente:
+            raise ErreurGenerateur(_("Higgsfield n'a pas fini à temps."))
+    url = (e.get("video") or {}).get("url") or next((v.get("url") for v in (e.get("videos") or []) if isinstance(v, dict)), None)
+    if not url:
+        raise ErreurGenerateur(_("Higgsfield n'a pas rendu de vidéo : {r}", r=str(e)[:200]))
+    return telecharger(url, sortie)
 
 
 def _data_uri(chemin):
@@ -388,6 +472,18 @@ def tester_clef(fournisseur, cle):
             with urllib.request.urlopen(req, timeout=20) as r:
                 n = len(json.loads(r.read().decode("utf-8")).get("models", []))
             return True, _("Clef Google valide : {n} modèles ouverts.", n=n)
+        if fournisseur == "heygen":
+            from .motion_html import tester_heygen
+            return tester_heygen(cle)
+        if fournisseur == "higgsfield":
+            req = urllib.request.Request(f"{HIGGSFIELD}/requests/00000000-0000-0000-0000-000000000000/status",
+                                         headers={"Authorization": f"Key {cle}", "User-Agent": "PhilCut"})
+            try:
+                urllib.request.urlopen(req, timeout=20)
+            except urllib.error.HTTPError as e:
+                if e.code in (401, 403):
+                    return False, _("Clef Higgsfield refusée (forme « identifiant:secret »).")
+            return True, _("Clef Higgsfield acceptée (le solde se voit dans la console Higgsfield).")
         if fournisseur == "fal":
             # état d'une demande inexistante : 401/403 = clef refusée ; 404/400/422 = clef acceptée
             req = urllib.request.Request(f"{FAL_FILE}/fal-ai/fast-sdxl/requests/00000000-0000-0000-0000-000000000000/status",
@@ -415,7 +511,7 @@ def generer(params, ident, consigne, sortie, duree=5, format_="16:9", image=None
                              references=references, image_fin=image_fin, multi=multi)
     try:
         m = modele(ident, params)
-        if m and m.get("fournisseur") in ("fal", "google"):
+        if m and m.get("fournisseur") in POUR_VIDEO:
             from .credit_ia import noter_depense
             noter_depense(m["fournisseur"], prix(m, duree, son) + (0.0 if not image_fin else 0.0))
     except Exception:      # noqa: BLE001 : le compte est un plus
