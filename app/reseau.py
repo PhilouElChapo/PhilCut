@@ -30,11 +30,41 @@ def activer():
     try:
         import truststore
         truststore.inject_into_ssl()
+        _une_verification_a_la_fois()
         _MODE = "windows"
     except Exception:
         ssl._create_default_https_context = lambda *a, **k: _contexte_union()
         _MODE = "python"
     return _MODE
+
+
+def _une_verification_a_la_fois():
+    """1.0.4 : plantage 0xc0000374 (tas Windows abîmé) chez Philippe le 20/11 : deux fils vérifiaient un certificat par Windows
+    en même temps (mise à jour + synchronisation Google Drive), le ramasse-miettes passant dans l'un pendant l'appel de l'autre
+    à crypt32. Les vérifications par Windows passent désormais une par une (quelques millisecondes chacune), sans ramasse-miettes
+    pendant l'appel."""
+    import gc
+    import threading
+    try:
+        import truststore._api as api
+    except Exception:
+        return
+    brut = getattr(api, "_verify_peercerts_impl", None)
+    if brut is None or getattr(brut, "_philcut", False):
+        return
+    verrou = threading.Lock()
+
+    def verifier(*a, **k):
+        with verrou:
+            avant = gc.isenabled()
+            gc.disable()
+            try:
+                return brut(*a, **k)
+            finally:
+                if avant:
+                    gc.enable()
+    verifier._philcut = True
+    api._verify_peercerts_impl = verifier
 
 
 def secours():

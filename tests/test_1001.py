@@ -131,6 +131,36 @@ class Test1002(unittest.TestCase):
         self.assertNotIn("image_url", envoye)
 
 
+class Test1004(unittest.TestCase):
+    def test_verifications_windows_une_a_la_fois(self):
+        import gc, threading, time
+        from app import reseau
+        try:
+            import truststore._api as api
+        except ImportError:
+            self.skipTest("truststore absent")
+        anc = api._verify_peercerts_impl
+        dedans, maxi, gc_actif = [0], [0], []
+
+        def faux(*a, **k):
+            dedans[0] += 1
+            maxi[0] = max(maxi[0], dedans[0])
+            gc_actif.append(gc.isenabled())
+            time.sleep(0.02)
+            dedans[0] -= 1
+        api._verify_peercerts_impl = faux
+        try:
+            reseau._une_verification_a_la_fois()
+            ts = [threading.Thread(target=api._verify_peercerts_impl) for _ in range(6)]
+            [t.start() for t in ts]
+            [t.join() for t in ts]
+        finally:
+            api._verify_peercerts_impl = anc
+        self.assertEqual(maxi[0], 1)
+        self.assertFalse(any(gc_actif))
+        self.assertTrue(gc.isenabled())
+
+
 class TestRecharger(unittest.TestCase):
     def test_fabrique_suit_le_modele(self):
         from app.fenetre import Fenetre
