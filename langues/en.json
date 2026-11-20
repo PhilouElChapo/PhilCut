@@ -9072,5 +9072,6 @@
  "Gemini remplace l'élément…": "Gemini is replacing the element…",
  "Mise aux dimensions de l'image d'origine…": "Fitting to the dimensions of the original image…",
  "Remplacer un élément de l'image par un de ma bibliothèque…": "Replace an element of the image with one from my library…",
- "Un avion, une voiture, un objet de l'image remplacé par un élément de votre bibliothèque ; le reste ne change pas (Gemini, environ 0,04 $)": "A plane, a car, an object of the image replaced by an element of your library; the rest does not change (Gemini, about $0.04)"
+ "Un avion, une voiture, un objet de l'image remplacé par un élément de votre bibliothèque ; le reste ne change pas (Gemini, environ 0,04 $)": "A plane, a car, an object of the image replaced by an element of your library; the rest does not change (Gemini, about $0.04)",
+ "Le dossier du brouillon : la séquence entière et chaque plan (plan01, plan02…)": "The draft folder: the whole sequence and each shot (plan01, plan02…)"
 }

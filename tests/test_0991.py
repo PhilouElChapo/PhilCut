@@ -85,6 +85,8 @@ class TestBrouillon(unittest.TestCase):
             GV.generer = anc
         self.assertEqual([v[0] for v in vus], ["omni-360p"] * 3)
         self.assertEqual(vus[0][1], a)
+        self.assertEqual(vus[1][1].endswith("depart02.jpg"), True)      # 1.0.8 : part de la fin du plan 1 du brouillon
+        self.assertEqual(vus[2][1], b)                                  # après une image clef : l'image clef
         self.assertFalse(any(v[2] for v in vus))
         self.assertAlmostEqual(float(moteur.sonder(f)["duree"]), 7, delta=0.3)
         self.assertFalse(seq["plans"][0].get("fichier"))        # le brouillon ne touche pas aux vrais plans

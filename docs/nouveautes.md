@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.0.7 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.0.8 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.0.8 (brouillon de toute la sequence)
+- Brouillon Gemini Omni : chaque plan part de la derniere image du plan d'avant du brouillon (ou de l'image clef), comme dans la vraie fabrication. Avant, plusieurs plans repartaient de la photo de depart et la scene recommencait.
+- Bouton « Ouvrir le dossier » a cote de « Revoir le brouillon » : la sequence entiere et chaque plan.
 
 ### 1.0.7 (enregistrement)
 - « Enregistrer » ne s'arrete plus sur « WinError 32 : le fichier est utilise par un autre processus » (Google Drive, OneDrive ou l'antivirus qui lit le projet a ce moment-la) : PhilCut reessaie quelques secondes.

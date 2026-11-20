@@ -163,7 +163,13 @@ def fabriquer(seq, mode, params, progression=None, arret=lambda: False):
         for i, pl in enumerate(copie["plans"]):
             if arret():
                 raise InterruptedError
-            pl["image"] = image_du_plan(seq, i) or ""
+            # 1.0.8 : comme la vraie fabrication, un plan enchaîné part de la dernière image du plan d'avant du brouillon
+            # (avant : chaque plan repartait de la dernière image connue, souvent la photo de départ : la scène recommençait)
+            depart = Q.depart_prevu(seq, i) if seq["plans"][i].get("image") or (i and not seq["plans"][i - 1].get("sans_fin")
+                                                                               and seq["plans"][i - 1].get("image_fin")) else ""
+            if not depart and i and pl.get("enchainer", True) and morceaux:
+                depart = Q.derniere_image(morceaux[-1], os.path.join(dossier, f"depart{i + 1:02d}.jpg"))
+            pl["image"] = depart or image_du_plan(seq, i) or ""
             f = Q.fabriquer_plan(copie, i, params, mode, lambda x, i=i: progression and progression((i + x) / n), arret)
             dest = os.path.join(dossier, f"plan{i + 1:02d}_{mode}.mp4")
             shutil.move(f, dest)

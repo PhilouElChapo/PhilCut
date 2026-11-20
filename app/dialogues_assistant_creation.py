@@ -967,11 +967,24 @@ class DialogueAssistant(QDialog):
         self.b_voir_brouillon = QPushButton(_("Revoir le brouillon"))
         self.b_voir_brouillon.clicked.connect(lambda: self.voir_brouillon((self.seq.get("brouillon") or {}).get("fichier", "")))
         h.addWidget(self.b_voir_brouillon)
+        self.b_dossier_brouillon = QPushButton(_("Ouvrir le dossier"))          # 1.0.8 : les plans du brouillon, un par un
+        self.b_dossier_brouillon.setToolTip(_("Le dossier du brouillon : la séquence entière et chaque plan (plan01, plan02…)"))
+        self.b_dossier_brouillon.clicked.connect(self._dossier_brouillon)
+        h.addWidget(self.b_dossier_brouillon)
         h.addStretch(1)
         v.addLayout(h)
         return w
 
     # ------------------------------------------------------------------ 0.9.91 : brouillon
+    def _dossier_brouillon(self):
+        f = (self.seq.get("brouillon") or {}).get("fichier", "")
+        if f and os.path.exists(f):
+            from PySide6.QtCore import QUrl
+            from PySide6.QtGui import QDesktopServices
+            QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.dirname(f)))
+            return os.path.dirname(f)
+        return ""
+
     def modes_brouillon(self):
         """[(mode, libellé, prix, possible)] dans l'ordre : gratuit d'abord."""
         from . import brouillon as B, packs_ia
@@ -1023,6 +1036,7 @@ class DialogueAssistant(QDialog):
         if hasattr(self, "b_voir_brouillon"):
             f = (self.seq.get("brouillon") or {}).get("fichier", "")
             self.b_voir_brouillon.setVisible(bool(f and os.path.exists(f)))
+            self.b_dossier_brouillon.setVisible(bool(f and os.path.exists(f)))
 
     def voir_brouillon(self, chemin, realisateur=False):
         if not chemin or not os.path.exists(chemin):
