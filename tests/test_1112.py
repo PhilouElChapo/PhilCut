@@ -129,32 +129,6 @@ class TestMusique(unittest.TestCase):
         self.assertEqual(ML.variante_nombres("un jour"), "")      # « un » n'est pas pris pour un nombre
 
 
-class TestVoixReference(unittest.TestCase):
-    def test_voix_d_un_artiste_refusee(self):
-        """Philippe, 21/11 21h08 : la voix séparée d'un morceau d'une chanteuse connue servait de timbre."""
-        from app import musique_ia as MI
-        d = tempfile.mkdtemp()
-        cas = {"connu.wav": {"artiste": "Metallica"}, "youtube.wav": {"source": "ytmusic"},
-               "moi.wav": {"artiste": "Archangel", "voix_a_moi": True}, "rien.wav": {}}
-        for nom, infos in cas.items():
-            with open(os.path.join(d, nom), "wb") as f:
-                f.write(b"x")
-            if infos:
-                MI.declarer(os.path.join(d, nom), **infos)
-        self.assertTrue(MI.voix_interdite(os.path.join(d, "connu.wav")))
-        self.assertTrue(MI.voix_interdite(os.path.join(d, "youtube.wav")))
-        self.assertEqual(MI.voix_interdite(os.path.join(d, "moi.wav")), "")
-        self.assertEqual(MI.voix_interdite(os.path.join(d, "rien.wav")), "")
-        from app.dialogues_musique_ia import DialogueFabriqueMusique, Hote
-        dl = DialogueFabriqueMusique(None, {}, Hote(), None, 60)
-        dl._test_oui = True
-        self.assertFalse(dl._accord_voix(os.path.join(d, "connu.wav")))
-        self.assertIn("Metallica", dl.info.text())
-        dl.reference = os.path.join(d, "youtube.wav")
-        dl.creer()
-        self.assertIsNone(dl.reference)
-
-
 class TestFenetre(unittest.TestCase):
     def test_choix_du_moteur_et_reduire(self):
         from app import ia, motion_html as MH, motion_remotion as MR

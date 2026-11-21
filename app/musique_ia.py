@@ -236,36 +236,6 @@ def declarer(fichier, **infos):
     return d
 
 
-def artiste_de(fichier):
-    """1.1.4 : l'artiste d'un morceau (déclaré au téléchargement, ou lu dans ses étiquettes ou son nom), « » si inconnu."""
-    d = droits(fichier)
-    if d.get("artiste"):
-        return str(d["artiste"]).strip()
-    try:
-        from . import musiques
-        e = musiques.etiquettes(fichier) or {}
-        return str(e.get("artiste") or "").strip()
-    except Exception:      # noqa: BLE001
-        return ""
-
-
-def voix_interdite(fichier, params=None):
-    """Raison pour laquelle la voix de ce morceau ne peut pas servir de timbre, ou « » (Philippe, 21/11 21h08 : la voix
-    séparée d'un morceau d'une chanteuse connue était prise comme voix de référence). Règle : seulement la voix de
-    l'utilisateur ou d'une personne d'accord ; jamais un chanteur ou une personne connue."""
-    d = droits(fichier)
-    if d.get("source") in ("ytmusic", "youtube") and not d.get("voix_a_moi"):
-        return _("ce morceau vient de YouTube : c'est la voix de son interprète")
-    a = artiste_de(fichier)
-    if a:
-        from . import styles_ia
-        connus = styles_ia._toutes(params)
-        net = styles_ia._net(a)
-        if net in connus or any(styles_ia._net(x) == net for x in d.get("artistes_connus", [])):
-            return _("« {a} » est un artiste connu", a=a)
-    return ""
-
-
 def peut_partir_de(fichier):
     d = droits(fichier)
     return bool(d.get("libre") or d.get("a_moi"))

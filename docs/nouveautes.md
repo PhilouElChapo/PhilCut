@@ -4,13 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.4 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.5 (comprend tout ce qui est sorti depuis la 0.4.4)
 
 ### 1.1.4 (mes modeles)
 - Fabrique musique : « Garder cette fiche comme modele… » et « Reprendre un modele… » (style, paroles, voix, inspiration, duree), sans avoir a creer la musique. Les morceaux deja gardes avec leur fiche se reprennent aussi.
 - Animation libre : « Garder comme modele… » et « Reprendre un modele… » (description, moteur et code : rien a repayer).
 - Les modeles sont dans « Ma bibliotheque de creations », sur tous vos postes.
-- Voix de reference : la voix d'un artiste connu ou d'un morceau venu de YouTube est refusee ; pour un morceau signe d'un artiste, la question le nomme (« Je suis … » ou « … m'a donne son accord ecrit »).
+- 1.1.5 : voix de reference comme avant (la question « C'est ma voix » ou « Une personne d'accord » : votre reponse fait foi).
 
 ### 1.1.3 (fenetres de travail)
 - Toutes les fenetres de travail (Fabrique musique, Sequence IA, Atelier IA, plan de liaison, faire parler, continuer avec ma voix, separer les sons, narration, clip de groupe, assistant…) ont « Reduire », toujours visible. Fermer une fenetre qui contient un travail la range : le meme menu ou « Afficher la fenetre » dans la barre du bas la rouvre telle quelle. « Repartir de zero » ouvre une fenetre neuve.

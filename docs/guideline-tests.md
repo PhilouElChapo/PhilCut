@@ -27,7 +27,7 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 
 1. Fabrique musique : remplir la fiche (phrase, paroles, inspiration du « 17 »), « ☆ Garder cette fiche comme modèle… », nommer « Anniversaire 40 ans ». « Repartir de zéro », puis « Reprendre un modèle… » : tout revient (paroles, style entendu, voix).
 2. Animation libre : après une construction, « ☆ Garder comme modèle… » ; « Nouvelle animation » ; « Reprendre un modèle… » : l'animation revient avec son aperçu, sans rien payer.
-3. Voix de référence › une voix tirée d'un morceau de YouTube Music, ou d'un artiste connu : refusée, avec le conseil « À la manière de… ». Un morceau d'Archangel : la question nomme Archangel.
+3. Voix de référence (1.1.5) : la question « C'est ma voix » / « Une personne d'accord » revient comme avant, pour tout morceau (YouTube compris).
 4. Fabrique IA › « Ma bibliothèque de créations… » : les deux modèles y sont (Modèle de musique, Modèle d'animation) ; sur un autre poste après la synchro aussi.
 
 ## T110 — 1.1.3 : Réduire partout, fermer ne perd rien
