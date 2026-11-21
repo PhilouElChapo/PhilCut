@@ -54,7 +54,7 @@ STRICT RULES (the renderer seeks the timeline to each frame; anything else break
    strokeDashoffset): never top, left, width, height, margin or font-size (they snap to whole pixels and stutter). Place
    elements with left/top once, then move them with x/y. At most ~400 animated elements.
 7. The whole animation must read well at {L}×{H} ({format}) and last about {duree} seconds unless the user says otherwise
-   (max {dmax:g} s).
+   (max {dmax:g} s).{musique}
 
 ANSWER FORMAT — exactly these sections, nothing before or after, no markdown fences:
 ===TITRE===
@@ -65,6 +65,10 @@ the duration in seconds (a number)
 the storyboard: one line per event the user asked for, in the order of the user's text, written "start-end s: what happens"
 (e.g. "4.5-7 s: fireworks burst above the gift"). EVERY event, object and effect of the user's description must appear here,
 none dropped or merged away; every end is at most the duration. The code must do exactly this plan.
+===SONS===
+the sound effects that go with the plan, one per line, written "time s: id" (e.g. "6.2 s: boom"), at the exact instant the
+event happens on screen (an appearance, a burst, a typed text, a gust, an explosion…). Use ONLY these ids: {sons}. Usually
+3 to 12 sounds; repeat an id if the same thing happens again; none if the user asked for silence.
 ===CSS===
 the CSS (classes you use; #scenes already exists)
 ===HTML===
@@ -105,7 +109,7 @@ STRICT RULES (Remotion renders each frame independently, in parallel; anything e
 6. Prefer transform (translate, scale, rotate) and opacity for motion; place elements with left/top once. At most ~400
    animated elements. Valid TypeScript: type your helper parameters (number, string, React.CSSProperties…).
 7. The whole animation must read well at {L}×{H} ({format}) and last about {duree} seconds unless the user says otherwise
-   (max {dmax:g} s).
+   (max {dmax:g} s).{musique}
 
 ANSWER FORMAT — exactly these sections, nothing before or after, no markdown fences:
 ===TITRE===
@@ -116,6 +120,10 @@ the duration in seconds (a number)
 the storyboard: one line per event the user asked for, in the order of the user's text, written "start-end s: what happens"
 (e.g. "4.5-7 s: fireworks burst above the gift"). EVERY event, object and effect of the user's description must appear here,
 none dropped or merged away; every end is at most the duration. The code must do exactly this plan.
+===SONS===
+the sound effects that go with the plan, one per line, written "time s: id" (e.g. "6.2 s: boom"), at the exact instant the
+event happens on screen (an appearance, a burst, a typed text, a gust, an explosion…). Use ONLY these ids: {sons}. Usually
+3 to 12 sounds; repeat an id if the same thing happens again; none if the user asked for silence.
 ===TSX===
 the whole file (imports, then helpers, then export const Animation)
 ===MESSAGE===
@@ -127,6 +135,53 @@ Re-read the user's original request first: every event it describes must be in t
 (if something was missing, add it now), and nothing may happen after the duration.
 
 {code}"""
+
+
+# 1.1.6 : les bruitages de PhilCut que l'IA peut placer (Philippe, 21/11 21h41 : « pour les bruitages, ça se passe comment ? »)
+SONS_EN = {"whoosh": "fast whoosh, something passing", "whoosh_inverse": "reverse whoosh rising to a cut",
+           "impact": "dull hit, landing", "boom": "deep cinematic boom", "pop": "small pop, something appears",
+           "ding": "bright bell, good news", "declic": "camera shutter", "bip": "short beep", "montee": "2 s riser before the big moment",
+           "descente": "falling tone", "tambour": "2 s drum roll before an announcement", "cymbale": "cymbal crash",
+           "gong": "big gong", "machine": "typewriter keys (2 s)", "glitch": "digital glitch", "laser": "sci-fi laser",
+           "boing": "cartoon spring", "validation": "two rising notes, success", "notification": "phone notification",
+           "caisse": "cash register", "sonnette": "door chime", "coeur": "heartbeat", "vent": "wind (6 s background)",
+           "tic_tac": "clock ticking", "sifflet": "whistle", "buzzer": "error buzzer"}
+
+
+def _sons_permis():
+    from . import bruitages
+    return [k for k in SONS_EN if k in bruitages.SONS]
+
+
+def lire_sons(texte, duree=None):
+    """Les bruitages demandés par l'IA : [(instant, id)], ids connus seulement, dans la durée."""
+    permis = set(_sons_permis())
+    out = []
+    for ligne in (texte or "").splitlines():
+        m = re.match(r"\s*[-•*]?\s*(\d+(?:[.,]\d+)?)\s*s?\s*[:)\-–—]\s*([a-z_]+)", ligne.strip().lower())
+        if m and m.group(2) in permis:
+            t = float(m.group(1).replace(",", "."))
+            if duree is None or t <= float(duree) + 0.05:
+                out.append((round(t, 2), m.group(2)))
+    return sorted(out)[:40]
+
+
+def sons_texte(anim):
+    from . import bruitages
+    return " · ".join(f"{t:g} s {bruitages.SONS[i][0]}".replace(".", ",") for t, i in ((anim.get("libre") or {}).get("sons") or [])
+                      if i in bruitages.SONS)
+
+
+def musique_consigne(anim):
+    """1.1.6 : la musique du film sous l'animation (temps forts en secondes de l'animation) : l'IA y cale les moments forts."""
+    mu = (anim or {}).get("musique") or {}
+    forts = [t for t in mu.get("forts") or [] if 0 <= t <= DUREE_MAX][:40]
+    if len(forts) < 2:
+        return ""
+    return ("\n8. MUSIC: the film's music plays under this animation" + (f" (tempo {mu['bpm']:g} bpm)" if mu.get("bpm") else "") +
+            ". Its strong beats fall at these seconds of the animation: " + ", ".join(f"{t:g}" for t in forts) +
+            ". Put the main events (appearances, bursts, the explosion, scene changes) exactly on strong beats, and the end of the "
+            "animation on a strong beat too.")
 
 
 def fiche(description, taille=(1920, 1080), duree=0.0, charte=None, transparent=False, moteur="hyperframes"):
@@ -168,7 +223,8 @@ def consigne(anim):
     L, H = anim.get("taille") or (1920, 1080)
     modele = CONSIGNE_REMOTION if moteur_de(anim) == "remotion" else CONSIGNE
     return modele.format(langue=_langue_ui(), L=L, H=H, format=_format(L, H), duree=f"{anim.get('duree') or 8:g}",
-                           dmax=DUREE_MAX)
+                           dmax=DUREE_MAX, sons=", ".join(f"{k} ({SONS_EN[k]})" for k in _sons_permis()),
+                           musique=musique_consigne(anim))
 
 
 def sections(texte):
@@ -264,13 +320,14 @@ def appliquer(anim, s, demande=""):
     lib = a.setdefault("libre", {})
     hist = lib.get("historique") or []
     if code_de(a):
-        hist = (hist + [{k: lib.get(k, "") for k in ("css", "html", "js", "tsx", "moteur", "plan")}])[-5:]
+        hist = (hist + [{k: lib.get(k, "") for k in ("css", "html", "js", "tsx", "moteur", "plan", "sons")}])[-5:]
     remotion = bool(s.get("tsx", "").strip()) and moteur_de(a) == "remotion"
     if remotion:
         lib.update(css="", html="", js="", tsx=s.get("tsx", ""), moteur="remotion")
     else:
         lib.update(css=s.get("css", ""), html=s.get("html", ""), js=s.get("js", ""), tsx="", moteur="hyperframes")
-    lib.update(message=s.get("message", ""), historique=hist, plan=lire_plan(s.get("plan", "")))
+    lib.update(message=s.get("message", ""), historique=hist, plan=lire_plan(s.get("plan", "")),
+               sons=lire_sons(s.get("sons", "")))
     if demande:
         lib.setdefault("demandes", []).append(demande)
     try:
@@ -287,7 +344,8 @@ def appliquer(anim, s, demande=""):
 def _code(anim):
     lib = anim.get("libre") or {}
     tete = ["===TITRE===", anim.get("titre", ""), "===DUREE===", f"{anim.get('duree') or 8:g}", "===PLAN===",
-            "\n".join(f"{a:g}-{b:g} s: {t}" for a, b, t in (lib.get("plan") or []))]
+            "\n".join(f"{a:g}-{b:g} s: {t}" for a, b, t in (lib.get("plan") or [])), "===SONS===",
+            "\n".join(f"{t:g} s: {i}" for t, i in (lib.get("sons") or []))]
     if code_de(anim) == "remotion":
         corps = ["===TSX===", lib.get("tsx", "")]
     else:
@@ -329,6 +387,7 @@ def revenir(anim):
     v = lib["historique"].pop()
     v.setdefault("tsx", "")
     v["plan"] = [tuple(x) for x in (v.get("plan") or [])]
+    v["sons"] = [tuple(x) for x in (v.get("sons") or [])]
     v.setdefault("moteur", "remotion" if v.get("tsx") else "hyperframes")
     lib.update(v)
     if v["moteur"] in MOTEURS_LIBRES:
@@ -420,3 +479,22 @@ def apercu_leger(anim, echelle=0.5, cadence=15):
     a["taille"] = [int(L * echelle) // 2 * 2, int(H * echelle) // 2 * 2]
     a["cadence"] = cadence
     return a
+
+
+def mixer_sons(video, sons, sortie, volume=0.7):
+    """L'aperçu avec ses bruitages (pour les entendre avant de poser) ; sans son à mettre, la vidéo telle quelle."""
+    from . import bruitages, moteur
+    sons = [(t, i) for t, i in sons or [] if i in bruitages.SONS]
+    if not sons:
+        return video
+    args = ["-i", video]
+    for _t, i in sons:
+        args += ["-i", bruitages.chemin(i)]
+    parts = [f"[{k + 1}:a]adelay={int(t * 1000)}|{int(t * 1000)},volume={volume}[s{k}]" for k, (t, _i) in enumerate(sons)]
+    parts.append("".join(f"[s{k}]" for k in range(len(sons))) + f"amix=inputs={len(sons)}:normalize=0:duration=longest[a]")
+    d = float(moteur.sonder(video).get("duree") or 0)
+    args += ["-filter_complex", ";".join(parts), "-map", "0:v", "-map", "[a]", "-c:v", "copy", "-c:a", "aac", "-b:a", "160k"]
+    if d:
+        args += ["-t", f"{d:.3f}"]
+    moteur.lancer(args + [sortie])
+    return sortie

@@ -9227,5 +9227,15 @@
  "Sans voix de référence.": "Keine Referenzstimme.",
  "Ce morceau est signé « {a} ». ": "Dieses Stück stammt von „{a}“. ",
  "ce morceau vient de YouTube : c'est la voix de son interprète": "dieses Stück stammt von YouTube: es ist die Stimme seines Interpreten",
- "« {a} » est un artiste connu": "„{a}“ ist ein bekannter Künstler"
+ "« {a} » est un artiste connu": "„{a}“ ist ein bekannter Künstler",
+ "Animation posée avec {n} bruitage(s) sur les pistes de son (chacun se déplace ou se supprime).": "Animation mit {n} Geräusch(en) auf den Tonspuren platziert (jedes lässt sich verschieben oder löschen).",
+ "Bruitages : l'IA les place sur son plan (posés avec l'animation, modifiables)": "Geräusche: die KI setzt sie nach ihrem Plan (mit der Animation platziert, änderbar)",
+ "Caler les moments forts sur la musique du film (à partir de la ligne rouge)": "Die Höhepunkte auf die Musik des Films abstimmen (ab der roten Linie)",
+ "Les temps forts de la musique posée dans le montage sont donnés à l'IA ; l'animation sera posée à la ligne rouge où elle est maintenant, pour rester calée": "Die starken Schläge der im Schnitt platzierten Musik werden der KI übergeben; die Animation wird an der jetzigen Position der roten Linie platziert, damit sie im Takt bleibt",
+ "Musique du film : temps forts…": "Filmmusik: starke Schläge…",
+ "Calée sur la musique (posée à {t} s).": "Auf die Musik abgestimmt (platziert bei {t} s).",
+ "Bruitages : {s}": "Geräusche: {s}",
+ "« Bruitages » : l'IA place les sons de PhilCut sur son plan (pop, boum, machine à écrire, souffle…) ; l'aperçu les fait entendre, et ils sont posés avec l'animation sur des pistes de son, chacun modifiable. « Caler sur la musique du film » : placez d'abord la ligne rouge où l'animation commencera ; les moments forts tombent sur les temps forts de la musique.": "„Geräusche“: die KI setzt die Klänge von PhilCut nach ihrem Plan (Pop, Bumm, Schreibmaschine, Rauschen…); die Vorschau lässt sie hören, und sie werden mit der Animation auf Tonspuren platziert, jedes änderbar. „Auf die Filmmusik abstimmen“: setzen Sie zuerst die rote Linie dorthin, wo die Animation beginnt; die Höhepunkte fallen auf die starken Schläge der Musik.",
+ "Bruitages placés par l'IA": "Geräusche von der KI gesetzt",
+ "Calée sur la musique du film": "Auf die Filmmusik abgestimmt"
 }

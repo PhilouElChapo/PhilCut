@@ -1097,12 +1097,34 @@ class ResultatAnimation(QDialog):
         v.addLayout(h)
         self.resize(760, 440)
 
+    def _poser_bruitages(self, t0):
+        """1.1.6 : les bruitages du plan de l'animation libre, posés sur des pistes de son libres (plans ordinaires)."""
+        from . import bruitages
+        sons = (self.anim.get("libre") or {}).get("sons") or []
+        if self.anim.get("genre") != "libre" or not self.anim.get("bruitages", True) or not sons:
+            return 0
+        n = 0
+        for t, ident in sons:
+            if ident in bruitages.SONS:
+                try:
+                    bruitages.poser(self.ed.projet, ident, float(t0) + float(t), 0.7)
+                    n += 1
+                except Exception:      # noqa: BLE001 : un son raté n'empêche pas les autres
+                    pass
+        if n:
+            self.ed.biblio.remplir(self.ed.projet)
+            self.ed.rafraichir()
+            self.ed.encart.message(_("Animation posée avec {n} bruitage(s) sur les pistes de son (chacun se déplace ou se supprime).",
+                                     n=n), 7000)
+        return n
+
     def dessus(self):
         self.apercu.arreter()
         pose = self.anim.get("pose")
-        self.ed.poser_au_dessus(self.chemin, float(pose) if pose is not None else self.ed.timeline.position,
-                                M.GENRES.get(self.anim.get("genre"), {}).get("nom", ""),
+        t0 = float(pose) if pose is not None else self.ed.timeline.position
+        self.ed.poser_au_dessus(self.chemin, t0, M.GENRES.get(self.anim.get("genre"), {}).get("nom", ""),
                                 float(self.anim.get("duree") or 0) or None)
+        self._poser_bruitages(t0)
         self.accept()
 
     def inserer(self):
@@ -1110,10 +1132,12 @@ class ResultatAnimation(QDialog):
         self.apercu.arreter()
         p = self.ed.projet
         p.marquer()
-        prolonger.inserer(p, self.chemin, self.ed.timeline.position, "video", M.GENRES.get(self.anim.get("genre"), {}).get("nom", ""))
+        t0 = self.ed.timeline.position
+        prolonger.inserer(p, self.chemin, t0, "video", M.GENRES.get(self.anim.get("genre"), {}).get("nom", ""))
         self.ed.biblio.remplir(p)
         self.ed.rafraichir()
         self.ed.encart.message(_("Animation insérée ; la suite est décalée (Ctrl+Z pour revenir)."), 6000)
+        self._poser_bruitages(t0)
         self.accept()
 
     def garder(self):

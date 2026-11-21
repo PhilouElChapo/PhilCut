@@ -25,7 +25,8 @@ COMMUNS = ["auteur", "langue", "outils_epingles", "barre_rapide", "volet", "ia_m
            "tampons_guetter", "tampons_classement", "tampons_placement", "ytdlp_accord", "ytdlp_hauteur", "ytdlp_son_seul", "ytdlp_resultats", "tampons_langue_recherche",
            "musiques_classement", "styles_perso", "creations_purge_jours", "secours_minutes", "secours_versions", "export_autres", "nouveautes_vues", "lecture_effets",
            "proposer_copie_legere", "creations_drive", "drive_purge_jours", "superpositions_alpha",
-           "chartes", "charte_active", "remotion_licence", "motion_moteur", "motion_libre_moteur"]
+           "chartes", "charte_active", "remotion_licence", "motion_moteur", "motion_libre_moteur", "motion_libre_bruitages",
+           "motion_libre_caler"]
 POSTE = ["secrets_refuses", "disposition_vue", "volet_largeur", "biblio_replies", "sessions_vues", "synchro_etat",
          "machine", "zoom", "racines", "nas", "dernier_dossier", "drive", "drive_compte", "association_video",
          "recherche_racines", "proxys", "ia_locale", "ia_poste_leger", "ia_gpu", "ia_locale_modeles", "ia_dossier_commun", "ia_partage", "ia_commun_propose", "dossier_flow", "dossier_proxys", "encodeur", "apercu_images", "ajout_auto", "dernier_dossier_export", "barre_taille", "dossier_images", "tailles_vue", "apercu_fidele", "preparation_auto", "secrets_empreinte", "dossier_rushes", "fenetre_geometrie", "fenetre_maximisee", "dossier_musique_import", "dossier_telechargements", "dossier_documents",

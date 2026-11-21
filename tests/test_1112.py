@@ -8,7 +8,8 @@ ICI = os.path.dirname(os.path.abspath(__file__))
 REPONSE_HF = open(os.path.join(ICI, "exemples", "libre_anniversaire.txt"), encoding="utf-8").read()
 TSX = open(os.path.join(ICI, "exemples", "libre_anniversaire_remotion.tsx"), encoding="utf-8").read()
 REPONSE_R = ("===TITRE===\n40 ans\n===DUREE===\n9.5\n===PLAN===\n0-4 s: le cadeau grandit, compteur et barres\n"
-             "4.2-7 s: feu d'artifice\n7-9.5 s: tout part en confettis\n===TSX===\n" + TSX + "\n===MESSAGE===\nVoilà.")
+             "4.2-7 s: feu d'artifice\n7-9.5 s: tout part en confettis\n===SONS===\n0.3 s: pop\n4.2 s: boom\n7 s: whoosh\n"
+             "===TSX===\n" + TSX + "\n===MESSAGE===\nVoilà.")
 
 
 class TestLogique(unittest.TestCase):
@@ -98,6 +99,76 @@ class TestLogique(unittest.TestCase):
             self.assertTrue(os.path.exists(os.path.join(d, "src", "Libre.tsx")))
         finally:
             MR.dossier = anc
+
+
+class TestSons(unittest.TestCase):
+    def test_sons_et_musique(self):
+        """Philippe, 21/11 21h41 et 22h10 : les bruitages placés par l'IA, et l'animation calée sur la musique."""
+        from app import motion_libre as ML
+        a = ML.appliquer(ML.fiche("x", moteur="remotion"), ML.sections(REPONSE_R))
+        self.assertEqual(a["libre"]["sons"], [(0.3, "pop"), (4.2, "boom"), (7.0, "whoosh")])
+        self.assertIn("Boum grave", ML.sons_texte(a))
+        self.assertIn("===SONS===", ML._code(a))
+        a["musique"] = {"forts": [0.5, 2.5, 4.5, 6.5], "bpm": 120}
+        c = ML.consigne(a)
+        self.assertIn("strong beats fall at these seconds of the animation: 0.5, 2.5, 4.5, 6.5", c)
+        self.assertIn("machine (typewriter", c)
+        self.assertNotIn("strong beats fall", ML.consigne(ML.fiche("x")))
+
+    def test_apercu_avec_sons(self):
+        from app import motion_libre as ML, moteur
+        d = tempfile.mkdtemp()
+        v = os.path.join(d, "v.mp4")
+        moteur.lancer(["-f", "lavfi", "-i", "color=c=black:s=320x180:d=2", "-c:v", "libx264", "-pix_fmt", "yuv420p", v])
+        r = ML.mixer_sons(v, [(0.2, "pop"), (1.0, "boom")], os.path.join(d, "s.mp4"))
+        f = moteur.sonder(r)
+        self.assertTrue(f.get("audio") or f.get("a_son") or "audio" in json.dumps(f), f)
+        self.assertAlmostEqual(float(f.get("duree") or 0), 2.0, delta=0.2)
+        self.assertEqual(ML.mixer_sons(v, [], "x.mp4"), v)
+
+    def test_calage_dans_la_fenetre(self):
+        from app import motion as M
+        from app.fenetre import Fenetre
+        f = Fenetre()
+        f.bienvenue = lambda *a, **k: None
+        ed = f.nouveau_projet("16:9")
+        dl = ed.animation_libre()
+        dl.caler.setEnabled(True)
+        dl.caler.setChecked(True)
+        ed.timeline.position = 10.0
+        anc = M.temps_musique
+        M.temps_musique = lambda projet: ([10.0, 10.5, 11.0, 11.5, 12.0], [9.0, 10.0, 12.0, 14.0])
+        try:
+            a = dl._caler_musique({"pose": None})
+        finally:
+            M.temps_musique = anc
+        self.assertEqual(a["musique"]["forts"], [0.0, 2.0, 4.0])
+        self.assertEqual(a["musique"]["bpm"], 120.0)
+        self.assertEqual(a["pose"], 10.0)
+        dl._jeter = True
+        dl.close()
+        ed.projet.modifie = False
+
+    def test_pose_avec_bruitages(self):
+        from app import motion_libre as ML
+        from app.fenetre import Fenetre
+        from app.dialogues_motion import ResultatAnimation
+        from app import moteur
+        f = Fenetre()
+        f.bienvenue = lambda *a, **k: None
+        ed = f.nouveau_projet("16:9")
+        d = tempfile.mkdtemp()
+        v = os.path.join(d, "anim.mp4")
+        moteur.lancer(["-f", "lavfi", "-i", "color=c=black:s=320x180:d=3", "-c:v", "libx264", "-pix_fmt", "yuv420p", v])
+        a = ML.appliquer(ML.fiche("x"), ML.sections(REPONSE_R))
+        a["pose"] = 2.0
+        r = ResultatAnimation(ed, v, a)
+        r.dessus()
+        noms = [c.get("nom", "") for p in ed.projet.pistes_audio() for c in ed.projet.clips_piste(p)]
+        self.assertEqual(len([n for n in noms if n.startswith("Bruitage")]), 3, noms)
+        debuts = sorted(c["debut"] for p in ed.projet.pistes_audio() for c in ed.projet.clips_piste(p))
+        self.assertAlmostEqual(debuts[0], 2.3, delta=0.01)
+        ed.projet.modifie = False
 
 
 class TestMusique(unittest.TestCase):

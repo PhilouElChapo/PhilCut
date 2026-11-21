@@ -237,7 +237,7 @@ def _guides_integres():
          ]},
         {"id": "animation_libre", "etat": "ok",
          "titre": _("Créer une animation libre en la décrivant"),
-         "mots": "animation libre decrire phrase motion design hyperframes remotion react ia claude reduire plan cadeau feu artifice confettis graphique compteur",
+         "mots": "animation libre decrire phrase motion design hyperframes remotion react ia claude reduire plan bruitage son musique caler cadeau feu artifice confettis graphique compteur",
          "intro": _("Pour tout ce que les types tout faits ne savent pas faire : vous décrivez, l'IA écrit la composition, vous "
                     "regardez et demandez des changements."),
          "etapes": [
@@ -250,6 +250,10 @@ def _guides_integres():
              {"texte": _("« Construire l'animation » : le prix est demandé ; PhilCut vérifie la composition puis montre un aperçu "
                          "léger, gratuit, rendu sur ce poste (le moteur choisi, installé une fois). Le plan de l'IA s'affiche, "
                          "une ligne par étape avec ses secondes : chaque étape de votre texte doit y être.")},
+             {"texte": _("« Bruitages » : l'IA place les sons de PhilCut sur son plan (pop, boum, machine à écrire, souffle…) ; "
+                         "l'aperçu les fait entendre, et ils sont posés avec l'animation sur des pistes de son, chacun modifiable. "
+                         "« Caler sur la musique du film » : placez d'abord la ligne rouge où l'animation commencera ; les moments "
+                         "forts tombent sur les temps forts de la musique.")},
              {"texte": _("Ecrivez ce qu'il faut changer, « Changer » ; « Version d'avant » revient en arrière. Si PhilCut trouve "
                          "une erreur, « Faire corriger ces erreurs par l'IA ».")},
              {"texte": _("« Fabriquer en qualité et poser… » : sur ce poste (gratuit) ou chez HeyGen ; puis au-dessus du film ou à "

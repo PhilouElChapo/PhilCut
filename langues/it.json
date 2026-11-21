@@ -9227,5 +9227,15 @@
  "Sans voix de référence.": "Nessuna voce di riferimento.",
  "Ce morceau est signé « {a} ». ": "Questo brano è firmato «{a}». ",
  "ce morceau vient de YouTube : c'est la voix de son interprète": "questo brano viene da YouTube: è la voce del suo interprete",
- "« {a} » est un artiste connu": "«{a}» è un artista noto"
+ "« {a} » est un artiste connu": "«{a}» è un artista noto",
+ "Animation posée avec {n} bruitage(s) sur les pistes de son (chacun se déplace ou se supprime).": "Animazione posata con {n} effetto/i sonoro/i sulle tracce audio (ognuno si può spostare o eliminare).",
+ "Bruitages : l'IA les place sur son plan (posés avec l'animation, modifiables)": "Effetti sonori: l'IA li colloca secondo il suo piano (posati con l'animazione, modificabili)",
+ "Caler les moments forts sur la musique du film (à partir de la ligne rouge)": "Allineare i momenti forti alla musica del film (dalla linea rossa)",
+ "Les temps forts de la musique posée dans le montage sont donnés à l'IA ; l'animation sera posée à la ligne rouge où elle est maintenant, pour rester calée": "I tempi forti della musica del montaggio vengono dati all'IA; l'animazione sarà posata alla linea rossa dov'è ora, per restare a tempo",
+ "Musique du film : temps forts…": "Musica del film: tempi forti…",
+ "Calée sur la musique (posée à {t} s).": "Allineata alla musica (posata a {t} s).",
+ "Bruitages : {s}": "Effetti sonori: {s}",
+ "« Bruitages » : l'IA place les sons de PhilCut sur son plan (pop, boum, machine à écrire, souffle…) ; l'aperçu les fait entendre, et ils sont posés avec l'animation sur des pistes de son, chacun modifiable. « Caler sur la musique du film » : placez d'abord la ligne rouge où l'animation commencera ; les moments forts tombent sur les temps forts de la musique.": "«Effetti sonori»: l'IA colloca i suoni di PhilCut secondo il suo piano (pop, bum, macchina da scrivere, soffio…); l'anteprima li fa sentire e vengono posati con l'animazione su tracce audio, ognuno modificabile. «Allineare alla musica del film»: mettete prima la linea rossa dove inizierà l'animazione; i momenti forti cadono sui tempi forti della musica.",
+ "Bruitages placés par l'IA": "Effetti sonori collocati dall'IA",
+ "Calée sur la musique du film": "Allineata alla musica del film"
 }

@@ -82,6 +82,20 @@ class DialogueMotionLibre(QDialog):
         f.addRow("", self.licence)
         self.transparent = QCheckBox(_("Fond transparent : posée au-dessus du film"))
         f.addRow("", self.transparent)
+        self.bruitages = QCheckBox(_("Bruitages placés par l'IA"))
+        self.bruitages.setToolTip(_("Bruitages : l'IA les place sur son plan (posés avec l'animation, modifiables)"))
+        self.bruitages.setChecked(bool(self.params.get("motion_libre_bruitages", True)))
+        self.bruitages.toggled.connect(lambda v: self.params.__setitem__("motion_libre_bruitages", bool(v)))
+        f.addRow("", self.bruitages)
+        self.caler = QCheckBox(_("Calée sur la musique du film"))
+        self.caler.setToolTip(_("Caler les moments forts sur la musique du film (à partir de la ligne rouge)") + " — " +
+                              _("Les temps forts de la musique posée dans le montage sont donnés à l'IA ; l'animation sera posée à la "
+                                "ligne rouge où elle est maintenant, pour rester calée"))
+        a_musique = any(True for _c in ed.projet.clips_piste("audio")) if hasattr(ed.projet, "clips_piste") else False
+        self.caler.setEnabled(a_musique)
+        self.caler.setChecked(a_musique and bool(self.params.get("motion_libre_caler", True)))
+        self.caler.toggled.connect(lambda v: self.params.__setitem__("motion_libre_caler", bool(v)))
+        f.addRow("", self.caler)
         gauche.addLayout(f)
         self.credit = LigneCredit(self.params, "anthropic", self, compact=True)
         gauche.addWidget(self.credit)
@@ -237,6 +251,7 @@ class DialogueMotionLibre(QDialog):
         a["charte"] = self.charte.currentData()
         a["transparent"] = self.transparent.isChecked()
         a["moteur_libre"] = self.moteur_choisi()
+        a["bruitages"] = self.bruitages.isChecked()
         if self.duree.value() > 0:
             a["duree"], a["duree_imposee"] = float(self.duree.value()), True
         else:
@@ -295,7 +310,16 @@ class DialogueMotionLibre(QDialog):
         leger = ML.apercu_leger(dict(a, transparent=False))
         r = MH.rendre_local(self.params, leger, sortie,
                             lambda f, x: t.avancer(0.6 + 0.4 * f, _("Aperçu léger : {x}", x=x)), t.arret_demande)
-        return a, r, []
+        return a, self._avec_sons(a, r), []
+
+    def _avec_sons(self, a, video):
+        """L'aperçu avec ses bruitages, pour les entendre ; un échec laisse l'aperçu muet."""
+        if not a.get("bruitages", True) or not (a.get("libre") or {}).get("sons") or not video:
+            return video
+        try:
+            return ML.mixer_sons(video, a["libre"]["sons"], os.path.splitext(video)[0] + "_sons.mp4")
+        except Exception:      # noqa: BLE001
+            return video
 
     def _apercu_remotion(self, t, a):
         """Remotion compile le code de l'IA en rendant l'aperçu léger : une erreur de compilation ou d'exécution revient à l'IA."""
@@ -310,7 +334,7 @@ class DialogueMotionLibre(QDialog):
                           lambda f, x: t.avancer(0.55 + 0.45 * f, _("Aperçu léger : {x}", x=x)), t.arret_demande)
         except MR.ErreurRemotion as e:
             return a, "", [e.journal or str(e)]
-        return a, r, []
+        return a, self._avec_sons(a, r), []
 
     def _fin_ia(self, r, e):
         if e:
@@ -324,9 +348,12 @@ class DialogueMotionLibre(QDialog):
             self.duree.setValue(0)
             self.duree.blockSignals(False)
         lib = a.get("libre") or {}
-        plan = ML.plan_texte(a)
+        plan, sons = ML.plan_texte(a), ML.sons_texte(a)
         self.message.setText(_("« {t} », {d} s — {m}", t=a.get("titre", ""), d=f"{a.get('duree', 0):g}", m=lib.get("message", ""))
-                             + (("\n" + _("Plan :") + "\n" + plan) if plan else ""))
+                             + (("\n" + _("Plan :") + "\n" + plan) if plan else "")
+                             + (("\n" + _("Bruitages : {s}", s=sons)) if sons and a.get("bruitages", True) else "")
+                             + (("\n" + _("Calée sur la musique (posée à {t} s).", t=f"{a['pose']:g}".replace(".", ",")))
+                                if a.get("musique") and a.get("pose") is not None else ""))
         if erreurs:
             self.erreurs.setText(_("La composition a {n} erreur(s) qui gâcheraient le rendu :\n{e}", n=len(erreurs),
                                    e="\n".join("• " + x[:220] for x in erreurs[:5])))
@@ -346,6 +373,23 @@ class DialogueMotionLibre(QDialog):
                                 "HeyGen."))
         self.credit.montrer("anthropic")
 
+    def _caler_musique(self, a):
+        """Temps forts de la musique du film, en secondes de l'animation posée à la ligne rouge (calculés dans la tâche)."""
+        if not self.caler.isChecked() or not self.caler.isEnabled():
+            a.pop("musique", None)
+            return a
+        t0 = float(a["pose"]) if a.get("pose") is not None else float(self.ed.timeline.position)
+        try:
+            temps, forts = M.temps_musique(self.ed.projet)
+        except Exception:      # noqa: BLE001 : sans calage plutôt que sans animation
+            return a
+        rel = [round(t - t0, 2) for t in forts if t0 <= t <= t0 + ML.DUREE_MAX]
+        ecarts = [b - x for x, b in zip(temps, temps[1:])]
+        bpm = round(60 / (sum(ecarts) / len(ecarts)), 1) if ecarts else 0
+        if len(rel) >= 2:
+            a["musique"], a["pose"] = {"forts": rel, "bpm": bpm}, t0
+        return a
+
     def creer(self):
         if not self.description.toPlainText().strip():
             self.etat.setText(_("Décrivez d'abord l'animation, en quelques phrases."))
@@ -358,7 +402,12 @@ class DialogueMotionLibre(QDialog):
                      a["moteur_libre"]) \
             | ({"duree_imposee": True} if a.get("duree_imposee") else {})
 
+        a["pose"] = float(self.ed.timeline.position) if self.caler.isChecked() else None
+        a["bruitages"] = self.bruitages.isChecked()
+
         def travail(t):
+            t.avancer(0.03, _("Musique du film : temps forts…") if self.caler.isChecked() else "")
+            self._caler_musique(a)
             t.avancer(0.05, _("L'IA écrit l'animation (une à deux minutes)…"))
             b = ML.creer(self.params, a)
             return self._verifier_et_apercu(t, b)
@@ -375,6 +424,7 @@ class DialogueMotionLibre(QDialog):
         a = self.lire()
 
         def travail(t):
+            self._caler_musique(a)
             t.avancer(0.05, _("L'IA reprend l'animation…"))
             b = ML.corriger(self.params, a, remarque, erreur)
             return self._verifier_et_apercu(t, b)

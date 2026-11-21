@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.5 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.6 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.6 (animation libre : bruitages et musique)
+- « Bruitages places par l'IA » : l'IA ecrit aussi la liste des sons de son plan (pop, boum, machine a ecrire, souffle, cymbale…), choisis parmi les bruitages de PhilCut. L'apercu les fait entendre ; ils sont poses avec l'animation sur des pistes de son, chacun modifiable.
+- « Calee sur la musique du film » : les temps forts de la musique du montage, a partir de la ligne rouge, sont donnes a l'IA ; les moments forts tombent dessus et l'animation est posee au meme endroit.
+- Les deux reglages sont aussi dans les Preferences (Assistant et IA).
 
 ### 1.1.4 (mes modeles)
 - Fabrique musique : « Garder cette fiche comme modele… » et « Reprendre un modele… » (style, paroles, voix, inspiration, duree), sans avoir a creer la musique. Les morceaux deja gardes avec leur fiche se reprennent aussi.

@@ -9236,5 +9236,15 @@
  "Sans voix de référence.": "No reference voice.",
  "Ce morceau est signé « {a} ». ": "This track is credited to “{a}”. ",
  "ce morceau vient de YouTube : c'est la voix de son interprète": "this track comes from YouTube: it is the voice of its performer",
- "« {a} » est un artiste connu": "“{a}” is a well-known artist"
+ "« {a} » est un artiste connu": "“{a}” is a well-known artist",
+ "Animation posée avec {n} bruitage(s) sur les pistes de son (chacun se déplace ou se supprime).": "Animation placed with {n} sound effect(s) on the sound tracks (each can be moved or deleted).",
+ "Bruitages : l'IA les place sur son plan (posés avec l'animation, modifiables)": "Sound effects: the AI places them on its plan (placed with the animation, editable)",
+ "Caler les moments forts sur la musique du film (à partir de la ligne rouge)": "Time the key moments to the film's music (from the red line)",
+ "Les temps forts de la musique posée dans le montage sont donnés à l'IA ; l'animation sera posée à la ligne rouge où elle est maintenant, pour rester calée": "The strong beats of the music placed in the edit are given to the AI; the animation will be placed at the red line where it is now, to stay in time",
+ "Musique du film : temps forts…": "Film music: strong beats…",
+ "Calée sur la musique (posée à {t} s).": "Timed to the music (placed at {t} s).",
+ "Bruitages : {s}": "Sound effects: {s}",
+ "« Bruitages » : l'IA place les sons de PhilCut sur son plan (pop, boum, machine à écrire, souffle…) ; l'aperçu les fait entendre, et ils sont posés avec l'animation sur des pistes de son, chacun modifiable. « Caler sur la musique du film » : placez d'abord la ligne rouge où l'animation commencera ; les moments forts tombent sur les temps forts de la musique.": "“Sound effects”: the AI places PhilCut's sounds on its plan (pop, boom, typewriter, whoosh…); the preview lets you hear them, and they are placed with the animation on sound tracks, each editable. “Time to the film's music”: first put the red line where the animation will start; the key moments fall on the music's strong beats.",
+ "Bruitages placés par l'IA": "Sound effects placed by the AI",
+ "Calée sur la musique du film": "Timed to the film's music"
 }

@@ -23,6 +23,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T112 — 1.1.6 : bruitages et calage sur la musique
+
+1. Poser votre musique dans le montage, mettre la ligne rouge là où l'animation doit commencer.
+2. Animation libre, votre texte numéroté, « Bruitages placés par l'IA » et « Calée sur la musique du film » cochés ; « Construire ».
+3. Sous le titre : le plan, la ligne « Bruitages : … » et « Calée sur la musique (posée à … s) ». L'aperçu fait-il entendre les bruitages au bon moment ?
+4. « Fabriquer en qualité et poser… » › « Poser au-dessus du film » : l'animation arrive à l'endroit annoncé ; les bruitages sont sur des pistes de son, chacun déplaçable. Les moments forts tombent-ils sur les temps forts de la musique ?
+5. Décocher « Bruitages » : rien n'est posé en son.
+
 ## T111 — 1.1.4 : mes modèles
 
 1. Fabrique musique : remplir la fiche (phrase, paroles, inspiration du « 17 »), « ☆ Garder cette fiche comme modèle… », nommer « Anniversaire 40 ans ». « Repartir de zéro », puis « Reprendre un modèle… » : tout revient (paroles, style entendu, voix).
