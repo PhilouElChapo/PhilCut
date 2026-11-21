@@ -732,6 +732,10 @@ def _layout_de(lay, w):
     return None, -1
 
 
+def _nb_widgets(lay):
+    return sum(1 for i in range(lay.count()) if lay.itemAt(i).widget() is not None)
+
+
 def ranger_fenetre(d):
     """Réduire : la fenêtre se range, le calcul continue, rien n'est perdu ; la barre du bas la rouvre."""
     try:
@@ -761,7 +765,13 @@ def fenetre_de_travail(d, rouvrir=None):
         b = QPushButton(_("Réduire"))
         fermer = next((x for x in d.findChildren(QPushButton) if x.text().replace("&", "") in (_("Fermer"), _("Annuler"))), None)
         lay, i = _layout_de(d.layout(), fermer) if fermer is not None else (None, -1)
-        if lay is not None:
+        if lay is not None and _nb_widgets(lay) >= 3 and d.layout() is not None and hasattr(d.layout(), "addLayout"):
+            from PySide6.QtWidgets import QHBoxLayout              # rangée déjà pleine : une rangée à part, rien de serré
+            rang = QHBoxLayout()
+            rang.addStretch(1)
+            rang.addWidget(b)
+            d.layout().addLayout(rang)
+        elif lay is not None:
             lay.insertWidget(i, b)
         else:
             from PySide6.QtWidgets import QDialogButtonBox
