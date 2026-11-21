@@ -23,6 +23,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T114 — 1.1.8 : double-clic, bruitages, vérification
+
+1. Double-clic sur l'animation posée : la fenêtre « Animation libre » revient avec la description et le code. Double-clic sur un bruitage ou un rush : l'Inspecteur s'ouvre sur ce plan (pas les effets).
+2. Animation libre reconstruite : le plan se lit en entier ; la ligne « Bruitages » est là ; l'aperçu les fait entendre.
+3. « Vérifier les étapes sur l'aperçu » : la liste des étapes absentes ; « Faire corriger ces erreurs » ; nouvel aperçu.
+4. Poser : les bruitages n'ont plus de fondus.
+
 ## T113 — 1.1.7 : bibliothèque, photos
 
 1. Ma bibliothèque › Secrétaire : cliquer la troisième photo : elle s'encadre et devient la vignette de la liste.

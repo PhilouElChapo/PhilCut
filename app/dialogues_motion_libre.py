@@ -8,6 +8,7 @@ import time
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
+                               QScrollArea,
                                QMessageBox, QPlainTextEdit, QProgressBar, QPushButton, QVBoxLayout, QWidget)
 
 from . import motion as M, motion_libre as ML
@@ -154,7 +155,18 @@ class DialogueMotionLibre(QDialog):
         droite = QVBoxLayout()
         self.message = QLabel(_("L'aperçu apparaîtra ici (rendu léger sur ce poste, gratuit)."))
         self.message.setWordWrap(True)
-        droite.addWidget(self.message)
+        self.message.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        zm = QScrollArea()                    # 1.1.8 : le plan entier se lit (il était coupé sous l'aperçu)
+        zm.setWidgetResizable(True)
+        zm.setFrameShape(QScrollArea.NoFrame)
+        zm.setWidget(self.message)
+        zm.setMaximumHeight(230)
+        droite.addWidget(zm)
+        self.b_verifier = QPushButton(_("Vérifier les étapes sur l'aperçu (IA, environ {p} $)", p=_prix(ML.PRIX_VERIFIER)))
+        self.b_verifier.setToolTip(_("Une image au milieu de chaque étape du plan est montrée à l'IA, qui dit lesquelles ne se voient "
+                                     "pas ; vous pouvez ensuite les faire corriger"))
+        self.b_verifier.clicked.connect(self.verifier_etapes)
+        droite.addWidget(self.b_verifier, 0, Qt.AlignLeft)
         self.apercu = ApercuCreation(self)
         droite.addWidget(self.apercu)
         droite.addStretch(1)
@@ -237,6 +249,7 @@ class DialogueMotionLibre(QDialog):
         self.b_erreurs.setEnabled(a_code and not occupe)
         self.b_avant.setEnabled(a_code and bool((self.anim.get("libre") or {}).get("historique")) and not occupe)
         self.b_projet.setEnabled(a_jour)
+        self.b_verifier.setEnabled(bool(a_jour and self.apercu_fichier and (self.anim.get("libre") or {}).get("plan")) and not occupe)
         self.b_fabriquer.setEnabled(a_jour and not occupe and not self._erreurs and (not remotion or self.licence.isChecked()))
         manque = not self._pret_ici() and (not remotion or self.licence.isChecked())
         self.b_installer.setText(_("Installer Remotion sur ce poste (environ 250 Mo, une fois)…") if remotion else
@@ -389,6 +402,33 @@ class DialogueMotionLibre(QDialog):
         if len(rel) >= 2:
             a["musique"], a["pose"] = {"forts": rel, "bpm": bpm}, t0
         return a
+
+    def verifier_etapes(self):
+        """1.1.8 (Philippe, 21/11 23h02 : « il manque des animations ») : l'IA regarde une image par étape du plan."""
+        if not self.apercu_fichier or not self.anim:
+            return
+        if not self._accord(_("L'IA va regarder l'aperçu, étape par étape"), ML.PRIX_VERIFIER):
+            return
+        a, video, params = copy.deepcopy(self.anim), self.apercu_fichier, self.params
+
+        def travail(t):
+            t.avancer(0.1, _("Images de chaque étape…"))
+            return ML.verifier_etapes(params, a, video)
+
+        def fin(r, e):
+            if e:
+                self.etat.setText(_("✕ {e}", e=texte_erreur(e)[:300]))
+                return
+            manquent = [x for x in r if not x.get("vue")]
+            if not manquent:
+                self.etat.setText(_("✓ Toutes les étapes du plan se voient dans l'aperçu."))
+                return
+            self._erreurs = [_("Etape {n} ({a}–{b} s) : {t} — {r}", n=x["n"], a=x["a"], b=x["b"], t=x["texte"],
+                               r=x.get("remarque") or _("ne se voit pas")) for x in manquent]
+            self.erreurs.setText(_("Ces étapes ne se voient pas dans l'aperçu :") + "\n" + "\n".join("• " + x[:220] for x in self._erreurs))
+            self.b_erreurs.show()
+            self.etat.setText(_("Faites-les corriger par l'IA : elle reçoit la liste exacte de ce qui manque."))
+        self._lancer(travail, _("Animation libre : vérification des étapes"), fin)
 
     def creer(self):
         if not self.description.toPlainText().strip():

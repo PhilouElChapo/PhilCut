@@ -171,6 +171,73 @@ class TestSons(unittest.TestCase):
         ed.projet.modifie = False
 
 
+class Test1118(unittest.TestCase):
+    def test_sons_deduits_et_tolerants(self):
+        from app import motion_libre as ML
+        self.assertEqual(ML.lire_sons("2,96–4,5 s : cymbale (feu)\n5.2 s → machine\n- 7 s: « whoosh »", 20),
+                         [(2.96, "cymbale"), (5.2, "machine"), (7.0, "whoosh")])
+        a = ML.appliquer(ML.fiche("x"), {"js": "tl.to(a, {x: 1}, 0)", "duree": "12",
+                                         "plan": "0-2 s: un cadeau apparaît\n3-5 s: feu d'artifice\n5-6 s: confettis\n"
+                                                 "6-8 s: texte lettre par lettre\n9-12 s: explosion finale"})
+        self.assertTrue(a["libre"]["sons_deduits"])
+        self.assertEqual([i for _t, i in a["libre"]["sons"]], ["pop", "boom", "whoosh", "machine", "boom"])
+
+    def test_bruitage_sans_fondus(self):
+        from app import bruitages
+        from app.projet import Projet
+        p = Projet()
+        c = bruitages.poser(p, "pop", 1.0)
+        self.assertEqual((c["fondu_entree"], c["fondu_sortie"]), (0.0, 0.0))
+
+    def test_verifier_etapes(self):
+        from app import ia, moteur, motion_libre as ML
+        d = tempfile.mkdtemp()
+        v = os.path.join(d, "v.mp4")
+        moteur.lancer(["-f", "lavfi", "-i", "color=c=black:s=320x180:d=6", "-c:v", "libx264", "-pix_fmt", "yuv420p", v])
+        a = ML.appliquer(ML.fiche("x"), {"js": "tl.to(a, {x: 1}, 0)", "duree": "6", "plan": "0-2 s: cadeau\n2-4 s: feu\n4-6 s: ouragan"})
+        recu = {}
+
+        def faux(params, consignes, texte, images=None, **k):
+            recu["i"], recu["t"] = images, texte
+            return [{"n": 1, "vue": True}, {"n": 2, "vue": True}, {"n": 3, "vue": False, "remarque": "pas d'ouragan"}]
+        anc = ia.demander
+        ia.demander = faux
+        try:
+            r = ML.verifier_etapes({}, a, v)
+        finally:
+            ia.demander = anc
+        self.assertEqual(len(recu["i"]), 3)
+        self.assertTrue(all(isinstance(x, bytes) for x in recu["i"]))
+        self.assertEqual([x["n"] for x in r if not x["vue"]], [3])
+        self.assertIn("4-6 s: ouragan", recu["t"])
+
+    def test_double_clic_ouvre_ce_qui_est_clique(self):
+        import json as J
+        from app import moteur, motion_libre as ML
+        from app.fenetre import Fenetre
+        f = Fenetre()
+        f.bienvenue = lambda *a, **k: None
+        ed = f.nouveau_projet("16:9")
+        d = tempfile.mkdtemp()
+        v = os.path.join(d, "anim.mp4")
+        moteur.lancer(["-f", "lavfi", "-i", "color=c=black:s=320x180:d=2", "-c:v", "libx264", "-pix_fmt", "yuv420p", v])
+        a = ML.appliquer(ML.fiche("un cadeau"), ML.sections(REPONSE_R))
+        J.dump(dict(a, moteur="hyperframes_local"), open(v + ".motion.json", "w", encoding="utf-8"))
+        ed.poser_au_dessus(v, 0.0, "anim", 2.0)
+        c = next(x for x in ed.projet.clips if (ed.projet.media(x["media"]) or {}).get("chemin") == v)
+        dl = ed.editer_plan(c)
+        self.assertEqual(dl.description.toPlainText(), "un cadeau")
+        dl._jeter = True
+        dl.close()
+        r = os.path.join(d, "rush.mp4")
+        moteur.lancer(["-f", "lavfi", "-i", "color=c=blue:s=320x180:d=2", "-c:v", "libx264", "-pix_fmt", "yuv420p", r])
+        ed.poser_au_dessus(r, 3.0, "rush", 2.0)
+        c2 = next(x for x in ed.projet.clips if (ed.projet.media(x["media"]) or {}).get("chemin") == r)
+        self.assertIsNone(ed.editer_plan(c2))
+        self.assertEqual(ed.volet.currentIndex(), 1)                 # l'Inspecteur, sur ce plan
+        ed.projet.modifie = False
+
+
 class TestMusique(unittest.TestCase):
     def test_seventeen_trouve_17(self):
         """Philippe, 21/11 20h25 : « avril lavigne seventeen » : le titre s'appelle « 17 »."""

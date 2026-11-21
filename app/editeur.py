@@ -2613,6 +2613,24 @@ class Editeur(QWidget):
         t.fini.connect(fini)
         t.start()
 
+    def editer_plan(self, c):
+        """1.1.8 (Philippe, 21/11 23h03 : « double-cliquer doit amener à modifier ce qui est cliqué, pas un effet de
+        transition ») : une animation rouvre sa fenêtre avec sa recette, une création IA son atelier, tout autre plan
+        (rush, son, bruitage, image) ses réglages dans l'Inspecteur ; les effets restent au clic droit."""
+        from . import creations, motion as M
+        m = self.projet.media(c.get("media")) or {}
+        chemin = m.get("chemin") or ""
+        anim = M.recette(chemin) if chemin else None
+        if anim:
+            anim = {k: v for k, v in anim.items() if k != "moteur"}
+            return self.animation_libre(anim) if anim.get("genre") == "libre" else self.animation(anim)
+        if chemin and (creations.lire(chemin) or m.get("recette")):
+            return self.reprendre_creation(c["id"])
+        self.timeline.selectionner(c["id"])
+        self._ouvrir_volet(1)
+        self.inspecteur.montrer_selection([c["id"]])
+        return None
+
     def editer_element(self, ident):
         if self._zone(ident):
             self._ouvrir_volet(1)
@@ -2620,7 +2638,7 @@ class Editeur(QWidget):
             return
         c = self.projet.clip(ident)
         if c:
-            self.effets_du_clip(ident)
+            self.editer_plan(c)
             return
         for t in self.projet.titres:
             if t["id"] == ident:

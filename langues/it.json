@@ -9260,5 +9260,16 @@
  "Gemini n'a pas pu répondre (raison non donnée)": "Gemini non ha potuto rispondere (motivo non indicato)",
  "Sa réponse : « {t} »": "La sua risposta: «{t}»",
  "Réessayez ; si cela recommence avec des photos, c'est souvent la ressemblance avec une personne réelle qui bloque : essayez « Inventé » avec une description.": "Riprovate; se succede di nuovo con delle foto, spesso blocca la somiglianza con una persona reale: provate «Inventato» con una descrizione.",
- "Connexion coupée avant l'envoi : nouvel essai dans 2 s": "Connessione interrotta prima dell'invio: nuovo tentativo tra 2 s"
+ "Connexion coupée avant l'envoi : nouvel essai dans 2 s": "Connessione interrotta prima dell'invio: nuovo tentativo tra 2 s",
+ "Vérifier les étapes sur l'aperçu (IA, environ {p} $)": "Verifica le tappe sull'anteprima (IA, circa {p} $)",
+ "Une image au milieu de chaque étape du plan est montrée à l'IA, qui dit lesquelles ne se voient pas ; vous pouvez ensuite les faire corriger": "Un'immagine a metà di ogni tappa del piano viene mostrata all'IA, che dice quali non si vedono; potete poi farle correggere",
+ "Animation libre : vérification des étapes": "Animazione libera: verifica delle tappe",
+ "L'IA va regarder l'aperçu, étape par étape": "L'IA guarderà l'anteprima, tappa per tappa",
+ "Images de chaque étape…": "Immagini di ogni tappa…",
+ "Etape {n} ({a}–{b} s) : {t} — {r}": "Tappa {n} ({a}–{b} s): {t} — {r}",
+ "Faites-les corriger par l'IA : elle reçoit la liste exacte de ce qui manque.": "Fatele correggere dall'IA: riceve l'elenco esatto di ciò che manca.",
+ "✓ Toutes les étapes du plan se voient dans l'aperçu.": "✓ Tutte le tappe del piano si vedono nell'anteprima.",
+ "Ces étapes ne se voient pas dans l'aperçu :": "Queste tappe non si vedono nell'anteprima:",
+ "ne se voit pas": "non si vede",
+ "Pas de plan à vérifier : faites d'abord construire l'animation.": "Nessun piano da verificare: fate prima costruire l'animazione."
 }

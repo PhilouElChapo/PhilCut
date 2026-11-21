@@ -9269,5 +9269,16 @@
  "Gemini n'a pas pu répondre (raison non donnée)": "Gemini could not answer (no reason given)",
  "Sa réponse : « {t} »": "Its answer: “{t}”",
  "Réessayez ; si cela recommence avec des photos, c'est souvent la ressemblance avec une personne réelle qui bloque : essayez « Inventé » avec une description.": "Try again; if it happens again with photos, it is often the resemblance to a real person that blocks: try “Invented” with a description.",
- "Connexion coupée avant l'envoi : nouvel essai dans 2 s": "Connection cut before sending: trying again in 2 s"
+ "Connexion coupée avant l'envoi : nouvel essai dans 2 s": "Connection cut before sending: trying again in 2 s",
+ "Vérifier les étapes sur l'aperçu (IA, environ {p} $)": "Check the steps on the preview (AI, about {p} $)",
+ "Une image au milieu de chaque étape du plan est montrée à l'IA, qui dit lesquelles ne se voient pas ; vous pouvez ensuite les faire corriger": "One frame in the middle of each step of the plan is shown to the AI, which says which ones cannot be seen; you can then have them fixed",
+ "Animation libre : vérification des étapes": "Free animation: checking the steps",
+ "L'IA va regarder l'aperçu, étape par étape": "The AI will look at the preview, step by step",
+ "Images de chaque étape…": "Frames of each step…",
+ "Etape {n} ({a}–{b} s) : {t} — {r}": "Step {n} ({a}–{b} s): {t} — {r}",
+ "Faites-les corriger par l'IA : elle reçoit la liste exacte de ce qui manque.": "Have them fixed by the AI: it receives the exact list of what is missing.",
+ "✓ Toutes les étapes du plan se voient dans l'aperçu.": "✓ All the steps of the plan can be seen in the preview.",
+ "Ces étapes ne se voient pas dans l'aperçu :": "These steps cannot be seen in the preview:",
+ "ne se voit pas": "cannot be seen",
+ "Pas de plan à vérifier : faites d'abord construire l'animation.": "No plan to check: have the animation built first."
 }

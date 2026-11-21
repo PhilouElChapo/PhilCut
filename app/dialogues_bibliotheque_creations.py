@@ -427,7 +427,9 @@ class DialogueBibliothequeCreations(QDialog):
         texte = self.desc.texte()
 
         def travail(_t):
-            return ia.demander(params, consigne, _("Décrivez ce que montrent ces photos."), images=images, max_jetons=600).strip()
+            from .assistant_creation import _jpeg
+            octets = [_jpeg(p) for p in images]           # l'IA reçoit des octets (JPEG réduit), jamais des chemins
+            return ia.demander(params, consigne, _("Décrivez ce que montrent ces photos."), images=octets, max_jetons=600).strip()
 
         def fin(r):
             if not r:

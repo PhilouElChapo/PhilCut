@@ -92,6 +92,7 @@ class TestBibliotheque(unittest.TestCase):
         finally:
             ia.demander = anc
         self.assertEqual(len(recu["i"]), 2)
+        self.assertTrue(all(isinstance(x, bytes) and x[:2] == b"\xff\xd8" for x in recu["i"]))    # des octets JPEG
         self.assertIn("Ne nomme jamais", recu["c"])
         self.assertIn("cheveux blonds", dl.desc.texte())
         self.assertIn("Inventé", dl.etat.text())

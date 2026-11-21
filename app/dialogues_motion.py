@@ -1107,7 +1107,7 @@ class ResultatAnimation(QDialog):
         for t, ident in sons:
             if ident in bruitages.SONS:
                 try:
-                    bruitages.poser(self.ed.projet, ident, float(t0) + float(t), 0.7)
+                    bruitages.poser(self.ed.projet, ident, float(t0) + float(t), 1.0)
                     n += 1
                 except Exception:      # noqa: BLE001 : un son raté n'empêche pas les autres
                     pass

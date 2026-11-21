@@ -9260,5 +9260,16 @@
  "Gemini n'a pas pu répondre (raison non donnée)": "Gemini konnte nicht antworten (kein Grund angegeben)",
  "Sa réponse : « {t} »": "Seine Antwort: „{t}“",
  "Réessayez ; si cela recommence avec des photos, c'est souvent la ressemblance avec une personne réelle qui bloque : essayez « Inventé » avec une description.": "Versuchen Sie es erneut; passiert es wieder mit Fotos, blockiert oft die Ähnlichkeit mit einer realen Person: versuchen Sie „Erfunden“ mit einer Beschreibung.",
- "Connexion coupée avant l'envoi : nouvel essai dans 2 s": "Verbindung vor dem Senden unterbrochen: neuer Versuch in 2 s"
+ "Connexion coupée avant l'envoi : nouvel essai dans 2 s": "Verbindung vor dem Senden unterbrochen: neuer Versuch in 2 s",
+ "Vérifier les étapes sur l'aperçu (IA, environ {p} $)": "Die Schritte in der Vorschau prüfen (KI, etwa {p} $)",
+ "Une image au milieu de chaque étape du plan est montrée à l'IA, qui dit lesquelles ne se voient pas ; vous pouvez ensuite les faire corriger": "Ein Bild aus der Mitte jedes Schritts des Plans wird der KI gezeigt, die sagt, welche nicht zu sehen sind; Sie können sie dann korrigieren lassen",
+ "Animation libre : vérification des étapes": "Freie Animation: Prüfung der Schritte",
+ "L'IA va regarder l'aperçu, étape par étape": "Die KI schaut sich die Vorschau Schritt für Schritt an",
+ "Images de chaque étape…": "Bilder jedes Schritts…",
+ "Etape {n} ({a}–{b} s) : {t} — {r}": "Schritt {n} ({a}–{b} s): {t} — {r}",
+ "Faites-les corriger par l'IA : elle reçoit la liste exacte de ce qui manque.": "Lassen Sie sie von der KI korrigieren: sie erhält die genaue Liste dessen, was fehlt.",
+ "✓ Toutes les étapes du plan se voient dans l'aperçu.": "✓ Alle Schritte des Plans sind in der Vorschau zu sehen.",
+ "Ces étapes ne se voient pas dans l'aperçu :": "Diese Schritte sind in der Vorschau nicht zu sehen:",
+ "ne se voit pas": "nicht zu sehen",
+ "Pas de plan à vérifier : faites d'abord construire l'animation.": "Kein Plan zu prüfen: lassen Sie zuerst die Animation erstellen."
 }

@@ -19,6 +19,7 @@ NOMS_MOTEURS = {"hyperframes": _("HyperFrames (HTML et GSAP ; libre, Apache 2.0 
 
 PRIX_CREER = 0.12          # une composition écrite par Claude (environ 6 000 jetons de sortie), prix indicatif
 PRIX_CORRIGER = 0.10
+PRIX_VERIFIER = 0.03
 DUREE_MAX = 60.0
 
 CONSIGNE = """You are a senior motion designer and creative coder. You write ONE animation as an HyperFrames composition:
@@ -158,12 +159,33 @@ def lire_sons(texte, duree=None):
     permis = set(_sons_permis())
     out = []
     for ligne in (texte or "").splitlines():
-        m = re.match(r"\s*[-•*]?\s*(\d+(?:[.,]\d+)?)\s*s?\s*[:)\-–—]\s*([a-z_]+)", ligne.strip().lower())
+        m = re.match(r"\s*[-•*]?\s*(\d+(?:[.,]\d+)?)\s*s?\s*(?:[-–—à]\s*\d+(?:[.,]\d+)?\s*s?\s*)?(?:[:)\-–—=>→]+)\s*"
+                     r"[«\"'`(\s]*([a-z_]+)", ligne.strip().lower())
         if m and m.group(2) in permis:
             t = float(m.group(1).replace(",", "."))
             if duree is None or t <= float(duree) + 0.05:
                 out.append((round(t, 2), m.group(2)))
     return sorted(out)[:40]
+
+
+_SONS_DU_PLAN = ((r"feu d.artifice|firework", "boom"), (r"confetti", "whoosh"),
+                 (r"machine à écrire|machine a ecrire|lettre par lettre|typewriter|typed", "machine"),
+                 (r"ouragan|tourbillon|tornade|hurricane|tornado|vortex|whirl", "vent"),
+                 (r"fond|molle|liqu[eé]fi|dissou|melt|dissolv", "descente"),
+                 (r"appara[iî]t|surgit|appear|pops? up", "pop"), (r"explos|deton|détona|burst|blast", "boom"),
+                 (r"compteur|counter|monte jusqu|count", "montee"))
+
+
+def sons_du_plan(plan):
+    """1.1.8 : quand l'IA n'a pas écrit de sons, PhilCut les déduit de son plan (un par étape, au début de l'étape)."""
+    out = []
+    for a, _b, texte in plan or []:
+        t = (texte or "").lower()
+        for motif, ident in _SONS_DU_PLAN:
+            if re.search(motif, t):
+                out.append((round(float(a), 2), ident))
+                break
+    return out
 
 
 def sons_texte(anim):
@@ -328,6 +350,9 @@ def appliquer(anim, s, demande=""):
         lib.update(css=s.get("css", ""), html=s.get("html", ""), js=s.get("js", ""), tsx="", moteur="hyperframes")
     lib.update(message=s.get("message", ""), historique=hist, plan=lire_plan(s.get("plan", "")),
                sons=lire_sons(s.get("sons", "")))
+    lib["sons_deduits"] = not lib["sons"]
+    if not lib["sons"]:
+        lib["sons"] = sons_du_plan(lib["plan"])
     if demande:
         lib.setdefault("demandes", []).append(demande)
     try:
@@ -498,3 +523,43 @@ def mixer_sons(video, sons, sortie, volume=0.7):
         args += ["-t", f"{d:.3f}"]
     moteur.lancer(args + [sortie])
     return sortie
+
+
+CONSIGNE_VERIFIER = """You check an animation render against its storyboard. You receive one frame taken in the middle of each step,
+in order, and the list of steps (number, time span, what must happen). For each step, say whether what it describes is
+clearly visible in its frame (a typewriter text may be partly typed; an explosion may be mid-burst). Be strict: if the main
+object or effect of the step is absent, it is not visible. Answer in JSON only:
+[{"n": step number, "vue": true or false, "remarque": "in the user's language ({langue}), what is missing or wrong, short"}]"""
+
+
+def images_etapes(video, plan, dossier):
+    """Une image au milieu de chaque étape (8 au plus), prise dans l'aperçu."""
+    from . import moteur
+    import os
+    out = []
+    for k, (a, b, _t) in enumerate(plan[:8]):
+        f = os.path.join(dossier, f"etape_{k + 1}.jpg")
+        moteur.lancer(["-ss", f"{(a + b) / 2:.2f}", "-i", video, "-frames:v", "1", "-vf", "scale=480:-2", "-q:v", "4", f])
+        out.append(f)
+    return out
+
+
+def verifier_etapes(params, anim, video):
+    """[{n, a, b, texte, vue, remarque}] : ce que l'IA voit de chaque étape du plan dans l'aperçu."""
+    import tempfile
+    from . import ia
+    from .motion import _langue_ui
+    plan = ((anim or {}).get("libre") or {}).get("plan") or []
+    if not plan:
+        raise ValueError(_("Pas de plan à vérifier : faites d'abord construire l'animation."))
+    images = images_etapes(video, plan, tempfile.mkdtemp())
+    etapes = "\n".join(f"{k + 1}. {a:g}-{b:g} s: {t}" for k, (a, b, t) in enumerate(plan[:8]))
+    octets = []
+    for f in images:
+        with open(f, "rb") as x:
+            octets.append(x.read())
+    r = ia.demander(params, CONSIGNE_VERIFIER.replace("{langue}", _langue_ui()), "Steps:\n" + etapes, images=octets,
+                    json_attendu=True, max_jetons=1500)
+    vus = {int(x.get("n", 0)): x for x in (r if isinstance(r, list) else []) if isinstance(x, dict)}
+    return [dict(n=k + 1, a=a, b=b, texte=t, vue=bool((vus.get(k + 1) or {}).get("vue", True)),
+                 remarque=(vus.get(k + 1) or {}).get("remarque", "")) for k, (a, b, t) in enumerate(plan[:8])]

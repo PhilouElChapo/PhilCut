@@ -116,6 +116,7 @@ def poser(projet, ident, debut, volume=1.0):
     piste = piste_libre(projet, debut, d)
     c = projet.ajouter_clip(m["id"], piste, float(debut))
     c["volume"] = float(volume)
+    c["fondu_entree"] = c["fondu_sortie"] = 0.0       # 1.1.8 : un bruitage part net (Philippe, 21/11 23h02 : fondus « stupides »)
     c["nom"] = _("Bruitage : {n}", n=SONS[ident][0])
     projet.ranger(piste)
     return c
