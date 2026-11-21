@@ -116,6 +116,15 @@ class DialogueMotionLibre(QDialog):
         hv.addWidget(self.b_projet)
         hv.addStretch(1)
         gauche.addLayout(hv)
+        hmod = QHBoxLayout()                     # 1.1.3 : mes modèles d'animation (bibliothèque, sur tous les postes)
+        b_rep = QPushButton(_("Reprendre un modèle…"))
+        b_rep.clicked.connect(self.reprendre_modele)
+        self.b_garder_modele = QPushButton(_("☆ Garder comme modèle…"))
+        self.b_garder_modele.clicked.connect(self.garder_modele)
+        hmod.addWidget(b_rep)
+        hmod.addWidget(self.b_garder_modele)
+        hmod.addStretch(1)
+        gauche.addLayout(hmod)
         self.barre = QProgressBar()
         self.barre.setRange(0, 1000)
         self.barre.hide()
@@ -435,6 +444,44 @@ class DialogueMotionLibre(QDialog):
                 ResultatAnimation(self.ed, r, a).exec()
         self._lancer(lambda t: M.fabriquer(self.params, a, sortie, k, t.avancer, t.arret_demande),
                      _("Animation libre : {m}", m=M.MOTEURS[k]["nom"]), fin)
+
+    # ------------------------------------------------------------------ modèles (1.1.3)
+    def garder_modele(self):
+        from .dialogues_bibliotheque_creations import garder_rapide
+        a = self.lire()
+        if not ML.code_de(a) and not a.get("description"):
+            self.etat.setText(_("Décrivez d'abord l'animation (ou faites-la construire) pour la garder."))
+            return None
+        garde = {k: a.get(k) for k in ("description", "taille", "duree", "duree_imposee", "transparent", "moteur_libre", "titre",
+                                       "libre", "genre", "cadence")}
+        garde["libre"] = {k: v for k, v in (a.get("libre") or {}).items() if k != "historique"}
+        x = garder_rapide(self, self.params, "modele_animation", a.get("titre") or a.get("description", "")[:50] or _("Animation"),
+                          a.get("description", ""), None, {"anim": garde})
+        if x:
+            self.etat.setText(_("✓ Modèle « {n} » gardé : « Reprendre un modèle… » le remet, sans repayer l'IA.", n=x["nom"]))
+        return x
+
+    def reprendre_modele(self):
+        from .dialogues_bibliotheque_creations import choisir_entree
+        e = choisir_entree(self, self.params, ("modele_animation",))
+        if e is None:
+            return None
+        a = dict(ML.fiche(""), **((e.get("donnees") or {}).get("anim") or {}))
+        a.setdefault("libre", {}).setdefault("historique", [])
+        a["charte"] = self.charte.currentData()
+        self.anim = a
+        self.description.setPlainText(a.get("description", ""))
+        t = list(a.get("taille") or (1920, 1080))
+        i = next((k for k in range(self.format.count()) if list(self.format.itemData(k)) == t), 0)
+        self.format.setCurrentIndex(i)
+        self.duree.setValue(float(a.get("duree") or 0) if a.get("duree_imposee") else 0)
+        self.transparent.setChecked(bool(a.get("transparent")))
+        self.moteur_libre.setCurrentIndex(max(0, self.moteur_libre.findData(ML.moteur_de(a))))
+        self.etat.setText(_("✓ Modèle « {n} » repris.", n=e["nom"]))
+        if ML.code_de(a):
+            self._lancer(lambda t: self._verifier_et_apercu(t, self.lire()), _("Animation libre : modèle"), self._fin_ia)
+        self._maj()
+        return e
 
     # ------------------------------------------------------------------ fenêtre
     def a_garder(self):

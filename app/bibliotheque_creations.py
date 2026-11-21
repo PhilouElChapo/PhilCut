@@ -35,6 +35,11 @@ GENRES = {
     "style_intro": (_("Style d'intro"), _("Une intro nommée : son modèle d'animation, ses couleurs, son fond.")),
     "musique": (_("Musique"), _("Un morceau créé, avec ce qui a servi à le créer.")),
     "image": (_("Image"), _("Une image créée ou gardée pour resservir.")),
+    # 1.1.3 (Philippe, 21/11 20h56 : « quand on crée des modèles de musique ou autres, les enregistrer pour les retrouver »)
+    "modele_musique": (_("Modèle de musique"), _("Une fiche de la Fabrique musique (style, paroles, voix, inspiration, durée), "
+                                                 "à reprendre telle quelle pour un autre morceau.")),
+    "modele_animation": (_("Modèle d'animation"), _("Une animation libre : sa description, son moteur et son code, à reprendre "
+                                                    "et à changer.")),
 }
 MODES = (("reel", _("Réel"), _("D'après vos photos (plusieurs : face, profil, en pied, ou plusieurs angles) : c'est lui, tel quel.")),
          ("inspire", _("Inspiré de photos"), _("L'IA crée une version nouvelle qui garde la ressemblance des photos, adaptée par la "

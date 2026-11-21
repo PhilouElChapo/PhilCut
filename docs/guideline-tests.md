@@ -23,6 +23,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T111 — 1.1.4 : mes modèles
+
+1. Fabrique musique : remplir la fiche (phrase, paroles, inspiration du « 17 »), « ☆ Garder cette fiche comme modèle… », nommer « Anniversaire 40 ans ». « Repartir de zéro », puis « Reprendre un modèle… » : tout revient (paroles, style entendu, voix).
+2. Animation libre : après une construction, « ☆ Garder comme modèle… » ; « Nouvelle animation » ; « Reprendre un modèle… » : l'animation revient avec son aperçu, sans rien payer.
+3. Voix de référence › une voix tirée d'un morceau de YouTube Music, ou d'un artiste connu : refusée, avec le conseil « À la manière de… ». Un morceau d'Archangel : la question nomme Archangel.
+4. Fabrique IA › « Ma bibliothèque de créations… » : les deux modèles y sont (Modèle de musique, Modèle d'animation) ; sur un autre poste après la synchro aussi.
+
 ## T110 — 1.1.3 : Réduire partout, fermer ne perd rien
 
 1. Fabrique musique : écrire des paroles, régler la durée ; « Réduire » : la fenêtre se range, « Afficher la fenêtre » (barre du bas) la rouvre telle quelle. « Fermer », puis Fabrique IA › Musique › Fabrique : même fiche, mêmes paroles.

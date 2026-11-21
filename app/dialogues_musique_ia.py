@@ -48,6 +48,18 @@ class DialogueFabriqueMusique(QDialog):
                         "ce poste, gratuitement."))
         aide.setWordWrap(True)
         v.addWidget(aide)
+        hm = QHBoxLayout()                       # 1.1.3 : mes modèles (fiches gardées, synchronisées avec la bibliothèque)
+        hm.addWidget(QLabel(_("Mes modèles :")))
+        b_mod = QPushButton(_("Reprendre un modèle…"))
+        b_mod.setToolTip(_("Une fiche gardée avant : style, paroles, voix, inspiration, durée"))
+        b_mod.clicked.connect(self.reprendre_modele)
+        hm.addWidget(b_mod)
+        b_gm = QPushButton(_("☆ Garder cette fiche comme modèle…"))
+        b_gm.setToolTip(_("Rangée dans votre bibliothèque de créations (sur tous vos postes), sans avoir besoin de créer la musique"))
+        b_gm.clicked.connect(self.garder_modele)
+        hm.addWidget(b_gm)
+        hm.addStretch(1)
+        v.addLayout(hm)
         zone = QScrollArea()
         zone.setWidgetResizable(True)
         zone.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -650,7 +662,8 @@ class DialogueFabriqueMusique(QDialog):
                 if not isinstance(err, InterruptedError):
                     self.info.setText(_("✕ Séparation de la voix impossible : {e}", e=texte_erreur(err)[:300]))
                 return
-            MI.declarer(r, **{k: v for k, v in MI.droits(ch).items() if k in ("voix_a_moi", "voix_accord")})
+            MI.declarer(r, **{k: v for k, v in MI.droits(ch).items() if k in ("voix_a_moi", "voix_accord", "source")},
+                        artiste=MI.artiste_de(ch))
             self.reference = r
             self._maj()
             self.info.setText(_("✓ Voix gardée : {f}. Ecoutez-la dans votre dossier avant de créer.", f=os.path.basename(r)))
@@ -659,16 +672,33 @@ class DialogueFabriqueMusique(QDialog):
                      _("Expérimental : de une à plusieurs minutes selon la carte graphique ; seule la voix est gardée."), fin)
 
     def _accord_voix(self, ch):
-        """De qui est cette voix ? Seulement la vôtre, ou celle d'une personne d'accord (noté à côté du fichier)."""
+        """De qui est cette voix ? Seulement la vôtre, ou celle d'une personne d'accord (noté à côté du fichier). 1.1.4 : un
+        morceau d'un artiste connu ou venu de YouTube est refusé ; un morceau signé d'un artiste est nommé dans la question."""
+        interdit = MI.voix_interdite(ch, self.params)
+        if interdit:
+            texte = _("Cette voix ne peut pas servir de voix de référence : {r}. PhilCut ne reproduit jamais la voix d'un chanteur "
+                      "ou d'une personne connue. Pour vous en rapprocher, décrivez sa manière de chanter : « À la manière de… » sur la "
+                      "ligne Voix, ou « Décrire la voix d'un morceau ».", r=interdit)
+            if getattr(self, "_test_oui", False):
+                self.info.setText(texte)
+            else:
+                QMessageBox.information(self, _("Voix de référence"), texte)
+            return False
         d = MI.droits(ch)
         if d.get("voix_a_moi") or d.get("voix_accord"):
             return True
+        artiste = MI.artiste_de(ch)
         m = QMessageBox(self)
         m.setWindowTitle(_("Voix de référence"))
-        m.setText(_("De qui est cette voix ? PhilCut ne reproduit que votre voix, ou celle d'une personne qui vous a donné son accord. "
+        m.setText((_("Ce morceau est signé « {a} ». ", a=artiste) if artiste else "") +
+                  _("De qui est cette voix ? PhilCut ne reproduit que votre voix, ou celle d'une personne qui vous a donné son accord. "
                     "Jamais un chanteur ou une personne connue : pour cela, décrivez sa manière de chanter (« à la manière de »)."))
-        b_moi = m.addButton(_("C'est ma voix"), QMessageBox.AcceptRole)
-        b_acc = m.addButton(_("Une personne d'accord"), QMessageBox.AcceptRole)
+        if artiste:                            # un morceau publié : on nomme l'artiste, la réponse engage l'utilisateur
+            b_moi = m.addButton(_("Je suis « {a} » : c'est mon enregistrement", a=artiste), QMessageBox.AcceptRole)
+            b_acc = m.addButton(_("« {a} » m'a donné son accord écrit", a=artiste), QMessageBox.AcceptRole)
+        else:
+            b_moi = m.addButton(_("C'est ma voix"), QMessageBox.AcceptRole)
+            b_acc = m.addButton(_("Une personne d'accord"), QMessageBox.AcceptRole)
         m.addButton(_("Annuler"), QMessageBox.RejectRole)
         m.exec()
         if m.clickedButton() is b_moi:
@@ -770,6 +800,10 @@ class DialogueFabriqueMusique(QDialog):
     def creer(self):
         if self.tache is not None and self.tache.isRunning():
             return
+        if self.reference and MI.voix_interdite(self.reference, self.params):      # 1.1.4 : jamais, même déjà choisie
+            self.info.setText(_("✕ Voix de référence retirée : {r}.", r=MI.voix_interdite(self.reference, self.params)))
+            self.reference = None
+            self.ref_info.setText(_("Sans voix de référence."))
         fiche, params = self.fiche(), self.params
         horo = time.strftime("%Y%m%d_%H%M%S")
         sortie = os.path.join(_dossier_sorties(), f"musique_{horo}.mp3")
@@ -898,6 +932,30 @@ class DialogueFabriqueMusique(QDialog):
         insp.update(fichier=e["nom"], chemin="")
         self._montrer_inspiration(insp)
         self.info.setText(_("✓ Style « {n} » repris de votre bibliothèque.", n=e["nom"]))
+
+    def garder_modele(self):
+        """1.1.3 : la fiche telle qu'elle est, gardée sous un nom (le morceau d'origine n'est jamais copié)."""
+        from .dialogues_bibliotheque_creations import garder_rapide
+        f = {k: v for k, v in self.fiche().items() if k not in ("source", "voix_reference")}
+        nom = (f.get("phrase") or (MI._STYLE.get(f.get("style")) or ("", _("Ma musique")))[1])[:50]
+        x = garder_rapide(self, self.params, "modele_musique", nom, f.get("phrase", ""), None, {"fiche": f})
+        if x:
+            self.info.setText(_("✓ Modèle « {n} » gardé : « Reprendre un modèle… » le remet tel quel.", n=x["nom"]))
+        return x
+
+    def reprendre_modele(self):
+        from .dialogues_bibliotheque_creations import choisir_entree
+        e = choisir_entree(self, self.params, ("modele_musique", "musique"))
+        if e is None:
+            return None
+        f = (e.get("donnees") or {}).get("fiche")
+        if not f:
+            self.info.setText(_("Ce morceau n'a pas de fiche gardée."))
+            return None
+        self.appliquer_fiche(f)
+        self._maj()
+        self.info.setText(_("✓ Modèle « {n} » repris : changez ce que vous voulez, puis « Créer la musique ».", n=e["nom"]))
+        return e
 
     def _garder_biblio(self, fiche):
         """Le morceau créé ; et, s'il y en a, le style entendu et la voix décrite, chacun sous son nom."""

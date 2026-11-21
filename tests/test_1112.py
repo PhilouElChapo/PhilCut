@@ -129,6 +129,32 @@ class TestMusique(unittest.TestCase):
         self.assertEqual(ML.variante_nombres("un jour"), "")      # « un » n'est pas pris pour un nombre
 
 
+class TestVoixReference(unittest.TestCase):
+    def test_voix_d_un_artiste_refusee(self):
+        """Philippe, 21/11 21h08 : la voix séparée d'un morceau d'une chanteuse connue servait de timbre."""
+        from app import musique_ia as MI
+        d = tempfile.mkdtemp()
+        cas = {"connu.wav": {"artiste": "Metallica"}, "youtube.wav": {"source": "ytmusic"},
+               "moi.wav": {"artiste": "Archangel", "voix_a_moi": True}, "rien.wav": {}}
+        for nom, infos in cas.items():
+            with open(os.path.join(d, nom), "wb") as f:
+                f.write(b"x")
+            if infos:
+                MI.declarer(os.path.join(d, nom), **infos)
+        self.assertTrue(MI.voix_interdite(os.path.join(d, "connu.wav")))
+        self.assertTrue(MI.voix_interdite(os.path.join(d, "youtube.wav")))
+        self.assertEqual(MI.voix_interdite(os.path.join(d, "moi.wav")), "")
+        self.assertEqual(MI.voix_interdite(os.path.join(d, "rien.wav")), "")
+        from app.dialogues_musique_ia import DialogueFabriqueMusique, Hote
+        dl = DialogueFabriqueMusique(None, {}, Hote(), None, 60)
+        dl._test_oui = True
+        self.assertFalse(dl._accord_voix(os.path.join(d, "connu.wav")))
+        self.assertIn("Metallica", dl.info.text())
+        dl.reference = os.path.join(d, "youtube.wav")
+        dl.creer()
+        self.assertIsNone(dl.reference)
+
+
 class TestFenetre(unittest.TestCase):
     def test_choix_du_moteur_et_reduire(self):
         from app import ia, motion_html as MH, motion_remotion as MR
@@ -210,6 +236,53 @@ class TestFenetre(unittest.TestCase):
         app.processEvents()
         self.assertIsNot(ed._fab_musique, d)
         ed._fab_musique.close()
+        ed.projet.modifie = False
+
+    def test_modeles(self):
+        """Philippe, 21/11 20h56 : garder les modèles de musique (et d'animation) pour les retrouver."""
+        from app.fenetre import Fenetre
+        from app import motion_libre as ML
+        f = Fenetre()
+        f.bienvenue = lambda *a, **k: None
+        ed = f.nouveau_projet("16:9")
+        d = ed.fabrique_musique()
+        d.phrase.setPlainText("ballade pour un anniversaire")
+        d.paroles.setPlainText("[verse]\n40 ans 40 ans")
+        d._test_precision = "Anniversaire 40 ans"
+        self.assertTrue(d.garder_modele())
+        d.phrase.setPlainText("")
+        d.paroles.setPlainText("")
+        d._test_biblio = "Anniversaire 40 ans"
+        self.assertTrue(d.reprendre_modele())
+        self.assertEqual(d.phrase.toPlainText(), "ballade pour un anniversaire")
+        self.assertIn("40 ans 40 ans", d.paroles.toPlainText())
+        d._test_oui = True
+        d._jeter = True
+        d.close()
+        dl = ed.animation_libre()
+        dl._test_oui = True
+        dl.anim = ML.appliquer(ML.fiche("cadeau", (1080, 1920), moteur="remotion"), ML.sections(REPONSE_R))
+        dl.description.setPlainText("cadeau")
+        dl.format.setCurrentIndex(1)                              # 9:16
+        dl.moteur_libre.setCurrentIndex(dl.moteur_libre.findData("remotion"))
+        dl._test_precision = "Cadeau 40"
+        self.assertTrue(dl.garder_modele())
+        dl.nouvelle()
+        dl._test_biblio = "Cadeau 40"
+        from app import motion_remotion as MR, motion_html as MH
+        anc = MR.pret, MH.local_pret
+        MR.pret = MH.local_pret = lambda: False
+        try:
+            self.assertTrue(dl.reprendre_modele())
+            if dl.tache:
+                dl.tache.wait(10000)
+            for _ in range(20):
+                app.processEvents()
+        finally:
+            MR.pret, MH.local_pret = anc
+        self.assertEqual(ML.code_de(dl.anim), "remotion")
+        self.assertEqual(dl.format.currentData(), (1080, 1920))
+        self.assertEqual(dl.moteur_choisi(), "remotion")
         ed.projet.modifie = False
 
     def test_autres_fenetres_ont_reduire(self):
