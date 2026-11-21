@@ -206,6 +206,8 @@ def commande(props, sortie, anim):
     compo = "Libre" if anim.get("genre") == "libre" else "PhilCut"
     c = [MH.node(), cli(), "render", "src/index.ts", compo, sortie, f"--props={props}", f"--browser-executable={MH.navigateur()}",
          "--log=verbose" if os.environ.get("PHILCUT_DEBUG") else "--log=info"]
+    if anim.get("echelle_rendu") and float(anim["echelle_rendu"]) != 1.0:    # 1.1.9 : aperçu léger, taille logique gardée
+        c.append(f"--scale={float(anim['echelle_rendu']):g}")
     if anim.get("transparent"):
         c += ["--codec=prores", "--prores-profile=4444", "--pixel-format=yuva444p10le"]
     else:

@@ -238,6 +238,44 @@ class Test1118(unittest.TestCase):
         ed.projet.modifie = False
 
 
+class Test1119(unittest.TestCase):
+    def test_apercu_leger_garde_la_taille_logique(self):
+        """Philippe, 21/11 23h14 : en aperçu, tout sortait du cadre (le code de l'IA place en pixels pour 1080×1920)."""
+        from app import motion_libre as ML, motion_html as MH, motion_remotion as MR
+        a = ML.appliquer(ML.fiche("x", (1080, 1920)), ML.sections(open(os.path.join(ICI, "exemples", "libre_anniversaire.txt"),
+                                                                      encoding="utf-8").read()))
+        b = ML.apercu_leger(a)
+        self.assertEqual(b["taille"], [1080, 1920])
+        h = MH.composition(b, "gsap.min.js", (), "")
+        self.assertIn('data-width="540" data-height="960"', h)
+        self.assertIn("const W = 1080, H = 1920", h)
+        self.assertIn("width: 1080px !important; height: 1920px !important; zoom: 0.5", h)
+        self.assertNotIn("zoom", MH.composition(a, "gsap.min.js", (), ""))
+        r = ML.appliquer(ML.fiche("x", moteur="remotion"), ML.sections(REPONSE_R))
+        self.assertIn("--scale=0.5", MR.commande("p.json", "s.mp4", ML.apercu_leger(r)))
+
+    def test_nouvelle_vide_l_apercu(self):
+        from app.fenetre import Fenetre
+        from app import moteur
+        f = Fenetre()
+        f.bienvenue = lambda *a, **k: None
+        ed = f.nouveau_projet("9:16")
+        dl = ed.animation_libre()
+        dl._test_oui = True
+        d = tempfile.mkdtemp()
+        v = os.path.join(d, "v.mp4")
+        moteur.lancer(["-f", "lavfi", "-i", "color=c=black:s=320x180:d=2", "-c:v", "libx264", "-pix_fmt", "yuv420p", v])
+        dl.apercu.charger(v, video=True)
+        dl.apercu_fichier = v
+        dl.anim = {"genre": "libre"}
+        dl.nouvelle()
+        self.assertEqual(dl.apercu_fichier, "")
+        self.assertTrue(dl.apercu.lecteur is None or dl.apercu.lecteur.source().isEmpty())
+        dl._jeter = True
+        dl.close()
+        ed.projet.modifie = False
+
+
 class TestMusique(unittest.TestCase):
     def test_seventeen_trouve_17(self):
         """Philippe, 21/11 20h25 : « avril lavigne seventeen » : le titre s'appelle « 17 »."""

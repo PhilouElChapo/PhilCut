@@ -424,20 +424,20 @@ GABARIT = r"""<!doctype html>
 <html lang="{langue}">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width={L}, height={H}" />
+<meta name="viewport" content="width={RL}, height={RH}" />
 <script src="{gsap}"></script>
 <style>
 {polices}
 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-html, body {{ width: {L}px; height: {H}px; overflow: hidden; background: {fond_page}; }}
-#racine {{ position: relative; width: {L}px; height: {H}px; overflow: hidden; font-family: "{police_texte}", "Poppins", sans-serif;
+html, body {{ width: {RL}px; height: {RH}px; overflow: hidden; background: {fond_page}; }}
+#racine {{ position: relative; width: {RL}px; height: {RH}px; overflow: hidden; font-family: "{police_texte}", "Poppins", sans-serif;
   color: {texte}; }}
 .clip {{ position: absolute; inset: 0; }}
-{css}
+{css}{zoom_css}
 </style>
 </head>
 <body>
-<div id="racine" data-composition-id="philcut" data-start="0" data-duration="{duree}" data-width="{L}" data-height="{H}"
+<div id="racine" data-composition-id="philcut" data-start="0" data-duration="{duree}" data-width="{RL}" data-height="{RH}"
   data-fps="{cadence}">
   <div id="fond" class="clip" data-start="0" data-duration="{duree}" data-track-index="0"></div>
   <div id="scenes" class="clip" data-start="0" data-duration="{duree}" data-track-index="1">{html}</div>
@@ -475,6 +475,10 @@ def composition(anim, gsap, polices, logo):
     from .motion import _langue_ui
     ch = CH.complete(anim.get("charte"))
     L, H = [int(x) // 2 * 2 for x in (anim.get("taille") or (1920, 1080))]
+    # 1.1.9 : l'aperçu léger garde la taille logique (le code de l'IA place souvent en pixels : left:540px…) et la page est
+    # réduite d'un bloc (zoom) ; avant, la page était à moitié de taille et tout sortait du cadre (Philippe, 21/11 23h14)
+    k = float(anim.get("echelle_rendu") or 1.0)
+    RL, RH = int(L * k) // 2 * 2, int(H * k) // 2 * 2
     lib = anim.get("libre") or {}
     duree = float(anim.get("duree") or 8)
     css_polices = "\n".join(f'@font-face {{ font-family: "{H_.escape(fam)}"; src: url("{H_.escape(f)}"); font-weight: {poids}; }}'
@@ -484,9 +488,11 @@ def composition(anim, gsap, polices, logo):
         h = int(70 * min(L, H) / 1080)
         js_logo = ("{ const im = document.createElement('img'); im.src = " + json.dumps(logo) + "; im.setAttribute('style', " +
                    json.dumps(f"position:absolute;height:{h}px;right:{int(L * 0.05)}px;top:{int(H * 0.05)}px;opacity:0.9") +
-                   "); document.getElementById('racine').appendChild(im); }")
+                   "); document.getElementById('scenes').appendChild(im); }")
     return GABARIT.format(
-        langue=H_.escape(_langue_ui()), L=L, H=H, gsap=H_.escape(gsap), polices=css_polices,
+        langue=H_.escape(_langue_ui()), L=L, H=H, RL=RL, RH=RH, gsap=H_.escape(gsap), polices=css_polices,
+        zoom_css=("" if k == 1.0 else "\n#fond, #scenes { left: 0 !important; top: 0 !important; right: auto !important; "
+                  f"bottom: auto !important; width: {L}px !important; height: {H}px !important; zoom: {k:g}; }}"),
         fond_page="transparent" if anim.get("transparent") else H_.escape(ch["couleurs"]["fond"]),
         police_texte=H_.escape(ch.get("police_texte") or "Poppins"), texte=H_.escape(ch["couleurs"]["texte"]),
         css=lib.get("css", "").replace("</", "<\\/"), html=lib.get("html", ""), duree=f"{duree:g}",
@@ -497,11 +503,10 @@ def composition(anim, gsap, polices, logo):
 
 
 def apercu_leger(anim, echelle=0.5, cadence=15):
-    """La même animation, plus petite et à 15 images par seconde : l'aperçu se rend en quelques secondes. Le code écrit en
-    multiples de u s'adapte tout seul."""
+    """La même animation, plus petite et à 15 images par seconde : l'aperçu se rend en quelques secondes. 1.1.9 : la taille
+    logique ne change pas (W, H, les pixels écrits par l'IA restent justes) ; seule l'image rendue est réduite."""
     a = copy.deepcopy(anim)
-    L, H = anim.get("taille") or (1920, 1080)
-    a["taille"] = [int(L * echelle) // 2 * 2, int(H * echelle) // 2 * 2]
+    a["echelle_rendu"] = echelle
     a["cadence"] = cadence
     return a
 

@@ -117,7 +117,7 @@ class DialogueMotionLibre(QDialog):
         self.erreurs.setStyleSheet("color:#e0a030")
         gauche.addWidget(self.erreurs)
         self.b_erreurs = QPushButton(_("Faire corriger ces erreurs par l'IA (environ {p} $)", p=_prix(ML.PRIX_CORRIGER)))
-        self.b_erreurs.clicked.connect(lambda: self.corriger(erreur="\n".join(self._erreurs)))
+        self.b_erreurs.clicked.connect(lambda: self.corriger(erreur="\n".join(self._erreurs or getattr(self, "_manquants", []))))
         self.b_erreurs.hide()
         gauche.addWidget(self.b_erreurs)
         hv = QHBoxLayout()
@@ -356,6 +356,7 @@ class DialogueMotionLibre(QDialog):
         a, apercu, erreurs = r
         self.anim = a
         self._erreurs = erreurs
+        self._manquants = []
         if a.get("duree") and not a.get("duree_imposee"):
             self.duree.blockSignals(True)
             self.duree.setValue(0)
@@ -423,10 +424,11 @@ class DialogueMotionLibre(QDialog):
             if not manquent:
                 self.etat.setText(_("✓ Toutes les étapes du plan se voient dans l'aperçu."))
                 return
-            self._erreurs = [_("Etape {n} ({a}–{b} s) : {t} — {r}", n=x["n"], a=x["a"], b=x["b"], t=x["texte"],
-                               r=x.get("remarque") or _("ne se voit pas")) for x in manquent]
-            self.erreurs.setText(_("Ces étapes ne se voient pas dans l'aperçu :") + "\n" + "\n".join("• " + x[:220] for x in self._erreurs))
-            self.b_erreurs.show()
+            self._manquants = [_("Etape {n} ({a}–{b} s) : {t} — {r}", n=x["n"], a=x["a"], b=x["b"], t=x["texte"],
+                                 r=x.get("remarque") or _("ne se voit pas")) for x in manquent]
+            self.erreurs.setText(_("Ces étapes ne se voient pas dans l'aperçu :") + "\n" +
+                                 "\n".join("• " + x[:220] for x in self._manquants))
+            self.b_erreurs.show()               # « Faire corriger » ; la fabrication reste possible (ce n'est pas une erreur de code)
             self.etat.setText(_("Faites-les corriger par l'IA : elle reçoit la liste exacte de ce qui manque."))
         self._lancer(travail, _("Animation libre : vérification des étapes"), fin)
 
@@ -438,6 +440,11 @@ class DialogueMotionLibre(QDialog):
             return
         a = self.lire()
         a.pop("libre", None)
+        self._vider_apercu()
+        self._erreurs = []
+        self.erreurs.setText("")
+        self.b_erreurs.hide()
+        self.message.setText(_("L'IA écrit l'animation ; l'aperçu de cette nouvelle animation apparaîtra ici."))
         a = ML.fiche(a["description"], a["taille"], a.get("duree") if a.get("duree_imposee") else 0, a["charte"], a["transparent"],
                      a["moteur_libre"]) \
             | ({"duree_imposee": True} if a.get("duree_imposee") else {})
@@ -581,6 +588,17 @@ class DialogueMotionLibre(QDialog):
         except RuntimeError:
             return False
 
+    def _vider_apercu(self):
+        """1.1.9 : l'aperçu d'une autre animation ne reste jamais affiché (Philippe : « ça reprend l'ancienne animation »)."""
+        try:
+            self.apercu.arreter()
+            from PySide6.QtCore import QUrl
+            if getattr(self.apercu, "lecteur", None) is not None:
+                self.apercu.lecteur.setSource(QUrl())
+        except Exception:      # noqa: BLE001
+            pass
+        self.apercu_fichier = ""
+
     def reduire(self):
         from .widgets import reafficher
         self.apercu.arreter() if hasattr(self.apercu, "arreter") else None
@@ -598,6 +616,7 @@ class DialogueMotionLibre(QDialog):
                 self, self.windowTitle(), _("Oublier l'animation en cours et repartir de zéro ?")) != QMessageBox.Yes:
             return
         self.anim, self._erreurs, self.apercu_fichier, self.resultat = None, [], "", ""
+        self._vider_apercu()
         self.description.clear()
         self.remarque.clear()
         self.erreurs.setText("")

@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.8 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.9 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.9 (apercu de l'animation libre)
+- L'apercu leger etait faux : rendu en demi-taille, il decalait tout ce que l'IA place en pixels (cadeau en bas a droite, textes qui se chevauchent). Il garde maintenant la vraie mise en page, seule l'image est reduite (HyperFrames et Remotion).
+- « Nouvelle animation » et « Construire » effacent l'apercu precedent : plus jamais l'ancienne animation a l'ecran.
+- Les etapes signalees absentes par la verification n'empechent plus de fabriquer et de poser.
 
 ### 1.1.8 (double-clic, bruitages, verification des etapes)
 - Double-clic sur un plan : une animation rouvre sa fenetre avec tout ce qui l'a faite, une creation IA son atelier, tout autre plan (rush, son, bruitage) ses reglages dans l'Inspecteur. Les effets et transitions restent au clic droit.

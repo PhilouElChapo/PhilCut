@@ -23,6 +23,12 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T115 — 1.1.9 : aperçu juste
+
+1. Animation libre, votre description du cadeau, « Construire » : dans l'aperçu, le cadeau est au centre, le compteur au-dessus, les deux textes ne se chevauchent pas, rien ne sort du cadre.
+2. « Nouvelle animation » : l'aperçu se vide. Nouvelle description (lettres qui pleuvent, canons…), « Construire » : seul le nouvel aperçu apparaît.
+3. « Fabriquer en qualité et poser… » › « Poser au-dessus du film » : l'animation est dans la timeline avec ses bruitages.
+
 ## T114 — 1.1.8 : double-clic, bruitages, vérification
 
 1. Double-clic sur l'animation posée : la fenêtre « Animation libre » revient avec la description et le code. Double-clic sur un bruitage ou un rush : l'Inspecteur s'ouvre sur ce plan (pas les effets).

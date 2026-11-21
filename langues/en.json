@@ -9280,5 +9280,6 @@
  "✓ Toutes les étapes du plan se voient dans l'aperçu.": "✓ All the steps of the plan can be seen in the preview.",
  "Ces étapes ne se voient pas dans l'aperçu :": "These steps cannot be seen in the preview:",
  "ne se voit pas": "cannot be seen",
- "Pas de plan à vérifier : faites d'abord construire l'animation.": "No plan to check: have the animation built first."
+ "Pas de plan à vérifier : faites d'abord construire l'animation.": "No plan to check: have the animation built first.",
+ "L'IA écrit l'animation ; l'aperçu de cette nouvelle animation apparaîtra ici.": "The AI is writing the animation; the preview of this new animation will appear here."
 }

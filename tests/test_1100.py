@@ -29,7 +29,7 @@ class TestLogique(unittest.TestCase):
             self.assertIn(x, h)
         self.assertIn("background: transparent", h)
         b = ML.apercu_leger(a)
-        self.assertEqual((b["taille"], b["cadence"]), ([540, 960], 15))
+        self.assertEqual((b["taille"], b["echelle_rendu"], b["cadence"]), ([1080, 1920], 0.5, 15))   # 1.1.9
         d = tempfile.mkdtemp()
         MH.preparer_projet(a, d)
         self.assertTrue(os.path.exists(os.path.join(d, "index.html")))

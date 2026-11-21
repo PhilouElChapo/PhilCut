@@ -66,8 +66,9 @@ jobs:
           python outils_dev/moteur_motion.py composition essai_ck chiffres_cles 1920 1080
           python outils_dev/moteur_motion.py composition essai_lb libre 1920 1080
           python outils_dev/moteur_motion.py composition essai_lv libre 1080 1920
+          python outils_dev/moteur_motion.py composition essai_lp libre_leger 1080 1920
           mkdir -p out
-          for d in essai_h essai_v essai_st essai_bd essai_pg essai_cm essai_ch essai_ap essai_ck essai_lb essai_lv; do
+          for d in essai_h essai_v essai_st essai_bd essai_pg essai_cm essai_ch essai_ap essai_ck essai_lb essai_lv essai_lp; do
             sed -i "s#https://cdn.jsdelivr.net/npm/gsap@[0-9.]*/dist/gsap.min.js#assets/gsap.min.js#" $d/index.html
             cp m/app/node_modules/gsap/dist/gsap.min.js $d/assets/
             node m/app/node_modules/hyperframes/bin/hyperframes.mjs lint $d

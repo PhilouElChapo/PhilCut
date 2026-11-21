@@ -9271,5 +9271,6 @@
  "✓ Toutes les étapes du plan se voient dans l'aperçu.": "✓ Alle Schritte des Plans sind in der Vorschau zu sehen.",
  "Ces étapes ne se voient pas dans l'aperçu :": "Diese Schritte sind in der Vorschau nicht zu sehen:",
  "ne se voit pas": "nicht zu sehen",
- "Pas de plan à vérifier : faites d'abord construire l'animation.": "Kein Plan zu prüfen: lassen Sie zuerst die Animation erstellen."
+ "Pas de plan à vérifier : faites d'abord construire l'animation.": "Kein Plan zu prüfen: lassen Sie zuerst die Animation erstellen.",
+ "L'IA écrit l'animation ; l'aperçu de cette nouvelle animation apparaîtra ici.": "Die KI schreibt die Animation; die Vorschau dieser neuen Animation erscheint hier."
 }
