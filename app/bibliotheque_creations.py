@@ -181,6 +181,9 @@ def retirer(params, e):
 def apercu(e):
     """Le fichier à montrer en vignette : planche, découpe, photo, image ; sinon rien."""
     f = e.get("fichiers") or {}
+    choisie = (e.get("donnees") or {}).get("vignette")         # 1.1.7 : la photo choisie comme vignette passe avant tout
+    if choisie and f.get(choisie):
+        return f[choisie]
     for role in ("planche", "decoupe", "photo", "image1", "image", "vignette", "image_tenue"):
         if f.get(role):
             return f[role]

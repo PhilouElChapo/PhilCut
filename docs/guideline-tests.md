@@ -23,6 +23,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T113 — 1.1.7 : bibliothèque, photos
+
+1. Ma bibliothèque › Secrétaire : cliquer la troisième photo : elle s'encadre et devient la vignette de la liste.
+2. « Décrire d'après les photos… » (prix demandé) : la description arrive, sans nom ; la comparer, la garder.
+3. Création : « Inventé », Enregistrer, « Faire sa fiche (Gemini)… » : un personnage nouveau dans le même esprit.
+4. Création : « Inspiré de photos », « Faire sa fiche » : si Gemini refuse, le message dit pourquoi (et ce qu'il a répondu).
+
 ## T112 — 1.1.6 : bruitages et calage sur la musique
 
 1. Poser votre musique dans le montage, mettre la ligne rouge là où l'animation doit commencer.

@@ -197,7 +197,17 @@ def _http(url, corps=None, entetes=None, methode=None, delai=None):
         r.add_header(k, v)
     t0 = time.monotonic()
     try:
-        with urllib.request.urlopen(r, timeout=delai) as f:
+        try:
+            ouvert = urllib.request.urlopen(r, timeout=delai)
+        except urllib.error.URLError as e1:
+            # 1.1.7 : coupure pendant la poignée de main TLS (rien n'a été envoyé) : un second essai, une seule fois
+            if isinstance(e1, urllib.error.HTTPError) or not re.search(r"UNEXPECTED_EOF|EOF occurred|ConnectionReset|reset by peer",
+                                                                       str(getattr(e1, "reason", e1)), re.I):
+                raise
+            rapporter(_("Connexion coupée avant l'envoi : nouvel essai dans 2 s"))
+            time.sleep(2)
+            ouvert = urllib.request.urlopen(r, timeout=delai)
+        with ouvert as f:
             brut = f.read()
             if corps is not None:
                 rapporter(_("← Réponse acceptée (code {c}) en {s} s, {t} reçus", c=f.status,
@@ -423,6 +433,45 @@ def generer_image(params, consigne, delai=240):
 
 
 
+REFUS_IMAGE = {   # 1.1.7 : la raison donnée par Gemini, dite en clair (Philippe, 21/11 22h36 : « Gemini n'a pas renvoyé d'image (?) »)
+    "IMAGE_SAFETY": _("Gemini refuse de dessiner cette image : elle ressemblerait à une personne réelle reconnaissable, ou touche "
+                      "à un contenu qu'il ne produit pas"),
+    "PROHIBITED_CONTENT": _("Gemini juge le contenu interdit (personne réelle, célébrité, contenu protégé…)"),
+    "IMAGE_PROHIBITED_CONTENT": _("Gemini juge l'image interdite (personne réelle, célébrité, contenu protégé…)"),
+    "SAFETY": _("Gemini a bloqué la demande par prudence"),
+    "BLOCKLIST": _("un mot de la demande est sur la liste bloquée de Gemini"),
+    "RECITATION": _("l'image copierait une œuvre existante"),
+    "IMAGE_RECITATION": _("l'image copierait une œuvre existante"),
+    "NO_IMAGE": _("Gemini a répondu sans image"),
+    "IMAGE_OTHER": _("Gemini n'a pas pu dessiner cette image"),
+    "OTHER": _("Gemini n'a pas pu répondre (raison non donnée)"),
+}
+
+
+def pas_d_image(d):
+    """Pourquoi Gemini n'a pas rendu d'image : raison du blocage, fin de réponse, et ce qu'il a écrit à la place."""
+    pf = (d or {}).get("promptFeedback") or {}
+    raisons, textes = [], []
+    if pf.get("blockReason"):
+        raisons.append(pf["blockReason"])
+    for c in (d or {}).get("candidates") or []:
+        if c.get("finishReason") and c["finishReason"] not in ("STOP",):
+            raisons.append(c["finishReason"])
+        textes += [p.get("text", "") for p in (c.get("content") or {}).get("parts", []) if p.get("text")]
+    clair = next((REFUS_IMAGE[r] for r in raisons if r in REFUS_IMAGE), "")
+    code = ", ".join(dict.fromkeys(raisons)) or "?"
+    dit = " ".join(textes).strip()[:300]
+    msg = _("Gemini n'a pas renvoyé d'image ({raison}).", raison=code)
+    if clair:
+        msg += " " + clair + "."
+    if dit:
+        msg += " " + _("Sa réponse : « {t} »", t=dit)
+    if not clair and not dit:
+        msg += " " + _("Réessayez ; si cela recommence avec des photos, c'est souvent la ressemblance avec une personne réelle qui "
+                       "bloque : essayez « Inventé » avec une description.")
+    return msg
+
+
 def generer_image_refs(params, consigne, images, delai=240):
     """Image créée par Gemini à partir d'une consigne et d'images de référence (personnes, lieu) : octets PNG ou JPEG."""
     clef = nettoyer_clef(params.get("clef_gemini", ""))
@@ -451,8 +500,7 @@ def generer_image_refs(params, consigne, images, delai=240):
                 if data and data.get("data"):
                     dernier.update(moteur="gemini", modele=modele)
                     return base64.b64decode(data["data"])
-        raison = (d.get("promptFeedback") or {}).get("blockReason") or "?"
-        derniere = ErreurIA(_("Gemini n'a pas renvoyé d'image ({raison}).", raison=raison))
+        derniere = ErreurIA(pas_d_image(d))
     raise derniere or ErreurIA(_("Aucun modèle Gemini d'image disponible avec cette clef."))
 
 def retoucher_image(params, png, consigne, zones_png=None, delai=240):

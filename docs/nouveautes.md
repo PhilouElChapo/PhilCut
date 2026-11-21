@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.6 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.7 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.7 (bibliotheque : photos)
+- Un clic sur une photo en fait la vignette de l'entree.
+- « Decrire d'apres les photos… » : l'IA ecrit la description de ce qu'on voit (allure, cheveux, age apparent, tenue), sans jamais dire qui c'est ; avec « Invente », on cree quelqu'un de nouveau dans le meme esprit.
+- Quand Gemini ne rend pas d'image, PhilCut dit pourquoi (ressemblance avec une personne reelle, contenu bloque…) et ce que Gemini a repondu.
+- Une coupure de connexion avant l'envoi est reessayee une fois toute seule.
 
 ### 1.1.6 (animation libre : bruitages et musique)
 - « Bruitages places par l'IA » : l'IA ecrit aussi la liste des sons de son plan (pop, boum, machine a ecrire, souffle, cymbale…), choisis parmi les bruitages de PhilCut. L'apercu les fait entendre ; ils sont poses avec l'animation sur des pistes de son, chacun modifiable.

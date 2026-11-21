@@ -18,6 +18,20 @@ IMAGES = _("Images") + " (*.png *.jpg *.jpeg *.webp)"
 SONS = _("Sons") + " (*.mp3 *.wav *.flac *.ogg *.m4a *.aac *.opus *.mp4 *.mkv *.webm *.mov)"
 
 
+
+CONSIGNE_DECRIRE = {
+    "personnage": ("Tu écris la description d'un personnage pour une fiche de création vidéo, d'après des photos. Décris seulement "
+                   "ce qu'on voit : allure générale, âge apparent, cheveux (couleur, longueur, coiffure), carrure, traits du visage "
+                   "en termes généraux, tenue et style, attitude. Ne nomme jamais la personne, ne devine jamais qui elle est, ne "
+                   "parle pas des photos elles-mêmes (défilé, magazine). Réponds en français, en 2 à 4 phrases, sans liste ni titre."),
+    "objet": ("Tu écris la description d'un objet ou d'un véhicule pour une fiche de création vidéo, d'après des photos : forme, "
+              "couleurs, matières, détails reconnaissables, état. Pas de marque ni d'immatriculation. Réponds en français, en 2 à "
+              "3 phrases, sans liste."),
+    "lieu": ("Tu écris la description d'un lieu pour une fiche de création vidéo, d'après des photos : type d'endroit, ambiance, "
+             "lumière, matériaux, couleurs, éléments marquants. Pas de nom de lieu réel ni d'enseigne. Réponds en français, en 2 à "
+             "3 phrases, sans liste."),
+}
+
 class DialogueBibliothequeCreations(QDialog):
     def __init__(self, ed):
         super().__init__(ed)
@@ -346,11 +360,16 @@ class DialogueBibliothequeCreations(QDialog):
         photos = self._photos(e)
         self.v_detail.addWidget(QLabel(_("Photos ({n}) : plusieurs angles donnent un meilleur résultat", n=len(photos))))
         h = QHBoxLayout()
+        choisie = (e.get("donnees") or {}).get("vignette")
         for role, p in photos[:8]:
             col = QVBoxLayout()
             im = QLabel()
             im.setPixmap(QPixmap(p).scaled(72, 72, Qt.KeepAspectRatio, Qt.SmoothTransformation))
-            im.setToolTip(os.path.basename(p))
+            im.setToolTip(os.path.basename(p) + "\n" + _("Clic : en faire la vignette de « {n} »", n=e.get("nom", "")))
+            im.setCursor(Qt.PointingHandCursor)
+            if role == choisie:
+                im.setStyleSheet("border: 3px solid #8b7cff;")
+            im.mousePressEvent = lambda _ev, r=role: self.choisir_vignette(r)
             col.addWidget(im)
             bx = QToolButton()
             bx.setText("✕")
@@ -361,6 +380,12 @@ class DialogueBibliothequeCreations(QDialog):
         b = QPushButton(_("Ajouter des photos…"))
         b.clicked.connect(self.ajouter_photos)
         h.addWidget(b)
+        if photos:
+            bd = QPushButton(_("Décrire d'après les photos…"))
+            bd.setToolTip(_("L'IA écrit la description de ce qu'on voit (allure, cheveux, âge apparent, tenue, style), sans jamais "
+                            "dire qui c'est ; avec « Inventé », on crée alors quelqu'un de nouveau qui en garde l'esprit"))
+            bd.clicked.connect(self.decrire_photos)
+            h.addWidget(bd)
         br = QPushButton(_("Image d'un rush…"))
         br.setToolTip(_("Placez la ligne rouge sur un rush (ou une photo du montage) où on le voit : PhilCut prend l'image, vous "
                         "l'encadrez. Recommencez avec d'autres rushes pour d'autres angles."))
@@ -368,6 +393,52 @@ class DialogueBibliothequeCreations(QDialog):
         h.addWidget(br)
         h.addStretch(1)
         self.v_detail.addLayout(h)
+
+    def choisir_vignette(self, role):
+        """1.1.7 : la photo cliquée devient la vignette de l'entrée (liste, choix depuis les autres fenêtres)."""
+        e = self.courante
+        if e is None:
+            return
+        d = dict(e.get("donnees") or {}, vignette=role)   # seulement la vignette : rien d'autre du formulaire n'est enregistré
+        nom, desc = self.nom.text(), self.desc.texte()       # ce qui est tapé et pas encore enregistré reste à l'écran
+        x = B.garder(self.params, e["genre"], e["nom"], e.get("description", ""), None, d, e["id"])
+        self.remplir(x["id"])
+        self.nom.setText(nom)
+        self.desc.mettre(desc)
+        self.etat.setText(_("✓ Vignette choisie."))
+
+    PRIX_DECRIRE = 0.01
+
+    def decrire_photos(self):
+        """1.1.7 (Philippe, 21/11 22h36 : « une description en fonction des photos ; ça permet de créer du non réel sur du
+        réel ») : l'IA décrit ce qu'elle voit, sans identifier personne ; la description se relit et se modifie."""
+        from . import ia
+        e = self.courante
+        images = [p for _r, p in self._photos(e)][:4] if e else []
+        if not images:
+            return
+        if getattr(self, "_test_oui", None) is None and QMessageBox.question(
+                self, _("Décrire d'après les photos"), _("Les photos sont envoyées à votre IA (Claude ou Gemini, votre clef) pour "
+                                                        "écrire la description : environ {p} $. Continuer ?",
+                                                        p=f"{self.PRIX_DECRIRE:.2f}".replace(".", ","))) != QMessageBox.Yes:
+            return
+        genre, params = e["genre"], self.params
+        consigne = CONSIGNE_DECRIRE.get(genre, CONSIGNE_DECRIRE["personnage"])
+        texte = self.desc.texte()
+
+        def travail(_t):
+            return ia.demander(params, consigne, _("Décrivez ce que montrent ces photos."), images=images, max_jetons=600).strip()
+
+        def fin(r):
+            if not r:
+                return
+            choisi = choisir_proposition(self, texte, r, _("D'après les photos")) if texte.strip() else r
+            if choisi is not None:
+                self.desc.mettre(choisi)
+                self.etat.setText(_("Description écrite d'après les photos : relisez-la. Pour quelqu'un de nouveau qui n'est pas la "
+                                    "personne des photos, choisissez « Inventé » : les photos ne sont plus envoyées, seule cette "
+                                    "description compte."))
+        self._lancer(travail, _("L'IA décrit les photos"), fin)
 
     @staticmethod
     def _prochain(e):
@@ -573,6 +644,9 @@ class DialogueBibliothequeCreations(QDialog):
     def _ameliorer(self, champ):
         from . import assistant_idee as I
         texte, quoi = champ.texte(), champ.quoi
+        if not texte.strip():                  # 1.1.7 : dit tout de suite, sans lancer de calcul (ni écrire au journal)
+            self.etat.setText(_("Ecrivez d'abord quelques mots, ou « Décrire d'après les photos… »."))
+            return
         niveau = self.params.get("musique_ia_ecrire") or "claude"
 
         def fin(r):
