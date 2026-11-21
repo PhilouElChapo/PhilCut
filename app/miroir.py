@@ -298,7 +298,11 @@ def _synchroniser_vrai(params, compte, emplacement, choix, sens, plan):
                 envoye = True
             elif l_mtime is None:                           # absent ici
                 if avant.get("local") and not distant_modifie:
-                    continue                                # supprime ici : on laisse (pas de suppression distante)
+                    # supprimé ici : on laisse (pas de suppression distante) ; 1.1.1 : l'état est GARDÉ, sinon la
+                    # synchronisation suivante ne savait plus qu'il avait été supprimé ici et proposait de le « recevoir »
+                    # à chaque ouverture (Philippe, 21/11 : un fichier de la bibliothèque proposé sans fin)
+                    nouvel_etat[rel] = avant
+                    continue
                 e.telecharger(dp, lp)
                 recus += 1
                 _JOURNAL.append(("recu", rel))

@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import commun
 app = commun.application()
 
-REPONSE = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "donnees", "libre_anniversaire.txt"), encoding="utf-8").read()
+REPONSE = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "exemples", "libre_anniversaire.txt"), encoding="utf-8").read()
 
 
 class TestLogique(unittest.TestCase):
@@ -55,6 +55,28 @@ class TestLogique(unittest.TestCase):
         self.assertEqual(ML.revenir(b)["libre"]["js"], a["libre"]["js"])
         a2 = dict(a, duree=5, duree_imposee=True)
         self.assertEqual(ML.appliquer(a2, ML.sections(REPONSE))["duree"], 5)
+
+
+class TestSynchro(unittest.TestCase):
+    def test_fichier_supprime_ici_n_est_plus_propose(self):
+        """1.1.1 : un fichier supprimé sur ce poste (déjà envoyé) ne revient plus à chaque ouverture en « à recevoir »."""
+        from app import distant, miroir
+        r = distant.nouveau_compte("reseau")
+        r["adresse"] = tempfile.mkdtemp()
+        params = {"comptes": [r], "drive_compte": r["id"]}
+        local = os.path.join(miroir.dossier_miroir(r), "PhilCut", "creations_partagees", "personnage", "x")
+        os.makedirs(local, exist_ok=True)
+        f = os.path.join(local, "image1.png")
+        with open(f, "wb") as fic:
+            fic.write(b"png")
+        miroir.synchroniser(params, r)
+        os.remove(f)
+        for _i in range(2):
+            plan = []
+            miroir.synchroniser(params, r, plan=plan)
+            self.assertFalse([x for x in plan if x["rel"].endswith("image1.png")], plan)
+            miroir.synchroniser(params, r)
+        self.assertFalse(os.path.exists(f))
 
 
 class TestFenetre(unittest.TestCase):

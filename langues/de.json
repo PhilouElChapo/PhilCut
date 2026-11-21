@@ -9152,5 +9152,6 @@
  "onUpdate / onComplete (non appelés quand le rendu se place à une image)": "onUpdate / onComplete (nicht aufgerufen, wenn das Rendering zu einem Bild springt)",
  "adresse internet (rien ne doit être chargé)": "Internetadresse (nichts darf geladen werden)",
  "animation hors de tl": "Animation außerhalb von tl",
- "Ce que je voulais au départ : {d}": "Was ich anfangs wollte: {d}"
+ "Ce que je voulais au départ : {d}": "Was ich anfangs wollte: {d}",
+ "Recevoir du Drive (absent ou plus ancien sur ce poste)": "Vom Drive empfangen (auf diesem Rechner fehlend oder älter)"
 }

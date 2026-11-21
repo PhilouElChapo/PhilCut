@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.1 (synchronisation)
+- Un fichier supprime sur ce poste (par exemple une image remplacee dans la bibliotheque) n'est plus propose a « recevoir » a chaque ouverture. Le groupe s'appelle « Recevoir du Drive » (il n'y a pas besoin d'un autre poste).
 
 ### 1.1.0 (animation libre)
 - Fabrique IA › Animation › « Animation libre : decrivez-la, l'IA la construit… » : vous decrivez l'animation en phrases ; l'IA (Claude) ecrit une vraie composition HyperFrames (dessins SVG, graphiques, particules, textes, aux couleurs de votre charte).

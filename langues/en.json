@@ -9161,5 +9161,6 @@
  "onUpdate / onComplete (non appelés quand le rendu se place à une image)": "onUpdate / onComplete (not called when the render seeks to a frame)",
  "adresse internet (rien ne doit être chargé)": "internet address (nothing may be loaded)",
  "animation hors de tl": "animation outside tl",
- "Ce que je voulais au départ : {d}": "What I wanted at first: {d}"
+ "Ce que je voulais au départ : {d}": "What I wanted at first: {d}",
+ "Recevoir du Drive (absent ou plus ancien sur ce poste)": "Receive from the Drive (missing or older on this computer)"
 }

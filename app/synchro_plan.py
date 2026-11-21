@@ -243,7 +243,7 @@ class DialoguePlan(QDialog):
         hh.setSectionResizeMode(1, QHeaderView.ResizeToContents)
         hh.setStretchLastSection(False)
         familles = {"biblio": _("Tampons et signatures"), "apprentissage": _("Apprentissage (OCR, classement)")}
-        for groupe, titre_g, ic in (("recevoir", _("Recevoir de vos autres postes"), "mise_a_jour"),
+        for groupe, titre_g, ic in (("recevoir", _("Recevoir du Drive (absent ou plus ancien sur ce poste)"), "mise_a_jour"),
                                     ("envoyer", _("Envoyer depuis ce poste"), "exporter")):
             ls = [l for l in lignes if l["groupe"] == groupe and not l.get("routine")]
             if not ls:

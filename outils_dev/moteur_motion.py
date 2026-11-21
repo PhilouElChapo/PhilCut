@@ -21,7 +21,7 @@ def _anim(genre="chiffres", L=1920, H=1080):
     if genre == "libre":                          # 1.1.0 : une composition écrite comme l'IA l'écrirait (tests/donnees)
         from app import motion_libre as ML
         racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        with open(os.path.join(racine, "tests", "donnees", "libre_anniversaire.txt"), encoding="utf-8") as f:
+        with open(os.path.join(racine, "tests", "exemples", "libre_anniversaire.txt"), encoding="utf-8") as f:
             return ML.appliquer(ML.fiche("essai", (int(L), int(H))), ML.sections(f.read()))
     a = M.nouvelle(genre, taille=(int(L), int(H)))
     a["source"] = "Exemple neutre"
