@@ -2812,8 +2812,8 @@ class Editeur(QWidget):
         anc = getattr(self, "_sequence", None)
         if anc is not None and not nouvelle:                 # 0.9.68 : une seule fenêtre, non bloquante
             try:
-                if anc.isVisible() or any(t.isRunning() for t in anc.taches):
-                    from .widgets import reafficher
+                from .widgets import reafficher, travail_garde
+                if anc.isVisible() or any(t.isRunning() for t in anc.taches) or travail_garde(anc):
                     reafficher(anc)
                     return anc
             except RuntimeError:
@@ -2823,6 +2823,8 @@ class Editeur(QWidget):
         d.setModal(False)
         d.finished.connect(lambda _r, d=d: getattr(d, "nouvelle_demandee", False) and self.sequence_ia(nouvelle=True))
         self._sequence = d
+        from .widgets import fenetre_de_travail
+        fenetre_de_travail(d, lambda: self.sequence_ia(nouvelle=True))
         d.show()
         return d
 
@@ -2938,9 +2940,8 @@ class Editeur(QWidget):
             self.encart.message(_("Placez la tête de lecture sur le premier des deux plans à relier (ou dans le vide entre eux), "
                                   "puis recommencez : le plan de liaison va de ce plan au suivant."))
             return None
-        d = DialogueLiaison(self, a, b)
-        d.show()
-        return d
+        from .widgets import non_bloquante
+        return non_bloquante(self, ("liaison", a["id"], b["id"]), lambda: DialogueLiaison(self, a, b))
 
     def narration(self, clip=None):
         """Vidéo de narration d'après ce qui est dit (0.9.67) : une fenêtre par piste de voix, non bloquante."""
@@ -2958,6 +2959,8 @@ class Editeur(QWidget):
         d = DialogueNarration(self, clip)
         ouverts[cle] = d
         self._narrations = ouverts
+        from .widgets import fenetre_de_travail
+        fenetre_de_travail(d)
         d.show()
         return d
 
@@ -2993,6 +2996,8 @@ class Editeur(QWidget):
         d = DialogueClipGroupe(self, clip, chemin, prefs)
         ouverts[cle] = d
         self._clips_groupe = ouverts
+        from .widgets import fenetre_de_travail
+        fenetre_de_travail(d)
         d.show()
         return d
 
@@ -3018,9 +3023,8 @@ class Editeur(QWidget):
             if clip is None or not clip["piste"].startswith("video"):
                 self.encart.message(_("Cliquez d'abord le plan vidéo à faire parler (ou placez la ligne rouge dessus)."))
                 return None
-        d = DialogueLevres(self, clip, genre)
-        d.show()
-        return d
+        from .widgets import non_bloquante
+        return non_bloquante(self, ("levres", (clip or {}).get("id"), genre), lambda: DialogueLevres(self, clip, genre))
 
     def continuer_voix(self, clip=None, debut=None, sur_liaison=None):
         """« Continuer avec ma voix » (0.9.57) : la voix du plan donné (ou du plan sous la ligne rouge, piste Voix ou plan
@@ -3030,9 +3034,9 @@ class Editeur(QWidget):
             t = self.timeline.position
             clip = next((c for p in ["voix"] + self.projet.pistes_audio() + ["video"]
                          for c in [self.projet.clip_a(max(0.0, t - 0.05), p)] if c), None)
-        d = DialogueVoixSuite(self, clip, debut, sur_liaison)
-        d.show()
-        return d
+        from .widgets import non_bloquante
+        cle = ("voix_suite", (clip or {}).get("id"), (sur_liaison or {}).get("id") if isinstance(sur_liaison, dict) else sur_liaison)
+        return non_bloquante(self, cle, lambda: DialogueVoixSuite(self, clip, debut, sur_liaison))
 
     def separer_sons(self, clip=None, fichier=None):
         """Séparer voix, musique et bruits (0.9.53) d'un plan du film ou d'un fichier ; fenêtre non bloquante."""
@@ -3046,9 +3050,9 @@ class Editeur(QWidget):
                                          "musique", self.params)
                 if not fichier:
                     return None
-        d = DialogueSeparation(self, clip, fichier)
+        from .widgets import non_bloquante
+        d = non_bloquante(self, ("separation", (clip or {}).get("id"), fichier), lambda: DialogueSeparation(self, clip, fichier))
         self._separation = d
-        d.show()
         return d
 
     def _ouvrir_atelier(self, d):
@@ -3056,13 +3060,18 @@ class Editeur(QWidget):
         anc = getattr(self, "_atelier", None)
         if anc is not None:
             try:
-                if anc._en_calcul():               # un calcul tourne déjà : on le montre plutôt que d'en ouvrir un second
+                from .widgets import travail_garde
+                fam = lambda x: getattr(getattr(x, "famille", None), "currentData", lambda: None)()  # noqa: E731
+                meme = fam(anc) == fam(d)
+                if anc._en_calcul() or (meme and travail_garde(anc)):   # 1.1.2 : travail gardé de la même famille
                     anc._reafficher()
                     d.deleteLater()
                     return anc
             except RuntimeError:
                 pass
         self._atelier = d
+        from .widgets import fenetre_de_travail
+        fenetre_de_travail(d)
         d.show()
         d.raise_()
         return d
@@ -3089,14 +3098,16 @@ class Editeur(QWidget):
         anc = getattr(self, "_fab_musique", None)
         if anc is not None and fiche is None and remplace is None:
             try:
-                if anc.en_calcul() or (anc.resultat and anc.isHidden()):   # une création en route ou pas encore vue : la même fenêtre
-                    from .widgets import reafficher
+                from .widgets import reafficher, travail_garde
+                if anc.en_calcul() or (anc.resultat and anc.isHidden()) or anc.isVisible() or travail_garde(anc):
                     reafficher(anc)
                     return anc
             except RuntimeError:
                 pass
         d = DialogueFabriqueMusique(self, self.params, h, fiche, duree)
         self._fab_musique = d
+        from .widgets import fenetre_de_travail          # 1.1.2 : Réduire toujours là ; fermer ne perd plus la fiche
+        fenetre_de_travail(d, lambda: (setattr(self, "_fab_musique", None), self.fabrique_musique()))
         d.show()                           # non bloquante (0.9.64) : on continue à monter pendant la création
         return d
 

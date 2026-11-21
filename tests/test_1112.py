@@ -184,5 +184,46 @@ class TestFenetre(unittest.TestCase):
         ed.projet.modifie = False
 
 
+    def test_fabrique_musique_gardee(self):
+        """Philippe, 21/11 20h35 : Fabrique musique : « on ne peut pas réduire ; si je fais fermer on perd tout »."""
+        from PySide6.QtWidgets import QLineEdit, QPlainTextEdit
+        from app.fenetre import Fenetre
+        f = Fenetre()
+        f.bienvenue = lambda *a, **k: None
+        ed = f.nouveau_projet("16:9")
+        d = ed.fabrique_musique()
+        for _ in range(5):
+            app.processEvents()
+        self.assertTrue(d.b_reduire.isVisibleTo(d))
+        champ = next(w for w in d.findChildren(QPlainTextEdit) if not w.isReadOnly())
+        champ.setPlainText("40 ans 40 ans, et bien voilà c'est arrivé")
+        d.close()
+        app.processEvents()
+        self.assertFalse(d.isVisible())
+        self.assertIs(ed.fabrique_musique(), d)
+        self.assertIn("40 ans", champ.toPlainText())
+        d.b_reduire.click()
+        self.assertFalse(d.isVisible())
+        self.assertIs(ed.fabrique_musique(), d)
+        d._test_oui = True
+        d.b_repartir.click()
+        app.processEvents()
+        self.assertIsNot(ed._fab_musique, d)
+        ed._fab_musique.close()
+        ed.projet.modifie = False
+
+    def test_autres_fenetres_ont_reduire(self):
+        from app.fenetre import Fenetre
+        f = Fenetre()
+        f.bienvenue = lambda *a, **k: None
+        ed = f.nouveau_projet("16:9")
+        for ouvrir in (ed.sequence_ia, lambda: ed.atelier_ia("image")):
+            d = ouvrir()
+            d = d or ed._atelier
+            self.assertTrue(getattr(d, "b_reduire", None) is not None, d)
+            d.close()
+        ed.projet.modifie = False
+
+
 if __name__ == "__main__":
     unittest.main()

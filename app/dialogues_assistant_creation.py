@@ -1230,7 +1230,7 @@ class DialogueAssistant(QDialog):
             pret = bool(getattr(self, "intro_fichier", ""))
         self.b_suiv.setEnabled(not calc and pret)
         self.b_dire.setEnabled(not calc)
-        self.b_reduire.setVisible(calc)
+        self.b_reduire.setVisible(True)        # 1.1.2 : Réduire toujours là
         self.b_manuel.setEnabled(not calc and k != P_IDEE)
         self.b_relancer.setVisible(bool(self.params.get("assistant_realisateur", A.REALISATEUR_DEFAUT)) and self.genre == "video" and
                                    k not in (P_IDEE, P_VIDEO) and getattr(self, "_realisateur_pause", False) and not calc)

@@ -23,6 +23,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T110 — 1.1.3 : Réduire partout, fermer ne perd rien
+
+1. Fabrique musique : écrire des paroles, régler la durée ; « Réduire » : la fenêtre se range, « Afficher la fenêtre » (barre du bas) la rouvre telle quelle. « Fermer », puis Fabrique IA › Musique › Fabrique : même fiche, mêmes paroles.
+2. Pendant une analyse (« S'inspirer d'un morceau ») : « Réduire », l'analyse continue dans la barre du bas.
+3. « Repartir de zéro » : confirmation, puis fenêtre neuve et vide.
+4. Même essai rapide avec Séquence IA, l'Atelier IA, l'assistant de création, le plan de liaison.
+
 ## T109 — 1.1.2 : animation libre pour Remotion, plan de l'IA, Réduire ; recherche YouTube Music
 
 1. Animation libre, votre texte du cadeau, durée au choix de l'IA, « Ecrite pour : HyperFrames » : « Construire ». Le plan s'affiche sous le titre : le feu d'artifice et les confettis y sont-ils, avec leurs secondes ? Les voit-on dans l'aperçu ?

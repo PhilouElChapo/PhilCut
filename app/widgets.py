@@ -664,8 +664,7 @@ def non_bloquante(proprietaire, cle, fabrique):
         try:
             en_cours = any(getattr(t, "isRunning", lambda: False)() for t in (getattr(anc, "taches", None) or [])) or \
                 bool(getattr(anc, "tache", None) is not None and anc.tache.isRunning())
-            garde = bool(getattr(anc, "a_garder", lambda: False)())     # 1.1.2 : travail gardé dans une fenêtre rangée
-            if anc.isVisible() or en_cours or garde:
+            if anc.isVisible() or en_cours or travail_garde(anc):      # 1.1.2 : travail gardé dans une fenêtre rangée
                 reafficher(anc)
                 return anc
         except RuntimeError:
@@ -673,8 +672,145 @@ def non_bloquante(proprietaire, cle, fabrique):
     d = fabrique()
     d.setModal(False)
     ouvertes[cle] = d
-    _bouton_reduire(d)
+    fenetre_de_travail(d, lambda: non_bloquante(proprietaire, cle, fabrique))
     d.show()
+    return d
+
+
+def _saisie(d):
+    """Ce que l'utilisateur a pu taper ou régler dans la fenêtre (pour savoir s'il y a un travail à garder)."""
+    from PySide6.QtWidgets import (QAbstractSlider, QAbstractSpinBox, QCheckBox, QComboBox, QLineEdit, QPlainTextEdit,
+                                   QRadioButton, QTextEdit)
+    vals = []
+    try:
+        for w in d.findChildren(QWidget):
+            if isinstance(w, QLineEdit) and not isinstance(w.parent(), (QAbstractSpinBox, QComboBox)):
+                vals.append(w.text())
+            elif isinstance(w, (QPlainTextEdit, QTextEdit)) and not w.isReadOnly():
+                vals.append(w.toPlainText())
+            elif isinstance(w, QAbstractSpinBox):
+                vals.append(w.text())
+            elif isinstance(w, QComboBox):
+                vals.append(w.currentIndex())
+            elif isinstance(w, (QCheckBox, QRadioButton)):
+                vals.append(w.isChecked())
+            elif isinstance(w, QAbstractSlider):
+                vals.append(w.value())
+    except RuntimeError:
+        return None
+    return tuple(vals)
+
+
+def travail_garde(d):
+    """1.1.2 (Philippe, 21/11 20h15 et 20h35 : « si je fais fermer on perd tout ») : la fenêtre contient un travail (quelque
+    chose de tapé ou réglé, un calcul fait, un résultat) : la fermer la range, le même menu la rouvre telle quelle."""
+    try:
+        if getattr(d, "_jeter", False):
+            return False
+        if hasattr(d, "a_garder"):
+            return bool(d.a_garder())
+        if getattr(d, "resultat", None) or getattr(d, "_a_calcule", False):
+            return True
+        depart = getattr(d, "_saisie_depart", None)
+        return depart is not None and _saisie(d) != depart
+    except RuntimeError:
+        return False
+
+
+def _layout_de(lay, w):
+    """Le layout qui contient ce widget, et sa place."""
+    if lay is None:
+        return None, -1
+    for i in range(lay.count()):
+        it = lay.itemAt(i)
+        if it.widget() is w:
+            return lay, i
+        if it.layout() is not None:
+            r = _layout_de(it.layout(), w)
+            if r[0] is not None:
+                return r
+    return None, -1
+
+
+def ranger_fenetre(d):
+    """Réduire : la fenêtre se range, le calcul continue, rien n'est perdu ; la barre du bas la rouvre."""
+    try:
+        if calcul_en_cours(d):
+            garder_calcul(d, True)
+            return
+        d.hide()
+        e = _encart_de(d)
+        if e is not None and getattr(e, "tache", None) is None:
+            e.suivre_message(_("« {t} » rangée : votre travail est gardé.", t=d.windowTitle()),
+                             (_("Afficher la fenêtre"), lambda: reafficher(d)), 20000)
+    except RuntimeError:
+        pass
+
+
+def fenetre_de_travail(d, rouvrir=None):
+    """1.1.2 : toute fenêtre de travail a « Réduire » (toujours là) et « Repartir de zéro » ; fermer une fenêtre qui contient un
+    travail la range au lieu de le perdre. `rouvrir` ouvre une fenêtre neuve (pour repartir de zéro)."""
+    if getattr(d, "_de_travail", False):
+        return d
+    d._de_travail = True
+    from PySide6.QtCore import QTimer
+    from PySide6.QtWidgets import QPushButton
+    QTimer.singleShot(0, lambda: setattr(d, "_saisie_depart", _saisie(d)))
+    b = getattr(d, "b_reduire", None)
+    if b is None:
+        b = QPushButton(_("Réduire"))
+        fermer = next((x for x in d.findChildren(QPushButton) if x.text().replace("&", "") in (_("Fermer"), _("Annuler"))), None)
+        lay, i = _layout_de(d.layout(), fermer) if fermer is not None else (None, -1)
+        if lay is not None:
+            lay.insertWidget(i, b)
+        else:
+            from PySide6.QtWidgets import QDialogButtonBox
+            boites = d.findChildren(QDialogButtonBox)
+            if boites:
+                boites[-1].addButton(b, QDialogButtonBox.ActionRole)
+            elif d.layout() is not None:
+                d.layout().addWidget(b)
+        d.b_reduire = b
+        b.clicked.connect(lambda: ranger_fenetre(d))
+    else:
+        try:
+            b.clicked.disconnect()
+        except (RuntimeError, TypeError):
+            pass
+        b.clicked.connect(lambda: ranger_fenetre(d))
+        veille = QTimer(d)                                 # certaines fenêtres le cachaient hors calcul : toujours visible
+        veille.timeout.connect(lambda: b.isHidden() and d.isVisible() and b.show())
+        veille.start(400)
+    b.setToolTip(_("Range la fenêtre sans rien perdre ; « Afficher la fenêtre » dans la barre du bas, ou le même menu, la "
+                   "rouvre telle quelle"))
+    b.show()
+    if rouvrir is not None and not hasattr(d, "nouvelle"):
+        r = QPushButton(_("Repartir de zéro"))
+        r.setToolTip(_("Ferme cette fenêtre en oubliant ce qui y est, et en ouvre une neuve"))
+
+        def repartir():
+            if calcul_en_cours(d):
+                return
+            if travail_garde(d) and not getattr(d, "_test_oui", False):
+                from PySide6.QtWidgets import QMessageBox
+                if QMessageBox.question(d, d.windowTitle(), _("Oublier ce qui est dans cette fenêtre et repartir de zéro ?")) \
+                        != QMessageBox.Yes:
+                    return
+            d._jeter = True
+            d.close()
+            rouvrir()
+        r.clicked.connect(repartir)
+        lay, i = _layout_de(d.layout(), b)
+        if lay is not None:
+            lay.insertWidget(i, r)
+        d.b_repartir = r
+
+    def fini(_r):
+        if calcul_en_cours(d):
+            garder_calcul(d, True)
+        elif travail_garde(d):
+            ranger_fenetre(d)
+    d.finished.connect(fini)
     return d
 
 
