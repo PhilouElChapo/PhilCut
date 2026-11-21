@@ -664,7 +664,8 @@ def non_bloquante(proprietaire, cle, fabrique):
         try:
             en_cours = any(getattr(t, "isRunning", lambda: False)() for t in (getattr(anc, "taches", None) or [])) or \
                 bool(getattr(anc, "tache", None) is not None and anc.tache.isRunning())
-            if anc.isVisible() or en_cours:
+            garde = bool(getattr(anc, "a_garder", lambda: False)())     # 1.1.2 : travail gardé dans une fenêtre rangée
+            if anc.isVisible() or en_cours or garde:
                 reafficher(anc)
                 return anc
         except RuntimeError:

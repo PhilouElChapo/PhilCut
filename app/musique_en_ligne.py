@@ -61,6 +61,77 @@ def _lignes_json(lignes):
                 continue
 
 
+_NOMBRES = {}
+for _i, _m in enumerate(("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen "
+                         "seventeen eighteen nineteen twenty").split()):
+    _NOMBRES[_m] = str(_i)
+for _i, _m in enumerate(("zéro un deux trois quatre cinq six sept huit neuf dix onze douze treize quatorze quinze seize dix-sept "
+                         "dix-huit dix-neuf vingt").split()):
+    _NOMBRES[_m] = str(_i)
+for _m, _v in (("thirty", 30), ("forty", 40), ("fifty", 50), ("sixty", 60), ("seventy", 70), ("eighty", 80), ("ninety", 90),
+               ("hundred", 100), ("trente", 30), ("quarante", 40), ("cinquante", 50), ("soixante", 60), ("cent", 100)):
+    _NOMBRES[_m] = str(_v)
+_CHIFFRES = {v: k for k, v in reversed(list(_NOMBRES.items())) if k.isascii()}      # 17 -> seventeen
+
+
+def _mots(t):
+    return re.findall(r"[a-z0-9]+(?:-[a-z0-9]+)*", _sans_accents((t or "").lower()))
+
+
+def _normal(mot):
+    """Un nombre écrit en lettres ou en chiffres devient le même mot (« seventeen », « dix-sept », « 17 »)."""
+    return _NOMBRES.get(mot, _NOMBRES.get(_sans_accents(mot), mot))
+
+
+def variante_nombres(texte):
+    """1.1.2 (Philippe, 21/11 20h25 : « avril lavigne seventeen » ne trouvait pas le titre « 17 ») : la même recherche avec les
+    nombres écrits autrement (lettres → chiffres, chiffres → lettres anglaises), ou « » s'il n'y en a pas."""
+    mots = (texte or "").split()
+    autre = []
+    for m in mots:
+        b = _sans_accents(m.lower())
+        if b in _NOMBRES and b not in ("un", "one", "six", "sept", "cent", "neuf"):    # mots trop courants pour être des nombres
+            autre.append(_NOMBRES[b])
+        elif m.isdigit() and m in _CHIFFRES:
+            autre.append(_CHIFFRES[m])
+        else:
+            autre.append(m)
+    v = " ".join(autre)
+    return v if v != " ".join(mots) else ""
+
+
+def pertinence(r, texte):
+    """Part des mots cherchés présents dans le titre et l'artiste (nombres en lettres ou en chiffres confondus)."""
+    cherches = {_normal(m) for m in _mots(texte)}
+    if not cherches:
+        return 0.0
+    vus = {_normal(m) for m in _mots(f"{r.get('titre', '')} {r.get('artiste', '')} {r.get('album', '')}")}
+    titre = {_normal(m) for m in _mots(r.get("titre", ""))}
+    return len(cherches & vus) / len(cherches) + (0.5 if titre and titre <= cherches else 0.0)
+
+
+def ranger(resultats, texte):
+    """Les titres qui contiennent ce qui est cherché d'abord ; à égalité, l'ordre de YouTube Music est gardé."""
+    return [r for _p, _i, r in sorted(((-pertinence(r, texte), i, r) for i, r in enumerate(resultats)), key=lambda x: x[:2])]
+
+
+def _chercher_ytmusic(texte, n):
+    from . import videos_en_ligne as VL
+    url = "https://music.youtube.com/search?" + urllib.parse.urlencode({"q": texte}) + "#songs"
+    lignes = VL._lancer_ytdlp(["--flat-playlist", "--dump-json", "--playlist-end", str(int(n)), "--xff", VL.pays(), url])
+    out = []
+    for d in _lignes_json(lignes):
+        ident = d.get("id") or ""
+        if not ident:
+            continue
+        artistes = d.get("artists") or ([d["artist"]] if d.get("artist") else [])
+        out.append({"titre": d.get("title") or "", "artiste": ", ".join(artistes) if artistes else _net_artiste(d.get("channel") or d.get("uploader")),
+                    "duree": float(d.get("duration") or 0), "page": f"https://music.youtube.com/watch?v={ident}", "id": ident,
+                    "source": "ytmusic", "licence": d.get("license") or "", "album": d.get("album") or "",
+                    "vignette": f"https://i.ytimg.com/vi/{ident}/mqdefault.jpg", "libre": False})
+    return out
+
+
 def chercher(texte, source="ytmusic", n=30):
     """Résultats : titre, artiste, durée, page, source, licence, libre (licence libre annoncée par la source)."""
     texte = (texte or "").strip()
@@ -77,20 +148,17 @@ def chercher(texte, source="ytmusic", n=30):
             r["artiste"] = _net_artiste(r.get("auteur"))
             r["libre"] = "creative commons" in (r.get("licence") or "").lower()
         return [r for r in out if not r.get("short")]
-    url = "https://music.youtube.com/search?" + urllib.parse.urlencode({"q": texte}) + "#songs"
-    lignes = VL._lancer_ytdlp(["--flat-playlist", "--dump-json", "--playlist-end", str(int(n)), "--xff", VL.pays(), url])
-    out = []
-    for d in _lignes_json(lignes):
-        ident = d.get("id") or ""
-        if not ident:
-            continue
-        artistes = d.get("artists") or ([d["artist"]] if d.get("artist") else [])
-        out.append({"titre": d.get("title") or "", "artiste": ", ".join(artistes) if artistes else _net_artiste(d.get("channel") or d.get("uploader")),
-                    "duree": float(d.get("duration") or 0), "page": f"https://music.youtube.com/watch?v={ident}", "id": ident,
-                    "source": "ytmusic", "licence": d.get("license") or "", "album": d.get("album") or "",
-                    "vignette": f"https://i.ytimg.com/vi/{ident}/mqdefault.jpg", "libre": False})
+    out = _chercher_ytmusic(texte, n)
+    autre = variante_nombres(texte)
+    if autre:                                      # « seventeen » cherche aussi « 17 » (et l'inverse)
+        try:
+            vus = {r["id"] for r in out}
+            out += [r for r in _chercher_ytmusic(autre, min(n, 15)) if r["id"] not in vus]
+        except Exception:      # noqa: BLE001 : la recherche principale suffit
+            pass
+    out = ranger(out, texte)
     completer(out[:12])
-    return out
+    return ranger(out, texte)
 
 
 def completer(resultats):

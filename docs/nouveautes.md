@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.2 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.2 (animation libre pour Remotion, recherche YouTube Music)
+- Animation libre : au choix, ecrite pour HyperFrames ou pour Remotion (fenetre et Preferences). Changer de moteur fait reecrire l'animation par l'IA, meme allure et meme minutage.
+- L'IA ecrit d'abord le plan, une ligne par etape avec ses secondes ; il s'affiche, chaque etape de votre texte doit y figurer, et PhilCut refuse un plan qui depasse la duree.
+- « Reduire » toujours present ; fermer range la fenetre sans rien perdre ; « Nouvelle animation » repart de zero.
+- YouTube Music : un nombre ecrit en lettres cherche aussi en chiffres (« seventeen » trouve « 17 ») ; les titres qui contiennent ce que vous cherchez passent en tete ; artiste et duree completes pour toute la liste.
 
 ### 1.1.1 (synchronisation)
 - Un fichier supprime sur ce poste (par exemple une image remplacee dans la bibliotheque) n'est plus propose a « recevoir » a chaque ouverture. Le groupe s'appelle « Recevoir du Drive » (il n'y a pas besoin d'un autre poste).

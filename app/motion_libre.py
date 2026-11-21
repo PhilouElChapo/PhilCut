@@ -13,6 +13,10 @@ import re
 
 from .langue import _
 
+MOTEURS_LIBRES = ("hyperframes", "remotion")    # 1.1.2 : au choix de l'utilisateur (Préférences et fenêtre)
+NOMS_MOTEURS = {"hyperframes": _("HyperFrames (HTML et GSAP ; libre, Apache 2.0 ; aussi rendu chez HeyGen)"),
+                "remotion": _("Remotion (React ; gratuit pour un particulier, 3 personnes au plus ou une association)")}
+
 PRIX_CREER = 0.12          # une composition écrite par Claude (environ 6 000 jetons de sortie), prix indicatif
 PRIX_CORRIGER = 0.10
 DUREE_MAX = 60.0
@@ -57,6 +61,10 @@ ANSWER FORMAT — exactly these sections, nothing before or after, no markdown f
 a short title in the user's language
 ===DUREE===
 the duration in seconds (a number)
+===PLAN===
+the storyboard: one line per event the user asked for, in the order of the user's text, written "start-end s: what happens"
+(e.g. "4.5-7 s: fireworks burst above the gift"). EVERY event, object and effect of the user's description must appear here,
+none dropped or merged away; every end is at most the duration. The code must do exactly this plan.
 ===CSS===
 the CSS (classes you use; #scenes already exists)
 ===HTML===
@@ -66,16 +74,87 @@ the JavaScript that builds the elements and the timeline (it runs after the HTML
 ===MESSAGE===
 one or two sentences in the user's language: what you made, and what the user can ask to change"""
 
+CONSIGNE_REMOTION = """You are a senior motion designer and creative coder. You write ONE animation as a Remotion (React) component,
+rendered frame by frame into a video. Aim for the quality of a top After Effects / Motion Canvas piece: deliberate composition,
+depth (layers, soft shadows, gradients, light), rich easing (Easing.out(Easing.exp), Easing.back, spring() used with taste),
+overlapping motion, secondary animation, particles where they help, perfect typography, nothing cheap or clip-art-like. Draw
+illustrations yourself with inline SVG (paths, gradients: gift boxes, ribbons, charts, fireworks, confetti…), never emoji as main
+graphics.
+
+THE FILE YOU WRITE (TypeScript + JSX) must export exactly:
+  export const Animation: React.FC<{{ A: Infos }}> = ({{ A }}) => {{ ... }};
+Allowed imports ONLY: `import React from "react";`, named imports from "remotion" (AbsoluteFill, Sequence, interpolate,
+interpolateColors, spring, Easing, random, useCurrentFrame, useVideoConfig) and `import type {{ Infos }} from "./LibreTypes";`.
+Infos A = {{ W, H (pixels), D (total duration in seconds), fps, u = min(W, H) / 1080 (size unit: write every size as a multiple
+of A.u), C: {{ fond, texte, doux, accent, accent2 }} (hex colours), F: {{ titre, texte }} (CSS font families, already loaded),
+TRANSPARENT (boolean: the video will be laid over a film; then paint no background), LANG (text language code) }}.
+PhilCut already paints the background colour (unless transparent), loads the fonts and adds the logo: you return the content,
+usually an <AbsoluteFill> with absolutely positioned children.
+
+STRICT RULES (Remotion renders each frame independently, in parallel; anything else breaks the video):
+1. Every movement is computed from `const frame = useCurrentFrame()` (t = frame / A.fps) with interpolate(...,
+   {{extrapolateLeft: "clamp", extrapolateRight: "clamp", easing}}) or spring({{frame, fps: A.fps, ...}}). No useState or useEffect
+   for animation, no CSS animations/transitions, no requestAnimationFrame, setTimeout or setInterval, no Date.
+2. No Math.random: use random("a seed string") from remotion (deterministic). Build particle lists with useMemo or at module
+   level from random(...), never from the frame.
+3. No network: no <img src="http…">, no fetch, no web fonts, no other npm package. Only the fonts in A.F, inline SVG, CSS
+   gradients.
+4. Keep important things inside the safe area (8 % margin on each side; for vertical video, keep the bottom 20 % free).
+5. Texts in the user's language ({langue}), short, correctly spelt, numbers written like the user. Do not invent facts or
+   numbers the user did not give; you may write decorative words only if asked. Counters: Math.round of an interpolated value.
+6. Prefer transform (translate, scale, rotate) and opacity for motion; place elements with left/top once. At most ~400
+   animated elements. Valid TypeScript: type your helper parameters (number, string, React.CSSProperties…).
+7. The whole animation must read well at {L}×{H} ({format}) and last about {duree} seconds unless the user says otherwise
+   (max {dmax:g} s).
+
+ANSWER FORMAT — exactly these sections, nothing before or after, no markdown fences:
+===TITRE===
+a short title in the user's language
+===DUREE===
+the duration in seconds (a number)
+===PLAN===
+the storyboard: one line per event the user asked for, in the order of the user's text, written "start-end s: what happens"
+(e.g. "4.5-7 s: fireworks burst above the gift"). EVERY event, object and effect of the user's description must appear here,
+none dropped or merged away; every end is at most the duration. The code must do exactly this plan.
+===TSX===
+the whole file (imports, then helpers, then export const Animation)
+===MESSAGE===
+one or two sentences in the user's language: what you made, and what the user can ask to change"""
+
 CONSIGNE_CORRIGER = """Here is the animation you wrote before (sections below). {pourquoi}
 Rewrite the WHOLE animation with the same answer format and the same strict rules, keeping everything that was fine.
+Re-read the user's original request first: every event it describes must be in the PLAN and really visible in the animation
+(if something was missing, add it now), and nothing may happen after the duration.
 
 {code}"""
 
 
-def fiche(description, taille=(1920, 1080), duree=0.0, charte=None, transparent=False):
+def fiche(description, taille=(1920, 1080), duree=0.0, charte=None, transparent=False, moteur="hyperframes"):
     return {"genre": "libre", "description": description.strip(), "taille": list(taille), "duree": float(duree or 0),
             "charte": charte, "transparent": bool(transparent), "cadence": 30, "titre": "",
-            "libre": {"css": "", "html": "", "js": "", "message": "", "historique": []}}
+            "moteur_libre": moteur if moteur in MOTEURS_LIBRES else "hyperframes",
+            "libre": {"css": "", "html": "", "js": "", "tsx": "", "moteur": "", "message": "", "historique": []}}
+
+
+def moteur_de(anim):
+    """Le moteur pour lequel l'animation est (ou sera) écrite."""
+    m = (anim or {}).get("moteur_libre")
+    return m if m in MOTEURS_LIBRES else "hyperframes"
+
+
+def code_de(anim):
+    """Le moteur pour lequel le code présent a été écrit (« » s'il n'y a pas encore de code)."""
+    lib = (anim or {}).get("libre") or {}
+    if lib.get("tsx", "").strip() and lib.get("moteur") == "remotion":
+        return "remotion"
+    if lib.get("js", "").strip():
+        return "hyperframes"
+    return ""
+
+
+def a_jour(anim):
+    """Le code présent est écrit pour le moteur choisi (sinon il faut le faire réécrire)."""
+    return code_de(anim) == moteur_de(anim)
 
 
 def _format(L, H):
@@ -87,7 +166,8 @@ def _format(L, H):
 def consigne(anim):
     from .motion import _langue_ui
     L, H = anim.get("taille") or (1920, 1080)
-    return CONSIGNE.format(langue=_langue_ui(), L=L, H=H, format=_format(L, H), duree=f"{anim.get('duree') or 8:g}",
+    modele = CONSIGNE_REMOTION if moteur_de(anim) == "remotion" else CONSIGNE
+    return modele.format(langue=_langue_ui(), L=L, H=H, format=_format(L, H), duree=f"{anim.get('duree') or 8:g}",
                            dmax=DUREE_MAX)
 
 
@@ -98,9 +178,9 @@ def sections(texte):
     out = {}
     for i in range(1, len(morceaux) - 1, 2):
         out[morceaux[i].lower()] = morceaux[i + 1].strip("\n")
-    if not out.get("js", "").strip():
-        raise ValueError(_("L'IA n'a pas rendu d'animation lisible (section JS absente). Réessayez."))
-    for cle in ("css", "html", "js"):                 # des balises de code oubliées dans une section
+    if not (out.get("js", "").strip() or out.get("tsx", "").strip()):
+        raise ValueError(_("L'IA n'a pas rendu d'animation lisible (code absent). Réessayez."))
+    for cle in ("css", "html", "js", "tsx"):                 # des balises de code oubliées dans une section
         out[cle] = re.sub(r"^```[a-z]*\s*|\s*```$", "", out.get(cle, "").strip())
     return out
 
@@ -120,19 +200,84 @@ def verifier_code(js, html=""):
     return fautes
 
 
+def lire_plan(texte):
+    """1.1.2 : les étapes du plan de l'IA : [(début, fin, texte)] (Philippe, 21/11 20h13 : feu d'artifice et confettis absents)."""
+    out = []
+    for ligne in (texte or "").splitlines():
+        m = re.match(r"\s*[-•*]?\s*(\d+(?:[.,]\d+)?)\s*(?:s\s*)?[-–—à]\s*(\d+(?:[.,]\d+)?)\s*s?\s*[:)\-–—]?\s*(.*)", ligne)
+        if m:
+            a, b = (float(x.replace(",", ".")) for x in m.group(1, 2))
+            out.append((a, max(a, b), m.group(3).strip()))
+    return out
+
+
+def plan_texte(anim):
+    plan = ((anim or {}).get("libre") or {}).get("plan") or []
+    return "\n".join(_("{a}–{b} s : {t}", a=f"{a:g}".replace(".", ","), b=f"{b:g}".replace(".", ","), t=t) for a, b, t in plan)
+
+
+def fautes_plan(anim):
+    """Le plan qui dépasse la durée (la fin serait coupée)."""
+    plan = ((anim or {}).get("libre") or {}).get("plan") or []
+    d = float((anim or {}).get("duree") or 0)
+    if plan and d and max(b for _a, b, _t in plan) > d + 0.25:
+        coupe = [t for _a, b, t in plan if b > d + 0.25]
+        return [_("le plan dure {p} s mais l'animation {d} s : coupé à la fin ({c})", p=f"{max(b for _a, b, _t in plan):g}",
+                  d=f"{d:g}", c=" ; ".join(coupe)[:200])]
+    return []
+
+
+IMPORTS_PERMIS = ("react", "remotion", "./LibreTypes")
+
+
+def verifier_tsx(tsx):
+    """1.1.2 : les fautes qui casseraient le rendu Remotion (images rendues séparément, en parallèle) ou sortiraient du projet."""
+    fautes = []
+    regles = ((r"Math\.random", _("Math.random (remplacer par random(\"…\") de Remotion)")),
+              (r"requestAnimationFrame|setTimeout|setInterval", _("minuterie du navigateur (tout doit venir de useCurrentFrame)")),
+              (r"\buseEffect\b|\buseLayoutEffect\b", _("useEffect (le mouvement doit venir de useCurrentFrame)")),
+              (r"\bDate\.now\b|\bnew Date\b", _("l'heure du poste (le rendu doit être le même à chaque fois)")),
+              (r"https?://", _("adresse internet (rien ne doit être chargé)")),
+              (r"\bfetch\s*\(|\brequire\s*\(|\bimport\s*\(", _("chargement de code ou de données")),
+              (r"@keyframes|transition\s*:", _("animation CSS (non suivie par le rendu image par image)")))
+    for motif, quoi in regles:
+        if re.search(motif, tsx or ""):
+            fautes.append(quoi)
+    for m in re.finditer(r"""^\s*import\b[^;]*?from\s*["']([^"']+)["']""", tsx or "", flags=re.M | re.S):
+        if m.group(1) not in IMPORTS_PERMIS:
+            fautes.append(_("import de « {m} » (seuls react et remotion sont permis)", m=m.group(1)))
+    if not re.search(r"export\s+const\s+Animation\b", tsx or ""):
+        fautes.append(_("« export const Animation » absent"))
+    return fautes
+
+
+def fautes(anim):
+    """Les règles non respectées par le code présent, selon son moteur."""
+    lib = (anim or {}).get("libre") or {}
+    if code_de(anim) == "remotion":
+        return verifier_tsx(lib.get("tsx", "")) + fautes_plan(anim)
+    return verifier_code(lib.get("js", ""), lib.get("html", "")) + fautes_plan(anim)
+
+
 def appliquer(anim, s, demande=""):
     a = copy.deepcopy(anim)
     lib = a.setdefault("libre", {})
     hist = lib.get("historique") or []
-    if lib.get("js"):
-        hist = (hist + [{k: lib.get(k, "") for k in ("css", "html", "js")}])[-5:]
-    lib.update(css=s.get("css", ""), html=s.get("html", ""), js=s.get("js", ""), message=s.get("message", ""), historique=hist)
+    if code_de(a):
+        hist = (hist + [{k: lib.get(k, "") for k in ("css", "html", "js", "tsx", "moteur", "plan")}])[-5:]
+    remotion = bool(s.get("tsx", "").strip()) and moteur_de(a) == "remotion"
+    if remotion:
+        lib.update(css="", html="", js="", tsx=s.get("tsx", ""), moteur="remotion")
+    else:
+        lib.update(css=s.get("css", ""), html=s.get("html", ""), js=s.get("js", ""), tsx="", moteur="hyperframes")
+    lib.update(message=s.get("message", ""), historique=hist, plan=lire_plan(s.get("plan", "")))
     if demande:
         lib.setdefault("demandes", []).append(demande)
     try:
         d = float(re.findall(r"[\d.]+", s.get("duree", ""))[0])
         if not a.get("duree_imposee"):
-            a["duree"] = max(2.0, min(DUREE_MAX, d))
+            fin_plan = max([b for _a, b, _t in lib["plan"]] or [0.0])
+            a["duree"] = max(2.0, min(DUREE_MAX, max(d, fin_plan)))
     except (IndexError, ValueError):
         a["duree"] = a.get("duree") or 8.0
     a["titre"] = (s.get("titre") or "").strip()[:80] or a.get("titre") or _("Animation libre")
@@ -141,9 +286,13 @@ def appliquer(anim, s, demande=""):
 
 def _code(anim):
     lib = anim.get("libre") or {}
-    return "\n".join(["===TITRE===", anim.get("titre", ""), "===DUREE===", f"{anim.get('duree') or 8:g}", "===CSS===",
-                      lib.get("css", ""), "===HTML===", lib.get("html", ""), "===JS===", lib.get("js", ""), "===MESSAGE===",
-                      lib.get("message", "")])
+    tete = ["===TITRE===", anim.get("titre", ""), "===DUREE===", f"{anim.get('duree') or 8:g}", "===PLAN===",
+            "\n".join(f"{a:g}-{b:g} s: {t}" for a, b, t in (lib.get("plan") or []))]
+    if code_de(anim) == "remotion":
+        corps = ["===TSX===", lib.get("tsx", "")]
+    else:
+        corps = ["===CSS===", lib.get("css", ""), "===HTML===", lib.get("html", ""), "===JS===", lib.get("js", "")]
+    return "\n".join(tete + corps + ["===MESSAGE===", lib.get("message", "")])
 
 
 def creer(params, anim):
@@ -161,6 +310,10 @@ def corriger(params, anim, remarque="", erreur=""):
         pourquoi.append("The user asks: " + remarque.strip())
     if erreur.strip():
         pourquoi.append("The render failed or the code broke a rule, fix it: " + erreur.strip()[:1500])
+    if code_de(anim) and not a_jour(anim):            # 1.1.2 : écrite pour l'autre moteur : on la fait transposer
+        vers = "a Remotion (React) component" if moteur_de(anim) == "remotion" else "an HyperFrames composition (HTML, CSS, GSAP)"
+        pourquoi.insert(0, f"It was written for the other engine: translate it into {vers}, same look and timing, following "
+                           "the new answer format.")
     texte = CONSIGNE_CORRIGER.format(pourquoi=" ".join(pourquoi) or "Improve it.", code=_code(anim))
     t = ia.demander(params, consigne(anim), _("Ce que je voulais au départ : {d}", d=anim.get("description", "")) + "\n\n" + texte,
                     max_jetons=16000)
@@ -173,7 +326,13 @@ def revenir(anim):
     lib = a.get("libre") or {}
     if not lib.get("historique"):
         return a
-    lib.update(lib["historique"].pop())
+    v = lib["historique"].pop()
+    v.setdefault("tsx", "")
+    v["plan"] = [tuple(x) for x in (v.get("plan") or [])]
+    v.setdefault("moteur", "remotion" if v.get("tsx") else "hyperframes")
+    lib.update(v)
+    if v["moteur"] in MOTEURS_LIBRES:
+        a["moteur_libre"] = v["moteur"]
     return a
 
 

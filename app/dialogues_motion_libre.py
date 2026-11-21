@@ -1,5 +1,7 @@
-"""1.1.0 : fenêtre « Animation libre » : vous décrivez, l'IA construit la composition HyperFrames, vous regardez l'aperçu,
-vous demandez des changements, puis PhilCut la fabrique en qualité et la pose dans le film."""
+"""1.1.0 : fenêtre « Animation libre » : vous décrivez, l'IA construit la composition, vous regardez l'aperçu,
+vous demandez des changements, puis PhilCut la fabrique en qualité et la pose dans le film.
+1.1.2 : au choix, HyperFrames ou Remotion (Philippe, 21/11 20h12 : « le projet sera distribué : laisser le choix aux
+utilisateurs ») ; le plan de l'IA (une ligne par étape) est montré et vérifié contre la durée."""
 import copy
 import os
 import time
@@ -60,6 +62,24 @@ class DialogueMotionLibre(QDialog):
             if ch.get("nom") == (act or {}).get("nom"):
                 self.charte.setCurrentIndex(self.charte.count() - 1)
         f.addRow(_("Charte"), self.charte)
+        self.moteur_libre = QComboBox()
+        for k in ML.MOTEURS_LIBRES:
+            self.moteur_libre.addItem(ML.NOMS_MOTEURS[k].split(" (")[0], k)
+            self.moteur_libre.setItemData(self.moteur_libre.count() - 1, ML.NOMS_MOTEURS[k], Qt.ToolTipRole)
+        k = (anim or {}).get("moteur_libre") or self.params.get("motion_libre_moteur") or "hyperframes"
+        self.moteur_libre.setCurrentIndex(max(0, self.moteur_libre.findData(k)))
+        self.moteur_libre.currentIndexChanged.connect(self._moteur_change)
+        f.addRow(_("Ecrite pour"), self.moteur_libre)
+        self.aide_moteur = QLabel("")
+        self.aide_moteur.setWordWrap(True)
+        self.aide_moteur.setStyleSheet("color:#9aa4c0")
+        f.addRow("", self.aide_moteur)
+        self.licence = QCheckBox(_("J'ai droit à la licence gratuite de Remotion (ou j'ai une licence entreprise)"))
+        self.licence.setToolTip(_("Gratuite pour un particulier, une structure de 3 personnes au plus ou une association ; au-delà, "
+                                  "licence entreprise Remotion obligatoire (remotion.dev/license)"))
+        self.licence.setChecked(bool(self.params.get("remotion_licence")))
+        self.licence.toggled.connect(self._licence)
+        f.addRow("", self.licence)
         self.transparent = QCheckBox(_("Fond transparent : posée au-dessus du film"))
         f.addRow("", self.transparent)
         gauche.addLayout(f)
@@ -88,8 +108,9 @@ class DialogueMotionLibre(QDialog):
         hv = QHBoxLayout()
         self.b_avant = QPushButton(_("‹ Version d'avant"))
         self.b_avant.clicked.connect(self.version_avant)
-        self.b_projet = QPushButton(_("Ouvrir le projet HyperFrames"))
-        self.b_projet.setToolTip(_("Le dossier de la composition (index.html) : HyperFrames Studio ou Claude Code peuvent la retoucher"))
+        self.b_projet = QPushButton(_("Ouvrir le projet"))
+        self.b_projet.setToolTip(_("Le dossier de l'animation (HyperFrames : index.html ; Remotion : src/LibreCode.tsx) : le studio du "
+                                   "moteur ou Claude Code peuvent la retoucher"))
         self.b_projet.clicked.connect(self.ouvrir_projet)
         hv.addWidget(self.b_avant)
         hv.addWidget(self.b_projet)
@@ -114,41 +135,91 @@ class DialogueMotionLibre(QDialog):
         self.apercu = ApercuCreation(self)
         droite.addWidget(self.apercu)
         droite.addStretch(1)
-        self.b_installer = QPushButton(_("Installer HyperFrames sur ce poste (environ 200 Mo, une fois)…"))
+        self.b_installer = QPushButton("")
         self.b_installer.clicked.connect(self.installer)
         droite.addWidget(self.b_installer)
         hf = QHBoxLayout()
         self.moteur = QComboBox()
-        self.moteur.addItem(_("HyperFrames sur ce poste (gratuit)"), "hyperframes_local")
-        self.moteur.addItem(_("HyperFrames chez HeyGen (payant)"), "hyperframes_cloud")
         hf.addWidget(self.moteur, 1)
         self.b_fabriquer = QPushButton(_("Fabriquer en qualité et poser…"))
         self.b_fabriquer.clicked.connect(self.fabriquer)
         hf.addWidget(self.b_fabriquer)
         droite.addLayout(hf)
+        hb2 = QHBoxLayout()                    # 1.1.2 : Réduire toujours là ; fermer range la fenêtre, le travail est gardé
+        b_nouvelle = QPushButton(_("Nouvelle animation"))
+        b_nouvelle.setToolTip(_("Repartir d'une description vide (l'animation en cours est oubliée)"))
+        b_nouvelle.clicked.connect(self.nouvelle)
+        hb2.addWidget(b_nouvelle)
+        hb2.addStretch(1)
+        self.b_reduire = QPushButton(_("Réduire"))
+        self.b_reduire.setToolTip(_("Range la fenêtre ; la barre du bas ou Fabrique IA › Animation la rouvrent, telle quelle"))
+        self.b_reduire.clicked.connect(self.reduire)
+        hb2.addWidget(self.b_reduire)
         b_fermer = QPushButton(_("Fermer"))
+        b_fermer.setToolTip(_("Votre animation reste gardée : Fabrique IA › Animation › Animation libre la rouvre"))
         b_fermer.clicked.connect(self.close)
-        droite.addWidget(b_fermer, 0, Qt.AlignRight)
+        hb2.addWidget(b_fermer)
+        droite.addLayout(hb2)
         h.addLayout(droite, 1)
         self._erreurs = []
         self.anim = anim or None
         if anim:
             self.description.setPlainText(anim.get("description", ""))
         self.resize(1000, 700)
-        self._maj()
+        self._moteur_change()
 
     # ------------------------------------------------------------------ état
+    def moteur_choisi(self):
+        return self.moteur_libre.currentData() or "hyperframes"
+
+    def _pret_ici(self):
+        """Le moteur choisi peut rendre l'aperçu sur ce poste."""
+        from . import motion_html as MH, motion_remotion as MR
+        if self.moteur_choisi() == "remotion":
+            return MH.local_pret() and MR.pret() and bool(self.params.get("remotion_licence"))
+        return MH.local_pret()
+
+    def _licence(self, oui):
+        self.params["remotion_licence"] = bool(oui)
+        try:
+            from .reglages import enregistrer
+            enregistrer(self.params)
+        except Exception:
+            pass
+        self._maj()
+
+    def _moteur_change(self, *_a):
+        k = self.moteur_choisi()
+        self.aide_moteur.setText(ML.NOMS_MOTEURS[k])
+        self.licence.setVisible(k == "remotion")
+        self.moteur.clear()
+        if k == "remotion":
+            self.moteur.addItem(_("Remotion sur ce poste (gratuit)"), "remotion")
+        else:
+            self.moteur.addItem(_("HyperFrames sur ce poste (gratuit)"), "hyperframes_local")
+            self.moteur.addItem(_("HyperFrames chez HeyGen (payant)"), "hyperframes_cloud")
+        if self.anim and ML.code_de(self.anim) and ML.code_de(self.anim) != k:
+            self.etat.setText(_("L'animation est écrite pour {a} : « Changer » la fera réécrire pour {b} (même allure, même "
+                                "minutage).", a=ML.NOMS_MOTEURS[ML.code_de(self.anim)].split(" (")[0],
+                                b=ML.NOMS_MOTEURS[k].split(" (")[0]))
+        self._maj()
+
     def _maj(self):
-        from . import motion_html as MH
         occupe = bool(self.tache and self.tache.isRunning())
-        a_code = bool(self.anim and (self.anim.get("libre") or {}).get("js"))
-        self.b_creer.setEnabled(not occupe)
-        self.b_corriger.setEnabled(a_code and not occupe)
+        a_code = bool(self.anim and ML.code_de(self.anim))
+        a_jour = a_code and ML.code_de(self.anim) == self.moteur_choisi()
+        remotion = self.moteur_choisi() == "remotion"
+        self.b_creer.setEnabled(not occupe and (not remotion or self.licence.isChecked()))
+        self.b_corriger.setEnabled(a_code and not occupe and (not remotion or self.licence.isChecked()))
         self.b_erreurs.setEnabled(a_code and not occupe)
         self.b_avant.setEnabled(a_code and bool((self.anim.get("libre") or {}).get("historique")) and not occupe)
-        self.b_projet.setEnabled(a_code)
-        self.b_fabriquer.setEnabled(a_code and not occupe and not self._erreurs)
-        self.b_installer.setVisible(not MH.local_pret())
+        self.b_projet.setEnabled(a_jour)
+        self.b_fabriquer.setEnabled(a_jour and not occupe and not self._erreurs and (not remotion or self.licence.isChecked()))
+        manque = not self._pret_ici() and (not remotion or self.licence.isChecked())
+        self.b_installer.setText(_("Installer Remotion sur ce poste (environ 250 Mo, une fois)…") if remotion else
+                                 _("Installer HyperFrames sur ce poste (environ 200 Mo, une fois)…"))
+        self.b_installer.setVisible(manque)
+        self.b_installer.setEnabled(not occupe)
 
     def lire(self):
         a = copy.deepcopy(self.anim) if self.anim else ML.fiche(self.description.toPlainText())
@@ -156,6 +227,7 @@ class DialogueMotionLibre(QDialog):
         a["taille"] = list(self.format.currentData())
         a["charte"] = self.charte.currentData()
         a["transparent"] = self.transparent.isChecked()
+        a["moteur_libre"] = self.moteur_choisi()
         if self.duree.value() > 0:
             a["duree"], a["duree_imposee"] = float(self.duree.value()), True
         else:
@@ -194,10 +266,11 @@ class DialogueMotionLibre(QDialog):
     def _verifier_et_apercu(self, t, a):
         """Règles du rendu image par image, « hyperframes lint », puis aperçu léger : (anim, aperçu, erreurs)."""
         from . import motion_html as MH
-        lib = a.get("libre") or {}
-        fautes = ML.verifier_code(lib.get("js", ""), lib.get("html", ""))
+        fautes = ML.fautes(a)
         if fautes:
             return a, "", [_("Règle non respectée : {f}", f=x) for x in fautes]
+        if ML.code_de(a) == "remotion":
+            return self._apercu_remotion(t, a)
         if not MH.local_pret():
             return a, "", []
         t.avancer(0.55, _("Vérification de la composition (sur ce poste)…"))
@@ -215,6 +288,21 @@ class DialogueMotionLibre(QDialog):
                             lambda f, x: t.avancer(0.6 + 0.4 * f, _("Aperçu léger : {x}", x=x)), t.arret_demande)
         return a, r, []
 
+    def _apercu_remotion(self, t, a):
+        """Remotion compile le code de l'IA en rendant l'aperçu léger : une erreur de compilation ou d'exécution revient à l'IA."""
+        from . import motion_remotion as MR
+        if not self._pret_ici():
+            return a, "", []
+        t.avancer(0.55, _("Remotion compile l'animation et rend l'aperçu léger (sur ce poste, gratuit)…"))
+        sortie = os.path.join(M.dossier(), f"apercu_libre_{time.strftime('%Y%m%d_%H%M%S')}.mp4")
+        leger = ML.apercu_leger(dict(a, transparent=False))
+        try:
+            r = MR.rendre(self.params, leger, sortie,
+                          lambda f, x: t.avancer(0.55 + 0.45 * f, _("Aperçu léger : {x}", x=x)), t.arret_demande)
+        except MR.ErreurRemotion as e:
+            return a, "", [e.journal or str(e)]
+        return a, r, []
+
     def _fin_ia(self, r, e):
         if e:
             self.etat.setText(_("✕ {e}", e=texte_erreur(e)[:400]))
@@ -227,7 +315,9 @@ class DialogueMotionLibre(QDialog):
             self.duree.setValue(0)
             self.duree.blockSignals(False)
         lib = a.get("libre") or {}
-        self.message.setText(_("« {t} », {d} s — {m}", t=a.get("titre", ""), d=f"{a.get('duree', 0):g}", m=lib.get("message", "")))
+        plan = ML.plan_texte(a)
+        self.message.setText(_("« {t} », {d} s — {m}", t=a.get("titre", ""), d=f"{a.get('duree', 0):g}", m=lib.get("message", ""))
+                             + (("\n" + _("Plan :") + "\n" + plan) if plan else ""))
         if erreurs:
             self.erreurs.setText(_("La composition a {n} erreur(s) qui gâcheraient le rendu :\n{e}", n=len(erreurs),
                                    e="\n".join("• " + x[:220] for x in erreurs[:5])))
@@ -241,7 +331,9 @@ class DialogueMotionLibre(QDialog):
             self.apercu.charger(apercu, video=True)
             self.etat.setText(_("Regardez l'aperçu (léger, en petit) ; demandez des changements, ou fabriquez en qualité."))
         elif not erreurs:
-            self.etat.setText(_("Composition écrite. Pour la voir ici, installez HyperFrames sur ce poste ; ou fabriquez-la chez "
+            self.etat.setText(_("Animation écrite pour Remotion. Pour la voir ici, installez Remotion sur ce poste.")
+                              if ML.code_de(a) == "remotion" else
+                              _("Composition écrite. Pour la voir ici, installez HyperFrames sur ce poste ; ou fabriquez-la chez "
                                 "HeyGen."))
         self.credit.montrer("anthropic")
 
@@ -253,7 +345,8 @@ class DialogueMotionLibre(QDialog):
             return
         a = self.lire()
         a.pop("libre", None)
-        a = ML.fiche(a["description"], a["taille"], a.get("duree") if a.get("duree_imposee") else 0, a["charte"], a["transparent"]) \
+        a = ML.fiche(a["description"], a["taille"], a.get("duree") if a.get("duree_imposee") else 0, a["charte"], a["transparent"],
+                     a["moteur_libre"]) \
             | ({"duree_imposee": True} if a.get("duree_imposee") else {})
 
         def travail(t):
@@ -264,7 +357,8 @@ class DialogueMotionLibre(QDialog):
 
     def corriger(self, erreur=""):
         remarque = self.remarque.text().strip() if not erreur else ""
-        if not erreur and not remarque:
+        transposer = bool(self.anim and ML.code_de(self.anim) and ML.code_de(self.anim) != self.moteur_choisi())
+        if not erreur and not remarque and not transposer:
             self.etat.setText(_("Ecrivez d'abord ce qu'il faut changer."))
             return
         if not self._accord(_("L'IA va reprendre l'animation"), ML.PRIX_CORRIGER):
@@ -289,19 +383,28 @@ class DialogueMotionLibre(QDialog):
         self._lancer(lambda t: self._verifier_et_apercu(t, a), _("Animation libre : version d'avant"), self._fin_ia)
 
     def installer(self):
-        from . import packs_ia
+        from . import packs_ia, motion_remotion as MR
+        remotion = self.moteur_choisi() == "remotion"
 
         def travail(t):
             if not packs_ia.moteur_installe("motion"):
-                packs_ia.installer("motion_html", t.avancer, t.arret_demande)
+                packs_ia.installer("motion_html", (lambda f, x: t.avancer(f * (0.5 if remotion else 1), x)), t.arret_demande)
+            if remotion and not MR.pret():
+                MR.installer(self.params, lambda f, x: t.avancer(0.5 + 0.5 * f, x), t.arret_demande)
             return True
-        self._lancer(travail, _("Installation de HyperFrames"),
-                     lambda r, e: self.etat.setText("✕ " + texte_erreur(e) if e else _("✓ HyperFrames est installé.")))
+        nom = "Remotion" if remotion else "HyperFrames"
+        self._lancer(travail, _("Installation de {m}", m=nom),
+                     lambda r, e: self.etat.setText("✕ " + texte_erreur(e) if e else _("✓ {m} est installé.", m=nom)))
 
     def ouvrir_projet(self):
-        from . import motion_html as MH
+        from . import motion_html as MH, motion_remotion as MR
+        a = self.lire()
         d = os.path.join(M.dossier(), "projets", time.strftime("%Y%m%d_%H%M%S") + "_libre")
-        MH.preparer_projet(self.lire(), d, gsap_en_ligne=not MH.gsap_local())
+        if ML.code_de(a) == "remotion":
+            MR.projet_libre(a, d + "_remotion")
+            d += "_remotion"
+        else:
+            MH.preparer_projet(a, d, gsap_en_ligne=not MH.gsap_local())
         if not getattr(self, "_test_oui", False):
             from PySide6.QtCore import QUrl
             from PySide6.QtGui import QDesktopServices
@@ -333,9 +436,46 @@ class DialogueMotionLibre(QDialog):
         self._lancer(lambda t: M.fabriquer(self.params, a, sortie, k, t.avancer, t.arret_demande),
                      _("Animation libre : {m}", m=M.MOTEURS[k]["nom"]), fin)
 
+    # ------------------------------------------------------------------ fenêtre
+    def a_garder(self):
+        """Il y a un travail à ne pas perdre (description écrite ou animation construite)."""
+        try:
+            return bool(self.anim or self.description.toPlainText().strip())
+        except RuntimeError:
+            return False
+
+    def reduire(self):
+        from .widgets import reafficher
+        self.apercu.arreter() if hasattr(self.apercu, "arreter") else None
+        self.hide()
+        e = getattr(self.ed, "encart", None)
+        if e is not None and getattr(e, "tache", None) is None:
+            e.suivre_message(_("Animation libre rangée : votre travail est gardé."),
+                             (_("Afficher l'animation libre"), lambda: reafficher(self)), 20000)
+
+    def nouvelle(self):
+        if self.tache and self.tache.isRunning():
+            self.etat.setText(_("Attendez la fin du calcul en cours."))
+            return
+        if self.anim and not getattr(self, "_test_oui", False) and QMessageBox.question(
+                self, self.windowTitle(), _("Oublier l'animation en cours et repartir de zéro ?")) != QMessageBox.Yes:
+            return
+        self.anim, self._erreurs, self.apercu_fichier, self.resultat = None, [], "", ""
+        self.description.clear()
+        self.remarque.clear()
+        self.erreurs.setText("")
+        self.b_erreurs.hide()
+        self.message.setText(_("L'aperçu apparaîtra ici (rendu léger sur ce poste, gratuit)."))
+        self.apercu.arreter() if hasattr(self.apercu, "arreter") else None
+        self.etat.setText("")
+        self._maj()
+
     def done(self, r):
         from .widgets import calcul_en_cours, garder_calcul
         if garder_calcul(self, calcul_en_cours(self)):
+            return
+        if self.a_garder():                    # fermer ne perd jamais le travail (Philippe, 21/11 20h15)
+            self.reduire()
             return
         self.apercu.arreter() if hasattr(self.apercu, "arreter") else None
         super().done(r)

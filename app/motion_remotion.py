@@ -7,7 +7,7 @@ distribue pas Remotion : il l'installe depuis npm sur ce poste, après que l'uti
 Le moteur « motion » (Node portable, Chrome sans fenêtre) est celui d'HyperFrames ; le projet Remotion de PhilCut y est livré
 sans ses bibliothèques (dossier remotion/).
 """
-import json, os, re, shutil, subprocess, sys
+import json, os, re, shutil, subprocess, sys, threading
 
 from .langue import _
 from . import motion as M
@@ -16,7 +16,13 @@ LICENCE_URL = "https://www.remotion.dev/docs/license"
 
 
 class ErreurRemotion(Exception):
-    pass
+    def __init__(self, texte, journal=""):
+        super().__init__(texte)
+        self.journal = journal          # 1.1.2 : la fin de la sortie de Remotion (renvoyée à l'IA pour qu'elle corrige)
+
+
+CODE_LIBRE = "LibreCode.tsx"           # réécrit avant chaque rendu libre : jamais remplacé par la mise à jour des sources
+_UN_RENDU_LIBRE = threading.Lock()    # un seul LibreCode.tsx dans le projet : un rendu libre à la fois
 
 
 def dossier():
@@ -90,7 +96,7 @@ def mettre_a_jour_sources():
     os.makedirs(dst, exist_ok=True)
     for f in os.listdir(src):
         a, b = os.path.join(src, f), os.path.join(dst, f)
-        if not os.path.isfile(a):
+        if not os.path.isfile(a) or (f == CODE_LIBRE and os.path.exists(b)):
             continue
         with open(a, "rb") as x:
             neuf = x.read()
@@ -137,9 +143,68 @@ def preparer(anim):
     return {"A": m}
 
 
+def _polices_et_logo(anim, pub):
+    from . import charte as CH, motion_html as MH
+    ch = CH.complete(anim.get("charte"))
+    polices, logo = [], ""
+    for fam in {ch.get("police_titre") or "Poppins", ch.get("police_texte") or "Poppins", "Poppins"}:
+        for f, poids in MH.POLICES_LIVREES.get(fam, []):
+            src = os.path.join(MH._dossier_polices(), f)
+            if os.path.exists(src):
+                shutil.copy2(src, os.path.join(pub, f))
+                polices.append([fam, f, poids])
+    if ch.get("logo") and os.path.exists(ch["logo"]) and anim.get("logo") is not False:
+        logo = "logo" + os.path.splitext(ch["logo"])[1].lower()
+        shutil.copy2(ch["logo"], os.path.join(pub, logo))
+    return ch, polices, logo
+
+
+def fiche_libre(anim):
+    """1.1.2 : la fiche de la composition « Libre » (mêmes noms que pour HyperFrames : W, H, D, u, C, F…)."""
+    from . import charte as CH
+    from .motion import _langue_ui
+    ch = CH.complete(anim.get("charte"))
+    L, H = [int(x) // 2 * 2 for x in (anim.get("taille") or (1920, 1080))]
+    cad = int(anim.get("cadence") or 30)
+    return {"W": L, "H": H, "D": float(anim.get("duree") or 8), "fps": cad, "cadence": cad, "u": min(L, H) / 1080,
+            "C": ch["couleurs"], "F": {"titre": ch.get("police_titre") or "Poppins", "texte": ch.get("police_texte") or "Poppins"},
+            "TRANSPARENT": bool(anim.get("transparent")), "LANG": _langue_ui()}
+
+
+def preparer_libre(anim, racine=None):
+    """Ecrit le code de l'IA (LibreCode.tsx) dans le projet Remotion et rend la fiche (--props)."""
+    racine = racine or dossier()
+    lib = anim.get("libre") or {}
+    if not lib.get("tsx", "").strip():
+        raise ErreurRemotion(_("Cette animation n'a pas encore de code Remotion : faites-la écrire (ou réécrire) par l'IA."))
+    if racine == dossier():
+        try:
+            mettre_a_jour_sources()
+        except OSError:
+            pass
+    os.makedirs(os.path.join(racine, "src"), exist_ok=True)
+    with open(os.path.join(racine, "src", CODE_LIBRE), "w", encoding="utf-8") as f:
+        f.write(lib["tsx"])
+    pub = os.path.join(racine, "public")
+    os.makedirs(pub, exist_ok=True)
+    m = fiche_libre(anim)
+    _ch, m["polices"], logo = _polices_et_logo(anim, pub)
+    if logo:
+        m["logo"] = logo
+    return {"A": m}
+
+
+def _erreurs_utiles(lignes):
+    """Les lignes de la sortie de Remotion qui disent l'erreur (compilation, exception dans le composant)."""
+    garde = [x for x in lignes if re.search(r"error|Error|ERROR|✘|TypeError|ReferenceError|SyntaxError|is not|cannot|Cannot|"
+                                            r"Expected|Unexpected|\.tsx:\d+", x)]
+    return "\n".join((garde or lignes)[-25:])
+
+
 def commande(props, sortie, anim):
     from . import motion_html as MH
-    c = [MH.node(), cli(), "render", "src/index.ts", "PhilCut", sortie, f"--props={props}", f"--browser-executable={MH.navigateur()}",
+    compo = "Libre" if anim.get("genre") == "libre" else "PhilCut"
+    c = [MH.node(), cli(), "render", "src/index.ts", compo, sortie, f"--props={props}", f"--browser-executable={MH.navigateur()}",
          "--log=verbose" if os.environ.get("PHILCUT_DEBUG") else "--log=info"]
     if anim.get("transparent"):
         c += ["--codec=prores", "--prores-profile=4444", "--pixel-format=yuva444p10le"]
@@ -162,9 +227,18 @@ def rendre(params, anim, sortie, progression=None, arret=lambda: False):
         raise ErreurRemotion(_("Remotion : confirmez d'abord votre droit à la licence (une fois, dans la fenêtre Animation)."))
     if not pret():
         installer(params, progression, arret)
+    if anim.get("genre") == "libre":
+        with _UN_RENDU_LIBRE:
+            return _rendre(params, anim, sortie, progression, arret)
+    return _rendre(params, anim, sortie, progression, arret)
+
+
+def _rendre(params, anim, sortie, progression=None, arret=lambda: False):
+    from . import moteur, motion_html as MH
     sortie = os.path.splitext(sortie)[0] + (".mov" if anim.get("transparent") else ".mp4")
     props = os.path.join(M.dossier(), os.path.splitext(os.path.basename(sortie))[0] + ".props.json")
-    json.dump(preparer(anim), open(props, "w", encoding="utf-8"), ensure_ascii=False)
+    fiche = preparer_libre(anim) if anim.get("genre") == "libre" else preparer(anim)
+    json.dump(fiche, open(props, "w", encoding="utf-8"), ensure_ascii=False)
     env = dict(os.environ, REMOTION_DISABLE_TELEMETRY="1")
     env["PATH"] = os.path.dirname(MH.node()) + os.pathsep + os.path.dirname(moteur.ffmpeg()) + os.pathsep + env.get("PATH", "")
     progression and progression(0.02, _("Remotion prépare le rendu"))
@@ -173,7 +247,7 @@ def rendre(params, anim, sortie, progression=None, arret=lambda: False):
     fin = []
     try:
         for ligne in proc.stdout:
-            fin = (fin + [ligne.rstrip()])[-40:]
+            fin = (fin + [ligne.rstrip()])[-120:]
             if arret():
                 proc.kill()
                 raise InterruptedError()
@@ -190,5 +264,25 @@ def rendre(params, anim, sortie, progression=None, arret=lambda: False):
     if code != 0 or not os.path.exists(sortie):
         from .journal import ecrire
         ecrire("remotion", "\n".join(fin))
-        raise ErreurRemotion(_("Le rendu Remotion a échoué : {e}", e=" / ".join(x for x in fin[-3:] if x.strip())[-300:]))
+        raise ErreurRemotion(_("Le rendu Remotion a échoué : {e}", e=" / ".join(x for x in fin[-3:] if x.strip())[-300:]),
+                             _erreurs_utiles(fin))
     return sortie
+
+
+def projet_libre(anim, d):
+    """1.1.2 : un projet Remotion complet de l'animation libre (sources, code de l'IA, fiche), à ouvrir dans Remotion Studio ou
+    à retoucher dans Claude Code ; « npm install » puis « npx remotion studio »."""
+    base = os.path.dirname(sources_livrees())
+    os.makedirs(d, exist_ok=True)
+    for f in ("package.json", "tsconfig.json"):
+        if os.path.exists(os.path.join(base, f)):
+            shutil.copy2(os.path.join(base, f), os.path.join(d, f))
+    shutil.copytree(sources_livrees(), os.path.join(d, "src"), dirs_exist_ok=True)
+    fiche = preparer_libre(anim, d)
+    with open(os.path.join(d, "props.json"), "w", encoding="utf-8") as f:
+        json.dump(fiche, f, ensure_ascii=False, indent=1)
+    with open(os.path.join(d, "LISEZMOI.txt"), "w", encoding="utf-8") as f:
+        f.write(_("Animation libre de PhilCut pour Remotion.\n\nLe code de l'animation : src/LibreCode.tsx.\n"
+                  "Pour la voir et la retoucher : npm install, puis npx remotion studio --props=props.json (composition « Libre »).\n"
+                  "Licence de Remotion : {u}\n", u=LICENCE_URL))
+    return d

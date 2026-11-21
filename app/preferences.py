@@ -663,6 +663,14 @@ class DialoguePreferences(QDialog):
         bc.clicked.connect(self._charte)
         hm.addWidget(bc)
         f.addRow(_("Animations : moteur"), hm)
+        self.motion_libre_moteur = QComboBox()        # 1.1.2 : moteur des animations libres (écrites par l'IA), au choix
+        from . import motion_libre as ML_
+        for k in ML_.MOTEURS_LIBRES:
+            self.motion_libre_moteur.addItem(ML_.NOMS_MOTEURS[k], k)
+        self.motion_libre_moteur.setCurrentIndex(max(0, self.motion_libre_moteur.findData(
+            self.params.get("motion_libre_moteur") or "hyperframes")))
+        self.motion_libre_moteur.setToolTip(_("L'IA écrit l'animation pour ce moteur ; on peut en changer pour chaque animation"))
+        f.addRow(_("Animations libres : écrites pour"), self.motion_libre_moteur)
         self.remotion_licence = QCheckBox(_("J'ai droit à la licence gratuite de Remotion (ou j'ai une licence entreprise)"))
         self.remotion_licence.setToolTip(_("Gratuite pour un particulier, une structure de 3 personnes au plus ou une association ; "
                                            "au-delà, licence entreprise Remotion obligatoire"))
@@ -1240,6 +1248,7 @@ class DialoguePreferences(QDialog):
             p["assistant_realisateur"] = self.assistant_realisateur.isChecked()
         if hasattr(self, "motion_moteur"):
             p["motion_moteur"] = self.motion_moteur.currentData()
+            p["motion_libre_moteur"] = self.motion_libre_moteur.currentData()
             p["remotion_licence"] = self.remotion_licence.isChecked()
         gestion = getattr(self.fenetre, "telechargements", None)
         a_installer = [k for k, c in self.cases_ia.items() if c.isChecked() and not packs_ia.installe(k)

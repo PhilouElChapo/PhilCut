@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T109 — 1.1.2 : animation libre pour Remotion, plan de l'IA, Réduire ; recherche YouTube Music
+
+1. Animation libre, votre texte du cadeau, durée au choix de l'IA, « Ecrite pour : HyperFrames » : « Construire ». Le plan s'affiche sous le titre : le feu d'artifice et les confettis y sont-ils, avec leurs secondes ? Les voit-on dans l'aperçu ?
+2. « Ecrite pour : Remotion », cocher la case de licence, « Installer Remotion… » (une fois), puis « Construire » : aperçu ? Même question pour le feu d'artifice et les confettis.
+3. Repasser sur HyperFrames : le message dit qu'il faut la réécrire ; « Changer » (sans texte) la transpose.
+4. « Réduire » : la fenêtre se range, « Afficher l'animation libre » dans la barre du bas la rouvre telle quelle. « Fermer », puis le menu : la même fenêtre revient. « Nouvelle animation » repart de zéro.
+5. Préférences › Assistant et IA : « Animations libres : écrites pour » ; changer, rouvrir une nouvelle animation libre : le choix suit.
+6. Musique en ligne, YouTube Music : « avril lavigne seventeen » : le titre « 17 » arrive en tête ; les artistes et durées se remplissent tout seuls sur toute la liste (« en cours… » puis le nom), même après « Plus de résultats ».
+
 ## T108 — 1.1.0 : animation libre
 
 1. Fabrique IA › Animation (motion design) › « Animation libre : décrivez-la, l'IA la construit… ». Coller : « Apparaît un cadeau d'anniversaire tout petit, on part de zéro puis il grandit pour arriver à 40 ans ; en même temps un graphique fait la même chose. A 40 apparaît un feu d'artifice et une fois le feu d'artifice fini l'image part en confettis. » Format 16:9, durée au choix de l'IA.

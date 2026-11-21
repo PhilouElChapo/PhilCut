@@ -237,19 +237,25 @@ def _guides_integres():
          ]},
         {"id": "animation_libre", "etat": "ok",
          "titre": _("Créer une animation libre en la décrivant"),
-         "mots": "animation libre decrire phrase motion design hyperframes ia claude cadeau feu artifice confettis graphique compteur",
+         "mots": "animation libre decrire phrase motion design hyperframes remotion react ia claude reduire plan cadeau feu artifice confettis graphique compteur",
          "intro": _("Pour tout ce que les types tout faits ne savent pas faire : vous décrivez, l'IA écrit la composition, vous "
                     "regardez et demandez des changements."),
          "etapes": [
              {"texte": _("Fabrique IA › Animation (motion design) › « Animation libre : décrivez-la, l'IA la construit… ».")},
              {"texte": _("Décrivez comme à un graphiste : ce qui apparaît, comment ça bouge, dans quel ordre, les chiffres et les "
                          "textes exacts. Choisissez le format, la durée (ou laissez l'IA choisir), la charte.")},
+             {"texte": _("« Ecrite pour » : HyperFrames (libre, aussi rendu chez HeyGen) ou Remotion (gratuit pour un particulier, "
+                         "3 personnes au plus ou une association : cochez la case de licence). Le choix d'office se règle dans "
+                         "Préférences › Assistant et IA ; changer en cours fait réécrire l'animation par « Changer ».")},
              {"texte": _("« Construire l'animation » : le prix est demandé ; PhilCut vérifie la composition puis montre un aperçu "
-                         "léger, gratuit, rendu sur ce poste (HyperFrames installé une fois).")},
+                         "léger, gratuit, rendu sur ce poste (le moteur choisi, installé une fois). Le plan de l'IA s'affiche, "
+                         "une ligne par étape avec ses secondes : chaque étape de votre texte doit y être.")},
              {"texte": _("Ecrivez ce qu'il faut changer, « Changer » ; « Version d'avant » revient en arrière. Si PhilCut trouve "
                          "une erreur, « Faire corriger ces erreurs par l'IA ».")},
              {"texte": _("« Fabriquer en qualité et poser… » : sur ce poste (gratuit) ou chez HeyGen ; puis au-dessus du film ou à "
                          "la ligne rouge.")},
+             {"texte": _("« Réduire » ou « Fermer » rangent la fenêtre sans rien perdre : la barre du bas ou le même menu la "
+                         "rouvrent telle quelle ; « Nouvelle animation » repart de zéro.")},
          ]},
         {"id": "credits_recharges", "etat": "ok",
          "titre": _("Voir le crédit de chaque IA payante et le recharger"),

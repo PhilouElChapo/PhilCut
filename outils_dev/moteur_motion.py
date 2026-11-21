@@ -55,6 +55,19 @@ def props(fichier, genre="chiffres", L=1920, H=1080):
     return 0
 
 
+def libre_remotion(projet, fichier, L=1920, H=1080):
+    """1.1.2 : l'exemple d'animation libre écrit pour Remotion (tests/exemples) : LibreCode.tsx + fiche de la composition « Libre »."""
+    from app import motion_libre as ML, motion_remotion as MR
+    with open(os.path.join(RACINE, "tests", "exemples", "libre_anniversaire_remotion.tsx"), encoding="utf-8") as f:
+        tsx = f.read()
+    a = ML.fiche("essai", (int(L), int(H)), 9.5, moteur="remotion")
+    a = ML.appliquer(a, {"tsx": tsx, "duree": "9.5", "plan": "0-4 s: cadeau\n4.2-7 s: feu\n7-9.5 s: confettis"})
+    fiche = MR.preparer_libre(a, projet)
+    fiche["A"]["polices"] = []
+    json.dump(fiche, open(fichier, "w", encoding="utf-8"), ensure_ascii=False)
+    return 0
+
+
 def catalogue(dossier):
     from moteurs_ia import empreinte
     p = os.path.join(dossier, "moteurs-creatifs.json")
@@ -90,4 +103,5 @@ if __name__ == "__main__":
     if not a:
         print(__doc__)
         sys.exit(1)
-    sys.exit({"composition": composition, "props": props, "catalogue": catalogue}[a[0]](*a[1:]))
+    sys.exit({"composition": composition, "props": props, "catalogue": catalogue,
+              "libre_remotion": libre_remotion}[a[0]](*a[1:]))

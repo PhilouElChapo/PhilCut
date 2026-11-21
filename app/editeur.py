@@ -2876,7 +2876,8 @@ class Editeur(QWidget):
         """1.1.0 : animation décrite en phrases, écrite par l'IA (composition HyperFrames)."""
         from .dialogues_motion_libre import DialogueMotionLibre
         from .widgets import non_bloquante
-        return non_bloquante(self, "animation_libre", lambda: DialogueMotionLibre(self, anim))
+        cle = "animation_libre" if not anim else "animation_libre:" + str(anim.get("titre") or anim.get("description", ""))[:60]
+        return non_bloquante(self, cle, lambda: DialogueMotionLibre(self, anim))
 
     def ma_charte(self):
         from .dialogues_motion import DialogueCharte

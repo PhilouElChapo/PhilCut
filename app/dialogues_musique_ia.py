@@ -1220,12 +1220,9 @@ class DialogueMusiqueEnLigne(QDialog):
             self.resultats = r or []
             self.liste.clear()
             for x in self.resultats:
-                d = int(x.get("duree") or 0)
-                duree = f"{d // 60}:{d % 60:02d}" if d else ""
-                lic = (" · " + _("licence annoncée : {l}", l=x["licence"][:60])) if x.get("licence") else ""
-                details = "  ·  ".join(y for y in (x.get("artiste", ""), x.get("album", ""), x.get("annee", ""), duree) if y)
-                it = QListWidgetItem(f"{x.get('titre', '')}\n{details or _('(artiste inconnu)')}{lic}")
-                self.liste.addItem(it)
+                self.liste.addItem(QListWidgetItem(self._texte_resultat(x)))
+            if src == "ytmusic":
+                self._completer_suite()
             if self.resultats:
                 info = _("{n} résultat(s). Double-clic pour écouter.", n=len(self.resultats))
                 if src == "audionautix":
@@ -1243,6 +1240,52 @@ class DialogueMusiqueEnLigne(QDialog):
                 self.liste.setCurrentRow(ancien)
                 self.liste.scrollToItem(self.liste.item(min(self.liste.count() - 1, ancien + 1)))
         self._lancer(lambda t: ML.chercher(texte, src, n), _("Recherche"), _("Recherche « {t} »", t=texte), fin)
+
+    def _texte_resultat(self, x):
+        d = int(x.get("duree") or 0)
+        duree = f"{d // 60}:{d % 60:02d}" if d else ""
+        lic = (" · " + _("licence annoncée : {l}", l=x["licence"][:60])) if x.get("licence") else ""
+        details = "  ·  ".join(y for y in (x.get("artiste", ""), x.get("album", ""), x.get("annee", ""), duree) if y)
+        attente = _("(artiste et durée : en cours…)") if getattr(self, "_completion", None) is not None else _("(artiste inconnu)")
+        return f"{x.get('titre', '')}\n{details or attente}{lic}"
+
+    def _completer_suite(self):
+        """1.1.2 : YouTube Music ne donne que le titre dans sa liste ; les fiches (artiste, album, durée) de TOUS les résultats
+        sont lues en arrière-plan, dix par dix, et la liste se complète à mesure (avant : les 12 premiers seulement)."""
+        from .taches import Tache
+        ML = self.ML
+        manquants = [x for x in self.resultats if not x.get("artiste") or not x.get("duree")]
+        if not manquants:
+            return
+        anc = getattr(self, "_completion", None)
+        if anc is not None:
+            anc.stopper()                      # une nouvelle recherche : l'ancienne complétion s'arrête
+
+        def travail(t):
+            for k in range(0, len(manquants), 10):
+                if t.arret_demande():
+                    break
+                ML.completer(manquants[k:k + 10])
+                t.avancer((k + 10) / len(manquants), "")
+            return True
+        tache = Tache(travail, _("Fiches des morceaux")).lier(self)
+        self._completion = tache
+
+        def rafraichir(*_a):
+            try:
+                for i, x in enumerate(self.resultats[:self.liste.count()]):
+                    self.liste.item(i).setText(self._texte_resultat(x))
+            except RuntimeError:
+                pass
+
+        def fini(_r, _e):
+            if getattr(self, "_completion", None) is tache:
+                self._completion = None
+            rafraichir()
+        tache.progression.connect(rafraichir, Qt.QueuedConnection)
+        tache.fini.connect(fini, Qt.QueuedConnection)
+        tache.start()
+        rafraichir()
 
     def _choisi(self, i):
         x = self.resultats[i] if 0 <= i < len(self.resultats) else None

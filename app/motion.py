@@ -715,6 +715,8 @@ def conseiller(anim, params=None):
         if etat("hyperframes_local", params)[0] and float(reglage(anim, "lueur")) > 0.7:
             return "hyperframes_local", _("installé ici, gratuit, et le plus fin pour les lueurs et les dégradés")
         return "maison", _("vos chiffres et titres se font très bien ici : gratuit, rien à installer, aperçu immédiat")
+    if anim.get("genre") == "libre" and anim.get("moteur_libre") == "remotion":
+        return "remotion", _("animation libre écrite pour Remotion : Remotion la rend ici, gratuitement")
     if etat("hyperframes_local", params)[0]:
         return "hyperframes_local", _("animation libre écrite par l'IA : HyperFrames la rend ici, gratuitement")
     return "hyperframes_cloud", _("animation libre écrite par l'IA : sans HyperFrames installé, HeyGen la rend pour quelques centimes")
