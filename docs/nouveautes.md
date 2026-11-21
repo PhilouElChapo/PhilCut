@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.0.8 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.0.9 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.0.9 (remplacer un element : deux facons, et une relecture)
+- « Gemini trouve et remplace tout seul » (conseille, rien a tracer ; un cadre l'aide s'il le faut) ou « Je place moi-meme » (on trace ou va le nouvel element, a sa taille, et on choisit son orientation : vers la gauche, la droite, de face, de trois quarts, de profil).
+- Apres chaque essai, une relecture par l'IA compare avant, apres et la fiche de la bibliotheque : ancien element remplace, ressemblance, personnes inchangees, decor inchange, avec les defauts vus. Clic sur le resultat : avant / apres.
 
 ### 1.0.8 (brouillon de toute la sequence)
 - Brouillon Gemini Omni : chaque plan part de la derniere image du plan d'avant du brouillon (ou de l'image clef), comme dans la vraie fabrication. Avant, plusieurs plans repartaient de la photo de depart et la scene recommencait.

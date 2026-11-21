@@ -10,6 +10,26 @@ import time
 from .langue import _
 
 PRIX = 0.04          # une image Gemini (prix indicatif, noté dans « dépensé ce mois »)
+PRIX_RELECTURE = 0.01
+
+# 1.0.9 (Philippe, 21/11 08h51 : « comment être sûr que c'est un bon remplacement… prévoir les deux solutions ») :
+# « auto » : Gemini trouve lui-même ce qu'il faut remplacer (rien à tracer) ; « place » : vous tracez où va le nouvel élément
+# et choisissez son orientation. Dans les deux cas, une relecture par l'IA compare avant / après et la fiche.
+MODES = {"auto": _("Gemini trouve et remplace tout seul (rien à tracer)"),
+         "place": _("Je place moi-même : je trace où il va et je choisis son orientation")}
+ORIENTATIONS = {"fiche": (_("Comme il vient (au mieux pour la scène)"), ""),
+                "gauche": (_("Tourné vers la gauche de l'image"), "Its front/nose points to the LEFT of the frame."),
+                "droite": (_("Tourné vers la droite de l'image"), "Its front/nose points to the RIGHT of the frame."),
+                "face": (_("De face, vers la caméra"), "It faces the camera."),
+                "trois_quarts": (_("De trois quarts"), "Seen in a three-quarter view."),
+                "profil": (_("De profil"), "Seen exactly from the side.")}
+
+CONSIGNE_AUTO = (
+    "Edit the FIRST image. Find {quoi} in it and replace it with: {nom}. {description} The new element takes the same place, "
+    "at a believable size for the scene, and must look exactly like the reference image(s) that follow (same shape, "
+    "proportions, colours, markings), with the light, shadows and colours of the FIRST image. Nothing of what was removed may "
+    "remain. Keep everything else strictly identical: the people (faces, expressions, hair, clothes), their position, the "
+    "background, the framing and the image size. Photorealistic, no text, no added logo.")
 GENRES = ("objet", "personnage", "musicien", "lieu", "image")
 
 CONSIGNE = (
@@ -68,14 +88,47 @@ def aux_dimensions(octets, largeur, hauteur, sortie):
     return sortie
 
 
-def consigne(quoi, entree):
+def consigne(quoi, entree, mode="place", orientation="fiche"):
     d = (entree.get("description") or "").strip()
-    return CONSIGNE.format(quoi=f"« {quoi.strip()} »" if quoi.strip() else "the object outlined in red",
-                           nom=f"« {entree.get('nom', '')} »", description=(f"Description: {d}." if d else ""))
+    q = f"« {quoi.strip()} »" if quoi.strip() else "the object outlined in red"
+    base = CONSIGNE_AUTO if mode == "auto" else CONSIGNE
+    texte = base.format(quoi=q, nom=f"« {entree.get('nom', '')} »", description=(f"Description: {d}." if d else ""))
+    if mode != "auto":
+        texte += " The red outline also gives the place and size of the new element."
+    o = ORIENTATIONS.get(orientation, ("", ""))[1]
+    return texte + (" " + o if o else "")
 
 
-def remplacer(params, chemin, zone, quoi, entree, progression=None):
-    """Fait le remplacement ; renvoie le chemin de la nouvelle image (dossier des créations IA)."""
+CONSIGNE_RELIRE = (
+    "Tu compares deux images : la PREMIÈRE est l'originale, la DEUXIÈME a été retouchée pour y remplacer {quoi} par « {nom} », "
+    "dont la ou les images de référence suivent. Vérifie honnêtement, sans complaisance : 1) remplace : l'ancien élément a "
+    "disparu et le nouveau est là, à une taille et une perspective crédibles ; 2) ressemble : le nouvel élément ressemble à la "
+    "référence (forme, couleurs, marquages) ; 3) personnes : les personnes sont restées identiques (visages, expressions, "
+    "vêtements, position) ; 4) decor : le reste du décor, la lumière et le cadrage n'ont pas changé. Réponds en JSON : "
+    "{{\"remplace\": true/false, \"ressemble\": true/false, \"personnes\": true/false, \"decor\": true/false, "
+    "\"defauts\": \"ce qui ne va pas, en une ou deux phrases courtes, en français, vide si rien\"}}")
+
+POINTS = (("remplace", _("Ancien élément remplacé")), ("ressemble", _("Ressemble à la fiche de la bibliothèque")),
+          ("personnes", _("Personnes inchangées")), ("decor", _("Décor et lumière inchangés")))
+
+
+def verifier(params, avant, apres, quoi, entree):
+    """La relecture par l'IA (Claude ou Gemini selon les clefs) : {remplace, ressemble, personnes, decor, defauts}."""
+    from . import ia
+    r = ia.demander(params, CONSIGNE_RELIRE.format(quoi=f"« {quoi.strip()} »" if quoi.strip() else "un élément",
+                                                    nom=entree.get("nom", "")),
+                    _("Voici les images."), images=[avant, apres] + references(entree)[:1], json_attendu=True, max_jetons=600)
+    if isinstance(r, str):
+        r = ia.lire_json(r)
+    r = r if isinstance(r, dict) else {}
+    out = {k: bool(r.get(k)) for k, _l in POINTS}
+    out["defauts"] = str(r.get("defauts") or "")[:300]
+    return out
+
+
+def remplacer(params, chemin, zone, quoi, entree, progression=None, mode="place", orientation="fiche"):
+    """Fait le remplacement ; renvoie le chemin de la nouvelle image (dossier des créations IA). En mode « auto », pas de
+    cadre : Gemini trouve lui-même ce qu'il faut remplacer."""
     from PySide6.QtGui import QImage
     from . import creations, ia
     im = QImage(chemin)
@@ -84,14 +137,19 @@ def remplacer(params, chemin, zone, quoi, entree, progression=None):
     d = creations.dossier()
     base = os.path.splitext(os.path.basename(chemin))[0][:40]
     marque = time.strftime("%Y%m%d-%H%M%S")
-    zones = image_zone(chemin, zone, os.path.join(d, f"{base}_zone_{marque}.png"))
+    zones = image_zone(chemin, zone, os.path.join(d, f"{base}_zone_{marque}.png")) if zone else ""
     progression and progression(0.15, _("Gemini remplace l'élément…"))
-    octets = ia.generer_image_refs(params, consigne(quoi, entree), [chemin, zones] + references(entree))
+    texte = consigne(quoi, entree, mode if zones else "auto", orientation)
+    if mode == "auto" and zones:
+        texte += " The SECOND image is the same picture with the element to replace outlined in red (do not draw it)."
+    octets = ia.generer_image_refs(params, texte,
+                                   [chemin] + ([zones] if zones else []) + references(entree))
     progression and progression(0.9, _("Mise aux dimensions de l'image d'origine…"))
     nom = "".join(c for c in entree.get("nom", "element") if c.isalnum() or c in " -_")[:30].strip().replace(" ", "_")
     sortie = aux_dimensions(octets, im.width(), im.height(), os.path.join(d, f"{base}_avec_{nom}_{marque}.png"))
-    try:
-        os.remove(zones)
-    except OSError:
-        pass
+    if zones:
+        try:
+            os.remove(zones)
+        except OSError:
+            pass
     return sortie

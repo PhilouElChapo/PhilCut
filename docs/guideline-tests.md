@@ -23,6 +23,13 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T107 — 1.0.9 : remplacer un élément de l'image
+
+1. Clic droit sur le plan du selfie › « Remplacer un élément de l'image par un de ma bibliothèque… ». Mode « Gemini trouve et remplace tout seul », « Ce qui disparaît » : l'avion blanc de ligne Iberia ; « Ce qui le remplace » : Falcon 10 ; case d'accord ; « Remplacer ».
+2. Le résultat remplace l'image à gauche ; cliquer dessus : avant / après. Lire la relecture (✓ / ⚠ et les défauts).
+3. Mode « Je place moi-même » : tracer l'endroit et la taille du Falcon, orientation « Tourné vers la gauche de l'image », refaire ; comparer.
+4. « Poser à la place de l'image » ; Ctrl+Z revient ; reposer.
+
 ## T106 — 1.0.1 : neuf types d'animation, « Recharger… » pour chaque modèle
 
 1. Fabrique IA › Animation › « Animation de chiffres, graphiques ou titre… » : dans « Animation », choisir tour à tour Camembert, Jauge, Comparaison, Classement, Chiffres clefs, Chronologie, Liste, Citation, Appel à l'action. Pour chacun : ▶, les trois propositions, rien de coupé, rien qui se chevauche ; en 9:16 aussi.

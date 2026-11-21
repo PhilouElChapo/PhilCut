@@ -183,6 +183,8 @@ class Test1005(unittest.TestCase):
         dl = ed.remplacer_element(c)
         dl._test_oui = True
         self.assertFalse(dl.b_go.isEnabled())
+        dl.modes.button(1).setChecked(True)                       # « je place moi-même » : le cadre est demandé
+        dl.orientation.setCurrentIndex(dl.orientation.findData("gauche"))
         dl._zone([0.1, 0.1, 0.6, 0.5])
         dl.quoi.setText("la voiture")
         self.assertFalse(dl.b_go.isEnabled())              # l'accord manque
@@ -199,20 +201,25 @@ class Test1005(unittest.TestCase):
             b.open(QIODevice.WriteOnly)
             r.save(b, "PNG")
             return bytes(ba)
-        anc = ia.generer_image_refs
+        anc, anc_d = ia.generer_image_refs, ia.demander
         ia.generer_image_refs = faux
+        ia.demander = lambda *a, **k: {"remplace": True, "ressemble": True, "personnes": False, "decor": True,
+                                       "defauts": "Le visage de gauche a changé."}
         try:
             dl.lancer()
             dl.tache.wait(20000)
             for _ in range(20):
                 app.processEvents()
         finally:
-            ia.generer_image_refs = anc
+            ia.generer_image_refs, ia.demander = anc, anc_d
         self.assertTrue(dl.resultat)
+        self.assertIn("⚠ Personnes inchangées", dl.verdict.text())
+        self.assertIn("visage de gauche", dl.verdict.text())
         self.assertEqual((QImage(dl.resultat).width(), QImage(dl.resultat).height()), (640, 360))
         self.assertEqual(recu["i"][0], src)
         self.assertTrue(any(p.endswith("planche.png") for p in recu["i"][2:]))
         self.assertIn("« la voiture »", recu["c"])
+        self.assertIn("LEFT", recu["c"])
         self.assertTrue(dl.poser())
         self.assertEqual(ed.projet.media(ed.projet.clip(c["id"])["media"])["chemin"], dl.resultat)
         ed.projet.modifie = False
