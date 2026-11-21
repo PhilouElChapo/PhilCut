@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T108 — 1.1.0 : animation libre
+
+1. Fabrique IA › Animation (motion design) › « Animation libre : décrivez-la, l'IA la construit… ». Coller : « Apparaît un cadeau d'anniversaire tout petit, on part de zéro puis il grandit pour arriver à 40 ans ; en même temps un graphique fait la même chose. A 40 apparaît un feu d'artifice et une fois le feu d'artifice fini l'image part en confettis. » Format 16:9, durée au choix de l'IA.
+2. « Construire l'animation » : prix demandé ; une à deux minutes ; l'aperçu léger apparaît à droite (si HyperFrames n'est pas installé : « Installer HyperFrames… » d'abord).
+3. Le dessin est-il soigné (pas « cheap ») ? Le compteur et le graphique montent-ils ensemble ? Feu d'artifice à 40, puis confettis ?
+4. Ecrire un changement (« le cadeau plus grand, des étincelles dorées autour ») › « Changer » ; puis « Version d'avant ».
+5. « Fabriquer en qualité et poser… » (sur ce poste) : regarder, « Poser au-dessus du film ».
+6. Refaire en 9:16 avec « Fond transparent ».
+
 ## T107 — 1.0.9 : remplacer un élément de l'image
 
 1. Clic droit sur le plan du selfie › « Remplacer un élément de l'image par un de ma bibliothèque… ». Mode « Gemini trouve et remplace tout seul », « Ce qui disparaît » : l'avion blanc de ligne Iberia ; « Ce qui le remplace » : Falcon 10 ; case d'accord ; « Remplacer ».

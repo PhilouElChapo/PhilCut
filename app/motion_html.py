@@ -589,6 +589,9 @@ Object.entries(Hr.scenes).sort((a, b) => a[1][0] - b[1][0]).forEach(([nom, [a, b
 
 def composition(anim, gsap="gsap.min.js", polices=(), logo=""):
     """Le HTML de l'animation (une composition HyperFrames autonome)."""
+    if anim.get("genre") == "libre":                  # 1.1.0 : écrite par l'IA d'après une description
+        from . import motion_libre as ML
+        return ML.composition(anim, gsap, polices, logo)
     m = mise_en_page(anim)
     c = m["couleurs"]
     css_polices = "\n".join(f'@font-face {{ font-family: "{html.escape(fam)}"; src: url("{html.escape(f)}"); font-weight: {poids}; }}'
@@ -683,6 +686,22 @@ def commande(dossier, sortie, anim):
     fmt = "mov" if anim.get("transparent") else "mp4"
     return [node(), cli_hyperframes(), "render", dossier, "-o", sortie, "--format", fmt, "--fps", str(int(anim.get("cadence") or 30)),
             "--quality", "delivery" if fmt == "mp4" else "looks", "--no-wait"]
+
+
+def verifier(dossier):
+    """1.1.0 : « hyperframes lint » du projet (gratuit, sur ce poste) : liste des erreurs (texte + conseil), vide si tout va.
+    Sert surtout aux animations libres écrites par l'IA : l'erreur lui est renvoyée pour qu'elle corrige."""
+    from . import moteur
+    if not local_pret():
+        return []
+    try:
+        r = subprocess.run([node(), cli_hyperframes(), "lint", "--json", dossier], cwd=dossier, env=_env(), capture_output=True,
+                           text=True, encoding="utf-8", errors="replace", timeout=120, **moteur._sans_console())
+        d = json.loads(r.stdout[r.stdout.find("{"):])
+    except (OSError, ValueError, subprocess.TimeoutExpired):
+        return []
+    return [f"{x.get('message', '')} — {x.get('fixHint', '')} — {x.get('snippet', '')}"[:600]
+            for x in d.get("findings", []) if x.get("severity") == "error"]
 
 
 def lire_progression(ligne):

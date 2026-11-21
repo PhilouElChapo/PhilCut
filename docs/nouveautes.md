@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.0.9 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.0 (animation libre)
+- Fabrique IA › Animation › « Animation libre : decrivez-la, l'IA la construit… » : vous decrivez l'animation en phrases ; l'IA (Claude) ecrit une vraie composition HyperFrames (dessins SVG, graphiques, particules, textes, aux couleurs de votre charte).
+- PhilCut verifie la composition (regles du rendu image par image, « hyperframes lint »), montre un apercu leger rendu gratuitement sur ce poste, puis vous demandez des changements en phrases (« Version d'avant » pour revenir) ; une erreur trouvee repart a l'IA d'un clic.
+- Fabrication en qualite sur ce poste (gratuit) ou chez HeyGen, puis pose au-dessus du film ou a la ligne rouge ; « Ouvrir le projet HyperFrames » pour la retoucher dans HyperFrames Studio ou Claude Code.
 
 ### 1.0.9 (remplacer un element : deux facons, et une relecture)
 - « Gemini trouve et remplace tout seul » (conseille, rien a tracer ; un cadre l'aide s'il le faut) ou « Je place moi-meme » (on trace ou va le nouvel element, a sa taille, et on choisit son orientation : vers la gauche, la droite, de face, de trois quarts, de profil).

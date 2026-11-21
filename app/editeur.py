@@ -2872,6 +2872,12 @@ class Editeur(QWidget):
             dlg.genre.setCurrentIndex(max(0, dlg.genre.findData(genre)))
         return dlg
 
+    def animation_libre(self, anim=None):
+        """1.1.0 : animation décrite en phrases, écrite par l'IA (composition HyperFrames)."""
+        from .dialogues_motion_libre import DialogueMotionLibre
+        from .widgets import non_bloquante
+        return non_bloquante(self, "animation_libre", lambda: DialogueMotionLibre(self, anim))
+
     def ma_charte(self):
         from .dialogues_motion import DialogueCharte
         d = DialogueCharte(self, self.params)

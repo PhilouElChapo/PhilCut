@@ -235,6 +235,22 @@ def _guides_integres():
                          "HeyGen demande votre clef et affiche son prix ; Remotion demande de confirmer votre droit à sa licence.")},
              {"texte": _("« Fabriquer », regardez, puis « Poser au-dessus du film » (transparent) ou « Insérer à la ligne rouge ».")},
          ]},
+        {"id": "animation_libre", "etat": "ok",
+         "titre": _("Créer une animation libre en la décrivant"),
+         "mots": "animation libre decrire phrase motion design hyperframes ia claude cadeau feu artifice confettis graphique compteur",
+         "intro": _("Pour tout ce que les types tout faits ne savent pas faire : vous décrivez, l'IA écrit la composition, vous "
+                    "regardez et demandez des changements."),
+         "etapes": [
+             {"texte": _("Fabrique IA › Animation (motion design) › « Animation libre : décrivez-la, l'IA la construit… ».")},
+             {"texte": _("Décrivez comme à un graphiste : ce qui apparaît, comment ça bouge, dans quel ordre, les chiffres et les "
+                         "textes exacts. Choisissez le format, la durée (ou laissez l'IA choisir), la charte.")},
+             {"texte": _("« Construire l'animation » : le prix est demandé ; PhilCut vérifie la composition puis montre un aperçu "
+                         "léger, gratuit, rendu sur ce poste (HyperFrames installé une fois).")},
+             {"texte": _("Ecrivez ce qu'il faut changer, « Changer » ; « Version d'avant » revient en arrière. Si PhilCut trouve "
+                         "une erreur, « Faire corriger ces erreurs par l'IA ».")},
+             {"texte": _("« Fabriquer en qualité et poser… » : sur ce poste (gratuit) ou chez HeyGen ; puis au-dessus du film ou à "
+                         "la ligne rouge.")},
+         ]},
         {"id": "credits_recharges", "etat": "ok",
          "titre": _("Voir le crédit de chaque IA payante et le recharger"),
          "mots": "credit solde recharger recharge payer compte depense mois claude gemini fal higgsfield heygen clef modele",
