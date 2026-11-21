@@ -59,7 +59,9 @@ Règles impératives :
 - Caméra : simple et stable (recule, accompagne de côté, fixe) ; jamais de dos quand les visages doivent rester
   reconnaissables.
 - Un lieu = un décor où se passent un ou plusieurs plans (l'escalier, la rue devant l'entrée…) ; au plus 4 lieux.
-- Au plus 8 plans. Ecris nom, description, action et caméra en {langue}.
+- Chaque événement de l'histoire a son plan, dans l'ordre, jusqu'au DERNIER (un départ, un roulage, un décollage, une
+  porte qui se ferme comptent chacun) : relis l'histoire à la fin et ajoute ce qui manque. Au plus 14 plans ; s'il en faut
+  plus, regroupe deux gestes voisins, jamais en supprimant un événement. Ecris nom, description, action et caméra en {langue}.
 """
 
 CONSIGNE_MODIFIER = """Tu aides à préparer une séquence vidéo par IA. Voici son état (JSON) et une demande de l'utilisateur.
@@ -150,7 +152,7 @@ def lire_analyse(d):
             lieux.append({"nom": _texte(li.get("nom"), 40), "sur_image": bool(li.get("sur_image")), "description": _texte(li.get("description")),
                           "image_n": 2 if str(li.get("image") or "") == "2" else 1})
     plans = []
-    for pl in (d.get("plans") or [])[:10]:
+    for pl in (d.get("plans") or [])[:16]:
         if not isinstance(pl, dict) or not _texte(pl.get("action")):
             continue
         try:
@@ -329,14 +331,14 @@ def analyser(params, histoire, image=None, niveau="claude", image_fin=None):
                 "Il n'y a pas d'image de départ : tous les personnages sont inventés (sur_image = false).")
     try:
         r = lire_analyse(demander(params, CONSIGNE_ANALYSE.format(contexte=contexte, langue=_langue()),
-                                  "Histoire : " + histoire.strip(), [image] if image else [], niveau))
+                                  "Histoire : " + histoire.strip(), [image] if image else [], niveau, max_jetons=7000))
     except Exception as e:      # noqa: BLE001 : 0.9.86 : image refusée → on redemande sans l'image avant d'abandonner
         if not image or "clef" in str(e).lower() or "refusée" in str(e).lower():
             raise
         contexte = ("L'image de départ n'a pas pu être lue : déduis les personnes de l'histoire (sur_image = true pour celles "
                     "qui y sont déjà au début, position et boîte vides).")
         r = lire_analyse(demander(params, CONSIGNE_ANALYSE.format(contexte=contexte, langue=_langue()),
-                                  "Histoire : " + histoire.strip(), [], niveau))
+                                  "Histoire : " + histoire.strip(), [], niveau, max_jetons=7000))
     if not r["plans"]:
         raise ErreurAssistant(_("L'IA n'a pas proposé de plan utilisable : reformulez l'histoire, ou changez d'IA."))
     return r

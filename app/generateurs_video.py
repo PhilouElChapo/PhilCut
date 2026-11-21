@@ -232,13 +232,34 @@ def corps_reference(consigne, duree, format_, depart_url=None, fin_url=None, ele
 MINI_FAL = 512        # fal refuse une image de référence de moins de 300 px de côté : marge prise
 
 
+RAPPORT_MIN, RAPPORT_MAX = 0.4, 2.5        # rapport largeur / hauteur accepté par fal pour les images de référence
+
+
 def assez_grande(chemin, mini=MINI_FAL):
     """L'image si ses deux côtés font au moins `mini` px, sinon une copie agrandie (côté court = mini, bords nets,
     PNG à côté). 0.9.86 : les découpes de personnes partaient trop petites (« image_too_small »)."""
-    from PySide6.QtGui import QImage
+    from PySide6.QtGui import QImage, QPainter, QColor
     from PySide6.QtCore import Qt
     img = QImage(chemin)
-    if img.isNull() or min(img.width(), img.height()) >= mini:
+    if img.isNull():
+        return chemin
+    # 1.1.11 (Philippe, 22/11 00h26 : 422 « aspect ratio should be between 0.4 and 2.5 ») : une image trop allongée (planche en
+    # bandeau, découpe très étroite) est complétée par des bords gris clair jusqu'à un rapport accepté, sans rien couper
+    r = img.width() / max(1, img.height())
+    if r > RAPPORT_MAX or r < RAPPORT_MIN:
+        if r > RAPPORT_MAX:
+            L, H = img.width(), round(img.width() / (RAPPORT_MAX - 0.1))
+        else:
+            L, H = round(img.height() * (RAPPORT_MIN + 0.02)), img.height()
+        fond = QImage(L, H, QImage.Format_RGB32)
+        fond.fill(QColor(205, 205, 205))
+        pe = QPainter(fond)
+        pe.drawImage((L - img.width()) // 2, (H - img.height()) // 2, img)
+        pe.end()
+        img = fond
+        chemin = os.path.splitext(chemin)[0] + "_cadre.png"
+        img.save(chemin)
+    if min(img.width(), img.height()) >= mini:
         return chemin
     k = mini / max(1, min(img.width(), img.height()))
     grande = img.scaled(round(img.width() * k), round(img.height() * k), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)

@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.10 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.11 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.11 (atelier de creation : plans, image clef, video)
+- Fabrication : une image de reference trop allongee (rapport largeur/hauteur hors de 0,4 a 2,5) est encadree de gris avant l'envoi : fini l'erreur HTTP 422 de fal.
+- Relecture du remplacement : l'erreur « string argument without an encoding » est corrigee (toutes les images envoyees a l'IA sont converties).
+- Les plans suivent le texte jusqu'au dernier evenement (roulage, decollage…), jusqu'a 14 plans.
+- Cocher « Image clef » ne fait plus planter PhilCut, et un message dit comment la creer (« Creer… », environ 0,04 $) ou la prendre a la ligne rouge (gratuit).
+- Un personnage nomme dans le texte (ex. « Pilote Maxime ») est repris directement de la bibliotheque.
 
 ### 1.1.10 (bibliotheque)
 - Les boutons des photos (« Ajouter des photos… », « Decrire d'apres les photos… », « Image d'un rush… ») sont sur leur propre rangee : ils ne sortent plus de la fenetre.

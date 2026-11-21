@@ -9283,5 +9283,6 @@
  "Pas de plan à vérifier : faites d'abord construire l'animation.": "No plan to check: have the animation built first.",
  "L'IA écrit l'animation ; l'aperçu de cette nouvelle animation apparaîtra ici.": "The AI is writing the animation; the preview of this new animation will appear here.",
  "✓ Fiche faite : c'est elle que les moteurs vidéo reçoivent pour garder le même visage (ou le même objet) d'un plan à l'autre.": "✓ Sheet made: this is what the video engines receive to keep the same face (or the same object) from one shot to the next.",
- "Pas encore de fiche : « Faire sa fiche (Gemini)… » en bas (face, trois quarts, profil, en pied).": "No sheet yet: “Make its sheet (Gemini)…” at the bottom (front, three-quarter, profile, full length)."
+ "Pas encore de fiche : « Faire sa fiche (Gemini)… » en bas (face, trois quarts, profil, en pied).": "No sheet yet: “Make its sheet (Gemini)…” at the bottom (front, three-quarter, profile, full length).",
+ "Image clef du plan {n} : « Créer… » la dessine avec vos fiches (Gemini, environ 0,04 $), ou « Image de la ligne rouge » prend une vraie image du montage (gratuit).": "Key image of shot {n}: “Create…” draws it with your sheets (Gemini, about 0.04 $), or “Red line image” takes a real image from the edit (free)."
 }

@@ -560,8 +560,18 @@ def retoucher_image(params, png, consigne, zones_png=None, delai=240):
     raise derniere or ErreurIA(_("Aucun modèle Gemini d'image disponible avec cette clef."))
 
 
+def _octets_image(i):
+    if isinstance(i, (bytes, bytearray)):
+        return bytes(i)
+    from .assistant_creation import _jpeg
+    return _jpeg(str(i))
+
+
 def demander(params, consignes, texte, images=None, json_attendu=False, max_jetons=4000):
-    """Texte (ou objet JSON si json_attendu) renvoye par le premier moteur qui repond."""
+    """Texte (ou objet JSON si json_attendu) renvoye par le premier moteur qui repond. Images : octets, ou chemins de
+    fichiers (1.1.11 : lus et réduits en JPEG ici ; un chemin passé tel quel faisait « string argument without an encoding »)."""
+    if images:
+        images = [_octets_image(i) for i in images if i]
     ms = moteurs(params)
     if not ms:
         raise ErreurIA(_("Aucune clef d'IA : renseignez votre clef Claude ou Gemini dans Edition › Préférences › IA."))

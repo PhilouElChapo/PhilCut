@@ -9274,5 +9274,6 @@
  "Pas de plan à vérifier : faites d'abord construire l'animation.": "Kein Plan zu prüfen: lassen Sie zuerst die Animation erstellen.",
  "L'IA écrit l'animation ; l'aperçu de cette nouvelle animation apparaîtra ici.": "Die KI schreibt die Animation; die Vorschau dieser neuen Animation erscheint hier.",
  "✓ Fiche faite : c'est elle que les moteurs vidéo reçoivent pour garder le même visage (ou le même objet) d'un plan à l'autre.": "✓ Blatt erstellt: das erhalten die Video-Engines, um von einer Einstellung zur nächsten dasselbe Gesicht (oder Objekt) zu behalten.",
- "Pas encore de fiche : « Faire sa fiche (Gemini)… » en bas (face, trois quarts, profil, en pied).": "Noch kein Blatt: „Sein Blatt erstellen (Gemini)…“ unten (vorne, Dreiviertel, Profil, ganze Figur)."
+ "Pas encore de fiche : « Faire sa fiche (Gemini)… » en bas (face, trois quarts, profil, en pied).": "Noch kein Blatt: „Sein Blatt erstellen (Gemini)…“ unten (vorne, Dreiviertel, Profil, ganze Figur).",
+ "Image clef du plan {n} : « Créer… » la dessine avec vos fiches (Gemini, environ 0,04 $), ou « Image de la ligne rouge » prend une vraie image du montage (gratuit).": "Schlüsselbild von Einstellung {n}: „Erstellen…“ zeichnet es mit Ihren Blättern (Gemini, etwa 0,04 $), oder „Bild der roten Linie“ nimmt ein echtes Bild aus dem Schnitt (kostenlos)."
 }

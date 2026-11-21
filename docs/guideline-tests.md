@@ -23,6 +23,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T116 — 1.1.11 : plans complets, image clef, référence acceptée
+
+1. Ecrivez dans l'atelier un texte avec un départ, un roulage et un décollage ; « Analyser » : chaque événement a son plan.
+2. Nommez un personnage de la bibliothèque (ex. « Pilote Maxime ») : il est coché tout de suite.
+3. Cochez « Image clef » sur un plan : pas de plantage, un message explique « Créer… » ou « Image de la ligne rouge ».
+4. Utilisez une photo panoramique comme référence puis « Fabriquer » : plus d'erreur 422.
+5. Outil « Remplacer » puis relecture : plus d'erreur « string argument without an encoding ».
+
 ## T115 — 1.1.9 : aperçu juste
 
 1. Animation libre, votre description du cadeau, « Construire » : dans l'aperçu, le cadeau est au centre, le compteur au-dessus, les deux textes ne se chevauchent pas, rien ne sort du cadre.

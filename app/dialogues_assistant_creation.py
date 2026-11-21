@@ -1194,14 +1194,17 @@ class DialogueAssistant(QDialog):
         pris = []
         for c in self.cartes:
             e = c.e
-            if e.get("source") == "bibliotheque" or e.get("source") in ("image", "photo") and e.get("decoupe"):
+            if e.get("source") == "bibliotheque":
                 continue
+            # 1.1.11 (Philippe, 22/11 00h26 : « Pilote Maxime » pas repris : l'IA l'avait cru sur l'image, un agent de piste
+            # découpé) : le nom exact d'une entrée de la bibliothèque l'emporte sur une découpe de l'image
+            decoupe = e.get("source") in ("image", "photo") and e.get("decoupe")
             entrees = B.lister(self.params, B.CARTES_POUR.get(e.get("type"), ()))
             n = net(e.get("nom"))
             if not n:
                 continue
-            x = next((y for y in entrees if net(y["nom"]) == n), None) or \
-                next((y for y in entrees if len(net(y["nom"])) > 3 and (net(y["nom"]) in n or n in net(y["nom"]))), None)
+            x = next((y for y in entrees if net(y["nom"]) == n), None) or (None if decoupe else
+                next((y for y in entrees if len(net(y["nom"])) > 3 and (net(y["nom"]) in n or n in net(y["nom"]))), None))
             if x is None:
                 continue
             B.vers_carte(x, e)
@@ -1636,7 +1639,8 @@ class DialogueAssistant(QDialog):
                 case.setChecked(not pl.get("sans_fin"))
                 case.setToolTip(_("Cochée : la vidéo doit arriver sur cette image (lieu, personnes, état de la scène). "
                                   "Décochée : le moteur enchaîne librement les gestes (souvent plus naturel)."))
-                case.toggled.connect(lambda on, i=i: self._basculer_clef(i, on))
+                # 1.1.11 : après le signal (la page est refaite : refaire la case pendant son propre signal plantait PhilCut)
+                case.toggled.connect(lambda on, i=i: QTimer.singleShot(0, lambda: self._basculer_clef(i, on)))
                 bloc.addWidget(case)
                 if pl.get("clef_pourquoi") and not pl.get("sans_fin"):
                     bloc.addWidget(self._aide(_("Pourquoi : {p}", p=pl["clef_pourquoi"])))
@@ -1677,6 +1681,9 @@ class DialogueAssistant(QDialog):
         if i + 1 < len(self.seq["plans"]):
             self.seq["plans"][i + 1]["fichier"] = ""
         self._remplir_images((i, "arrivee"))
+        if on:
+            self.etat.setText(_("Image clef du plan {n} : « Créer… » la dessine avec vos fiches (Gemini, environ 0,04 $), ou « Image "
+                                "de la ligne rouge » prend une vraie image du montage (gratuit).", n=i + 1))
 
     def clef_ligne_rouge(self, i):
         """L'image affichée à la ligne rouge devient l'image clef du plan i (0.9.87 : des éléments du réel)."""
