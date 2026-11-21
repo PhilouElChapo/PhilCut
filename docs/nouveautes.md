@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.9 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.10 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.10 (bibliotheque)
+- Les boutons des photos (« Ajouter des photos… », « Decrire d'apres les photos… », « Image d'un rush… ») sont sur leur propre rangee : ils ne sortent plus de la fenetre.
+- La fiche faite par Gemini reste en grand en haut de l'entree, meme si une photo est choisie comme vignette ; une ligne dit si la fiche est faite.
+- Quand Gemini ne dessine pas une fiche d'apres des photos, le message conseille « Decrire d'apres les photos » puis « Invente ».
 
 ### 1.1.9 (apercu de l'animation libre)
 - L'apercu leger etait faux : rendu en demi-taille, il decalait tout ce que l'IA place en pixels (cadeau en bas a droite, textes qui se chevauchent). Il garde maintenant la vraie mise en page, seule l'image est reduite (HyperFrames et Remotion).

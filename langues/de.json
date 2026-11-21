@@ -9272,5 +9272,7 @@
  "Ces étapes ne se voient pas dans l'aperçu :": "Diese Schritte sind in der Vorschau nicht zu sehen:",
  "ne se voit pas": "nicht zu sehen",
  "Pas de plan à vérifier : faites d'abord construire l'animation.": "Kein Plan zu prüfen: lassen Sie zuerst die Animation erstellen.",
- "L'IA écrit l'animation ; l'aperçu de cette nouvelle animation apparaîtra ici.": "Die KI schreibt die Animation; die Vorschau dieser neuen Animation erscheint hier."
+ "L'IA écrit l'animation ; l'aperçu de cette nouvelle animation apparaîtra ici.": "Die KI schreibt die Animation; die Vorschau dieser neuen Animation erscheint hier.",
+ "✓ Fiche faite : c'est elle que les moteurs vidéo reçoivent pour garder le même visage (ou le même objet) d'un plan à l'autre.": "✓ Blatt erstellt: das erhalten die Video-Engines, um von einer Einstellung zur nächsten dasselbe Gesicht (oder Objekt) zu behalten.",
+ "Pas encore de fiche : « Faire sa fiche (Gemini)… » en bas (face, trois quarts, profil, en pied).": "Noch kein Blatt: „Sein Blatt erstellen (Gemini)…“ unten (vorne, Dreiviertel, Profil, ganze Figur)."
 }

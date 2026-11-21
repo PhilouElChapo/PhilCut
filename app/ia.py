@@ -466,7 +466,7 @@ def pas_d_image(d):
         msg += " " + clair + "."
     if dit:
         msg += " " + _("Sa réponse : « {t} »", t=dit)
-    if not clair and not dit:
+    if (not clair and not dit) or set(raisons) & {"IMAGE_OTHER", "NO_IMAGE", "OTHER", "IMAGE_SAFETY"}:
         msg += " " + _("Réessayez ; si cela recommence avec des photos, c'est souvent la ressemblance avec une personne réelle qui "
                        "bloque : essayez « Inventé » avec une description.")
     return msg

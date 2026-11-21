@@ -9272,5 +9272,7 @@
  "Ces étapes ne se voient pas dans l'aperçu :": "Queste tappe non si vedono nell'anteprima:",
  "ne se voit pas": "non si vede",
  "Pas de plan à vérifier : faites d'abord construire l'animation.": "Nessun piano da verificare: fate prima costruire l'animazione.",
- "L'IA écrit l'animation ; l'aperçu de cette nouvelle animation apparaîtra ici.": "L'IA sta scrivendo l'animazione; l'anteprima di questa nuova animazione apparirà qui."
+ "L'IA écrit l'animation ; l'aperçu de cette nouvelle animation apparaîtra ici.": "L'IA sta scrivendo l'animazione; l'anteprima di questa nuova animazione apparirà qui.",
+ "✓ Fiche faite : c'est elle que les moteurs vidéo reçoivent pour garder le même visage (ou le même objet) d'un plan à l'autre.": "✓ Scheda fatta: è ciò che ricevono i motori video per mantenere lo stesso volto (o lo stesso oggetto) da un'inquadratura all'altra.",
+ "Pas encore de fiche : « Faire sa fiche (Gemini)… » en bas (face, trois quarts, profil, en pied).": "Ancora nessuna scheda: «Fai la sua scheda (Gemini)…» in basso (fronte, tre quarti, profilo, figura intera)."
 }

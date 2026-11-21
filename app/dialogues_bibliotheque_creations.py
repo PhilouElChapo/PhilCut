@@ -151,11 +151,17 @@ class DialogueBibliothequeCreations(QDialog):
         d = e.get("donnees") or {}
         lb = QLabel(f"<b>{B.GENRES[e['genre']][0]}</b> — " + _("créé le {c}", c=e.get("cree", "")))
         self.v_detail.addWidget(lb)
-        ap = B.apercu(e)
+        planche = (e.get("fichiers") or {}).get("planche")
+        ap = planche or B.apercu(e)              # 1.1.10 : la fiche reste en grand ; la vignette ne sert qu'à la liste
         if ap:
             im = QLabel()
             im.setPixmap(QPixmap(ap).scaled(420, 220, Qt.KeepAspectRatio, Qt.SmoothTransformation))
             self.v_detail.addWidget(im)
+        if e["genre"] in ("personnage", "musicien", "objet"):
+            self.v_detail.addWidget(aide(_("✓ Fiche faite : c'est elle que les moteurs vidéo reçoivent pour garder le même visage (ou "
+                                           "le même objet) d'un plan à l'autre.") if planche else
+                                         _("Pas encore de fiche : « Faire sa fiche (Gemini)… » en bas (face, trois quarts, profil, "
+                                           "en pied).")))
         h = QHBoxLayout()
         h.addWidget(QLabel(_("Nom")))
         self.nom = QLineEdit(e["nom"])
@@ -377,6 +383,9 @@ class DialogueBibliothequeCreations(QDialog):
             bx.clicked.connect(lambda _c=False, r=role: self.retirer_photo(r))
             col.addWidget(bx, 0, Qt.AlignHCenter)
             h.addLayout(col)
+        h.addStretch(1)
+        self.v_detail.addLayout(h)
+        h = QHBoxLayout()                      # 1.1.9 : les boutons sur leur propre rangée (ils sortaient de la fenêtre)
         b = QPushButton(_("Ajouter des photos…"))
         b.clicked.connect(self.ajouter_photos)
         h.addWidget(b)
