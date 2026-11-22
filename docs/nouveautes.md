@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.16 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.17 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.17
+- Animation simple : la taille des images est lue aussi sans Qt (outils de verification du moteur d'animation).
 
 ### 1.1.16 (motion design : look pro et animation simple avec images)
 - Fabrique IA › Animation : deux entrees. « Motion design IA (look pro) » et « Animation simple » (les types tout faits).

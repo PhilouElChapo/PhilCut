@@ -659,9 +659,32 @@ MAX_IMAGES = 2
 
 
 def _taille_image(chemin):
-    from PySide6.QtGui import QImageReader
-    s = QImageReader(chemin).size()
-    return (s.width(), s.height()) if s.isValid() and s.width() > 0 else (1, 1)
+    """(largeur, hauteur) d'une image : par Qt, sinon en lisant l'en-tête PNG ou JPEG (outils sans Qt)."""
+    try:
+        from PySide6.QtGui import QImageReader
+        s = QImageReader(chemin).size()
+        if s.isValid() and s.width() > 0:
+            return s.width(), s.height()
+    except ImportError:
+        pass
+    import struct
+    try:
+        with open(chemin, "rb") as f:
+            d = f.read(65536)
+        if d[:8] == b"\x89PNG\r\n\x1a\n":
+            return struct.unpack(">II", d[16:24])
+        i = 2
+        while d[:2] == b"\xff\xd8" and i + 9 < len(d):
+            if d[i] != 0xFF:
+                break
+            m, n = d[i + 1], struct.unpack(">H", d[i + 2:i + 4])[0]
+            if m in (0xC0, 0xC1, 0xC2):
+                h, w = struct.unpack(">HH", d[i + 5:i + 9])
+                return w, h
+            i += 2 + n
+    except (OSError, struct.error):
+        pass
+    return 1, 1
 
 
 def calques_images(anim):
