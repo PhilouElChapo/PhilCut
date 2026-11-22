@@ -282,6 +282,11 @@ class DialogueAssistant(QDialog):
         self.c_realisateur.setChecked(bool(self.params.get("assistant_realisateur", A.REALISATEUR_DEFAUT)))
         self.c_realisateur.toggled.connect(lambda x: self.params.__setitem__("assistant_realisateur", bool(x)))
         v.addWidget(self.c_realisateur)
+        b = QPushButton(_("Reprendre une création en cours…"))          # 1.1.13 : après une erreur ou une fermeture
+        b.setToolTip(_("Les vidéos préparées sur ce poste : fiches, images clefs et plans déjà faits sont repris, rien n'est "
+                       "refait ni payé deux fois"))
+        b.clicked.connect(self.reprendre_en_cours)
+        v.addWidget(b)
         self.l_manques = QLabel("")
         self.l_manques.setWordWrap(True)
         self.l_manques.setStyleSheet("color:#c98a00")
@@ -3171,6 +3176,34 @@ class DialogueAssistant(QDialog):
         p = self.ed.projet
         p.d["sequences_ia"] = [s for s in p.d.get("sequences_ia") or [] if s.get("cree") != self.seq.get("cree")] + [copy.deepcopy(self.seq)]
         Q.enregistrer(self.seq)
+
+    def reprendre_en_cours(self):
+        from PySide6.QtWidgets import QInputDialog
+        liste = Q.en_cours()
+        if not liste:
+            self.etat.setText(_("Aucune création de l'assistant gardée sur ce poste."))
+            return
+        noms = [Q.resume_en_cours(s) for _c, s in liste]
+        essai = getattr(self, "_test_reprendre", None)
+        if essai is not None:
+            nom, ok = noms[essai], True
+        else:
+            nom, ok = QInputDialog.getItem(self, _("Reprendre une création en cours"), _("Création :"), noms, 0, False)
+        if not ok:
+            return
+        seq = liste[noms.index(nom)][1]
+        self._realisateur_pause = True                  # on reprend : rien ne repart tout seul
+        self.reprendre_sequence(seq)
+        faits = [p for p in self.seq["plans"] if p.get("fichier") and os.path.exists(p["fichier"])]
+        images = any(p.get("image_fin") and os.path.exists(p["image_fin"]) for p in self.seq["plans"])
+        if faits:
+            self._remplir_video()
+            self.aller(P_VIDEO)
+        elif images:
+            self._remplir_images()
+            self.aller(P_IMAGES)
+        self.etat.setText(_("Création reprise : {n} plan(s) déjà fait(s) gardé(s) ; « Fabriquer les plans qui restent » continue.",
+                            n=len(faits)))
 
     def reprendre_sequence(self, seq):
         """Retour du réglage manuel : la séquence réglée à la main reprend sa place dans l'assistant."""

@@ -282,6 +282,8 @@ def generer_reference(cle, m, consigne, sortie, duree=5, format_="16:9", image=N
         urls = [televerser(cle, assez_grande(i)) for i in images[:4]]
         elements.append({"nom": nom, "frontal_image_url": urls[0], "reference_image_urls": urls[1:]})
     depart = televerser(cle, assez_grande(image)) if image and os.path.exists(image) else None
+    if multi and len(multi) > 1:
+        image_fin = None                  # fal refuse « End Image Url » avec plusieurs consignes (le plan clef se fait seul)
     fin = televerser(cle, assez_grande(image_fin)) if image_fin and os.path.exists(image_fin) else None
     corps = corps_reference(consigne, duree, format_, depart, fin, elements, m, son, multi)
     return attendre_fal(cle, m["modele"], corps, sortie, progression, arret)

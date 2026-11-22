@@ -337,6 +337,35 @@ def dossier(seq):
     return d
 
 
+def en_cours(limite=12):
+    """1.1.13 : les créations de l'assistant gardées sur ce poste (plus récente d'abord) : [(chemin, séquence)]. Après un arrêt
+    (erreur, fermeture, mise à jour), on les reprend là où elles en étaient : fiches, images clefs et plans faits compris."""
+    from .config import dossier_donnees
+    racine = os.path.join(dossier_donnees(), "sequences")
+    out = []
+    if not os.path.isdir(racine):
+        return out
+    for nom in sorted(os.listdir(racine), reverse=True):
+        ch = os.path.join(racine, nom, "sequence.json")
+        try:
+            with open(ch, encoding="utf-8") as f:
+                seq = json.load(f)
+        except (OSError, ValueError):
+            continue
+        if isinstance(seq, dict) and seq.get("assistant") and seq.get("plans"):
+            out.append((ch, seq))
+        if len(out) >= limite:
+            break
+    return out
+
+
+def resume_en_cours(seq):
+    faits = sum(1 for p in seq.get("plans", []) if p.get("fichier") and os.path.exists(p["fichier"]))
+    t = time.strftime("%d/%m %H:%M", time.localtime(seq.get("cree") or 0))
+    h = " ".join((seq.get("histoire") or "").split())
+    return _("{t} · {h} · {n} plans, {f} faits", t=t, h=(h[:70] + "…") if len(h) > 70 else h, n=len(seq["plans"]), f=faits)
+
+
 def enregistrer(seq):
     chemin = os.path.join(dossier(seq), "sequence.json")
     with open(chemin, "w", encoding="utf-8") as f:
@@ -706,7 +735,10 @@ def _depart_fixe(pl):
 
 def groupe_continu(seq, i, a_faire, moteur_video, params):
     """Les plans faits d'un seul calcul à partir du plan i : ceux qui suivent, enchaînés, à faire, sans image de départ à
-    eux, jusqu'à la prochaine image clef (incluse), 15 s et 6 plans au plus. Un seul plan si ce n'est pas possible."""
+    eux, jusqu'à la prochaine image clef (exclue), 15 s et 6 plans au plus. Un seul plan si ce n'est pas possible.
+    1.1.13 (Philippe, 22/11 20h56 : fal 422 « End Image Url is not supported with Multi Prompt ») : Kling O3 refuse une image
+    d'arrivée avec plusieurs consignes ; un plan qui a une image clef (ou une fin réelle) est donc toujours fait seul, il part
+    de la vraie dernière image du groupe d'avant et arrive sur son image clef."""
     groupe = [i]
     if not continu_possible(seq, moteur_video, params):
         return groupe
@@ -720,10 +752,10 @@ def groupe_continu(seq, i, a_faire, moteur_video, params):
         d = int(pl.get("duree") or DUREE_PLAN)
         if not pl.get("enchainer", True) or _depart_fixe(pl) or total + d > MAX_CONTINU:
             break
+        if pl.get("clef") or pl.get("fin_reelle"):
+            break                                    # une image clef ferme le moment : ce plan sera fait seul
         groupe.append(k)
         total += d
-        if pl.get("clef") or pl.get("fin_reelle"):
-            break                                    # une image clef ferme le moment
         k += 1
     return groupe
 

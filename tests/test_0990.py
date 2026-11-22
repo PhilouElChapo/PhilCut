@@ -46,7 +46,7 @@ class TestGroupes(unittest.TestCase):
         from app import sequence_ia as Q
         seq = sequence([4, 4, 4, 4, 4], clefs=[2])
         g = Q.groupes_continus(seq, range(5), "kling-o3-ref", {})
-        self.assertEqual(g, [[0, 1, 2], [3, 4]])
+        self.assertEqual(g, [[0, 1], [2], [3, 4]])          # 1.1.13 : le plan clef est fait seul (fal 422)
 
     def test_quinze_secondes_au_plus(self):
         from app import sequence_ia as Q
@@ -141,13 +141,13 @@ class TestAssistant(unittest.TestCase):
             dl.fabriquer()
             self.assertTrue(attendre(lambda: not dl.file and not dl._en_calcul() and dl._plan_en_cours == -1
                                      and all(p.get("fichier") for p in dl.seq["plans"])))
-            self.assertEqual(appels, [[0, 1], [2, 3]])
-            self.assertIn("⛓", dl._texte_plan(0))
+            self.assertEqual(appels, [[0], [1], [2, 3]])        # 1.1.13 : le plan clef est fait seul
+            self.assertIn("⛓", dl._texte_plan(2))
             self.assertNotIn("⛓", dl._texte_plan(1))
             dl.l_plans.setCurrentRow(2)
             dl._test_precision = ""
             dl.refaire_plan()                                 # le plan 3 et le 4, du même calcul
-            self.assertTrue(attendre(lambda: len(appels) == 3 and not dl._en_calcul()))
+            self.assertTrue(attendre(lambda: len(appels) == 4 and not dl._en_calcul()))
             self.assertEqual(appels[-1], [2, 3])
         finally:
             Q.fabriquer_groupe, A.verifier = anc, anc_v

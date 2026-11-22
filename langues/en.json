@@ -9339,5 +9339,12 @@
  "Demander à l'aide (discussion avec l'IA)…": "Ask for help (conversation with the AI)…",
  "Posez votre question en clair : l'aide connaît les menus et les guides de PhilCut, voit l'écran si vous le voulez, et vous montre où cliquer": "Ask your question plainly: the help knows PhilCut's menus and guides, sees the screen if you want, and shows you where to click",
  "Aide par discussion : répondre avec": "Help by conversation: answer with",
- "Joindre d'office la capture de PhilCut à chaque question": "Attach the PhilCut screenshot to every question by default"
+ "Joindre d'office la capture de PhilCut à chaque question": "Attach the PhilCut screenshot to every question by default",
+ "Reprendre une création en cours…": "Resume a creation in progress…",
+ "Les vidéos préparées sur ce poste : fiches, images clefs et plans déjà faits sont repris, rien n'est refait ni payé deux fois": "The videos prepared on this computer: sheets, key images and shots already made are taken back, nothing is redone or paid twice",
+ "Création reprise : {n} plan(s) déjà fait(s) gardé(s) ; « Fabriquer les plans qui restent » continue.": "Creation resumed: {n} shot(s) already made kept; “Make the remaining shots” continues.",
+ "Aucune création de l'assistant gardée sur ce poste.": "No assistant creation kept on this computer.",
+ "Reprendre une création en cours": "Resume a creation in progress",
+ "Création :": "Creation:",
+ "{t} · {h} · {n} plans, {f} faits": "{t} · {h} · {n} shots, {f} made"
 }

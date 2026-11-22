@@ -9330,5 +9330,12 @@
  "Demander à l'aide (discussion avec l'IA)…": "Hilfe fragen (Gespräch mit der KI)…",
  "Posez votre question en clair : l'aide connaît les menus et les guides de PhilCut, voit l'écran si vous le voulez, et vous montre où cliquer": "Stellen Sie Ihre Frage einfach: Die Hilfe kennt die Menüs und Anleitungen von PhilCut, sieht auf Wunsch den Bildschirm und zeigt Ihnen, wo Sie klicken müssen",
  "Aide par discussion : répondre avec": "Hilfe im Gespräch: antworten mit",
- "Joindre d'office la capture de PhilCut à chaque question": "Das Bildschirmfoto von PhilCut standardmäßig jeder Frage anhängen"
+ "Joindre d'office la capture de PhilCut à chaque question": "Das Bildschirmfoto von PhilCut standardmäßig jeder Frage anhängen",
+ "Reprendre une création en cours…": "Eine laufende Kreation fortsetzen…",
+ "Les vidéos préparées sur ce poste : fiches, images clefs et plans déjà faits sont repris, rien n'est refait ni payé deux fois": "Die auf diesem Rechner vorbereiteten Videos: Blätter, Schlüsselbilder und bereits erstellte Einstellungen werden übernommen, nichts wird neu gemacht oder doppelt bezahlt",
+ "Création reprise : {n} plan(s) déjà fait(s) gardé(s) ; « Fabriquer les plans qui restent » continue.": "Kreation fortgesetzt: {n} bereits erstellte Einstellung(en) behalten; „Die übrigen Einstellungen erstellen“ macht weiter.",
+ "Aucune création de l'assistant gardée sur ce poste.": "Keine Assistenten-Kreation auf diesem Rechner gespeichert.",
+ "Reprendre une création en cours": "Eine laufende Kreation fortsetzen",
+ "Création :": "Kreation:",
+ "{t} · {h} · {n} plans, {f} faits": "{t} · {h} · {n} Einstellungen, {f} erstellt"
 }

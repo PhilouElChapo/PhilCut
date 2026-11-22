@@ -23,6 +23,12 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T118 — 1.1.13 : reprise et plans clefs
+
+1. Assistant › page 1 › « Reprendre une création en cours… » : choisissez le tarmac ; vous arrivez sur les images (ou la vidéo si des plans sont faits).
+2. « Tout me va : fabriquer la vidéo » : plus d'erreur 422 ; les plans avec image clef sont fabriqués seuls, les autres par moments enchaînés (⛓).
+3. Fermez PhilCut au milieu, rouvrez, reprenez : les plans déjà faits restent, seuls les manquants sont fabriqués.
+
 ## T117 — 1.1.12 : aide par discussion, groupe entier
 
 1. Aide › « Demander à l'aide (discussion avec l'IA)… » ; un projet ouvert avec la photo du tarmac, posez : « Comment rallonger ce plan à partir de la photo ? ».

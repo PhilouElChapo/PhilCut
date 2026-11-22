@@ -9330,5 +9330,12 @@
  "Demander à l'aide (discussion avec l'IA)…": "Chiedere aiuto (conversazione con l'IA)…",
  "Posez votre question en clair : l'aide connaît les menus et les guides de PhilCut, voit l'écran si vous le voulez, et vous montre où cliquer": "Fate la vostra domanda in chiaro: l'aiuto conosce i menu e le guide di PhilCut, vede lo schermo se volete e vi mostra dove cliccare",
  "Aide par discussion : répondre avec": "Aiuto in conversazione: rispondere con",
- "Joindre d'office la capture de PhilCut à chaque question": "Allegare di default la schermata di PhilCut a ogni domanda"
+ "Joindre d'office la capture de PhilCut à chaque question": "Allegare di default la schermata di PhilCut a ogni domanda",
+ "Reprendre une création en cours…": "Riprendere una creazione in corso…",
+ "Les vidéos préparées sur ce poste : fiches, images clefs et plans déjà faits sont repris, rien n'est refait ni payé deux fois": "I video preparati su questo computer: schede, immagini chiave e inquadrature già fatte vengono riprese, nulla viene rifatto né pagato due volte",
+ "Création reprise : {n} plan(s) déjà fait(s) gardé(s) ; « Fabriquer les plans qui restent » continue.": "Creazione ripresa: {n} inquadratura/e già fatta/e conservata/e; «Fabbricare le inquadrature rimanenti» continua.",
+ "Aucune création de l'assistant gardée sur ce poste.": "Nessuna creazione dell'assistente conservata su questo computer.",
+ "Reprendre une création en cours": "Riprendere una creazione in corso",
+ "Création :": "Creazione:",
+ "{t} · {h} · {n} plans, {f} faits": "{t} · {h} · {n} inquadrature, {f} fatte"
 }
