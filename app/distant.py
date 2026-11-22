@@ -770,7 +770,7 @@ class GoogleDrive(_DriveOAuth):
 
     def _q(self, q):
         return f"{DRIVE_API}/files?" + urllib.parse.urlencode({
-            "q": q, "fields": "files(id,name,mimeType,size,modifiedTime)", "pageSize": "1000", "spaces": "drive"})
+            "q": q, "fields": "files(id,name,mimeType,size,modifiedTime,md5Checksum)", "pageSize": "1000", "spaces": "drive"})
 
     @staticmethod
     def _echapper(nom):
@@ -852,7 +852,8 @@ class GoogleDrive(_DriveOAuth):
             # 0.9.97 : l'identifiant de chaque enfant est retenu : le parcours ne redemande plus chaque sous-dossier par son
             # nom (deux requêtes par dossier au lieu d'une : la synchronisation de Philippe passait des minutes à 20 %)
             self._ids["/" + "/".join(p for p in _joindre(dossier, f["name"]).split("/") if p)] = f["id"]
-            out[f["name"]] = (int(f.get("size") or 0), f.get("modifiedTime", ""), f.get("mimeType") == DOSSIER_MIME)
+            out[f["name"]] = (int(f.get("size") or 0), f.get("modifiedTime", ""), f.get("mimeType") == DOSSIER_MIME,
+                              f.get("md5Checksum") or "")
         return out
 
     def qui(self):

@@ -66,6 +66,15 @@ def _date(v):
     return (v.get("maj") or v.get("date") or "") if isinstance(v, dict) else ""
 
 
+def _md5(chemin):
+    import hashlib
+    h = hashlib.md5()
+    with open(chemin, "rb") as f:
+        for bloc in iter(lambda: f.read(1 << 20), b""):
+            h.update(bloc)
+    return h.hexdigest()
+
+
 def _empreinte(chemin):
     import hashlib
     h = hashlib.sha1()
@@ -265,6 +274,12 @@ def _synchroniser_vrai(params, compte, emplacement, choix, sens, plan):
             # l'empreinte decide : un fichier reecrit a l'identique (heure changee) n'est pas un changement
             local_modifie = l_mtime is not None and _empreinte(lp) != avant.get("empreinte")
             distant_modifie = d is not None and d[1] != avant.get("distant")
+            # 1.1.18 (Philippe, 22/11 23h09 : la même fiche « modifiée des deux côtés » proposée à chaque synchronisation) :
+            # quand le Drive donne l'empreinte MD5 et qu'elle est celle du fichier d'ici, les deux sont identiques : rien à faire
+            if d is not None and l_mtime is not None and (local_modifie or distant_modifie) and len(d) > 3 and d[3] \
+                    and d[3] == _md5(lp):
+                nouvel_etat[rel] = {"local": l_mtime, "empreinte": _empreinte(lp), "distant": d[1]}
+                continue
             if d is None and l_mtime is None:
                 continue
             # decision

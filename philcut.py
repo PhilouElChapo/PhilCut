@@ -137,6 +137,11 @@ def main():
         ecran.installer(app)
     except Exception:
         pass
+    try:                                    # 1.1.18 : ramasse-miettes dans le fil de l'interface (tas corrompu sous Windows)
+        from app import ramasse_miettes
+        ramasse_miettes.installer(app)
+    except Exception:       # noqa: BLE001
+        pass
     import importlib
     for frac, texte, modules in ((0.3, _("Recherche du moteur vidéo (FFmpeg)…"), ("app.moteur",)),
                                  (0.4, _("Chargement des effets et des transitions…"), ("app.effets", "app.catalogue_effets")),

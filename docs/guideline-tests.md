@@ -23,6 +23,11 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T121 — 1.1.18 : stabilité et synchronisation
+
+1. Ouvrez PhilCut plusieurs fois de suite, laissez la synchronisation tourner, travaillez une heure : plus de « Windows fatal exception: code 0xc0000374 » dans le journal.
+2. La fiche « creations_partagees/lieu/… » n'est plus proposée à chaque ouverture (une dernière fois au plus).
+
 ## T120 — 1.1.16 : motion design IA (look pro) et animation simple avec images
 
 1. Fabrique IA › Animation › « Motion design IA (look pro)… » ; décrivez les canons (« ATTENTION ça va COMMENCER… »), « Look pro » tout coché, Relectures 2, Modèle « Selon la complexité ».
