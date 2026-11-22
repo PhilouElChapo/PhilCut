@@ -208,6 +208,8 @@ class G7RienDeTronque(unittest.TestCase):
         fen += [("Crédits et recharges des IA", DialogueCredits(f, f.params))]
         from app.dialogues_motion_libre import DialogueMotionLibre                # 1.1.0
         fen += [("Animation libre", DialogueMotionLibre(ed))]
+        from app.dialogues_aide_ia import DialogueAideIA                          # 1.1.12
+        fen += [("Demander à l'aide", DialogueAideIA(f))]
         fautes = []
         for nom, d in fen:
             d.show()

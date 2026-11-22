@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.11 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.12 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.12 (aide par discussion, groupe entier)
+- Aide › « Demander a l'aide (discussion avec l'IA)… » : posez votre question en clair. L'aide recoit le manuel de PhilCut tire des vrais menus (barre et clic droit), des guides et de fiches d'aide mises a jour en ligne, l'etat du montage et, sur clic, une capture de l'ecran.
+- Chaque reponse donne les etapes, « Montrez-moi » (le menu s'ouvre, la ligne est surlignee), « Le faire pour moi » (l'outil s'ouvre) ou une phrase pour « Dites-le en clair ». Un chemin invente par l'IA n'est jamais montre.
+- Au choix : Claude ou Gemini avec votre clef (quelques centimes la question, le manuel est garde en cache), ou l'IA de ce poste (gratuit). Aussi dans « Dites-le en clair » et dans les guides (« Pas trouve ? »), et dans les Preferences.
+- Clip de groupe : « ☆ Garder ce groupe… » range le groupe entier dans la bibliotheque, « Prendre un groupe de ma bibliotheque… » remet les memes musiciens, memes visages, dans le clip suivant. Le groupe se modifie aussi dans la bibliotheque (genre Groupe).
 
 ### 1.1.11 (atelier de creation : plans, image clef, video)
 - Fabrication : une image de reference trop allongee (rapport largeur/hauteur hors de 0,4 a 2,5) est encadree de gris avant l'envoi : fini l'erreur HTTP 422 de fal.

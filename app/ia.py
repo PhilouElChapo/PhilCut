@@ -321,7 +321,9 @@ def _claude(clef, params, consignes, texte, images, max_jetons):
     contenu = [{"type": "image", "source": {"type": "base64", "media_type": type_image(i),
                                              "data": base64.b64encode(i).decode()}} for i in images or []]
     contenu.append({"type": "text", "text": texte})
-    corps = lambda m: {"model": m, "max_tokens": max_jetons, "system": consignes,
+    # 1.1.12 : une longue consigne (le manuel de l'aide) est gardée en cache chez Anthropic : les questions suivantes coûtent moins
+    systeme = [{"type": "text", "text": consignes, "cache_control": {"type": "ephemeral"}}] if len(consignes) > 8000 else consignes
+    corps = lambda m: {"model": m, "max_tokens": max_jetons, "system": systeme,
                        "messages": [{"role": "user", "content": contenu}]}
     forcer, autre_entete = False, False
     for _essai in range(3):

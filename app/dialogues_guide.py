@@ -62,6 +62,10 @@ class DialogueGuides(QDialog):
         self.zone.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.zone.setFrameShape(QFrame.NoFrame)
         v.addWidget(self.zone, 1)
+        b = QPushButton(_("Pas trouvé ? Demander à l'aide…"))       # 1.1.12 : la discussion reprend ce qui est cherché
+        b.setToolTip(_("Une discussion avec l'IA qui connaît PhilCut"))
+        b.clicked.connect(lambda: self.fenetre.aide_ia(self.cherche.text().strip()) if hasattr(self.fenetre, "aide_ia") else None)
+        v.addWidget(b)
         self.minuteur = QTimer(self)
         self.minuteur.setInterval(600)
         self.minuteur.timeout.connect(self._verifier)

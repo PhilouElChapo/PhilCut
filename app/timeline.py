@@ -1743,6 +1743,10 @@ class Timeline(QGraphicsView):
 
     def _exec_menu(self, m, pos):
         """Ouvre le menu ; si le guide (« Montrez-moi ») l'a demandé, la bonne ligne est surlignée (0.9.52)."""
+        pris = getattr(self, "_capture_menu", None)
+        if pris is not None:                     # 1.1.12 : l'aide par discussion lit le menu sans l'ouvrir
+            pris.append(m)
+            return
         chemin = getattr(self, "surligner_menu", None)
         self.surligner_menu = None
         if chemin:

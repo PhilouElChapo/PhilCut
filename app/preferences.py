@@ -652,6 +652,15 @@ class DialoguePreferences(QDialog):
         from .assistant_creation import REALISATEUR_DEFAUT
         self.assistant_realisateur.setChecked(bool(self.params.get("assistant_realisateur", REALISATEUR_DEFAUT)))
         f.addRow("", self.assistant_realisateur)
+        self.aide_ia_niveau = QComboBox()                # 1.1.12 : l'aide par discussion
+        from . import assistant_creation as _AC
+        for k, lib in _AC.niveaux(self.params):
+            self.aide_ia_niveau.addItem(lib, k)
+        self.aide_ia_niveau.setCurrentIndex(max(0, self.aide_ia_niveau.findData(self.params.get("aide_ia_niveau") or "")))
+        f.addRow(_("Aide par discussion : répondre avec"), self.aide_ia_niveau)
+        self.aide_ia_capture = QCheckBox(_("Joindre d'office la capture de PhilCut à chaque question"))
+        self.aide_ia_capture.setChecked(bool(self.params.get("aide_ia_capture", True)))
+        f.addRow("", self.aide_ia_capture)
         hm = QHBoxLayout()                             # 0.9.99 : animations (motion design)
         self.motion_moteur = QComboBox()
         from . import motion as MO
@@ -1255,6 +1264,9 @@ class DialoguePreferences(QDialog):
             p["sequence_continue"] = self.sequence_continue.isChecked()
         if hasattr(self, "assistant_realisateur"):
             p["assistant_realisateur"] = self.assistant_realisateur.isChecked()
+        if hasattr(self, "aide_ia_niveau"):
+            p["aide_ia_niveau"] = self.aide_ia_niveau.currentData()
+            p["aide_ia_capture"] = self.aide_ia_capture.isChecked()
         if hasattr(self, "motion_moteur"):
             p["motion_moteur"] = self.motion_moteur.currentData()
             p["motion_libre_moteur"] = self.motion_libre_moteur.currentData()

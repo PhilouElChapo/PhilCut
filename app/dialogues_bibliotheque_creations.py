@@ -221,6 +221,29 @@ class DialogueBibliothequeCreations(QDialog):
             self.extra["instrument"] = QLineEdit(d.get("instrument", ""))
             h.addWidget(self.extra["instrument"], 1)
             self.v_detail.addLayout(h)
+        if e["genre"] == "groupe":                         # 1.1.12 : les musiciens du groupe, chacun par sa fiche
+            self.v_detail.addWidget(QLabel(_("Musiciens du groupe")))
+            lm = QListWidget()
+            lm.setIconSize(QSize(48, 36))
+            lm.setWordWrap(True)
+            lm.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            lm.setMaximumHeight(170)
+            for m in B.membres(self.params, e):
+                self._ligne_groupe(lm, m)
+            self.extra["membres"] = lm
+            self.v_detail.addWidget(lm)
+            h = QHBoxLayout()
+            b = QPushButton(_("Ajouter un musicien…"))
+            b.setToolTip(_("Un musicien ou un personnage de votre bibliothèque"))
+            b.clicked.connect(self._ajouter_au_groupe)
+            h.addWidget(b)
+            b = QPushButton(_("Retirer du groupe"))
+            b.clicked.connect(lambda: lm.takeItem(lm.currentRow()) if lm.currentRow() >= 0 else None)
+            h.addWidget(b)
+            h.addStretch(1)
+            self.v_detail.addLayout(h)
+            self.v_detail.addWidget(aide(_("Clip de groupe › « Prendre un groupe de ma bibliothèque… » : ces musiciens jouent avec "
+                                           "leurs visages. « Enregistrer » garde la liste.")))
         if e["genre"] == "voix":
             h = QHBoxLayout()
             h.addWidget(QLabel(_("C'est une voix de")))
@@ -290,9 +313,29 @@ class DialogueBibliothequeCreations(QDialog):
         self.v_detail.addLayout(h)
         self.v_detail.addStretch(1)
 
+    @staticmethod
+    def _ligne_groupe(lm, m):
+        it = QListWidgetItem(f"{m.get('nom', '')} — {m.get('role', '')}")
+        if m.get("image") and os.path.exists(m["image"]):
+            it.setIcon(QIcon(QPixmap(m["image"]).scaled(48, 36, Qt.KeepAspectRatio, Qt.SmoothTransformation)))
+        it.setData(Qt.UserRole, {k: m.get(k, "") for k in ("role", "nom", "description", "biblio", "genre")})
+        lm.addItem(it)
+
+    def _ajouter_au_groupe(self):
+        x = choisir_entree(self, self.params, ("musicien", "personnage"))
+        if x is None or "membres" not in self.extra:
+            return
+        d = x.get("donnees") or {}
+        self._ligne_groupe(self.extra["membres"], {"role": d.get("instrument", ""), "nom": x["nom"], "genre": x["genre"],
+                                                   "description": x.get("description", ""), "biblio": x["id"],
+                                                   "image": (x.get("fichiers") or {}).get("planche") or B.apercu(x)})
+
     def _donnees(self):
         e = self.courante
         d = dict(e.get("donnees") or {})
+        if "membres" in self.extra:
+            lm = self.extra["membres"]
+            d["membres"] = [lm.item(i).data(Qt.UserRole) for i in range(lm.count())]
         if "instrument" in self.extra:
             d["instrument"] = self.extra["instrument"].text().strip()
         if "role" in self.extra:

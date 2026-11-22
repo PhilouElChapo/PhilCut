@@ -62,6 +62,10 @@ class DialogueCommande(QDialog):
         bg.clicked.connect(lambda: self._guides())
         hg = QHBoxLayout()                                   # de l'aide, pas une action : sur sa ligne, hors de la liste triée
         hg.addWidget(bg)
+        ba = QPushButton(_("Demander à l'aide…"))            # 1.1.12
+        ba.setToolTip(_("Une discussion avec l'IA qui connaît PhilCut : elle explique et montre où cliquer"))
+        ba.clicked.connect(lambda: self._aide_ia())
+        hg.addWidget(ba)
         hg.addStretch(1)
         v.addLayout(hg)
         h = QHBoxLayout()
@@ -129,6 +133,13 @@ class DialogueCommande(QDialog):
             self._compris(r, e)
         except RuntimeError:          # fenêtre déjà fermée pendant que l'IA réfléchissait : rien à afficher
             pass
+
+    def _aide_ia(self):
+        f = self.ed.window()
+        q = self.phrase.text().strip()
+        self.reject()
+        if hasattr(f, "aide_ia"):
+            f.aide_ia(q)
 
     def _guides(self, guide=None):
         f = self.ed.window()

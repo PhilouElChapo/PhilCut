@@ -23,6 +23,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T117 — 1.1.12 : aide par discussion, groupe entier
+
+1. Aide › « Demander à l'aide (discussion avec l'IA)… » ; un projet ouvert avec la photo du tarmac, posez : « Comment rallonger ce plan à partir de la photo ? ».
+2. La réponse donne des étapes : « Montrez-moi l'étape… » ouvre le clic droit avec la ligne surlignée ; « Le faire pour moi » ouvre l'outil.
+3. Posez une suite (« et pour garder Pilote Maxime ? ») : la discussion est reprise.
+4. Essayez « Répondre avec » : Claude, Gemini, IA locale ; décochez la capture : la question part sans image.
+5. Clip de groupe : prenez des musiciens, « ☆ Garder ce groupe… » ; ouvrez le clip d'une autre chanson, « Prendre un groupe de ma bibliothèque… » : mêmes musiciens, mêmes visages.
+
 ## T116 — 1.1.11 : plans complets, image clef, référence acceptée
 
 1. Ecrivez dans l'atelier un texte avec un départ, un roulage et un décollage ; « Analyser » : chaque événement a son plan.

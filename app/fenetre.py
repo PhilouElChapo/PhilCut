@@ -325,10 +325,13 @@ class Fenetre(QMainWindow):
         ou.addAction(_("Journal des plantages et erreurs…"), self.journal_plantages)
         ou.addAction(_("Ouvrir le dossier des données"), lambda: self.ouvrir_externe(dossier_donnees()))
         ai = mb.addMenu(_("&Aide"))
-        a = ai.addAction(icone("ia"), _("Comment faire… (guides pas à pas)"), self.guides)     # 0.9.52 : en tête, c'est l'aide
+        a = ai.addAction(icone("ia"), _("Demander à l'aide (discussion avec l'IA)…"), self.aide_ia)      # 1.1.12
+        a.setToolTip(_("Posez votre question en clair : l'aide connaît les menus et les guides de PhilCut, voit l'écran si vous "
+                       "le voulez, et vous montre où cliquer"))
         f_ = a.font()
         f_.setBold(True)
         a.setFont(f_)
+        a = ai.addAction(_("Comment faire… (guides pas à pas)"), self.guides)     # 0.9.52
         ai.addSeparator()
         ai.addAction(_("Raccourcis clavier"), self.raccourcis)
         ai.addAction(_("Vérifier les mises à jour…"), lambda: self.verifier_maj(silencieux=False))
@@ -337,6 +340,11 @@ class Fenetre(QMainWindow):
         ai.addAction(_("Site du projet (GitHub)"), lambda: webbrowser.open("https://github.com/PhilouElChapo/PhilCut"))
         ai.addSeparator()
         ai.addAction(_("A propos de PhilCut"), self.a_propos)
+
+    def aide_ia(self, question=""):
+        """1.1.12 : l'aide par discussion (l'IA reçoit le manuel de PhilCut tiré des vrais menus et des guides)."""
+        from .dialogues_aide_ia import ouvrir
+        return ouvrir(self, question if isinstance(question, str) else "")
 
     def guides(self, guide=None):
         """Les guides pas à pas, à côté du film (non bloquants) : « Montrez-moi » ouvre les bons menus."""
@@ -2083,7 +2091,7 @@ class Fenetre(QMainWindow):
         NV.integrer(reseau=False)
         if os.environ.get("PHILCUT_SANS_RESEAU") or not self.params.get("effets_en_ligne", True):
             return
-        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_gl.json", "effets_ia.json", NV.FICHIER, "elements.json", "guides.json", "styles.json", "ia.json", "prompts.json")] + [__import__("app.styles_ia", fromlist=["x"]).recharger_catalogue()],
+        fil = threading.Thread(target=lambda: [catalogue_ligne.telecharger(n, 8) for n in ("effets.json", "effets_gl.json", "effets_ia.json", NV.FICHIER, "elements.json", "guides.json", "aide.json", "styles.json", "ia.json", "prompts.json")] + [__import__("app.styles_ia", fromlist=["x"]).recharger_catalogue()],
                                daemon=True)
         fil.start()
 

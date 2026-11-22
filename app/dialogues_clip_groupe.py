@@ -147,6 +147,18 @@ class DialogueClipGroupe(QDialog):
         h.addWidget(b)
         h.addStretch(1)
         l2.addLayout(h)
+        h = QHBoxLayout()                                  # 1.1.12 : le groupe entier, sur sa rangée (G7)
+        h.addWidget(QLabel(_("Groupe entier :")))
+        b = QPushButton(_("Prendre un groupe de ma bibliothèque…"))
+        b.setToolTip(_("Les mêmes musiciens, avec leurs visages, que dans vos autres clips"))
+        b.clicked.connect(self._groupe_biblio)
+        h.addWidget(b)
+        b = QPushButton(_("☆ Garder ce groupe…"))
+        b.setToolTip(_("Range le groupe (et chaque musicien qui n'y est pas encore) dans « Ma bibliothèque de créations »"))
+        b.clicked.connect(self._garder_groupe)
+        h.addWidget(b)
+        h.addStretch(1)
+        l2.addLayout(h)
         v.addWidget(g2)
         # 3. plans
         g3 = QGroupBox(_("3. Les plans, calés sur les mesures"))
@@ -322,8 +334,12 @@ class DialogueClipGroupe(QDialog):
             nom = (self.table_groupe.item(r, 1) or QTableWidgetItem("")).text().strip()
             desc = (self.table_groupe.item(r, 2) or QTableWidgetItem("")).text().strip()
             anc = self.clip["groupe"][r] if r < len(self.clip["groupe"]) else {}
-            img = anc.get("image", "") if anc.get("description") == desc and anc.get("role") == role else ""
-            g.append({"role": role, "nom": nom or CG.ROLES.get(role, role), "description": desc, "image": img})
+            meme = anc.get("description") == desc and anc.get("role") == role
+            img = anc.get("image", "") if meme else ""
+            m = {"role": role, "nom": nom or CG.ROLES.get(role, role), "description": desc, "image": img}
+            if meme and anc.get("biblio"):                 # 1.1.12 : le lien vers la fiche de la bibliothèque est gardé
+                m.update(biblio=anc["biblio"], genre=anc.get("genre", "musicien"))
+            g.append(m)
         self.clip["groupe"] = g
         for r, p in enumerate(self.clip["plans"]):
             it = self.table.item(r, 2)
@@ -412,9 +428,67 @@ class DialogueClipGroupe(QDialog):
         roles = (["chant"] if re.search(r"chant|voix|vocal|sing", d.get("instrument", ""), re.I) else []) or \
             CG._roles_depuis_texte(texte) or ["claviers"]
         self.clip["groupe"].append({"role": roles[0], "nom": e["nom"], "description": e.get("description", ""),
-                                    "image": (e.get("fichiers") or {}).get("planche") or B.apercu(e), "biblio": e["id"]})
+                                    "image": (e.get("fichiers") or {}).get("planche") or B.apercu(e), "biblio": e["id"],
+                                    "genre": e["genre"]})
         self._ligne_membre(self.clip["groupe"][-1])
         self._maj()
+
+    def _groupe_biblio(self):
+        """1.1.12 : un groupe de la bibliothèque remplace les musiciens du clip (question si le groupe actuel a été changé)."""
+        from . import bibliotheque_creations as B
+        from .dialogues_bibliotheque_creations import choisir_entree
+        if not self.clip:
+            return
+        e = choisir_entree(self, self.params, ("groupe",), _("Prendre un groupe"))
+        if e is None:
+            return
+        self._lire_tables()
+        if any(m.get("biblio") or m.get("image") for m in self.clip["groupe"]) and getattr(self, "_test_biblio", None) is None:
+            from PySide6.QtWidgets import QMessageBox
+            if QMessageBox.question(self, _("Prendre un groupe"), _("Les musiciens actuels seront remplacés par ceux de « {n} ». "
+                                    "Continuer ?", n=e["nom"])) != QMessageBox.Yes:
+                return
+        nouveaux = []
+        for m in B.membres(self.params, e):
+            role = m.get("role") if m.get("role") in CG.ROLES else (CG._roles_depuis_texte(m.get("role", "") + " " +
+                                                                                          m.get("description", "")) or ["claviers"])[0]
+            nouveaux.append({"role": role, "nom": m.get("nom", ""), "description": m.get("description", ""),
+                             "image": m.get("image", ""), "biblio": m.get("biblio"), "genre": m.get("genre", "musicien")})
+        if not nouveaux:
+            return
+        self.clip["groupe"] = nouveaux
+        self.clip["groupe_biblio"] = e["id"]
+        self.table_groupe.setRowCount(0)
+        for m in nouveaux:
+            self._ligne_membre(m)
+        self._maj()
+
+    def _garder_groupe(self):
+        from PySide6.QtWidgets import QInputDialog, QLineEdit, QMessageBox
+        from . import bibliotheque_creations as B
+        if not self.clip or not self.clip["groupe"]:
+            return
+        self._lire_tables()
+        anc = B.lire(self.params, "groupe", self.clip.get("groupe_biblio") or "") if self.clip.get("groupe_biblio") else None
+        essai = getattr(self, "_test_precision", None)
+        if essai is not None:
+            nom, ok = essai or (anc or {}).get("nom") or _("Mon groupe"), True
+        else:
+            nom, ok = QInputDialog.getText(self, _("Garder ce groupe"), _("Nom du groupe :"), QLineEdit.Normal,
+                                           (anc or {}).get("nom") or _("Mon groupe"))
+        if not ok or not (nom or "").strip():
+            return
+        try:
+            e = B.garder_groupe(self.params, nom.strip(), self.clip["groupe"], (anc or {}).get("id"),
+                                (self.clip.get("style") or {}).get("nom", "") if isinstance(self.clip.get("style"), dict) else "")
+        except (ValueError, OSError) as err:
+            from .taches import texte_erreur
+            QMessageBox.warning(self, _("Garder ce groupe"), texte_erreur(err))
+            return
+        self.clip["groupe_biblio"] = e["id"]
+        for m, x in zip(self.clip["groupe"], e["donnees"]["membres"]):
+            m.update(biblio=x["biblio"], genre=x["genre"])
+        self.etat.setText(_("✓ Groupe « {n} » gardé dans votre bibliothèque.", n=e["nom"]))
 
     def _garder_membre(self):
         from .dialogues_bibliotheque_creations import garder_rapide

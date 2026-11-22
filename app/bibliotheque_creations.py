@@ -25,6 +25,9 @@ FORMAT = 1
 GENRES = {
     "personnage": (_("Personnage"), _("Une personne, avec sa fiche (face, profil, en pied) : elle reste identique d'une vidéo à l'autre.")),
     "musicien": (_("Musicien"), _("Un musicien inventé, avec son instrument : pour les clips de groupe.")),
+    # 1.1.12 (Philippe, 22/11 01h03 : « se servir de la bibliothèque pour les musiciens : de vrais groupes reconstitués »)
+    "groupe": (_("Groupe"), _("Un groupe entier : ses musiciens (chacun avec sa fiche), repris d'un clic dans chaque clip, mêmes "
+                              "visages d'une chanson à l'autre.")),
     "objet": (_("Objet"), _("Un véhicule, un accessoire qui revient : sa fiche le garde identique.")),
     "lieu": (_("Lieu"), _("Un endroit, un décor : ses images et sa description.")),
     "voix": (_("Voix"), _("Chanteur, chanteuse, narration : une voix décrite, ou un timbre gardé (avec l'accord de la personne).")),
@@ -200,8 +203,46 @@ def resume(e):
             bouts.append(_("timbre gardé"))
     if e["genre"] == "musicien" and d.get("instrument"):
         bouts.append(d["instrument"])
+    if e["genre"] == "groupe" and d.get("membres"):
+        bouts.append(_("{n} musiciens", n=len(d["membres"])) + " : " + ", ".join(m.get("nom", "") for m in d["membres"])[:90])
     texte = e.get("description") or (d.get("voix_decrite") or {}).get("fr") or (d.get("inspiration") or {}).get("resume") or ""
     return " · ".join(x for x in bouts if x) + (" — " + texte[:140] if texte else "")
+
+
+# ------------------------------------------------------------------ groupes (1.1.12)
+def membres(params, e):
+    """Les musiciens d'un groupe, avec l'image à jour de leur fiche (planche, sinon vignette) ; un membre retiré de la
+    bibliothèque garde ce que le groupe savait de lui (nom, rôle, description)."""
+    out = []
+    for m in (e.get("donnees") or {}).get("membres") or []:
+        x = dict(m)
+        fiche = lire(params, m.get("genre") or "musicien", m["biblio"]) if m.get("biblio") else None
+        if fiche:
+            x["nom"] = x.get("nom") or fiche["nom"]
+            x["description"] = fiche.get("description") or x.get("description", "")
+            x["image"] = (fiche.get("fichiers") or {}).get("planche") or apercu(fiche)
+        out.append(x)
+    return out
+
+
+def garder_groupe(params, nom, membres_, ident=None, style=""):
+    """Range un groupe : chaque musicien qui n'est pas encore dans la bibliothèque y entre (genre musicien, avec son image),
+    puis le groupe les cite par leur fiche. Renvoie l'entrée du groupe."""
+    liste, fichiers = [], {}
+    for k, m in enumerate(membres_):
+        bid, genre = m.get("biblio"), m.get("genre") or "musicien"
+        if not bid or not lire(params, genre, bid):
+            img = m.get("image") if m.get("image") and os.path.exists(m["image"]) else None
+            x = garder(params, "musicien", m.get("nom") or m.get("role") or _("Musicien"), m.get("description", ""),
+                       {"image1": img} if img else None, {"instrument": m.get("instrument") or m.get("role", "")})
+            bid, genre = x["id"], "musicien"
+        liste.append({"role": m.get("role", ""), "nom": m.get("nom", ""), "description": m.get("description", ""),
+                      "biblio": bid, "genre": genre})
+        if m.get("image") and os.path.exists(m["image"]):
+            fichiers[f"membre{k + 1}"] = m["image"]
+    if not liste:
+        raise ValueError(_("Le groupe n'a aucun musicien."))
+    return garder(params, "groupe", nom, (style or "").strip(), fichiers or None, {"membres": liste}, ident)
 
 
 # ------------------------------------------------------------------ des cartes de l'assistant à la bibliothèque, et retour
