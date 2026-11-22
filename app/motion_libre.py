@@ -252,9 +252,10 @@ def consigne(anim):
     from .motion import _langue_ui
     L, H = anim.get("taille") or (1920, 1080)
     modele = CONSIGNE_REMOTION if moteur_de(anim) == "remotion" else CONSIGNE
+    from .motion_pro import consigne_ressources                      # 1.1.16 : dessins, plans vidéo, blocs du motion pro
     return modele.format(langue=_langue_ui(), L=L, H=H, format=_format(L, H), duree=f"{anim.get('duree') or 8:g}",
                            dmax=DUREE_MAX, sons=", ".join(f"{k} ({SONS_EN[k]})" for k in _sons_permis()),
-                           musique=musique_consigne(anim))
+                           musique=musique_consigne(anim)) + consigne_ressources(anim.get("libre") or {}, moteur_de(anim))
 
 
 def sections(texte):
@@ -350,7 +351,7 @@ def appliquer(anim, s, demande=""):
     lib = a.setdefault("libre", {})
     hist = lib.get("historique") or []
     if code_de(a):
-        hist = (hist + [{k: lib.get(k, "") for k in ("css", "html", "js", "tsx", "moteur", "plan", "sons")}])[-5:]
+        hist = (hist + [{k: lib.get(k, "") for k in ("css", "html", "js", "tsx", "moteur", "plan", "sons", "videos_poses")}])[-5:]
     remotion = bool(s.get("tsx", "").strip()) and moteur_de(a) == "remotion"
     if remotion:
         lib.update(css="", html="", js="", tsx=s.get("tsx", ""), moteur="remotion")
@@ -358,6 +359,10 @@ def appliquer(anim, s, demande=""):
         lib.update(css=s.get("css", ""), html=s.get("html", ""), js=s.get("js", ""), tsx="", moteur="hyperframes")
     lib.update(message=s.get("message", ""), historique=hist, plan=lire_plan(s.get("plan", "")),
                sons=lire_sons(s.get("sons", "")))
+    vids = ((lib.get("ressources") or {}).get("videos") or {})
+    if vids:                                                      # 1.1.16 : les plans vidéo réalistes, posés par l'IA
+        from .motion_pro import lire_videos
+        lib["videos_poses"] = lire_videos(s.get("videos", ""), set(vids), DUREE_MAX)
     lib["sons_deduits"] = not lib["sons"]
     if not lib["sons"]:
         lib["sons"] = sons_du_plan(lib["plan"])
@@ -379,6 +384,9 @@ def _code(anim):
     tete = ["===TITRE===", anim.get("titre", ""), "===DUREE===", f"{anim.get('duree') or 8:g}", "===PLAN===",
             "\n".join(f"{a:g}-{b:g} s: {t}" for a, b, t in (lib.get("plan") or [])), "===SONS===",
             "\n".join(f"{t:g} s: {i}" for t, i in (lib.get("sons") or []))]
+    if lib.get("videos_poses"):
+        tete += ["===VIDEOS===", "\n".join(f"{v['id']} {v['debut']:g} {v['duree']:g} {v.get('cx') or 0:g} {v.get('cy') or 0:g} "
+                                           f"{v.get('largeur') or 0:g}" for v in lib["videos_poses"])]
     if code_de(anim) == "remotion":
         corps = ["===TSX===", lib.get("tsx", "")]
     else:
@@ -448,12 +456,13 @@ html, body {{ width: {RL}px; height: {RH}px; overflow: hidden; background: {fond
 <div id="racine" data-composition-id="philcut" data-start="0" data-duration="{duree}" data-width="{RL}" data-height="{RH}"
   data-fps="{cadence}">
   <div id="fond" class="clip" data-start="0" data-duration="{duree}" data-track-index="0"></div>
-  <div id="scenes" class="clip" data-start="0" data-duration="{duree}" data-track-index="1">{html}</div>
+  <div id="scenes" class="clip" data-start="0" data-duration="{duree}" data-track-index="1">{html}</div>{videos_html}
 </div>
 <script>
 const W = {L}, H = {H}, D = {duree}, u = Math.min(W, H) / 1080, TRANSPARENT = {transparent}, LANG = {langue_js};
 const C = {couleurs};
 const F = {polices_js};
+const IMG = {images_js};
 const tl = gsap.timeline({{ paused: true }});
 window.__timelines = window.__timelines || {{}};
 window.__timelines["philcut"] = tl;
@@ -493,6 +502,27 @@ tl.seek(0);
 """
 
 
+def _videos_html(anim, k, L, H, duree):
+    """1.1.16 : les plans vidéo réalistes posés par l'IA : de vrais clips HyperFrames, en mode écran (le noir disparaît)."""
+    import html as H_
+    lib = anim.get("libre") or {}
+    res = (lib.get("ressources") or {}).get("videos") or {}
+    out = []
+    for n, v in enumerate(lib.get("videos_poses") or []):
+        r = res.get(v["id"])
+        if not r or not r.get("src"):
+            continue
+        larg = float(v.get("largeur") or L)
+        haut = larg * 9 / 16 if not r.get("hauteur") else larg * r["hauteur"] / max(1, r.get("largeur") or 1)
+        cx, cy = float(v.get("cx") or L / 2), float(v.get("cy") or H / 2)
+        d = min(float(v["duree"]), max(0.1, duree - float(v["debut"])))
+        st = (f"position:absolute;left:{(cx - larg / 2) * k:.1f}px;top:{(cy - haut / 2) * k:.1f}px;width:{larg * k:.1f}px;"
+              f"height:{haut * k:.1f}px;object-fit:contain;mix-blend-mode:screen;pointer-events:none")
+        out.append(f'\n  <video id="vid{n}" class="philcut-video" src="{H_.escape(r["src"])}" muted playsinline '
+                   f'data-start="{float(v["debut"]):g}" data-duration="{d:g}" data-track-index="{3 + n}" style="{st}"></video>')
+    return "".join(out)
+
+
 def composition(anim, gsap, polices, logo):
     """La page HyperFrames de l'animation libre (appelée par motion_html.composition)."""
     import html as H_
@@ -524,7 +554,9 @@ def composition(anim, gsap, polices, logo):
         cadence=int(anim.get("cadence") or 30), transparent="true" if anim.get("transparent") else "false",
         langue_js=json.dumps(_langue_ui()), couleurs=json.dumps(ch["couleurs"]),
         polices_js=json.dumps({"titre": ch.get("police_titre") or "Poppins", "texte": ch.get("police_texte") or "Poppins"}),
-        js=lib.get("js", "").replace("</script", "<\\/script"), logo=js_logo)
+        js=lib.get("js", "").replace("</script", "<\\/script"), logo=js_logo,
+        images_js=json.dumps({i: r["src"] for i, r in ((lib.get("ressources") or {}).get("images") or {}).items() if r.get("src")}),
+        videos_html=_videos_html(anim, k, L, H, duree))
 
 
 def apercu_leger(anim, echelle=0.5, cadence=15):

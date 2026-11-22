@@ -23,6 +23,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T120 — 1.1.16 : motion design IA (look pro) et animation simple avec images
+
+1. Fabrique IA › Animation › « Motion design IA (look pro)… » ; décrivez les canons (« ATTENTION ça va COMMENCER… »), « Look pro » tout coché, Relectures 2, Modèle « Selon la complexité ».
+2. « Construire » : la préparation coûte environ 0,03 $ ; elle montre ensuite blocs, dessins, effets vidéo, le modèle choisi et le total au plus : acceptez.
+3. Les dessins (canon) et l'effet vidéo (explosion) se fabriquent (barre du bas) ; l'aperçu vient, puis les relectures : le message dit « relectures : … ».
+4. Regardez : les canons sont-ils de vrais dessins ? l'explosion est-elle une vraie vidéo sans fond noir ?
+5. Fabrique IA › Animation › « Animation simple… » : « Ajouter une image… » deux fois, places « en haut » et « dans un coin » ; l'aperçu les montre ; essayez HyperFrames et Remotion.
+
 ## T119 — 1.1.14 : animation libre fidèle
 
 1. Rouvrez l'animation « Attention ça va commencer » (ou « Reprendre un modèle… ») et relancez l'aperçu : mots en dégradés multicolores, traînées qui descendent, canons en bas à gauche et à droite, tir, éclats, noir.

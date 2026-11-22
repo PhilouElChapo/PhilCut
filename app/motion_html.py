@@ -93,6 +93,7 @@ def mise_en_page(anim):
             "lignes_st": M.lignes_st(anim.get("mots") or [], M.ST_VERTICAL_CAR if vertical else M.ST_HORIZONTAL_CAR),
             "st_taille": M.ST_VERTICAL_TAILLE if vertical else 1.0, "chapitres": anim.get("chapitres") or [],
             "image": anim.get("_html_image") or "", "image_ratio": float(anim.get("_html_ratio") or 0),
+            "calques": [dict(c, src=(anim.get("_html_calques") or {}).get(c["n"], ""), chemin="") for c in M.calques_images(anim)],
             "elements": [[_insecable(str(l)), (float(v) if v is not None else None), _insecable(str(t or "")),
                           _insecable(M.nombre_texte(anim, v) if v is not None else "")] for l, v, t in M.elements(anim)],
             "palette": M.palette(ch, len(M.elements(anim))),
@@ -173,6 +174,16 @@ if (!A.transparent) {{
     $("div", "", fond).className = "grille";
   }}
 }}
+(A.calques || []).forEach((k) => {{                      // 1.1.16 : une ou deux images, sous les textes
+  if (!k.src) return;
+  const im = document.createElement("img");
+  im.src = k.src;
+  im.setAttribute("style", `position:absolute;left:${{k.x}}px;top:${{k.y}}px;width:${{k.w}}px;height:${{k.h}}px;` +
+    `object-fit:${{k.cover ? "cover" : "contain"}};opacity:0`);
+  document.getElementById(k.cover ? "fond" : "scenes").appendChild(im);
+  tl.fromTo(im, {{ opacity: 0, scale: 0.92 }}, {{ opacity: k.op, scale: 1, duration: 0.5, ease: "power2.out", immediateRender: false }}, k.t0);
+  tl.to(im, {{ opacity: 0, duration: 0.4 }}, k.t1);
+}});
 {scenes}
 {logo}
 tl.set({{}}, {{}}, D);
@@ -624,6 +635,18 @@ def _dossier_polices():
     return os.path.join(base, "fonts")
 
 
+def _copier_calques(anim, dossier, prefixe):
+    """1.1.16 : les images de l'animation simple copiées à côté de la composition : {rang de l'image: adresse dans la page}."""
+    out = {}
+    for k, im in enumerate((anim.get("images") or [])[:M.MAX_IMAGES]):
+        ch = (im or {}).get("chemin") or ""
+        if os.path.exists(ch):
+            nom = f"image{k + 1}" + os.path.splitext(ch)[1].lower()
+            shutil.copy2(ch, os.path.join(dossier, nom))
+            out[k] = prefixe + nom
+    return out
+
+
 def _ratio(chemin):
     """Hauteur / largeur d'une image (pour faire défiler une capture jusqu'en bas)."""
     try:
@@ -632,6 +655,22 @@ def _ratio(chemin):
         return img.shape[0] / img.shape[1] if img is not None else 0.0
     except Exception:      # noqa: BLE001
         return 0.0
+
+
+def _ressources_libres(anim, dossier):
+    """1.1.16 : dessins et plans vidéo du motion pro copiés dans assets/ ; chacun reçoit son chemin dans la page (src)."""
+    import copy
+    res = ((anim.get("libre") or {}).get("ressources") or {})
+    if not (res.get("images") or res.get("videos")):
+        return anim
+    a = copy.deepcopy(anim)
+    for genre in ("images", "videos"):
+        for i, r in (a["libre"]["ressources"].get(genre) or {}).items():
+            if r.get("chemin") and os.path.exists(r["chemin"]):
+                nom = os.path.basename(r["chemin"])
+                shutil.copy2(r["chemin"], os.path.join(dossier, "assets", nom))
+                r["src"] = "assets/" + nom
+    return a
 
 
 def preparer_projet(anim, dossier, gsap_en_ligne=False):
@@ -659,6 +698,8 @@ def preparer_projet(anim, dossier, gsap_en_ligne=False):
         nom = "capture" + os.path.splitext(anim["image"])[1].lower()
         shutil.copy2(anim["image"], os.path.join(dossier, "assets", nom))
         anim = dict(anim, _html_image="assets/" + nom, _html_ratio=_ratio(anim["image"]))
+    anim = dict(anim, _html_calques=_copier_calques(anim, os.path.join(dossier, "assets"), "assets/"))
+    anim = _ressources_libres(anim, dossier)
     with open(os.path.join(dossier, "index.html"), "w", encoding="utf-8") as f:
         f.write(composition(anim, gsap, polices, logo))
     json.dump({"id": "philcut", "name": anim.get("titre") or "PhilCut"}, open(os.path.join(dossier, "meta.json"), "w", encoding="utf-8"))

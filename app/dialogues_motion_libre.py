@@ -30,7 +30,7 @@ class DialogueMotionLibre(QDialog):
         from .dialogues_creatif import ApercuCreation
         self.ed, self.params = ed, ed.params
         self.tache, self.taches, self.apercu_fichier, self.resultat = None, [], "", ""
-        self.setWindowTitle(_("Animation libre : décrivez-la, l'IA la construit"))
+        self.setWindowTitle(_("Motion design IA (look pro) : décrivez-la, l'IA la construit"))
         h = QHBoxLayout(self)
         gauche = QVBoxLayout()
         intro = QLabel(_("Décrivez l'animation comme à un graphiste : ce qui apparaît, comment ça bouge, dans quel ordre. L'IA "
@@ -41,7 +41,7 @@ class DialogueMotionLibre(QDialog):
         self.description = QPlainTextEdit()
         self.description.setPlaceholderText(_("ex. : un cadeau apparaît tout petit et grandit pendant qu'un compteur monte de 0 à 40 ; un "
                                               "graphique monte en même temps ; à 40, feu d'artifice ; puis l'image part en confettis."))
-        self.description.setFixedHeight(120)
+        self.description.setFixedHeight(100)
         gauche.addWidget(self.description)
         f = QFormLayout()
         self.format = QComboBox()
@@ -98,6 +98,7 @@ class DialogueMotionLibre(QDialog):
         self.caler.toggled.connect(lambda v: self.params.__setitem__("motion_libre_caler", bool(v)))
         f.addRow("", self.caler)
         gauche.addLayout(f)
+        gauche.addWidget(self._groupe_pro())
         self.credit = LigneCredit(self.params, "anthropic", self, compact=True)
         gauche.addWidget(self.credit)
         self.b_creer = QPushButton(_("✨ Construire l'animation (environ {p} $)", p=_prix(ML.PRIX_CREER)))
@@ -150,8 +151,13 @@ class DialogueMotionLibre(QDialog):
         gauche.addStretch(1)
         w_g = QWidget()
         w_g.setLayout(gauche)
-        w_g.setFixedWidth(470)
-        h.addWidget(w_g)
+        zg = QScrollArea()                       # 1.1.16 : la colonne s'est allongée (look pro) ; elle défile sur un petit écran
+        zg.setWidgetResizable(True)
+        zg.setFrameShape(QScrollArea.NoFrame)
+        zg.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        zg.setWidget(w_g)
+        zg.setFixedWidth(490)
+        h.addWidget(zg)
         droite = QVBoxLayout()
         self.message = QLabel(_("L'aperçu apparaîtra ici (rendu léger sur ce poste, gratuit)."))
         self.message.setWordWrap(True)
@@ -202,6 +208,58 @@ class DialogueMotionLibre(QDialog):
             self.description.setPlainText(anim.get("description", ""))
         self.resize(1000, 700)
         self._moteur_change()
+
+    def _groupe_pro(self):
+        """1.1.16 : la méthode des outils en ligne, réglable (chaque coût est demandé avant de payer)."""
+        from PySide6.QtWidgets import QGridLayout, QGroupBox, QSpinBox
+        from . import motion_pro as MP
+        g = QGroupBox(_("Look pro"))
+        gl = QGridLayout(g)
+        p = self.params
+        self.pro_dessins = QCheckBox(_("Vrais dessins (Gemini)"))
+        self.pro_dessins.setToolTip(_("Les objets (canon, avion, cadeau…) sont dessinés par Gemini puis détourés, au lieu de dessins "
+                                      "faits en code ; environ {p} $ le dessin", p=_prix(MP.PRIX_IMAGE)))
+        self.pro_dessins.setChecked(bool(p.get("motion_pro_dessins", True)))
+        self.pro_videos = QCheckBox(_("Effets réalistes en vidéo IA"))
+        self.pro_videos.setToolTip(_("Feu, fumée, explosion, eau… filmés par votre générateur vidéo sur fond noir, posés en mode "
+                                     "écran au bon instant ; le prix est demandé"))
+        self.pro_videos.setChecked(bool(p.get("motion_pro_videos", True)))
+        self.pro_blocs = QCheckBox(_("Blocs éprouvés (HyperFrames)"))
+        self.pro_blocs.setToolTip(_("236 composants du registre officiel HyperFrames (HeyGen, Apache 2.0) : textes, particules, "
+                                    "transitions, compteurs… l'IA choisit ceux qui servent et s'en inspire"))
+        self.pro_blocs.setChecked(bool(p.get("motion_pro_blocs", True)))
+        gl.addWidget(self.pro_dessins, 0, 0)
+        gl.addWidget(self.pro_videos, 0, 1)
+        gl.addWidget(self.pro_blocs, 1, 0)
+        hr = QHBoxLayout()
+        hr.addWidget(QLabel(_("Relectures")))
+        self.pro_tours = QSpinBox()
+        self.pro_tours.setRange(0, 3)
+        self.pro_tours.setValue(int(p.get("motion_pro_tours", 2)))
+        self.pro_tours.setToolTip(_("L'IA regarde une image par étape de son aperçu et corrige ce qui ne se voit pas, ce nombre de "
+                                    "fois au plus (0 : jamais)"))
+        hr.addWidget(self.pro_tours)
+        hr.addStretch(1)
+        gl.addLayout(hr, 1, 1)
+        hm = QHBoxLayout()
+        hm.addWidget(QLabel(_("Modèle qui écrit")))
+        self.pro_modele = QComboBox()
+        for k, lib in (("auto", _("Selon la complexité")), ("rapide", _("Rapide (moins cher)")), ("meilleur", _("Le meilleur"))):
+            self.pro_modele.addItem(lib, k)
+        self.pro_modele.setCurrentIndex(max(0, self.pro_modele.findData(p.get("motion_pro_modele") or "auto")))
+        hm.addWidget(self.pro_modele, 1)
+        gl.addLayout(hm, 2, 0, 1, 2)
+        for w, cle in ((self.pro_dessins, "motion_pro_dessins"), (self.pro_videos, "motion_pro_videos"),
+                       (self.pro_blocs, "motion_pro_blocs")):
+            w.toggled.connect(lambda v, c=cle: self.params.__setitem__(c, bool(v)))
+        self.pro_tours.valueChanged.connect(lambda v: self.params.__setitem__("motion_pro_tours", int(v)))
+        self.pro_modele.currentIndexChanged.connect(lambda _i: self.params.__setitem__("motion_pro_modele",
+                                                                                       self.pro_modele.currentData()))
+        return g
+
+    def _pro_actif(self):
+        return any(w.isChecked() for w in (self.pro_dessins, self.pro_videos, self.pro_blocs)) or self.pro_tours.value() > 0 \
+            or self.pro_modele.currentData() != "rapide"
 
     # ------------------------------------------------------------------ état
     def moteur_choisi(self):
@@ -353,6 +411,9 @@ class DialogueMotionLibre(QDialog):
         if e:
             self.etat.setText(_("✕ {e}", e=texte_erreur(e)[:400]))
             return
+        if not r:
+            self.etat.setText(_("Arrêté."))
+            return
         a, apercu, erreurs = r
         self.anim = a
         self._erreurs = erreurs
@@ -363,7 +424,25 @@ class DialogueMotionLibre(QDialog):
             self.duree.blockSignals(False)
         lib = a.get("libre") or {}
         plan, sons = ML.plan_texte(a), ML.sons_texte(a)
+        pro = a.get("pro") or {}
+        resume_pro = ""
+        if pro.get("modele"):
+            from . import motion_pro as MP
+            res = lib.get("ressources") or {}
+            morceaux = [_("écrite par {m}", m=MP.nom_modele(pro["modele"]))]
+            if res.get("blocs"):
+                morceaux.append(_("blocs : {l}", l=", ".join(res["blocs"])))
+            if res.get("images"):
+                morceaux.append(_("dessins : {l}", l=", ".join(res["images"])))
+            if res.get("videos"):
+                morceaux.append(_("effets vidéo : {l}", l=", ".join(res["videos"])))
+            if pro.get("relectures"):
+                morceaux.append(_("relectures : {l}", l=" ; ".join(pro["relectures"])))
+            if pro.get("ratees"):
+                morceaux.append(_("pas fait : {l}", l=" ; ".join(pro["ratees"])))
+            resume_pro = "\n" + _("Look pro : {l}.", l=" · ".join(morceaux))
         self.message.setText(_("« {t} », {d} s — {m}", t=a.get("titre", ""), d=f"{a.get('duree', 0):g}", m=lib.get("message", ""))
+                             + resume_pro
                              + (("\n" + _("Plan :") + "\n" + plan) if plan else "")
                              + (("\n" + _("Bruitages : {s}", s=sons)) if sons and a.get("bruitages", True) else "")
                              + (("\n" + _("Calée sur la musique (posée à {t} s).", t=f"{a['pose']:g}".replace(".", ",")))
@@ -436,7 +515,10 @@ class DialogueMotionLibre(QDialog):
         if not self.description.toPlainText().strip():
             self.etat.setText(_("Décrivez d'abord l'animation, en quelques phrases."))
             return
-        if not self._accord(_("L'IA va écrire l'animation"), ML.PRIX_CREER):
+        pro = self._pro_actif()
+        from . import motion_pro as MP
+        if not self._accord(_("L'IA va préparer l'animation (blocs, dessins, effets, modèle)") if pro else
+                            _("L'IA va écrire l'animation"), MP.PRIX_PREPARER if pro else ML.PRIX_CREER):
             return
         a = self.lire()
         a.pop("libre", None)
@@ -451,14 +533,128 @@ class DialogueMotionLibre(QDialog):
 
         a["pose"] = float(self.ed.timeline.position) if self.caler.isChecked() else None
         a["bruitages"] = self.bruitages.isChecked()
+        if not pro:
+            def travail(t):
+                t.avancer(0.03, _("Musique du film : temps forts…") if self.caler.isChecked() else "")
+                self._caler_musique(a)
+                t.avancer(0.05, _("L'IA écrit l'animation (une à deux minutes)…"))
+                b = ML.creer(self.params, a)
+                return self._verifier_et_apercu(t, b)
+            self._lancer(travail, _("Animation libre : écriture"), self._fin_ia)
+            return
+        dessins, videos, blocs = self.pro_dessins.isChecked(), self.pro_videos.isChecked(), self.pro_blocs.isChecked()
+        from . import ia
+        dessins = dessins and bool(ia.nettoyer_clef(self.params.get("clef_gemini", "")))
+        videos = videos and MP.modele_video(self.params) is not None
+        params = self.params
 
         def travail(t):
-            t.avancer(0.03, _("Musique du film : temps forts…") if self.caler.isChecked() else "")
+            t.avancer(0.2, _("L'IA prépare : blocs, dessins, effets, complexité…"))
+            prep = MP.preparer(params, dict(a, moteur_libre=a["moteur_libre"] if blocs else "remotion"), dessins, videos)
+            if not blocs:
+                prep["blocs"] = []
+            return prep
+        self._lancer(travail, _("Motion design IA : préparation"), lambda r, e: self._apres_preparation(a, r, e))
+
+    def _apres_preparation(self, a, prep, e):
+        from . import motion_pro as MP
+        if e:
+            self.etat.setText(_("✕ {e}", e=texte_erreur(e)[:400]))
+            return
+        fam, modele = MP.modele(self.params, prep["complexite"], self.pro_modele.currentData())
+        tours = self.pro_tours.value()
+        prix = MP.prix(prep, modele, self.params, tours)
+        lignes = [prep.get("pourquoi") or "",
+                  _("Complexité {c}/3 : écrite par {m}.", c=prep["complexite"], m=MP.nom_modele(modele))]
+        if prep["blocs"]:
+            lignes.append(_("Blocs : {l}.", l=", ".join(prep["blocs"])))
+        if prep["images"]:
+            lignes.append(_("Dessins ({p} $) : {l}.", p=_prix(prix["dessins"]), l=", ".join(x["id"] for x in prep["images"])))
+        if prep["videos"]:
+            m = MP.modele_video(self.params)
+            lignes.append(_("Effets vidéo par {m} ({p} $) : {l}.", m=(m or {}).get("nom", "?"), p=_prix(prix["videos"]),
+                            l=", ".join(x["id"] for x in prep["videos"])))
+        lignes.append(_("Ecriture : {p} $ ; relectures ({n} au plus) : jusqu'à {r} $.", p=_prix(prix["ecrire"]), n=tours,
+                        r=_prix(prix["relecture"])))
+        texte = "\n".join(x for x in lignes if x)
+        self.message.setText(texte)
+        if not self._accord(texte + "\n\n" + _("Total au plus"), prix["total"]):
+            self.etat.setText(_("Rien n'a été fabriqué ; changez les réglages « Look pro » ou la description, puis reconstruisez."))
+            return
+        params, params_m = self.params, MP.params_modele(self.params, fam, modele)
+        dossier = os.path.join(M.dossier(), "ressources", time.strftime("%Y%m%d_%H%M%S"))
+        os.makedirs(dossier, exist_ok=True)
+        format_ = "9:16" if a["taille"][1] > a["taille"][0] else ("1:1" if a["taille"][0] == a["taille"][1] else "16:9")
+        a["pro"] = {"prep": prep, "famille": fam, "modele": modele, "relectures": []}
+
+        def travail(t):
+            res = {"images": {}, "videos": {}, "blocs": {}}
+            ratees = []
+            n = len(prep["images"]) + len(prep["videos"]) + len(prep["blocs"])
+            k = 0
+            for img in prep["images"]:
+                k += 1
+                t.avancer(0.02 + 0.25 * k / max(1, n), _("Dessin « {i} » (Gemini)…", i=img["id"]))
+                try:
+                    res["images"][img["id"]] = dict(MP.dessiner(params, img, dossier), en=img["en"])
+                except Exception as err:      # noqa: BLE001 : sans ce dessin plutôt que sans animation
+                    ratees.append(_("dessin « {i} » : {e}", i=img["id"], e=texte_erreur(err)[:120]))
+                if t.arret_demande():
+                    return None
+            for vid in prep["videos"]:
+                k += 1
+                t.avancer(0.02 + 0.25 * k / max(1, n), _("Effet vidéo « {i} » (une à trois minutes)…", i=vid["id"]))
+                try:
+                    res["videos"][vid["id"]] = dict(MP.filmer(params, vid, dossier, format_, arret=t.arret_demande), en=vid["en"])
+                except Exception as err:      # noqa: BLE001
+                    ratees.append(_("effet « {i} » : {e}", i=vid["id"], e=texte_erreur(err)[:120]))
+                if t.arret_demande():
+                    return None
+            for nom in prep["blocs"]:
+                k += 1
+                t.avancer(0.02 + 0.25 * k / max(1, n), _("Bloc « {i} » (bibliothèque HyperFrames)…", i=nom))
+                try:
+                    res["blocs"][nom] = MP.source_bloc(nom)
+                except Exception as err:      # noqa: BLE001
+                    ratees.append(_("bloc « {i} » : {e}", i=nom, e=texte_erreur(err)[:120]))
+            a["libre"] = {"ressources": res}
+            a["pro"]["ratees"] = ratees
             self._caler_musique(a)
-            t.avancer(0.05, _("L'IA écrit l'animation (une à deux minutes)…"))
-            b = ML.creer(self.params, a)
-            return self._verifier_et_apercu(t, b)
-        self._lancer(travail, _("Animation libre : écriture"), self._fin_ia)
+            t.avancer(0.3, _("{m} écrit l'animation (une à trois minutes)…", m=MP.nom_modele(modele)))
+            b = ML.creer(params_m, a)
+            return self._relire(t, b, params, params_m, self.pro_tours.value())
+        self._lancer(travail, _("Motion design IA : fabrication"), self._fin_ia)
+
+    def _relire(self, t, b, params, params_m, tours):
+        """1.1.16 : l'IA regarde son rendu (une image par étape) et fait corriger ce qui ne se voit pas, `tours` fois au plus ;
+        une erreur de code est aussi renvoyée à corriger. Renvoie (anim, aperçu, erreurs) comme _verifier_et_apercu."""
+        b, apercu, erreurs = self._verifier_et_apercu(t, b)
+        for n in range(tours):
+            if t.arret_demande():
+                break
+            if erreurs:
+                t.avancer(0.62, _("Relecture {n}/{m} : l'IA corrige une erreur de code…", n=n + 1, m=tours))
+                b = ML.corriger(params_m, b, erreur="\n".join(erreurs))
+                b.setdefault("pro", {}).setdefault("relectures", []).append(_("erreur de code corrigée"))
+            elif apercu:
+                t.avancer(0.62, _("Relecture {n}/{m} : l'IA regarde son aperçu, étape par étape…", n=n + 1, m=tours))
+                try:
+                    vus = ML.verifier_etapes(params, b, apercu)
+                except Exception:      # noqa: BLE001 : la relecture est un plus
+                    break
+                manquent = [x for x in vus if not x.get("vue")]
+                if not manquent:
+                    b.setdefault("pro", {}).setdefault("relectures", []).append(_("tout se voit"))
+                    break
+                remarque = "These steps are not visible in the render, fix them so each one clearly shows: " + "; ".join(
+                    f"step {x['n']} ({x['a']:g}-{x['b']:g} s) {x['texte']} -> {x.get('remarque') or 'not visible'}" for x in manquent)
+                t.avancer(0.66, _("Relecture {n}/{m} : {k} étape(s) à corriger…", n=n + 1, m=tours, k=len(manquent)))
+                b = ML.corriger(params_m, b, remarque=remarque)
+                b.setdefault("pro", {}).setdefault("relectures", []).append(_("{k} étape(s) corrigée(s)", k=len(manquent)))
+            else:
+                break
+            b, apercu, erreurs = self._verifier_et_apercu(t, b)
+        return b, apercu, erreurs
 
     def corriger(self, erreur=""):
         remarque = self.remarque.text().strip() if not erreur else ""
@@ -470,10 +666,14 @@ class DialogueMotionLibre(QDialog):
             return
         a = self.lire()
 
+        pro = a.get("pro") or {}
+        from . import motion_pro as MP
+        params = MP.params_modele(self.params, pro["famille"], pro["modele"]) if pro.get("modele") else self.params
+
         def travail(t):
             self._caler_musique(a)
             t.avancer(0.05, _("L'IA reprend l'animation…"))
-            b = ML.corriger(self.params, a, remarque, erreur)
+            b = ML.corriger(params, a, remarque, erreur)
             return self._verifier_et_apercu(t, b)
 
         def fin(r, e):

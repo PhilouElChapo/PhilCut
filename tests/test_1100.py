@@ -88,6 +88,10 @@ class TestFenetre(unittest.TestCase):
         ed = f.nouveau_projet("9:16")
         dl = ed.animation_libre()
         dl._test_oui = True
+        for w in (dl.pro_dessins, dl.pro_videos, dl.pro_blocs):       # 1.1.16 : sans le look pro (testé dans test_1125)
+            w.setChecked(False)
+        dl.pro_tours.setValue(0)
+        dl.pro_modele.setCurrentIndex(dl.pro_modele.findData("rapide"))
         self.assertEqual(dl.format.currentData(), (1080, 1920))
         self.assertFalse(dl.b_corriger.isEnabled())
         dl.description.setPlainText("un cadeau qui grandit jusqu'à 40")
@@ -119,7 +123,7 @@ class TestFenetre(unittest.TestCase):
         for a in m.actions():
             if a.menu():
                 textes += [b.text() for b in a.menu().actions()]
-        self.assertIn("Animation libre : décrivez-la, l'IA la construit…", textes)
+        self.assertIn("Motion design IA (look pro) : décrivez-la, l'IA la construit…", textes)
 
 
 if __name__ == "__main__":

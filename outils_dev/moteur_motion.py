@@ -16,8 +16,63 @@ RELEASE = "https://github.com/PhilouElChapo/PhilCut/releases/download/moteurs-ia
 NOMS = {"windows": "philcut-motion-windows-x64.zip", "linux": "philcut-motion-linux-x64.tar.gz"}
 
 
+def _png_essai(chemin, L=360, H=240):
+    """Un PNG transparent avec un « canon » rouge et gris (écrit à la main : zlib)."""
+    import struct, zlib
+    lignes = []
+    for y in range(H):
+        ligne = bytearray([0])
+        for x in range(L):
+            if 40 <= x < 320 and 60 <= y < 180:
+                ligne += bytes((192, 48, 32, 255))
+            elif 140 <= x < 220 and 20 <= y < 80:
+                ligne += bytes((48, 48, 48, 255))
+            else:
+                ligne += bytes((0, 0, 0, 0))
+        lignes.append(bytes(ligne))
+    def bloc(t, d):
+        return struct.pack(">I", len(d)) + t + d + struct.pack(">I", zlib.crc32(t + d) & 0xffffffff)
+    with open(chemin, "wb") as f:
+        f.write(b"\x89PNG\r\n\x1a\n" + bloc(b"IHDR", struct.pack(">IIBBBBB", L, H, 8, 6, 0, 0, 0)) +
+                bloc(b"IDAT", zlib.compress(b"".join(lignes))) + bloc(b"IEND", b""))
+
+
+def _essais_medias():
+    """1.1.16 : une image (PNG transparent) et un plan vidéo de vérification, fabriqués par FFmpeg."""
+    import subprocess, tempfile
+    d = os.path.join(tempfile.gettempdir(), "philcut_essais_medias")
+    os.makedirs(d, exist_ok=True)
+    img, img2, vid = os.path.join(d, "img_canon.png"), os.path.join(d, "photo.jpg"), os.path.join(d, "vid_boom.mp4")
+    if not os.path.exists(img):
+        _png_essai(img)
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "testsrc2=s=800x600", "-frames:v", "1", img2],
+                       check=True)
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i", "mandelbrot=s=640x360:r=30", "-t", "4",
+                        "-pix_fmt", "yuv420p", vid], check=True)
+    return img, img2, vid
+
+
 def _anim(genre="chiffres", L=1920, H=1080):
     from app import motion as M
+    if genre == "libre_pro":                        # 1.1.16 : dessin (IMG) et plan vidéo posé en mode écran
+        from app import motion_libre as ML
+        img, _img2, vid = _essais_medias()
+        racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        with open(os.path.join(racine, "tests", "exemples", "libre_canons.txt"), encoding="utf-8") as f:
+            s = ML.sections(f.read())
+        s["js"] += ('\nconst dessin = $("img", {position: "absolute", left: 390 * u + "px", top: 260 * u + "px", width: 300 * u + "px"});'
+                    '\ndessin.src = IMG.canon; dessin.style.opacity = "0";\ntl.fromTo(dessin, {opacity: 1}, {opacity: 1, duration: 0.3}, 0.8);')
+        s["videos"] = "boom 5.3 1.6 540 960 1000"
+        a = ML.fiche("essai", (int(L), int(H)))
+        a["libre"] = {"ressources": {"images": {"canon": {"chemin": img, "largeur": 360, "hauteur": 240, "en": "cannon"}},
+                                     "videos": {"boom": {"chemin": vid, "duree": 4.0, "en": "explosion"}}}}
+        return ML.appliquer(a, s)
+    if genre == "titre_images":                     # 1.1.16 : animation simple avec deux images
+        img, img2, _vid = _essais_medias()
+        a = M.nouvelle("titre", taille=(int(L), int(H)))
+        a.update(titre="Une soirée au bord du lac", sous_titre="Chapitre 2",
+                 images=[{"chemin": img2, "place": "haut"}, {"chemin": img, "place": "coin"}])
+        return a
     if genre in ("libre", "libre_leger", "libre_canons"):   # 1.1.0 : une composition écrite comme l'IA l'écrirait (tests/exemples)
         from app import motion_libre as ML
         racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -50,7 +105,10 @@ def composition(dossier, genre="chiffres", L=1920, H=1080):
 
 def props(fichier, genre="chiffres", L=1920, H=1080):
     from app import motion_html as MH
-    m = MH.mise_en_page(_anim(genre, L, H))
+    a = _anim(genre, L, H)
+    os.makedirs("public", exist_ok=True)
+    a = dict(a, _html_calques=MH._copier_calques(a, "public", ""))      # 1.1.16 : images de l'animation simple
+    m = MH.mise_en_page(a)
     m["cadence"] = 30
     m["polices"] = []
     json.dump({"A": m}, open(fichier, "w", encoding="utf-8"), ensure_ascii=False)
@@ -64,6 +122,10 @@ def libre_remotion(projet, fichier, L=1920, H=1080):
         tsx = f.read()
     a = ML.fiche("essai", (int(L), int(H)), 9.5, moteur="remotion")
     a = ML.appliquer(a, {"tsx": tsx, "duree": "9.5", "plan": "0-4 s: cadeau\n4.2-7 s: feu\n7-9.5 s: confettis"})
+    img, _img2, vid = _essais_medias()                 # 1.1.16 : dessin et plan vidéo posé en mode écran
+    a["libre"]["ressources"] = {"images": {"canon": {"chemin": img}}, "videos": {"boom": {"chemin": vid, "duree": 4.0}}}
+    a["libre"]["videos_poses"] = [{"id": "boom", "debut": 4.2, "duree": 2.0, "cx": int(L) / 2, "cy": int(H) / 2,
+                                   "largeur": int(L) * 0.8}]
     fiche = MR.preparer_libre(a, projet)
     fiche["A"]["polices"] = []
     json.dump(fiche, open(fichier, "w", encoding="utf-8"), ensure_ascii=False)

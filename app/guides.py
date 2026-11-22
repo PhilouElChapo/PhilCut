@@ -224,11 +224,13 @@ def _guides_integres():
          "etapes": [
              {"texte": _("Fabrique IA › Animation (motion design) › « Ma charte… » : tirez-la de votre logo ou de votre site, "
                          "corrigez, OK. Une fois pour toutes.")},
-             {"texte": _("Fabrique IA › Animation › « Animation de chiffres, graphiques ou titre… » : écrivez ce que vous voulez et "
+             {"texte": _("Fabrique IA › Animation › « Animation simple : chiffres, graphiques, titre (avec 1 ou 2 images)… » : écrivez ce que vous voulez et "
                          "« ✨ Préparer avec l'IA », ou remplissez la fiche ; « Coller un tableau » prend vos lignes d'Excel.")},
              {"texte": _("Le type : chiffre, barres, courbe, camembert (parts d'un tout), jauge (un pourcentage), comparaison "
                          "avant / après, classement, chiffres clefs en cartes, chronologie, liste de points, citation, titre ou "
                          "appel à l'action (« S'abonner », cliqué par la souris). Chronologie et liste : une ligne par élément.")},
+             {"texte": _("« Images » : une ou deux images (photo, logo, produit…), à droite, à gauche, en haut, dans un coin "
+                         "ou en fond discret ; elles apparaissent sous les textes, dans les trois moteurs.")},
              {"texte": _("Regardez (▶), choisissez une des trois propositions, réglez les curseurs ; une remarque à l'instant "
                          "(« à 0:03 la barre est trop rouge ») et « Corriger par l'IA ».")},
              {"texte": _("Moteur : celui marqué ★ est conseillé. HyperFrames et Remotion s'installent une fois (« Installer… ») ; "
@@ -236,14 +238,19 @@ def _guides_integres():
              {"texte": _("« Fabriquer », regardez, puis « Poser au-dessus du film » (transparent) ou « Insérer à la ligne rouge ».")},
          ]},
         {"id": "animation_libre", "etat": "ok",
-         "titre": _("Créer une animation libre en la décrivant"),
-         "mots": "animation libre decrire phrase motion design hyperframes remotion react ia claude reduire plan bruitage son musique caler cadeau feu artifice confettis graphique compteur",
+         "titre": _("Motion design IA (look pro) : décrire une animation, l'IA la construit"),
+         "mots": "animation libre decrire phrase motion design hyperframes remotion react ia claude reduire plan bruitage son musique caler cadeau feu artifice confettis graphique compteur look pro dessins gemini effets video explosion feu fumee blocs bibliotheque relecture opus sonnet",
          "intro": _("Pour tout ce que les types tout faits ne savent pas faire : vous décrivez, l'IA écrit la composition, vous "
                     "regardez et demandez des changements."),
          "etapes": [
-             {"texte": _("Fabrique IA › Animation (motion design) › « Animation libre : décrivez-la, l'IA la construit… ».")},
+             {"texte": _("Fabrique IA › Animation (motion design) › « Motion design IA (look pro) : décrivez-la, l'IA la construit… ».")},
              {"texte": _("Décrivez comme à un graphiste : ce qui apparaît, comment ça bouge, dans quel ordre, les chiffres et les "
                          "textes exacts. Choisissez le format, la durée (ou laissez l'IA choisir), la charte.")},
+             {"texte": _("« Look pro » : vrais dessins (Gemini dessine chaque objet, détouré), effets réalistes en vidéo IA (feu, "
+                         "fumée, explosion filmés sur fond noir et posés en mode écran), blocs éprouvés de la bibliothèque "
+                         "HyperFrames, relectures (l'IA regarde son aperçu et corrige ce qui ne se voit pas) et modèle qui écrit "
+                         "(selon la complexité : Sonnet, ou Opus pour une animation riche). L'IA prépare d'abord, puis montre le "
+                         "détail des coûts avant de fabriquer.")},
              {"texte": _("« Ecrite pour » : HyperFrames (libre, aussi rendu chez HeyGen) ou Remotion (gratuit pour un particulier, "
                          "3 personnes au plus ou une association : cochez la case de licence). Le choix d'office se règle dans "
                          "Préférences › Assistant et IA ; changer en cours fait réécrire l'animation par « Changer ».")},

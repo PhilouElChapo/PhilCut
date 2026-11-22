@@ -652,6 +652,58 @@ def lire_fichier(chemin):
 
 
 # ------------------------------------------------------------------ zones sûres (Reels, Shorts, TikTok)
+# ------------------------------------------------------------------ 1.1.16 : une ou deux images dans l'animation simple
+PLACES_IMAGE = {"droite": _("à droite"), "gauche": _("à gauche"), "haut": _("en haut"), "coin": _("petite, dans un coin"),
+                "fond": _("en fond, discrète")}
+MAX_IMAGES = 2
+
+
+def _taille_image(chemin):
+    from PySide6.QtGui import QImageReader
+    s = QImageReader(chemin).size()
+    return (s.width(), s.height()) if s.isValid() and s.width() > 0 else (1, 1)
+
+
+def calques_images(anim):
+    """Les images de l'animation simple (Philippe, 22/11 22h06 : « intégrer 1 ou 2 images si nécessaire ») : rectangle en pixels
+    de l'image, opacité, apparition et départ, mêmes pour les trois moteurs. [{chemin, x, y, w, h, op, cover, t0, t1}]"""
+    L, H = [int(x) // 2 * 2 for x in (anim.get("taille") or (1920, 1080))]
+    zx, zy, zw, zh = zone_sure(dict(anim, taille=[L, H]))
+    D = float(anim.get("duree") or duree_conseillee(anim.get("genre")))
+    out = []
+    for k, im in enumerate((anim.get("images") or [])[:MAX_IMAGES]):
+        ch = (im or {}).get("chemin") or ""
+        if not os.path.exists(ch):
+            continue
+        iw, ih = _taille_image(ch)
+        r = ih / iw
+        place = im.get("place") if im.get("place") in PLACES_IMAGE else "droite"
+        op, cover = 1.0, False
+        if place == "fond":
+            x, y, w, h, op, cover = 0, 0, L, H, 0.3, True
+        elif place in ("gauche", "droite"):
+            w = zw * (0.42 if H > L else 0.3)
+            h = min(w * r, zh * 0.62)
+            w = h / r
+            x = zx if place == "gauche" else zx + zw - w
+            y = zy + (zh - h) / 2
+        elif place == "haut":
+            h = zh * 0.28
+            w = min(h / r, zw * 0.7)
+            h = w * r
+            x, y = zx + (zw - w) / 2, zy
+        else:
+            w = min(L, H) * 0.18
+            h = w * r
+            x, y = zx, zy + zh - h
+        if k == 1 and out and out[0]["x"] == x and out[0]["y"] == y and not cover:      # même place : à côté de la première
+            x = max(zx, x - w * 1.08) if x > zx + zw / 2 else min(zx + zw - w, x + w * 1.08)
+        t0 = 0.15 + 0.3 * k
+        out.append({"n": k, "chemin": ch, "x": round(x, 1), "y": round(y, 1), "w": round(w, 1), "h": round(h, 1), "op": op,
+                    "cover": cover, "t0": t0, "t1": max(t0 + 0.6, D - 0.45)})
+    return out
+
+
 def zone_sure(anim):
     """Le rectangle (x, y, l, h) où poser textes et chiffres : en vertical, les boutons et la légende des réseaux couvrent le
     haut, le bas et la droite (zones mortes) ; en horizontal, une marge de 7 %."""

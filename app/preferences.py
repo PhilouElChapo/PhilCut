@@ -689,6 +689,39 @@ class DialoguePreferences(QDialog):
         hl.addWidget(self.motion_libre_caler)
         hl.addStretch(1)
         f.addRow("", hl)
+        hp = QHBoxLayout()                              # 1.1.16 : motion design IA, look pro
+        self.motion_pro_dessins = QCheckBox(_("Vrais dessins (Gemini)"))
+        self.motion_pro_dessins.setChecked(bool(self.params.get("motion_pro_dessins", True)))
+        self.motion_pro_videos = QCheckBox(_("Effets réalistes en vidéo IA"))
+        self.motion_pro_videos.setChecked(bool(self.params.get("motion_pro_videos", True)))
+        self.motion_pro_blocs = QCheckBox(_("Blocs éprouvés (HyperFrames)"))
+        self.motion_pro_blocs.setChecked(bool(self.params.get("motion_pro_blocs", True)))
+        for w in (self.motion_pro_dessins, self.motion_pro_videos, self.motion_pro_blocs):
+            hp.addWidget(w)
+        hp.addStretch(1)
+        f.addRow(_("Motion design IA : look pro"), hp)
+        hp2 = QHBoxLayout()
+        from PySide6.QtWidgets import QSpinBox
+        self.motion_pro_tours = QSpinBox()
+        self.motion_pro_tours.setRange(0, 3)
+        self.motion_pro_tours.setValue(int(self.params.get("motion_pro_tours", 2)))
+        hp2.addWidget(QLabel(_("Relectures")))
+        hp2.addWidget(self.motion_pro_tours)
+        self.motion_pro_modele = QComboBox()
+        for k, lib in (("auto", _("Selon la complexité")), ("rapide", _("Rapide (moins cher)")), ("meilleur", _("Le meilleur"))):
+            self.motion_pro_modele.addItem(lib, k)
+        self.motion_pro_modele.setCurrentIndex(max(0, self.motion_pro_modele.findData(self.params.get("motion_pro_modele") or "auto")))
+        hp2.addWidget(QLabel(_("Modèle qui écrit")))
+        hp2.addWidget(self.motion_pro_modele, 1)
+        f.addRow("", hp2)
+        self.motion_pro_video = QComboBox()
+        self.motion_pro_video.addItem(_("Le premier disponible"), "")
+        from . import generateurs_video as _GV
+        for m in _GV.modeles(self.params):
+            if not m.get("references"):
+                self.motion_pro_video.addItem(m["nom"], m["id"])
+        self.motion_pro_video.setCurrentIndex(max(0, self.motion_pro_video.findData(self.params.get("motion_pro_video") or "")))
+        f.addRow(_("Effets vidéo faits par"), self.motion_pro_video)
         self.remotion_licence = QCheckBox(_("J'ai droit à la licence gratuite de Remotion (ou j'ai une licence entreprise)"))
         self.remotion_licence.setToolTip(_("Gratuite pour un particulier, une structure de 3 personnes au plus ou une association ; "
                                            "au-delà, licence entreprise Remotion obligatoire"))
@@ -1271,6 +1304,12 @@ class DialoguePreferences(QDialog):
             p["motion_moteur"] = self.motion_moteur.currentData()
             p["motion_libre_moteur"] = self.motion_libre_moteur.currentData()
             p["motion_libre_bruitages"] = self.motion_libre_bruitages.isChecked()
+            p["motion_pro_dessins"] = self.motion_pro_dessins.isChecked()
+            p["motion_pro_videos"] = self.motion_pro_videos.isChecked()
+            p["motion_pro_blocs"] = self.motion_pro_blocs.isChecked()
+            p["motion_pro_tours"] = self.motion_pro_tours.value()
+            p["motion_pro_modele"] = self.motion_pro_modele.currentData()
+            p["motion_pro_video"] = self.motion_pro_video.currentData()
             p["motion_libre_caler"] = self.motion_libre_caler.isChecked()
             p["remotion_licence"] = self.remotion_licence.isChecked()
         gestion = getattr(self.fenetre, "telechargements", None)

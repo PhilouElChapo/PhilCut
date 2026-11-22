@@ -17,6 +17,7 @@ export type Animation = {
   horaire?: Horaire; coins?: number; panneau?: boolean; mots?: [number, number, string][]; style_st?: string; majuscules?: boolean;
   lignes_st?: { t0: number; t1: number; mots: [number, number, string][] }[]; chapitres?: [number, string][]; image?: string; st_taille?: number;
   image_ratio?: number;
+  calques?: { src: string; x: number; y: number; w: number; h: number; op: number; cover: boolean; t0: number; t1: number }[];
   // 1.0.1 : neuf types de plus
   elements?: [string, number | null, string, string][]; palette?: string[]; bouton?: string; bouton_fait?: string;
 };
@@ -633,6 +634,12 @@ export const PhilCut: React.FC<{ A: Animation }> = ({ A }) => {
   return (
     <AbsoluteFill>
       <Fond A={A} />
+      {(A.calques || []).filter((k) => k.src).map((k, i) => {
+        const a = entre(t, k.t0, k.t0 + 0.5) * (1 - entre(t, k.t1, k.t1 + 0.4));
+        const s = 0.92 + 0.08 * entre(t, k.t0, k.t0 + 0.5);
+        return a <= 0 ? null : <Img key={"calque" + i} src={staticFile(k.src)} style={{ position: "absolute", left: k.x, top: k.y,
+          width: k.w, height: k.h, objectFit: k.cover ? "cover" : "contain", opacity: a * k.op, transform: `scale(${s})` }} />;
+      })}
       {Object.entries(h.scenes).sort((x, y) => x[1][0] - y[1][0]).map(([nom, [a, b]]) => {
         const S = SCENES[nom] as React.FC<SceneProps> | undefined;
         return S && t >= a - 0.01 && t <= b + 0.01 ? <S key={nom} A={A} h={h} a={a} b={b} dernier={b >= fins - 1e-6} /> : null;

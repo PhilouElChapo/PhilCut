@@ -1064,10 +1064,37 @@ class Rendu:
                 p.drawEllipse(QPointF(px, py), r, r)
         p.restore()
 
+    # -------------------------------------------------- 1.1.16 : une ou deux images (animation simple)
+    def calques(self, p, t):
+        from PySide6.QtGui import QImage
+        from PySide6.QtCore import QRectF
+        if not hasattr(self, "_calques"):
+            self._calques = [(c, QImage(c["chemin"])) for c in M.calques_images(self.a)]
+        for c, img in self._calques:
+            if img.isNull():
+                continue
+            a = entre(t, c["t0"], c["t0"] + 0.5) * (1 - entre(t, c["t1"], c["t1"] + 0.4))
+            if a <= 0:
+                continue
+            k = 0.92 + 0.08 * entre(t, c["t0"], c["t0"] + 0.5)
+            w, h = c["w"] * k, c["h"] * k
+            x, y = c["x"] + (c["w"] - w) / 2, c["y"] + (c["h"] - h) / 2
+            p.save()
+            p.setOpacity(a * c["op"])
+            cible = QRectF(x, y, w, h)
+            if c["cover"]:
+                r = max(w / img.width(), h / img.height())
+                sw, sh = w / r, h / r
+                p.drawImage(cible, img, QRectF((img.width() - sw) / 2, (img.height() - sh) / 2, sw, sh))
+            else:
+                p.drawImage(cible, img)
+            p.restore()
+
     # -------------------------------------------------- une image
     def dessiner(self, p, t):
         """L'image à l'instant t (en secondes de l'animation), sur l'horaire commun."""
         self.fond(p, t)
+        self.calques(p, t)
         fins = max((b for _a, b in self.h["scenes"].values()), default=self.D)
         for nom, (a, b) in sorted(self.h["scenes"].items(), key=lambda x: x[1][0]):
             if a - 0.01 <= t <= b + 0.01:

@@ -4,7 +4,18 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.15 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.16 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.16 (motion design : look pro et animation simple avec images)
+- Fabrique IA › Animation : deux entrees. « Motion design IA (look pro) » et « Animation simple » (les types tout faits).
+- Look pro, avec la methode des outils en ligne, chaque cout demande avant :
+  - l'IA prepare d'abord : blocs de la bibliotheque HyperFrames (registre officiel de HeyGen, Apache 2.0, 236 composants eprouves), objets a dessiner, effets realistes a filmer, complexite ;
+  - vrais dessins : Gemini dessine chaque objet sur fond vert, PhilCut le detoure ;
+  - effets realistes en video IA (feu, fumee, explosion…) filmes sur fond noir et poses en mode ecran au bon instant ;
+  - le modele qui ecrit suit la complexite : Claude Sonnet, ou Claude Opus pour une animation riche (ou Gemini Flash / Pro) ;
+  - relectures : l'IA regarde une image par etape de son apercu et fait corriger ce qui ne se voit pas, jusqu'a 3 fois.
+- Animation simple : une ou deux images (photo, logo, produit), a droite, a gauche, en haut, dans un coin ou en fond discret, dans les trois moteurs.
+- Tous ces reglages sont aussi dans les Preferences.
 
 ### 1.1.15 (animation libre, suite)
 - Un element cache qui doit apparaitre plus tard (flamme du canon, onde de choc) n'est plus visible des le debut.

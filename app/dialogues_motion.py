@@ -408,6 +408,10 @@ class DialogueMotion(QDialog):
         self.source = QLineEdit()
         self.source.setPlaceholderText(_("d'où viennent les chiffres (affiché en petit)"))
         f2.addRow(_("Source"), self.source)
+        self.w_images = QWidget()                 # 1.1.16 : une ou deux images (photo, logo, produit…)
+        self.v_images = QVBoxLayout(self.w_images)
+        self.v_images.setContentsMargins(0, 0, 0, 0)
+        f2.addRow(_("Images"), self.w_images)
         hc = QHBoxLayout()
         self.charte = QComboBox()
         hc.addWidget(self.charte, 1)
@@ -612,10 +616,73 @@ class DialogueMotion(QDialog):
         self.style_st.setCurrentIndex(max(0, self.style_st.findData(a.get("style_st") or "surligne")))
         self.majuscules.setChecked(bool(a.get("majuscules", True)))
         self.calage.setCurrentIndex(max(0, self.calage.findData(a.get("cale") or "")))
+        self._remplir_images()
         self._charge = False
         self._contexte()
         self._lire_et_dessiner()
         self._vignettes()
+
+    # ---------------------------------------------- 1.1.16 : une ou deux images
+    def _remplir_images(self):
+        while self.v_images.count():
+            it = self.v_images.takeAt(0)
+            if it.widget():
+                it.widget().deleteLater()
+            elif it.layout():
+                lay = it.layout()
+                while lay.count():
+                    x = lay.takeAt(0)
+                    if x.widget():
+                        x.widget().deleteLater()
+                lay.deleteLater()
+        images = self.anim.setdefault("images", [])
+        for k, im in enumerate(images):
+            h = QHBoxLayout()
+            nom = QLabel(os.path.basename(im.get("chemin", "")))
+            nom.setToolTip(im.get("chemin", ""))
+            nom.setMinimumWidth(60)
+            h.addWidget(nom, 1)
+            place = QComboBox()
+            for cle, lib in M.PLACES_IMAGE.items():
+                place.addItem(lib, cle)
+            place.setCurrentIndex(max(0, place.findData(im.get("place") or "droite")))
+            place.currentIndexChanged.connect(lambda _i, k=k, w=place: self._place_image(k, w.currentData()))
+            h.addWidget(place)
+            b = QPushButton("✕")
+            b.setToolTip(_("Retirer cette image"))
+            b.setFixedWidth(32)
+            b.clicked.connect(lambda _c=False, k=k: self._retirer_image(k))
+            h.addWidget(b)
+            self.v_images.addLayout(h)
+        if len(images) < M.MAX_IMAGES:
+            b = QPushButton(_("Ajouter une image (photo, logo, produit…)…") if not images else _("Ajouter une seconde image…"))
+            b.setToolTip(_("Une ou deux images posées dans l'animation, sous les textes : à côté, en haut, dans un coin ou en fond"))
+            b.clicked.connect(self._ajouter_image)
+            self.v_images.addWidget(b)
+
+    def _ajouter_image(self):
+        from .widgets import ouvrir_fichier
+        ch = getattr(self, "_test_image", None) or ouvrir_fichier(self, _("Choisir une image"),
+                                                                 _("Images (*.png *.jpg *.jpeg *.webp *.bmp)"), "images", self.params)
+        if not ch:
+            return
+        images = self.anim.setdefault("images", [])
+        images.append({"chemin": ch, "place": "droite" if not images else "gauche"})
+        self._remplir_images()
+        self._lire_et_dessiner()
+
+    def _retirer_image(self, k):
+        images = self.anim.setdefault("images", [])
+        if 0 <= k < len(images):
+            images.pop(k)
+        self._remplir_images()
+        self._lire_et_dessiner()
+
+    def _place_image(self, k, place):
+        images = self.anim.setdefault("images", [])
+        if 0 <= k < len(images):
+            images[k]["place"] = place
+        self._lire_et_dessiner()
 
     def lire_fiche(self):
         a = self.anim

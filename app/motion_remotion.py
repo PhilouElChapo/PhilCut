@@ -125,6 +125,7 @@ def preparer(anim):
         nom = "capture" + os.path.splitext(anim["image"])[1].lower()
         shutil.copy2(anim["image"], os.path.join(pub, nom))
         anim = dict(anim, _html_image=nom, _html_ratio=MH._ratio(anim["image"]))
+    anim = dict(anim, _html_calques=MH._copier_calques(anim, pub, ""))
     m = MH.mise_en_page(anim)
     m["cadence"] = int(anim.get("cadence") or 30)
     ch = CH.complete(anim.get("charte"))
@@ -191,6 +192,23 @@ def preparer_libre(anim, racine=None):
     _ch, m["polices"], logo = _polices_et_logo(anim, pub)
     if logo:
         m["logo"] = logo
+    res = lib.get("ressources") or {}                 # 1.1.16 : dessins et plans vidéo du motion pro
+    m["IMG"], m["VID"] = {}, []
+    for i, r in (res.get("images") or {}).items():
+        if r.get("chemin") and os.path.exists(r["chemin"]):
+            nom = os.path.basename(r["chemin"])
+            shutil.copy2(r["chemin"], os.path.join(pub, nom))
+            m["IMG"][i] = nom
+    L, H = m["W"], m["H"]
+    for v in lib.get("videos_poses") or []:
+        r = (res.get("videos") or {}).get(v["id"]) or {}
+        if not (r.get("chemin") and os.path.exists(r["chemin"])):
+            continue
+        nom = os.path.basename(r["chemin"])
+        shutil.copy2(r["chemin"], os.path.join(pub, nom))
+        larg = float(v.get("largeur") or L)
+        m["VID"].append({"fichier": nom, "debut": float(v["debut"]), "duree": float(v["duree"]), "largeur": larg,
+                         "cx": float(v.get("cx") or L / 2), "cy": float(v.get("cy") or H / 2)})
     return {"A": m}
 
 

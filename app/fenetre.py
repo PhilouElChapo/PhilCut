@@ -971,11 +971,12 @@ class Fenetre(QMainWindow):
             (icone("fabrique"), _("Animation (motion design)"),
              _("Chiffres qui montent, barres qui poussent, courbe qui se trace, titres animés, aux couleurs de votre charte : "
                "moteur de PhilCut, HyperFrames, HeyGen ou Remotion, au choix (PhilCut conseille)."), [
-                ent(icone("fabrique"), _("Animation libre : décrivez-la, l'IA la construit…"),
-                    _("Tout ce que vous imaginez : l'IA écrit une vraie composition (dessins, graphiques, particules, textes) aux "
-                      "couleurs de votre charte ; aperçu, changements en phrases, puis fabrication par HyperFrames."),
+                ent(icone("fabrique"), _("Motion design IA (look pro) : décrivez-la, l'IA la construit…"),
+                    _("Tout ce que vous imaginez, avec la méthode des outils en ligne : l'IA choisit des blocs éprouvés, fait "
+                      "dessiner les objets (Gemini), filmer les effets réalistes (vidéo IA), écrit la composition avec le modèle "
+                      "adapté, puis regarde son rendu et se corrige ; chaque coût est demandé."),
                     quand(lambda e: e.animation_libre())),
-                ent(icone("fabrique"), _("Animation de chiffres, graphiques ou titre…"),
+                ent(icone("fabrique"), _("Animation simple : chiffres, graphiques, titre (avec 1 ou 2 images)…"),
                     _("Chiffres, barres, courbe, camembert, jauge, comparaison, classement, chronologie, liste, citation, titre ou "
                       "appel à l'action : dites ce que vous voulez ou collez vos chiffres ; trois propositions, des curseurs, l'aperçu "
                       "immédiat ; puis le moteur conseillé fabrique, vous regardez, vous posez."), quand(lambda e: e.animation())),

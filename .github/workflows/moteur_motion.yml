@@ -68,8 +68,10 @@ jobs:
           python outils_dev/moteur_motion.py composition essai_lv libre 1080 1920
           python outils_dev/moteur_motion.py composition essai_lp libre_leger 1080 1920
           python outils_dev/moteur_motion.py composition essai_lc libre_canons 1080 1920
+          python outils_dev/moteur_motion.py composition essai_pro libre_pro 1080 1920
+          python outils_dev/moteur_motion.py composition essai_ti titre_images 1920 1080
           mkdir -p out
-          for d in essai_h essai_v essai_st essai_bd essai_pg essai_cm essai_ch essai_ap essai_ck essai_lb essai_lv essai_lp essai_lc; do
+          for d in essai_h essai_v essai_st essai_bd essai_pg essai_cm essai_ch essai_ap essai_ck essai_lb essai_lv essai_lp essai_lc essai_pro essai_ti; do
             sed -i "s#https://cdn.jsdelivr.net/npm/gsap@[0-9.]*/dist/gsap.min.js#assets/gsap.min.js#" $d/index.html
             cp m/app/node_modules/gsap/dist/gsap.min.js $d/assets/
             node m/app/node_modules/hyperframes/bin/hyperframes.mjs lint $d
@@ -84,7 +86,7 @@ jobs:
           CH=$(find "$PWD/m/chrome" -name chrome-headless-shell -type f | head -1)
           cp -r m/remotion /tmp/remotion && cd /tmp/remotion
           npm install --omit=dev --no-audit --no-fund
-          for g in chiffres sous_titres bandeau camembert chronologie citation appel classement; do
+          for g in chiffres sous_titres bandeau camembert chronologie citation appel classement titre_images; do
             if [ "$g" = sous_titres ] || [ "$g" = chronologie ]; then python $GITHUB_WORKSPACE/outils_dev/moteur_motion.py props props.json $g 1080 1920;
             else python $GITHUB_WORKSPACE/outils_dev/moteur_motion.py props props.json $g; fi
             node node_modules/@remotion/cli/remotion-cli.js render src/index.ts PhilCut "$GITHUB_WORKSPACE/out/remotion_$g.mp4" \
