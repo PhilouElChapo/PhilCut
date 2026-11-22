@@ -55,7 +55,11 @@ STRICT RULES (the renderer seeks the timeline to each frame; anything else break
 6. Animate ONLY transforms and opacity (x, y, scale, scaleX, scaleY, rotation, opacity) and SVG attributes (attr:{{...}},
    strokeDashoffset): never top, left, width, height, margin or font-size (they snap to whole pixels and stutter). Place
    elements with left/top once, then move them with x/y. At most ~400 animated elements.
-7. The whole animation must read well at {L}×{H} ({format}) and last about {duree} seconds unless the user says otherwise
+7. Pitfalls that ruin a render: tl.fromTo() shows its FROM values from 0 s, so give a hidden start (opacity: 0) to anything
+   that appears later; a mirror with scaleX(-1) flips around transform-origin (use transformOrigin "50% 50%" or draw the
+   mirrored shape in the SVG), and a GSAP scale/rotation tween replaces a CSS transform; place objects that come in pairs
+   (left/right) symmetrically and check both are inside the frame.
+8. The whole animation must read well at {L}×{H} ({format}) and last about {duree} seconds unless the user says otherwise
    (max {dmax:g} s).{musique}
 
 ANSWER FORMAT — exactly these sections, nothing before or after, no markdown fences:
@@ -110,7 +114,10 @@ STRICT RULES (Remotion renders each frame independently, in parallel; anything e
    numbers the user did not give; you may write decorative words only if asked. Counters: Math.round of an interpolated value.
 6. Prefer transform (translate, scale, rotate) and opacity for motion; place elements with left/top once. At most ~400
    animated elements. Valid TypeScript: type your helper parameters (number, string, React.CSSProperties…).
-7. The whole animation must read well at {L}×{H} ({format}) and last about {duree} seconds unless the user says otherwise
+7. Pitfalls: a mirror with scaleX(-1) flips around transform-origin (use "50% 50%" or draw the mirrored shape in the SVG);
+   place objects that come in pairs (left/right) symmetrically and check both are inside the frame; anything that appears
+   later is invisible (opacity 0) before its instant.
+8. The whole animation must read well at {L}×{H} ({format}) and last about {duree} seconds unless the user says otherwise
    (max {dmax:g} s).{musique}
 
 ANSWER FORMAT — exactly these sections, nothing before or after, no markdown fences:
@@ -461,6 +468,16 @@ const __style = (e, style) => {{ if (!style) return; if (typeof style === "strin
     if (k === "webkitTextFillColor" || k === "WebkitTextFillColor") e.style.setProperty("-webkit-text-fill-color", String(v)); }} }};
 const $ = (tag, style, parent, texte) => {{ const e = document.createElement(tag); __style(e, style);
   if (texte !== undefined) e.textContent = texte; (parent || document.getElementById("scenes")).appendChild(e); return e; }};
+// 1.1.14 : tl.fromTo montre ses valeurs « de départ » dès 0 s ; un élément caché par son style (opacity 0) qui doit apparaître
+// plus tard (flash, onde de choc, éclat) restait visible tout du long : il reste caché jusqu'à son instant.
+const __fromTo = tl.fromTo.bind(tl);
+tl.fromTo = (cible, de, vers, pos, ...r) => {{
+  if (typeof pos === "number" && pos > 0 && de && vers && vers.immediateRender === undefined && de.opacity !== undefined && de.opacity > 0) {{
+    const els = gsap.utils.toArray(cible);
+    if (els.length && els.every(e => e && e.style && e.style.opacity === "0")) vers = Object.assign({{}}, vers, {{ immediateRender: false }});
+  }}
+  return __fromTo(cible, de, vers, pos, ...r);
+}};
 const svg = (markup, parent) => {{ const d = document.createElement("div"); d.innerHTML = markup.trim();
   const s = d.firstElementChild; (parent || document.getElementById("scenes")).appendChild(s); return s; }};
 if (!TRANSPARENT) document.getElementById("fond").style.background = C.fond;

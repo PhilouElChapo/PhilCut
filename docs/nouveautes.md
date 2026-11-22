@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.14 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.15 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.15 (animation libre, suite)
+- Un element cache qui doit apparaitre plus tard (flamme du canon, onde de choc) n'est plus visible des le debut.
+- L'IA est prevenue des pieges vus sur l'essai des canons : objet en miroir qui sort du cadre, paires gauche et droite a placer symetriquement.
 
 ### 1.1.14 (animation libre)
 - Animation libre : quand l'IA donnait les styles d'un element sous forme d'objet, ils etaient tous perdus (couleurs, positions, transparence) : mots sans couleur, canons mal places, flammes visibles en etoiles des le debut. PhilCut accepte maintenant les deux ecritures ; les animations deja construites sont corrigees en relancant l'apercu.

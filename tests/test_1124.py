@@ -19,6 +19,9 @@ class Test1124(unittest.TestCase):
         self.assertIn("__style", page)
         self.assertIn('typeof style === "string"', page)
         self.assertIn("camelCase", ML.CONSIGNE)
+        self.assertIn("immediateRender: false", page)            # 1.1.15 : flamme, onde de choc cachées jusqu'à leur instant
+        self.assertIn("scaleX(-1) flips", ML.CONSIGNE)
+        self.assertIn("scaleX(-1) flips", ML.CONSIGNE_REMOTION)
 
 
 if __name__ == "__main__":
