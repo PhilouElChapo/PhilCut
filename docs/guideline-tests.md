@@ -23,6 +23,11 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T119 — 1.1.14 : animation libre fidèle
+
+1. Rouvrez l'animation « Attention ça va commencer » (ou « Reprendre un modèle… ») et relancez l'aperçu : mots en dégradés multicolores, traînées qui descendent, canons en bas à gauche et à droite, tir, éclats, noir.
+2. Essayez aussi « Ecrite pour » › Remotion avec le même texte.
+
 ## T118 — 1.1.13 : reprise et plans clefs
 
 1. Assistant › page 1 › « Reprendre une création en cours… » : choisissez le tarmac ; vous arrivez sur les images (ou la vidéo si des plans sont faits).

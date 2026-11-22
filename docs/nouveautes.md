@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.13 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.14 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.14 (animation libre)
+- Animation libre : quand l'IA donnait les styles d'un element sous forme d'objet, ils etaient tous perdus (couleurs, positions, transparence) : mots sans couleur, canons mal places, flammes visibles en etoiles des le debut. PhilCut accepte maintenant les deux ecritures ; les animations deja construites sont corrigees en relancant l'apercu.
 
 ### 1.1.13 (fabrication du tarmac)
 - Kling O3 Reference : l'erreur HTTP 422 « End Image Url is not supported with Multi Prompt » est corrigee. Un plan avec image clef est maintenant toujours fabrique seul : il part de la vraie derniere image du plan d'avant et arrive sur son image clef ; les plans entre deux images clefs restent faits d'un seul calcul.

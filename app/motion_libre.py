@@ -36,7 +36,8 @@ THE CANVAS (already in the page, do not recreate it):
   as a multiple of u), C = colours {{fond, texte, doux, accent, accent2}} (hex), F = fonts {{titre, texte}} (CSS family names,
   already loaded), TRANSPARENT (boolean: the video will be laid over a film; then keep the background empty), LANG (text
   language code), `tl` = the GSAP timeline (already created, paused, registered), alea() = seeded random in [0, 1) (use it
-  instead of Math.random, which is forbidden), $(tag, style, parent, text) = creates an element (parent defaults to #scenes),
+  instead of Math.random, which is forbidden), $(tag, style, parent, text) = creates an element (parent defaults to #scenes; style = a CSS text "left:10px; …" or an
+  object of camelCase properties {{left: 10 * u + "px", …}}, numbers become px),
   svg(markup, parent) = inserts an inline SVG string and returns the <svg> element.
 
 STRICT RULES (the renderer seeks the timeline to each frame; anything else breaks the video):
@@ -451,7 +452,14 @@ window.__timelines = window.__timelines || {{}};
 window.__timelines["philcut"] = tl;
 let __graine = 1234567;
 const alea = () => {{ __graine = (__graine * 1103515245 + 12345) % 2147483648; return __graine / 2147483648; }};
-const $ = (tag, style, parent, texte) => {{ const e = document.createElement(tag); if (style) e.setAttribute("style", style);
+const __sansUnite = /^(opacity|zIndex|fontWeight|lineHeight|flex|flexGrow|flexShrink|order)$/;
+const __style = (e, style) => {{ if (!style) return; if (typeof style === "string") {{ e.setAttribute("style", style); return; }}
+  for (const k in style) {{ let v = style[k]; if (v === undefined || v === null) continue;
+    if (typeof v === "number" && !__sansUnite.test(k)) v = v + "px";
+    if (k.indexOf("-") >= 0) e.style.setProperty(k, String(v)); else e.style[k] = String(v);
+    if (k === "webkitBackgroundClip" || k === "WebkitBackgroundClip") e.style.backgroundClip = String(v);
+    if (k === "webkitTextFillColor" || k === "WebkitTextFillColor") e.style.setProperty("-webkit-text-fill-color", String(v)); }} }};
+const $ = (tag, style, parent, texte) => {{ const e = document.createElement(tag); __style(e, style);
   if (texte !== undefined) e.textContent = texte; (parent || document.getElementById("scenes")).appendChild(e); return e; }};
 const svg = (markup, parent) => {{ const d = document.createElement("div"); d.innerHTML = markup.trim();
   const s = d.firstElementChild; (parent || document.getElementById("scenes")).appendChild(s); return s; }};

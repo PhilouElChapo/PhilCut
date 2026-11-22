@@ -1,0 +1,391 @@
+===TITRE===
+Attention ça va commencer
+===DUREE===
+7.02
+===CSS===
+#scenes {
+  overflow: hidden;
+  background: #0f1016;
+  font-family: sans-serif;
+  user-select: none;
+}
+.full {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.streak {
+  position: absolute;
+  width: 6px;
+  background: linear-gradient(to top, rgba(255,255,255,0.8), rgba(255,215,0,0.6), transparent);
+  border-radius: 3px;
+  transform-origin: top center;
+}
+.word-box {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+.vivid-text {
+  font-weight: 900;
+  text-align: center;
+  line-height: 0.95;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.shard {
+  position: absolute;
+  transform-origin: center center;
+}
+===HTML===
+<div id="backdrop" class="full"></div>
+<div id="trails" class="full"></div>
+<div id="cannons-layer" class="full"></div>
+<div id="projectiles-layer" class="full"></div>
+<div id="shards-layer" class="full"></div>
+<div id="blackout" class="full" style="background:#000; opacity:0; z-index:100;"></div>
+===JS===
+const trailsContainer = document.getElementById("trails");
+const cannonsLayer = document.getElementById("cannons-layer");
+const projectilesLayer = document.getElementById("projectiles-layer");
+const shardsLayer = document.getElementById("shards-layer");
+const blackout = document.getElementById("blackout");
+
+// --- 1. MOTS MULTICOLORES ET TRAÎNÉES ---
+const wordsWrapper = $("div", {
+  position: "absolute",
+  left: "0",
+  top: "0",
+  width: W + "px",
+  height: H + "px",
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  zIndex: "10"
+});
+
+const linesData = [
+  { text: "ATTENTION", size: 90 * u, grad: "linear-gradient(135deg, #FF1361, #FFF800)" },
+  { text: "ÇA VA", size: 68 * u, grad: "linear-gradient(135deg, #00F2FE, #4FACFE)" },
+  { text: "COMMENCER", size: 84 * u, grad: "linear-gradient(135deg, #FF0844, #FFB199, #FEE140)" }
+];
+
+const textEls = [];
+linesData.forEach((d) => {
+  const el = $("div", {
+    fontFamily: F.titre || "sans-serif",
+    fontSize: d.size + "px",
+    fontWeight: "900",
+    letterSpacing: "4px",
+    backgroundImage: d.grad,
+    webkitBackgroundClip: "text",
+    webkitTextFillColor: "transparent",
+    textShadow: "0 10px 30px rgba(0,0,0,0.5)",
+    marginBottom: 10 * u + "px",
+    transformOrigin: "center center"
+  }, wordsWrapper, d.text);
+  textEls.push(el);
+});
+
+// Traînées verticales ("trace de haut en bas")
+const streakCount = 35;
+const streakEls = [];
+for (let i = 0; i < streakCount; i++) {
+  const stX = (0.12 + alea() * 0.76) * W;
+  const stH = (180 + alea() * 400) * u;
+  const stW = (3 + alea() * 6) * u;
+  const hue = Math.floor(alea() * 360);
+  const streak = $("div", {
+    position: "absolute",
+    left: stX + "px",
+    top: "-300px",
+    width: stW + "px",
+    height: stH + "px",
+    background: `linear-gradient(to top, hsla(${hue}, 100%, 70%, 0.8), hsla(${hue}, 100%, 50%, 0.1), transparent)`,
+    borderRadius: (stW / 2) + "px",
+    opacity: "0"
+  }, trailsContainer);
+  streakEls.push({ el: streak, h: stH });
+}
+
+// Chute initiale des mots
+tl.set(wordsWrapper, { y: -H * 0.9, opacity: 0 });
+tl.to(wordsWrapper, {
+  y: 0,
+  opacity: 1,
+  duration: 0.6,
+  ease: "power3.in"
+}, 0.35);
+
+tl.to(wordsWrapper, {
+  y: 20 * u,
+  duration: 0.1,
+  ease: "power1.out"
+}, 0.95);
+
+tl.to(wordsWrapper, {
+  y: 0,
+  duration: 0.3,
+  ease: "elastic.out(1, 0.4)"
+}, 1.05);
+
+// Animation des traces lumineuses
+streakEls.forEach((st, idx) => {
+  const startT = 0.35 + (idx % 6) * 0.04;
+  tl.fromTo(st.el, 
+    { y: -100 * u, opacity: 0.8, scaleY: 0.2 },
+    { y: H * 0.75 + alea() * 200 * u, opacity: 0, scaleY: 1.5, duration: 0.75, ease: "power2.in" },
+    startT
+  );
+});
+
+// --- 2. CANONS (GAUCHE & DROITE) ---
+function createCannonSvg(flip) {
+  const dir = flip ? -1 : 1;
+  return `
+  <svg width="${260 * u}" height="${260 * u}" viewBox="0 0 200 200" style="overflow:visible;">
+    <defs>
+      <radialGradient id="wheelGrad${flip ? 'R' : 'L'}" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#8a5a36"/>
+        <stop offset="70%" stop-color="#4a2e18"/>
+        <stop offset="100%" stop-color="#241408"/>
+      </radialGradient>
+      <linearGradient id="barrelGrad${flip ? 'R' : 'L'}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#555"/>
+        <stop offset="45%" stop-color="#222"/>
+        <stop offset="70%" stop-color="#111"/>
+        <stop offset="100%" stop-color="#444"/>
+      </linearGradient>
+    </defs>
+    <!-- Roue arrière / support -->
+    <ellipse cx="70" cy="150" rx="36" ry="36" fill="url(#wheelGrad${flip ? 'R' : 'L'})" stroke="#1a0f05" stroke-width="5"/>
+    <circle cx="70" cy="150" r="10" fill="#a87c4f" stroke="#111" stroke-width="2"/>
+    <line x1="70" y1="116" x2="70" y2="184" stroke="#241408" stroke-width="4"/>
+    <line x1="36" y1="150" x2="104" y2="150" stroke="#241408" stroke-width="4"/>
+    <!-- Canon fût -->
+    <g class="barrel" style="transform-origin: 70px 145px; transform: rotate(${flip ? -38 : 38}deg);">
+      <path d="M 50,135 L 155,100 L 150,60 L 45,115 Z" fill="url(#barrelGrad${flip ? 'R' : 'L'})" stroke="#111" stroke-width="3"/>
+      <!-- Bouche du canon -->
+      <ellipse cx="152" cy="80" rx="9" ry="22" fill="#1b1b1b" stroke="#000" stroke-width="3" transform="rotate(-18 152 80)"/>
+      <ellipse cx="48" cy="125" rx="14" ry="14" fill="#2d2d2d" stroke="#111" stroke-width="2"/>
+    </g>
+  </svg>
+  `;
+}
+
+// Canon Gauche
+const cannonLeft = $("div", {
+  position: "absolute",
+  left: 20 * u + "px",
+  bottom: 60 * u + "px",
+  transformOrigin: "bottom left"
+}, cannonsLayer);
+cannonLeft.innerHTML = createCannonSvg(false);
+
+// Canon Droit
+const cannonRight = $("div", {
+  position: "absolute",
+  right: 20 * u + "px",
+  bottom: 60 * u + "px",
+  transformOrigin: "bottom right",
+  transform: "scaleX(-1)"
+}, cannonsLayer);
+cannonRight.innerHTML = createCannonSvg(true);
+
+// Apparition & Grossissement des canons
+tl.fromTo([cannonLeft, cannonRight],
+  { scale: 0, opacity: 0 },
+  { scale: 1.15, opacity: 1, duration: 0.8, ease: "back.out(1.8)" },
+  2.02
+);
+
+// --- 3. FLAMMES ET EFFETS DE TIR ---
+function createBlastSvg() {
+  return `
+  <svg width="${200 * u}" height="${200 * u}" viewBox="0 0 100 100" style="overflow:visible;">
+    <polygon points="50,10 65,38 95,45 70,68 80,98 50,80 20,98 30,68 5,45 35,38" fill="#FFF275" opacity="0.95"/>
+    <polygon points="50,22 60,40 82,46 64,62 72,84 50,71 28,84 36,62 18,46 40,40" fill="#FF4500" opacity="0.95"/>
+    <circle cx="50" cy="50" r="14" fill="#FFFFFF"/>
+  </svg>
+  `;
+}
+
+const blastLeft = $("div", {
+  position: "absolute",
+  left: 170 * u + "px",
+  bottom: 180 * u + "px",
+  transformOrigin: "center center",
+  opacity: "0"
+}, cannonsLayer);
+blastLeft.innerHTML = createBlastSvg();
+
+const blastRight = $("div", {
+  position: "absolute",
+  right: 170 * u + "px",
+  bottom: 180 * u + "px",
+  transformOrigin: "center center",
+  transform: "scaleX(-1)",
+  opacity: "0"
+}, cannonsLayer);
+blastRight.innerHTML = createBlastSvg();
+
+// Recul des canons et flashs
+tl.to([cannonLeft, cannonRight], {
+  scale: 0.95,
+  duration: 0.08,
+  yoyo: true,
+  repeat: 1,
+  ease: "power4.out"
+}, 3.69);
+
+tl.fromTo([blastLeft, blastRight],
+  { scale: 0.2, opacity: 1, rotation: 0 },
+  { scale: 2.2, opacity: 0, rotation: 40, duration: 0.35, ease: "power2.out" },
+  3.69
+);
+
+// --- 4. BOULETS DE CANON ---
+function createBallSvg() {
+  return `
+  <svg width="${70 * u}" height="${70 * u}" viewBox="0 0 60 60">
+    <defs>
+      <radialGradient id="ballShade" cx="35%" cy="35%" r="65%">
+        <stop offset="0%" stop-color="#777"/>
+        <stop offset="40%" stop-color="#2a2a2a"/>
+        <stop offset="90%" stop-color="#0a0a0a"/>
+        <stop offset="100%" stop-color="#000"/>
+      </radialGradient>
+    </defs>
+    <circle cx="30" cy="30" r="26" fill="url(#ballShade)" stroke="#FF8C00" stroke-width="2"/>
+    <ellipse cx="22" cy="20" rx="8" ry="4" fill="#fff" opacity="0.4" transform="rotate(-30 22 20)"/>
+  </svg>
+  `;
+}
+
+const ballLeft = $("div", {
+  position: "absolute",
+  left: 170 * u + "px",
+  bottom: 180 * u + "px",
+  opacity: "0"
+}, projectilesLayer);
+ballLeft.innerHTML = createBallSvg();
+
+const ballRight = $("div", {
+  position: "absolute",
+  right: 170 * u + "px",
+  bottom: 180 * u + "px",
+  opacity: "0"
+}, projectilesLayer);
+ballRight.innerHTML = createBallSvg();
+
+const targetX = W / 2 - 35 * u;
+const targetY = H / 2 - 35 * u;
+
+// Trajets des deux boulets vers le centre
+tl.set([ballLeft, ballRight], { opacity: 1 }, 3.69);
+
+const startLX = 170 * u;
+const startLY = H - (180 * u) - (70 * u);
+const startRX = W - (170 * u) - (70 * u);
+const startRY = startLY;
+
+tl.fromTo(ballLeft,
+  { x: 0, y: 0, scale: 0.7 },
+  { x: targetX - startLX, y: targetY - startLY, scale: 1.25, duration: 1.66, ease: "power2.in" },
+  3.69
+);
+
+tl.fromTo(ballRight,
+  { x: 0, y: 0, scale: 0.7 },
+  { x: targetX - startRX, y: targetY - startRY, scale: 1.25, duration: 1.66, ease: "power2.in" },
+  3.69
+);
+
+// --- 5. EXPLOSION EN ÉCLATS MULTICOLORES (5.35s) ---
+// Disparition des boulets et du texte intact au moment exact de l'impact
+tl.set([ballLeft, ballRight, wordsWrapper], { opacity: 0 }, 5.35);
+
+// Onde de choc circulaire
+const shockwave = $("div", {
+  position: "absolute",
+  left: (W / 2 - 100 * u) + "px",
+  top: (H / 2 - 100 * u) + "px",
+  width: 200 * u + "px",
+  height: 200 * u + "px",
+  borderRadius: "50%",
+  border: `${14 * u}px solid #ffffff`,
+  boxShadow: "0 0 50px #ff0055, inset 0 0 30px #ffee00",
+  opacity: "0",
+  pointerEvents: "none"
+}, shardsLayer);
+
+tl.fromTo(shockwave,
+  { scale: 0.2, opacity: 1 },
+  { scale: 4.5, opacity: 0, duration: 0.65, ease: "power3.out" },
+  5.35
+);
+
+// Éclats multicolores projetés
+const shardCount = 80;
+const shardColors = ["#FF1361", "#FFF800", "#00F2FE", "#4FACFE", "#FF0844", "#FFB199", "#FFFFFF", "#FFA500"];
+
+for (let i = 0; i < shardCount; i++) {
+  const angle = alea() * Math.PI * 2;
+  const dist = (280 + alea() * 550) * u;
+  const size = (16 + alea() * 32) * u;
+  const col = shardColors[Math.floor(alea() * shardColors.length)];
+  
+  const shard = $("div", {
+    position: "absolute",
+    left: (W / 2 - size / 2) + "px",
+    top: (H / 2 - size / 2) + "px",
+    width: size + "px",
+    height: size + "px",
+    backgroundColor: col,
+    clipPath: (i % 2 === 0) 
+      ? "polygon(50% 0%, 0% 100%, 100% 100%)" 
+      : "polygon(20% 0%, 100% 30%, 80% 100%, 0% 80%)",
+    boxShadow: `0 0 15px ${col}`,
+    opacity: "0"
+  }, shardsLayer);
+
+  const destX = Math.cos(angle) * dist;
+  const destY = Math.sin(angle) * dist + (alea() * 150 * u);
+  const rot = (alea() - 0.5) * 1000;
+
+  tl.set(shard, { opacity: 1 }, 5.35);
+  tl.to(shard, {
+    x: destX,
+    y: destY,
+    rotation: rot,
+    scale: 0.1,
+    opacity: 0,
+    duration: 1.1 + alea() * 0.4,
+    ease: "power3.out"
+  }, 5.35);
+}
+
+// Canons ébranlés par l'impact
+tl.to([cannonLeft, cannonRight], {
+  y: 60 * u,
+  opacity: 0,
+  duration: 0.8,
+  ease: "power2.in"
+}, 5.7);
+
+// --- 6. ÉCRAN NOIR FINAL (SUR LE DERNIER TEMPS FORT) ---
+tl.to(blackout, {
+  opacity: 1,
+  duration: 0.45,
+  ease: "power2.in"
+}, 6.57);
+===MESSAGE===
+Exemple réel (Philippe, 22/11 21h24) : styles donnés en objet à $() (1.1.14).

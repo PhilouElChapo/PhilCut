@@ -67,8 +67,9 @@ jobs:
           python outils_dev/moteur_motion.py composition essai_lb libre 1920 1080
           python outils_dev/moteur_motion.py composition essai_lv libre 1080 1920
           python outils_dev/moteur_motion.py composition essai_lp libre_leger 1080 1920
+          python outils_dev/moteur_motion.py composition essai_lc libre_canons 1080 1920
           mkdir -p out
-          for d in essai_h essai_v essai_st essai_bd essai_pg essai_cm essai_ch essai_ap essai_ck essai_lb essai_lv essai_lp; do
+          for d in essai_h essai_v essai_st essai_bd essai_pg essai_cm essai_ch essai_ap essai_ck essai_lb essai_lv essai_lp essai_lc; do
             sed -i "s#https://cdn.jsdelivr.net/npm/gsap@[0-9.]*/dist/gsap.min.js#assets/gsap.min.js#" $d/index.html
             cp m/app/node_modules/gsap/dist/gsap.min.js $d/assets/
             node m/app/node_modules/hyperframes/bin/hyperframes.mjs lint $d
@@ -100,7 +101,7 @@ jobs:
           set -e
           for f in out/*.mp4; do
             b=$(basename "$f" .mp4)
-            for t in 1.0 2.8 7 13; do ffmpeg -loglevel error -y -ss $t -i "$f" -frames:v 1 -vf scale=960:-2 "out/${b}_${t}.jpg" || true; done
+            for t in 1.0 2.8 4.5 5.6 7 13; do ffmpeg -loglevel error -y -ss $t -i "$f" -frames:v 1 -vf scale=960:-2 "out/${b}_${t}.jpg" || true; done
           done
           git config user.name "moteur-motion" && git config user.email "moteur-motion@users.noreply.github.com"
           if git fetch -q origin motion-rendus; then git worktree add -q /tmp/rendus FETCH_HEAD && git -C /tmp/rendus checkout -q -B motion-rendus;
