@@ -23,7 +23,7 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
-## T122 — 1.1.19 : centre d'activité et fiches
+## T122 — 1.1.20 : centre d'activité et fiches
 
 1. Pendant une fabrication de l'assistant, ouvrez le Centre d'activité : « Afficher la fenêtre » et « Arrêter » sont entiers et visibles, sans barre de défilement horizontale.
 2. Reprenez la création en cours du tarmac, page des images : les deux femmes montrent la découpe de leur photo, avec la mention « Découpe de votre photo : elle sert de fiche ».

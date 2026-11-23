@@ -1,4 +1,4 @@
-"""1.1.19 : Centre d'activité : boutons d'une tâche en cours entiers et visibles (« Arrêter » était coupé à droite) ; fiche
+"""1.1.20 : Centre d'activité : boutons d'une tâche en cours entiers et visibles (« Arrêter » était coupé à droite) ; fiche
 d'une personne réelle : la découpe de la photo se voit à la place de « Pas de fiche »."""
 import os, sys, unittest
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
