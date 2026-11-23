@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.21 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.22 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.22
+- Kling O3 Reference : une personne qui n'a qu'une image (la decoupe de votre photo) est acceptee ; la meme image sert d'appui.
 
 ### 1.1.21 (plans video : refus de fal evites)
 - Kling O3 Reference : avec une image de depart ou d'arrivee, 3 personnages ou objets au plus (limite du moteur) ; les personnes passent avant les objets.

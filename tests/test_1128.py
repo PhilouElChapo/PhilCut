@@ -25,6 +25,13 @@ class Test1128(unittest.TestCase):
         c = GV.corps_reference("walk", 6, "9:16", None, "fin", self.elements(4), m)
         self.assertEqual(len(c["elements"]), 3)
 
+    def test_une_seule_image(self):
+        c = GV.corps_reference("walk", 6, "9:16", None, None, self.elements(2), GV.modele("kling-o3-ref"))
+        self.assertTrue(all(e["reference_image_urls"] == [e["frontal_image_url"]] for e in c["elements"]))
+        n = GV.ajuster_corps({"elements": [{"frontal_image_url": "f", "reference_image_urls": []}]},
+                             'HTTP 422 : {"msg":"Value error, Either frontal_image_url and reference_image_urls or video_url must be provided."}')
+        self.assertEqual(n["elements"][0]["reference_image_urls"], ["f"])
+
     def test_ajuster(self):
         c = {"multi_prompt": [{"prompt": "x"}], "elements": self.elements(4), "start_image_url": "d"}
         n = GV.ajuster_corps(c, MSG)

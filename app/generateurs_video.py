@@ -224,8 +224,11 @@ def corps_reference(consigne, duree, format_, depart_url=None, fin_url=None, ele
         corps["duration"] = str(min(15, max(3, sum(d for _t, d in plans))))
         corps["shot_type"] = "customize"
     if elements:
+        # 1.1.22 (Philippe, 23/11 23h33 : 422 « Either frontal_image_url and reference_image_urls … must be provided ») : un
+        # élément fait d'une seule image (la découpe d'une vraie photo) doit quand même avoir une image d'appui : la même
         corps["elements"] = [{"frontal_image_url": e["frontal_image_url"],
-                              "reference_image_urls": list(e.get("reference_image_urls") or [])[:3]} for e in elements]
+                              "reference_image_urls": list(e.get("reference_image_urls") or [])[:3] or [e["frontal_image_url"]]}
+                             for e in elements]
     if depart_url:
         corps["start_image_url"] = depart_url
     if fin_url:
@@ -496,6 +499,10 @@ def ajuster_corps(corps, message):
         re.search(r"max(?:imum)? (?:number is |)(\d+)", message) if "element" in bas else None)
     if m and c.get("elements") and len(c["elements"]) > int(m.group(1)):
         c["elements"] = c["elements"][:int(m.group(1))]
+        return c
+    if "reference_image_urls" in message and "frontal_image_url" in message and c.get("elements"):
+        c["elements"] = [dict(e, reference_image_urls=e.get("reference_image_urls") or [e.get("frontal_image_url")])
+                         for e in c["elements"]]
         return c
     if "end image" in bas and "multi prompt" in bas and c.get("end_image_url"):
         c.pop("end_image_url")
