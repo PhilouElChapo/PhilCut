@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.22 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.23 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.23 (fiches des vraies personnes)
+- Une vraie personne a toujours sa fiche (face, trois quarts, profil, en pied) faite d'apres sa photo : le visage reste le sien.
+- La photo ne montre que le haut : l'IA complete la tenue (bas, chaussures) d'apres ce qu'on voit, la description et la scene.
+- Gemini refuse un vrai visage : Seedream 4.5 (fal.ai, environ 0,04 $) fait la fiche a sa place.
+- La video ne part pas tant qu'une personne n'a pas sa fiche : PhilCut propose de la faire.
 
 ### 1.1.22
 - Kling O3 Reference : une personne qui n'a qu'une image (la decoupe de votre photo) est acceptee ; la meme image sert d'appui.

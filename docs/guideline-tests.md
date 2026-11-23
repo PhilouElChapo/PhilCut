@@ -23,6 +23,12 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T124 — 1.1.23 : fiches des vraies personnes
+
+1. Tarmac, page des images : « Tout me convient : fabriquer la vidéo » : PhilCut dit que les deux femmes n'ont pas de fiche et propose de les faire.
+2. « Oui » : les fiches arrivent (Gemini, ou Seedream si Gemini refuse ; le journal le dit) : face, trois quarts, profil, en pied, même visage, tenue complétée.
+3. Ensuite la vidéo part.
+
 ## T123 — 1.1.21 : plans vidéo sans refus de fal
 
 1. Reprenez la création en cours du tarmac et relancez la fabrication : le groupe de plans avec 4 personnages ou objets et une image de départ passe (plus de 422 « max number is 3 »).

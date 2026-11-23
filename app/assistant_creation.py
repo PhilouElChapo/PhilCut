@@ -629,7 +629,7 @@ def a_preparer(seq, params):
     if par == "aucune":
         return 0, 0, 0
     tous = list(range(len(seq["plans"])))
-    fiches = len(Q.sans_planche(seq, tous)) if tous and par == "gemini" else 0
+    fiches = len(Q.sans_planche(seq, tous)) if tous and (par == "gemini" or params.get("clef_fal")) else 0
     depart = sum(1 for i in tous if not Q.depart_prevu(seq, i) and not (i > 0 and seq["plans"][i].get("enchainer", True)))
     # 0.9.87 : un plan enchaîné part de la vraie fin de la vidéo d'avant : pas d'image de départ inventée
     arrivee = sum(1 for pl in seq["plans"] if not (pl.get("image_fin") and os.path.exists(pl["image_fin"])) and not pl.get("sans_fin"))
@@ -713,7 +713,8 @@ def preparer(seq, params, progression=None, arret=lambda: False):
     n_avant, images_avant = _images_faites(seq)
     tous = list(range(len(seq["plans"])))
     seq["images_par"] = images_par(seq, params)
-    a_ficher = Q.sans_planche(seq, tous) if seq["images_par"] == "gemini" else []
+    # 1.1.23 : Seedream (fal.ai) fait aussi les fiches quand Gemini refuse ou manque
+    a_ficher = Q.sans_planche(seq, tous) if seq["images_par"] == "gemini" or params.get("clef_fal") else []
     etapes = len(a_ficher) + len(tous)
     k = 0
     for p in a_ficher:

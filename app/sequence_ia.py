@@ -425,7 +425,48 @@ def image_depart(seq, i, params, moteur_image="gemini", precision=""):
 CONSIGNE_PLANCHE = ("If the reference photo shows several people, draw ONLY the one person matching the description below, never "
                     "the others. Character model sheet of EXACTLY that same person as in the reference images: same face, same hairstyle, same "
                     "body, same outfit. Four views side by side on a plain light grey background: front view, three-quarter view, "
-                    "side profile, full body standing. Even soft studio light, photorealistic, sharp, no text, no labels. {d}")
+                    "side profile, full body standing. Even soft studio light, photorealistic, sharp, no text, no labels. "
+                    # 1.1.23 (Philippe, 23/11 23h38) : la photo ne montre souvent que le haut : l'IA complète la tenue
+                    "If the reference photos show only part of the body, complete the rest of the outfit (trousers or skirt, shoes) "
+                    "naturally, matching the visible clothes, the description and the scene; never change the face. {d}")
+
+PRIX_PLANCHE_SECOURS = 0.04      # Seedream 4.5 Edit (fal.ai), relevé le 23/11/2026
+
+
+def planche_secours(params, consigne, refs):
+    """1.1.23 (choix de Philippe, 23/11 23h40) : Gemini refuse souvent de redessiner un vrai visage ; Seedream 4.5 (fal.ai),
+    qui accepte les photos de référence, fait alors la fiche. Octets de l'image."""
+    from . import generateurs_video as GV
+    cle = GV.clef(params, "fal")
+    if not cle:
+        raise ValueError(_("Pas de clef fal.ai pour la fiche de secours (Préférences › IA › Connecter une IA)."))
+    urls = [GV.televerser(cle, GV.assez_grande(i)) for i in refs[:4]]
+    res = GV.demande_fal(cle, "fal-ai/bytedance/seedream/v4.5/edit",
+                         {"prompt": consigne, "image_urls": urls, "image_size": {"width": 2560, "height": 1440}, "num_images": 1})
+    url = next((x.get("url") for x in res.get("images") or [] if isinstance(x, dict) and x.get("url")), None)
+    if not url:
+        raise ValueError(_("Seedream n'a pas rendu de fiche : {r}", r=str(res)[:200]))
+    import urllib.request
+    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "PhilCut"}), timeout=180) as r:
+        donnees = r.read()
+    try:
+        from .credit_ia import noter_depense
+        noter_depense("fal", PRIX_PLANCHE_SECOURS)
+    except Exception:      # noqa: BLE001
+        pass
+    return donnees
+
+
+def personnes_sans_fiche(seq):
+    """1.1.23 : les personnes (pas les objets) vues dans au moins un plan à faire, sans fiche : la vidéo ne part pas sans elles
+    (choix de Philippe : une vraie photo seule ne donne ni le profil ni la tenue entière)."""
+    noms = set()
+    for pl in seq["plans"]:
+        if pl.get("fichier") and os.path.exists(pl["fichier"]):
+            continue
+        noms |= {n.lower() for n in visibles(seq, pl)}
+    return [p["nom"] for p in seq["personnages"] if p["nom"].lower() in noms and p.get("genre") != "objet"
+            and not (p.get("planche") and os.path.exists(p["planche"]))]
 
 
 def planche_lieu(seq, li, params):
@@ -485,7 +526,16 @@ def planche_personnage(seq, p, params):
         png = ia.generer_image_refs(params, "Only the object described, as seen in the reference image. " + consigne_objet, refs) \
             if refs else ia.generer_image(params, consigne_objet)
     elif refs:
-        png = ia.generer_image_refs(params, CONSIGNE_PLANCHE.format(d=("Description: " + d) if d else ""), refs)
+        consigne = CONSIGNE_PLANCHE.format(d=("Description: " + d) if d else "")
+        try:
+            png = ia.generer_image_refs(params, consigne, refs)
+        except ia.ErreurIA as e:
+            # 1.1.23 : Gemini a refusé (vrai visage, IMAGE_OTHER…) : Seedream en secours, si une clef fal.ai existe
+            if getattr(e, "delai", False) or "injoignable" in str(e) or "timed out" in str(e) or not params.get("clef_fal"):
+                raise
+            from .journal import ecrire
+            ecrire("assistant", f"fiche de « {p.get('nom')} » : Gemini a refusé ({e}), Seedream en secours")
+            png = planche_secours(params, consigne, refs)
     else:                                   # 0.9.77 : personnage inventé (le chauffeur) : sa fiche le fixe pour tous les plans
         png = ia.generer_image(params, "Character model sheet of an INVENTED person (not a real or famous person): " + d +
                                ". Four views side by side on a plain light grey background: front view, three-quarter view, side "

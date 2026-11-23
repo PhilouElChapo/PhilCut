@@ -1348,6 +1348,19 @@ class DialogueAssistant(QDialog):
         elif k == P_PLANS:
             self.preparer()
         elif k == P_IMAGES:
+            # 1.1.23 (choix de Philippe, 23/11 23h40) : pas de vidéo tant qu'une personne n'a pas sa fiche (face, profil, en pied)
+            manquent = Q.personnes_sans_fiche(self.seq)
+            if manquent and not getattr(self, "_test_sans_fiche", False):
+                r = QMessageBox.question(self, _("Fiches manquantes"), _(
+                    "Ces personnes n'ont pas encore de fiche (face, trois quarts, profil, en pied) : {n}. Sans elle, le moteur ne "
+                    "connaît ni leur profil ni leur tenue entière, et les visages dérivent. Faire les fiches maintenant ? (environ "
+                    "0,04 $ chacune ; Seedream prend le relais si Gemini refuse un vrai visage)", n=", ".join(manquent)),
+                    QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Yes)
+                if r == QMessageBox.Yes:
+                    self.seq["images_par"] = "gemini"
+                    self.aller(P_PLANS)
+                    self.preparer()
+                return
             for pl in self.seq["plans"]:
                 pl["images_ok"] = True
             Q.enregistrer(self.seq)
