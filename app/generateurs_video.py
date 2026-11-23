@@ -47,10 +47,11 @@ MODELES = [
     {"id": "omni-1080p", "fournisseur": "google", "nom": "Gemini Omni Flash 1080p", "modele": "gemini-omni-1.1-flash",
      "resolution": "1080p", "prix_s": 0.10, "duree_auto": True, "note": _("720p agrandi par Google")},
     {"id": "kling-3-pro", "fournisseur": "fal", "nom": "Kling 3.0 Pro (fal)", "modele": "fal-ai/kling-video/v3/pro/text-to-video",
-     "modele_image": "fal-ai/kling-video/v3/pro/image-to-video", "prix_s": 0.112, "prix_s_son": 0.168, "durees": [5, 10], "son_param": "generate_audio",
+     "modele_image": "fal-ai/kling-video/v3/pro/image-to-video", "param_image": "start_image_url", "max_prompt": 2500, "prix_s": 0.112, "prix_s_son": 0.168, "durees": [5, 10], "son_param": "generate_audio",
      "note": _("mouvements réalistes, personnes")},
     {"id": "kling-o3-ref", "fournisseur": "fal", "nom": "Kling O3 Référence : personnage fidèle (fal)",
-     "modele": "fal-ai/kling-video/o3/standard/reference-to-video", "references": True, "image_fin": True, "multi": True,
+     "modele": "fal-ai/kling-video/o3/standard/reference-to-video", "references": True, "image_fin": True, "multi": True, "max_prompt": 2500,
+     "max_elements": 4, "max_elements_images": 3,
      "prix_s": 0.084, "prix_s_son": 0.112, "durees": list(range(3, 16)), "son_param": "generate_audio",
      "note": _("garde le visage et la tenue d'après la fiche du personnage, image de départ et d'arrivée, jusqu'à 15 s")},
     {"id": "seedance-2", "fournisseur": "fal", "nom": "Seedance 2.0 (fal)", "modele": "bytedance/seedance-2.0/text-to-video",
@@ -195,12 +196,17 @@ def raccourcir(texte, n):
 def corps_reference(consigne, duree, format_, depart_url=None, fin_url=None, elements=None, m=None, son=False, multi=None):
     """Demande « reference to video » (Kling O1/O3) : chaque personnage est un élément (@Element1…) avec une image de face et
     des images d'appui ; le texte commence par dire qui est qui, pour que le moteur relie les noms aux images."""
-    elements = [e for e in (elements or []) if e.get("frontal_image_url")][:4]
+    # 1.1.21 (Philippe, 23/11 22h43 : 422 « The number of elements exceeds the limit for first/tail image input, max number
+    # is 3 ») : avec une image de départ ou d'arrivée, Kling O3 n'accepte que 3 éléments (non écrit dans sa page) ; sans, 4
+    mx = (m or {}).get("max_elements", 4)
+    if depart_url or fin_url:
+        mx = min(mx, (m or {}).get("max_elements_images", 3))
+    elements = [e for e in (elements or []) if e.get("frontal_image_url")][:mx]
     noms = [f"@Element{i + 1} is {e['nom']}" for i, e in enumerate(elements) if e.get("nom")]
     avant = "; ".join(noms) + ". " if noms else ""
     apres = (" Keep @" + ", @".join(f"Element{i + 1}" for i in range(len(elements))) +
              " exactly identical to the reference images: same face, hair, body and outfit.") if elements else ""
-    corps = {"prompt": avant + consigne + apres, "duration": str(int(duree_reelle(m or {"durees": list(range(3, 16))}, duree))),
+    corps = {"prompt": avant + raccourcir(consigne, (m or {}).get("max_prompt", 2500) - len(avant) - len(apres)) + apres, "duration": str(int(duree_reelle(m or {"durees": list(range(3, 16))}, duree))),
              "aspect_ratio": "9:16" if format_ == "9:16" else "16:9"}
     if multi:
         # 0.9.90 : un plan par élément, durées entières de 1 à 15 s, somme ≤ 15 ; le moteur les enchaîne en gardant gestes,
@@ -275,7 +281,10 @@ def generer_reference(cle, m, consigne, sortie, duree=5, format_="16:9", image=N
     av = progression or (lambda f: None)
     av(0.01)
     elements = []
-    for nom, images in (references or [])[:4]:
+    mx = m.get("max_elements", 4)
+    if (image and os.path.exists(image)) or (image_fin and os.path.exists(image_fin)):
+        mx = min(mx, m.get("max_elements_images", 3))
+    for nom, images in (references or [])[:mx]:
         images = [i for i in images if i and os.path.exists(i)]
         if not images:
             continue
@@ -361,7 +370,7 @@ def generer_higgsfield(cle, m, consigne, sortie, duree=5, image=None, progressio
     point = (m.get("modele_image") if image and m.get("modele_image") else m["modele"]).strip("/")
     corps = {"prompt": consigne, "duration": int(duree_reelle(m, duree))}
     if image and m.get("modele_image"):
-        corps["image_url"] = _data_uri(image)
+        corps["image_url"] = _data_uri(assez_grande(image))
     if m.get("formats"):                          # 1.0.2 : Seedance 2.5 (page de la console) : format, définition, son
         corps["aspect_ratio"] = format_ if format_ in m["formats"] else "16:9"
     if m.get("resolution"):
@@ -406,9 +415,12 @@ def _data_uri(chemin):
 def generer_fal(cle, m, consigne, sortie, duree=5, format_="16:9", image=None, progression=None, arret=lambda: False, son=False):
     """File d'attente fal.ai : envoi, suivi de l'état, récupération de la vidéo (video.url)."""
     point = (m.get("modele_image") if image and m.get("modele_image") else m["modele"]).strip("/")
-    corps = {"prompt": consigne, "duration": str(int(duree_reelle(m, duree))), "aspect_ratio": "9:16" if format_ == "9:16" else "16:9"}
+    corps = {"prompt": raccourcir(consigne, m.get("max_prompt", 2500)), "duration": str(int(duree_reelle(m, duree))),
+             "aspect_ratio": "9:16" if format_ == "9:16" else "16:9"}
     if image:
-        corps["image_url"] = _data_uri(image)
+        # 1.1.21 : Kling 3.0 attend « start_image_url » (Seedance « image_url ») ; image ramenée aux règles de fal (300 px au
+        # moins, rapport 0,4 à 2,5) comme pour les références
+        corps[m.get("param_image", "image_url")] = _data_uri(assez_grande(image))
     if m.get("son_param"):
         # 0.9.68 : pas de son fabriqué par le moteur (voix inventées, musique) sauf demande : PhilCut pose le sien, moins cher
         corps[m["son_param"]] = bool(son)
@@ -435,7 +447,17 @@ def telecharger(url, sortie):
 def demande_fal(cle, point, corps, progression=None, arret=lambda: False, attente=300.0):
     """Demande à la file d'attente de fal.ai suivie jusqu'au bout ; renvoie la réponse (JSON) du modèle."""
     point = point.strip("/")
-    r = _http(f"{FAL_FILE}/{point}", cle, corps)
+    corps = dict(corps)
+    for _essai in range(4):
+        try:
+            r = _http(f"{FAL_FILE}/{point}", cle, corps)
+            break
+        except ErreurGenerateur as e:
+            neuf = ajuster_corps(corps, str(e))
+            if neuf is None or _essai == 3:
+                raise
+            corps = neuf
+            progression and progression(0.02, _("fal.ai a refusé un réglage : demande ajustée et renvoyée"))
     statut_url = r.get("status_url") or f"{FAL_FILE}/{point}/requests/{r.get('request_id')}/status"
     reponse_url = r.get("response_url") or f"{FAL_FILE}/{point}/requests/{r.get('request_id')}"
     if not r.get("request_id") and not r.get("status_url"):
@@ -459,6 +481,38 @@ def demande_fal(cle, point, corps, progression=None, arret=lambda: False, attent
         if time.time() - debut > 1500:
             raise ErreurGenerateur(_("La génération met trop de temps ; réessayez plus tard."))
     return _http(reponse_url, cle)
+
+
+def ajuster_corps(corps, message):
+    """1.1.21 : une demande refusée par fal (422, limite non documentée) corrigée d'après le message, sinon None. Règles
+    apprises au fil des essais : nombre d'éléments, image d'arrivée avec plusieurs consignes, longueur des consignes, nom du
+    paramètre de l'image de départ. Une demande refusée à l'entrée n'est pas facturée."""
+    import re
+    if "422" not in message and "Unprocessable" not in message:
+        return None
+    c = json.loads(json.dumps(corps))
+    bas = message.lower()
+    m = re.search(r"exceeds the limit[^.]*max number is (\d+)", message) or (
+        re.search(r"max(?:imum)? (?:number is |)(\d+)", message) if "element" in bas else None)
+    if m and c.get("elements") and len(c["elements"]) > int(m.group(1)):
+        c["elements"] = c["elements"][:int(m.group(1))]
+        return c
+    if "end image" in bas and "multi prompt" in bas and c.get("end_image_url"):
+        c.pop("end_image_url")
+        return c
+    m = re.search(r"must not exceed (\d+) characters", message)
+    if m:
+        n = int(m.group(1)) - 12
+        if c.get("multi_prompt"):
+            c["multi_prompt"] = [dict(x, prompt=raccourcir(x.get("prompt", ""), n)) for x in c["multi_prompt"]]
+        elif c.get("prompt"):
+            c["prompt"] = raccourcir(c["prompt"], n)
+        return c
+    for absent, present in (("start_image_url", "image_url"), ("image_url", "start_image_url")):
+        if absent in message and "field required" in bas and present in c and absent not in c:
+            c[absent] = c.pop(present)
+            return c
+    return None
 
 
 FAL_REST = "https://rest.fal.ai"

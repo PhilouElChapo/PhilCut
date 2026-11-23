@@ -23,6 +23,11 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T123 — 1.1.21 : plans vidéo sans refus de fal
+
+1. Reprenez la création en cours du tarmac et relancez la fabrication : le groupe de plans avec 4 personnages ou objets et une image de départ passe (plus de 422 « max number is 3 »).
+2. Si fal refuse encore un réglage, la barre dit « demande ajustée et renvoyée » et la fabrication continue.
+
 ## T122 — 1.1.20 : centre d'activité et fiches
 
 1. Pendant une fabrication de l'assistant, ouvrez le Centre d'activité : « Afficher la fenêtre » et « Arrêter » sont entiers et visibles, sans barre de défilement horizontale.

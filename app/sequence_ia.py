@@ -551,8 +551,10 @@ def references_du_plan(seq, pl):
                                        and not _photo_de_groupe(seq, i)]
         imgs = ([p["planche"]] if p.get("planche") and os.path.exists(p["planche"]) else []) + autres
         if imgs:
-            out.append((f"Character {chr(65 + k)}", imgs[:4]))
-    return out
+            out.append((f"Character {chr(65 + k)}", imgs[:4], p.get("genre") == "objet"))
+    # 1.1.21 : les personnes d'abord (le moteur peut n'en garder que 3 : un objet se reconnaît sur l'image de départ)
+    out.sort(key=lambda x: x[2])
+    return [(n, im) for n, im, _o in out]
 
 
 def derniere_image(video, sortie):

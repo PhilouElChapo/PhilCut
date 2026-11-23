@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.20 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.21 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.21 (plans video : refus de fal evites)
+- Kling O3 Reference : avec une image de depart ou d'arrivee, 3 personnages ou objets au plus (limite du moteur) ; les personnes passent avant les objets.
+- Tout refus connu de fal.ai (nombre d'elements, image d'arrivee, longueur des consignes, nom de l'image de depart) est corrige et la demande renvoyee seule ; une demande refusee n'est pas facturee.
+- Kling 3.0 Pro avec une image de depart : parametre corrige (le plan aurait ete refuse) ; images ramenees aux regles de fal pour tous les modeles.
 
 ### 1.1.20 (centre d'activite et fiches de l'assistant)
 - Centre d'activite : boutons compacts, toujours entiers et visibles (« Arreter » n'est plus coupe a droite) ; la fenetre s'elargit si besoin.

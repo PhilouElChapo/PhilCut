@@ -81,7 +81,7 @@ class TestGenerateurs(unittest.TestCase):
         self.assertIn("image-to-video", ETAT["chemin"])
         c = ETAT["corps"]
         self.assertEqual((c["duration"], c["aspect_ratio"]), ("10", "9:16"))
-        self.assertTrue(c["image_url"].startswith("data:image/png;base64,"))
+        self.assertTrue(c["start_image_url"].startswith("data:image/png;base64,"))
         self.assertEqual(etapes[-1], 1.0)
         with self.assertRaises(GV.ErreurGenerateur):
             GV.generer({"clef_fal": "mauvais"}, "kling-3-pro", "x", sortie)
