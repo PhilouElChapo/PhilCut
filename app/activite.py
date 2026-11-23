@@ -146,7 +146,9 @@ class FenetreActivite(QDialog):
         from PySide6.QtWidgets import QHeaderView
         h = self.table.horizontalHeader()
         h.setSectionResizeMode(0, QHeaderView.Stretch)
-        h.setSectionResizeMode(5, QHeaderView.ResizeToContents)
+        h.setSectionResizeMode(3, QHeaderView.Stretch)          # 1.1.19 : Tâche et Détail se partagent la place restante
+        h.setSectionResizeMode(5, QHeaderView.Fixed)            # largeur calculée sur les boutons eux-mêmes (_largeur_boutons)
+        h.setStretchLastSection(False)
         self.table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.table.setWordWrap(True)
         v.addWidget(self.table, 1)
@@ -206,6 +208,7 @@ class FenetreActivite(QDialog):
                 hl = QHBoxLayout(w)
                 hl.setContentsMargins(2, 0, 2, 0)
                 cle = "pendant" if l["etat"] in (EN_COURS, ATTENTE) else "ouvrir"
+                hl.setSpacing(4)
                 if l.get(cle):
                     bo = QPushButton(l[cle][0])
                     bo.clicked.connect(lambda _c=False, l=l, cle=cle: _ouvrir_ligne(l, cle))
@@ -214,13 +217,38 @@ class FenetreActivite(QDialog):
                     bs = QPushButton(_("Arrêter"))
                     bs.clicked.connect(lambda _c=False, l=l: self.c.arreter(l))
                     hl.addWidget(bs)
+                for b_ in w.findChildren(QPushButton):  # 1.1.19 : boutons compacts, jamais coupés (texte entier)
+                    b_.setStyleSheet("padding:3px 10px")
+                    b_.setMinimumWidth(b_.sizeHint().width())
                 self.table.setCellWidget(i, 5, w)
             else:
                 self.table.setCellWidget(i, 5, None)
                 self.table.setItem(i, 5, QTableWidgetItem(""))
         self._courantes = lignes
+        self._largeur_boutons()
         self.table.resizeRowsToContents()
         self.actualiser()
+
+    def _largeur_boutons(self):
+        """1.1.19 (Philippe, 23/11 : « Arrêter » coupé à droite) : la colonne des boutons prend exactement la largeur de ses
+        boutons, la fenêtre s'élargit s'il le faut (jamais au-delà de l'écran), Tâche et Détail se partagent le reste."""
+        larg = 0
+        for i in range(self.table.rowCount()):
+            w = self.table.cellWidget(i, 5)
+            if w is not None:
+                w.adjustSize()
+                larg = max(larg, w.sizeHint().width() + 6)
+        larg = max(larg, 40)
+        self.table.setColumnWidth(5, larg)
+        mini = {1: 110, 2: 90, 4: 100}
+        place = self.table.viewport().width()
+        if sum(self.table.columnWidth(c) for c in mini) + larg + 2 * 160 > place:    # des largeurs tirées trop grandes
+            for c, m in mini.items():
+                self.table.setColumnWidth(c, min(self.table.columnWidth(c), m))
+        voulu = sum(self.table.columnWidth(c) for c in mini) + larg + 2 * 200 + 60
+        if self.width() < voulu:
+            ecran = self.screen().availableGeometry().width() if self.screen() else voulu
+            self.resize(min(voulu, ecran - 40), self.height())
 
     def actualiser(self):
         lignes = getattr(self, "_courantes", [])

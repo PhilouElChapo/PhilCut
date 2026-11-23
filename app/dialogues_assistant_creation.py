@@ -1586,10 +1586,15 @@ class DialogueAssistant(QDialog):
         g.addWidget(self._titre(_("Personnages et objets")), ligne, 0, 1, 3)
         ligne += 1
         for k, p in enumerate(self.seq["personnages"]):
-            vg = Vignette(p.get("planche", ""), 170, _("Pas de fiche"))
+            # 1.1.19 (Philippe, 23/11 : « il manque les fiches des deux femmes ») : une personne réelle sans planche (Gemini refuse
+            # souvent de redessiner un vrai visage) garde sa découpe de la photo, qui part comme fiche : on la montre
+            planche = p.get("planche") if p.get("planche") and os.path.exists(p["planche"]) else ""
+            decoupe = p.get("decoupe") if p.get("decoupe") and os.path.exists(p["decoupe"]) else ""
+            vg = Vignette(planche or decoupe, 170, _("Pas de fiche"))
             vg.clic.connect(lambda ch: agrandir(self, ch))
             g.addWidget(vg, ligne, 0)
-            lb = QLabel(f"<b>{p['nom']}</b><br>{p.get('description', '')}")
+            note = "" if planche else (_("Découpe de votre photo : elle sert de fiche (vrai visage).") if decoupe else "")
+            lb = QLabel(f"<b>{p['nom']}</b><br>{p.get('description', '')}" + (f"<br><i>{note}</i>" if note else ""))
             lb.setWordWrap(True)
             g.addWidget(lb, ligne, 1)
             bl = QVBoxLayout()

@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.18 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.1.19 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.1.19 (centre d'activite et fiches de l'assistant)
+- Centre d'activite : boutons compacts, toujours entiers et visibles (« Arreter » n'est plus coupe a droite) ; la fenetre s'elargit si besoin.
+- Assistant de creation, page des images : une personne reelle sans fiche dessinee montre la decoupe de votre photo, qui sert de fiche, au lieu de « Pas de fiche ».
 
 ### 1.1.18 (plantage et synchronisation)
 - Plantage « code 0xc0000374 » pendant la synchronisation corrige : le nettoyage de la memoire de Python se fait maintenant dans le fil de l'interface, plus jamais dans un fil de fond ou il pouvait detruire un objet de la fenetre.
