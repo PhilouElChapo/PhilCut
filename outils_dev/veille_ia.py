@@ -32,15 +32,18 @@ def lire(url, delai=60):
         return r.read().decode("utf-8", "replace")
 
 
-def _hf(depot, cache):
-    if depot not in cache:
-        d = json.loads(lire(f"https://huggingface.co/api/models/{depot}?blobs=true"))
+def _hf(depot, cache, revision="main"):
+    """Fichiers d'un dépôt Hugging Face à une révision (1.1.24 : un fichier épinglé sur un commit est relu à ce commit, il ne
+    passe donc plus pour « changé » quand main bouge)."""
+    if (depot, revision) not in cache:
+        url = f"https://huggingface.co/api/models/{depot}" + ("" if revision == "main" else f"/revision/{revision}") + "?blobs=true"
+        d = json.loads(lire(url))
         out = {}
         for s in d.get("siblings") or []:
             lfs = s.get("lfs") or {}
             out[s["rfilename"]] = {"taille": int(s.get("size") or lfs.get("size") or 0), "sha256": lfs.get("sha256") or ""}
-        cache[depot] = out
-    return cache[depot]
+        cache[(depot, revision)] = out
+    return cache[(depot, revision)]
 
 
 def relever(man, cache, jour):
@@ -52,9 +55,9 @@ def relever(man, cache, jour):
             r = HF.match(f.get("url", ""))
             if not r:
                 continue
-            depot, _branche, chemin = r.groups()
+            depot, branche, chemin = r.groups()
             try:
-                infos = _hf(depot, cache).get(chemin)
+                infos = _hf(depot, cache, branche).get(chemin)
             except Exception as e:      # noqa: BLE001
                 alerte(f"{cle} : {depot} illisible ({e})")
                 continue
@@ -79,6 +82,8 @@ def cmd_modeles(dist):
         p = os.path.join(dist, nom)
         if not os.path.exists(p):
             continue
+        import shutil
+        shutil.copy(p, os.path.join(dist, "avant-" + nom))       # 1.1.24 : pour épingler l'ancienne version si l'essai rate
         with open(p, encoding="utf-8") as f:
             man = json.load(f)
         c = relever(man, cache, jour)
@@ -127,8 +132,63 @@ def cmd_essai(dist, limite=3e9):
                 P.supprimer(cle)
             except Exception:       # noqa: BLE001
                 pass
+    with open(os.path.join(dist, "rates.json"), "w", encoding="utf-8") as f:
+        json.dump(rates, f)
     if rates:
-        sys.exit(1)
+        epingler(dist, rates)
+
+
+def _revision_de(depot, chemin, sha, taille, cache, n=60):
+    """Le commit le plus récent du dépôt où ce fichier a encore cette empreinte (ou cette taille quand l'empreinte manque)."""
+    commits = cache.setdefault(("commits", depot), json.loads(lire(f"https://huggingface.co/api/models/{depot}/commits/main")))
+    for c in commits[:n]:
+        try:
+            i = _hf(depot, cache, c["id"]).get(chemin)
+        except Exception:       # noqa: BLE001
+            continue
+        if i and ((sha and i["sha256"] == sha) or (not sha and taille and i["taille"] == taille)):
+            return c["id"]
+    return None
+
+
+def epingler(dist, rates):
+    """1.1.24 (veille du 24/11 : les voix Piper de rhasspy/piper-voices ont changé de format ; « "aɪ" is not a single codepoint »
+    avec notre moteur Piper 1.2.0) : un modèle changé dont l'essai rate garde sa version d'avant, épinglée sur le commit Hugging
+    Face où ses fichiers ont encore les empreintes vérifiées : les postes qui l'installent reçoivent les bons fichiers."""
+    cache = {}
+    for nom in ("moteurs-ia.json", "moteurs-creatifs.json"):
+        p, pa = os.path.join(dist, nom), os.path.join(dist, "avant-" + nom)
+        if not (os.path.exists(p) and os.path.exists(pa)):
+            continue
+        with open(p, encoding="utf-8") as f:
+            man = json.load(f)
+        with open(pa, encoding="utf-8") as f:
+            avant = json.load(f)
+        touche = False
+        for cle in rates:
+            if cle not in (avant.get("modeles") or {}):
+                continue
+            m = json.loads(json.dumps(avant["modeles"][cle]))
+            for fi in m.get("fichiers") or []:
+                r = HF.match(fi.get("url", ""))
+                if not r or r.group(2) != "main":
+                    continue
+                depot, _b, chemin = r.groups()
+                try:
+                    rev = _revision_de(depot, chemin, fi.get("sha256", ""), fi.get("taille", 0), cache)
+                except Exception as e:      # noqa: BLE001
+                    rev = None
+                    alerte(f"{cle} : historique de {depot} illisible ({e})")
+                if rev:
+                    fi["url"] = f"https://huggingface.co/{depot}/resolve/{rev}/{chemin}"
+                    note("Modele epingle", f"{cle} : {chemin} garde la version verifiee ({rev[:10]})")
+                else:
+                    alerte(f"{cle} : {chemin} : version verifiee introuvable dans l'historique (a remplacer a la main)")
+            man["modeles"][cle] = m
+            touche = True
+        if touche:
+            with open(p, "w", encoding="utf-8") as f:
+                json.dump(man, f, ensure_ascii=False, indent=1)
 
 
 _N = r"\$\s*\**\s*([0-9]+(?:\.[0-9]+)?)\s*\**\s*"

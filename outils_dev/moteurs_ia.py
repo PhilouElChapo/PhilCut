@@ -107,8 +107,13 @@ def versions():
     return out
 
 
-def _hf_fichiers(depot):
-    d = lire_json(f"https://huggingface.co/api/models/{depot}?blobs=true")
+# 1.1.24 : les voix de main sont passées au format du nouveau Piper (incompatible avec notre moteur 1.2.0) : révision
+# épinglée, remplacée par la veille quand elle trouve le commit vérifié (voir veille_ia.epingler)
+PIPER_REV = os.environ.get("PHILCUT_PIPER_REV", "main")
+
+
+def _hf_fichiers(depot, revision="main"):
+    d = lire_json(f"https://huggingface.co/api/models/{depot}" + ("" if revision == "main" else f"/revision/{revision}") + "?blobs=true")
     out = {}
     for s in d.get("siblings", []):
         lfs = s.get("lfs") or {}
@@ -163,14 +168,14 @@ def modeles(sortie):
         else:
             print(f"::warning title={cle}::{f} introuvable")
     try:
-        voix_hf = _hf_fichiers("rhasspy/piper-voices")
+        voix_hf = _hf_fichiers("rhasspy/piper-voices", PIPER_REV)
     except Exception as e:              # noqa: BLE001
         print(f"::warning title=Voix de synthèse::piper-voices indisponible ({e})")
         voix_hf = {}
     for cle, (nom, chemin, q) in VOIX_SYNTHESE.items():
         f1, f2 = chemin + ".onnx", chemin + ".onnx.json"
         if f1 in voix_hf and f2 in voix_hf:
-            fichiers = [{"nom": os.path.basename(f), "role": r, "url": f"https://huggingface.co/rhasspy/piper-voices/resolve/main/{f}",
+            fichiers = [{"nom": os.path.basename(f), "role": r, "url": f"https://huggingface.co/rhasspy/piper-voices/resolve/{PIPER_REV}/{f}",
                          "taille": voix_hf[f]["taille"], "sha256": voix_hf[f]["sha256"]} for f, r in ((f1, "modele"), (f2, "config"))]
             cat[cle] = {"genre": "voix", "nom": nom, "source": "rhasspy/piper-voices", "qualite": q, "essai": False, "langue": chemin[:2],
                         "fichiers": fichiers, "taille": sum(x["taille"] for x in fichiers)}
