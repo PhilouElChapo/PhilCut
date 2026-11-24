@@ -113,9 +113,13 @@ def cmd_essai(dist, limite=3e9):
             if m.get("genre") in EI.ESSAIS:
                 r = EI.tester(m["genre"], {"ia_locale_modeles": {m["genre"]: cle}, "ia_poste_leger": False})
                 if not r.get("ok"):
+                    # 1.1.24 : le détail brut (sortie du moteur), sinon on ne voit que « le moteur n'a pas pu finir »
+                    print(f"--- {cle} : detail ---\n{r.get('detail', '')}\n{r.get('journal', '')}", flush=True)
                     raise RuntimeError(r.get("message") or "essai rate")
             note("Essai IA", f"{cle} : ok")
         except Exception as e:      # noqa: BLE001
+            import traceback
+            traceback.print_exc()
             alerte(f"{cle} : essai rate ({e})")
             rates.append(cle)
         finally:
