@@ -727,6 +727,13 @@ class DialoguePreferences(QDialog):
                                            "au-delà, licence entreprise Remotion obligatoire"))
         self.remotion_licence.setChecked(bool(self.params.get("remotion_licence")))
         f.addRow("", self.remotion_licence)
+        from . import pantin_ia as _PI                     # 1.3.0 : style proposé pour un nouveau personnage animé
+        self.pantin_style = QComboBox()
+        for k, n in _PI.liste_styles():
+            self.pantin_style.addItem(n, k)
+        self.pantin_style.setCurrentIndex(max(0, self.pantin_style.findData(self.params.get("pantin_style") or "plat")))
+        self.pantin_style.setToolTip(_("Proposé quand vous créez un personnage animé ; vous pouvez le changer à chaque fois"))
+        f.addRow(_("Personnage animé : style"), self.pantin_style)
         h = QHBoxLayout()                              # 0.9.85 : mises à jour des IA (locales et cloud)
         self.ia_maj_verifier = QCheckBox(_("Chercher les mises à jour des IA (une fois par semaine, jamais installées sans vous)"))
         self.ia_maj_verifier.setChecked(self.params.get("ia_maj_verifier", True))
@@ -1312,6 +1319,7 @@ class DialoguePreferences(QDialog):
             p["motion_pro_video"] = self.motion_pro_video.currentData()
             p["motion_libre_caler"] = self.motion_libre_caler.isChecked()
             p["remotion_licence"] = self.remotion_licence.isChecked()
+            p["pantin_style"] = self.pantin_style.currentData()
         gestion = getattr(self.fenetre, "telechargements", None)
         a_installer = [k for k, c in self.cases_ia.items() if c.isChecked() and not packs_ia.installe(k)
                        and not (gestion is not None and gestion.en_file(k))]

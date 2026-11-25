@@ -23,6 +23,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T128 — 1.3.0 : personnage animé (pantin)
+
+1. Aide › « Mises à jour des IA » › « Sur ce poste » : installez « Bouches des personnages animés » (Rhubarb, gratuit).
+2. Fabrique IA › Animation › « Personnage animé (pantin)… » › « + Nouveau personnage » › « Créé par l'IA… » : décrivez-le, style au choix ; le prix (environ 0,09 $) et la consigne anglaise avec sa traduction sont montrés ; « Créer ».
+3. Le squelette s'affiche : les points jaunes sont-ils sur les articulations ? Corrigez-en un, « Appliquer le squelette ».
+4. Onglet Mouvements : « Saluer » à 0 s, « Marcher » à 2 s ; « Noter la place » à 2 s à gauche puis à 5 s à droite ; « ▶ Lire » : les bras et les jambes restent-ils attachés, sans trou aux épaules ?
+5. Onglet Visage : une voix (fichier ou texte), « Synchroniser les bouches », « ▶ Lire » : la bouche suit-elle la voix ? Les yeux clignent-ils ?
+6. « Fabriquer et poser… » puis « Poser au-dessus du film » (fond transparent dans l'onglet Scène) ; fermez la fenêtre, puis Fabrique IA › Reprendre une création en cours : la scène revient.
+7. Essayez aussi « Depuis une photo » avec votre propre photo (case d'accord) et un autre style.
+
 ## T127 — 1.2.4 : nouveau moteur de voix (Piper)
 
 1. Aide › « Mises à jour des IA » › « Sur ce poste » : « Moteur « voix » » est en tête ; le mettre à jour, l'essai passe tout seul.

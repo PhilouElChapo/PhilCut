@@ -2899,6 +2899,13 @@ class Editeur(QWidget):
         cle = "animation_libre" if not anim else "animation_libre:" + str(anim.get("titre") or anim.get("description", ""))[:60]
         return non_bloquante(self, cle, lambda: DialogueMotionLibre(self, anim))
 
+    def pantin(self, scene=None, chemin_scene=None, clip_id=None):
+        """1.3.0 : personnage animé (pantin) : créé par l'IA ou depuis une photo, mouvements, bouche sur la voix."""
+        from .dialogues_pantin import DialoguePantin
+        from .widgets import non_bloquante
+        cle = "pantin" if not chemin_scene else "pantin:" + chemin_scene
+        return non_bloquante(self, cle, lambda: DialoguePantin(self, scene, chemin_scene, clip_id))
+
     def ma_charte(self):
         from .dialogues_motion import DialogueCharte
         d = DialogueCharte(self, self.params)
@@ -3134,6 +3141,8 @@ class Editeur(QWidget):
         elif g == "motion_ia":
             d = self.animation_libre()
             d.appliquer_anim(e.get("anim") or {}, x.get("titre", ""))
+        elif g == "pantin":
+            d = self.pantin(e.get("scene"), e.get("chemin"))
         else:
             return None
         s_ = getattr(d, "_suivi_en_cours", None)
@@ -3206,6 +3215,14 @@ class Editeur(QWidget):
             return
         if c is None:
             c = next((x for x in self.projet.clips if x["media"] == m.get("id")), None)
+        if rec.get("outil") == "pantin":                           # 1.3.0 : la scène du personnage animé, telle qu'elle était
+            from . import pantin as PN
+            try:
+                sc = PN.charger_scene(rec.get("scene") or "")
+            except (OSError, ValueError):
+                self.encart.message(_("La scène de ce personnage animé n'est plus sur ce poste."), 7000)
+                return None
+            return self.pantin(sc, rec.get("scene"), c["id"] if c else None)
         if rec.get("outil") == "fabrique":                         # 0.9.40 : plan IA de la Fabrique (cloud ou Flow), réglages d'origine
             return self.window().fabrique(recette=rec)
         if (rec.get("famille") or "musique") == "musique":          # 0.9.37 : la fabrique musique, avec la fiche d'origine

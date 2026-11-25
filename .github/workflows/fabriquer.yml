@@ -8,7 +8,8 @@ on:
   push:
     branches: [main]
     tags: ["v*"]
-    paths-ignore: ["docs/**", "README.md", "catalogue/**", "motion/**", ".github/workflows/rendu_motion.yml", ".github/workflows/moteur_motion.yml"]
+    paths-ignore: ["docs/**", "README.md", "catalogue/**", "motion/**", ".github/workflows/rendu_motion.yml", ".github/workflows/moteur_*.yml",
+                   ".github/workflows/veille_*.yml", "outils_dev/**"]
   workflow_dispatch:
 
 permissions:

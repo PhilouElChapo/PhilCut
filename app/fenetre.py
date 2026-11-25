@@ -976,6 +976,11 @@ class Fenetre(QMainWindow):
                       "dessiner les objets (Gemini), filmer les effets réalistes (vidéo IA), écrit la composition avec le modèle "
                       "adapté, puis regarde son rendu et se corrige ; chaque coût est demandé."),
                     quand(lambda e: e.animation_libre())),
+                ent(icone("fabrique"), _("Personnage animé (pantin) : il bouge, il parle…"),
+                    _("Un personnage créé par l'IA, ou d'après une photo (personne d'accord), découpé en pièces : vous lui "
+                      "donnez des mouvements (saluer, marcher, montrer, sauter…), des expressions, et sa bouche suit la voix. "
+                      "Environ 0,09 $ pour créer le personnage ; tout le reste est gratuit, sur ce poste."),
+                    quand(lambda e: e.pantin())),
                 ent(icone("fabrique"), _("Animation simple : chiffres, graphiques, titre (avec 1 ou 2 images)…"),
                     _("Chiffres, barres, courbe, camembert, jauge, comparaison, classement, chronologie, liste, citation, titre ou "
                       "appel à l'action : dites ce que vous voulez ou collez vos chiffres ; trois propositions, des curseurs, l'aperçu "
@@ -1068,8 +1073,8 @@ class Fenetre(QMainWindow):
                         "les refaire, comparer avant / après, sans jamais payer deux fois."))
         a_ = fb.addAction(_("Reprendre une création en cours…"),
                           (lambda: ed.reprendre_en_cours()) if ed is not None else (lambda: self._ed(lambda e: e.reprendre_en_cours())))
-        a_.setToolTip(_("Fabrique musique, assistant (musique ou vidéo), clip de groupe, motion design IA : gardés à chaque changement, "
-                        "repris là où vous en étiez, même après un plantage ; rien de déjà payé n'est refait."))
+        a_.setToolTip(_("Fabrique musique, assistant (musique ou vidéo), clip de groupe, motion design IA, personnage animé : gardés "
+                        "à chaque changement, repris là où vous en étiez, même après un plantage ; rien de déjà payé n'est refait."))
         a_ = fb.addAction(_("Ma bibliothèque de créations (personnages, lieux, voix, styles…)…"),
                           (lambda: ed.bibliotheque_creations()) if ed is not None else (lambda: self._ed(lambda e: e.bibliotheque_creations())))
         a_.setToolTip(_("Ce que vous avez gardé pour le réutiliser tel quel : personnages et musiciens avec leur fiche, objets, lieux, "

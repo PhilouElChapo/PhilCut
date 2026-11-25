@@ -1,0 +1,55 @@
+# 1.3.0 : moteur « bouches » des personnages animés : Rhubarb Lip Sync (licence MIT), archives officielles reprises telles
+# quelles pour Windows et Linux, essayées pour de vrai (une voix française, plusieurs formes de bouche), puis publiées dans
+# la release « moteurs-ia » (catalogue moteurs-creatifs.json).
+name: Moteur bouches (Rhubarb)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/moteur_bouches.yml
+      - outils_dev/moteur_bouches.py
+
+permissions:
+  contents: write
+
+jobs:
+  bouches:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Archives officielles
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TAG=$(gh release view -R DanielSWolf/rhubarb-lip-sync --json tagName -q .tagName)
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          mkdir -p brut dist
+          gh release download "$TAG" -R DanielSWolf/rhubarb-lip-sync -p '*Windows.zip' -p '*Linux.zip' -D brut
+          ls -la brut
+          cp brut/*Windows.zip dist/philcut-rhubarb-windows-x64.zip
+          cp brut/*Linux.zip dist/philcut-rhubarb-linux-x64.zip
+      - name: Essai reel (Linux)
+        run: |
+          set -e
+          sudo apt-get update -qq && sudo apt-get install -y -qq espeak-ng ffmpeg > /dev/null
+          mkdir -p essai && cd essai && unzip -q ../dist/philcut-rhubarb-linux-x64.zip
+          EXE=$(find . -name rhubarb -type f | head -1); chmod +x "$EXE"
+          "$EXE" --version
+          espeak-ng -v fr -w voix0.wav "Bonjour, je suis un personnage animé. Ma bouche suit cette voix, phrase après phrase."
+          ffmpeg -loglevel error -y -i voix0.wav -ac 1 -ar 16000 voix.wav
+          cd .. && python outils_dev/moteur_bouches.py essai "essai/$EXE" essai/voix.wav
+      - name: Catalogue et publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          gh release download moteurs-ia -p moteurs-creatifs.json -D dist --clobber
+          python outils_dev/moteur_bouches.py catalogue dist "Rhubarb Lip Sync $TAG"
+          gh release upload moteurs-ia dist/philcut-rhubarb-windows-x64.zip dist/philcut-rhubarb-linux-x64.zip --clobber
+          gh release upload moteurs-ia dist/moteurs-creatifs.json --clobber

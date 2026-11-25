@@ -217,13 +217,26 @@ class G7RienDeTronque(unittest.TestCase):
         mv = DialogueMesVoix(ed, ed.params)
         mv.arbre.setCurrentItem(mv.arbre.topLevelItem(0).child(1))
         fen += [("Mes voix", mv)]
+        from app.dialogues_pantin import DialoguePantin, DialogueCreer          # 1.3.0 : chaque onglet vérifié
+        from test_1133_pantin import pantin_essai
+        dp = DialoguePantin(ed)
+        dp._test_oui = True
+        dp.ajouter_personnage(pantin_essai())
+        fen += [("Nouveau personnage (IA)", DialogueCreer(ed, ed.params)),
+                ("Nouveau personnage (photo)", DialogueCreer(ed, ed.params, photo=True))]
+        fen += [(f"Personnage animé, onglet {i + 1}", (dp, i)) for i in range(dp.onglets.count())]
         fautes = []
         for nom, d in fen:
+            if isinstance(d, tuple):
+                d, onglet = d
+                d.onglets.setCurrentIndex(onglet)
             d.show()
             for pb in tronques(d):
                 fautes.append(f"{nom} : {pb[0]} « {pb[1][:50]} » {pb[2]}")
-            if d is not f:
+            if d is not f and d is not dp:
                 d.close()
+        dp._jeter = True
+        dp.done(0)
         self.assertEqual(fautes, [], "G7 : texte tronqué ou fenêtre trop grande : " + " | ".join(fautes))
         ed.projet.modifie = False
 

@@ -283,11 +283,8 @@ class DialogueMotionLibre(QDialog):
 
     def _licence(self, oui):
         self.params["remotion_licence"] = bool(oui)
-        try:
-            from .reglages import enregistrer
-            enregistrer(self.params)
-        except Exception:
-            pass
+        if hasattr(self.params, "enregistrer"):          # 1.3.0 : gardé tout de suite (l'ancien appel n'existait pas)
+            self.params.enregistrer()
         self._maj()
 
     def _moteur_change(self, *_a):

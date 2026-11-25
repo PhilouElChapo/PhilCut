@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.2.4 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.0
+- Personnage anime (pantin) : Fabrique IA › Animation › « Personnage anime (pantin) : il bouge, il parle… ». Le personnage est cree par l'IA, ou d'apres une photo (personne d'accord, case a cocher), dans le style choisi (environ 0,09 $). PhilCut le decoupe en pieces qui tournent autour des articulations ; le squelette se corrige a la souris.
+- Onze mouvements tout faits (applaudir, courir, danser, marcher, montrer, saluer, sauter…), enchaines en douceur ; places notees pour traverser l'image ; expressions ; les yeux clignent.
+- La bouche suit la voix (fichier, partie en jaune du film ou voix de synthese) grace a Rhubarb Lip Sync, nouveau moteur gratuit « bouches » (Aide › Mises a jour des IA).
+- L'apercu est exactement la video finale, calculee sur ce poste ; fond en couleur, en image ou transparent ; la scene est gardee a chaque changement (Reprendre une creation en cours) et se rouvre depuis le media.
 
 ### 1.2.4 (1.2.3 n'est pas sortie pour Windows)
 - Nouveau moteur de voix de synthese (Piper, piper1-gpl, licence GPL-3.0) : il lit les nouvelles voix de Hugging Face comme les anciennes. Aide › Mises a jour des IA : « Moteur voix » d'abord (en tete de liste), puis les voix.

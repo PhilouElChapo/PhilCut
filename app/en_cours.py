@@ -17,7 +17,7 @@ from PySide6.QtCore import QObject, QTimer
 from .langue import _
 
 GENRES = {"fabrique_musique": _("Fabrique musique"), "assistant_musique": _("Assistant musique"), "clip_groupe": _("Clip de groupe"),
-          "motion_ia": _("Motion design IA")}
+          "motion_ia": _("Motion design IA"), "pantin": _("Personnage animé")}
 GARDER_JOURS = 60
 
 

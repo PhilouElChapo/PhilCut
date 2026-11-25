@@ -602,6 +602,33 @@ def _guides_integres():
                          "le prix demandé).")},
              {"texte": _("Double-clic : la voix est prise. Des curseurs changés sans « Garder » ne valent que pour ce morceau.")},
          ]},
+        {"id": "pantin", "etat": "ok",
+         "titre": _("Personnage animé (pantin) : il bouge, il parle"),
+         "mots": "personnage anime pantin cartoon marionnette squelette articulation bouche voix synchro levres rhubarb mouvement saluer marcher sauter expression photo explainer infographics dessin anime",
+         "intro": _("Un personnage découpé en pièces (tête, buste, bras, jambes) qui tournent autour de leurs articulations, comme "
+                    "dans les vidéos d'explication : il fait des gestes, change d'expression, et sa bouche suit la voix. Tout se "
+                    "modifie à tout moment."),
+         "etapes": [
+             {"texte": _("Fabrique IA › Animation (motion design) › « Personnage animé (pantin) : il bouge, il parle… ».")},
+             {"texte": _("Onglet Personnages › « + Nouveau personnage » : créé par l'IA (décrivez-le, choisissez le style) ou depuis "
+                         "une photo (seulement une personne d'accord, ou vous-même : cochez la case). Gemini le dessine en pose en "
+                         "T, puis ses yeux et ses bouches ; environ 0,09 $, prix montré avant. Il est gardé dans « Mes "
+                         "personnages » pour d'autres scènes.")},
+             {"texte": _("« Squelette… » montre le dessin : glissez les points jaunes sur les articulations et les carrés bleus "
+                         "sur les yeux et la bouche, puis « Appliquer le squelette » : les pièces sont redécoupées.")},
+             {"texte": _("Place et taille avec les curseurs ; « Noter la place à cet instant » à deux moments différents fait "
+                         "traverser l'image au personnage (avec « Marcher », il marche en avançant).")},
+             {"texte": _("Onglet Mouvements : placez le curseur de temps, choisissez un mouvement (saluer, marcher, montrer, "
+                         "sauter…), « Ajouter à cet instant » ; début et durée se changent dans la liste. Les mouvements "
+                         "s'enchaînent en douceur.")},
+             {"texte": _("Onglet Visage : expressions à poser à un instant ; les yeux clignent tout seuls. « Voix… » : un fichier, "
+                         "la partie en jaune du film, ou un texte lu par la voix de synthèse ; puis « Synchroniser les bouches » "
+                         "(Rhubarb Lip Sync, gratuit, installé une fois par Aide › Mises à jour des IA).")},
+             {"texte": _("Onglet Scène : format, durée, fond (couleur, image, ou transparent pour poser le personnage sur le film). "
+                         "« ▶ Lire » montre exactement la vidéo finale.")},
+             {"texte": _("« Fabriquer et poser… » : la vidéo est calculée sur ce poste (gratuit), vous la regardez, puis vous la "
+                         "posez. Plus tard, « Modifier la création IA » sur le média rouvre la scène telle qu'elle était.")},
+         ]},
         {"id": "reprendre_creation", "etat": "ok",
          "titre": _("Reprendre une création en cours (après une fermeture ou un plantage)"),
          "mots": "reprendre creation en cours plantage perdu fermer sauvegarde musique clip groupe motion assistant retrouver",
