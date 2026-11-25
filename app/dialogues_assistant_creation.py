@@ -1805,6 +1805,8 @@ class DialogueAssistant(QDialog):
                                 "composée avec les mêmes fiches, le même décor et la même lumière (un raccord comme au cinéma)."))
                 ce.toggled.connect(lambda on, i=i: QTimer.singleShot(0, lambda: self._basculer_enchainement(i, on)))
                 bloc.addWidget(ce)
+                if pl.get("lien_pourquoi") and not pl.get("enchaine_main"):
+                    bloc.addWidget(self._aide(_("Proposé par l'IA : {p}", p=pl["lien_pourquoi"])))
             g.addLayout(bloc, ligne, 0)
             # fin
             bloc = QVBoxLayout()

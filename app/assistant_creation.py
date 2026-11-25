@@ -35,6 +35,7 @@ A partir de l'histoire de l'utilisateur, rends un objet JSON :
  "lieux": [{{"nom": "...", "sur_image": true si c'est le décor de l'image de départ, "description": "lumière, matières, détails"}}],
  "plans": [{{"action": "...", "personnages": ["nom", ...], "hors_champ": "où sont ceux qu'on ne voit plus, ou vide",
  "depart": "état de la scène à sa première image",
+ "enchainer": true ou false, "pourquoi_lien": "…",
  "lieu": "nom du lieu ou vide", "duree": 8 à 15, "camera": "cadrage et mouvement : plan large, plan moyen, gros plan ; fixe,
  recule, s'approche, accompagne…", "image_clef": true ou false, "pourquoi_clef": "si image_clef : en quelques mots, ce
  qu'elle doit fixer (« elles sont déjà dans la voiture »), sinon vide"}}],
@@ -63,8 +64,14 @@ Règles impératives :
   l'autre : quelqu'un qui monte dans un véhicule, entre dans un bâtiment ou sort du champ n'apparaît plus dans les plans
   suivants tant que l'histoire ne le fait pas ressortir ; dis où il est dans « hors_champ » (« les deux femmes sont dans la
   voiture »). Une liste vide = on ne voit aucun personnage (seulement le décor ou un objet).
-- « image_clef » : toujours false (chaque scène a son image de départ, validée par l'utilisateur ; le moteur joue la
-  scène librement jusqu'au bout).
+- Le lien entre deux scènes (« enchainer », sur la scène qui suit) : true quand elle continue EXACTEMENT le même moment
+  au même endroit (mêmes personnes, mêmes places : « elles montent l'escalier » juste après « elles arrivent au pied de
+  l'escalier ») ; elle part alors de la vraie dernière image de la scène d'avant. false quand on change de lieu, de
+  moment ou d'angle (un raccord de cinéma) : elle part de sa propre image, décrite dans « depart ». La première scène :
+  false. « pourquoi_lien » : en quelques mots, pourquoi.
+- « image_clef » (sur une scène) : true seulement quand l'état à la FIN de cette scène doit être exact, surtout quand la
+  scène suivante s'y enchaîne (« elles sont en haut de l'escalier, la porte ouverte ») : cette image finira la scène et
+  commencera la suivante. Sinon false (le moteur joue librement). « pourquoi_clef » : ce qu'elle doit fixer.
 - Le cadrage suit l'action : plan large quand on se déplace d'un lieu à l'autre ou quand un véhicule doit tenir dans
   l'image, plus serré pour un geste ; dis-le dans « camera ».
 - Caméra : simple et stable (recule, accompagne de côté, fixe) ; jamais de dos quand les visages doivent rester
@@ -176,6 +183,7 @@ def lire_analyse(d):
         lieu = _texte(pl.get("lieu"), 40)
         plans.append({"action": _texte(pl.get("action"), 700), "personnages": noms, "duree": max(3, min(15, duree)),
                       "depart": _texte(pl.get("depart"), 400),
+                      "enchainer_ia": bool(pl.get("enchainer")) and bool(plans), "lien_pourquoi": _texte(pl.get("pourquoi_lien"), 160),
                       "camera": _texte(pl.get("camera"), 160), "lieu": lieu if lieu.lower() in vus_l else "",
                       "hors_champ": _texte(pl.get("hors_champ"), 200), "visibles_fixes": True,
                       "clef": bool(pl.get("image_clef")), "clef_pourquoi": _texte(pl.get("pourquoi_clef"), 160)})
@@ -519,6 +527,8 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
             if a.get(cle):
                 pl[cle] = a[cle]
         pl["etat_depart"] = a.get("depart", "")     # 1.3.5 : l'état de la première image de la scène
+        pl["enchainer_ia"] = bool(a.get("enchainer_ia"))       # 1.3.8 : le lien proposé par l'IA
+        pl["lien_pourquoi"] = a.get("lien_pourquoi", "")
         pl["clef"] = bool(a.get("clef"))            # 0.9.87 : image de fin imposée seulement aux images clefs
         pl["clef_pourquoi"] = a.get("clef_pourquoi", "")
         pl["sans_fin"] = not pl["clef"]
@@ -530,9 +540,11 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
         precedent_change = not vieux                # 0.9.86 : seul ce qui a changé (et le plan qui en part) est refait
         if vieux:
             for cle in ("image", "image_fin", "images_ok", "sans_fin", "clef", "clef_pourquoi", "fin_reelle", "fichier", "verdict", "precision", "precision_fin",
-                        "consigne", "clef_main", "enchaine_main", "enchainer"):
+                        "consigne", "clef_main", "enchaine_main"):
                 if cle in vieux:
                     pl[cle] = vieux[cle]
+            if vieux.get("enchaine_main"):
+                pl["enchainer"] = bool(vieux.get("enchainer"))       # votre choix de lien est gardé
             if int(vieux.get("duree") or 0) != pl["duree"]:
                 pl["fichier"], pl["verdict"] = "", None
         plans.append(pl)
@@ -558,10 +570,11 @@ def uniformiser(seq, image=None):
             i += 1
     for k, pl in enumerate(seq["plans"]):
         if not (scenes and pl.get("enchaine_main")):
-            pl["enchainer"] = k > 0 and not scenes   # une scène part de SON image de départ : une erreur ne se propage plus
-        pl["enchainer"] = pl["enchainer"] and k > 0
+            # en scènes : le lien proposé par l'IA (même moment, même lieu) ; sinon sa propre image de départ
+            pl["enchainer"] = k > 0 and (bool(pl.get("enchainer_ia")) if scenes else True)
+        pl["enchainer"] = bool(pl.get("enchainer")) and k > 0
         if scenes and not pl.get("fin_reelle") and not pl.get("clef_main"):
-            pl["clef"], pl["sans_fin"] = False, True  # pas d'image d'arrivée d'office ; celle cochée à la main est gardée
+            pl["sans_fin"] = not pl.get("clef")       # l'image clef proposée par l'IA ; celle cochée à la main est gardée
         if pl.get("fin_reelle") and k < len(seq["plans"]) - 1:
             pl.pop("fin_reelle")
             pl["image_fin"], pl["clef"], pl["sans_fin"] = "", False, True

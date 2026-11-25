@@ -9730,5 +9730,6 @@
  "Enchaîner sur la fin de la scène d'avant": "An das Ende der vorigen Szene anschließen",
  "Cochée : la scène part de la vraie dernière image de la scène d'avant (continuité exacte, mais un défaut de la scène d'avant se retrouve ici). Décochée : elle part de sa propre image de départ, composée avec les mêmes fiches, le même décor et la même lumière (un raccord comme au cinéma).": "Angekreuzt: die Szene beginnt mit dem echten letzten Bild der vorigen Szene (exakte Kontinuität, aber ein Fehler der vorigen Szene setzt sich hier fort). Nicht angekreuzt: sie beginnt mit ihrem eigenen Startbild, erstellt mit denselben Blättern, derselben Kulisse und demselben Licht (ein Schnitt wie im Kino).",
  "La scène {n} partira de la fin de la scène {p}. Pour fixer exactement ce raccord, cochez « Image clef à la fin de ce plan » sur la scène {p} : la même image finira l'une et commencera l'autre.": "Szene {n} beginnt am Ende von Szene {p}. Um diesen Übergang genau festzulegen, kreuzen Sie « Schlüsselbild am Ende dieser Einstellung » bei Szene {p} an: dasselbe Bild beendet die eine und beginnt die andere.",
- "La scène {n} aura sa propre image de départ : « Préparer les images » la compose (environ 0,04 $).": "Szene {n} erhält ihr eigenes Startbild: « Bilder vorbereiten » erstellt es (etwa 0,04 $)."
+ "La scène {n} aura sa propre image de départ : « Préparer les images » la compose (environ 0,04 $).": "Szene {n} erhält ihr eigenes Startbild: « Bilder vorbereiten » erstellt es (etwa 0,04 $).",
+ "Proposé par l'IA : {p}": "Von der KI vorgeschlagen: {p}"
 }

@@ -14,12 +14,15 @@ ANALYSE = {"personnages": [
     "lieux": [{"nom": "Tarmac", "sur_image": True, "description": "tarmac gris, ciel nuageux"}],
     "plans": [
         {"action": "La femme sourit face caméra puis se tourne vers le jet", "personnages": ["Femme brune", "Jet"], "duree": 8,
-         "depart": "La femme debout devant le jet", "lieu": "Tarmac", "image_clef": True},
+         "depart": "La femme debout devant le jet", "lieu": "Tarmac"},
         {"action": "Le pilote et l'hôtesse arrivent côte à côte. Le pilote serre la main de la femme pendant que l'hôtesse sourit à côté",
          "personnages": ["Femme brune", "Pilote", "Hôtesse", "Jet"], "duree": 12, "lieu": "Tarmac",
          "depart": "La femme devant le jet, le pilote et l'hôtesse à droite, à dix mètres"},
         {"action": "Le jet roule puis décolle", "personnages": ["Jet"], "duree": 10, "depart": "Le jet porte fermée, personne dehors",
          "lieu": "Tarmac"}]}
+ANALYSE_LIEE = {**ANALYSE, "plans": [dict(ANALYSE["plans"][0]), dict(ANALYSE["plans"][1], image_clef=True,
+                                                                     pourquoi_clef="tous au pied de l'escalier"),
+                                     dict(ANALYSE["plans"][2], enchainer=True, pourquoi_lien="même moment")]}
 
 
 def _png(d, nom, coul="gray"):
@@ -43,7 +46,7 @@ class TestScenes(unittest.TestCase):
         self.assertEqual(len(s["plans"]), 3)                         # « et », « puis », « pendant que » : rien n'est coupé
         self.assertIn("côte à côte", s["plans"][1]["action"])
         self.assertTrue(all(not pl["enchainer"] for pl in s["plans"]))        # chaque scène part de son image
-        self.assertTrue(all(pl["sans_fin"] and not pl["clef"] for pl in s["plans"]))    # aucune image d'arrivée imposée
+        self.assertTrue(all(pl["sans_fin"] and not pl["clef"] for pl in s["plans"]))    # l'IA n'en a demandé aucune
         self.assertEqual(s["plans"][1]["etat_depart"], "La femme devant le jet, le pilote et l'hôtesse à droite, à dix mètres")
         self.assertEqual(A.etat(s)["plans"][1]["depart"], s["plans"][1]["etat_depart"])
         f, dep, arr = A.a_preparer(s, {"clef_gemini": "x"})
@@ -117,6 +120,15 @@ class TestScenes(unittest.TestCase):
         self.assertEqual([pl["enchainer"] for pl in n["plans"]], [False, False, True])
         f, dep, arr = A.a_preparer(n, {"clef_gemini": "x"})
         self.assertEqual(dep, 1)                                    # la scène enchaînée n'a pas d'image de départ à composer
+
+    def test_lien_propose_par_l_ia(self):
+        n = A.appliquer(Q.nouvelle("9:16"), A.lire_analyse(ANALYSE_LIEE), self.img)
+        self.assertEqual([pl["enchainer"] for pl in n["plans"]], [False, False, True])
+        self.assertEqual([pl["sans_fin"] for pl in n["plans"]], [True, False, True])   # image clef de la scène 2 : départ de la 3
+        self.assertEqual(n["plans"][2]["lien_pourquoi"], "même moment")
+        f, dep, arr = A.a_preparer(n, {"clef_gemini": "x"})
+        self.assertEqual((dep, arr), (1, 1))
+        self.assertIn("enchainer", A.CONSIGNE_ANALYSE)
 
     def test_modifier_garde_les_lieux(self):
         s = self.seq
