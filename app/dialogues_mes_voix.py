@@ -423,6 +423,24 @@ class DialogueMesVoix(QDialog):
         v.addLayout(h)
         return d.exec() == QDialog.Accepted and c.isChecked()
 
+    def _garder_ou_seulement(self, defaut):
+        """None : pour ce morceau seulement ; un nom : la garder dans « Mes voix » ; '' : annulé."""
+        if getattr(self, "_test_garder", "?") != "?":
+            return self._test_garder
+        m = QMessageBox(self)
+        m.setWindowTitle(_("Voix décrite"))
+        m.setText(_("La voix est décrite. La prendre pour ce morceau seulement, ou la garder dans « Mes voix » pour la retrouver "
+                    "(et lui ajouter des variantes) ?"))
+        b_seul = m.addButton(_("Pour ce morceau seulement"), QMessageBox.AcceptRole)
+        b_garder = m.addButton(_("La garder dans Mes voix…"), QMessageBox.AcceptRole)
+        m.addButton(_("Annuler"), QMessageBox.RejectRole)
+        m.exec()
+        if m.clickedButton() is b_seul:
+            return None
+        if m.clickedButton() is b_garder:
+            return self._nom_demande(_("Nouvelle voix"), _("Nom de la voix (ex. : Archangel, ma voix) :"), defaut)
+        return ""
+
     def _analyser(self, ch, reel, separer, passage_deja=False):
         from .dialogues_musique_ia import choisir_passage
         passage = None
@@ -444,11 +462,11 @@ class DialogueMesVoix(QDialog):
                 QMessageBox.information(self, _("Voix"), manque)
                 return
         defaut = os.path.splitext(os.path.basename(ch))[0][:40]
-        nom = self._nom_demande(_("Nouvelle voix"), _("Nom de la voix (ex. : Archangel, ma voix) :"), defaut)
-        if not nom:
-            return
-        if reel and not self._accord(nom):
-            return
+        nom = ""
+        if reel:                                         # une voix réelle se garde toujours (accord noté avec elle)
+            nom = self._nom_demande(_("Nouvelle voix"), _("Nom de la voix (ex. : Archangel, ma voix) :"), defaut)
+            if not nom or not self._accord(nom):
+                return
         params = self.params
 
         def travail(t):
@@ -467,9 +485,26 @@ class DialogueMesVoix(QDialog):
                     self.info.setText(_("✕ Voix non analysée : {e}", e=texte_erreur(err)[:300]))
                 return
             reg = VF.reglages_depuis_mesures(r.get("mesures"))
+            vd = {"en": r.get("en", ""), "fr": r.get("fr", ""), "mesures": r.get("mesures")}
+            if not reel:
+                # 1.2.2 (Philippe, 25/11 : ne jamais perdre ce qui marchait) : comme avant, la voix décrite peut servir pour ce
+                # morceau seulement ; la garder dans « Mes voix » est un choix
+                garder = self._garder_ou_seulement(defaut)
+                if garder is None:
+                    self.choisi = {"nom": _("d'après « {f} »", f=defaut), "reglages": reg,
+                                   "voix_decrite": {"en": vd["en"], "fr": vd["fr"], "fichier": defaut}}
+                    if self.poser_cb:
+                        self.poser_cb(self.choisi)
+                    self.accept()
+                    return
+                if not garder:
+                    return
+                nom2 = garder
+            else:
+                nom2 = nom
             if reel:                                  # la déclaration suit le fichier (musique_ia.creer la vérifie)
                 MI.declarer(r["voix_seule"], voix_accord=True, voix_de=nom)
-            e = VF.garder_principal(self.params, nom, reg, {"en": r.get("en", ""), "fr": r.get("fr", ""), "mesures": r.get("mesures")},
+            e = VF.garder_principal(self.params, nom2, reg, vd,
                                     extrait=r["voix_seule"] if reel else None, reel=reel, voix_seule=r["voix_seule"] if reel else None,
                                     accord=reel, source=os.path.basename(ch))
             self.info.setText(_("✓ « {n} » gardée comme modèle principal : ajoutez ses variantes (chaude, aiguë…).", n=VF.nom_affiche(e)))

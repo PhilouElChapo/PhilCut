@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.2.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.2.2 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.2.2
+- « Mes voix… › Nouvelle voix › D'apres un morceau » : comme avant, la voix decrite peut servir pour ce morceau seulement ; la garder dans « Mes voix » est un choix.
 
 ### 1.2.1 (variantes du catalogue, mon groupe, reprendre une creation)
 - Chaque voix « a la maniere de » du catalogue a ses propres variantes (crooner et swing pour un crooner, flow serre pour un rappeur, criee pour le metal…) ; une voix deja rauque n'a pas de variante « rauque ».

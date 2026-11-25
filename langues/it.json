@@ -9543,5 +9543,9 @@
  "Fabrique IA › « Reprendre une création en cours… ».": "Laboratorio IA › « Riprendere una creazione in corso… ».",
  "Choisissez la création (genre, titre, date) : elle rouvre là où vous en étiez ; continuez.": "Scegli la creazione (tipo, titolo, data): si riapre da dove eri; continua.",
  "En haut : « Mon groupe… » ; le style et la voix du groupe se posent sur la fiche.": "In alto: « Il mio gruppo… »; lo stile e la voce del gruppo vanno sulla scheda.",
- "Choisissez « Clip » en bas de la fiche : après la création, le clip de groupe s'ouvre avec ses musiciens.": "Scegli « Clip » in fondo alla scheda: dopo la creazione, il clip di gruppo si apre con i suoi musicisti."
+ "Choisissez « Clip » en bas de la fiche : après la création, le clip de groupe s'ouvre avec ses musiciens.": "Scegli « Clip » in fondo alla scheda: dopo la creazione, il clip di gruppo si apre con i suoi musicisti.",
+ "La voix est décrite. La prendre pour ce morceau seulement, ou la garder dans « Mes voix » pour la retrouver (et lui ajouter des variantes) ?": "La voce è descritta. Usarla solo per questo brano, o tenerla in « Le mie voci » per ritrovarla (e aggiungere varianti)?",
+ "Pour ce morceau seulement": "Solo per questo brano",
+ "La garder dans Mes voix…": "Tenerla in Le mie voci…",
+ "d'après « {f} »": "da « {f} »"
 }

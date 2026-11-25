@@ -9552,5 +9552,9 @@
  "Fabrique IA › « Reprendre une création en cours… ».": "AI workshop › « Resume a creation in progress… ».",
  "Choisissez la création (genre, titre, date) : elle rouvre là où vous en étiez ; continuez.": "Choose the creation (kind, title, date): it reopens where you left off; carry on.",
  "En haut : « Mon groupe… » ; le style et la voix du groupe se posent sur la fiche.": "At the top: « My band… »; the band's style and voice are set on the sheet.",
- "Choisissez « Clip » en bas de la fiche : après la création, le clip de groupe s'ouvre avec ses musiciens.": "Choose « Clip » at the bottom of the sheet: after creation, the band clip opens with its musicians."
+ "Choisissez « Clip » en bas de la fiche : après la création, le clip de groupe s'ouvre avec ses musiciens.": "Choose « Clip » at the bottom of the sheet: after creation, the band clip opens with its musicians.",
+ "La voix est décrite. La prendre pour ce morceau seulement, ou la garder dans « Mes voix » pour la retrouver (et lui ajouter des variantes) ?": "The voice is described. Use it for this track only, or keep it in « My voices » to find it again (and add variants)?",
+ "Pour ce morceau seulement": "For this track only",
+ "La garder dans Mes voix…": "Keep it in My voices…",
+ "d'après « {f} »": "from « {f} »"
 }

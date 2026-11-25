@@ -143,6 +143,20 @@ class TestFenetres(unittest.TestCase):
         d2.recherche.setText("rock")
         self.assertTrue(d2.arbre.topLevelItem(d2.arbre.topLevelItemCount() - 1).isExpanded())
 
+    def test_voix_decrite_pour_ce_morceau(self):
+        """1.2.2 : comme avant, une voix décrite d'après un morceau sert pour ce morceau sans être gardée (au choix)."""
+        import time
+        from app.dialogues_mes_voix import DialogueMesVoix
+        d = DialogueMesVoix(self.ed, self.ed.params)
+        d._test_sans_separation, d._test_garder = True, None
+        d._analyser(wav(self.d, "chant.wav", 330, 4), False, False, passage_deja=True)
+        t0 = time.time()
+        while d.choisi is None and time.time() - t0 < 60:
+            app.processEvents()
+            time.sleep(0.05)
+        self.assertTrue(d.choisi and d.choisi["voix_decrite"]["en"])
+        self.assertEqual(len(VF.mes_voix(self.ed.params)), 1)       # rien de gardé en plus
+
     def test_ecoute_sans_calcul_au_clic(self):
         from app.dialogues_mes_voix import DialogueMesVoix
         d = DialogueMesVoix(self.ed, self.ed.params)

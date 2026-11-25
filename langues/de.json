@@ -9543,5 +9543,9 @@
  "Fabrique IA › « Reprendre une création en cours… ».": "KI-Werkstatt › « Eine laufende Erstellung fortsetzen… ».",
  "Choisissez la création (genre, titre, date) : elle rouvre là où vous en étiez ; continuez.": "Wählen Sie die Erstellung (Art, Titel, Datum): sie öffnet sich dort, wo Sie aufgehört haben; machen Sie weiter.",
  "En haut : « Mon groupe… » ; le style et la voix du groupe se posent sur la fiche.": "Oben: « Meine Band… »; Stil und Stimme der Band werden in das Blatt übernommen.",
- "Choisissez « Clip » en bas de la fiche : après la création, le clip de groupe s'ouvre avec ses musiciens.": "Wählen Sie « Clip » unten im Blatt: nach der Erstellung öffnet sich der Band-Clip mit ihren Musikern."
+ "Choisissez « Clip » en bas de la fiche : après la création, le clip de groupe s'ouvre avec ses musiciens.": "Wählen Sie « Clip » unten im Blatt: nach der Erstellung öffnet sich der Band-Clip mit ihren Musikern.",
+ "La voix est décrite. La prendre pour ce morceau seulement, ou la garder dans « Mes voix » pour la retrouver (et lui ajouter des variantes) ?": "Die Stimme ist beschrieben. Nur für dieses Stück verwenden oder in « Meine Stimmen » behalten, um sie wiederzufinden (und Varianten hinzuzufügen)?",
+ "Pour ce morceau seulement": "Nur für dieses Stück",
+ "La garder dans Mes voix…": "In Meine Stimmen behalten…",
+ "d'après « {f} »": "nach « {f} »"
 }
