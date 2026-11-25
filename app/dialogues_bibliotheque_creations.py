@@ -257,6 +257,16 @@ class DialogueBibliothequeCreations(QDialog):
             self.v_detail.addLayout(h)
             if (d.get("voix_decrite") or {}).get("fr"):
                 self.v_detail.addWidget(aide(_("Voix décrite : {d}", d=d["voix_decrite"]["fr"])))
+            # 1.2.0 : variantes (chaude, aiguë…) et les 7 réglages, dans « Mes voix… »
+            vs = d.get("variantes") or []
+            hv = QHBoxLayout()
+            hv.addWidget(QLabel(_("Variantes : {v}", v=", ".join(v["nom"] for v in vs) if vs else _("aucune"))))
+            bv = QPushButton(_("Variantes et réglages…"))
+            bv.setToolTip(_("Ouvre « Mes voix… » sur cette voix : curseurs, pré-écoute, « + Ajouter une variante »"))
+            bv.clicked.connect(lambda: self.variantes_voix(e))
+            hv.addWidget(bv)
+            hv.addStretch(1)
+            self.v_detail.addLayout(hv)
         if e["genre"] in ("personnage", "musicien", "voix"):
             self.extra["accord"] = QCheckBox(_("Accord de la personne des photos (ou c'est moi)"))
             self.extra["accord"].setToolTip(_("Obligatoire pour « Réel » et « Inspiré de photos » : la ressemblance est gardée."))
@@ -734,6 +744,22 @@ class DialogueBibliothequeCreations(QDialog):
             r = Q.planche_personnage(seq, p, params)
             return p.get("planche") or (r if isinstance(r, str) else "")
         self._lancer(travail, _("Fiche de « {n} »", n=p["nom"]), lambda r: r and self.enregistrer({"planche": r}))
+
+    def variantes_voix(self, e):
+        from .dialogues_mes_voix import DialogueMesVoix
+        d = DialogueMesVoix(self, self.params)
+        d.recherche.setText(e["nom"])
+        for i in range(d.arbre.topLevelItemCount()):
+            it = d.arbre.topLevelItem(i)
+            x = it.data(0, Qt.UserRole) or (None, None, None)
+            if x[0] == "mienne" and x[1]["id"] == e["id"]:
+                d.arbre.setCurrentItem(it.child(0))
+        if getattr(self, "_test_variantes", None):
+            return self._test_variantes(d)
+        d.b_ok.hide()
+        d.exec()
+        self.remplir() if hasattr(self, "remplir") else None
+        return d
 
     def voix_depuis_morceau(self, timbre):
         from . import creatif

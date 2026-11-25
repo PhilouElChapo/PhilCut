@@ -151,17 +151,15 @@ class DialogueFabriqueMusique(QDialog):
         hv.addWidget(self.instrumental)
         hv.addWidget(self.voix, 1)
         hv.addWidget(self.langue)
-        self.b_voix_style = QPushButton(_("À la manière de…"))
-        self.b_voix_style.setToolTip(_("Une manière de chanter connue, ou celle d'un morceau : décrite au moteur, jamais copiée"))
-        mv = QMenu(self.b_voix_style)
-        mv.addAction(_("Chanter à la manière d'un chanteur, d'un groupe…"), self._voix_a_la_maniere)
-        mv.addAction(_("Décrire la voix d'un morceau de ce poste…"), lambda: self._decrire_voix(None))
-        mv.addAction(_("Décrire la voix d'un morceau en ligne…"), self._decrire_voix_en_ligne)
-        mv.addAction(_("Une voix de ma bibliothèque…"), self._voix_biblio)
-        self.b_voix_style.setMenu(mv)
+        # 1.2.0 (choix de Philippe, 25/11) : un seul bouton « Mes voix… » : mes voix gardées et leurs variantes, le catalogue
+        # « à la manière de », décrire la voix d'un morceau, voix réelle
+        self.b_voix_style = QPushButton(_("Mes voix…"))
+        self.b_voix_style.setToolTip(_("Vos voix gardées et leurs variantes (chaude, aiguë…), les manières de chanter du catalogue, "
+                                       "une voix décrite d'après un morceau ou une voix réelle : décrites au moteur"))
+        self.b_voix_style.clicked.connect(self.mes_voix)
         hv.addWidget(self.b_voix_style)
         f.addRow(_("Voix"), hv)
-        self.voix_decrite = None
+        self.voix_decrite, self.voix_choisie = None, None
         self.voix_decrite_info = QLabel("")
         self.voix_decrite_info.setWordWrap(True)
         self.voix_decrite_info.setStyleSheet("color:#9ad0ff")
@@ -363,6 +361,12 @@ class DialogueFabriqueMusique(QDialog):
         for w in (self.instruments, self.epoque):
             w.textChanged.connect(self._maj)
         self.phrase.textChanged.connect(self._maj)
+        # 1.2.0 : « à la manière d'Archangel, voix chaude » : la voix gardée (et sa variante) est prise dans la phrase
+        self._minuteur_voix = QTimer(self)
+        self._minuteur_voix.setSingleShot(True)
+        self._minuteur_voix.setInterval(900)
+        self._minuteur_voix.timeout.connect(self.voix_de_la_phrase)
+        self.phrase.textChanged.connect(self._minuteur_voix.start)
         self.instrumental.toggled.connect(self._maj)
         self._remplir_styles()
         self._bascule_paroles(True)
@@ -419,6 +423,8 @@ class DialogueFabriqueMusique(QDialog):
             f["voix_reference"] = {"chemin": self.reference}
         if self.voix_decrite:
             f["voix_decrite"] = dict(self.voix_decrite)
+        if getattr(self, "voix_choisie", None):
+            f["voix_choisie"] = dict(self.voix_choisie)
         if self.clip_lieu.currentData():
             f["clip"] = {"lieu": self.clip_lieu.currentData(), "anime": self.clip_anime.isChecked()}
         return f
@@ -448,6 +454,8 @@ class DialogueFabriqueMusique(QDialog):
             self._montrer_inspiration(dict(f["inspiration"]))
         if f.get("voix_decrite"):
             self._poser_voix_decrite(dict(f["voix_decrite"]))
+        if f.get("voix_choisie"):
+            self.voix_choisie = dict(f["voix_choisie"])
         cl = f.get("clip") or {}
         self.clip_lieu.setCurrentIndex(max(0, self.clip_lieu.findData(cl.get("lieu", ""))))
         self.clip_anime.setChecked(bool(cl.get("anime")))
@@ -483,6 +491,71 @@ class DialogueFabriqueMusique(QDialog):
         if nom:
             p = self.phrase.toPlainText().rstrip(" ,")
             self.phrase.setPlainText((p + ", " if p else "") + _("à la manière de") + " " + nom)
+
+    # ---- 1.2.0 : « Mes voix… »
+    def mes_voix(self):
+        from .dialogues_mes_voix import choisir_voix
+        c = choisir_voix(self, self.params, self.paroles.toPlainText(), self.langue.currentData() or "fr",
+                         getattr(self.hote, "son_timeline", None))
+        if c:
+            self.poser_voix(c)
+        return c
+
+    def poser_voix(self, c):
+        """Une voix de « Mes voix… » (ou trouvée dans la phrase) : sa manière décrite ; son timbre si c'est une voix réelle."""
+        self.voix_choisie = {k: c.get(k) for k in ("nom", "entree", "variante", "catalogue", "reglages", "modifiee") if c.get(k)}
+        self._poser_voix_decrite(dict(c["voix_decrite"], fichier=c["nom"]))
+        if c.get("reference"):
+            self.reference = c["reference"]
+            self.ref_info.setText(_("Voix de référence : {f}", f=c["nom"]))
+            self.b_sans_ref.setVisible(True)
+        self.info.setText(_("✓ Voix « {n} ».", n=c["nom"]))
+
+    def voix_de_la_phrase(self):
+        """Une voix gardée nommée dans la phrase passe avant le catalogue : prise, puis retirée de la phrase (elle s'affiche sur la
+        ligne Voix). Mot vague (« douce » sans variante douce) : PhilCut demande (choix de Philippe, 25/11)."""
+        from . import voix_familles as VF
+        texte = self.phrase.toPlainText()
+        try:
+            t = VF.trouver(texte, self.params)
+        except Exception:      # noqa: BLE001 : bibliothèque illisible : la phrase reste telle quelle
+            return None
+        if not t:
+            return None
+        e, va = t["entree"], t["variante"]
+        if t["mot_inconnu"]:
+            va = self._demander_variante(e, t)
+            if va is False:
+                return None
+        self.poser_voix(VF.choix(e, va))
+        reste = texte[:t["debut"]] + texte[t["fin"]:] if len(VF._net(texte)) == len(texte) else texte
+        reste = " ".join(reste.replace(" ,", ",").split()).strip(" ,;")
+        self.phrase.blockSignals(True)
+        self.phrase.setPlainText(reste)
+        self.phrase.blockSignals(False)
+        self._maj()
+        return t
+
+    def _demander_variante(self, e, t):
+        """Variantes existantes, le modèle principal, ou créer la variante nommée ; False si annulé."""
+        from . import voix_familles as VF
+        if getattr(self, "_test_variante", None) is not None:
+            return self._test_variante(e, t)
+        m = QMessageBox(self)
+        m.setWindowTitle(_("Quelle voix ?"))
+        m.setText(_("« {n} » n'a pas de variante « {m} ». Laquelle prendre ?", n=VF.nom_affiche(e), m=t["mot_inconnu"]))
+        boutons = {m.addButton(_("Normale (modèle principal)"), QMessageBox.AcceptRole): None}
+        for v in VF.variantes(e):
+            boutons[m.addButton(v["nom"], QMessageBox.AcceptRole)] = v
+        creer = m.addButton(_("Créer la variante « {m} »", m=VF.TYPES[t["type"]][0]), QMessageBox.AcceptRole)
+        m.addButton(_("Annuler"), QMessageBox.RejectRole)
+        m.exec()
+        b = m.clickedButton()
+        if b is creer:
+            v = VF.variante_type(t["type"], VF.reglages_de(e))
+            e2 = VF.ajouter_variante(self.params, e, v["nom"], v["reglages"], v["mots"])
+            return next((x for x in VF.variantes(e2) if VF._net(x["nom"]) == VF._net(v["nom"])), None)
+        return boutons.get(b, False)
 
     # ---- voix « à la manière de », voix décrite d'un morceau (0.9.63)
     def _voix_a_la_maniere(self):
@@ -543,13 +616,13 @@ class DialogueFabriqueMusique(QDialog):
         self.voix_decrite = {k: r[k] for k in ("en", "fr", "fichier") if k in r}
         self.instrumental.setChecked(False)
         self.voix.setEnabled(False)
-        self.voix_decrite_info.setText(_("🎤 Voix décrite d'après « {f} » : {d}. Le moteur chante avec une autre voix, de cette manière.",
-                                         f=r.get("fichier", ""), d=r.get("fr", "")))
+        self.voix_decrite_info.setText(_("🎤 Voix « {f} » : {d}. Le moteur chante de cette manière.", f=r.get("fichier", ""), d=r.get("fr", "")))
         self.boite_voix_decrite.show()
         self._maj()
 
     def _sans_voix_decrite(self):
         self.voix_decrite = None
+        self.voix_choisie = None
         self.boite_voix_decrite.hide()
         self.voix.setEnabled(not self.instrumental.isChecked())
         self._maj()

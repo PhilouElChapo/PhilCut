@@ -698,12 +698,43 @@ class DialogueAssistant(QDialog):
             carte.mettre_description(carte.e.get("description", ""))
             carte.rafraichir()
 
+    def _mes_voix_carte(self, carte):
+        """1.2.0 : la voix de la carte prise dans « Mes voix… » (voix gardées, variantes, catalogue « à la manière de »)."""
+        from .dialogues_mes_voix import choisir_voix
+        mus = (getattr(self, "musique", None) or {}).get("elements") or []
+        paroles = next((x.get("texte", "") for x in mus if x.get("type") == "paroles"), "")
+        c = choisir_voix(self, self.params, paroles)
+        if not c:
+            return None
+        e = carte.e
+        e.update(source="bibliotheque", nom=c["nom"], description=c["voix_decrite"].get("fr", ""),
+                 voix_decrite={"en": c["voix_decrite"].get("en", ""), "fr": c["voix_decrite"].get("fr", "")}, biblio=c.get("entree", ""),
+                 voix_choisie={k: c.get(k) for k in ("nom", "entree", "variante", "catalogue") if c.get(k)})
+        if c.get("reference"):
+            e.update(voix_seule=c["reference"], accord=True)
+        else:
+            e.pop("voix_seule", None)
+        carte.nom.blockSignals(True)
+        carte.nom.setText(e["nom"])
+        carte.nom.blockSignals(False)
+        carte.mettre_description(e.get("description", ""))
+        carte.rafraichir()
+        return c
+
     def _options_bibliotheque(self, carte):
         from . import bibliotheque_creations as B
         e = carte.e
         w = QWidget()
         v = QVBoxLayout(w)
         v.setContentsMargins(24, 0, 0, 0)
+        if e.get("type") == "voix":                        # 1.2.0 : voix par familles, variantes et catalogue
+            h = QHBoxLayout()
+            b = QPushButton(_("Mes voix…"))
+            b.clicked.connect(lambda: self._mes_voix_carte(carte))
+            h.addWidget(b)
+            h.addWidget(self._aide((e.get("voix_choisie") or {}).get("nom") or _("Aucune voix choisie")), 1)
+            v.addLayout(h)
+            return w
         entrees = B.lister(self.params, B.CARTES_POUR.get(e["type"], ()))
         h = QHBoxLayout()
         cb = QComboBox()

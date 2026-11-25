@@ -101,7 +101,7 @@ def manque(e):
     if not s:
         return _("Choisissez d'où vient cet élément.")
     if s == "bibliotheque":
-        return "" if e.get("biblio") else _("Choisissez dans votre bibliothèque.")
+        return "" if e.get("biblio") or e.get("voix_choisie") else _("Choisissez dans votre bibliothèque.")
     if t in ("personne", "objet", "lieu"):
         if s == "image" and not e.get("boite") and t != "lieu":       # un lieu pris dans l'image garde toute l'image
             return _("Tracez son cadre sur l'image.")
@@ -492,7 +492,8 @@ Rends l'état modifié au même format que l'état reçu, plus "remarques": "ce 
 est demandé ; garde mot pour mot le reste. La somme des durées des parties = "duree". Aucun nom propre dans les descriptions.
 Ecris en {langue}."""
 
-_GARDER = ("chemin", "passage", "usage", "inspiration", "pret", "voix_decrite", "voix_seule", "accord", "droits_ok", "texte", "choix", "force")
+_GARDER = ("chemin", "passage", "usage", "inspiration", "pret", "voix_decrite", "voix_seule", "accord", "droits_ok", "texte", "choix", "force",
+           "voix_choisie", "biblio")
 
 
 def etat_musique(etat):

@@ -3094,6 +3094,22 @@ class Editeur(QWidget):
         d.raise_()
         return d
 
+    def son_pour_voix(self):
+        """1.2.0 (« Mes voix… », voix réelle depuis la timeline) : le son de la partie jaune, sinon du plan sous la ligne rouge,
+        en WAV (voix et musiques à leur place) ; la voix en est ensuite séparée."""
+        from . import levres
+        from .projet import fin_clip
+        a, b = self.timeline.zone
+        if a is None or b is None or b - a < 1:
+            t = float(self.timeline.position)
+            c = self.projet.clip_a(t, "video") or self.projet.clip_a(t, "voix") or self.projet.clip_a(t, "audio")
+            if not c:
+                raise RuntimeError(_("Choisissez une partie en jaune, ou placez la ligne rouge sur un plan où l'on entend la voix."))
+            a, b = float(c["debut"]), float(fin_clip(c))
+        from .creations import dossier
+        sortie = os.path.join(dossier(), f"voix_timeline_{int(a * 10)}_{int(b * 10)}.wav")
+        return levres.extraire_son(self.projet, a, min(b, a + 60), sortie)
+
     def fabrique_musique(self, fiche=None, remplace=None):
         """Fabrique musique (brique commune avec PhilMusic) : PhilCut lui donne de quoi poser le morceau dans le film."""
         from .dialogues_musique_ia import DialogueFabriqueMusique, Hote
@@ -3109,6 +3125,7 @@ class Editeur(QWidget):
                 ed._ouvrir_clip_apres_import(chemin, cl)
         h.poser = poser
         h.clip = True
+        h.son_timeline = self.son_pour_voix
         h.garder = lambda chemin: ed.importer([chemin])
         if remplace:
             h.remplacer = lambda chemin, r: ed.remplacer_media_clip(remplace, chemin, r)

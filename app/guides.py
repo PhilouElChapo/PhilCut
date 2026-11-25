@@ -576,12 +576,29 @@ def _guides_integres():
               "fait": "fenetre:DialogueFabriqueMusique"},
              {"texte": _("Ligne Phrase › « Style « à la manière de »… » : choisissez une famille ou tapez (« metal », « Einaudi »…), "
                          "double-cliquez un nom. Absent de la liste ? « Utiliser », puis « Améliorer avec l'IA ».")},
-             {"texte": _("Ligne Voix › « À la manière de… » : une manière de chanter connue, ou « Décrire la voix d'un morceau » : "
-                         "choisissez le passage où la voix chante, PhilCut l'isole de la musique et la décrit (registre, vibrato, "
-                         "timbre).")},
+             {"texte": _("Ligne Voix › « Mes voix… » : vos voix gardées et leurs variantes, ou la branche « À la manière de "
+                         "(catalogue) » ; « Nouvelle voix » décrit la voix d'un morceau (PhilCut l'isole de la musique et la décrit).")},
              {"texte": _("« S'inspirer d'un morceau » › Choisir un morceau : un fichier, ou en ligne (« S'inspirer de ce morceau » "
                          "télécharge tout seul ; « Plus de résultats » si besoin). Gardez tout le morceau ou seulement un passage.")},
              {"texte": _("Relisez la consigne anglaise en bas, puis « Créer la musique ».")},
+         ]},
+        {"id": "mes_voix", "etat": "ok",
+         "titre": _("Mes voix : une voix, ses variantes (chaude, aiguë, rapide…), une voix réelle"),
+         "mots": "voix variante famille modele principal chaude aigue rapide reel reelle timbre chanteur chanteuse groupe "
+                 "archangel maniere preecoute ecouter reglages curseurs",
+         "intro": _("Une voix gardée est un modèle principal ; ses variantes (chaude, aiguë, rapide…) partent de lui. Une voix "
+                    "réelle (la vôtre, ou celle d'une personne d'accord) donne aussi son timbre. Ecrire « à la manière d'Archangel, "
+                    "voix chaude » dans la phrase prend la voix et sa variante."),
+         "etapes": [
+             {"texte": _("Fabrique IA › Musique › « Créer une musique par IA (Fabrique musique)… », puis ligne Voix › « Mes voix… »."),
+              "montrer": {"menu": [_("Fabrique IA"), _("Musique"), _("Créer une musique par IA (Fabrique musique)…")]},
+              "fait": "fenetre:DialogueMesVoix"},
+             {"texte": _("« Nouvelle voix » : d'après un morceau (manière décrite) ou voix réelle (fichier, timeline, micro, en ligne) ; "
+                         "PhilCut sépare la voix de la musique, la mesure et la garde comme modèle principal.")},
+             {"texte": _("« + Ajouter une variante » : chaude, aiguë, rapide… ; réglez les curseurs, puis « Garder comme variante… ».")},
+             {"texte": _("Un clic écoute l'extrait gardé ; « ▶ Pré-écouter » le fabrique une fois (sur ce poste, ou par le cloud avec "
+                         "le prix demandé).")},
+             {"texte": _("Double-clic : la voix est prise. Des curseurs changés sans « Garder » ne valent que pour ce morceau.")},
          ]},
         {"id": "voix_retouches", "etat": "ok",
          "titre": _("Retoucher une voix (studio, narration, plus grave ou plus aiguë) et l'entendre"),

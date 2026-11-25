@@ -210,6 +210,13 @@ class G7RienDeTronque(unittest.TestCase):
         fen += [("Animation libre", DialogueMotionLibre(ed))]
         from app.dialogues_aide_ia import DialogueAideIA                          # 1.1.12
         fen += [("Demander à l'aide", DialogueAideIA(f))]
+        from app.dialogues_mes_voix import DialogueMesVoix                        # 1.2.0
+        from app import voix_familles as VF
+        e = VF.garder_principal(ed.params, "Voix d'essai pour la vérification des boutons", VF.NEUTRES)
+        VF.ajouter_variante(ed.params, e, "Chaude (solo)", VF.NEUTRES)
+        mv = DialogueMesVoix(ed, ed.params)
+        mv.arbre.setCurrentItem(mv.arbre.topLevelItem(0).child(1))
+        fen += [("Mes voix", mv)]
         fautes = []
         for nom, d in fen:
             d.show()

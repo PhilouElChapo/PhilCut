@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.1.23 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.2.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.2.0 (mes voix, par familles)
+- Fabrique musique, ligne Voix : un seul bouton « Mes voix… ». Vos voix gardees en arbre, chacune avec sa voix principale et ses variantes (chaude, aigue, rapide…), puis la branche « A la maniere de (catalogue) ». Recherche en haut.
+- Un clic ecoute l'extrait garde (rien n'est refait ni paye) ; « Pre-ecouter » le fabrique une fois, sur ce poste ou par le cloud (prix demande). Il chante une ligne de vos paroles.
+- Sept reglages visibles (hauteur, etendue, chaleur, brillance, souffle, vibrato, debit) : changes sans « Garder », ils ne valent que pour ce morceau ; « Garder comme variante… » les range sous la voix.
+- Nouvelle voix : d'apres un morceau (maniere decrite) ou voix reelle (fichier, timeline, micro, en ligne), separee de la musique, avec la case d'accord.
+- Ecrire « a la maniere d'Archangel, voix chaude » dans la phrase prend la voix et sa variante ; un mot sans variante (« douce ») : PhilCut demande.
+- Aussi dans l'assistant musique (carte Voix), le clip de groupe (« Voix du chant… », gardee avec le groupe) et la bibliotheque (« Variantes et reglages… »).
 
 ### 1.1.23 (fiches des vraies personnes)
 - Une vraie personne a toujours sa fiche (face, trois quarts, profil, en pied) faite d'apres sa photo : le visage reste le sien.

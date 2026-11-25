@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T125 — 1.2.0 : mes voix, par familles
+
+1. Fabrique musique › ligne Voix › « Mes voix… » : « Nouvelle voix › Voix réelle : un fichier… » avec un morceau d'Archangel ; passage, « Oui » pour séparer, nom « Archangel », case d'accord : « Archangel (réel) » apparaît avec « Normale ».
+2. « + Ajouter une variante › Chaude » puis « Rapide » ; régler les curseurs de « Chaude », « Garder comme variante… » « Chaude (solo) ».
+3. « ▶ Pré-écouter » sur une variante : choisir « Sur ce poste » ; l'extrait chante ; recliquer la variante : il rejoue sans recalcul.
+4. Double-clic sur « Chaude (solo) » : la ligne Voix l'affiche ; créer la musique.
+5. Effacer la voix, écrire dans la phrase « à la manière d'Archangel, voix rapide » : la variante est prise et retirée de la phrase. Puis « à la manière d'Archangel douce » : PhilCut demande.
+6. Clip de groupe : « Voix du chant… », puis « ☆ Garder ce groupe… » ; bibliothèque › fiche de la voix › « Variantes et réglages… ».
+
 ## T124 — 1.1.23 : fiches des vraies personnes
 
 1. Tarmac, page des images : « Tout me convient : fabriquer la vidéo » : PhilCut dit que les deux femmes n'ont pas de fiche et propose de les faire.

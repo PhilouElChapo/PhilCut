@@ -225,7 +225,7 @@ def membres(params, e):
     return out
 
 
-def garder_groupe(params, nom, membres_, ident=None, style=""):
+def garder_groupe(params, nom, membres_, ident=None, style="", voix=None):
     """Range un groupe : chaque musicien qui n'est pas encore dans la bibliothèque y entre (genre musicien, avec son image),
     puis le groupe les cite par leur fiche. Renvoie l'entrée du groupe."""
     liste, fichiers = [], {}
@@ -242,7 +242,10 @@ def garder_groupe(params, nom, membres_, ident=None, style=""):
             fichiers[f"membre{k + 1}"] = m["image"]
     if not liste:
         raise ValueError(_("Le groupe n'a aucun musicien."))
-    return garder(params, "groupe", nom, (style or "").strip(), fichiers or None, {"membres": liste}, ident)
+    donnees = {"membres": liste}
+    if voix:                                    # 1.2.0 : la voix du chanteur ou de la chanteuse (« Mes voix… »)
+        donnees["voix"] = {k: voix.get(k) for k in ("nom", "entree", "variante", "catalogue") if voix.get(k)}
+    return garder(params, "groupe", nom, (style or "").strip(), fichiers or None, donnees, ident)
 
 
 # ------------------------------------------------------------------ des cartes de l'assistant à la bibliothèque, et retour
