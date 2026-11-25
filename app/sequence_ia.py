@@ -400,8 +400,13 @@ def image_depart(seq, i, params, moteur_image="gemini", precision=""):
     """Image de départ du plan i, composée à partir des images de référence (Gemini : personnages et lieu réunis ;
     IA de ce poste : image du lieu retravaillée). Renvoie le chemin, ou "" s'il n'y a rien pour la composer."""
     pl = seq["plans"][i]
-    planches = [im[0] for _n, im in references_du_plan(seq, pl) if "planche_" in os.path.basename(im[0])]
-    refs = (planches + [x for x in images_du_plan(seq, pl) if x not in planches])[:4]
+    rp = [(n, im) for n, im in references_du_plan(seq, pl) if "planche_" in os.path.basename(im[0])]
+    planches = [im[0] for _n, im in rp]
+    lieux = [x for x in images_du_plan(seq, pl) if x not in planches]
+    if len(planches) > 2:                            # 1.3.3 : toutes les fiches sur une seule image (voir casting)
+        c = casting(rp, os.path.join(dossier(seq), f"plan{i + 1:02d}_casting.png"))
+        planches = [c] if c else planches
+    refs = (planches + lieux)[:4]
     texte = consigne(seq, pl, params) + ((" Precisely, at the start: " + _anglais(precision, True)) if precision else "")
     sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_depart_{int(time.time() * 1000) % 10 ** 9}.png")
     if moteur_image == "gemini":
@@ -410,7 +415,9 @@ def image_depart(seq, i, params, moteur_image="gemini", precision=""):
             png = ia.generer_image(params, "First frame of this video shot, photorealistic still image: " + texte)
         else:
             png = ia.generer_image_refs(params, "Compose the first frame of this video shot as one photorealistic still image. "
-                                                "Use the reference images for the people's appearance and the place. " + texte, refs)
+                                                "Use the reference images for the people's appearance (a cast sheet shows several "
+                                                "of them, each labelled with its Character letter: every one of them appears as "
+                                                "drawn) and the place; other people in the place photos are not characters. " + texte, refs)
         with open(sortie, "wb") as f:
             f.write(png)
         return sortie
@@ -641,25 +648,66 @@ def image_connue_avant(seq, i):
     return ""
 
 
+def casting(refs_plan, sortie, hauteur=640):
+    """1.3.3 (Philippe, 25/11 21h20 : l'hôtesse devenait un agent de piste) : le moteur d'images ne prend que quelques images
+    de référence ; au-delà de trois personnes, les dernières fiches étaient laissées de côté et l'IA copiait une personne de
+    la photo du lieu. Toutes les fiches des personnes du plan tiennent donc sur UNE image, chacune marquée « Character X »
+    comme dans la consigne."""
+    from PySide6.QtGui import QImage, QPainter, QColor, QFont
+    from PySide6.QtCore import Qt, QRectF
+    cases = []
+    for nom, imgs in refs_plan:
+        q = QImage(imgs[0]) if imgs else QImage()
+        if not q.isNull():
+            cases.append((nom, q.scaledToHeight(hauteur, Qt.SmoothTransformation)))
+    if not cases:
+        return ""
+    bande = int(hauteur * 0.09)
+    L = sum(q.width() for _n, q in cases) + 12 * (len(cases) + 1)
+    planche = QImage(L, hauteur + bande + 24, QImage.Format_RGB32)
+    planche.fill(QColor("#ffffff"))
+    p = QPainter(planche)
+    f = QFont()
+    f.setPixelSize(int(bande * 0.7))
+    f.setBold(True)
+    p.setFont(f)
+    p.setPen(QColor("#000000"))
+    x = 12
+    for nom, q in cases:
+        p.drawImage(x, 12, q)
+        p.drawText(QRectF(x, 12 + hauteur, q.width(), bande), Qt.AlignCenter, nom)
+        x += q.width() + 12
+    p.end()
+    planche.save(sortie)
+    return sortie
+
+
 def image_arrivee(seq, i, params, depart=None, precision=""):
     """Image d'arrivée du plan i (0.9.72) : la pose quand l'action est finie, composée d'après l'image de départ et les
     références. Le moteur doit la rejoindre : il ne peut plus faire traverser la table ni changer de visage en route."""
     precision = precision or seq["plans"][i].get("precision_fin", "")      # 0.9.98 : correction d'une image clef
     from . import ia
     pl = seq["plans"][i]
-    fiches = [x for _n, im in references_du_plan(seq, pl) for x in im[:1]]
+    rp = references_du_plan(seq, pl)
+    fiches = [x for _n, im in rp for x in im[:1]]
     if not (depart and os.path.exists(depart)):
         depart = image_connue_avant(seq, i)          # 0.9.87 : image clef : la dernière image réelle connue sert de décor
     lieux = [x for x in images_du_plan(seq, pl) if x not in fiches and x != depart]
     fin = (seq.get("raccord") or {}).get("image_fin")
+    if len(fiches) > 2:                              # 1.3.3 : toutes les fiches sur une seule image, aucune n'est perdue
+        planche = casting(rp, os.path.join(dossier(seq), f"plan{i + 1:02d}_casting.png"))
+        fiches = [planche] if planche else fiches[:3]
     refs = fiches[:3] + ([depart] if depart and os.path.exists(depart) else []) + lieux[:1]
     if fin and os.path.exists(fin) and fin not in refs and i < len(seq["plans"]) - 1:
         refs.append(fin)                             # relier deux rushes : tenues et lumière de l'image d'après
     action = consigne(seq, pl, params)
     png = (ia.generer_image_refs if refs else lambda prm, c, r=None: ia.generer_image(prm, c))(
         params, "KEY IMAGE of a video sequence: the exact state of the scene at the END of this shot, action completely finished "
-                "(final pose, physically plausible). The first reference images are the character and object sheets: every face, "
-                "hairstyle, outfit and object must match them exactly. The next reference images are REAL photos of the place: keep "
+                "(final pose, physically plausible). The first reference images are the character and object sheets (a cast sheet "
+                "shows several of them side by side, each labelled with its Character letter): every face, hairstyle, outfit and "
+                "object must match them exactly, and every character of the shot must appear as on the sheets. Other people "
+                "visible in the place photos (staff, passers-by) are NOT characters: do not draw them unless the story names "
+                "them. The next reference images are REAL photos of the place: keep "
                 "their decor, materials, light and lens exactly; the camera framing follows the Camera line (it may move, widen or "
                 "come closer). People are where the story says at that moment: whoever got into a vehicle, left or is listed as not "
                 "visible must NOT appear. One photorealistic still image, no text. " + action +
