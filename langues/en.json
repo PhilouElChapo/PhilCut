@@ -9713,5 +9713,7 @@
  "Cette animation est en 3D : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "This animation is in 3D: update the animation engine (Help › AI updates).",
  "Cette animation a des effets pixel : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "This animation has pixel effects: update the animation engine (Help › AI updates).",
  "Aucune image à mettre sur la planche.": "No image to put on the sheet.",
- "Plan inconnu : {n}": "Unknown shot: {n}"
+ "Plan inconnu : {n}": "Unknown shot: {n}",
+ "Connexion à fal.ai perdue pendant l'attente : {e}": "Connection to fal.ai lost while waiting: {e}",
+ "Réseau lent : nouvelle tentative…": "Slow network: trying again…"
 }

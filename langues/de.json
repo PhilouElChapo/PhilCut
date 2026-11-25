@@ -9704,5 +9704,7 @@
  "Cette animation est en 3D : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Diese Animation ist in 3D: aktualisieren Sie die Animations-Engine (Hilfe › KI-Aktualisierungen).",
  "Cette animation a des effets pixel : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Diese Animation hat Pixeleffekte: aktualisieren Sie die Animations-Engine (Hilfe › KI-Aktualisierungen).",
  "Aucune image à mettre sur la planche.": "Kein Bild für die Kontakttafel.",
- "Plan inconnu : {n}": "Unbekannte Einstellung: {n}"
+ "Plan inconnu : {n}": "Unbekannte Einstellung: {n}",
+ "Connexion à fal.ai perdue pendant l'attente : {e}": "Verbindung zu fal.ai beim Warten verloren: {e}",
+ "Réseau lent : nouvelle tentative…": "Langsames Netz: neuer Versuch…"
 }

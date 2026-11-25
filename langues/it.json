@@ -9704,5 +9704,7 @@
  "Cette animation est en 3D : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Questa animazione è in 3D: aggiornate il motore di animazione (Aiuto › Aggiornamenti delle IA).",
  "Cette animation a des effets pixel : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Questa animazione ha effetti pixel: aggiornate il motore di animazione (Aiuto › Aggiornamenti delle IA).",
  "Aucune image à mettre sur la planche.": "Nessuna immagine da mettere sul provino.",
- "Plan inconnu : {n}": "Inquadratura sconosciuta: {n}"
+ "Plan inconnu : {n}": "Inquadratura sconosciuta: {n}",
+ "Connexion à fal.ai perdue pendant l'attente : {e}": "Connessione a fal.ai persa durante l'attesa: {e}",
+ "Réseau lent : nouvelle tentative…": "Rete lenta: nuovo tentativo…"
 }

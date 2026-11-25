@@ -41,5 +41,33 @@ class TestCasting(unittest.TestCase):
         self.assertIn("NOT characters", recu["c"])
 
 
+class TestReseau(unittest.TestCase):
+    def test_coupure_pendant_l_attente(self):
+        """1.3.4 : un délai dépassé pendant l'attente de fal ne perd pas la vidéo : on redemande l'état."""
+        from app import generateurs_video as GV
+        import time
+        appels = []
+
+        def faux(url, cle, corps=None, methode=None, delai=120):
+            appels.append(url)
+            if corps is not None:
+                return {"request_id": "r1", "status_url": "S", "response_url": "R"}
+            if url == "S":
+                if appels.count("S") == 1:
+                    raise TimeoutError("The read operation timed out")
+                return {"status": "COMPLETED"}
+            if appels.count("R") == 1:
+                raise TimeoutError("x")
+            return {"video": {"url": "u"}}
+        anc, dodo = GV._http, time.sleep
+        GV._http, time.sleep = faux, lambda s: None
+        try:
+            r = GV.demande_fal("k", "point", {"prompt": "x"})
+        finally:
+            GV._http, time.sleep = anc, dodo
+        self.assertEqual(r, {"video": {"url": "u"}})
+        self.assertEqual((appels.count("S"), appels.count("R")), (2, 2))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -9704,5 +9704,7 @@
  "Cette animation est en 3D : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Esta animación es en 3D: actualice el motor de animación (Ayuda › Actualizaciones de las IA).",
  "Cette animation a des effets pixel : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Esta animación tiene efectos píxel: actualice el motor de animación (Ayuda › Actualizaciones de las IA).",
  "Aucune image à mettre sur la planche.": "Ninguna imagen para la hoja de contactos.",
- "Plan inconnu : {n}": "Plano desconocido: {n}"
+ "Plan inconnu : {n}": "Plano desconocido: {n}",
+ "Connexion à fal.ai perdue pendant l'attente : {e}": "Conexión con fal.ai perdida durante la espera: {e}",
+ "Réseau lent : nouvelle tentative…": "Red lenta: nuevo intento…"
 }

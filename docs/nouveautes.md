@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.3 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.4 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.4
+- Video par fal.ai : une coupure ou une lenteur du reseau pendant l'attente ne fait plus echouer le plan (la video deja payee n'est plus perdue) ; PhilCut redemande l'etat puis le resultat.
 
 ### 1.3.3
 - Assistant video : quand un plan compte plus de deux personnes, toutes leurs fiches tiennent sur une seule image de reference (« Character A, B, C, D »). Avant, la quatrieme etait laissee de cote et l'IA copiait une personne de la photo du lieu (l'hotesse devenait un agent de piste). Les personnes des photos du lieu qui ne sont pas dans l'histoire ne sont plus dessinees.

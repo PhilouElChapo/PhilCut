@@ -474,7 +474,15 @@ def demande_fal(cle, point, corps, progression=None, arret=lambda: False, attent
                 pass
             raise InterruptedError()
         time.sleep(5)
-        st = _http(statut_url, cle)
+        try:
+            st = _http(statut_url, cle)
+            pannes = 0
+        except (TimeoutError, OSError) as e:      # 1.3.4 (Philippe, 25/11) : une coupure réseau pendant l'attente ne perd plus
+            pannes = locals().get("pannes", 0) + 1          # la vidéo déjà payée : fal continue, on redemande l'état
+            if pannes > 12:
+                raise ErreurGenerateur(_("Connexion à fal.ai perdue pendant l'attente : {e}", e=str(e)[:120])) from e
+            progression and progression(min(0.9, (time.time() - debut) / attente), _("Réseau lent : nouvelle tentative…"))
+            continue
         etat = (st.get("status") or "").upper()
         progression and progression(min(0.9, (time.time() - debut) / attente))
         if etat == "COMPLETED":
@@ -483,7 +491,13 @@ def demande_fal(cle, point, corps, progression=None, arret=lambda: False, attent
             raise ErreurGenerateur(_("fal.ai : génération refusée ou en échec ({e}).", e=st.get("error") or etat))
         if time.time() - debut > 1500:
             raise ErreurGenerateur(_("La génération met trop de temps ; réessayez plus tard."))
-    return _http(reponse_url, cle)
+    for essai in range(4):                        # le résultat aussi : quatre essais avant d'abandonner une vidéo payée
+        try:
+            return _http(reponse_url, cle)
+        except (TimeoutError, OSError):
+            if essai == 3:
+                raise
+            time.sleep(5)
 
 
 def ajuster_corps(corps, message):
