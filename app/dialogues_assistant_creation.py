@@ -98,6 +98,9 @@ class DialogueAssistant(QDialog):
         self.genre = "video"
         self._genre_choisi = False
         self.image, self.tache, self.taches, self.file = "", None, [], []
+        from . import en_cours as EC                 # 1.2.1 : la musique de l'assistant gardée à chaque changement
+        EC.suivre(self, "assistant_musique", self._etat_musique_en_cours,
+                  lambda: ((self.musique or {}).get("idee") or _("Musique"))[:60])
         self.cartes = []
         self.setWindowTitle(_("Assistant de création : de l'idée au résultat"))
         self.resize(1000, 720)
@@ -3225,6 +3228,29 @@ class DialogueAssistant(QDialog):
         p = self.ed.projet
         p.d["sequences_ia"] = [s for s in p.d.get("sequences_ia") or [] if s.get("cree") != self.seq.get("cree")] + [copy.deepcopy(self.seq)]
         Q.enregistrer(self.seq)
+
+    def _etat_musique_en_cours(self):
+        if self.genre != "musique" or not self.musique:
+            return None
+        return {"musique": self.musique, "resultat": getattr(self, "resultat", "") or "",
+                "parties_faites": getattr(self, "parties_faites", {}) or {}, "page": self.pages.currentIndex()}
+
+    def reprendre_musique(self, e):
+        """1.2.1 : une musique de l'assistant reprise là où elle en était (cartes, déroulé, paroles, parties déjà faites)."""
+        self.genre, self._genre_choisi = "musique", True
+        self.musique = copy.deepcopy(e.get("musique") or {})
+        self.resultat = e.get("resultat") if e.get("resultat") and os.path.exists(e["resultat"]) else ""
+        self.parties_faites = {k: f for k, f in (e.get("parties_faites") or {}).items() if f and os.path.exists(f)}
+        self._remplir_mcartes()
+        self._remplir_deroule()
+        self._remplir_paroles()
+        page = int(e.get("page") or P_M_ELEM)
+        self.aller(page if page in (P_M_ELEM, P_M_DEROULE, P_M_PAROLES, P_M_CREER) else P_M_ELEM)
+        if page == P_M_CREER:
+            self._preparer_creer()
+        self.show()
+        self.raise_()
+        self.etat.setText(_("Musique reprise là où vous en étiez ; rien de déjà fait n'est refait."))
 
     def reprendre_en_cours(self):
         from PySide6.QtWidgets import QInputDialog

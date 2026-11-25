@@ -58,6 +58,13 @@ class DialogueFabriqueMusique(QDialog):
         b_gm.setToolTip(_("Rangée dans votre bibliothèque de créations (sur tous vos postes), sans avoir besoin de créer la musique"))
         b_gm.clicked.connect(self.garder_modele)
         hm.addWidget(b_gm)
+        b_gr = QPushButton(_("Mon groupe…"))          # 1.2.1 : style et voix d'un groupe gardé (choix de Philippe, 25/11)
+        b_gr.setToolTip(_("Un groupe de votre bibliothèque : son style et la voix de son chanteur ou de sa chanteuse ; tout reste "
+                          "modifiable, et le clip de groupe reprend ensuite ses musiciens"))
+        b_gr.clicked.connect(self.choisir_groupe)
+        hm.addWidget(b_gr)
+        self.groupe_info = QLabel("")
+        hm.addWidget(self.groupe_info)
         hm.addStretch(1)
         v.addLayout(hm)
         zone = QScrollArea()
@@ -373,8 +380,13 @@ class DialogueFabriqueMusique(QDialog):
         if fiche:
             self.appliquer_fiche(fiche)
         self._maj()
+        # 1.2.1 : gardée à chaque changement, à reprendre (Fabrique IA › Reprendre une création en cours…)
+        from . import en_cours as EC
+        EC.suivre(self, "fabrique_musique", self._etat_en_cours,
+                  lambda: self.phrase.toPlainText().strip()[:60] or self.style.currentText())
 
     # ---- petits outils
+
     def _choix_niveau(self):
         """Pour écrire (consigne, paroles) : Claude d'abord, le meilleur pour cela ; Gemini ou l'IA locale au choix."""
         c = QComboBox()
@@ -425,8 +437,12 @@ class DialogueFabriqueMusique(QDialog):
             f["voix_decrite"] = dict(self.voix_decrite)
         if getattr(self, "voix_choisie", None):
             f["voix_choisie"] = dict(self.voix_choisie)
+        if getattr(self, "groupe_choisi", None):
+            f["groupe"] = dict(self.groupe_choisi)
         if self.clip_lieu.currentData():
             f["clip"] = {"lieu": self.clip_lieu.currentData(), "anime": self.clip_anime.isChecked()}
+            if getattr(self, "groupe_choisi", None):
+                f["clip"]["groupe"] = self.groupe_choisi["id"]
         return f
 
     def appliquer_fiche(self, f):
@@ -456,6 +472,9 @@ class DialogueFabriqueMusique(QDialog):
             self._poser_voix_decrite(dict(f["voix_decrite"]))
         if f.get("voix_choisie"):
             self.voix_choisie = dict(f["voix_choisie"])
+        if f.get("groupe"):
+            self.groupe_choisi = dict(f["groupe"])
+            self.groupe_info.setText(_("Groupe : {n}", n=self.groupe_choisi.get("nom", "")))
         cl = f.get("clip") or {}
         self.clip_lieu.setCurrentIndex(max(0, self.clip_lieu.findData(cl.get("lieu", ""))))
         self.clip_anime.setChecked(bool(cl.get("anime")))
@@ -493,6 +512,12 @@ class DialogueFabriqueMusique(QDialog):
             self.phrase.setPlainText((p + ", " if p else "") + _("à la manière de") + " " + nom)
 
     # ---- 1.2.0 : « Mes voix… »
+    def _etat_en_cours(self):
+        f = self.fiche()
+        if not (f.get("phrase") or f.get("paroles") or f.get("inspiration") or f.get("voix_decrite") or self.resultat):
+            return None                                 # rien encore à garder
+        return {"fiche": {k: v for k, v in f.items() if k != "source"}, "resultat": self.resultat or ""}
+
     def mes_voix(self):
         from .dialogues_mes_voix import choisir_voix
         c = choisir_voix(self, self.params, self.paroles.toPlainText(), self.langue.currentData() or "fr",
@@ -985,6 +1010,45 @@ class DialogueFabriqueMusique(QDialog):
         insp.update(fichier=e["nom"], chemin="")
         self._montrer_inspiration(insp)
         self.info.setText(_("✓ Style « {n} » repris de votre bibliothèque.", n=e["nom"]))
+
+    # ------------------------------------------------------------------ groupe (1.2.1)
+    def choisir_groupe(self):
+        from .dialogues_bibliotheque_creations import choisir_entree
+        e = choisir_entree(self, self.params, ("groupe",), _("Mon groupe"))
+        if e is not None:
+            self.appliquer_groupe(e)
+        return e
+
+    def appliquer_groupe(self, e):
+        """Style et voix du groupe ; le groupe suit la fiche (le clip de groupe reprend ses musiciens)."""
+        from . import bibliotheque_creations as B, voix_familles as VF
+        d = e.get("donnees") or {}
+        st = B.lire(self.params, "style_musical", d.get("style_biblio") or "") if d.get("style_biblio") else None
+        if st:
+            insp = dict((st.get("donnees") or {}).get("inspiration") or {}) or {"resume": st.get("description", ""), "caption_en": ""}
+            insp.update(fichier=st["nom"], chemin="")
+            self._montrer_inspiration(insp)
+        elif e.get("description"):
+            p = self.phrase.toPlainText().strip()
+            if e["description"] not in p:
+                self.phrase.blockSignals(True)
+                self.phrase.setPlainText((p + ", " if p else "") + e["description"])
+                self.phrase.blockSignals(False)
+        vx = d.get("voix") or {}
+        if vx.get("entree"):
+            ev = B.lire(self.params, "voix", vx["entree"])
+            if ev:
+                va = next((v for v in VF.variantes(ev) if v.get("id") == vx.get("variante")), None)
+                self.poser_voix(VF.choix(ev, va))
+        elif vx.get("catalogue"):
+            x = next((c for c in VF.catalogue(self.params) if c["nom"] == vx["catalogue"]), None)
+            if x:
+                va = next((v for v in x["variantes"] if v.get("id") == vx.get("variante")), None)
+                self.poser_voix(VF.choix_catalogue(x, va))
+        self.groupe_choisi = {"id": e["id"], "nom": e["nom"]}
+        self.groupe_info.setText(_("Groupe : {n}", n=e["nom"]))
+        self.info.setText(_("✓ Groupe « {n} » : style et voix repris ; tout reste modifiable.", n=e["nom"]))
+        self._maj()
 
     def garder_modele(self):
         """1.1.3 : la fiche telle qu'elle est, gardée sous un nom (le morceau d'origine n'est jamais copié)."""

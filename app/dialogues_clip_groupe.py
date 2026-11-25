@@ -66,6 +66,7 @@ class DialogueClipGroupe(QDialog):
         self.fiche = rec.get("fiche") if rec.get("famille") == "musique" else None
         if self.fiche and self.fiche.get("clip"):
             prefs = dict(self.fiche["clip"], **prefs)
+        self._prefs_groupe = prefs.get("groupe", "")
         racine = QVBoxLayout(self)
         zone = QScrollArea()
         zone.setWidgetResizable(True)
@@ -258,6 +259,9 @@ class DialogueClipGroupe(QDialog):
         self.lieu_texte.editingFinished.connect(self._scene_changee)
         self._charger()
         self._maj()
+        from . import en_cours as EC                 # 1.2.1 : gardé à chaque changement
+        EC.suivre(self, "clip_groupe", lambda: {"chemin": self.chemin, "clip": self.clip} if self.clip else None,
+                  lambda: os.path.basename(self.chemin or ""))
 
     # ------------------------------------------------------------------ état
     def _charger(self):
@@ -439,17 +443,20 @@ class DialogueClipGroupe(QDialog):
         self._ligne_membre(self.clip["groupe"][-1])
         self._maj()
 
-    def _groupe_biblio(self):
-        """1.1.12 : un groupe de la bibliothèque remplace les musiciens du clip (question si le groupe actuel a été changé)."""
+    def _groupe_biblio(self, e=None):
+        """1.1.12 : un groupe de la bibliothèque remplace les musiciens du clip (question si le groupe actuel a été changé).
+        1.2.1 : `e` donné = le groupe choisi dans la Fabrique musique, repris sans question."""
         from . import bibliotheque_creations as B
         from .dialogues_bibliotheque_creations import choisir_entree
         if not self.clip:
             return
-        e = choisir_entree(self, self.params, ("groupe",), _("Prendre un groupe"))
+        demande = e is None
+        if demande:
+            e = choisir_entree(self, self.params, ("groupe",), _("Prendre un groupe"))
         if e is None:
             return
         self._lire_tables()
-        if any(m.get("biblio") or m.get("image") for m in self.clip["groupe"]) and getattr(self, "_test_biblio", None) is None:
+        if demande and any(m.get("biblio") or m.get("image") for m in self.clip["groupe"]) and getattr(self, "_test_biblio", None) is None:
             from PySide6.QtWidgets import QMessageBox
             if QMessageBox.question(self, _("Prendre un groupe"), _("Les musiciens actuels seront remplacés par ceux de « {n} ». "
                                     "Continuer ?", n=e["nom"])) != QMessageBox.Yes:
@@ -587,8 +594,31 @@ class DialogueClipGroupe(QDialog):
             self.clip["plans"] = CG.decouper(self.clip)
             self._noter_dossier()
             self._afficher()
+            gid = (self.fiche or {}).get("groupe", {}).get("id") or self._prefs_groupe
+            if gid:                                    # 1.2.1 : le groupe choisi dans la Fabrique joue le clip
+                from . import bibliotheque_creations as B
+                g = B.lire(self.params, "groupe", gid)
+                if g:
+                    self._groupe_biblio(g)
             self.etat.setText(_("✓ Morceau écouté : relisez le groupe et les plans, puis fabriquez."))
         self._lancer(lambda t: CG.analyser(chemin, params, separer, t.avancer, lambda: t.arret), _("Clip : écoute du morceau"), fin)
+
+    def reprendre(self, e):
+        """1.2.1 : le clip tel qu'il était (groupe, plans, plans déjà fabriqués)."""
+        if e.get("clip"):
+            self.clip = e["clip"]
+            for w in (self.lieu, self.anime, self.lieu_texte, self.format):
+                w.blockSignals(True)
+            self.lieu.setCurrentIndex(max(0, self.lieu.findData(self.clip.get("lieu"))))
+            self.anime.setChecked(bool(self.clip.get("anime")))
+            self.lieu_texte.setText(self.clip.get("lieu_texte", ""))
+            for w in (self.lieu, self.anime, self.lieu_texte, self.format):
+                w.blockSignals(False)
+            self._afficher()
+            if self.clip.get("voix_chant"):
+                self.voix_chant_info.setText(self.clip["voix_chant"].get("nom", ""))
+            self.etat.setText(_("Clip repris là où vous en étiez ; les plans déjà fabriqués sont gardés."))
+        self._maj()
 
     def _noter_dossier(self):
         CG.enregistrer(self.clip)

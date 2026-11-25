@@ -36,12 +36,92 @@ TYPES = {
     "soufflee": (_("Soufflée"), {"souffle": +30, "brillance": -10}, ("soufflee", "souffle", "airy", "breathy", "murmuree")),
 }
 
-# variantes déduites de la famille musicale quand le catalogue n'en donne pas (genres de styles_ia.GENRES)
-PAR_GENRE = {"rock_metal": ("rauque", "puissante", "douce"), "jazz_soul": ("chaude", "douce", "rapide"),
-             "pop": ("douce", "puissante", "aigue"), "chanson": ("douce", "chaude", "puissante"), "rap": ("rapide", "grave", "lente"),
-             "folk_country": ("douce", "chaude", "rauque"), "classique": ("douce", "puissante", "aigue"),
-             "electro": ("soufflee", "douce", "aigue"), "monde": ("chaude", "douce", "puissante"), "chant": ("chaude", "douce", "puissante"),
-             "film": ("douce", "puissante", "soufflee")}
+# ------------------------------------------------------------------ variantes des voix du catalogue (1.2.1)
+# Propres à chaque voix (choix de Philippe, 25/11) : d'après sa famille musicale et les mots de sa description ; écrites dans
+# catalogue/styles.json par outils_dev/variantes_voix.py (le catalogue en ligne peut les corriger), sinon calculées ici.
+# id : (noms fr/en/de/es/it, ajout anglais, mots qui l'appellent, mots de la description qui la rendent inutile)
+V = {
+    "douce": (("Douce (ballade)", "Soft (ballad)", "Sanft (Ballade)", "Suave (balada)", "Dolce (ballata)"),
+              "softer gentle ballad delivery, intimate", ("douce", "doux", "ballade", "soft", "tendre"), ("soft", "gentle", "whisper")),
+    "puissante": (("Puissante (refrain)", "Powerful (chorus)", "Kraftvoll (Refrain)", "Potente (estribillo)", "Potente (ritornello)"),
+                  "full powerful chest voice, big chorus energy", ("puissante", "puissant", "refrain", "fort"), ("powerful", "soaring", "belting")),
+    "rauque": (("Rauque", "Raspy", "Rau", "Ronca", "Roca"), "raspier gritty edge, rough texture", ("rauque", "raspy", "rocailleuse"),
+               ("raspy", "gritty", "gravelly", "rough")),
+    "criee": (("Criée", "Screamed", "Geschrien", "Gritada", "Urlata"), "screamed aggressive delivery, intense shouts", ("criee", "cri", "hurlee"),
+              ("scream", "growl", "shout")),
+    "intime": (("Soufflée (intime)", "Breathy (intimate)", "Gehaucht (intim)", "Susurrada (íntima)", "Sussurrata (intima)"),
+               "breathy whispered close-mic delivery", ("soufflee", "intime", "murmuree", "breathy"), ("whisper", "breathy", "airy")),
+    "parlee": (("Parlée-chantée", "Spoken-sung", "Gesprochen-gesungen", "Hablada-cantada", "Parlata-cantata"),
+               "half-spoken storytelling delivery", ("parlee", "parle", "spoken"), ("spoken", "half-spoken", "talk")),
+    "lyrique": (("Lyrique", "Lyrical", "Lyrisch", "Lírica", "Lirica"), "lyrical sustained legato lines, rich vibrato",
+                ("lyrique", "legato"), ("operatic", "legato")),
+    "crooner": (("Crooner", "Crooner", "Crooner", "Crooner", "Crooner"), "velvety relaxed crooning, close to the mic, warm legato",
+                ("crooner", "croon", "velours"), ()),
+    "swing": (("Swing", "Swing", "Swing", "Swing", "Swing"), "upbeat swinging phrasing, playful timing", ("swing", "swinguee"), ("swing",)),
+    "feutree": (("Feutrée", "Hushed", "Gedämpft", "Aterciopelada", "Vellutata"), "hushed velvety late-night delivery",
+                ("feutree", "velours", "nuit"), ("smoky", "velvet", "silky")),
+    "gospel": (("Gospel", "Gospel", "Gospel", "Gospel", "Gospel"), "gospel-inflected powerful runs and melisma", ("gospel",),
+               ("gospel",)),
+    "scat": (("Scat", "Scat", "Scat", "Scat", "Scat"), "playful jazz scat improvisation", ("scat",), ("scat",)),
+    "flow_rapide": (("Flow serré", "Rapid flow", "Schneller Flow", "Flow rápido", "Flow veloce"), "rapid-fire tight rap flow",
+                    ("rapide", "serre", "flow", "fast"), ("rapid", "fast")),
+    "posee": (("Posée", "Laid-back", "Entspannt", "Relajada", "Rilassata"), "laid-back relaxed rap delivery, behind the beat",
+              ("posee", "calme", "laid"), ("laid-back", "relaxed", "drawling")),
+    "chantee": (("Chantée (mélodique)", "Sung (melodic)", "Gesungen (melodisch)", "Cantada (melódica)", "Cantata (melodica)"),
+                "melodic sung hook, autotuned", ("chantee", "melodique", "melodic"), ("melodic", "autotune", "sung")),
+    "acoustique": (("Acoustique", "Acoustic", "Akustisch", "Acústica", "Acustica"), "plain acoustic campfire delivery, warm and close",
+                   ("acoustique", "guitare", "feu"), ("acoustic",)),
+    "harmonies": (("Harmonies", "Harmonies", "Harmonien", "Armonías", "Armonie"), "stacked close vocal harmonies", ("harmonies", "choeur"),
+                  ("harmon",)),
+    "robotique": (("Robotique (vocoder)", "Robotic (vocoder)", "Robotisch (Vocoder)", "Robótica (vocoder)", "Robotica (vocoder)"),
+                  "robotic vocoder-processed vocals", ("robot", "robotique", "vocoder"), ("vocoder", "robot")),
+    "planante": (("Planante", "Dreamy", "Verträumt", "Etérea", "Sognante"), "dreamy reverb-drenched floating vocals",
+                 ("planante", "reve", "dreamy"), ("dreamy", "reverb", "floating")),
+    "chaude": (("Chaude", "Warm", "Warm", "Cálida", "Calda"), "warmer richer tone", ("chaude", "chaud", "warm"), ("warm",)),
+    "aigue": (("Aiguë", "High", "Hoch", "Aguda", "Acuta"), "higher register, head voice", ("aigue", "haute", "high"), ("high", "falsetto")),
+    "grave": (("Grave", "Low", "Tief", "Grave", "Grave"), "lower register, deep tone", ("grave", "basse", "low"), ("deep", "low", "baritone")),
+}
+
+PAR_GENRE = {
+    "rock_metal": ("rauque", "criee", "puissante", "douce"),
+    "pop": ("douce", "puissante", "intime", "aigue"),
+    "chanson": ("douce", "parlee", "lyrique", "puissante"),
+    "rap": ("flow_rapide", "posee", "chantee", "grave"),
+    "jazz_soul": ("feutree", "swing", "gospel", "douce"),
+    "folk_country": ("acoustique", "harmonies", "rauque", "douce"),
+    "electro": ("robotique", "planante", "intime", "aigue"),
+    "monde": ("chaude", "douce", "puissante", "harmonies"),
+    "classique": ("lyrique", "douce", "puissante", "aigue"),
+    "film": ("douce", "puissante", "lyrique", "intime"),
+    "chant": ("chaude", "douce", "puissante", "lyrique"),
+}
+# quelques voix où la famille ne suffit pas (mots de la description → variantes en tête)
+INDICES = ((r"croon", ("crooner", "swing", "douce", "feutree")), (r"scat", ("scat", "swing", "douce")), (r"metal|growl|scream", ("criee", "rauque", "douce")),
+           (r"punk", ("criee", "rauque", "puissante")), (r"opera|operatic", ("lyrique", "puissante", "douce")),
+           (r"whisper|breathy", ("intime", "douce", "puissante")), (r"vocoder|robot", ("robotique", "planante", "intime")),
+           (r"rap", ("flow_rapide", "posee", "chantee")), (r"country|folk", ("acoustique", "harmonies", "douce")),
+           (r"gospel|soul", ("gospel", "feutree", "douce")))
+
+
+def variantes_pour(genre, voix_en, n=4):
+    texte = voix_en.lower()
+    ordre = []
+    for motif, ids in INDICES:
+        if re.search(motif, texte):
+            ordre += ids
+    ordre += PAR_GENRE.get(genre, PAR_GENRE["chant"])
+    ordre += ["chaude", "puissante", "aigue", "grave", "douce", "rauque"]     # de quoi en avoir au moins 3
+    out = []
+    for i in dict.fromkeys(ordre):
+        noms, ajout, mots, inutile = V[i]
+        if any(m in texte for m in inutile) and i not in ("crooner", "swing", "scat", "gospel", "lyrique"):
+            continue                                   # déjà dans la voix : pas une variante
+        out.append({"id": i, "noms": dict(zip(("fr", "en", "de", "es", "it"), noms)), "en": f"{voix_en}, {ajout}",
+                    "mots": list(mots)})
+        if len(out) >= n:
+            break
+    return out
+
 
 PHRASE_NEUTRE = {"fr": "La lumière se lève sur la ville, je chante pour toi ce soir",
                  "en": "The light is rising on the city, I sing for you tonight"}
@@ -238,10 +318,9 @@ def catalogue(params=None):
             continue
         vus.add(nom)
         g = S.genre(nom)
-        vs = S._CATALOGUE.get("variantes", {}).get(_net(nom)) or []
-        if not vs:
-            vs = [{"id": k, "nom": TYPES[k][0], "en": d["voix"] + ", " + decrire(appliquer(NEUTRES, TYPES[k][1]))[0].split(", ", 1)[-1],
-                   "mots": list(TYPES[k][2])} for k in PAR_GENRE.get(g, ("douce", "puissante", "chaude"))]
+        vs = S._CATALOGUE.get("variantes", {}).get(_net(nom)) or variantes_pour(g, d["voix"])
+        from .langue import LANGUE
+        vs = [dict(v, nom=(v.get("noms") or {}).get(LANGUE) or (v.get("noms") or {}).get("fr") or v.get("nom") or v["id"]) for v in vs]
         out.append({"nom": nom, "genre": g, "en": d["voix"], "variantes": vs})
     return sorted(out, key=lambda x: _net(x["nom"]))
 

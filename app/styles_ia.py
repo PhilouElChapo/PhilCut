@@ -203,7 +203,7 @@ def _catalogue():
     version de PhilCut. Même règle que la liste livrée : des descriptions de style, jamais de nom ni de visage."""
     if _CATALOGUE["refs"] is not None:
         return _CATALOGUE["refs"]
-    refs, genres, mots = {}, {}, {}
+    refs, genres, mots, variantes = {}, {}, {}, {}
     try:
         from . import catalogue_ligne as CL
         lst = CL.charger("styles.json").get("styles") or []
@@ -222,10 +222,12 @@ def _catalogue():
                     AVEC_LIEN.add(_net(n))
                 refs[_net(n)] = (principal, d)
             genres[_net(principal)] = e.get("genre") if e.get("genre") in GENRES else "chant"
+            if isinstance(e.get("variantes"), list):           # 1.2.1 : variantes de la voix (« Mes voix… »)
+                variantes[_net(principal)] = [v for v in e["variantes"] if isinstance(v, dict) and v.get("id") and v.get("en")]
             mots[_net(principal)] = str(e.get("mots") or "")
         except (TypeError, AttributeError):
             continue                                   # une entrée mal formée ne gêne pas les autres
-    _CATALOGUE.update(refs=refs, genres=genres, mots=mots)
+    _CATALOGUE.update(refs=refs, genres=genres, mots=mots, variantes=variantes)
     return refs
 
 

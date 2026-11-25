@@ -23,6 +23,12 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T126 — 1.2.1 : variantes du catalogue, mon groupe, reprendre une création
+
+1. « Mes voix… » › « À la manière de (catalogue) » › une voix de crooner : Crooner, Swing, Douce (ballade), Feutrée ; un rappeur : Flow serré, Posée…
+2. Clip de groupe : « Voix du chant… » (Archangel › Chaude), « ☆ Garder ce groupe… ». Fabrique musique › « Mon groupe… » : style et voix se posent ; choisir « Clip » ; après la création, le clip s'ouvre avec les musiciens du groupe.
+3. Fabrique musique : écrire une phrase, choisir une voix, fermer PhilCut sans enregistrer (ou le tuer) ; relancer : Fabrique IA › « Reprendre une création en cours… » : tout est là. Pareil avec le motion design IA et l'assistant musique.
+
 ## T125 — 1.2.0 : mes voix, par familles
 
 1. Fabrique musique › ligne Voix › « Mes voix… » : « Nouvelle voix › Voix réelle : un fichier… » avec un morceau d'Archangel ; passage, « Oui » pour séparer, nom « Archangel », case d'accord : « Archangel (réel) » apparaît avec « Normale ».

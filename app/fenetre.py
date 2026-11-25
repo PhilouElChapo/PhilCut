@@ -1066,6 +1066,10 @@ class Fenetre(QMainWindow):
                           (lambda: self.creations_a_traiter(ed)) if ed is not None else (lambda: self._ed(lambda e: self.creations_a_traiter(e))))
         a_.setToolTip(_("Les créations IA demandées sur un autre appareil, ou dont le fichier manque : les calculer ici gratuitement ou "
                         "les refaire, comparer avant / après, sans jamais payer deux fois."))
+        a_ = fb.addAction(_("Reprendre une création en cours…"),
+                          (lambda: ed.reprendre_en_cours()) if ed is not None else (lambda: self._ed(lambda e: e.reprendre_en_cours())))
+        a_.setToolTip(_("Fabrique musique, assistant (musique ou vidéo), clip de groupe, motion design IA : gardés à chaque changement, "
+                        "repris là où vous en étiez, même après un plantage ; rien de déjà payé n'est refait."))
         a_ = fb.addAction(_("Ma bibliothèque de créations (personnages, lieux, voix, styles…)…"),
                           (lambda: ed.bibliotheque_creations()) if ed is not None else (lambda: self._ed(lambda e: e.bibliotheque_creations())))
         a_.setToolTip(_("Ce que vous avez gardé pour le réutiliser tel quel : personnages et musiciens avec leur fiche, objets, lieux, "

@@ -208,6 +208,15 @@ class DialogueMotionLibre(QDialog):
             self.description.setPlainText(anim.get("description", ""))
         self.resize(1000, 700)
         self._moteur_change()
+        from . import en_cours as EC                 # 1.2.1 : gardée à chaque changement (code, dessins, vidéos déjà payés)
+        EC.suivre(self, "motion_ia", self._etat_en_cours,
+                  lambda: (self.anim or {}).get("titre") or self.description.toPlainText().strip()[:60])
+
+    def _etat_en_cours(self):
+        if not self.a_garder():
+            return None
+        a = self.lire()
+        return {"anim": {k: v for k, v in a.items() if k != "charte"}}
 
     def _groupe_pro(self):
         """1.1.16 : la méthode des outils en ligne, réglable (chaque coût est demandé avant de payer)."""
@@ -763,7 +772,12 @@ class DialogueMotionLibre(QDialog):
         e = choisir_entree(self, self.params, ("modele_animation",))
         if e is None:
             return None
-        a = dict(ML.fiche(""), **((e.get("donnees") or {}).get("anim") or {}))
+        self.appliquer_anim((e.get("donnees") or {}).get("anim") or {}, e["nom"])
+        return e
+
+    def appliquer_anim(self, anim, nom=""):
+        """Une animation remise telle quelle (modèle gardé, ou création en cours reprise, 1.2.1) : rien de payé n'est refait."""
+        a = dict(ML.fiche(""), **(anim or {}))
         a.setdefault("libre", {}).setdefault("historique", [])
         a["charte"] = self.charte.currentData()
         self.anim = a
@@ -774,11 +788,11 @@ class DialogueMotionLibre(QDialog):
         self.duree.setValue(float(a.get("duree") or 0) if a.get("duree_imposee") else 0)
         self.transparent.setChecked(bool(a.get("transparent")))
         self.moteur_libre.setCurrentIndex(max(0, self.moteur_libre.findData(ML.moteur_de(a))))
-        self.etat.setText(_("✓ Modèle « {n} » repris.", n=e["nom"]))
+        self.etat.setText(_("✓ « {n} » repris.", n=nom))
         if ML.code_de(a):
             self._lancer(lambda t: self._verifier_et_apercu(t, self.lire()), _("Animation libre : modèle"), self._fin_ia)
         self._maj()
-        return e
+        return a
 
     # ------------------------------------------------------------------ fenêtre
     def a_garder(self):

@@ -4,7 +4,12 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.2.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.2.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.2.1 (variantes du catalogue, mon groupe, reprendre une creation)
+- Chaque voix « a la maniere de » du catalogue a ses propres variantes (crooner et swing pour un crooner, flow serre pour un rappeur, criee pour le metal…) ; une voix deja rauque n'a pas de variante « rauque ».
+- Fabrique musique : « Mon groupe… » prend le style et la voix du chanteur ou de la chanteuse d'un groupe garde ; tout reste modifiable ; le clip de groupe reprend ensuite ses musiciens.
+- Fabrique IA › « Reprendre une creation en cours… » : Fabrique musique, assistant musique et video, clip de groupe, motion design IA, gardes a chaque changement ; rien de deja paye n'est refait.
 
 ### 1.2.0 (mes voix, par familles)
 - Fabrique musique, ligne Voix : un seul bouton « Mes voix… ». Vos voix gardees en arbre, chacune avec sa voix principale et ses variantes (chaude, aigue, rapide…), puis la branche « A la maniere de (catalogue) ». Recherche en haut.

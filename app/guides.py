@@ -600,6 +600,28 @@ def _guides_integres():
                          "le prix demandé).")},
              {"texte": _("Double-clic : la voix est prise. Des curseurs changés sans « Garder » ne valent que pour ce morceau.")},
          ]},
+        {"id": "reprendre_creation", "etat": "ok",
+         "titre": _("Reprendre une création en cours (après une fermeture ou un plantage)"),
+         "mots": "reprendre creation en cours plantage perdu fermer sauvegarde musique clip groupe motion assistant retrouver",
+         "intro": _("La Fabrique musique, l'assistant (musique ou vidéo), le clip de groupe et le motion design IA sont gardés à "
+                    "chaque changement : rien de ce qui est fait ou payé n'est perdu."),
+         "etapes": [
+             {"texte": _("Fabrique IA › « Reprendre une création en cours… »."),
+              "montrer": {"menu": [_("Fabrique IA"), _("Reprendre une création en cours…")]}},
+             {"texte": _("Choisissez la création (genre, titre, date) : elle rouvre là où vous en étiez ; continuez.")},
+         ]},
+        {"id": "groupe_musique", "etat": "ok",
+         "titre": _("Mon groupe : son style et sa voix dans la Fabrique musique, ses musiciens dans le clip"),
+         "mots": "groupe musique style voix chanteur chanteuse musiciens clip archangel bibliotheque",
+         "intro": _("Un groupe gardé (clip de groupe › « ☆ Garder ce groupe… », avec « Voix du chant… ») donne son style et la voix "
+                    "de son chanteur ou de sa chanteuse ; tout reste modifiable."),
+         "etapes": [
+             {"texte": _("Fabrique IA › Musique › « Créer une musique par IA (Fabrique musique)… »."),
+              "montrer": {"menu": [_("Fabrique IA"), _("Musique"), _("Créer une musique par IA (Fabrique musique)…")]},
+              "fait": "fenetre:DialogueFabriqueMusique"},
+             {"texte": _("En haut : « Mon groupe… » ; le style et la voix du groupe se posent sur la fiche.")},
+             {"texte": _("Choisissez « Clip » en bas de la fiche : après la création, le clip de groupe s'ouvre avec ses musiciens.")},
+         ]},
         {"id": "voix_retouches", "etat": "ok",
          "titre": _("Retoucher une voix (studio, narration, plus grave ou plus aiguë) et l'entendre"),
          "mots": "voix retouche studio narration diction grave aigu timbre feminine masculine changer transformer ecouter "

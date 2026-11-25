@@ -3094,6 +3094,53 @@ class Editeur(QWidget):
         d.raise_()
         return d
 
+    def reprendre_en_cours(self, choix=None):
+        """1.2.1 : « Fabrique IA › Reprendre une création en cours… » : les créations gardées à chaque changement (Fabrique
+        musique, assistant musique, clip de groupe, motion design IA) et les séquences de l'assistant vidéo."""
+        from . import en_cours as EC, sequence_ia as Q
+        liste = [("ec", x, EC.resume(x)) for x in EC.lister()]
+        liste += [("seq", s, _("Assistant vidéo") + " · " + Q.resume_en_cours(s)) for _c, s in Q.en_cours()]
+        if not liste:
+            self.encart.message(_("Aucune création en cours sur ce poste."), 6000)
+            return None
+        if choix is None:
+            from PySide6.QtWidgets import QInputDialog
+            noms = [x[2] for x in liste]
+            nom, ok = QInputDialog.getItem(self, _("Reprendre une création en cours"), _("Création :"), noms, 0, False)
+            if not ok:
+                return None
+            choix = noms.index(nom)
+        quoi, x, _n = liste[choix]
+        if quoi == "seq":
+            d = self.assistant_creation()
+            d.reprendre_sequence(x)
+            return d
+        e, g = x["etat"], x["genre"]
+        if g == "fabrique_musique":
+            d = self.fabrique_musique(fiche=e.get("fiche"))
+            if e.get("resultat") and os.path.exists(e["resultat"]):
+                from . import musique_ia as MI
+                d._fini(d.fiche(), (e["resultat"], MI.consigne(d.fiche(), self.params)), None)
+        elif g == "assistant_musique":
+            d = self.assistant_creation(musique=True)
+            d.reprendre_musique(e)
+        elif g == "clip_groupe":
+            from .dialogues_clip_groupe import DialogueClipGroupe
+            from .widgets import fenetre_de_travail
+            d = DialogueClipGroupe(self, None, e.get("chemin"))
+            d.reprendre(e)
+            fenetre_de_travail(d)
+            d.show()
+        elif g == "motion_ia":
+            d = self.animation_libre()
+            d.appliquer_anim(e.get("anim") or {}, x.get("titre", ""))
+        else:
+            return None
+        s_ = getattr(d, "_suivi_en_cours", None)
+        if s_ is not None:                               # la même entrée continue d'être tenue à jour
+            s_.ident = x["id"]
+        return d
+
     def son_pour_voix(self):
         """1.2.0 (« Mes voix… », voix réelle depuis la timeline) : le son de la partie jaune, sinon du plan sous la ligne rouge,
         en WAV (voix et musiques à leur place) ; la voix en est ensuite séparée."""
