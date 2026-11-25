@@ -882,6 +882,31 @@ class _InfoBulles(QObject):
         return False
 
 
+class _BoitesMessages(QObject):
+    """1.3.2 (capture de Philippe, 25/11 21h11 : « Fiches manquantes » rognée, texte coupé dans une petite boîte) : un long
+    message de QMessageBox est montré dans une boîte assez large, le texte passe à la ligne et tout se lit sans défiler."""
+
+    def eventFilter(self, obj, ev):
+        from PySide6.QtCore import QEvent
+        from PySide6.QtWidgets import QMessageBox, QLabel, QScrollArea
+        if ev.type() == QEvent.Show and isinstance(obj, QMessageBox) and not obj.property("philcut_large"):
+            obj.setProperty("philcut_large", True)
+            lab = obj.findChild(QLabel, "qt_msgbox_label")
+            if lab is not None and len(lab.text()) > 120:
+                ecran = obj.screen().availableGeometry() if obj.screen() else None
+                largeur = min(560, int(ecran.width() * 0.6)) if ecran else 560
+                lab.setWordWrap(True)
+                lab.setMinimumWidth(largeur)
+                for zone in obj.findChildren(QScrollArea):          # Qt récent : le texte dans une zone qui défile
+                    zone.setWidgetResizable(True)
+                    zone.setMinimumWidth(largeur + 4)
+                    zone.setMinimumHeight(min(lab.heightForWidth(largeur) + 8, int(ecran.height() * 0.7) if ecran else 600))
+                obj.adjustSize()
+        return False
+
+
 def installer_infobulles(app):
     app._infobulles = _InfoBulles(app)
     app.installEventFilter(app._infobulles)
+    app._boites = _BoitesMessages(app)
+    app.installEventFilter(app._boites)

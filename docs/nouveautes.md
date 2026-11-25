@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.2 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.2
+- Les longs messages (ex. « Fiches manquantes ») s'affichent dans une boite assez large : le texte passe a la ligne, plus rien de coupe.
 
 ### 1.3.1
 - Motion design IA « look pro » : nouvelle case « 3D, physique et effets pixel ». Quand la description le demande, l'IA construit une vraie scene 3D (Three.js : objets arrondis, lumiere, ombres, camera qui tourne), avec une physique reelle (Rapier : des cubes qui tombent, rebondissent, s'effondrent), de la lueur, du grain, du flou ; ou elle pose des effets pixel art (244 effets pixelfx : feu, explosions, magie, meteo, bestioles…). Gratuit, calcule sur ce poste (mise a jour du moteur d'animation).
