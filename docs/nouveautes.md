@@ -4,9 +4,9 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.2.3 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.2.4 (comprend tout ce qui est sorti depuis la 0.4.4)
 
-### 1.2.3
+### 1.2.4 (1.2.3 n'est pas sortie pour Windows)
 - Nouveau moteur de voix de synthese (Piper, piper1-gpl, licence GPL-3.0) : il lit les nouvelles voix de Hugging Face comme les anciennes. Aide › Mises a jour des IA : « Moteur voix » d'abord (en tete de liste), puis les voix.
 - La pause entre les phrases est gardee : PhilCut lit le texte phrase par phrase et pose lui-meme le silence demande.
 

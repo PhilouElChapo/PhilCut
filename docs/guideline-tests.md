@@ -23,7 +23,7 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
-## T127 — 1.2.3 : nouveau moteur de voix (Piper)
+## T127 — 1.2.4 : nouveau moteur de voix (Piper)
 
 1. Aide › « Mises à jour des IA » › « Sur ce poste » : « Moteur « voix » » est en tête ; le mettre à jour, l'essai passe tout seul.
 2. Puis mettre à jour les voix proposées (Siwis, Tom…) : l'essai passe ; une voix d'avant, pas mise à jour, parle toujours.
