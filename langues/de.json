@@ -9547,5 +9547,6 @@
  "La voix est décrite. La prendre pour ce morceau seulement, ou la garder dans « Mes voix » pour la retrouver (et lui ajouter des variantes) ?": "Die Stimme ist beschrieben. Nur für dieses Stück verwenden oder in « Meine Stimmen » behalten, um sie wiederzufinden (und Varianten hinzuzufügen)?",
  "Pour ce morceau seulement": "Nur für dieses Stück",
  "La garder dans Mes voix…": "In Meine Stimmen behalten…",
- "d'après « {f} »": "nach « {f} »"
+ "d'après « {f} »": "nach « {f} »",
+ "Les moteurs passent en tête de liste : mettez-les à jour avant leurs modèles. Exemple : le nouveau moteur « voix » lit les nouvelles voix de synthèse, l'ancien ne les lit pas.": "Die Engines stehen oben in der Liste: Aktualisieren Sie sie vor ihren Modellen. Beispiel: Die neue Engine « Stimme » liest die neuen synthetischen Stimmen, die alte nicht."
 }

@@ -918,16 +918,61 @@ def synthese(texte, sortie_wav, cle=None, params=None, vitesse=1.0, silence=None
     cmd = [executable("voix"), "--model", modele, "--output_file", sortie_wav, "--length_scale", f"{1.0 / max(0.5, min(2.0, vitesse)):.3f}"]
     if roles.get("config"):
         cmd += ["--config", os.path.join(dossier_modele(cle), roles["config"])]
-    if silence is not None:
-        cmd += ["--sentence_silence", f"{max(0.0, float(silence)):.2f}"]
     if expressivite is not None:
         e = max(0.0, min(1.0, float(expressivite)))
         cmd += ["--noise_scale", f"{0.35 + 0.6 * e:.3f}", "--noise_w", f"{0.4 + 0.6 * e:.3f}"]
-    r = subprocess.run(cmd, input=texte.encode("utf-8"), cwd=dossier_moteur("voix"), env=_env("voix"), capture_output=True, timeout=600,
-                       **{k: v for k, v in _options_processus().items() if k != "preexec_fn"})
+    opts = dict(cwd=dossier_moteur("voix"), env=_env("voix"), capture_output=True, timeout=600,
+                **{k: v for k, v in _options_processus().items() if k != "preexec_fn"})
+    phrases = decouper_phrases(texte) if silence is not None else []
+    if len(phrases) > 1:
+        # 1.2.3 : le nouveau Piper (piper1-gpl) n'a plus --sentence_silence ; une phrase par ligne, un fichier par phrase
+        # (--output_dir, valable aussi pour l'ancien moteur), recollés ici avec la pause demandée
+        i = cmd.index("--output_file")
+        dossier_phrases = sortie_wav + ".phrases"
+        shutil.rmtree(dossier_phrases, ignore_errors=True)
+        os.makedirs(dossier_phrases)
+        cmd_d = cmd[:i] + ["--output_dir", dossier_phrases] + cmd[i + 2:]
+        try:
+            r = subprocess.run(cmd_d, input="\n".join(phrases).encode("utf-8") + b"\n", **opts)
+            wavs = [x.strip() for x in r.stdout.decode("utf-8", "replace").splitlines() if x.strip().lower().endswith(".wav")]
+            wavs = [w if os.path.isabs(w) else os.path.join(dossier_phrases, os.path.basename(w)) for w in wavs]
+            if len(wavs) != len(phrases):      # chemins non écrits : les fichiers portent l'heure, l'ordre suffit
+                wavs = sorted((os.path.join(dossier_phrases, f) for f in os.listdir(dossier_phrases) if f.endswith(".wav")),
+                              key=lambda f: (len(os.path.basename(f)), os.path.basename(f)))
+            if r.returncode != 0 or len(wavs) != len(phrases) or not all(os.path.exists(w) for w in wavs):
+                raise ErreurIA(_("La voix de synthèse a échoué : {t}", t=r.stderr.decode("utf-8", "replace")[-300:]))
+            recoller_wav(wavs, sortie_wav, max(0.0, float(silence)))
+        finally:
+            shutil.rmtree(dossier_phrases, ignore_errors=True)
+        return sortie_wav
+    r = subprocess.run(cmd, input=texte.encode("utf-8"), **opts)
     if r.returncode != 0 or not os.path.exists(sortie_wav):
         raise ErreurIA(_("La voix de synthèse a échoué : {t}", t=r.stderr.decode("utf-8", "replace")[-300:]))
     return sortie_wav
+
+
+def decouper_phrases(texte):
+    """Phrases d'un texte (fin : . ! ? … ou retour à la ligne), sans les vides."""
+    import re
+    morceaux = re.split(r"(?<=[.!?…])\s+|\n+", texte or "")
+    return [m.strip() for m in morceaux if m and m.strip()]
+
+
+def recoller_wav(wavs, sortie, silence):
+    """Recolle des WAV de même format, avec `silence` secondes de silence entre deux."""
+    import wave
+    with wave.open(wavs[0]) as w0:
+        p = w0.getparams()
+    blanc = b"\x00" * (int(p.framerate * silence) * p.sampwidth * p.nchannels)
+    with wave.open(sortie, "wb") as o:
+        o.setnchannels(p.nchannels)
+        o.setsampwidth(p.sampwidth)
+        o.setframerate(p.framerate)
+        for k, f in enumerate(wavs):
+            with wave.open(f) as w:
+                if k:
+                    o.writeframes(blanc)
+                o.writeframes(w.readframes(w.getnframes()))
 
 
 # ------------------------------------------------------------------ détourage (onnxruntime)

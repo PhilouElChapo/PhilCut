@@ -78,7 +78,8 @@ def a_mettre_a_jour():
                         "avant": e.get("version") or e.get("date", "?"), "apres": m.get("version") or _("catalogue du jour"),
                         "taille": sum(f.get("taille", 0) for f in m.get("fichiers") or []), "raison": raison})
     net = lambda t: unicodedata.normalize("NFKD", t.lower()).encode("ascii", "ignore").decode()
-    return sorted(out, key=lambda x: net(x["nom"]))
+    # 1.2.3 : moteurs d'abord (une voix au nouveau format a besoin du nouveau moteur), puis par nom
+    return sorted(out, key=lambda x: (x["type"] != "moteur", net(x["nom"])))
 
 
 # ------------------------------------------------------------------ essai après mise à jour

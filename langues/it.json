@@ -9547,5 +9547,6 @@
  "La voix est décrite. La prendre pour ce morceau seulement, ou la garder dans « Mes voix » pour la retrouver (et lui ajouter des variantes) ?": "La voce è descritta. Usarla solo per questo brano, o tenerla in « Le mie voci » per ritrovarla (e aggiungere varianti)?",
  "Pour ce morceau seulement": "Solo per questo brano",
  "La garder dans Mes voix…": "Tenerla in Le mie voci…",
- "d'après « {f} »": "da « {f} »"
+ "d'après « {f} »": "da « {f} »",
+ "Les moteurs passent en tête de liste : mettez-les à jour avant leurs modèles. Exemple : le nouveau moteur « voix » lit les nouvelles voix de synthèse, l'ancien ne les lit pas.": "I motori sono in cima all'elenco: aggiornali prima dei loro modelli. Esempio: il nuovo motore « voce » legge le nuove voci sintetiche, il vecchio no."
 }

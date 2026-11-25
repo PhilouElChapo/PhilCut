@@ -34,7 +34,11 @@ WHISPER = {
     "whisper_test": ("Voix (essai, tiny)", "ggml-tiny.bin", 1),
 }
 WHISPER_DEPOTS = ["ggerganov/whisper.cpp", "ggml-org/whisper.cpp"]
-PIPER_TAG = "2023.11.14-2"            # dernière version autonome (exécutable) de Piper
+# 1.2.3 : nouveau Piper (OHF-Voice/piper1-gpl, licence GPL-3.0), compilé par moteur_piper.yml (Windows et Linux) et
+# publié dans la release « moteurs-ia » ; moteurs_ia.yml reprend ces archives telles quelles
+PIPER_DEPOT = "OHF-Voice/piper1-gpl"
+PIPER_COMMIT = os.environ.get("PIPER1_COMMIT", "6aacdbc98eda4b1cb81d960bef7c7fae710b13fd")
+PIPER_TAG = os.environ.get("PIPER1_VERSION", "1.8.0") + "-" + PIPER_COMMIT[:7]
 VOIX_SYNTHESE = {                       # clef : (nom, chemin dans rhasspy/piper-voices, qualité)
     "voix_fr_femme": ("Voix française, femme (Siwis)", "fr/fr_FR/siwis/medium/fr_FR-siwis-medium", 3),
     "voix_fr_homme": ("Voix française, homme (Tom)", "fr/fr_FR/tom/medium/fr_FR-tom-medium", 3),
@@ -107,8 +111,8 @@ def versions():
     return out
 
 
-# 1.1.24 : les voix de main sont passées au format du nouveau Piper (incompatible avec notre moteur 1.2.0) : révision
-# épinglée, remplacée par la veille quand elle trouve le commit vérifié (voir veille_ia.epingler)
+# 1.1.24 : les voix de main sont passées au format du nouveau Piper ; 1.2.3 : le nouveau moteur les lit, main redevient
+# la référence (la veille garde la possibilité d'épingler une révision, voir veille_ia.epingler)
 PIPER_REV = os.environ.get("PHILCUT_PIPER_REV", "main")
 
 
@@ -167,21 +171,7 @@ def modeles(sortie):
             print(f"::notice title={cle}::{f} ({fichiers[f]['taille'] / 1e6:.0f} Mo)")
         else:
             print(f"::warning title={cle}::{f} introuvable")
-    try:
-        voix_hf = _hf_fichiers("rhasspy/piper-voices", PIPER_REV)
-    except Exception as e:              # noqa: BLE001
-        print(f"::warning title=Voix de synthèse::piper-voices indisponible ({e})")
-        voix_hf = {}
-    for cle, (nom, chemin, q) in VOIX_SYNTHESE.items():
-        f1, f2 = chemin + ".onnx", chemin + ".onnx.json"
-        if f1 in voix_hf and f2 in voix_hf:
-            fichiers = [{"nom": os.path.basename(f), "role": r, "url": f"https://huggingface.co/rhasspy/piper-voices/resolve/{PIPER_REV}/{f}",
-                         "taille": voix_hf[f]["taille"], "sha256": voix_hf[f]["sha256"]} for f, r in ((f1, "modele"), (f2, "config"))]
-            cat[cle] = {"genre": "voix", "nom": nom, "source": "rhasspy/piper-voices", "qualite": q, "essai": False, "langue": chemin[:2],
-                        "fichiers": fichiers, "taille": sum(x["taille"] for x in fichiers)}
-            print(f"::notice title={cle}::{os.path.basename(f1)} ({cat[cle]['taille'] / 1e6:.0f} Mo)")
-        else:
-            print(f"::warning title={cle}::{chemin} introuvable")
+    cat.update(voix_catalogue(PIPER_REV))
     for cle, (nom, url, q) in DETOURAGE.items():
         try:
             t = taille_distante(url)
@@ -207,6 +197,54 @@ def empreinte(chemin):
     return h.hexdigest()
 
 
+def voix_catalogue(revision="main"):
+    """Entrées du catalogue pour les voix de synthèse (rhasspy/piper-voices, à cette révision)."""
+    cat = {}
+    try:
+        voix_hf = _hf_fichiers("rhasspy/piper-voices", revision)
+    except Exception as e:              # noqa: BLE001
+        print(f"::warning title=Voix de synthèse::piper-voices indisponible ({e})")
+        voix_hf = {}
+    for cle, (nom, chemin, q) in VOIX_SYNTHESE.items():
+        f1, f2 = chemin + ".onnx", chemin + ".onnx.json"
+        if f1 in voix_hf and f2 in voix_hf:
+            fichiers = [{"nom": os.path.basename(f), "role": r, "url": f"https://huggingface.co/rhasspy/piper-voices/resolve/{revision}/{f}",
+                         "taille": voix_hf[f]["taille"], "sha256": voix_hf[f]["sha256"]} for f, r in ((f1, "modele"), (f2, "config"))]
+            cat[cle] = {"genre": "voix", "nom": nom, "source": "rhasspy/piper-voices", "qualite": q, "essai": False, "langue": chemin[:2],
+                        "fichiers": fichiers, "taille": sum(x["taille"] for x in fichiers)}
+            print(f"::notice title={cle}::{os.path.basename(f1)} ({cat[cle]['taille'] / 1e6:.0f} Mo)")
+        else:
+            print(f"::warning title={cle}::{chemin} introuvable")
+    return cat
+
+
+def piper(dist, manifeste):
+    """1.2.3 : met à jour le catalogue publié avec le moteur de voix fabriqué par moteur_piper.yml (archives dans dist)
+    et remet les voix sur main (le nouveau moteur lit le nouveau format)."""
+    with open(manifeste, encoding="utf-8") as f:
+        man = json.load(f)
+    m = {"nom": "Piper (voix de synthèse)", "version": PIPER_TAG, "licence": "GPL-3.0",
+         "source": f"https://github.com/{PIPER_DEPOT}/tree/{PIPER_COMMIT}"}
+    for systeme in ("windows", "linux"):
+        for f in sorted(os.listdir(dist)):
+            if f.startswith(f"philcut-piper-{systeme}"):
+                p = os.path.join(dist, f)
+                m[systeme] = {"fichier": f, "taille": os.path.getsize(p), "sha256": empreinte(p),
+                              "url": f"https://github.com/PhilouElChapo/PhilCut/releases/download/moteurs-ia/{f}"}
+    if not all(s in m for s in ("windows", "linux")):
+        print("::error::archive Piper absente (windows ou linux)")
+        return 1
+    man.setdefault("moteurs", {})["voix"] = m
+    voix = voix_catalogue("main")
+    if voix:
+        man.setdefault("modeles", {}).update(voix)
+    man["date"] = time.strftime("%Y-%m-%d")
+    with open(manifeste, "w", encoding="utf-8") as fo:
+        json.dump(man, fo, ensure_ascii=False, indent=1)
+    print(f"::notice title=Moteur voix::{PIPER_TAG}, {len(voix)} voix sur main")
+    return 0
+
+
 def assembler(dossier):
     """dossier contient les archives fabriquées, modeles.json et versions.json."""
     v = json.load(open(os.path.join(dossier, "versions.json")))
@@ -214,7 +252,8 @@ def assembler(dossier):
            "moteurs": {"vision": {"nom": "llama.cpp (llama-server)", "version": v["llama_tag"], "licence": "MIT"},
                        "vision_gpu": {"nom": "llama.cpp Vulkan (carte graphique)", "version": v["llama_tag"], "licence": "MIT"},
                        "whisper": {"nom": "whisper.cpp (whisper-cli)", "version": v["whisper_tag"], "licence": "MIT"},
-                       "voix": {"nom": "Piper (voix de synthèse)", "version": PIPER_TAG, "licence": "MIT"}},
+                       "voix": {"nom": "Piper (voix de synthèse)", "version": PIPER_TAG, "licence": "GPL-3.0",
+                                "source": f"https://github.com/{PIPER_DEPOT}/tree/{PIPER_COMMIT}"}},
            "modeles": json.load(open(os.path.join(dossier, "modeles.json"), encoding="utf-8"))}
     vus = set()
     for genre, prefixe in (("vision_gpu", "philcut-llama-vulkan"), ("vision", "philcut-llama"), ("whisper", "philcut-whisper"), ("voix", "philcut-piper")):
@@ -250,5 +289,7 @@ if __name__ == "__main__":
         sys.exit(modeles(sys.argv[2]))
     if cmd == "assembler":
         sys.exit(assembler(sys.argv[2]))
+    if cmd == "piper":
+        sys.exit(piper(sys.argv[2], sys.argv[3]))
     print(__doc__)
     sys.exit(2)

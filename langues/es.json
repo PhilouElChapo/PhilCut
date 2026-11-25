@@ -9547,5 +9547,6 @@
  "La voix est décrite. La prendre pour ce morceau seulement, ou la garder dans « Mes voix » pour la retrouver (et lui ajouter des variantes) ?": "La voz está descrita. ¿Usarla solo para esta pieza o guardarla en « Mis voces » para encontrarla de nuevo (y añadirle variantes)?",
  "Pour ce morceau seulement": "Solo para esta pieza",
  "La garder dans Mes voix…": "Guardarla en Mis voces…",
- "d'après « {f} »": "a partir de « {f} »"
+ "d'après « {f} »": "a partir de « {f} »",
+ "Les moteurs passent en tête de liste : mettez-les à jour avant leurs modèles. Exemple : le nouveau moteur « voix » lit les nouvelles voix de synthèse, l'ancien ne les lit pas.": "Los motores aparecen primero en la lista: actualícelos antes que sus modelos. Ejemplo: el nuevo motor « voz » lee las nuevas voces sintéticas, el antiguo no."
 }

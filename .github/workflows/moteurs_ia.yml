@@ -75,8 +75,7 @@ jobs:
             Copy-Item pack\llama\LICENSE.txt pack\vulkan\ -ErrorAction SilentlyContinue
             Compress-Archive pack\vulkan\* dist\philcut-llama-vulkan-windows-x64.zip
           }
-          gh release download 2023.11.14-2 -R rhasspy/piper -p piper_windows_amd64.zip -D brut   # voix de synthèse (Piper)
-          Copy-Item brut\piper_windows_amd64.zip dist\philcut-piper-windows-x64.zip
+          gh release download moteurs-ia -R ${{ github.repository }} -p philcut-piper-windows-x64.zip -D dist   # voix (Piper, fabrique par moteur_piper.yml)
           & pack\llama\llama-server.exe --version
           & pack\whisper\whisper-cli.exe --help | Select-Object -First 3
           Compress-Archive pack\llama\* dist\philcut-llama-windows-x64.zip
@@ -149,8 +148,7 @@ jobs:
               echo "::warning title=Vulkan Linux::l'archive officielle ne tourne pas sur Ubuntu 22.04 : version carte graphique Linux non publiee"
             fi
           fi
-          gh release download 2023.11.14-2 -R rhasspy/piper -p piper_linux_x86_64.tar.gz -D brut   # voix de synthèse (Piper)
-          cp brut/piper_linux_x86_64.tar.gz dist/philcut-piper-linux-x64.tar.gz
+          gh release download moteurs-ia -R ${{ github.repository }} -p philcut-piper-linux-x64.tar.gz -D dist   # voix (Piper, fabrique par moteur_piper.yml)
           tar czf dist/philcut-llama-linux-x64.tar.gz -C pack llama
           tar czf dist/philcut-whisper-linux-x64.tar.gz -C pack whisper
           ls -la dist

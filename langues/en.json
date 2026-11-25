@@ -9556,5 +9556,6 @@
  "La voix est décrite. La prendre pour ce morceau seulement, ou la garder dans « Mes voix » pour la retrouver (et lui ajouter des variantes) ?": "The voice is described. Use it for this track only, or keep it in « My voices » to find it again (and add variants)?",
  "Pour ce morceau seulement": "For this track only",
  "La garder dans Mes voix…": "Keep it in My voices…",
- "d'après « {f} »": "from « {f} »"
+ "d'après « {f} »": "from « {f} »",
+ "Les moteurs passent en tête de liste : mettez-les à jour avant leurs modèles. Exemple : le nouveau moteur « voix » lit les nouvelles voix de synthèse, l'ancien ne les lit pas.": "Engines come first in the list: update them before their models. Example: the new « voice » engine reads the new synthetic voices, the old one does not."
 }

@@ -1,0 +1,140 @@
+# 1.2.3 : nouveau moteur de voix de synthèse, Piper de OHF-Voice/piper1-gpl (licence GPL-3.0), compilé ici à partir des
+# sources officielles (libpiper et son programme en ligne de commande), pour Windows (MSVC) et Linux (Ubuntu 22.04,
+# compatible Zorin 17). Il lit les voix au nouveau format de rhasspy/piper-voices (main) comme les anciennes.
+# Chaque archive est essayée pour de vrai (ancienne et nouvelle voix, lecture phrase par phrase), puis publiée dans la
+# release « moteurs-ia » avec ses sources (GPL) ; le catalogue moteurs-ia.json est mis à jour et les voix reviennent sur main.
+# PhilCut lance ce programme à part (aucun code GPL dans PhilCut).
+name: Moteur voix (Piper)
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit de OHF-Voice/piper1-gpl"
+        default: "6aacdbc98eda4b1cb81d960bef7c7fae710b13fd"
+      publier:
+        description: "Publier dans moteurs-ia (sinon : seulement fabriquer et essayer)"
+        type: boolean
+        default: true
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/moteur_piper.yml
+
+permissions:
+  contents: write
+
+env:
+  PIPER1_COMMIT: ${{ inputs.commit || '6aacdbc98eda4b1cb81d960bef7c7fae710b13fd' }}
+
+jobs:
+  fabriquer:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2022
+            systeme: windows
+          - os: ubuntu-22.04
+            systeme: linux
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Sources piper1-gpl
+        shell: bash
+        run: |
+          git init -q piper1 && cd piper1
+          git remote add origin https://github.com/OHF-Voice/piper1-gpl.git
+          git fetch -q --depth 1 origin "$PIPER1_COMMIT" && git checkout -q FETCH_HEAD
+          grep -o 'version="[0-9.]*"' setup.py
+          git archive --format=tar.gz --prefix=piper1-gpl/ -o ../piper1-gpl-sources.tar.gz HEAD
+      - name: Compiler (Windows)
+        if: matrix.systeme == 'windows'
+        shell: cmd
+        working-directory: piper1/libpiper
+        run: |
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=%CD%/install || exit /b 1
+          cmake --build build --config Release -j 4 || exit /b 1
+          cmake --install build --config Release || exit /b 1
+      - name: Compiler (Linux)
+        if: matrix.systeme == 'linux'
+        working-directory: piper1/libpiper
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq patchelf ninja-build
+          cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$PWD/install
+          cmake --build build --config Release
+          cmake --install build --config Release
+      - name: Paquet
+        shell: bash
+        run: |
+          I=piper1/libpiper/install
+          find "$I" -maxdepth 2 | head -50
+          mkdir -p pack/piper
+          if [ "${{ matrix.systeme }}" = windows ]; then
+            cp "$I"/bin/piper_exe.exe pack/piper/piper.exe
+            cp "$I"/bin/*.dll pack/piper/
+            cp -r "$I"/bin/espeak-ng-data pack/piper/
+            # runtime Visual C++ à côté du programme (déploiement local autorisé par Microsoft) : rien à installer
+            for d in vcruntime140.dll vcruntime140_1.dll msvcp140.dll; do
+              cp "/c/Windows/System32/$d" pack/piper/ || true
+            done
+          else
+            cp "$I"/bin/piper_exe pack/piper/piper
+            cp -P "$I"/lib/*.so* pack/piper/ 2>/dev/null || true
+            cp -r "$I"/share/espeak-ng-data pack/piper/
+            for f in pack/piper/piper pack/piper/*.so*; do
+              [ -L "$f" ] || patchelf --set-rpath '$ORIGIN' "$f" || true
+            done
+          fi
+          cp piper1/COPYING pack/piper/COPYING.txt
+          cp -r piper1/licenses pack/piper/licenses 2>/dev/null || true
+          printf 'Piper (piper1-gpl) %s\nLicence : GPL-3.0 (COPYING.txt)\nSources : https://github.com/OHF-Voice/piper1-gpl/tree/%s\nCopie des sources : piper1-gpl-sources.tar.gz dans la release moteurs-ia de PhilouElChapo/PhilCut\n' \
+            "$(grep -o 'version="[0-9.]*"' piper1/setup.py | cut -d'"' -f2)" "$PIPER1_COMMIT" > pack/piper/SOURCES.txt
+          ls -la pack/piper
+      - name: Essai reel
+        shell: bash
+        run: python outils_dev/essai_piper.py pack/piper essai_piper
+      - name: Archive
+        shell: bash
+        run: |
+          mkdir -p dist
+          if [ "${{ matrix.systeme }}" = windows ]; then
+            cd pack && 7z a -tzip -bso0 ../dist/philcut-piper-windows-x64.zip piper && cd ..
+          else
+            tar czf dist/philcut-piper-linux-x64.tar.gz -C pack piper
+            cp piper1-gpl-sources.tar.gz dist/
+          fi
+          ls -la dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: piper-${{ matrix.systeme }}
+          path: dist/*
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: essai-piper-${{ matrix.systeme }}
+          path: essai_piper/*.wav
+
+  publier:
+    needs: fabriquer
+    if: ${{ github.event_name == 'push' || inputs.publier }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: piper-*
+          path: dist
+          merge-multiple: true
+      - name: Catalogue et publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download moteurs-ia -p moteurs-ia.json -D .
+          cp moteurs-ia.json avant-moteurs-ia.json
+          python outils_dev/moteurs_ia.py piper dist moteurs-ia.json
+          gh release upload moteurs-ia dist/philcut-piper-windows-x64.zip dist/philcut-piper-linux-x64.tar.gz dist/piper1-gpl-sources.tar.gz moteurs-ia.json --clobber
+          echo "::notice title=Publie::Piper piper1-gpl ${PIPER1_COMMIT:0:7} (Windows et Linux)"

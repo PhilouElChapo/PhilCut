@@ -426,6 +426,8 @@ def _guides_integres():
               "fait": "fenetre:DialogueMajIA"},
              {"texte": _("Onglet « Sur ce poste » : cochez ce que vous voulez, « Mettre à jour la sélection ». Le téléchargement "
                          "continue si vous fermez ou réduisez la fenêtre.")},
+             {"texte": _("Les moteurs passent en tête de liste : mettez-les à jour avant leurs modèles. Exemple : le nouveau moteur "
+                         "« voix » lit les nouvelles voix de synthèse, l'ancien ne les lit pas.")},
              {"texte": _("Si une IA marche moins bien : « Revenir » dans « Anciennes versions gardées ». « Libérer la place » "
                          "efface ces anciennes versions.")},
              {"texte": _("Onglet « Dans le cloud » : chaque service, à quoi il sert, son prix indicatif et son état. Le prix est "
