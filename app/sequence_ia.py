@@ -257,6 +257,10 @@ def consigne(seq, pl, params=None, traduire=True):
         action += " Important: " + _anglais(pl["precision"], traduire).rstrip(".") + "."
     f = "vertical 9:16" if seq.get("format") == "9:16" else "widescreen 16:9"
     morceaux = [f"Cinematic shot, {f}, about {int(pl.get('duree') or DUREE_PLAN)} seconds."]
+    if seq.get("mode") == "scenes":                  # 1.3.5 : une scène entière, d'une traite
+        morceaux.append("One continuous take, no cut. The events of Action happen once each, in the order written, at a natural "
+                        "pace; things written in the same sentence happen at the same time. Vehicles keep their exact real "
+                        "shape and parts (doors, stairs, wheels where they are on the first frame).")
     if li:
         morceaux.append("Setting: " + _anglais(li.get("description") or li["nom"], traduire) + ".")
     if persos:
@@ -407,7 +411,17 @@ def image_depart(seq, i, params, moteur_image="gemini", precision=""):
         c = casting(rp, os.path.join(dossier(seq), f"plan{i + 1:02d}_casting.png"))
         planches = [c] if c else planches
     refs = (planches + lieux)[:4]
-    texte = consigne(seq, pl, params) + ((" Precisely, at the start: " + _anglais(precision, True)) if precision else "")
+    etat = pl.get("etat_depart") or ""
+    texte = consigne(seq, pl, params) + (
+        (" THE IMAGE SHOWS THE VERY FIRST INSTANT of the shot, before anything described in Action has happened: "
+         + _anglais(etat, True).rstrip(".") + ".") if etat else "") + (
+        (" Precisely, at the start: " + _anglais(precision, True)) if precision else "")
+    if i > 0 and seq.get("mode") == "scenes":        # même décor, même lumière que la scène d'avant
+        av = seq["plans"][i - 1].get("image")
+        if av and os.path.exists(av) and av not in lieux and av not in planches:
+            lieux = [av] + lieux
+            refs = (planches + lieux)[:4]
+            texte += " Same place, same light and same outfits as the previous scene (the reference photo of the place)."
     sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_depart_{int(time.time() * 1000) % 10 ** 9}.png")
     if moteur_image == "gemini":
         from . import ia
@@ -595,8 +609,10 @@ def _photo_de_groupe(seq, chemin):
     return sum(1 for p in seq["personnages"] if chemin in (p.get("images") or [])) > 1
 
 
-def references_du_plan(seq, pl):
-    """[(« Character A », [planche, images…])] des personnages du plan, pour les moteurs « Référence »."""
+def references_du_plan(seq, pl, sans_objets=False):
+    """[(« Character A », [planche, images…])] des personnages du plan, pour les moteurs « Référence ».
+    sans_objets (1.3.5) : quand la vidéo part d'une image, les objets (avion, voiture) et le lieu y sont déjà ; leur fiche
+    à plusieurs vues sur fond gris était recopiée telle quelle par le moteur (« le Falcon en multiplan »)."""
     out = []
     noms = [n.lower() for n in visibles(seq, pl)]
     for k, p in enumerate(seq["personnages"]):
@@ -611,7 +627,7 @@ def references_du_plan(seq, pl):
             out.append((f"Character {chr(65 + k)}", imgs[:4], p.get("genre") == "objet"))
     # 1.1.21 : les personnes d'abord (le moteur peut n'en garder que 3 : un objet se reconnaît sur l'image de départ)
     out.sort(key=lambda x: x[2])
-    return [(n, im) for n, im, _o in out]
+    return [(n, im) for n, im, o in out if not (sans_objets and o)]
 
 
 def derniere_image(video, sortie):
@@ -809,7 +825,8 @@ def fabriquer_plan(seq, i, params, moteur_video, progression=None, arret=lambda:
             progression and progression(0.04)
             fin = image_arrivee(seq, i, params, image)
         GV.generer(params, moteur_video, texte, sortie, int(pl.get("duree") or DUREE_PLAN), seq.get("format", "16:9"), image,
-                   progression, arret, son=seq.get("voix") == "moteur", references=references_du_plan(seq, pl), image_fin=fin)
+                   progression, arret, son=seq.get("voix") == "moteur",
+                   references=references_du_plan(seq, pl, sans_objets=bool(image)), image_fin=fin)
     else:
         GV.generer(params, moteur_video, texte, sortie, int(pl.get("duree") or DUREE_PLAN), seq.get("format", "16:9"), image,
                    progression, arret, son=seq.get("voix") == "moteur")
@@ -870,11 +887,11 @@ def groupes_continus(seq, indices, moteur_video, params):
     return out
 
 
-def references_du_groupe(seq, indices):
+def references_du_groupe(seq, indices, sans_objets=False):
     """Les personnes et objets de tous les plans du groupe (quatre au plus), chacun une seule fois."""
     out, vus = [], set()
     for i in indices:
-        for nom, images in references_du_plan(seq, seq["plans"][i]):
+        for nom, images in references_du_plan(seq, seq["plans"][i], sans_objets):
             if nom not in vus:
                 vus.add(nom)
                 out.append((nom, images))
@@ -922,7 +939,7 @@ def fabriquer_groupe(seq, indices, params, moteur_video, progression=None, arret
     ident = f"{indices[0] + 1:02d}-{indices[-1] + 1:02d}_{int(time.time())}"
     video = os.path.join(dossier(seq), f"plans{ident}.mp4")
     GV.generer(params, moteur_video, multi[0][0], video, sum(d for _t, d in multi), seq.get("format", "16:9"), image,
-               progression, arret, son=seq.get("voix") == "moteur", references=references_du_groupe(seq, indices),
+               progression, arret, son=seq.get("voix") == "moteur", references=references_du_groupe(seq, indices, sans_objets=bool(image)),
                image_fin=fin, multi=multi)
     fichiers = decouper_video(video, [d for _t, d in multi],
                               lambda n: os.path.join(dossier(seq), f"plan{indices[n] + 1:02d}_{int(time.time())}_{n}.mp4"))

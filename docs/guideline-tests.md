@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T130 — 1.3.5 : le tarmac en scènes, brouillon avant de payer
+
+1. Assistant › « Reprendre une création en cours… » › le tarmac ; cliquez « 1. Votre idée » en haut, puis « Suivant » : PhilCut propose de redécouper en scènes ; « Oui ».
+2. Page des scènes : 4 ou 5 scènes de 8 à 15 s ? « Le pilote et l'hôtesse arrivent… » est-elle une seule phrase, dans une seule scène ? Le décollage est-il seul, sans personnage ?
+3. « Préparer les images » : les fiches sont déjà là ; une image de départ par scène. L'hôtesse est-elle bien l'hôtesse, sans homme en gilet jaune ? Sinon « Corriger… ».
+4. « Tout me convient » : PhilCut propose le brouillon (prix affiché) ; « Brouillon d'abord ». Regardez-le ; la relecture de l'IA est dessous.
+5. « Reprendre les corrections de l'IA », modifiez le texte si besoin, « Appliquer ces corrections » ; ou « Tout me va : fabriquer la vidéo ».
+6. La vraie vidéo : l'avion reste-t-il le même (plus de planche à plusieurs avions) ? Chacun garde-t-il son visage ?
+
 ## T129 — 1.3.1 : motion design en 3D, physique, effets pixel
 
 1. Aide › « Mises à jour des IA » : mettez à jour le moteur « Animations HyperFrames et Remotion ».

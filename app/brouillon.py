@@ -178,3 +178,31 @@ def fabriquer(seq, mode, params, progression=None, arret=lambda: False):
     seq["brouillon"] = {"mode": mode, "fichier": sortie, "quand": time.strftime("%Y-%m-%d %H:%M")}
     progression and progression(1.0)
     return sortie
+
+
+# ------------------------------------------------------------------ 1.3.5 : le brouillon relu par l'IA
+def relire(seq, mode, params, niveau="claude", progression=None):
+    """L'IA relit chaque scène du brouillon (mêmes contrôles que pour la vraie vidéo : personnes, objets, gestes, histoire).
+    Renvoie [{"plan", "t", "texte", "quoi"}] ; une scène illisible est sautée."""
+    from . import correcteur as C
+    dossier = os.path.join(Q.dossier(seq), "brouillon")
+    copie = copy.deepcopy(seq)
+    copie["defauts"] = []
+    n = len(copie["plans"])
+    for i, pl in enumerate(copie["plans"]):
+        f = os.path.join(dossier, f"plan{i + 1:02d}_{mode}.mp4")
+        if not os.path.exists(f):
+            continue
+        pl["fichier"] = f
+        try:
+            C.relire(params, copie, i, niveau)
+        except Exception:      # noqa: BLE001 : une relecture ratée ne perd pas le brouillon
+            pass
+        progression and progression((i + 1) / n)
+    return [{"plan": x["plan"], "t": x.get("t", 0), "texte": x["texte"], "quoi": x.get("quoi", "autre")}
+            for x in copie["defauts"] if x.get("source") == "ia"]
+
+
+def texte_corrections(defauts):
+    """Les défauts de l'IA en un texte que l'utilisateur peut modifier avant de l'appliquer."""
+    return "\n".join(_("Scène {i} : {x}", i=d["plan"] + 1, x=d["texte"]) for d in defauts)

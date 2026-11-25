@@ -806,11 +806,12 @@ class DialogueAssistant(QDialog):
     def _page_plans(self):
         w = QWidget()
         v = QVBoxLayout(w)
-        v.addWidget(self._titre(_("Voici les plans : une seule action simple par plan")))
-        v.addWidget(self._aide(_("Corrigez le texte, qui on voit (noms séparés par une virgule ; vide = personne, seulement le décor "
-                                 "ou un objet), le cadrage ou la durée. Les personnes qui ne sont plus visibles (dans la voiture, "
-                                 "sorties) ne reviennent pas : survolez « Qui » pour voir où elles sont. Un plan à deux actions est "
-                                 "coupé en deux tout seul.")))
+        v.addWidget(self._titre(_("Voici les scènes : chacune se joue d'une traite")))
+        v.addWidget(self._aide(_("Chaque ligne est une scène entière (8 à 15 s) : ce qui s'y passe, dans l'ordre. Corrigez le texte, "
+                                 "qui on voit (noms séparés par une virgule ; vide = personne, seulement le décor ou un objet), le "
+                                 "cadrage ou la durée. Les personnes qui ne sont plus visibles (dans la voiture, sorties) ne "
+                                 "reviennent pas : survolez « Qui » pour voir où elles sont. Chaque scène part de sa propre image "
+                                 "de départ, que vous validez à l'étape suivante.")))
         self.t_plans = QTableWidget(0, 4)
         self.t_plans.setHorizontalHeaderLabels([_("Ce qu'on voit"), _("Qui"), _("Cadrage"), _("Durée (s)")])
         self._table(self.t_plans, (1, 3), 0)
@@ -1045,18 +1046,57 @@ class DialogueAssistant(QDialog):
             a.triggered.connect(lambda _c=False, x=mode: self.faire_brouillon(x))
         m.exec(self.b_brouillon.mapToGlobal(self.b_brouillon.rect().bottomLeft()))
 
-    def faire_brouillon(self, mode, realisateur=False):
+    def _brouillon_d_abord(self):
+        """1.3.5 (choix de Philippe, 25/11 22h50) : avant la vraie fabrication, proposer le brouillon en basse définition de
+        toute la séquence, relu par l'IA. Renvoie True si le brouillon part (la fabrication attend)."""
+        from . import brouillon as B
+        if self.seq.get("mode") != "scenes" or self.seq.get("brouillon_vu") or not self.params.get("clef_gemini") \
+                or not any(not pl.get("fichier") for pl in self.seq["plans"]):
+            return False
+        n = len(self.seq["plans"])
+        p = B.prix(self.seq, "omni-360p", self.params) + (A.PRIX_LECTURE * n if self._cloud() else 0)
+        choix = getattr(self, "_test_brouillon", None)
+        if choix is None:
+            if getattr(self, "_test_oui", None) is not None:
+                return False
+            m = QMessageBox(QMessageBox.Question, _("Brouillon avant de payer"), _(
+                "Faire d'abord un brouillon de toute la séquence en basse définition (Gemini Omni 360p), relu par l'IA ? Environ "
+                "{p}, contre {v} pour la vraie qualité. Vous voyez si l'histoire se joue bien, vous corrigez, et le rendu cher ne "
+                "part que quand le brouillon vous va.\n\nLe brouillon vérifie l'histoire et les personnes ; le moteur final peut "
+                "encore différer sur des détails.", p=A.argent(p),
+                v=A.argent(A.estimer(self.seq, self.seq.get("moteur") or self.moteur.currentData(), self.params, self._niveau())["videos"])),
+                QMessageBox.NoButton, self)
+            b1 = m.addButton(_("Brouillon d'abord (conseillé)"), QMessageBox.AcceptRole)
+            b2 = m.addButton(_("Fabriquer directement"), QMessageBox.DestructiveRole)
+            m.addButton(_("Annuler"), QMessageBox.RejectRole)
+            m.setDefaultButton(b1)
+            m.exec()
+            choix = "brouillon" if m.clickedButton() is b1 else "direct" if m.clickedButton() is b2 else "annuler"
+        if choix == "direct":
+            self.seq["brouillon_vu"] = True
+            return False
+        if choix == "brouillon":
+            self.faire_brouillon("omni-360p", realisateur=True, relire=True, deja_demande=True)
+        return True
+
+    def faire_brouillon(self, mode, realisateur=False, relire=False, deja_demande=False):
         from . import brouillon as B
         p = B.prix(self.seq, mode, self.params)
-        if p > 0 and getattr(self, "_test_oui", None) is None and QMessageBox.question(
+        if p > 0 and not deja_demande and getattr(self, "_test_oui", None) is None and QMessageBox.question(
                 self, _("Brouillon de toute la séquence"),
                 _("Le brouillon en Gemini Omni 360p coûte environ {p} sur votre compte Google (hors budget de la création). "
                   "Rien n'est posé dans le film. Continuer ?", p=A.argent(p))) != QMessageBox.Yes:
             return
         seq = copy.deepcopy(self.seq)
+        niveau = self._niveau()
+        lectures = len(seq["plans"]) if relire and self._cloud() else 0
 
         def travail(t):
-            f = B.fabriquer(seq, mode, self.params, lambda x: t.avancer(x, _("brouillon")), t.arret_demande)
+            f = B.fabriquer(seq, mode, self.params, lambda x: t.avancer(x * (0.85 if relire else 1.0), _("brouillon")), t.arret_demande)
+            if relire:
+                t.avancer(0.86, _("L'IA relit le brouillon…"))
+                seq["brouillon"]["defauts"] = B.relire(seq, mode, self.params, niveau,
+                                                       lambda x: t.avancer(0.86 + 0.14 * x, _("L'IA relit le brouillon…")))
             return f, seq.get("brouillon")
 
         def fin(r, e):
@@ -1064,8 +1104,11 @@ class DialogueAssistant(QDialog):
                 self.etat.setText("✕ " + (texte_erreur(e) if e else _("rien n'a été fabriqué")))
                 return
             self.seq["brouillon"] = r[1]
+            self.seq["brouillon_vu"] = True
             if p > 0:
                 A.depenser(self.seq, _("Brouillon"), p)
+            if lectures:
+                A.depenser(self.seq, _("Relecture du brouillon"), A.PRIX_LECTURE * lectures)
             Q.enregistrer(self.seq)
             self._maj_brouillon()
             self.voir_brouillon(r[0], realisateur)
@@ -1091,6 +1134,46 @@ class DialogueAssistant(QDialog):
         ap = ApercuCreation(d)
         ap.charger(chemin, video=True)
         v.addWidget(ap, 1)
+        defauts = (self.seq.get("brouillon") or {}).get("defauts")
+        if defauts is not None and self.pages.currentIndex() == P_IMAGES:
+            # 1.3.5 : la relecture de l'IA, et vos corrections (les siennes se reprennent d'un bouton, puis se modifient)
+            from PySide6.QtWidgets import QPlainTextEdit
+            from . import brouillon as B
+            v.addWidget(QLabel(_("Relecture de l'IA : {n} défaut(s).", n=len(defauts)) if defauts else
+                               _("Relecture de l'IA : rien à signaler.")))
+            if defauts:
+                lst = QListWidget()
+                lst.setWordWrap(True)
+                lst.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+                lst.setMaximumHeight(110)
+                for x in defauts:
+                    lst.addItem(_("Scène {i}, {t} s : {x}", i=x["plan"] + 1, t=f"{x['t']:g}", x=x["texte"]))
+                v.addWidget(lst)
+            v.addWidget(QLabel(_("Corrections à appliquer aux scènes (écrivez les vôtres, ou reprenez celles de l'IA puis modifiez-les) :")))
+            d.corrections = QPlainTextEdit()
+            d.corrections.setMaximumHeight(90)
+            v.addWidget(d.corrections)
+            hc = QHBoxLayout()
+            br = QPushButton(_("Reprendre les corrections de l'IA"))
+            br.setEnabled(bool(defauts))
+            br.clicked.connect(lambda: d.corrections.setPlainText(B.texte_corrections(defauts)))
+            hc.addWidget(br)
+            ba = QPushButton(_("Appliquer ces corrections"))
+            ba.setToolTip(_("L'assistant corrige les scènes (environ 0,01 $) ; vous revenez aux scènes, puis aux images"))
+
+            def appliquer():
+                t = d.corrections.toPlainText().strip()
+                if not t:
+                    return
+                self.seq["brouillon_vu"] = False          # les scènes changent : un nouveau brouillon sera proposé
+                self.libre.setText(_("Corrige les scènes pour éviter ces défauts vus sur le brouillon : {t}", t=t))
+                d.close()
+                self.dire()
+            ba.clicked.connect(appliquer)
+            hc.addWidget(ba)
+            hc.addStretch(1)
+            v.addLayout(hc)
+            d._br, d._ba = br, ba
         hb = QHBoxLayout()
         hb.addStretch(1)
         if self.pages.currentIndex() == P_IMAGES:
@@ -1106,7 +1189,7 @@ class DialogueAssistant(QDialog):
             b.clicked.connect(d.close)
             hb.addWidget(b)
         v.addLayout(hb)
-        d.resize(760, 560)
+        d.resize(760, 700 if defauts is not None else 560)
         d.finished.connect(ap.arreter)
         self._dlg_brouillon = d
         d.show()
@@ -1355,6 +1438,15 @@ class DialogueAssistant(QDialog):
                 self.analyser_musique()
             else:
                 self.genre = "video"
+                if self.seq.get("plans") and self.seq.get("mode") != "scenes" and self._cloud() and (
+                        getattr(self, "_test_redecouper", None) or (getattr(self, "_test_oui", None) is None and QMessageBox.question(
+                            self, _("Découpage en scènes"),
+                            _("Cette création est découpée geste par geste ({n} plans), l'ancienne méthode : les erreurs se "
+                              "propageaient d'un plan à l'autre. La redécouper en quelques scènes de 8 à 15 s ? Les personnages, "
+                              "leurs fiches et les lieux sont gardés ; les images et vidéos des anciens plans ne servent plus "
+                              "(environ 0,01 $).", n=len(self.seq["plans"]))) == QMessageBox.Yes)):
+                    self.redecouper()                 # 1.3.5
+                    return
                 if self.seq.get("plans") and self.seq.get("histoire") == self.c_histoire.texte() and \
                         getattr(self, "_lue_avec", None) == (self._suite(), self._niveau(), self._raccord()):
                     self.aller(P_QUI)              # 0.9.86 : rien n'a changé : on retrouve tout tel quel
@@ -1394,6 +1486,8 @@ class DialogueAssistant(QDialog):
                     self.seq["images_par"] = "gemini"
                     self.aller(P_PLANS)
                     self.preparer()
+                return
+            if self._brouillon_d_abord():            # 1.3.5 : un brouillon relu par l'IA avant le rendu cher
                 return
             for pl in self.seq["plans"]:
                 pl["images_ok"] = True
@@ -1507,6 +1601,17 @@ class DialogueAssistant(QDialog):
                               (analyse.get("remarques") or _("Vérifiez chaque carte, corrigez ce qui ne va pas, puis continuez.")))
         self._lancer(travail, _("L'assistant lit votre idée et regarde l'image") if image else _("L'assistant lit votre idée"), fin)
 
+    def redecouper(self):
+        """1.3.5 : une création découpée geste par geste est redécoupée en scènes ; personnages, fiches et lieux gardés."""
+        self._remplir_cartes()
+        self._remplir_plans()
+        self.aller(P_PLANS)
+        self.seq["brouillon_vu"] = False
+        self._garder_persos = (copy.deepcopy(self.seq["personnages"]), copy.deepcopy(self.seq.get("lieux") or []))
+        self.libre.setText(_("Redécoupe toute l'histoire en scènes, selon les règles, sans changer aucun personnage ni lieu "
+                             "(mêmes noms, mêmes descriptions, mot pour mot). L'histoire : {h}", h=self.c_histoire.texte()))
+        self.dire()
+
     # ------------------------------------------------------------------ écrire librement
     def dire(self):
         texte = self.libre.text().strip()
@@ -1533,6 +1638,14 @@ class DialogueAssistant(QDialog):
             if e or not r:
                 return
             self.seq, message = r
+            gardes = getattr(self, "_garder_persos", None)
+            self._garder_persos = None
+            if gardes and {p["nom"].lower() for p in gardes[0]} == {p["nom"].lower() for p in self.seq["personnages"]}:
+                # redécoupage : les personnages, leurs fiches payées et les lieux restent exactement ceux d'avant
+                par_nom = {p["nom"].lower(): p for p in gardes[0]}
+                self.seq["personnages"] = [par_nom[p["nom"].lower()] for p in self.seq["personnages"]]
+                if gardes[1]:
+                    self.seq["lieux"] = gardes[1]
             if self._cloud():
                 A.depenser(self.seq, _("Correction en clair"), A.PRIX_LECTURE)
             self.libre.clear()

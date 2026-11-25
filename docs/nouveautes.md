@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.4 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.5 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.5
+- Assistant video, nouvelle methode : des scenes, pas des gestes. L'histoire est decoupee en quelques scenes de 8 a 15 s, chacune jouee d'une traite ; les actions simultanees restent ensemble (plus de phrase coupee en deux plans).
+- Chaque scene part de sa propre image de depart, que vous validez ; plus d'image d'arrivee imposee ; une erreur ne se propage plus d'un plan au suivant.
+- References propres : les personnes en fiches ; l'avion, la voiture et le lieu viennent de l'image de depart (leur planche n'est plus recopiee par le moteur).
+- Brouillon avant de payer : toute la sequence en basse definition, relue par l'IA ; « Reprendre les corrections de l'IA », que vous modifiez, puis « Appliquer » ; le rendu cher ne part que quand le brouillon vous va.
+- Un vehicule qui s'en va a sa scene, sans personnage.
+- Une creation en cours faite avec l'ancienne methode : « 1. Votre idee » puis « Suivant » propose de la redecouper en scenes ; personnages, fiches et lieux gardes.
 
 ### 1.3.4
 - Video par fal.ai : une coupure ou une lenteur du reseau pendant l'attente ne fait plus echouer le plan (la video deja payee n'est plus perdue) ; PhilCut redemande l'etat puis le resultat.

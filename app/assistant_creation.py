@@ -18,6 +18,7 @@ from .langue import _
 PRIX_IMAGE = 0.04
 # 0.9.98 : le Réalisateur enchaîne tout par défaut ; les tests le coupent (PHILCUT_REALISATEUR=0), ainsi que la question de relecture
 REALISATEUR_DEFAUT = os.environ.get("PHILCUT_REALISATEUR", "1") == "1"
+MODE_SCENES = True             # 1.3.5 : False seulement dans les tests de l'ancien découpage geste par geste
 PRIX_LECTURE = 0.01            # une lecture par l'IA cloud (analyse, correction, vérification) : ordre de grandeur
 
 
@@ -33,7 +34,8 @@ A partir de l'histoire de l'utilisateur, rends un objet JSON :
 "description": "..."}}],
  "lieux": [{{"nom": "...", "sur_image": true si c'est le décor de l'image de départ, "description": "lumière, matières, détails"}}],
  "plans": [{{"action": "...", "personnages": ["nom", ...], "hors_champ": "où sont ceux qu'on ne voit plus, ou vide",
- "lieu": "nom du lieu ou vide", "duree": 4 à 10, "camera": "cadrage et mouvement : plan large, plan moyen, gros plan ; fixe,
+ "depart": "état de la scène à sa première image",
+ "lieu": "nom du lieu ou vide", "duree": 8 à 15, "camera": "cadrage et mouvement : plan large, plan moyen, gros plan ; fixe,
  recule, s'approche, accompagne…", "image_clef": true ou false, "pourquoi_clef": "si image_clef : en quelques mots, ce
  qu'elle doit fixer (« elles sont déjà dans la voiture »), sinon vide"}}],
  "remarques": "une phrase pour l'utilisateur, ou vide"}}
@@ -45,30 +47,41 @@ Règles impératives :
   description physique complète (âge, allure, vêtements).
 - Un objet important qui revient dans plusieurs plans (véhicule, accessoire) : genre = "objet", décrit précisément (couleur,
   forme), sans marque.
-- UNE SEULE action simple par plan, physiquement possible, 4 à 10 secondes ; découpe « puis », « pour que », « pendant
-  que » en plans séparés. Quand quelqu'un apparaît (un chauffeur), fais-le entrer dans un plan à lui avant qu'il agisse.
+- DES SCENES, PAS DES GESTES (1.3.5) : chaque « plan » est une SCENE entière de 8 à 15 secondes, filmée d'une traite
+  (« l'accueil », « la montée dans l'avion »). Son « action » raconte dans l'ordre ce qui s'y passe, en 2 à 4 phrases
+  courtes ; ce qui se passe EN MEME TEMPS reste dans la même scène et la même phrase (« Le pilote et l'hôtesse arrivent
+  côte à côte », « le pilote serre la main des deux femmes pendant que l'hôtesse sourit à côté »). Ne coupe JAMAIS une
+  phrase à deux sujets en deux plans. Une nouvelle scène seulement quand le moment change vraiment : nouveau lieu, saut
+  dans le temps, ou plus de 15 secondes. 3 à 6 scènes pour une histoire courte.
+- « depart » : l'état exact de la scène à sa PREMIERE image, avant toute action (qui est où, dans quelle posture, ce
+  qu'on voit du décor) : « Les deux femmes debout devant l'avion, porte ouverte, escalier sorti ; le pilote et
+  l'hôtesse à droite, à dix mètres ». Chaque scène repart d'une image neuve : écris « depart » pour qu'il prolonge la
+  fin de la scène d'avant.
+- Un véhicule qui s'en va (roule, décolle, démarre) a SA scène, sans aucun personnage visible (liste vide) : seulement
+  le véhicule et le décor.
 - Chaque plan liste seulement les personnages et objets qu'on y VOIT, par leur nom exact. Suis la continuité d'un plan à
   l'autre : quelqu'un qui monte dans un véhicule, entre dans un bâtiment ou sort du champ n'apparaît plus dans les plans
   suivants tant que l'histoire ne le fait pas ressortir ; dis où il est dans « hors_champ » (« les deux femmes sont dans la
   voiture »). Une liste vide = on ne voit aucun personnage (seulement le décor ou un objet).
-- Images clefs : la vidéo de chaque plan part de la vraie dernière image du plan précédent ; on n'impose une image de fin
-  (« image_clef »: true) qu'aux moments où la scène change vraiment (nouveau lieu, quelqu'un arrive ou s'en va, état très
-  différent à respecter) et au dernier plan. Ailleurs false : le moteur enchaîne librement les gestes.
+- « image_clef » : toujours false (chaque scène a son image de départ, validée par l'utilisateur ; le moteur joue la
+  scène librement jusqu'au bout).
 - Le cadrage suit l'action : plan large quand on se déplace d'un lieu à l'autre ou quand un véhicule doit tenir dans
   l'image, plus serré pour un geste ; dis-le dans « camera ».
 - Caméra : simple et stable (recule, accompagne de côté, fixe) ; jamais de dos quand les visages doivent rester
   reconnaissables.
 - Un lieu = un décor où se passent un ou plusieurs plans (l'escalier, la rue devant l'entrée…) ; au plus 4 lieux.
-- Chaque événement de l'histoire a son plan, dans l'ordre, jusqu'au DERNIER (un départ, un roulage, un décollage, une
-  porte qui se ferme comptent chacun) : relis l'histoire à la fin et ajoute ce qui manque. Au plus 14 plans ; s'il en faut
-  plus, regroupe deux gestes voisins, jamais en supprimant un événement. Ecris nom, description, action et caméra en {langue}.
+- Chaque événement de l'histoire est dans une scène, dans l'ordre, jusqu'au DERNIER (un départ, un roulage, un décollage,
+  une porte qui se ferme comptent chacun) : relis l'histoire à la fin et ajoute ce qui manque. Au plus 8 scènes. Ecris nom,
+  description, action, depart et caméra en {langue}.
 """
 
 CONSIGNE_MODIFIER = """Tu aides à préparer une séquence vidéo par IA. Voici son état (JSON) et une demande de l'utilisateur.
 Rends l'état modifié, au même format : {{"personnages": [...], "plans": [...], "message": "ce que tu as changé, en une
 phrase"}}. Ne change que ce qui est demandé ; garde mot pour mot les noms, descriptions et actions qui ne sont pas concernés.
-Mêmes règles : un personnage = une personne, une seule action simple par plan (4 à 10 s), chaque plan liste ses
-personnages, aucun nom de personne réelle. Ecris en {langue}."""
+Mêmes règles : un personnage = une personne ; chaque plan est une scène entière de 8 à 15 s (ce qui se passe dans
+l'ordre, les actions simultanées ensemble, jamais une phrase coupée en deux plans) avec « depart » (l'état de sa première
+image) ; un véhicule qui s'en va a sa scène sans personnage ; chaque plan liste ses personnages ; aucun nom de personne
+réelle. Ecris en {langue}."""
 
 CONSIGNE_VERIFIER = """Tu contrôles un plan vidéo fabriqué par une IA. Les {n} premières images sont les fiches de référence
 des personnages ({noms}). Les trois dernières sont le début, le milieu et la fin du plan fabriqué. Action demandée : « {action} ».
@@ -161,7 +174,8 @@ def lire_analyse(d):
             duree = Q.DUREE_PLAN
         noms = [n for n in (_texte(x, 40) for x in (pl.get("personnages") or []) if x) if n.lower() in vus]
         lieu = _texte(pl.get("lieu"), 40)
-        plans.append({"action": _texte(pl.get("action"), 300), "personnages": noms, "duree": max(3, min(15, duree)),
+        plans.append({"action": _texte(pl.get("action"), 700), "personnages": noms, "duree": max(3, min(15, duree)),
+                      "depart": _texte(pl.get("depart"), 400),
                       "camera": _texte(pl.get("camera"), 160), "lieu": lieu if lieu.lower() in vus_l else "",
                       "hors_champ": _texte(pl.get("hors_champ"), 200), "visibles_fixes": True,
                       "clef": bool(pl.get("image_clef")), "clef_pourquoi": _texte(pl.get("pourquoi_clef"), 160)})
@@ -504,10 +518,13 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
         for cle in ("hors_champ", "visibles_fixes"):
             if a.get(cle):
                 pl[cle] = a[cle]
+        pl["etat_depart"] = a.get("depart", "")     # 1.3.5 : l'état de la première image de la scène
         pl["clef"] = bool(a.get("clef"))            # 0.9.87 : image de fin imposée seulement aux images clefs
         pl["clef_pourquoi"] = a.get("clef_pourquoi", "")
         pl["sans_fin"] = not pl["clef"]
         vieux = vieux_plans.get(cle_plan(a))
+        if vieux and vieux.get("etat_depart", "") != pl["etat_depart"] and pl["etat_depart"]:
+            vieux = dict(vieux, image="", images_ok=False, fichier="", verdict=None)      # départ décrit autrement : image à refaire
         if vieux and precedent_change and vieux.get("enchainer", True):
             vieux = dict(vieux, image_fin="", images_ok=False, fichier="", verdict=None)    # son départ a changé : arrivée à refaire
         precedent_change = not vieux                # 0.9.86 : seul ce qui a changé (et le plan qui en part) est refait
@@ -520,6 +537,8 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
                 pl["fichier"], pl["verdict"] = "", None
         plans.append(pl)
     seq["personnages"], seq["plans"] = persos, plans
+    if MODE_SCENES:
+        seq["mode"] = "scenes"                       # 1.3.5 (choix de Philippe, 25/11 22h50) : des scènes, pas des gestes
     uniformiser(seq, image)
     return seq
 
@@ -528,7 +547,8 @@ def uniformiser(seq, image=None):
     """Les règles que l'utilisateur n'a plus à connaître : actions doubles coupées, premier plan parti de l'image du rush,
     plans enchaînés."""
     i = 0
-    while i < len(seq["plans"]) and len(seq["plans"]) < 12:
+    scenes = seq.get("mode") == "scenes"
+    while not scenes and i < len(seq["plans"]) and len(seq["plans"]) < 12:
         if Q.actions_multiples(seq["plans"][i].get("action", "")) and not seq["plans"][i].get("fichier"):
             avant = len(seq["plans"])
             Q.couper_plan(seq, i)
@@ -537,7 +557,9 @@ def uniformiser(seq, image=None):
         else:
             i += 1
     for k, pl in enumerate(seq["plans"]):
-        pl["enchainer"] = k > 0
+        pl["enchainer"] = k > 0 and not scenes       # une scène part de SON image de départ : une erreur ne se propage plus
+        if scenes and not pl.get("fin_reelle"):      # plus d'image d'arrivée imposée : le moteur joue la scène jusqu'au bout
+            pl["clef"], pl["sans_fin"] = False, True
         if pl.get("fin_reelle") and k < len(seq["plans"]) - 1:
             pl.pop("fin_reelle")
             pl["image_fin"], pl["clef"], pl["sans_fin"] = "", False, True
@@ -563,6 +585,7 @@ def etat(seq):
                       for x in seq.get("lieux") or []],
             "plans": [{"action": pl["action"], "personnages": pl.get("personnages") or [], "duree": pl.get("duree"),
                        "camera": pl.get("camera", ""), "lieu": pl.get("lieu", ""), "hors_champ": pl.get("hors_champ", ""),
+                       "depart": pl.get("etat_depart", ""),
                        "visibles_fixes": bool(pl.get("visibles_fixes"))} for pl in seq["plans"]]}
 
 
@@ -572,6 +595,8 @@ def modifier(params, seq, demande, niveau="claude", image=None):
     d = demander(params, CONSIGNE_MODIFIER.format(langue=_langue()),
                  "Etat :\n" + json.dumps(etat(seq), ensure_ascii=False) + "\n\nDemande : " + demande.strip(), [], niveau)
     r = lire_analyse(d)
+    if not r["lieux"]:
+        r.pop("lieux")                               # 1.3.5 : une réponse sans lieux ne les efface pas
     if not r["plans"]:
         raise ErreurAssistant(_("L'IA n'a pas su appliquer cette demande : dites-le autrement, ou corrigez dans le tableau."))
     nouveau = copy.deepcopy(seq)

@@ -28,6 +28,9 @@ REPONSE = {"personnages": [{"nom": "Lui", "genre": "personne", "sur_image": True
                       "image_clef": False}]}
 
 
+from app import assistant_creation as _A_scenes
+_A_scenes.MODE_SCENES = False          # ces tests portent sur l'ancien découpage geste par geste
+
 class TestLogique(unittest.TestCase):
     def test_clefs_et_raccord(self):
         from app import assistant_creation as A, sequence_ia as Q
