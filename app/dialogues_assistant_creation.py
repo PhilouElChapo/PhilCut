@@ -1845,6 +1845,7 @@ class DialogueAssistant(QDialog):
     def _basculer_clef(self, i, on):
         pl = self.seq["plans"][i]
         pl["clef"], pl["sans_fin"] = bool(on), not on
+        pl["clef_main"] = bool(on)                   # 1.3.6 : choisie par vous : une correction ou un redécoupage la garde
         pl["fichier"], pl["images_ok"] = "", False
         if not on:
             pl["image_fin"] = ""

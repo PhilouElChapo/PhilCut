@@ -103,6 +103,13 @@ class TestScenes(unittest.TestCase):
         self.assertEqual(B.texte_corrections(d), "Scène 1 : défaut 0\nScène 2 : défaut 1")
         self.assertFalse(s.get("defauts"))                           # la séquence elle-même n'est pas touchée
 
+    def test_image_clef_cochee_gardee(self):
+        s = self.seq
+        s["plans"][1].update(clef=True, sans_fin=False, clef_main=True, image_fin=self.img)
+        n = A.appliquer(s, A.lire_analyse(ANALYSE), self.img)
+        self.assertTrue(n["plans"][1]["clef"] and not n["plans"][1]["sans_fin"])
+        self.assertFalse(n["plans"][0]["clef"])
+
     def test_modifier_garde_les_lieux(self):
         s = self.seq
         anc = A.demander

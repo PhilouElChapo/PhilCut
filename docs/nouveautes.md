@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.5 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.6 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.6
+- Assistant video en scenes : une image clef que vous cochez a la main (« Image clef a la fin de ce plan ») reste gardee apres une correction ou un redecoupage.
 
 ### 1.3.5
 - Assistant video, nouvelle methode : des scenes, pas des gestes. L'histoire est decoupee en quelques scenes de 8 a 15 s, chacune jouee d'une traite ; les actions simultanees restent ensemble (plus de phrase coupee en deux plans).
