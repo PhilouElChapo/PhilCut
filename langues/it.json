@@ -9692,5 +9692,17 @@
  "Tristesse": "Tristezza",
  "3D cartoon": "Cartone animato 3D",
  "Plat vectoriel": "Vettoriale piatto",
- "Trait minimaliste": "Tratto minimalista"
+ "Trait minimaliste": "Tratto minimalista",
+ "236 composants du registre officiel HyperFrames (HeyGen, Apache 2.0) : textes, particules, transitions, compteurs… et 124 plans tout prêts de Video ShotCraft (Apache 2.0 : mouvements de caméra, ouvertures, transitions) ; l'IA choisit ceux qui servent et s'en inspire": "236 componenti del registro ufficiale HyperFrames (HeyGen, Apache 2.0): testi, particelle, transizioni, contatori… e 124 inquadrature pronte di Video ShotCraft (Apache 2.0: movimenti di camera, aperture, transizioni); l'IA sceglie quelle utili e se ne ispira",
+ "3D, physique et effets pixel": "3D, fisica ed effetti pixel",
+ "Vraie 3D (Three.js : objets, lumière, ombres, caméra), physique réelle (Rapier : ça tombe, rebondit, s'effondre), lueur, grain, flou, et 244 effets pixel art (pixelfx) ; gratuits, calculés sur ce poste ; l'IA s'en sert quand la description le demande": "Vero 3D (Three.js: oggetti, luce, ombre, camera), fisica reale (Rapier: le cose cadono, rimbalzano, crollano), bagliore, grana, sfocatura e 244 effetti pixel art (pixelfx); gratis, calcolati su questo computer; l'IA li usa quando la descrizione lo chiede",
+ "Effets pixel (gratuits) : {l}.": "Effetti pixel (gratis): {l}.",
+ "Plans tout prêts (Video ShotCraft) : {l}.": "Inquadrature pronte (Video ShotCraft): {l}.",
+ "Plan « {i} » (Video ShotCraft)…": "Inquadratura « {i} » (Video ShotCraft)…",
+ "plan « {i} » : {e}": "inquadratura « {i} »: {e}",
+ "« 3D, physique et effets pixel » (gratuits, sur ce poste) : quand la description le demande, l'IA construit une vraie scène 3D (objets arrondis, lumière, ombres, caméra qui tourne), avec une physique réelle (des cubes qui tombent, rebondissent, s'effondrent), de la lueur, du grain, du flou, ou pose des effets pixel art (feu, explosions, magie, météo…). « Blocs éprouvés » ajoute 124 plans tout prêts de Video ShotCraft (mouvements de caméra, ouvertures, transitions). La 3D et les effets pixel existent avec HyperFrames ; avec Remotion, les plans servent de recettes.": "« 3D, fisica ed effetti pixel » (gratis, su questo computer): quando la descrizione lo chiede, l'IA costruisce una vera scena 3D (oggetti arrotondati, luce, ombre, una camera che gira), con fisica reale (cubi che cadono, rimbalzano, crollano), bagliore, grana, sfocatura, oppure mette effetti pixel art (fuoco, esplosioni, magia, meteo…). « Blocchi collaudati » aggiunge 124 inquadrature pronte di Video ShotCraft (movimenti di camera, aperture, transizioni). 3D ed effetti pixel funzionano con HyperFrames; con Remotion, le inquadrature servono da ricette.",
+ "Cette animation est en 3D : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Questa animazione è in 3D: aggiornate il motore di animazione (Aiuto › Aggiornamenti delle IA).",
+ "Cette animation a des effets pixel : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Questa animazione ha effetti pixel: aggiornate il motore di animazione (Aiuto › Aggiornamenti delle IA).",
+ "Aucune image à mettre sur la planche.": "Nessuna immagine da mettere sul provino.",
+ "Plan inconnu : {n}": "Inquadratura sconosciuta: {n}"
 }

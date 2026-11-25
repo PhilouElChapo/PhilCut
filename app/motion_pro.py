@@ -85,6 +85,51 @@ def source_bloc(nom):
     return texte
 
 
+# ------------------------------------------------------------------ 1.3.1 : effets pixel (pixelfx) et plans (Video ShotCraft)
+SHOTCRAFT = "https://raw.githubusercontent.com/Vincentwei1021/video-shotcraft"
+MAX_PIXEL, MAX_PLANS = 4, 2
+
+
+def catalogue_pixel():
+    """Les 244 effets pixel art de pixelfx (catalogue/effets_pixel.json) : {id, nom, desc, taille, origine, duree, boucle}."""
+    from . import catalogue_ligne as CL
+    return [e for e in (CL.charger("effets_pixel.json").get("effets") or []) if isinstance(e, dict) and e.get("id")]
+
+
+def catalogue_plans():
+    """Les plans de Video ShotCraft (catalogue/plans_shotcraft.json) : {nom, famille, resume, usage, duree, carte, demo}."""
+    from . import catalogue_ligne as CL
+    c = CL.charger("plans_shotcraft.json")
+    return [dict(p, commit=c.get("commit", "main")) for p in (c.get("plans") or []) if isinstance(p, dict) and p.get("nom")]
+
+
+def source_plan(nom, avec_demo=False):
+    """La carte du plan (sa recette : intention, mouvement, réglages, pièges) et, pour Remotion, son code de démonstration ;
+    gardées sur ce poste après le premier téléchargement."""
+    p = next((x for x in catalogue_plans() if x["nom"] == nom), None)
+    if not p:
+        raise ValueError(_("Plan inconnu : {n}", n=nom))
+    morceaux = []
+    for chemin in [p["carte"]] + ([p["demo"]] if avec_demo and p.get("demo") else []):
+        if not re.fullmatch(r"[A-Za-z0-9_./-]{1,160}", chemin) or ".." in chemin:
+            continue
+        cache = os.path.join(_dossier_blocs(), "shotcraft_" + re.sub(r"[^A-Za-z0-9_.-]", "_", chemin))
+        if os.path.exists(cache):
+            with open(cache, encoding="utf-8") as f:
+                morceaux.append(f.read())
+            continue
+        texte = _lire_url(f"{SHOTCRAFT}/{p['commit']}/{chemin}")
+        with open(cache, "w", encoding="utf-8") as f:
+            f.write(texte)
+        morceaux.append(texte)
+    return "\n\n".join(morceaux)
+
+
+def pixel_dispo():
+    from .motion_html import pixelfx_dispo
+    return pixelfx_dispo()
+
+
 # ------------------------------------------------------------------ préproduction
 CONSIGNE_PREPARER = """You are the art director of a motion design studio. Read the user's description of an animation and prepare
 the production. Answer in JSON only:
@@ -97,11 +142,21 @@ the production. Answer in JSON only:
    style", "forme": "carre" | "large" | "haut"}; do not list texts, simple shapes, particles or backgrounds],
  "videos": [at most 2 realistic effects that code cannot draw well (fire, smoke, explosion, water, sparks, lightning…), filmed
    on a pure black background: {"id": "short_id", "en": "precise English description, black background, centered", "duree": 3 to 5}],
+ "effets_pixel": [ids of at most 4 PIXEL ART EFFECTS from the PIXEL list below, only if the user asks for pixel art, retro
+   game, 8-bit style, or a game-like effect (fire, explosion, magic, weather, pickup, critter, transition) that fits a pixel
+   look; [] otherwise],
+ "plans": [names of at most 2 SHOTS from the SHOTS list below (tuned motion recipes: camera moves, openings, UI entrances,
+   transitions, typography, data…) whose technique would really lift the animation; [] if none fits],
  "pourquoi": "one sentence in {langue}: what you chose and why"}
 Images allowed: {images}. Videos allowed: {videos}.
 
 LIBRARY (name: description [tags]):
-{catalogue}"""
+{catalogue}
+
+PIXEL (id (name)): {pixel}
+
+SHOTS (name [family]: summary, in Chinese):
+{plans}"""
 
 
 def _slug(t, defaut):
@@ -109,7 +164,7 @@ def _slug(t, defaut):
     return s or defaut
 
 
-def lire_preparation(d, noms_blocs, avec_images=True, avec_videos=True):
+def lire_preparation(d, noms_blocs, avec_images=True, avec_videos=True, noms_pixel=(), noms_plans=()):
     """La préproduction bornée : complexité 1-3, blocs connus, images et vidéos limitées (ids uniques)."""
     d = d if isinstance(d, dict) else {}
     try:
@@ -140,18 +195,26 @@ def lire_preparation(d, noms_blocs, avec_images=True, avec_videos=True):
         except (TypeError, ValueError):
             duree = 4
         videos.append({"id": i, "en": str(x["en"]).strip()[:400], "duree": duree})
+    pixel = list(dict.fromkeys(x for x in (d.get("effets_pixel") or []) if isinstance(x, str) and x in noms_pixel))[:MAX_PIXEL]
+    plans = list(dict.fromkeys(x for x in (d.get("plans") or []) if isinstance(x, str) and x in noms_plans))[:MAX_PLANS]
     return {"complexite": cx, "blocs": blocs, "images": images[:MAX_IMAGES], "videos": videos[:MAX_VIDEOS],
-            "pourquoi": str(d.get("pourquoi") or "").strip()[:400]}
+            "pixel": pixel, "plans": plans, "pourquoi": str(d.get("pourquoi") or "").strip()[:400]}
 
 
 def preparer(params, anim, avec_images=True, avec_videos=True):
     from . import ia
     from .motion import _langue_ui
-    blocs = catalogue() if anim.get("moteur_libre", "hyperframes") != "remotion" else []
+    hf = anim.get("moteur_libre", "hyperframes") != "remotion"
+    blocs = catalogue() if hf else []
+    pixel = catalogue_pixel() if hf and anim.get("avec_pixel", True) and pixel_dispo() else []
+    plans = catalogue_plans() if anim.get("avec_plans", True) else []
     consigne = (CONSIGNE_PREPARER.replace("{langue}", _langue_ui()).replace("{catalogue}", catalogue_texte(blocs) or "(none)")
-                .replace("{images}", "yes" if avec_images else "no").replace("{videos}", "yes" if avec_videos else "no"))
+                .replace("{images}", "yes" if avec_images else "no").replace("{videos}", "yes" if avec_videos else "no")
+                .replace("{pixel}", ", ".join(f"{e['id']} ({e.get('nom', '')})" for e in pixel) or "(none)")
+                .replace("{plans}", "\n".join(f"{p['nom']} [{p['famille']}]: {p.get('resume', '')[:70]}" for p in plans) or "(none)"))
     r = ia.demander(params, consigne, anim.get("description", ""), json_attendu=True, max_jetons=1500)
-    return lire_preparation(r, {b["nom"] for b in blocs}, avec_images, avec_videos)
+    return lire_preparation(r, {b["nom"] for b in blocs}, avec_images, avec_videos, {e["id"] for e in pixel},
+                            {p["nom"] for p in plans})
 
 
 def modele(params, complexite, choix="auto"):
@@ -173,7 +236,7 @@ def prix(prep, modele_id, params=None, tours=2):
     from . import generateurs_video as GV
     m = modele_video(params or {})
     pv = sum(GV.prix(m, v["duree"], False) for v in prep.get("videos") or []) if m else 0.0
-    ecrire = PRIX_ECRIRE.get(modele_id, 0.12) + 0.02 * len(prep.get("blocs") or [])
+    ecrire = PRIX_ECRIRE.get(modele_id, 0.12) + 0.02 * (len(prep.get("blocs") or []) + len(prep.get("plans") or []))
     relecture = tours * (0.03 + PRIX_ECRIRE.get(modele_id, 0.12) * 0.8)
     out = {"dessins": PRIX_IMAGE * len(prep.get("images") or []), "videos": pv, "ecrire": ecrire, "relecture": relecture}
     out["total"] = sum(out.values())
@@ -280,6 +343,26 @@ def consigne_ressources(lib, moteur="hyperframes"):
             "timing (adapt them into your single composition: your elements in #scenes, every tween on `tl` at absolute times, "
             "colours from C, sizes in u; drop their demo card, titles and sample texts):\n" +
             "\n\n".join(f"--- {k} ---\n{v[:MAX_SOURCE_BLOC]}" for k, v in blocs.items()))
+    pixel = res.get("pixel") or {}
+    if pixel and moteur != "remotion":
+        morceaux.append(
+            "PIXEL ART EFFECTS (pixelfx, MIT), already loaded as the global PFX. Each one is a crisp pixel-art animation drawn by "
+            "code at the exact frame: PFX.effect(id, {x, y (frame pixels where the effect's ORIGIN goes — for fires, explosions "
+            "and critters on the ground it is the ground point under it), scale (size of one art pixel in frame pixels: 3 to 8; "
+            "the effect's size below × scale), start (seconds), duration (loops play until the end unless given; one-shots last "
+            "their own duration), flip (true faces left), seed, palette: [hex colours dark to light] to recolour}). Call it once "
+            "at build time; no tween needed. It sits above #scenes content (z 2) and can be used several times.\n" +
+            "\n".join(f"- {k}: {v.get('desc', '')} Size {v.get('taille')} px, origin {v.get('origine')}, "
+                      f"{'loop' if v.get('boucle') else 'one-shot'} {v.get('duree', 1):g} s." for k, v in pixel.items()))
+    plans = res.get("plans") or {}
+    if plans:
+        morceaux.append(
+            "PROVEN SHOT RECIPES from Video ShotCraft (Apache-2.0, cards written in Chinese): reuse their intention, timing, "
+            "easing values, camera logic and the pitfalls they list, translated into your own code"
+            + (" (their demo code imports helpers you do not have: rewrite what you need with the allowed imports only)"
+               if moteur == "remotion" else " (their demos are React; rebuild the technique with CSS 3D, SVG and tl)")
+            + ". Replace their placeholder product, texts and brand with the user's content:\n" +
+            "\n\n".join(f"--- {k} ---\n{v[:MAX_SOURCE_BLOC]}" for k, v in plans.items()))
     return ("\n\n" + "\n\n".join(morceaux)) if morceaux else ""
 
 

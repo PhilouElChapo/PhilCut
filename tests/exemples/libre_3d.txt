@@ -1,0 +1,50 @@
+===TITRE===
+Le personnage en cubes
+===DUREE===
+7
+===PLAN===
+0-2.2 s: des petits cubes tombent du ciel et forment un personnage carré
+2.2-4 s: ses yeux s'allument, la caméra tourne doucement autour de lui
+4-4.6 s: le titre « Motion 3D » apparaît au-dessus
+4.6-7 s: le personnage s'effondre en cubes qui rebondissent sur le sol
+===SONS===
+0.4 s: pop
+2.3 s: ding
+4.0 s: whoosh
+4.7 s: boum
+===CSS===
+.titre { position: absolute; left: 0; right: 0; text-align: center; font-family: var(--titre); font-weight: 800; color: #fff;
+  text-shadow: 0 0 30px rgba(255, 160, 90, 0.9); }
+===HTML===
+===JS===
+const S = P3.scene({ background: TRANSPARENT ? undefined : "#1a1430", camera: { pos: [0, 3.2, 12], look: [0, 1.6, 0], fov: 32 },
+  light: "studio", bloom: 0.55, grain: 0.25, vignette: 0.35 });
+S.floor({ color: "#2a2147", shadowOnly: TRANSPARENT });
+const al = P3.rng("personnage");
+const teintes = [C.accent, "#ff9a5c", "#ffb27a"];
+const cubes = [];
+for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) for (let z = 0; z < 2; z++) {
+  if ((y === 0 || y === 1) && (x === 2)) continue;              // l'écart entre les jambes
+  const pos = [x * 0.52 - 1.04, 0.26 + y * 0.52, z * 0.52 - 0.26];
+  const c = S.box({ size: 0.5, radius: 0.07, color: teintes[Math.floor(al() * 3)], material: "plastic", pos });
+  const t0 = 0.15 + (y * 5 + x) * 0.04 + z * 0.05;
+  S.key(c, t0, { pos: [pos[0] + (al() - 0.5) * 3, pos[1] + 7, pos[2] + (al() - 0.5) * 2], rot: [al() * 180, al() * 180, 0], scale: 0.2 });
+  S.key(c, t0 + 0.7, { pos, rot: [0, 0, 0], scale: 1 }, "back.out");
+  S.body(c, { restitution: 0.4, friction: 0.5, impulse: { t: 4.62, v: [(al() - 0.5) * 3, 2 + al() * 3, (al() - 0.5) * 3] } });
+  cubes.push(c);
+}
+S.physics({ start: 4.6, end: 7 });
+const yeux = [-0.55, 0.55].map((x) => S.box({ size: [0.32, 0.32, 0.05], color: "#ffffff", material: "glow", pos: [x, 2.0, 0.53], opacity: 0 }));
+yeux.forEach((e) => { S.key(e, 2.2, { opacity: 0, scale: 0.3 }); S.key(e, 2.5, { opacity: 1, scale: 1 }, "back.out"); S.key(e, 4.5, { opacity: 1 }); S.key(e, 4.7, { opacity: 0 }); });
+S.particles({ count: 500, area: [18, 9, 10], center: [0, 4, -2], color: "#ffd9b0", size: 0.035, drift: [0.15, 0.05, 0] });
+S.cameraKey(0, { pos: [0, 3.2, 12] });
+S.cameraKey(2.2, { pos: [0, 3.2, 11] }, "sine.inOut");
+S.cameraKey(4.4, { pos: [5.5, 3.6, 9.5] }, "sine.inOut");
+S.cameraKey(7, { pos: [6.5, 5, 10] }, "sine.inOut");
+const titre = $("div", { top: 120 * u, fontSize: 110 * u }, null, "Motion 3D");
+titre.className = "titre";
+titre.style.setProperty("--titre", F.titre);
+tl.fromTo(titre, { opacity: 0, y: -40 * u, scale: 0.9 }, { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "back.out(2)" }, 4.0);
+tl.to(titre, { opacity: 0, duration: 0.4 }, 6.5);
+===MESSAGE===
+Un personnage en cubes qui se forme, s'allume puis s'effondre en vraie physique.

@@ -1,0 +1,17 @@
+{
+  "name": "philcut3d",
+  "version": "1.0.0",
+  "private": true,
+  "description": "3D (Three.js), physique (Rapier) et effets pour les animations HyperFrames de PhilCut, en un seul fichier",
+  "license": "MIT",
+  "scripts": {
+    "build": "esbuild index.js --bundle --format=iife --minify --target=es2020 --global-name=P3 --outfile=dist/three-philcut.js --banner:js=\"/* PhilCut 3D (MIT) : Three.js (MIT, mrdoob et les contributeurs), Rapier (Apache-2.0, Dimforge EURL) */\""
+  },
+  "dependencies": {
+    "@dimforge/rapier3d-compat": "0.21.0",
+    "three": "0.187.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

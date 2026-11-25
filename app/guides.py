@@ -239,7 +239,7 @@ def _guides_integres():
          ]},
         {"id": "animation_libre", "etat": "ok",
          "titre": _("Motion design IA (look pro) : décrire une animation, l'IA la construit"),
-         "mots": "animation libre decrire phrase motion design hyperframes remotion react ia claude reduire plan bruitage son musique caler cadeau feu artifice confettis graphique compteur look pro dessins gemini effets video explosion feu fumee blocs bibliotheque relecture opus sonnet",
+         "mots": "animation libre decrire phrase motion design hyperframes remotion react ia claude reduire plan bruitage son musique caler cadeau feu artifice confettis graphique compteur look pro dessins gemini effets video explosion feu fumee blocs bibliotheque relecture opus sonnet 3d three physique cubes lueur grain pixel art retro shotcraft camera",
          "intro": _("Pour tout ce que les types tout faits ne savent pas faire : vous décrivez, l'IA écrit la composition, vous "
                     "regardez et demandez des changements."),
          "etapes": [
@@ -251,6 +251,12 @@ def _guides_integres():
                          "HyperFrames, relectures (l'IA regarde son aperçu et corrige ce qui ne se voit pas) et modèle qui écrit "
                          "(selon la complexité : Sonnet, ou Opus pour une animation riche). L'IA prépare d'abord, puis montre le "
                          "détail des coûts avant de fabriquer.")},
+             {"texte": _("« 3D, physique et effets pixel » (gratuits, sur ce poste) : quand la description le demande, l'IA "
+                         "construit une vraie scène 3D (objets arrondis, lumière, ombres, caméra qui tourne), avec une physique "
+                         "réelle (des cubes qui tombent, rebondissent, s'effondrent), de la lueur, du grain, du flou, ou pose des "
+                         "effets pixel art (feu, explosions, magie, météo…). « Blocs éprouvés » ajoute 124 plans tout prêts de "
+                         "Video ShotCraft (mouvements de caméra, ouvertures, transitions). La 3D et les effets pixel existent avec "
+                         "HyperFrames ; avec Remotion, les plans servent de recettes.")},
              {"texte": _("« Ecrite pour » : HyperFrames (libre, aussi rendu chez HeyGen) ou Remotion (gratuit pour un particulier, "
                          "3 personnes au plus ou une association : cochez la case de licence). Le choix d'office se règle dans "
                          "Préférences › Assistant et IA ; changer en cours fait réécrire l'animation par « Changer ».")},

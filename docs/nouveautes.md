@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.1
+- Motion design IA « look pro » : nouvelle case « 3D, physique et effets pixel ». Quand la description le demande, l'IA construit une vraie scene 3D (Three.js : objets arrondis, lumiere, ombres, camera qui tourne), avec une physique reelle (Rapier : des cubes qui tombent, rebondissent, s'effondrent), de la lueur, du grain, du flou ; ou elle pose des effets pixel art (244 effets pixelfx : feu, explosions, magie, meteo, bestioles…). Gratuit, calcule sur ce poste (mise a jour du moteur d'animation).
+- « Blocs eprouves » propose aussi 124 plans tout prets de Video ShotCraft (mouvements de camera, ouvertures, entrees d'interface, transitions) : l'IA reprend leur technique avec votre contenu.
+- Relectures : l'IA regarde une planche de controle (toutes les etapes d'un coup d'oeil) au lieu d'images separees, moins cher.
+- Calage sur la musique : l'IA recoit toute la grille des temps, pas seulement les temps forts.
 
 ### 1.3.0
 - Personnage anime (pantin) : Fabrique IA › Animation › « Personnage anime (pantin) : il bouge, il parle… ». Le personnage est cree par l'IA, ou d'apres une photo (personne d'accord, case a cocher), dans le style choisi (environ 0,09 $). PhilCut le decoupe en pieces qui tournent autour des articulations ; le squelette se corrige a la souris.

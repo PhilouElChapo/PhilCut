@@ -23,6 +23,14 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T129 — 1.3.1 : motion design en 3D, physique, effets pixel
+
+1. Aide › « Mises à jour des IA » : mettez à jour le moteur « Animations HyperFrames et Remotion ».
+2. Motion design IA (look pro), HyperFrames, case « 3D, physique et effets pixel » cochée : « un personnage fait de petits cubes orange se forme, ses yeux s'allument, la caméra tourne autour, puis il s'effondre en cubes qui rebondissent ». La 3D est-elle belle (ombres, lueur, grain) ? Les cubes tombent-ils de façon réaliste ?
+3. Même chose avec « un feu de camp en pixel art, un feu d'artifice éclate au-dessus, style jeu rétro » : les effets pixel sont-ils nets ?
+4. Le message de préparation liste-t-il « Plans tout prêts (Video ShotCraft) » quand c'est utile (ex. « ouverture façon présentation produit, la caméra plonge sur une carte ») ?
+5. Avec une musique sous la ligne rouge et « Caler sur la musique » : les événements tombent-ils sur les temps ?
+
 ## T128 — 1.3.0 : personnage animé (pantin)
 
 1. Aide › « Mises à jour des IA » › « Sur ce poste » : installez « Bouches des personnages animés » (Rhubarb, gratuit).

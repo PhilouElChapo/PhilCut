@@ -1,0 +1,16 @@
+{
+  "name": "pixelfx-philcut",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Les effets pixel art de pixelfx (MIT) pour les animations HyperFrames de PhilCut, en un seul fichier",
+  "license": "MIT",
+  "scripts": {
+    "build": "esbuild index.js --bundle --format=iife --global-name=PFX --minify --target=es2020 --outfile=dist/pixelfx-philcut.js --banner:js=\"/* pixelfx (MIT, Patch) ; Sprite Fusion VFX (MIT, Hugo Duprez) ; Hollow Crown (MIT, rehan-remade) ; adaptation PhilCut (MIT) */\""
+  },
+  "dependencies": {
+    "pixelfx": "github:patch-gg/pixelfx#5294518ce7c72e48b6100a744596e0acf57f2826"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

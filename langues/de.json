@@ -9692,5 +9692,17 @@
  "Tristesse": "Traurigkeit",
  "3D cartoon": "3D-Cartoon",
  "Plat vectoriel": "Flache Vektorgrafik",
- "Trait minimaliste": "Minimalistische Linie"
+ "Trait minimaliste": "Minimalistische Linie",
+ "236 composants du registre officiel HyperFrames (HeyGen, Apache 2.0) : textes, particules, transitions, compteurs… et 124 plans tout prêts de Video ShotCraft (Apache 2.0 : mouvements de caméra, ouvertures, transitions) ; l'IA choisit ceux qui servent et s'en inspire": "236 Komponenten aus dem offiziellen HyperFrames-Register (HeyGen, Apache 2.0): Texte, Partikel, Übergänge, Zähler… und 124 fertige Einstellungen von Video ShotCraft (Apache 2.0: Kamerafahrten, Eröffnungen, Übergänge); die KI wählt die nützlichen aus und lässt sich davon leiten",
+ "3D, physique et effets pixel": "3D, Physik und Pixeleffekte",
+ "Vraie 3D (Three.js : objets, lumière, ombres, caméra), physique réelle (Rapier : ça tombe, rebondit, s'effondre), lueur, grain, flou, et 244 effets pixel art (pixelfx) ; gratuits, calculés sur ce poste ; l'IA s'en sert quand la description le demande": "Echtes 3D (Three.js: Objekte, Licht, Schatten, Kamera), echte Physik (Rapier: Dinge fallen, prallen ab, stürzen ein), Leuchten, Körnung, Unschärfe und 244 Pixel-Art-Effekte (pixelfx); kostenlos, auf diesem Rechner berechnet; die KI nutzt sie, wenn die Beschreibung es verlangt",
+ "Effets pixel (gratuits) : {l}.": "Pixeleffekte (kostenlos): {l}.",
+ "Plans tout prêts (Video ShotCraft) : {l}.": "Fertige Einstellungen (Video ShotCraft): {l}.",
+ "Plan « {i} » (Video ShotCraft)…": "Einstellung « {i} » (Video ShotCraft)…",
+ "plan « {i} » : {e}": "Einstellung « {i} »: {e}",
+ "« 3D, physique et effets pixel » (gratuits, sur ce poste) : quand la description le demande, l'IA construit une vraie scène 3D (objets arrondis, lumière, ombres, caméra qui tourne), avec une physique réelle (des cubes qui tombent, rebondissent, s'effondrent), de la lueur, du grain, du flou, ou pose des effets pixel art (feu, explosions, magie, météo…). « Blocs éprouvés » ajoute 124 plans tout prêts de Video ShotCraft (mouvements de caméra, ouvertures, transitions). La 3D et les effets pixel existent avec HyperFrames ; avec Remotion, les plans servent de recettes.": "« 3D, Physik und Pixeleffekte » (kostenlos, auf diesem Rechner): wenn die Beschreibung es verlangt, baut die KI eine echte 3D-Szene (abgerundete Objekte, Licht, Schatten, eine sich drehende Kamera) mit echter Physik (Würfel, die fallen, abprallen, einstürzen), Leuchten, Körnung, Unschärfe, oder setzt Pixel-Art-Effekte (Feuer, Explosionen, Magie, Wetter…). « Bewährte Blöcke » fügt 124 fertige Einstellungen von Video ShotCraft hinzu (Kamerafahrten, Eröffnungen, Übergänge). 3D und Pixeleffekte gibt es mit HyperFrames; mit Remotion dienen die Einstellungen als Rezepte.",
+ "Cette animation est en 3D : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Diese Animation ist in 3D: aktualisieren Sie die Animations-Engine (Hilfe › KI-Aktualisierungen).",
+ "Cette animation a des effets pixel : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Diese Animation hat Pixeleffekte: aktualisieren Sie die Animations-Engine (Hilfe › KI-Aktualisierungen).",
+ "Aucune image à mettre sur la planche.": "Kein Bild für die Kontakttafel.",
+ "Plan inconnu : {n}": "Unbekannte Einstellung: {n}"
 }

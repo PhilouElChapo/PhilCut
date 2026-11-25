@@ -44,6 +44,32 @@ def navigateur():
     return ""
 
 
+def three_local():
+    """1.3.1 : la 3D de PhilCut (three-philcut.js : Three.js, Rapier, effets), livrée avec le moteur « motion »."""
+    p = os.environ.get("PHILCUT_THREE_JS") or os.path.join(dossier_moteur(), "philcut3d", "three-philcut.js")
+    return p if os.path.exists(p) else ""
+
+
+def three_dispo():
+    try:
+        return bool(three_local())
+    except Exception:      # noqa: BLE001
+        return False
+
+
+def pixelfx_local():
+    """1.3.1 : les effets pixel art (pixelfx-philcut.js), livrés avec le moteur « motion »."""
+    p = os.environ.get("PHILCUT_PIXELFX_JS") or os.path.join(dossier_moteur(), "pixelfx", "pixelfx-philcut.js")
+    return p if os.path.exists(p) else ""
+
+
+def pixelfx_dispo():
+    try:
+        return bool(pixelfx_local())
+    except Exception:      # noqa: BLE001
+        return False
+
+
 def gsap_local():
     f = os.path.join(dossier_moteur(), "app", "node_modules", "gsap", "dist", "gsap.min.js")
     return f if os.path.exists(f) else ""
@@ -700,6 +726,16 @@ def preparer_projet(anim, dossier, gsap_en_ligne=False):
         anim = dict(anim, _html_image="assets/" + nom, _html_ratio=_ratio(anim["image"]))
     anim = dict(anim, _html_calques=_copier_calques(anim, os.path.join(dossier, "assets"), "assets/"))
     anim = _ressources_libres(anim, dossier)
+    from .motion_libre import utilise_3d
+    if utilise_3d(anim):
+        if not three_local():
+            raise ErreurMotion(_("Cette animation est en 3D : mettez à jour le moteur d'animation (Aide › Mises à jour des IA)."))
+        shutil.copy2(three_local(), os.path.join(dossier, "assets", "three-philcut.js"))
+    from .motion_libre import utilise_pixel
+    if utilise_pixel(anim):
+        if not pixelfx_local():
+            raise ErreurMotion(_("Cette animation a des effets pixel : mettez à jour le moteur d'animation (Aide › Mises à jour des IA)."))
+        shutil.copy2(pixelfx_local(), os.path.join(dossier, "assets", "pixelfx-philcut.js"))
     with open(os.path.join(dossier, "index.html"), "w", encoding="utf-8") as f:
         f.write(composition(anim, gsap, polices, logo))
     json.dump({"id": "philcut", "name": anim.get("titre") or "PhilCut"}, open(os.path.join(dossier, "meta.json"), "w", encoding="utf-8"))

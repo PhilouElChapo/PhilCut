@@ -111,7 +111,7 @@ class TestSons(unittest.TestCase):
         self.assertIn("===SONS===", ML._code(a))
         a["musique"] = {"forts": [0.5, 2.5, 4.5, 6.5], "bpm": 120}
         c = ML.consigne(a)
-        self.assertIn("strong beats fall at these seconds of the animation: 0.5, 2.5, 4.5, 6.5", c)
+        self.assertIn("fall at these seconds of the animation: 0.5, 2.5, 4.5, 6.5", c)
         self.assertIn("machine (typewriter", c)
         self.assertNotIn("strong beats fall", ML.consigne(ML.fiche("x")))
 
@@ -206,8 +206,11 @@ class Test1118(unittest.TestCase):
             r = ML.verifier_etapes({}, a, v)
         finally:
             ia.demander = anc
-        self.assertEqual(len(recu["i"]), 3)
+        self.assertEqual(len(recu["i"]), 1)                  # 1.3.1 : une seule planche de contrôle (3 cases)
         self.assertTrue(all(isinstance(x, bytes) for x in recu["i"]))
+        from PySide6.QtGui import QImage
+        q = QImage.fromData(recu["i"][0])
+        self.assertGreater(q.width(), 2 * 320)                 # deux colonnes de 320 px
         self.assertEqual([x["n"] for x in r if not x["vue"]], [3])
         self.assertIn("4-6 s: ouragan", recu["t"])
 

@@ -9701,5 +9701,17 @@
  "Tristesse": "Sadness",
  "3D cartoon": "3D cartoon",
  "Plat vectoriel": "Flat vector",
- "Trait minimaliste": "Minimalist line"
+ "Trait minimaliste": "Minimalist line",
+ "236 composants du registre officiel HyperFrames (HeyGen, Apache 2.0) : textes, particules, transitions, compteurs… et 124 plans tout prêts de Video ShotCraft (Apache 2.0 : mouvements de caméra, ouvertures, transitions) ; l'IA choisit ceux qui servent et s'en inspire": "236 components from the official HyperFrames registry (HeyGen, Apache 2.0): texts, particles, transitions, counters… and 124 ready-made shots from Video ShotCraft (Apache 2.0: camera moves, openings, transitions); the AI picks the useful ones and draws on them",
+ "3D, physique et effets pixel": "3D, physics and pixel effects",
+ "Vraie 3D (Three.js : objets, lumière, ombres, caméra), physique réelle (Rapier : ça tombe, rebondit, s'effondre), lueur, grain, flou, et 244 effets pixel art (pixelfx) ; gratuits, calculés sur ce poste ; l'IA s'en sert quand la description le demande": "Real 3D (Three.js: objects, light, shadows, camera), real physics (Rapier: things fall, bounce, collapse), glow, grain, blur, and 244 pixel art effects (pixelfx); free, computed on this computer; the AI uses them when the description asks for it",
+ "Effets pixel (gratuits) : {l}.": "Pixel effects (free): {l}.",
+ "Plans tout prêts (Video ShotCraft) : {l}.": "Ready-made shots (Video ShotCraft): {l}.",
+ "Plan « {i} » (Video ShotCraft)…": "Shot « {i} » (Video ShotCraft)…",
+ "plan « {i} » : {e}": "shot « {i} »: {e}",
+ "« 3D, physique et effets pixel » (gratuits, sur ce poste) : quand la description le demande, l'IA construit une vraie scène 3D (objets arrondis, lumière, ombres, caméra qui tourne), avec une physique réelle (des cubes qui tombent, rebondissent, s'effondrent), de la lueur, du grain, du flou, ou pose des effets pixel art (feu, explosions, magie, météo…). « Blocs éprouvés » ajoute 124 plans tout prêts de Video ShotCraft (mouvements de caméra, ouvertures, transitions). La 3D et les effets pixel existent avec HyperFrames ; avec Remotion, les plans servent de recettes.": "« 3D, physics and pixel effects » (free, on this computer): when the description asks for it, the AI builds a real 3D scene (rounded objects, light, shadows, a camera that turns), with real physics (cubes that fall, bounce, collapse), glow, grain, blur, or places pixel art effects (fire, explosions, magic, weather…). « Proven blocks » adds 124 ready-made shots from Video ShotCraft (camera moves, openings, transitions). 3D and pixel effects work with HyperFrames; with Remotion, the shots serve as recipes.",
+ "Cette animation est en 3D : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "This animation is in 3D: update the animation engine (Help › AI updates).",
+ "Cette animation a des effets pixel : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "This animation has pixel effects: update the animation engine (Help › AI updates).",
+ "Aucune image à mettre sur la planche.": "No image to put on the sheet.",
+ "Plan inconnu : {n}": "Unknown shot: {n}"
 }

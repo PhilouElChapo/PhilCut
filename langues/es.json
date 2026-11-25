@@ -9692,5 +9692,17 @@
  "Tristesse": "Tristeza",
  "3D cartoon": "Dibujo animado 3D",
  "Plat vectoriel": "Vectorial plano",
- "Trait minimaliste": "Trazo minimalista"
+ "Trait minimaliste": "Trazo minimalista",
+ "236 composants du registre officiel HyperFrames (HeyGen, Apache 2.0) : textes, particules, transitions, compteurs… et 124 plans tout prêts de Video ShotCraft (Apache 2.0 : mouvements de caméra, ouvertures, transitions) ; l'IA choisit ceux qui servent et s'en inspire": "236 componentes del registro oficial de HyperFrames (HeyGen, Apache 2.0): textos, partículas, transiciones, contadores… y 124 planos listos de Video ShotCraft (Apache 2.0: movimientos de cámara, aperturas, transiciones); la IA elige los útiles y se inspira en ellos",
+ "3D, physique et effets pixel": "3D, física y efectos píxel",
+ "Vraie 3D (Three.js : objets, lumière, ombres, caméra), physique réelle (Rapier : ça tombe, rebondit, s'effondre), lueur, grain, flou, et 244 effets pixel art (pixelfx) ; gratuits, calculés sur ce poste ; l'IA s'en sert quand la description le demande": "3D real (Three.js: objetos, luz, sombras, cámara), física real (Rapier: las cosas caen, rebotan, se derrumban), brillo, grano, desenfoque y 244 efectos pixel art (pixelfx); gratis, calculados en este equipo; la IA los usa cuando la descripción lo pide",
+ "Effets pixel (gratuits) : {l}.": "Efectos píxel (gratis): {l}.",
+ "Plans tout prêts (Video ShotCraft) : {l}.": "Planos listos (Video ShotCraft): {l}.",
+ "Plan « {i} » (Video ShotCraft)…": "Plano « {i} » (Video ShotCraft)…",
+ "plan « {i} » : {e}": "plano « {i} »: {e}",
+ "« 3D, physique et effets pixel » (gratuits, sur ce poste) : quand la description le demande, l'IA construit une vraie scène 3D (objets arrondis, lumière, ombres, caméra qui tourne), avec une physique réelle (des cubes qui tombent, rebondissent, s'effondrent), de la lueur, du grain, du flou, ou pose des effets pixel art (feu, explosions, magie, météo…). « Blocs éprouvés » ajoute 124 plans tout prêts de Video ShotCraft (mouvements de caméra, ouvertures, transitions). La 3D et les effets pixel existent avec HyperFrames ; avec Remotion, les plans servent de recettes.": "« 3D, física y efectos píxel » (gratis, en este equipo): cuando la descripción lo pide, la IA construye una escena 3D real (objetos redondeados, luz, sombras, una cámara que gira), con física real (cubos que caen, rebotan, se derrumban), brillo, grano, desenfoque, o coloca efectos pixel art (fuego, explosiones, magia, clima…). « Bloques probados » añade 124 planos listos de Video ShotCraft (movimientos de cámara, aperturas, transiciones). La 3D y los efectos píxel funcionan con HyperFrames; con Remotion, los planos sirven de recetas.",
+ "Cette animation est en 3D : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Esta animación es en 3D: actualice el motor de animación (Ayuda › Actualizaciones de las IA).",
+ "Cette animation a des effets pixel : mettez à jour le moteur d'animation (Aide › Mises à jour des IA).": "Esta animación tiene efectos píxel: actualice el motor de animación (Ayuda › Actualizaciones de las IA).",
+ "Aucune image à mettre sur la planche.": "Ninguna imagen para la hoja de contactos.",
+ "Plan inconnu : {n}": "Plano desconocido: {n}"
 }

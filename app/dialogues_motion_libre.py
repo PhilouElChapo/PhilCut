@@ -235,8 +235,14 @@ class DialogueMotionLibre(QDialog):
         self.pro_videos.setChecked(bool(p.get("motion_pro_videos", True)))
         self.pro_blocs = QCheckBox(_("Blocs éprouvés (HyperFrames)"))
         self.pro_blocs.setToolTip(_("236 composants du registre officiel HyperFrames (HeyGen, Apache 2.0) : textes, particules, "
-                                    "transitions, compteurs… l'IA choisit ceux qui servent et s'en inspire"))
+                                    "transitions, compteurs… et 124 plans tout prêts de Video ShotCraft (Apache 2.0 : mouvements "
+                                    "de caméra, ouvertures, transitions) ; l'IA choisit ceux qui servent et s'en inspire"))
         self.pro_blocs.setChecked(bool(p.get("motion_pro_blocs", True)))
+        self.pro_3d = QCheckBox(_("3D, physique et effets pixel"))         # 1.3.1
+        self.pro_3d.setToolTip(_("Vraie 3D (Three.js : objets, lumière, ombres, caméra), physique réelle (Rapier : ça tombe, "
+                                 "rebondit, s'effondre), lueur, grain, flou, et 244 effets pixel art (pixelfx) ; gratuits, "
+                                 "calculés sur ce poste ; l'IA s'en sert quand la description le demande"))
+        self.pro_3d.setChecked(bool(p.get("motion_pro_3d", True)))
         gl.addWidget(self.pro_dessins, 0, 0)
         gl.addWidget(self.pro_videos, 0, 1)
         gl.addWidget(self.pro_blocs, 1, 0)
@@ -258,8 +264,9 @@ class DialogueMotionLibre(QDialog):
         self.pro_modele.setCurrentIndex(max(0, self.pro_modele.findData(p.get("motion_pro_modele") or "auto")))
         hm.addWidget(self.pro_modele, 1)
         gl.addLayout(hm, 2, 0, 1, 2)
+        gl.addWidget(self.pro_3d, 3, 0, 1, 2)
         for w, cle in ((self.pro_dessins, "motion_pro_dessins"), (self.pro_videos, "motion_pro_videos"),
-                       (self.pro_blocs, "motion_pro_blocs")):
+                       (self.pro_blocs, "motion_pro_blocs"), (self.pro_3d, "motion_pro_3d")):
             w.toggled.connect(lambda v, c=cle: self.params.__setitem__(c, bool(v)))
         self.pro_tours.valueChanged.connect(lambda v: self.params.__setitem__("motion_pro_tours", int(v)))
         self.pro_modele.currentIndexChanged.connect(lambda _i: self.params.__setitem__("motion_pro_modele",
@@ -267,7 +274,7 @@ class DialogueMotionLibre(QDialog):
         return g
 
     def _pro_actif(self):
-        return any(w.isChecked() for w in (self.pro_dessins, self.pro_videos, self.pro_blocs)) or self.pro_tours.value() > 0 \
+        return any(w.isChecked() for w in (self.pro_dessins, self.pro_videos, self.pro_blocs, self.pro_3d)) or self.pro_tours.value() > 0 \
             or self.pro_modele.currentData() != "rapide"
 
     # ------------------------------------------------------------------ état
@@ -485,8 +492,9 @@ class DialogueMotionLibre(QDialog):
         rel = [round(t - t0, 2) for t in forts if t0 <= t <= t0 + ML.DUREE_MAX]
         ecarts = [b - x for x, b in zip(temps, temps[1:])]
         bpm = round(60 / (sum(ecarts) / len(ecarts)), 1) if ecarts else 0
+        tous = [round(t - t0, 2) for t in temps if t0 <= t <= t0 + ML.DUREE_MAX]      # 1.3.1 : toute la grille des temps
         if len(rel) >= 2:
-            a["musique"], a["pose"] = {"forts": rel, "bpm": bpm}, t0
+            a["musique"], a["pose"] = {"forts": rel, "temps": tous, "bpm": bpm}, t0
         return a
 
     def verifier_etapes(self):
@@ -554,9 +562,13 @@ class DialogueMotionLibre(QDialog):
         videos = videos and MP.modele_video(self.params) is not None
         params = self.params
 
+        a["avec_3d"] = a["avec_pixel"] = self.pro_3d.isChecked()
+        a["avec_plans"] = blocs
+
         def travail(t):
             t.avancer(0.2, _("L'IA prépare : blocs, dessins, effets, complexité…"))
-            prep = MP.preparer(params, dict(a, moteur_libre=a["moteur_libre"] if blocs else "remotion"), dessins, videos)
+            prep = MP.preparer(params, dict(a, moteur_libre=a["moteur_libre"] if blocs or a["avec_pixel"] else "remotion"),
+                               dessins, videos)
             if not blocs:
                 prep["blocs"] = []
             return prep
@@ -574,6 +586,10 @@ class DialogueMotionLibre(QDialog):
                   _("Complexité {c}/3 : écrite par {m}.", c=prep["complexite"], m=MP.nom_modele(modele))]
         if prep["blocs"]:
             lignes.append(_("Blocs : {l}.", l=", ".join(prep["blocs"])))
+        if prep.get("pixel"):
+            lignes.append(_("Effets pixel (gratuits) : {l}.", l=", ".join(prep["pixel"])))
+        if prep.get("plans"):
+            lignes.append(_("Plans tout prêts (Video ShotCraft) : {l}.", l=", ".join(prep["plans"])))
         if prep["images"]:
             lignes.append(_("Dessins ({p} $) : {l}.", p=_prix(prix["dessins"]), l=", ".join(x["id"] for x in prep["images"])))
         if prep["videos"]:
@@ -594,9 +610,13 @@ class DialogueMotionLibre(QDialog):
         a["pro"] = {"prep": prep, "famille": fam, "modele": modele, "relectures": []}
 
         def travail(t):
-            res = {"images": {}, "videos": {}, "blocs": {}}
+            res = {"images": {}, "videos": {}, "blocs": {}, "pixel": {}, "plans": {}}
             ratees = []
-            n = len(prep["images"]) + len(prep["videos"]) + len(prep["blocs"])
+            n = len(prep["images"]) + len(prep["videos"]) + len(prep["blocs"]) + len(prep.get("plans") or [])
+            infos = {e["id"]: e for e in MP.catalogue_pixel()}           # 1.3.1 : effets pixel, rien à télécharger
+            for i in prep.get("pixel") or []:
+                if i in infos:
+                    res["pixel"][i] = infos[i]
             k = 0
             for img in prep["images"]:
                 k += 1
@@ -623,6 +643,13 @@ class DialogueMotionLibre(QDialog):
                     res["blocs"][nom] = MP.source_bloc(nom)
                 except Exception as err:      # noqa: BLE001
                     ratees.append(_("bloc « {i} » : {e}", i=nom, e=texte_erreur(err)[:120]))
+            for nom in prep.get("plans") or []:
+                k += 1
+                t.avancer(0.02 + 0.25 * k / max(1, n), _("Plan « {i} » (Video ShotCraft)…", i=nom))
+                try:
+                    res["plans"][nom] = MP.source_plan(nom, avec_demo=a.get("moteur_libre") == "remotion")
+                except Exception as err:      # noqa: BLE001
+                    ratees.append(_("plan « {i} » : {e}", i=nom, e=texte_erreur(err)[:120]))
             a["libre"] = {"ressources": res}
             a["pro"]["ratees"] = ratees
             self._caler_musique(a)

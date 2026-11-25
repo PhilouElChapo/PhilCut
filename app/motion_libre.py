@@ -84,6 +84,37 @@ the JavaScript that builds the elements and the timeline (it runs after the HTML
 ===MESSAGE===
 one or two sentences in the user's language: what you made, and what the user can ask to change"""
 
+CONSIGNE_3D_API = """
+
+REAL 3D (optional, use it when the description asks for 3D objects, depth, a camera move around objects, glowing neon, physics
+— things falling, bouncing, collapsing, stacking — or a soft cinematic look; otherwise keep plain HTML/SVG). A global P3 is
+loaded (Three.js + Rapier physics + post effects). It draws in a WebGL canvas added to #scenes (under the HTML you add after
+it, so titles and SVG can sit on top). Everything is driven by time: you do NOT use tl for 3D objects, you give keys.
+  const S = P3.scene({background: "#hex" (omit when TRANSPARENT), camera: {pos: [x, y, z], look: [x, y, z], fov: 35},
+    light: "studio" | "sun" | "neon" | "night" | "soft", shadows: true, bloom: 0 to 1.5 (glow of bright and "glow" materials),
+    grain: 0 to 1, vignette: 0 to 1, blur: 0 to 1 (depth of field; {amount, focus: distance}), exposure: 1});
+  Units are metres; y is up; the floor is y = 0. Objects (all options optional) return Three.js objects:
+    S.box({size: 1 or [w, h, d], radius: 0.08 (rounded edges), color, material: "plastic" | "matte" | "clay" | "metal" |
+      "glass" | "glow" | "toon", pos: [x, y, z], rot: [degrees x, y, z], scale, opacity, parent: aGroup})
+    S.sphere({radius}), S.cylinder({radius, height}), S.cone({radius, height}), S.torus({radius, tube}),
+    S.plane({size: [w, h]}), S.group({...}), S.floor({color, shadowOnly: true (only the shadows, for TRANSPARENT)}),
+    S.image(IMG.id or "assets/…", {width}) (a drawn illustration as a flat card in 3D),
+    S.text("words", {size: letter height, color, material: "glow" or default, font}),
+    S.particles({count, area: [w, h, d], center, color, size, drift: [vx, vy, vz], speed, seed}) (dust, sparks, snow).
+  Animation: S.key(obj, t, {pos, rot, scale, opacity, color}, ease) — ease is a GSAP name ("power3.out", "back.out",
+    "elastic.out", "expo.inOut", "bounce.out", "sine.inOut"…). Before its first key an object keeps its first keyed value,
+    after its last key it holds it. S.cameraKey(t, {pos, look, fov}, ease) moves the camera. S.animate((t, S) => {...}) for
+    anything computed from t (spin, wave, orbit) — pure function of t, no state.
+  Physics (Rapier, computed once, then read at each frame): S.physics({gravity: [0, -9.81, 0], start: s, end: s}); then
+    S.body(obj, {type: "dynamic" | "fixed" | "kinematic" (follows its keys and pushes others), restitution: 0.3, friction:
+    0.6, density, velocity: [vx, vy, vz], spin: [deg/s x, y, z], impulse: {t: s, v: [vx, vy, vz]} (a kick)}). Before start
+    the bodies follow their keys (e.g. a tower is built with keys, then collapses at start); the floor y = 0 is solid.
+    Bodies must be children of the scene (not of a group). At most ~200 bodies.
+  Randomness: P3.rng("seed") returns a deterministic random() function (or use alea()).
+  Quality tips: rounded boxes, a few strong colours from C, light "studio" or "soft", shadows on, bloom 0.3-0.6, grain 0.2,
+  vignette 0.3, slow camera moves (2-4 s, "sine.inOut"), staggered keys, secondary motion. Keep the 3D framed inside the safe
+  area. Texts that must be read can stay HTML on top (crisper)."""
+
 CONSIGNE_REMOTION = """You are a senior motion designer and creative coder. You write ONE animation as a Remotion (React) component,
 rendered frame by frame into a video. Aim for the quality of a top After Effects / Motion Canvas piece: deliberate composition,
 depth (layers, soft shadows, gradients, light), rich easing (Easing.out(Easing.exp), Easing.back, spring() used with taste),
@@ -208,10 +239,14 @@ def musique_consigne(anim):
     forts = [t for t in mu.get("forts") or [] if 0 <= t <= DUREE_MAX][:40]
     if len(forts) < 2:
         return ""
+    temps = [t for t in mu.get("temps") or [] if 0 <= t <= DUREE_MAX][:120]
     return ("\n8. MUSIC: the film's music plays under this animation" + (f" (tempo {mu['bpm']:g} bpm)" if mu.get("bpm") else "") +
-            ". Its strong beats fall at these seconds of the animation: " + ", ".join(f"{t:g}" for t in forts) +
+            ". Its strong beats (first beat of each bar) fall at these seconds of the animation: " + ", ".join(f"{t:g}" for t in forts) +
             ". Put the main events (appearances, bursts, the explosion, scene changes) exactly on strong beats, and the end of the "
-            "animation on a strong beat too.")
+            "animation on a strong beat too." +
+            (" Every beat of the grid: " + ", ".join(f"{t:g}" for t in temps) + ". Land secondary accents (pops, staggers, "
+             "small hits) on beats; keep every time in seconds as given (never round to frames yourself); an event that should "
+             "hit a beat must start on it, not around it." if len(temps) >= 4 else ""))
 
 
 def fiche(description, taille=(1920, 1080), duree=0.0, charte=None, transparent=False, moteur="hyperframes"):
@@ -253,9 +288,12 @@ def consigne(anim):
     L, H = anim.get("taille") or (1920, 1080)
     modele = CONSIGNE_REMOTION if moteur_de(anim) == "remotion" else CONSIGNE
     from .motion_pro import consigne_ressources                      # 1.1.16 : dessins, plans vidéo, blocs du motion pro
+    from .motion_html import three_dispo
+    trois = moteur_de(anim) != "remotion" and three_dispo() and anim.get("avec_3d", True)
     return modele.format(langue=_langue_ui(), L=L, H=H, format=_format(L, H), duree=f"{anim.get('duree') or 8:g}",
                            dmax=DUREE_MAX, sons=", ".join(f"{k} ({SONS_EN[k]})" for k in _sons_permis()),
-                           musique=musique_consigne(anim)) + consigne_ressources(anim.get("libre") or {}, moteur_de(anim))
+                           musique=musique_consigne(anim)) + consigne_ressources(anim.get("libre") or {}, moteur_de(anim)) + \
+        (CONSIGNE_3D_API if trois else "")
 
 
 def sections(texte):
@@ -441,7 +479,7 @@ GABARIT = r"""<!doctype html>
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width={RL}, height={RH}" />
-<script src="{gsap}"></script>
+<script src="{gsap}"></script>{three}
 <style>
 {polices}
 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
@@ -556,7 +594,19 @@ def composition(anim, gsap, polices, logo):
         polices_js=json.dumps({"titre": ch.get("police_titre") or "Poppins", "texte": ch.get("police_texte") or "Poppins"}),
         js=lib.get("js", "").replace("</script", "<\\/script"), logo=js_logo,
         images_js=json.dumps({i: r["src"] for i, r in ((lib.get("ressources") or {}).get("images") or {}).items() if r.get("src")}),
-        videos_html=_videos_html(anim, k, L, H, duree))
+        videos_html=_videos_html(anim, k, L, H, duree),
+        three=('\n<script src="assets/three-philcut.js"></script>' if utilise_3d(anim) else "") +
+              ('\n<script src="assets/pixelfx-philcut.js"></script>' if utilise_pixel(anim) else ""))
+
+
+def utilise_pixel(anim):
+    """1.3.1 : le code de l'IA pose des effets pixel art (PFX : pixelfx)."""
+    return bool(re.search(r"\bPFX\.", ((anim or {}).get("libre") or {}).get("js", "")))
+
+
+def utilise_3d(anim):
+    """1.3.1 : le code de l'IA se sert de la 3D de PhilCut (P3 : Three.js, Rapier, effets)."""
+    return bool(re.search(r"\bP3\.", ((anim or {}).get("libre") or {}).get("js", "")))
 
 
 def apercu_leger(anim, echelle=0.5, cadence=15):
@@ -587,8 +637,10 @@ def mixer_sons(video, sons, sortie, volume=0.7):
     return sortie
 
 
-CONSIGNE_VERIFIER = """You check an animation render against its storyboard. You receive one frame taken in the middle of each step,
-in order, and the list of steps (number, time span, what must happen). For each step, say whether what it describes is
+CONSIGNE_VERIFIER = """You check an animation render against its storyboard. You receive ONE contact sheet: a grid of frames, one
+taken in the middle of each step, each labelled in its corner with the step number and time (read the grid left to right,
+top to bottom), and the list of steps (number, time span, what must happen). Also judge the whole sheet as a motion designer:
+consistent style and framing from step to step. For each step, say whether what it describes is
 clearly visible in its frame (a typewriter text may be partly typed; an explosion may be mid-burst). Be strict: if the main
 object or effect of the step is absent, it is not visible. Answer in JSON only:
 [{"n": step number, "vue": true or false, "remarque": "in the user's language ({langue}), what is missing or wrong, short"}]"""
@@ -606,20 +658,54 @@ def images_etapes(video, plan, dossier):
     return out
 
 
+def planche_controle(images, plan, sortie, colonnes=None):
+    """1.3.1 : les images des étapes en une seule planche (grille, chaque case marquée « n · a-b s ») : l'IA voit toute
+    l'animation d'un coup d'œil, et une seule image coûte moins cher que huit."""
+    from PySide6.QtGui import QImage, QPainter, QColor, QFont
+    from PySide6.QtCore import Qt, QRectF
+    ims = [QImage(f) for f in images]
+    ims = [i for i in ims if not i.isNull()]
+    if not ims:
+        raise ValueError(_("Aucune image à mettre sur la planche."))
+    n = len(ims)
+    col = colonnes or (1 if n == 1 else 2 if n <= 4 else 3 if n <= 9 else 4)
+    lig = (n + col - 1) // col
+    w, h, marge = ims[0].width(), ims[0].height(), 6
+    planche = QImage(col * (w + marge) + marge, lig * (h + marge) + marge, QImage.Format_RGB32)
+    planche.fill(QColor("#202020"))
+    p = QPainter(planche)
+    f = QFont()
+    f.setPixelSize(max(14, h // 12))
+    f.setBold(True)
+    p.setFont(f)
+    for k, im in enumerate(ims):
+        x, y = marge + (k % col) * (w + marge), marge + (k // col) * (h + marge)
+        p.drawImage(x, y, im)
+        a, b = (plan[k][0], plan[k][1]) if k < len(plan) else (0, 0)
+        texte = f"{k + 1} · {a:g}-{b:g} s"
+        r = QRectF(x + 4, y + 4, p.fontMetrics().horizontalAdvance(texte) + 12, f.pixelSize() + 8)
+        p.fillRect(r, QColor(0, 0, 0, 170))
+        p.setPen(QColor("#ffffff"))
+        p.drawText(r, Qt.AlignCenter, texte)
+    p.end()
+    planche.save(sortie, quality=85)
+    return sortie
+
+
 def verifier_etapes(params, anim, video):
     """[{n, a, b, texte, vue, remarque}] : ce que l'IA voit de chaque étape du plan dans l'aperçu."""
+    import os
     import tempfile
     from . import ia
     from .motion import _langue_ui
     plan = ((anim or {}).get("libre") or {}).get("plan") or []
     if not plan:
         raise ValueError(_("Pas de plan à vérifier : faites d'abord construire l'animation."))
-    images = images_etapes(video, plan, tempfile.mkdtemp())
+    d = tempfile.mkdtemp()
+    images = images_etapes(video, plan, d)
     etapes = "\n".join(f"{k + 1}. {a:g}-{b:g} s: {t}" for k, (a, b, t) in enumerate(plan[:8]))
-    octets = []
-    for f in images:
-        with open(f, "rb") as x:
-            octets.append(x.read())
+    with open(planche_controle(images, plan[:8], os.path.join(d, "planche.jpg")), "rb") as x:
+        octets = [x.read()]
     r = ia.demander(params, CONSIGNE_VERIFIER.replace("{langue}", _langue_ui()), "Steps:\n" + etapes, images=octets,
                     json_attendu=True, max_jetons=1500)
     vus = {int(x.get("n", 0)): x for x in (r if isinstance(r, list) else []) if isinstance(x, dict)}

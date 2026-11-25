@@ -1,0 +1,6124 @@
+{
+"source": "https://github.com/patch-gg/pixelfx",
+"commit": "5294518ce7c72e48b6100a744596e0acf57f2826",
+"licence": "MIT (Patch) ; Sprite Fusion VFX MIT (Hugo Duprez) ; Hollow Crown MIT",
+"effets": [
+{
+"id": "moves/arrow-shot",
+"nom": "Arrow shot",
+"desc": "He raises the bow, draws to his cheek, holds his breath and looses: the string snaps forward, the arrow crosses the floor and thuds home.",
+"tags": [
+"move",
+"bow",
+"arrow",
+"projectile",
+"ranged",
+"one-shot"
+],
+"taille": [
+300,
+74
+],
+"origine": [
+38,
+66
+],
+"duree": 1.9,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "moves/dash-strike",
+"nom": "Dash strike",
+"desc": "A crouch, then he's across the floor in a blur of after-images and already cutting: a critical hit, a beat, and he hops back to where he started.",
+"tags": [
+"move",
+"melee",
+"sword",
+"dash",
+"crit",
+"one-shot"
+],
+"taille": [
+372,
+156
+],
+"origine": [
+66,
+136
+],
+"duree": 2.3,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "moves/earth-stomp",
+"nom": "Earth stomp",
+"desc": "A knee comes up, the boot slams down, the floor heaves under the target and a stone spike rams up through it.",
+"tags": [
+"move",
+"earth",
+"spell",
+"stomp",
+"one-shot"
+],
+"taille": [
+290,
+142
+],
+"origine": [
+50,
+128
+],
+"duree": 3.46,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "moves/fireball-throw",
+"nom": "Fireball throw",
+"desc": "He gathers fire in his hand, leans back and hurls it: the ball flies, the target takes it in a blast and comes out charred.",
+"tags": [
+"move",
+"fire",
+"spell",
+"projectile",
+"explosion",
+"one-shot"
+],
+"taille": [
+356,
+244
+],
+"origine": [
+64,
+198
+],
+"duree": 6.8100000000000005,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "moves/ground-pound",
+"nom": "Ground pound",
+"desc": "He coils, leaps out of frame height, hangs, and comes down like a rock: the floor cracks, shock waves race out and throw the target about as they pass.",
+"tags": [
+"move",
+"impact",
+"jump",
+"landing",
+"shockwave",
+"one-shot"
+],
+"taille": [
+304,
+204
+],
+"origine": [
+152,
+168
+],
+"duree": 3.8200000000000003,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "moves/holy-smite",
+"nom": "Holy smite",
+"desc": "Both hands go up and a glint marks the target; he brings them down and a bolt of light drops like a hammer, leaving the target blanched.",
+"tags": [
+"move",
+"holy",
+"spell",
+"strike",
+"one-shot"
+],
+"taille": [
+252,
+182
+],
+"origine": [
+42,
+151
+],
+"duree": 2.8,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "moves/ice-lance-throw",
+"nom": "Ice lance throw",
+"desc": "Frost gathers into a spear in his hand, he throws it like a javelin, and the target ices over in a burst of snowflakes and shivers.",
+"tags": [
+"move",
+"ice",
+"spell",
+"projectile",
+"one-shot"
+],
+"taille": [
+310,
+136
+],
+"origine": [
+86,
+134
+],
+"duree": 4.34,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "moves/lightning-call",
+"nom": "Lightning call",
+"desc": "An arm goes up, a sigil lights under the target, and on the downswing a thick bolt comes down on it; the target jolts through the aftershocks.",
+"tags": [
+"move",
+"lightning",
+"spell",
+"strike",
+"one-shot"
+],
+"taille": [
+290,
+266
+],
+"origine": [
+42,
+231
+],
+"duree": 3,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "moves/meteor-call",
+"nom": "Meteor call",
+"desc": "A long chant: a circle draws itself round him, it flares, he points, and a burning rock comes down on the target and flattens the scene.",
+"tags": [
+"move",
+"fire",
+"spell",
+"meteor",
+"ultimate",
+"one-shot"
+],
+"taille": [
+380,
+240
+],
+"origine": [
+92,
+212
+],
+"duree": 6.43,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "moves/pistol-shots",
+"nom": "Pistol shots",
+"desc": "Three aimed shots: the gun kicks up each time and settles, tracers cross the floor, and the target staggers under each hit.",
+"tags": [
+"move",
+"gun",
+"pistol",
+"projectile",
+"ranged",
+"one-shot"
+],
+"taille": [
+378,
+76
+],
+"origine": [
+111,
+72
+],
+"duree": 2.6,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "moves/rocket-launcher",
+"nom": "Rocket launcher",
+"desc": "He drops to one knee, shoulders the tube and fires: the kick shoves him back along the floor, the rocket crawls out on its jet and the target goes up.",
+"tags": [
+"move",
+"gun",
+"rocket",
+"projectile",
+"explosion",
+"one-shot"
+],
+"taille": [
+480,
+244
+],
+"origine": [
+178,
+198
+],
+"duree": 6.5600000000000005,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "moves/sword-combo",
+"nom": "Sword combo",
+"desc": "Three strokes walking forward: a slash, a crossing double cut, and a two-handed cleave into the floor that throws the target about.",
+"tags": [
+"move",
+"melee",
+"sword",
+"combo",
+"one-shot"
+],
+"taille": [
+264,
+150
+],
+"origine": [
+72,
+130
+],
+"duree": 2.975,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "fire/brazier",
+"nom": "Brazier",
+"desc": "An iron bowl on a tripod heaped with glowing coals and a big roaring fire, sparks and embers streaming up off it, light on the iron and the floor.",
+"tags": [
+"fire",
+"brazier",
+"prop",
+"light",
+"sparks",
+"ambient",
+"loop"
+],
+"taille": [
+112,
+148
+],
+"origine": [
+56,
+136
+],
+"duree": 3,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "fire/campfire",
+"nom": "Campfire",
+"desc": "Crossed logs on a bed of coals and a lively fire: tongues that lick and leap, popping sparks, embers drifting up, smoke curling off, a warm pool of light.",
+"tags": [
+"fire",
+"campfire",
+"prop",
+"light",
+"smoke",
+"ambient",
+"loop"
+],
+"taille": [
+128,
+128
+],
+"origine": [
+64,
+112
+],
+"duree": 3,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "fire/candle",
+"nom": "Candle",
+"desc": "A wax candle in a brass dish: a calm flame with a blue root that sways and stretches, a halo of light, motes drifting in it, a bead of wax running down a drip.",
+"tags": [
+"fire",
+"candle",
+"prop",
+"light",
+"calm",
+"ambient",
+"loop"
+],
+"taille": [
+56,
+76
+],
+"origine": [
+28,
+64
+],
+"duree": 4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "fire/fire-breath",
+"nom": "Fire breath",
+"desc": "A roaring cone of fire streaming right from the mouth: white-hot at the lips, billowing out and cooling to red and smoke at its edges, sparks thrown out ahead.",
+"tags": [
+"fire",
+"breath",
+"dragon",
+"stream",
+"cone",
+"directional",
+"loop"
+],
+"taille": [
+160,
+116
+],
+"origine": [
+12,
+72
+],
+"duree": 1.5,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "fire/fire-ring",
+"nom": "Fire ring",
+"desc": "A white flash at the feet, then flames race outward along the floor in a ring, flaring as the front passes and burning down behind it over a smouldering scorch.",
+"tags": [
+"fire",
+"ring",
+"nova",
+"aoe",
+"spell",
+"ground",
+"one-shot"
+],
+"taille": [
+224,
+128
+],
+"origine": [
+112,
+92
+],
+"duree": 3.9,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "fire/fire-tornado",
+"nom": "Fire tornado",
+"desc": "A spinning funnel of fire: spiral bands turning round it, licks flung off its sides, a ring of flame whirling at its foot, embers orbiting it in and out of view.",
+"tags": [
+"fire",
+"tornado",
+"vortex",
+"spell",
+"aoe",
+"loop"
+],
+"taille": [
+120,
+152
+],
+"origine": [
+60,
+136
+],
+"duree": 2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "fire/fireball",
+"nom": "Fireball",
+"desc": "A fireball flying right: a churning white-hot head with a corona of flame, a long torn tail of flame puffs cooling into smoke, embers shed behind.",
+"tags": [
+"fire",
+"fireball",
+"projectile",
+"magic",
+"directional",
+"loop"
+],
+"taille": [
+136,
+56
+],
+"origine": [
+112,
+28
+],
+"duree": 1.2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "fire/flame-pillar",
+"nom": "Flame pillar",
+"desc": "The floor cracks and glows, a column of fire erupts white-hot and roars, spewing embers and shedding flame, then collapses into rolling smoke.",
+"tags": [
+"fire",
+"pillar",
+"eruption",
+"spell",
+"ground",
+"one-shot"
+],
+"taille": [
+184,
+256
+],
+"origine": [
+92,
+232
+],
+"duree": 5,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "fire/flamethrower",
+"nom": "Flamethrower",
+"desc": "A pressurised jet shooting right: a blue pilot at the nozzle, a tight stream with surges racing down it, a sputter, burning drops falling off, a tip that curls up into smoke.",
+"tags": [
+"fire",
+"flamethrower",
+"stream",
+"weapon",
+"directional",
+"loop"
+],
+"taille": [
+184,
+104
+],
+"origine": [
+30,
+60
+],
+"duree": 1.6,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "fire/meteor",
+"nom": "Meteor",
+"desc": "A burning rock streaks in from the upper left in a comet of fire and smashes into the floor: a white flash, a fireball, rocks and brands thrown, a glowing crater that cools.",
+"tags": [
+"fire",
+"meteor",
+"impact",
+"explosion",
+"spell",
+"debris",
+"one-shot"
+],
+"taille": [
+272,
+232
+],
+"origine": [
+150,
+208
+],
+"duree": 5,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "fire/spirit-flame",
+"nom": "Spirit flame",
+"desc": "A cold blue-teal ghost fire floating in the air: a bright rim round a hollow dark heart, a wave climbing its wispy tail, curls breaking off, cold sparks rising.",
+"tags": [
+"fire",
+"spirit",
+"ghost",
+"magic",
+"cold",
+"ambient",
+"loop"
+],
+"taille": [
+80,
+124
+],
+"origine": [
+40,
+94
+],
+"duree": 3,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "fire/torch",
+"nom": "Torch",
+"desc": "A wall torch on an iron bracket: a licking flame leaping off a pitch-soaked wrap, licks and puffs torn off its tips, smoke, embers, a flickering light on the wall.",
+"tags": [
+"fire",
+"torch",
+"prop",
+"light",
+"wall",
+"dungeon",
+"loop"
+],
+"taille": [
+72,
+120
+],
+"origine": [
+36,
+94
+],
+"duree": 2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "explosions/barrel-explosion",
+"nom": "Barrel explosion",
+"desc": "An explosive barrel shudders, its lid bulging and spitting flame, then blows: a fireball column, staves and the lid flying, burning fuel splashed over the floor.",
+"tags": [
+"explosion",
+"barrel",
+"fire",
+"smoke",
+"debris",
+"ground",
+"one-shot"
+],
+"taille": [
+300,
+240
+],
+"origine": [
+150,
+204
+],
+"duree": 5.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "explosions/big-explosion",
+"nom": "Big explosion",
+"desc": "A huge ground blast in three beats: a white dome, a rolling fireball that climbs into a mushrooming smoke column, heavy rocks, and fires left burning.",
+"tags": [
+"explosion",
+"fire",
+"smoke",
+"debris",
+"mushroom",
+"big",
+"ground",
+"one-shot"
+],
+"taille": [
+360,
+300
+],
+"origine": [
+180,
+262
+],
+"duree": 7.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "explosions/cartoon-pow",
+"nom": "Cartoon POW",
+"desc": "A comic-book hit: a jagged two-tone burst star slams in with a shake and boiling edges, POW! drops in letter by letter, action lines fly, then it all snaps away.",
+"tags": [
+"cartoon",
+"comic",
+"pow",
+"hit",
+"impact",
+"text",
+"one-shot"
+],
+"taille": [
+184,
+144
+],
+"origine": [
+92,
+72
+],
+"duree": 1.05,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "explosions/dirt-explosion",
+"nom": "Dirt explosion",
+"desc": "A buried charge goes off: a flash under the floor, a V of dirt clods and grit thrown high, a brown dust plume that billows and settles, and a crater left behind.",
+"tags": [
+"explosion",
+"dirt",
+"earth",
+"dust",
+"debris",
+"ground",
+"one-shot"
+],
+"taille": [
+260,
+240
+],
+"origine": [
+130,
+206
+],
+"duree": 3.6,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "explosions/firework-burst",
+"nom": "Firework burst",
+"desc": "A shell climbs, slows and bursts into a sphere of coloured trailing stars round a gold core; they droop, crackle into white pops and fade, leaving glitter.",
+"tags": [
+"firework",
+"celebration",
+"sparkle",
+"sky",
+"burst",
+"one-shot"
+],
+"taille": [
+240,
+248
+],
+"origine": [
+120,
+100
+],
+"duree": 3.6,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "explosions/firework-rocket",
+"nom": "Firework rocket",
+"desc": "A rocket fizzes off the ground on a sparkling gold trail, coasts, and bursts into a palm: heavy gold fronds arc out, droop on glittering trails and crackle at the tips.",
+"tags": [
+"firework",
+"rocket",
+"celebration",
+"sparkle",
+"sky",
+"one-shot"
+],
+"taille": [
+300,
+300
+],
+"origine": [
+150,
+288
+],
+"duree": 3.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "explosions/grenade",
+"nom": "Grenade",
+"desc": "A grenade is lobbed in, bounces, rolls to a stop with its fuse fizzing, shudders, then blows: a white flash, shrapnel streaks, sparks, a small fireball and a scorch.",
+"tags": [
+"explosion",
+"grenade",
+"shrapnel",
+"fire",
+"smoke",
+"ground",
+"one-shot"
+],
+"taille": [
+300,
+200
+],
+"origine": [
+160,
+170
+],
+"duree": 4.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "explosions/implosion",
+"nom": "Implosion",
+"desc": "Everything is sucked in: streaks and grit rush inward, rings contract and a dark sphere collapses onto a crushed white point; a beat of stillness, then a sharp pop.",
+"tags": [
+"implosion",
+"energy",
+"magic",
+"collapse",
+"pop",
+"one-shot"
+],
+"taille": [
+208,
+184
+],
+"origine": [
+104,
+92
+],
+"duree": 1.65,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "explosions/nuke",
+"nom": "Nuke",
+"desc": "A blinding white frame, then a fireball lifts on a thin stem into a wide rolling cap that glows from inside; a white skirt flashes and a dust surge sweeps the floor.",
+"tags": [
+"explosion",
+"nuke",
+"mushroom",
+"cloud",
+"big",
+"ground",
+"one-shot"
+],
+"taille": [
+400,
+320
+],
+"origine": [
+200,
+284
+],
+"duree": 9,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "explosions/plasma-explosion",
+"nom": "Plasma explosion",
+"desc": "A blue-violet energy blast with no smoke: a white flash, a ball of plasma swelling into a thinning shell, shock rings in and out of depth, lightning arcs crackling off it.",
+"tags": [
+"explosion",
+"plasma",
+"energy",
+"electric",
+"magic",
+"sci-fi",
+"one-shot"
+],
+"taille": [
+224,
+200
+],
+"origine": [
+112,
+100
+],
+"duree": 1.7,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "explosions/small-explosion",
+"nom": "Explosion",
+"desc": "A ground blast: a white flash and shock rings, fire that cools into a rolling smoke column, sparks, burning brands that land and keep burning, tumbling rocks and a glowing scorch.",
+"tags": [
+"explosion",
+"fire",
+"smoke",
+"debris",
+"impact",
+"one-shot"
+],
+"taille": [
+300,
+240
+],
+"origine": [
+150,
+196
+],
+"duree": 5.4,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "explosions/smoke-bomb",
+"nom": "Smoke bomb",
+"desc": "A round canister clinks down, fuse sparking, and pops: thick grey-violet smoke gushes out, rolls along the floor, billows into a cloud that hides all, then thins to wisps.",
+"tags": [
+"smoke",
+"smoke-bomb",
+"ninja",
+"vanish",
+"escape",
+"ground",
+"one-shot"
+],
+"taille": [
+260,
+176
+],
+"origine": [
+130,
+156
+],
+"duree": 5,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "water/bubbles",
+"nom": "Bubbles",
+"desc": "Bubbles stream up from a vent of pebbles, wobbling and swelling as they rise, flare as they cross shafts of light from the surface, then dome up and pop there.",
+"tags": [
+"water",
+"bubbles",
+"underwater",
+"vent",
+"ambient",
+"loop"
+],
+"taille": [
+104,
+112
+],
+"origine": [
+52,
+104
+],
+"duree": 4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "water/drip",
+"nom": "Drip",
+"desc": "A bead swells under a wet stone tip and catches the light, pinches off, falls stretched by its speed and plinks into a puddle with a crown, a ring and a tiny rebound.",
+"tags": [
+"water",
+"drip",
+"drop",
+"puddle",
+"cave",
+"ambient",
+"loop"
+],
+"taille": [
+72,
+88
+],
+"origine": [
+36,
+78
+],
+"duree": 1.6,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "water/fountain",
+"nom": "Fountain",
+"desc": "A stone basin; a jet rises from its spout and blooms into glassy arcs that break into beads, fall back and plink into the water with rings.",
+"tags": [
+"water",
+"fountain",
+"jet",
+"basin",
+"prop",
+"ambient",
+"loop"
+],
+"taille": [
+120,
+104
+],
+"origine": [
+60,
+96
+],
+"duree": 2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "water/geyser",
+"nom": "Geyser",
+"desc": "A pool heaves and burbles faster and faster, then blasts a white column of water skyward with a churning foam head; it rains back down in drops and steam, slumps and sputters out.",
+"tags": [
+"water",
+"geyser",
+"eruption",
+"steam",
+"column",
+"nature",
+"one-shot"
+],
+"taille": [
+184,
+168
+],
+"origine": [
+92,
+146
+],
+"duree": 5,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "water/rain-splash",
+"nom": "Rain splash",
+"desc": "A low close-up on one puddle in the rain: big drops land in crowns that throw beads and a rebound jet, rings spread and interfere, a lamp's reflection wobbles on the water.",
+"tags": [
+"water",
+"rain",
+"splash",
+"puddle",
+"close-up",
+"ambient",
+"loop"
+],
+"taille": [
+176,
+80
+],
+"origine": [
+88,
+50
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "water/ripples",
+"nom": "Ripples",
+"desc": "A drop plinks on still dark water and rings spread out across it at a low angle: the swell of each ring catches the light, crests glint, and they fade into the calm.",
+"tags": [
+"water",
+"ripples",
+"rings",
+"surface",
+"pond",
+"ambient",
+"loop"
+],
+"taille": [
+136,
+52
+],
+"origine": [
+68,
+30
+],
+"duree": 2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "water/splash",
+"nom": "Splash",
+"desc": "A stone drops into still water: a white hit, a crown that tears into droplets arcing out to plink down with rings, a jet that bounces back, foam and drifting mist.",
+"tags": [
+"water",
+"splash",
+"impact",
+"drop",
+"liquid",
+"one-shot"
+],
+"taille": [
+176,
+100
+],
+"origine": [
+88,
+78
+],
+"duree": 2.5,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "water/water-jet",
+"nom": "Water jet",
+"desc": "A pressurised stream blasts right: a tight glassy rod with surges running down it that swells, roughens, bends under its weight and breaks into chunks, spray and mist.",
+"tags": [
+"water",
+"jet",
+"stream",
+"hose",
+"spray",
+"directional",
+"loop"
+],
+"taille": [
+188,
+80
+],
+"origine": [
+14,
+32
+],
+"duree": 1,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "water/water-orb",
+"nom": "Water orb",
+"desc": "A sphere of water floats and wobbles: a current circles inside it, the floor shows upside down through it, it shines, light gathers on the floor under it, and drips fall and plink.",
+"tags": [
+"water",
+"orb",
+"sphere",
+"magic",
+"float",
+"ambient",
+"loop"
+],
+"taille": [
+100,
+108
+],
+"origine": [
+50,
+100
+],
+"duree": 3,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "water/waterfall",
+"nom": "Waterfall",
+"desc": "A river pours from a notch in a rock outcrop: a white curl, a deep sheet that splits into strands, churning foam, spray, drifting mist and rings on a dark pool.",
+"tags": [
+"water",
+"waterfall",
+"cascade",
+"foam",
+"mist",
+"ambient",
+"loop"
+],
+"taille": [
+144,
+136
+],
+"origine": [
+72,
+118
+],
+"duree": 2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "water/wave-crash",
+"nom": "Wave crash",
+"desc": "A swell rolls in and steepens, its lip throws forward and curls over a dark barrel, then crashes into a burst of white foam and spray that surges on and fades to lace.",
+"tags": [
+"water",
+"wave",
+"crash",
+"surf",
+"foam",
+"spray",
+"one-shot"
+],
+"taille": [
+224,
+104
+],
+"origine": [
+112,
+86
+],
+"duree": 3.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "water/whirlpool",
+"nom": "Whirlpool",
+"desc": "Seen from above, dark water winds into a vortex: foam arms spiral in, darkening as they're drawn down into a deep eye with a lit far rim, flecks of foam circling in after them.",
+"tags": [
+"water",
+"whirlpool",
+"vortex",
+"maelstrom",
+"swirl",
+"top-down",
+"loop"
+],
+"taille": [
+128,
+84
+],
+"origine": [
+64,
+42
+],
+"duree": 3,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "ice/blizzard-vortex",
+"nom": "Blizzard vortex",
+"desc": "A swirling snow tornado: wind bands spin up a leaning funnel, flakes and ice crystals orbit in front and behind, snow boils at its foot and cold light fills its throat.",
+"tags": [
+"ice",
+"snow",
+"blizzard",
+"tornado",
+"vortex",
+"wind",
+"loop"
+],
+"taille": [
+128,
+116
+],
+"origine": [
+64,
+102
+],
+"duree": 2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "ice/freeze",
+"nom": "Freeze",
+"desc": "Frost races in and climbs the character, turning it to ice; a faceted block crystallizes round it pane by pane, glints, cracks and bursts, and the character thaws free.",
+"tags": [
+"ice",
+"freeze",
+"frozen",
+"status",
+"crowd-control",
+"one-shot"
+],
+"taille": [
+176,
+128
+],
+"origine": [
+88,
+108
+],
+"duree": 4,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "ice/frost-breath",
+"nom": "Frost breath",
+"desc": "A cone of icy wind blowing right: frost puffs billow out, swell and sink, wind streaks race through, ice crystals tumble and glint off a white-hot mouth.",
+"tags": [
+"ice",
+"breath",
+"frost",
+"cone",
+"wind",
+"directional",
+"loop"
+],
+"taille": [
+184,
+104
+],
+"origine": [
+12,
+50
+],
+"duree": 1.2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "ice/frost-nova",
+"nom": "Frost nova",
+"desc": "Frost spirals into a spinning snowflake, then a wave blooms three rings of ice crystals round the caster; snow drifts, frost creeps, and the ice melts back into the floor.",
+"tags": [
+"ice",
+"nova",
+"aoe",
+"frost",
+"magic",
+"one-shot"
+],
+"taille": [
+288,
+192
+],
+"origine": [
+144,
+150
+],
+"duree": 3.4,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "ice/ice-crystal",
+"nom": "Ice crystal",
+"desc": "A floating ice crystal turning slowly in its own cold light: its facets brighten and darken as they turn, glints flash on them, frost motes circle it.",
+"tags": [
+"ice",
+"crystal",
+"gem",
+"pickup",
+"float",
+"magic",
+"loop"
+],
+"taille": [
+96,
+100
+],
+"origine": [
+48,
+92
+],
+"duree": 3,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "ice/ice-lance",
+"nom": "Ice lance",
+"desc": "A faceted ice spear flying right: a light pulse runs through its core, rings of cold air shear off the tip, frost peels off into a wake and crystals shed behind it.",
+"tags": [
+"ice",
+"lance",
+"spear",
+"projectile",
+"directional",
+"magic",
+"loop"
+],
+"taille": [
+176,
+64
+],
+"origine": [
+146,
+32
+],
+"duree": 0.8,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "ice/ice-shatter",
+"nom": "Ice shatter",
+"desc": "A block of ice takes a hit from the left: it jolts, cracks race over its faces, it flashes white and bursts into chunks that tumble, bounce and skid off in a roll of ice dust.",
+"tags": [
+"ice",
+"shatter",
+"break",
+"destroy",
+"impact",
+"directional",
+"one-shot"
+],
+"taille": [
+224,
+112
+],
+"origine": [
+68,
+90
+],
+"duree": 2.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ice/ice-spikes",
+"nom": "Ice spikes",
+"desc": "A frost line races along the floor and clusters of jagged ice blades burst up behind it in a rising wave, glint, flash white together and shatter into toppling shards.",
+"tags": [
+"ice",
+"spikes",
+"ground",
+"wave",
+"directional",
+"magic",
+"one-shot"
+],
+"taille": [
+264,
+112
+],
+"origine": [
+24,
+96
+],
+"duree": 3,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ice/icicle-fall",
+"nom": "Icicle fall",
+"desc": "An icicle drips and trembles, snaps off its frosted root, drops, stabs the floor and bursts into skidding shards, splinters and rolling frost.",
+"tags": [
+"ice",
+"icicle",
+"fall",
+"trap",
+"shatter",
+"one-shot"
+],
+"taille": [
+152,
+120
+],
+"origine": [
+76,
+100
+],
+"duree": 2.6,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ice/snowflake-burst",
+"nom": "Snowflake burst",
+"desc": "A cold pop: frost gathers and flashes white in a ring, then crisp six-armed snowflakes spin out, slow, twinkle and drift down to settle and melt.",
+"tags": [
+"ice",
+"snow",
+"snowflake",
+"burst",
+"magic",
+"one-shot"
+],
+"taille": [
+140,
+120
+],
+"origine": [
+70,
+106
+],
+"duree": 3.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "lightning/ball-lightning",
+"nom": "Ball lightning",
+"desc": "A crackling ball of plasma drifts on a wandering loop, spitting arcs off its skin and leaving a wake of fading motes, and zaps the floor when it dips low.",
+"tags": [
+"lightning",
+"electric",
+"plasma",
+"orb",
+"wisp",
+"ambient",
+"loop"
+],
+"taille": [
+136,
+104
+],
+"origine": [
+68,
+92
+],
+"duree": 4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "lightning/chain-lightning",
+"nom": "Chain lightning",
+"desc": "A bolt leaps from the caster's hand through three targets in turn; each flashes, sparks and grounds itself to the floor while the arcs between them flicker, then the chain snaps.",
+"tags": [
+"lightning",
+"electric",
+"chain",
+"spell",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+248,
+104
+],
+"origine": [
+40,
+82
+],
+"duree": 1.8,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "lightning/charge-up",
+"nom": "Charge up",
+"desc": "Sparks streak and arcs whip in to a crackling core at the caster's hand that swells and pulses faster, then it flashes and bursts: bolts every way, a ring, a spray of sparks.",
+"tags": [
+"lightning",
+"electric",
+"charge",
+"spell",
+"power-up",
+"actor",
+"one-shot"
+],
+"taille": [
+272,
+184
+],
+"origine": [
+124,
+148
+],
+"duree": 2.7,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "lightning/electrified",
+"nom": "Electrified",
+"desc": "Current runs through a character: arcs crawl over and leap across the body, sparks spit off, the body flares to an electric silhouette on each jolt, and the feet ground out.",
+"tags": [
+"lightning",
+"electric",
+"status",
+"shock",
+"stun",
+"actor",
+"loop"
+],
+"taille": [
+108,
+92
+],
+"origine": [
+54,
+76
+],
+"duree": 2,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "lightning/lightning-strike",
+"nom": "Lightning strike",
+"desc": "A targeted strike: a sigil charges on the floor, the scene darkens, a thick bolt slams into it, arcs race out along the cracks it splits, the channel crumbles to a scorch.",
+"tags": [
+"lightning",
+"electric",
+"strike",
+"spell",
+"target",
+"impact",
+"ground",
+"one-shot"
+],
+"taille": [
+240,
+264
+],
+"origine": [
+120,
+228
+],
+"duree": 3,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "lightning/plasma-ball",
+"nom": "Plasma ball",
+"desc": "A glass globe on a dark pedestal: wandering plasma tendrils reach from the core to the glass and fan out in bright feet where they touch it, lighting the stand and floor.",
+"tags": [
+"lightning",
+"electric",
+"plasma",
+"lamp",
+"prop",
+"loop"
+],
+"taille": [
+112,
+104
+],
+"origine": [
+56,
+96
+],
+"duree": 3,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "lightning/spark-arc",
+"nom": "Spark arc",
+"desc": "A climbing arc between two rods: it strikes white at their narrow foot, climbs on rising heat as it stretches and bows, sputters and snaps at the top, then strikes again.",
+"tags": [
+"lightning",
+"electric",
+"arc",
+"jacobs-ladder",
+"machine",
+"prop",
+"loop"
+],
+"taille": [
+124,
+120
+],
+"origine": [
+62,
+108
+],
+"duree": 2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "lightning/storm-cloud",
+"nom": "Storm cloud",
+"desc": "A storm cloud boils overhead, billows lit from inside by flickering discharges, ragged scud under its flat dark base; rain slants down and once a loop a bolt cracks to the floor.",
+"tags": [
+"lightning",
+"storm",
+"weather",
+"cloud",
+"rain",
+"ambient",
+"loop"
+],
+"taille": [
+168,
+176
+],
+"origine": [
+84,
+164
+],
+"duree": 3,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "lightning/tesla-coil",
+"nom": "Tesla coil",
+"desc": "A copper coil under a steel torus throws branching arcs that lash out in volleys and now and then strike the floor in a spray of sparks, lighting the metal and the ground.",
+"tags": [
+"lightning",
+"electric",
+"tesla",
+"machine",
+"prop",
+"loop"
+],
+"taille": [
+224,
+136
+],
+"origine": [
+112,
+120
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "lightning/thunderclap",
+"nom": "Thunderclap",
+"desc": "A thunderclap round the caster: a white flash, forked bolts burst out and stab the floor, a heavy shock ring tears across the ground raising dust and grit, sparks streak away.",
+"tags": [
+"lightning",
+"electric",
+"nova",
+"aoe",
+"spell",
+"shockwave",
+"one-shot"
+],
+"taille": [
+288,
+156
+],
+"origine": [
+144,
+124
+],
+"duree": 1.9,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "lightning/zap-hit",
+"nom": "Zap hit",
+"desc": "A contact zap: an arc snaps in from the left, the hit point overloads into a knot of tiny crackling zigzags, a fern of burn marks glows outward, sparks jink away, ozone puffs.",
+"tags": [
+"lightning",
+"electric",
+"hit",
+"impact",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+144,
+112
+],
+"origine": [
+76,
+56
+],
+"duree": 0.9,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "scifi/emp-blast",
+"nom": "EMP blast",
+"desc": "A disc charge ticks, pops white, and a bubble of rolling scanlines swells out with arcs crawling its skin; it strobes, tears and shorts out into falling dead pixels.",
+"tags": [
+"scifi",
+"emp",
+"pulse",
+"shockwave",
+"electric",
+"grenade",
+"glitch",
+"one-shot"
+],
+"taille": [
+152,
+116
+],
+"origine": [
+76,
+84
+],
+"duree": 3.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "scifi/energy-core",
+"nom": "Energy core",
+"desc": "A plasma core beating in a steel cage: it swells and throws a shock ring on each beat, two tilted rings orbit it, and arcs jump to the bars and spark.",
+"tags": [
+"scifi",
+"reactor",
+"core",
+"power",
+"plasma",
+"machine",
+"prop",
+"ground",
+"loop"
+],
+"taille": [
+112,
+100
+],
+"origine": [
+56,
+88
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "scifi/force-field",
+"nom": "Force field",
+"desc": "A glassy dome of hex plates over the hero: plates glint, tracers from the right slam into it, a ripple and cracks of light race across, sparks glance off.",
+"tags": [
+"scifi",
+"shield",
+"barrier",
+"dome",
+"hex",
+"hit",
+"defense",
+"loop"
+],
+"taille": [
+184,
+104
+],
+"origine": [
+76,
+84
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "scifi/glitch",
+"nom": "Glitch",
+"desc": "The hero's signal breaks up in bursts: an RGB split, slices torn sideways, rows smeared out, junk blocks and dead pixels, then snaps back clean.",
+"tags": [
+"scifi",
+"glitch",
+"digital",
+"corrupt",
+"hologram",
+"status",
+"loop"
+],
+"taille": [
+88,
+64
+],
+"origine": [
+44,
+54
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "scifi/hologram",
+"nom": "Hologram",
+"desc": "A floor projector throws a cone of light holding a turning wireframe model: scanlines roll through it, a data ring circles it, and it flickers, tears and jitters.",
+"tags": [
+"scifi",
+"hologram",
+"projector",
+"wireframe",
+"display",
+"glitch",
+"ground",
+"loop"
+],
+"taille": [
+112,
+104
+],
+"origine": [
+56,
+92
+],
+"duree": 4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "scifi/jetpack",
+"nom": "Jetpack",
+"desc": "Twin thrusters fire straight down: white-hot cores with shock diamonds inside ragged flames, puffs that cool into smoke billowing below, lit by the fire.",
+"tags": [
+"scifi",
+"jetpack",
+"thrust",
+"rocket",
+"fire",
+"smoke",
+"flight",
+"loop"
+],
+"taille": [
+96,
+116
+],
+"origine": [
+48,
+30
+],
+"duree": 2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "scifi/laser-grid",
+"nom": "Laser grid",
+"desc": "Security lasers between two steel posts: red beams slide and scissor across, dust and haze light up only where they cut through, and the floor sweepers scorch and spark.",
+"tags": [
+"scifi",
+"laser",
+"security",
+"trap",
+"hazard",
+"beam",
+"ground",
+"loop"
+],
+"taille": [
+128,
+84
+],
+"origine": [
+64,
+76
+],
+"duree": 3,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "scifi/scanner",
+"nom": "Scanner",
+"desc": "Brackets snap onto the hero, a scan line sweeps head to toe leaving a cooling outline, and a readout counts up to OK before it all lets go.",
+"tags": [
+"scifi",
+"scan",
+"target",
+"hud",
+"tech",
+"status",
+"ui",
+"loop"
+],
+"taille": [
+112,
+78
+],
+"origine": [
+42,
+58
+],
+"duree": 3.2,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "scifi/teleporter-pad",
+"nom": "Teleporter pad",
+"desc": "A steel pad glows on the floor, its rings rippling outward; a soft column of light rises off it and rings of light lift away, sparkles drifting up through them.",
+"tags": [
+"scifi",
+"teleporter",
+"pad",
+"portal",
+"beam",
+"spawn",
+"ground",
+"loop"
+],
+"taille": [
+96,
+104
+],
+"origine": [
+48,
+92
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "scifi/tractor-beam",
+"nom": "Tractor beam",
+"desc": "A hovering pod projects a cone of light to the floor; rocks tear loose in puffs of dust and spiral up spinning into the lens while rings of light climb the beam.",
+"tags": [
+"scifi",
+"beam",
+"tractor",
+"lift",
+"abduct",
+"debris",
+"ground",
+"loop"
+],
+"taille": [
+120,
+132
+],
+"origine": [
+60,
+114
+],
+"duree": 3,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "scifi/warp-in",
+"nom": "Warp in",
+"desc": "A beam slams down, rings run down it and a scanline paints the hero in from head to toe, white-hot pixels cooling to their own colors; the beam pinches shut in sparks.",
+"tags": [
+"scifi",
+"teleport",
+"warp",
+"beam",
+"spawn",
+"arrive",
+"one-shot"
+],
+"taille": [
+192,
+168
+],
+"origine": [
+96,
+128
+],
+"duree": 3,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "scifi/warp-out",
+"nom": "Warp out",
+"desc": "The hero's outline flickers on, they flash white and break into light from the head down, streaming up a beam that lifts off the floor and pinches shut.",
+"tags": [
+"scifi",
+"teleport",
+"warp",
+"beam",
+"despawn",
+"leave",
+"one-shot"
+],
+"taille": [
+128,
+168
+],
+"origine": [
+64,
+128
+],
+"duree": 2.6,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/claw-swipe",
+"nom": "Claw swipe",
+"desc": "Three claw marks rake down one after another, white-hot, cooling through orange to red, then close up from both ends and leave a dotted scar, with hot flecks and drips.",
+"tags": [
+"melee",
+"claw",
+"swipe",
+"beast",
+"scratch",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+128,
+96
+],
+"origine": [
+36,
+84
+],
+"duree": 0.9,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/dagger-flurry",
+"nom": "Dagger flurry",
+"desc": "A flurry of small quick crescents at every angle in front of the fighter, each with a flick of sparks, finished by one big cut that glints and bursts.",
+"tags": [
+"melee",
+"slash",
+"dagger",
+"combo",
+"flurry",
+"fast",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+148,
+104
+],
+"origine": [
+36,
+86
+],
+"duree": 0.95,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/double-slash",
+"nom": "Double slash",
+"desc": "A down cut, then an up cut that crosses it: the moment the X closes both strokes flash white, the crossing bursts with light and sparks, and a dotted X lingers.",
+"tags": [
+"melee",
+"slash",
+"combo",
+"sword",
+"cross",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+164,
+108
+],
+"origine": [
+44,
+92
+],
+"duree": 0.8,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/hammer-smash",
+"nom": "Hammer smash",
+"desc": "A hammer drops in front in a wedge of motion: a white slam with rays, a dome of force, a dent with cracks, rocks thrown up that bounce and settle, and dust.",
+"tags": [
+"melee",
+"smash",
+"hammer",
+"heavy",
+"ground",
+"shockwave",
+"debris",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+208,
+112
+],
+"origine": [
+80,
+92
+],
+"duree": 2,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/heavy-cleave",
+"nom": "Heavy cleave",
+"desc": "A glint over the head, then a thick ember arc accelerates over the top into the floor: a white slam, glowing cracks, dust rolling both ways, grit and rising embers.",
+"tags": [
+"melee",
+"slash",
+"cleave",
+"axe",
+"heavy",
+"ground",
+"fire",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+208,
+116
+],
+"origine": [
+68,
+96
+],
+"duree": 1.9,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/scythe-reap",
+"nom": "Scythe reap",
+"desc": "A slow, huge dark crescent reaps round the front with a pale ghostly edge; it hangs, then tears away from the tail into curling wisps and cold vapour.",
+"tags": [
+"melee",
+"scythe",
+"reap",
+"dark",
+"ghost",
+"death",
+"slash",
+"combat",
+"one-shot"
+],
+"taille": [
+184,
+116
+],
+"origine": [
+84,
+98
+],
+"duree": 2.1,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/spear-sweep",
+"nom": "Spear sweep",
+"desc": "A wide low sweep at shin height: a long flat crescent swings from behind the legs round the front, and the wind of it kicks a wake of dust and grit along the floor.",
+"tags": [
+"melee",
+"sweep",
+"spear",
+"polearm",
+"low",
+"aoe",
+"ground",
+"dust",
+"combat",
+"one-shot"
+],
+"taille": [
+216,
+84
+],
+"origine": [
+104,
+70
+],
+"duree": 1.5,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/spin-slash",
+"nom": "Spin slash",
+"desc": "The blade whirls once round the waist on a tilted plane, behind the body and back in front; the closed ring flares white, dissolves into a dotted trace and throws sparks.",
+"tags": [
+"melee",
+"slash",
+"spin",
+"sword",
+"aoe",
+"combat",
+"one-shot"
+],
+"taille": [
+208,
+104
+],
+"origine": [
+104,
+84
+],
+"duree": 0.8,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/sword-slash",
+"nom": "Sword slash",
+"desc": "A tilted crescent whips round in two frames, cools from white to deep blue as it trails off, glints at the tip and throws sparks.",
+"tags": [
+"melee",
+"slash",
+"sword",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+136,
+104
+],
+"origine": [
+44,
+92
+],
+"duree": 0.75,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/thrust",
+"nom": "Thrust",
+"desc": "A piercing stab: a bundle of streaks shoots out from the hand to a point, a long four-point star flares at the tip with a pierce ring, sparks and speed lines.",
+"tags": [
+"melee",
+"thrust",
+"stab",
+"spear",
+"rapier",
+"pierce",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+196,
+76
+],
+"origine": [
+34,
+62
+],
+"duree": 0.75,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/uppercut",
+"nom": "Uppercut",
+"desc": "A crescent rises from the floor past the face, and at the top a comic impact star bursts: bold outline, hot core, burst lines, twinkles and sparks.",
+"tags": [
+"melee",
+"uppercut",
+"punch",
+"rising",
+"launcher",
+"comic",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+132,
+128
+],
+"origine": [
+48,
+110
+],
+"duree": 0.85,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "melee/whip-crack",
+"nom": "Whip crack",
+"desc": "A whip rolls out to the right as a loop running down its length, faster and faster, until the tip flips over and cracks: a white pop, a ring of air, sparks and a puff of smoke.",
+"tags": [
+"melee",
+"whip",
+"crack",
+"lash",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+192,
+80
+],
+"origine": [
+30,
+68
+],
+"duree": 0.85,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "impacts/blunt-hit",
+"nom": "Blunt hit",
+"desc": "A heavy, soft thud: a white-hot lumpy blob cools to cream in a warm pool of light, inked wedges jab out and snap back, a squashed ring of dust puffs swells and drifts, clods drop.",
+"tags": [
+"impact",
+"hit",
+"blunt",
+"punch",
+"club",
+"thump",
+"dust",
+"comic",
+"one-shot"
+],
+"taille": [
+128,
+88
+],
+"origine": [
+64,
+72
+],
+"duree": 0.9,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "impacts/bullet-impact",
+"nom": "Bullet impact",
+"desc": "A bullet hits a wall on the right: a hot half-star, sparks sprayed back in a cone, a puff of grit, chips that fall and bounce, a pock mark cooling to soot.",
+"tags": [
+"impact",
+"bullet",
+"gun",
+"wall",
+"sparks",
+"debris",
+"directional",
+"one-shot"
+],
+"taille": [
+152,
+100
+],
+"origine": [
+116,
+84
+],
+"duree": 1.4,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "impacts/crit-hit",
+"nom": "Critical hit",
+"desc": "A critical hit: a jagged starburst slams in white and overshoots, a ring breaks into flying arcs, sparks streak off, shards tumble to the floor under a big flare.",
+"tags": [
+"impact",
+"hit",
+"crit",
+"critical",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+216,
+136
+],
+"origine": [
+84,
+106
+],
+"duree": 0.9,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "impacts/ground-slam",
+"nom": "Ground slam",
+"desc": "Something lands hard: the floor flashes and cracks, two crescent shock waves race out along it, a dust wave and a tall dust cloud rise, rocks erupt, bounce and settle.",
+"tags": [
+"impact",
+"ground",
+"slam",
+"shockwave",
+"quake",
+"rocks",
+"dust",
+"one-shot"
+],
+"taille": [
+288,
+208
+],
+"origine": [
+144,
+164
+],
+"duree": 3.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "impacts/heavy-landing",
+"nom": "Heavy landing",
+"desc": "A character lands hard: the floor dents and cracks under their feet, two rings of dust roll out along the floor one after the other, and pebbles hop away.",
+"tags": [
+"impact",
+"landing",
+"ground",
+"stomp",
+"dust",
+"rocks",
+"actor",
+"one-shot"
+],
+"taille": [
+176,
+80
+],
+"origine": [
+88,
+60
+],
+"duree": 1.6,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "impacts/hit-flash",
+"nom": "Hit flash",
+"desc": "The character takes damage: a white frame, then their own colors flushed red and blinking white, cooling off, while comic hit lines jab in at them.",
+"tags": [
+"impact",
+"hit",
+"damage",
+"hurt",
+"flash",
+"blink",
+"actor",
+"comic",
+"one-shot"
+],
+"taille": [
+80,
+64
+],
+"origine": [
+40,
+54
+],
+"duree": 0.5,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "impacts/hit-spark",
+"nom": "Hit spark",
+"desc": "The everyday hit: a sharp, lopsided cross flare with one long ray along the blow round a white diamond core, then a cone of sparks and hot chips that fall and bounce.",
+"tags": [
+"impact",
+"hit",
+"spark",
+"combat",
+"directional",
+"one-shot"
+],
+"taille": [
+136,
+80
+],
+"origine": [
+44,
+64
+],
+"duree": 0.5,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "impacts/impact-frame",
+"nom": "Impact frame",
+"desc": "An anime impact: two frames of white with black burst lines rushing at the hit, two frames inverted, then the lines pull out past the edges and vanish.",
+"tags": [
+"impact",
+"hit",
+"anime",
+"manga",
+"flash",
+"speed-lines",
+"screen",
+"one-shot"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+90
+],
+"duree": 0.3,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "impacts/parry",
+"nom": "Parry",
+"desc": "Two blades clash: their edges flash in an X, a white four-point star rings out, a ring breaks into arcs and a fan of gold sparks sprays up and rains down.",
+"tags": [
+"impact",
+"parry",
+"block",
+"clash",
+"sword",
+"metal",
+"sparks",
+"one-shot"
+],
+"taille": [
+200,
+112
+],
+"origine": [
+100,
+96
+],
+"duree": 1,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "impacts/ricochet",
+"nom": "Ricochet",
+"desc": "A tracer streaks down onto the floor, glances off with a white-hot star and skips away at an angle, leaving a glowing skid while sparks skitter along the ground.",
+"tags": [
+"impact",
+"ricochet",
+"bullet",
+"tracer",
+"sparks",
+"ground",
+"directional",
+"one-shot"
+],
+"taille": [
+232,
+84
+],
+"origine": [
+64,
+60
+],
+"duree": 1.1,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "impacts/shield-block",
+"nom": "Shield block",
+"desc": "A blow is caught on a half-dome of energy in front of the character: its diamond lattice flashes, a ripple runs over it, sparks glance off, then it blinks out cell by cell.",
+"tags": [
+"impact",
+"block",
+"shield",
+"barrier",
+"energy",
+"ripple",
+"actor",
+"one-shot"
+],
+"taille": [
+148,
+104
+],
+"origine": [
+40,
+88
+],
+"duree": 1.1,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "projectiles/arrow",
+"nom": "Arrow",
+"desc": "An arrow in flight: a steel broadhead catching the light, a wooden shaft, fletching fluttering in the wind, streaks of air peeling off its head and swirling off its feathers.",
+"tags": [
+"projectile",
+"arrow",
+"bow",
+"medieval",
+"directional",
+"loop"
+],
+"taille": [
+112,
+32
+],
+"origine": [
+92,
+16
+],
+"duree": 0.6,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "projectiles/bullet-tracer",
+"nom": "Bullet tracer",
+"desc": "A white-hot slug tearing along, its tracer burning behind it in a long streak that sputters and cools from white through gold to red, shedding sparks and a thread of smoke.",
+"tags": [
+"projectile",
+"bullet",
+"tracer",
+"gun",
+"directional",
+"loop"
+],
+"taille": [
+200,
+40
+],
+"origine": [
+184,
+18
+],
+"duree": 0.6,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "projectiles/cannonball",
+"nom": "Cannon shot",
+"desc": "A cannon fires from a muzzle `height` px above the floor (the origin): a white flash, a tongue of flame, the ball arcing off trailing smoke, a big gunsmoke cloud rolling out.",
+"tags": [
+"projectile",
+"cannon",
+"cannonball",
+"smoke",
+"flash",
+"directional",
+"one-shot"
+],
+"taille": [
+208,
+116
+],
+"origine": [
+48,
+102
+],
+"duree": 3.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "projectiles/energy-disc",
+"nom": "Energy disc",
+"desc": "A sawblade of crackling energy spinning flat out as it flies: hooked teeth bright on their leading edges, a white hub, spiral arms churning, sparks flung off the teeth.",
+"tags": [
+"projectile",
+"disc",
+"saw",
+"energy",
+"sci-fi",
+"directional",
+"loop"
+],
+"taille": [
+120,
+52
+],
+"origine": [
+92,
+26
+],
+"duree": 0.5,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "projectiles/flare",
+"nom": "Signal flare",
+"desc": "A signal flare streaks up off the ground trailing sparks and smoke, bursts, and hangs as a pulsing red star that drips sparks under its own red-lit smoke, then gutters out.",
+"tags": [
+"projectile",
+"flare",
+"signal",
+"fire",
+"smoke",
+"light",
+"one-shot"
+],
+"taille": [
+152,
+232
+],
+"origine": [
+76,
+226
+],
+"duree": 5,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "projectiles/homing-missile",
+"nom": "Homing missile",
+"desc": "A missile kicks off, arcs up, rolls over and dives onto its target (the origin), its smoke trail left hanging in the air, and hits in a fiery blast of flame, sparks and rocks.",
+"tags": [
+"projectile",
+"missile",
+"rocket",
+"homing",
+"smoke",
+"explosion",
+"one-shot"
+],
+"taille": [
+248,
+140
+],
+"origine": [
+160,
+120
+],
+"duree": 3.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "projectiles/laser-bolt",
+"nom": "Laser bolt",
+"desc": "A red laser bolt: a white-hot core in a rounded head, red bands tapering back, pulses racing down it, a tail that shimmers apart into wavering dashes.",
+"tags": [
+"projectile",
+"laser",
+"energy",
+"sci-fi",
+"directional",
+"loop"
+],
+"taille": [
+128,
+32
+],
+"origine": [
+108,
+16
+],
+"duree": 0.5,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "projectiles/magic-missile",
+"nom": "Magic missile",
+"desc": "Motes gather into an arcane orb at a hand `height` px above the floor (the origin); it weaves to its target trailing a twisting ribbon and bursts into a star of light.",
+"tags": [
+"projectile",
+"magic",
+"arcane",
+"missile",
+"spell",
+"directional",
+"one-shot"
+],
+"taille": [
+208,
+112
+],
+"origine": [
+24,
+104
+],
+"duree": 1.9,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "projectiles/muzzle-pistol",
+"nom": "Pistol shot",
+"desc": "One pistol shot from a muzzle `height` px above the floor (the origin): a spiky white-cored flash, sparks, a curl of smoke hooking up and back, a casing that bounces and settles.",
+"tags": [
+"projectile",
+"muzzle",
+"gun",
+"pistol",
+"flash",
+"smoke",
+"casing",
+"directional",
+"one-shot"
+],
+"taille": [
+96,
+72
+],
+"origine": [
+44,
+66
+],
+"duree": 1.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "projectiles/muzzle-shotgun",
+"nom": "Shotgun blast",
+"desc": "A shotgun blast from a muzzle `height` px above the floor (the origin): a wide ragged fan of flame, pellet streaks, a heavy rolling smoke cloud, a red shell kicked out on the pump.",
+"tags": [
+"projectile",
+"muzzle",
+"gun",
+"shotgun",
+"flash",
+"smoke",
+"casing",
+"directional",
+"one-shot"
+],
+"taille": [
+160,
+88
+],
+"origine": [
+44,
+82
+],
+"duree": 3.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "projectiles/muzzle-smg",
+"nom": "SMG burst",
+"desc": "Sustained fire at twelve rounds a second: each shot a different spiky flash with a white core, sparks, smoke wisps piling up and drifting, brass casings bouncing on the floor.",
+"tags": [
+"projectile",
+"muzzle",
+"gun",
+"automatic",
+"flash",
+"smoke",
+"casing",
+"directional",
+"loop"
+],
+"taille": [
+112,
+72
+],
+"origine": [
+56,
+66
+],
+"duree": 1,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "projectiles/plasma-shot",
+"nom": "Plasma shot",
+"desc": "A glowing plasma blob: hot knots churning in its core, a corona crackling over its skin, its tail necking into droplets that tear off, cool and wink out behind.",
+"tags": [
+"projectile",
+"plasma",
+"energy",
+"sci-fi",
+"directional",
+"loop"
+],
+"taille": [
+144,
+60
+],
+"origine": [
+108,
+30
+],
+"duree": 0.8,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "projectiles/rocket",
+"nom": "Rocket",
+"desc": "A steel rocket roars along: a flickering jet with shock diamonds and a white-hot nozzle, a thick billowing smoke trail lit by the flame, sparks shed behind.",
+"tags": [
+"projectile",
+"rocket",
+"missile",
+"smoke",
+"fire",
+"directional",
+"loop"
+],
+"taille": [
+288,
+76
+],
+"origine": [
+252,
+42
+],
+"duree": 1.2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "spawn/coin-drop",
+"nom": "Coin drop",
+"desc": "An enemy goes up in a soft poof and gold coins spin out of it, bounce with a glint on each hit, settle on the floor, twinkle, and wink out one by one.",
+"tags": [
+"spawn",
+"death",
+"loot",
+"coins",
+"gold",
+"drop",
+"pickup",
+"ground",
+"one-shot"
+],
+"taille": [
+160,
+88
+],
+"origine": [
+80,
+78
+],
+"duree": 3,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "spawn/disintegrate",
+"nom": "Disintegrate",
+"desc": "The character crackles with light, flashes white, then peels away from the head down: each pixel flares white-hot and streams off on the wind as a cooling mote of light.",
+"tags": [
+"spawn",
+"death",
+"disintegrate",
+"dissolve",
+"pixels",
+"energy",
+"light",
+"one-shot"
+],
+"taille": [
+176,
+100
+],
+"origine": [
+48,
+86
+],
+"duree": 3.4,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "spawn/dissolve-burn",
+"nom": "Dissolve burn",
+"desc": "An ember seam lights at the feet and climbs the body: above it the body scorches and smoulders, at it flames lick up, below it there's only falling ash, embers and smoke.",
+"tags": [
+"spawn",
+"death",
+"burn",
+"fire",
+"ash",
+"dissolve",
+"embers",
+"one-shot"
+],
+"taille": [
+96,
+112
+],
+"origine": [
+48,
+100
+],
+"duree": 3.6,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "spawn/egg-hatch",
+"nom": "Egg hatch",
+"desc": "A speckled egg rocks three times, each rock cracking it further with warm light leaking out, then pops: light pours out of the opening and lit shell halves tumble away.",
+"tags": [
+"spawn",
+"egg",
+"hatch",
+"birth",
+"crack",
+"shell",
+"light",
+"ground",
+"one-shot"
+],
+"taille": [
+120,
+96
+],
+"origine": [
+60,
+84
+],
+"duree": 3.1,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "spawn/poof",
+"nom": "Poof",
+"desc": "A cartoon death poof: a white pop, a ring of soft round smoke balls bursting out between speed lines, little stars spinning off, and the cloud lifting and thinning away.",
+"tags": [
+"spawn",
+"death",
+"despawn",
+"smoke",
+"poof",
+"cartoon",
+"one-shot"
+],
+"taille": [
+112,
+92
+],
+"origine": [
+56,
+80
+],
+"duree": 1.6,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "spawn/respawn-beam",
+"nom": "Respawn beam",
+"desc": "A guide line drops, a pillar of light slams onto the spot, and a scan bar climbs from the feet writing the character back in row by row, white-hot lines cooling to its colors.",
+"tags": [
+"spawn",
+"respawn",
+"beam",
+"teleport",
+"scanline",
+"light",
+"one-shot"
+],
+"taille": [
+128,
+150
+],
+"origine": [
+64,
+136
+],
+"duree": 2.5,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "spawn/shatter-death",
+"nom": "Shatter death",
+"desc": "Frost races up the body and seals it in faceted ice, a glint sweeps it, cracks spread from the chest, then it bursts into its own facets that tumble, bounce and melt.",
+"tags": [
+"spawn",
+"death",
+"ice",
+"freeze",
+"shatter",
+"shards",
+"one-shot"
+],
+"taille": [
+172,
+96
+],
+"origine": [
+84,
+84
+],
+"duree": 3.3,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "spawn/soul-rise",
+"nom": "Soul rise",
+"desc": "The body's outline flares and dims, then a pale glowing copy of it lifts out, stretching as its legs melt into a rippling wisp, shedding motes until it thins into light.",
+"tags": [
+"spawn",
+"death",
+"soul",
+"ghost",
+"spirit",
+"rise",
+"light",
+"one-shot"
+],
+"taille": [
+96,
+140
+],
+"origine": [
+48,
+126
+],
+"duree": 3.2,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "spawn/spawn-portal",
+"nom": "Spawn portal",
+"desc": "A rift tears open on the floor and swirls, belches violet smoke and sparks, spits a fountain of wisps up out of itself, then twists shut with a pop.",
+"tags": [
+"spawn",
+"portal",
+"summon",
+"rift",
+"arcane",
+"smoke",
+"ground",
+"one-shot"
+],
+"taille": [
+208,
+150
+],
+"origine": [
+104,
+122
+],
+"duree": 3.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "spawn/summon-rise",
+"nom": "Summon rise",
+"desc": "A rune circle burns into the floor, the ground bursts, and a horned brute heaves up out of it through dust and rubble, lit from below, until its eyes flare.",
+"tags": [
+"spawn",
+"summon",
+"demon",
+"rise",
+"runes",
+"dust",
+"rubble",
+"ground",
+"one-shot"
+],
+"taille": [
+176,
+116
+],
+"origine": [
+88,
+94
+],
+"duree": 4.6,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "arcane/arcane-beam",
+"nom": "Arcane beam",
+"desc": "A beam fires right from the hand: a white core, strands twisting round it, pulses running down it, a flaring source and an end that sprays sparks.",
+"tags": [
+"arcane",
+"beam",
+"laser",
+"ray",
+"magic",
+"directional",
+"loop"
+],
+"taille": [
+264,
+100
+],
+"origine": [
+26,
+84
+],
+"duree": 1.2,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "arcane/arcane-missiles",
+"nom": "Arcane missiles",
+"desc": "A volley of violet bolts fans out of the hand, curls round on twisting ribbons and pops on the target one after another.",
+"tags": [
+"arcane",
+"missile",
+"projectile",
+"homing",
+"volley",
+"magic",
+"directional",
+"one-shot"
+],
+"taille": [
+240,
+116
+],
+"origine": [
+26,
+88
+],
+"duree": 1.75,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "arcane/arcane-orb",
+"nom": "Arcane orb",
+"desc": "A floating orb of smoky violet glass with a swirl turning round a white-hot heart, two tilted rings of light orbiting behind and in front.",
+"tags": [
+"arcane",
+"orb",
+"sphere",
+"magic",
+"floating",
+"loop"
+],
+"taille": [
+136,
+112
+],
+"origine": [
+68,
+104
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "arcane/blink-in",
+"nom": "Blink in",
+"desc": "Glittering bits spiral in to a point of light that opens into a line, then into a white silhouette that cools into the caster.",
+"tags": [
+"arcane",
+"blink",
+"teleport",
+"appear",
+"movement",
+"magic",
+"one-shot"
+],
+"taille": [
+136,
+96
+],
+"origine": [
+68,
+80
+],
+"duree": 1.4,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "arcane/blink-out",
+"nom": "Blink out",
+"desc": "The caster crackles with gathering light, flashes white, squeezes into a line of light that collapses and pops away in sparks.",
+"tags": [
+"arcane",
+"blink",
+"teleport",
+"vanish",
+"movement",
+"magic",
+"one-shot"
+],
+"taille": [
+136,
+96
+],
+"origine": [
+68,
+80
+],
+"duree": 1.6,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "arcane/magic-circle-cast",
+"nom": "Magic circle cast",
+"desc": "A circle draws itself on the floor, runes ignite one by one, it flashes, and a column of light fires up and breaks apart into glints.",
+"tags": [
+"arcane",
+"magic",
+"circle",
+"rune",
+"cast",
+"column",
+"summon",
+"ground",
+"one-shot"
+],
+"taille": [
+200,
+220
+],
+"origine": [
+100,
+192
+],
+"duree": 3.9,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "arcane/mana-burst",
+"nom": "Mana burst",
+"desc": "Energy rushes into a point and blows out in a white flash and rings, flinging glowing runes that flare and pop into sparks one after another.",
+"tags": [
+"arcane",
+"burst",
+"mana",
+"rune",
+"nova",
+"magic",
+"ground",
+"one-shot"
+],
+"taille": [
+208,
+150
+],
+"origine": [
+104,
+124
+],
+"duree": 1.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "arcane/portal",
+"nom": "Portal",
+"desc": "An upright rift: fibrous spiral arms wind down into the dark, a lit rim wobbles, motes and streaks are pulled in, the floor glows.",
+"tags": [
+"arcane",
+"portal",
+"rift",
+"teleport",
+"magic",
+"ground",
+"loop"
+],
+"taille": [
+152,
+116
+],
+"origine": [
+76,
+106
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "arcane/rune-circle",
+"nom": "Rune circle",
+"desc": "A rune circle turns on the floor in perspective: a carousel of runes lit by chasing light, a turning square, ticks, motes rising off it.",
+"tags": [
+"arcane",
+"rune",
+"circle",
+"magic",
+"aura",
+"ground",
+"loop"
+],
+"taille": [
+136,
+100
+],
+"origine": [
+68,
+80
+],
+"duree": 4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "arcane/spell-charge",
+"nom": "Spell charge",
+"desc": "Energy gathers in the caster's hand: streaks and motes spiral in, rings collapse into a swelling orb that crackles with arcs, ready to fire.",
+"tags": [
+"arcane",
+"charge",
+"spell",
+"orb",
+"cast",
+"magic",
+"loop"
+],
+"taille": [
+120,
+86
+],
+"origine": [
+44,
+80
+],
+"duree": 1.6,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "arcane/star-fall",
+"nom": "Star fall",
+"desc": "Stars streak down on long trails across an area, each landing with a white flash, a ring across the floor and a kick of sparks.",
+"tags": [
+"arcane",
+"star",
+"meteor",
+"rain",
+"aoe",
+"magic",
+"ground",
+"one-shot"
+],
+"taille": [
+232,
+172
+],
+"origine": [
+124,
+150
+],
+"duree": 2.5,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "arcane/time-stop",
+"nom": "Time stop",
+"desc": "A clock face springs open, ticks slower and slower, freezes drained of colour, cracks, then shatters into falling shards.",
+"tags": [
+"arcane",
+"time",
+"clock",
+"freeze",
+"stop",
+"shatter",
+"magic",
+"one-shot"
+],
+"taille": [
+196,
+136
+],
+"origine": [
+98,
+118
+],
+"duree": 3.6,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "holy/blessing",
+"nom": "Blessing",
+"desc": "A soft cone of light rests on the character from above; sparkles drift down through it, twinkling, and wink out where they land on the head and shoulders.",
+"tags": [
+"holy",
+"blessing",
+"buff",
+"light",
+"sparkle",
+"character",
+"loop"
+],
+"taille": [
+80,
+128
+],
+"origine": [
+40,
+108
+],
+"duree": 3,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "holy/divine-shield",
+"nom": "Divine shield",
+"desc": "A bubble of gold light round the character: a bright rim and a thin gold film, meridians turning like a slow globe, a sheen sweeping across and sparkles winking on it.",
+"tags": [
+"holy",
+"shield",
+"bubble",
+"barrier",
+"buff",
+"character",
+"loop"
+],
+"taille": [
+88,
+84
+],
+"origine": [
+44,
+68
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "holy/feather-burst",
+"nom": "Feather burst",
+"desc": "A white puff pops and throws feathers that brake hard, then rock from side to side as they sink and fade, with down drifting after them.",
+"tags": [
+"holy",
+"feather",
+"burst",
+"poof",
+"angel",
+"bird",
+"one-shot"
+],
+"taille": [
+160,
+160
+],
+"origine": [
+80,
+60
+],
+"duree": 3,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "holy/halo",
+"nom": "Halo",
+"desc": "A ring of gold light floats over the head with a glint running round it; fine dust sifts down from it and the head catches its light.",
+"tags": [
+"holy",
+"halo",
+"saint",
+"buff",
+"glow",
+"character",
+"loop"
+],
+"taille": [
+56,
+80
+],
+"origine": [
+28,
+70
+],
+"duree": 2,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "holy/heal",
+"nom": "Heal",
+"desc": "Petals of light bloom under the feet, a hoop of light rises up the body restoring its colour and leaving sparkles, and motes spiral up and pop into tiny hearts.",
+"tags": [
+"holy",
+"heal",
+"restore",
+"buff",
+"petals",
+"hearts",
+"character",
+"one-shot"
+],
+"taille": [
+80,
+104
+],
+"origine": [
+40,
+92
+],
+"duree": 1.9,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "holy/heal-aoe",
+"nom": "Healing ring",
+"desc": "A seed of green light sinks into the floor and a soft ring rolls out from it; the floor glows where it passes and plus signs sprout and float up.",
+"tags": [
+"holy",
+"heal",
+"aoe",
+"ring",
+"plus",
+"ground",
+"one-shot"
+],
+"taille": [
+256,
+136
+],
+"origine": [
+128,
+104
+],
+"duree": 2.9,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "holy/holy-pillar",
+"nom": "Holy pillar",
+"desc": "Light breaks through from above: a sun opens at the top and a fan of shafts converges on the mark, pulsing, while a sigil burns on the floor; then the fan folds shut.",
+"tags": [
+"holy",
+"pillar",
+"light",
+"rays",
+"aoe",
+"sigil",
+"ground",
+"one-shot"
+],
+"taille": [
+192,
+232
+],
+"origine": [
+96,
+204
+],
+"duree": 3.5,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "holy/resurrection",
+"nom": "Resurrection",
+"desc": "Light pours down on the fallen and life climbs back up the body; wings of light unfold, a halo forms, one great wingbeat, then the wings scatter into feathers.",
+"tags": [
+"holy",
+"revive",
+"resurrect",
+"wings",
+"halo",
+"light",
+"character",
+"one-shot"
+],
+"taille": [
+192,
+160
+],
+"origine": [
+96,
+140
+],
+"duree": 4.8,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "holy/smite",
+"nom": "Smite",
+"desc": "A glint marks the spot, then a bolt of light drops like a hammer: a white flash, a shockwave over the floor, stone chips flying and cracks that glow and cool.",
+"tags": [
+"holy",
+"smite",
+"strike",
+"impact",
+"light",
+"ground",
+"one-shot"
+],
+"taille": [
+224,
+176
+],
+"origine": [
+112,
+148
+],
+"duree": 2.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "holy/sunburst",
+"nom": "Sunburst",
+"desc": "A white-hot core in a gold corona; long and short rays turn slowly round it, breathing, with glints running out along them that wink at the tips.",
+"tags": [
+"holy",
+"sun",
+"radiant",
+"rays",
+"light",
+"glow",
+"loop"
+],
+"taille": [
+128,
+128
+],
+"origine": [
+64,
+64
+],
+"duree": 4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "shadow/black-hole",
+"nom": "Black hole",
+"desc": "A tilted disk of banded rings turns round a black hole, its far side bent up over the top and under the bottom; debris spirals in, stretches and is swallowed.",
+"tags": [
+"shadow",
+"black-hole",
+"void",
+"space",
+"gravity",
+"dark",
+"magic",
+"loop"
+],
+"taille": [
+184,
+132
+],
+"origine": [
+92,
+124
+],
+"duree": 4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "shadow/curse",
+"nom": "Curse",
+"desc": "Wisps gather over the head, a skull stamps down with a flash, its eyes burn as the curse floods the body violet, then it cracks and crumbles.",
+"tags": [
+"shadow",
+"curse",
+"debuff",
+"skull",
+"status",
+"dark",
+"magic",
+"one-shot"
+],
+"taille": [
+112,
+124
+],
+"origine": [
+56,
+108
+],
+"duree": 3.4,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "shadow/dark-explosion",
+"nom": "Dark explosion",
+"desc": "Motes swirl into a pulsing core, a black star cuts across a violet-white flash, and a black sphere burns at the rim, throws lit shards and smoke, then collapses.",
+"tags": [
+"shadow",
+"explosion",
+"void",
+"dark",
+"magic",
+"impact",
+"one-shot"
+],
+"taille": [
+280,
+248
+],
+"origine": [
+140,
+206
+],
+"duree": 3.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "shadow/eclipse",
+"nom": "Eclipse",
+"desc": "A black moon over the sun: a breathing pearl corona with long streamers, a thin white rim, and one diamond bead blazing on its edge.",
+"tags": [
+"shadow",
+"eclipse",
+"moon",
+"sun",
+"corona",
+"sky",
+"magic",
+"loop"
+],
+"taille": [
+160,
+144
+],
+"origine": [
+80,
+72
+],
+"duree": 4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "shadow/grasping-hands",
+"nom": "Grasping hands",
+"desc": "Shadow arms burst up out of a dark pool with a splash, clench their hands into claws, strain, and are dragged back under, fingers clawing at the air.",
+"tags": [
+"shadow",
+"hands",
+"arms",
+"grab",
+"ground",
+"dark",
+"magic",
+"one-shot"
+],
+"taille": [
+200,
+116
+],
+"origine": [
+100,
+100
+],
+"duree": 3.1,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "shadow/hex-sigil",
+"nom": "Hex sigil",
+"desc": "A burning pen traces a cursed sigil in the air, its glyphs pop in one by one, then it flares white and crumbles into falling embers.",
+"tags": [
+"shadow",
+"hex",
+"sigil",
+"rune",
+"curse",
+"magic",
+"circle",
+"one-shot"
+],
+"taille": [
+168,
+128
+],
+"origine": [
+84,
+112
+],
+"duree": 4.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "shadow/life-steal",
+"nom": "Life steal",
+"desc": "A target on the right is struck and bleeds red orbs; they hang a moment, then whip home as comet streaks and flood the caster crimson.",
+"tags": [
+"shadow",
+"life-steal",
+"drain",
+"blood",
+"heal",
+"directional",
+"magic",
+"one-shot"
+],
+"taille": [
+184,
+100
+],
+"origine": [
+36,
+92
+],
+"duree": 2.2,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "shadow/necro-skulls",
+"nom": "Necro skulls",
+"desc": "Spectral skulls circle a cold green flame on a tilted orbit, passing behind and before it, eyes lit, trailing curls of ghost smoke.",
+"tags": [
+"shadow",
+"necromancy",
+"skull",
+"orbit",
+"ghost",
+"spectral",
+"magic",
+"loop"
+],
+"taille": [
+136,
+116
+],
+"origine": [
+68,
+108
+],
+"duree": 3,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "shadow/shadow-flames",
+"nom": "Shadow flames",
+"desc": "Inside-out fire on the floor: a black heart wrapped in violet flame with pale skin and tips, shedding embers and dark smoke.",
+"tags": [
+"shadow",
+"fire",
+"flame",
+"ground",
+"dark",
+"magic",
+"loop"
+],
+"taille": [
+104,
+112
+],
+"origine": [
+52,
+102
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "shadow/shadow-tendrils",
+"nom": "Shadow tendrils",
+"desc": "A dark pool opens on the floor; tentacles with lit rims and hooked tips lash up out of it with a splash, writhe, and sink back as it closes.",
+"tags": [
+"shadow",
+"tentacle",
+"tendril",
+"ground",
+"dark",
+"magic",
+"one-shot"
+],
+"taille": [
+208,
+130
+],
+"origine": [
+104,
+106
+],
+"duree": 3.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "shadow/soul-drain",
+"nom": "Soul drain",
+"desc": "Pale souls are torn loose on the right and dragged down a funnel of streaks into a black crystal vessel, which flares violet as each one lands.",
+"tags": [
+"shadow",
+"soul",
+"drain",
+"necromancy",
+"funnel",
+"directional",
+"magic",
+"loop"
+],
+"taille": [
+208,
+120
+],
+"origine": [
+40,
+110
+],
+"duree": 3.2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "shadow/void-orb",
+"nom": "Void orb",
+"desc": "A black orb hangs in the air, a pale rim crawling round it; a dark vortex winds into it, motes and streaks are pulled in, and light bends round its edge.",
+"tags": [
+"shadow",
+"void",
+"orb",
+"vortex",
+"dark",
+"magic",
+"loop"
+],
+"taille": [
+168,
+160
+],
+"origine": [
+84,
+150
+],
+"duree": 3.2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "status/bleeding",
+"nom": "Bleeding",
+"desc": "Bleeding out: beads swell at three wounds, run, let go and fall to spatter into a glossy pool that ripples; each heartbeat spurts a little and flashes the body red.",
+"tags": [
+"status",
+"bleed",
+"blood",
+"dot",
+"debuff",
+"wound",
+"loop"
+],
+"taille": [
+60,
+56
+],
+"origine": [
+30,
+46
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "status/burning",
+"nom": "Burning",
+"desc": "Burning over time: small flames lick from four hot spots, trailing sparks and thin smoke; every 0.6 s they flare, the body flashes white then orange, scorch marks spread.",
+"tags": [
+"status",
+"fire",
+"burn",
+"dot",
+"debuff",
+"loop"
+],
+"taille": [
+72,
+80
+],
+"origine": [
+36,
+70
+],
+"duree": 1.2,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "status/charmed",
+"nom": "Charmed",
+"desc": "Smitten: a big heart beats over the head, throwing a ring and a flush of light with every beat, little hearts float up, the eyes go pink and the cheeks blush.",
+"tags": [
+"status",
+"charm",
+"love",
+"hearts",
+"debuff",
+"loop"
+],
+"taille": [
+60,
+76
+],
+"origine": [
+30,
+68
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "status/confused",
+"nom": "Confused",
+"desc": "Head in a spin: a glowing spiral whirls over the head, question marks pop up round it and bob, the eyes dart left and right.",
+"tags": [
+"status",
+"confused",
+"confusion",
+"dizzy",
+"debuff",
+"loop"
+],
+"taille": [
+60,
+78
+],
+"origine": [
+30,
+70
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "status/cursed",
+"nom": "Cursed",
+"desc": "Hexed: violet smoke rises off the body in winding trails, a dark stain creeps up from the feet with a glowing edge, the eyes burn, a skull glitches in overhead.",
+"tags": [
+"status",
+"curse",
+"hex",
+"dark",
+"debuff",
+"shadow",
+"loop"
+],
+"taille": [
+64,
+84
+],
+"origine": [
+32,
+76
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "status/frozen",
+"nom": "Frozen",
+"desc": "Chilled to the bone: frost ferns creep over the body, icicles hang from chin and hands and drip, breath steams, snow settles, a shiver every second, frost spreads underfoot.",
+"tags": [
+"status",
+"ice",
+"freeze",
+"frozen",
+"cold",
+"chill",
+"debuff",
+"loop"
+],
+"taille": [
+72,
+64
+],
+"origine": [
+36,
+54
+],
+"duree": 2,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "status/haste",
+"nom": "Haste",
+"desc": "Sped up: striped after-images stream out behind, speed lines whip past, dust kicks off the heels and the leading edge catches the wind. Faces right.",
+"tags": [
+"status",
+"haste",
+"speed",
+"fast",
+"buff",
+"directional",
+"loop"
+],
+"taille": [
+100,
+56
+],
+"origine": [
+64,
+48
+],
+"duree": 1.2,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "status/petrified",
+"nom": "Petrified",
+"desc": "Turned to stone: grey creeps up from the feet behind a crackling edge that spits grit, the statue holds, cracks run through it, and it bursts into tumbling chunks and dust.",
+"tags": [
+"status",
+"stone",
+"petrify",
+"petrified",
+"debuff",
+"death",
+"one-shot"
+],
+"taille": [
+120,
+74
+],
+"origine": [
+60,
+64
+],
+"duree": 3.8,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "status/poisoned",
+"nom": "Poisoned",
+"desc": "Sick to the bone: green rolls up the body in waves, dark veins creep from a wound, toxic sweat drips and hisses; every 0.8 s it wobbles, blisters pop and a ring pulses out.",
+"tags": [
+"status",
+"poison",
+"toxic",
+"dot",
+"debuff",
+"sick",
+"loop"
+],
+"taille": [
+72,
+64
+],
+"origine": [
+36,
+54
+],
+"duree": 1.6,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "status/rage",
+"nom": "Rage",
+"desc": "Seething: the body judders on every heartbeat, an anger mark throbs at the temple, eyes burn, steam jets off the head, stress lines flash out and the floor cracks hot underfoot.",
+"tags": [
+"status",
+"rage",
+"berserk",
+"anger",
+"buff",
+"loop"
+],
+"taille": [
+80,
+80
+],
+"origine": [
+40,
+70
+],
+"duree": 1.2,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "status/sleep",
+"nom": "Sleep",
+"desc": "Fast asleep: eyes shut, soft outlined Zs float up off the head one after another, swaying and growing as they rise, dream motes drift, a slow breathing glow.",
+"tags": [
+"status",
+"sleep",
+"zzz",
+"rest",
+"debuff",
+"loop"
+],
+"taille": [
+60,
+82
+],
+"origine": [
+26,
+74
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "status/slowed",
+"nom": "Slowed",
+"desc": "Dragged through time: a glassy clock dial behind the head ticks round in heavy steps, flashing with each, while drops sink in slow motion and spread slow rings.",
+"tags": [
+"status",
+"slow",
+"time",
+"clock",
+"debuff",
+"loop"
+],
+"taille": [
+64,
+76
+],
+"origine": [
+32,
+68
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "status/stunned",
+"nom": "Stunned",
+"desc": "Seeing stars: three spinning stars and two little birds circle the head on a tilted ring, ducking behind it and sweeping round in front, trailing glitter.",
+"tags": [
+"status",
+"stun",
+"dizzy",
+"daze",
+"stars",
+"birds",
+"debuff",
+"loop"
+],
+"taille": [
+60,
+64
+],
+"origine": [
+30,
+56
+],
+"duree": 2,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "nature/acid-splash",
+"nom": "Acid splash",
+"desc": "A gob of acid bursts into a crown and spatters; it eats a glowing, smoking pit into the floor and boils down into it, spitting bright beads, pale steam curling off.",
+"tags": [
+"nature",
+"acid",
+"poison",
+"splash",
+"liquid",
+"ground",
+"one-shot"
+],
+"taille": [
+184,
+116
+],
+"origine": [
+92,
+100
+],
+"duree": 2.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "nature/boulder",
+"nom": "Boulder",
+"desc": "A spinning boulder arcs right shedding dust and pebbles, smashes into the floor in a white flash and bursts into tumbling chunks, gravel and rolling dust.",
+"tags": [
+"nature",
+"earth",
+"rock",
+"projectile",
+"impact",
+"directional",
+"one-shot"
+],
+"taille": [
+264,
+120
+],
+"origine": [
+40,
+104
+],
+"duree": 2.3,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "nature/earth-spike",
+"nom": "Earth spike",
+"desc": "The floor cracks with light and heaves, a faceted stone spike rams up with two side shards in a burst of chips, grit and dust; rubble rains, then it splits and crumbles.",
+"tags": [
+"nature",
+"earth",
+"stone",
+"spike",
+"ground",
+"attack",
+"one-shot"
+],
+"taille": [
+272,
+150
+],
+"origine": [
+136,
+132
+],
+"duree": 3.4,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "nature/healing-bloom",
+"nom": "Healing bloom",
+"desc": "A sprout pushes up and unfurls, a bud swells and opens round a glowing golden heart in a flare of healing light; its petals lift away one by one as motes.",
+"tags": [
+"nature",
+"heal",
+"flower",
+"plant",
+"buff",
+"ground",
+"one-shot"
+],
+"taille": [
+124,
+120
+],
+"origine": [
+62,
+108
+],
+"duree": 3.3,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "nature/leaf-storm",
+"nom": "Leaf storm",
+"desc": "Leaves tumble up a rising spiral round the character, passing behind and in front, turning and flipping, wrapped in bright bands of wind; litter swirls at their feet.",
+"tags": [
+"nature",
+"wind",
+"leaves",
+"buff",
+"aura",
+"actor",
+"loop"
+],
+"taille": [
+112,
+104
+],
+"origine": [
+56,
+92
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": true
+},
+{
+"id": "nature/poison-cloud",
+"nom": "Poison cloud",
+"desc": "A miasma hugging the floor: ragged sheets of gas lit yellow-green from within, fading to violet, creep out in tongues that curl over at their tips; plumes twist up as ribbons.",
+"tags": [
+"nature",
+"poison",
+"gas",
+"cloud",
+"miasma",
+"toxic",
+"area",
+"ground",
+"loop"
+],
+"taille": [
+256,
+100
+],
+"origine": [
+128,
+86
+],
+"duree": 4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "nature/quake",
+"nom": "Quake",
+"desc": "The ground jolts three times: a rift tears out along the floor glowing deep inside, slabs of floor heave up and drop back askew, pebbles hop and dust bursts out of the split.",
+"tags": [
+"nature",
+"earth",
+"quake",
+"rift",
+"aoe",
+"ground",
+"one-shot"
+],
+"taille": [
+288,
+104
+],
+"origine": [
+144,
+88
+],
+"duree": 3.1,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "nature/root-snare",
+"nom": "Root snare",
+"desc": "The floor cracks and roots burst up round the character, spiralling round its legs; they cinch tight with a snap, hold, then crack and crumble into bark and dust.",
+"tags": [
+"nature",
+"roots",
+"plant",
+"snare",
+"root",
+"status",
+"actor",
+"one-shot"
+],
+"taille": [
+128,
+96
+],
+"origine": [
+64,
+78
+],
+"duree": 2.7,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "nature/spore-burst",
+"nom": "Spore burst",
+"desc": "A toadstool pushes up, swells and trembles as its gills glow, then squashes and puffs a lumpy cloud of glowing spores that billows up and drifts down twinkling.",
+"tags": [
+"nature",
+"mushroom",
+"spores",
+"poison",
+"cloud",
+"ground",
+"one-shot"
+],
+"taille": [
+212,
+132
+],
+"origine": [
+106,
+118
+],
+"duree": 3.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "nature/thorns",
+"nom": "Thorns",
+"desc": "A seam races along the floor and hooked thorns punch up out of it one after another, each bigger than the last, in bursts of dirt and green light; they hold, then sink.",
+"tags": [
+"nature",
+"thorns",
+"plant",
+"spikes",
+"ground",
+"attack",
+"one-shot"
+],
+"taille": [
+232,
+92
+],
+"origine": [
+48,
+78
+],
+"duree": 2.4,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "nature/tornado",
+"nom": "Tornado",
+"desc": "A snaking funnel of spinning wind bands under a flared, churning top that flickers with lightning; leaves and debris whirl round it front and back, dust boils at its foot.",
+"tags": [
+"nature",
+"wind",
+"tornado",
+"storm",
+"hazard",
+"ground",
+"loop"
+],
+"taille": [
+196,
+168
+],
+"origine": [
+98,
+152
+],
+"duree": 2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "nature/toxic-puddle",
+"nom": "Toxic puddle",
+"desc": "Black tar lit from inside by chartreuse veins and a glowing rim, an oily sheen drifting on it; glossy bubbles dome, stretch and pop, vapour curls up in fraying ribbons.",
+"tags": [
+"nature",
+"poison",
+"toxic",
+"sludge",
+"tar",
+"puddle",
+"hazard",
+"ground",
+"loop"
+],
+"taille": [
+176,
+100
+],
+"origine": [
+88,
+86
+],
+"duree": 4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "nature/vine-whip",
+"nom": "Vine whip",
+"desc": "A thorny vine bursts from the floor, rears back coiled, then lashes out right in a whip crack that sprays sap and tears off leaves, before sliding back into the ground.",
+"tags": [
+"nature",
+"vine",
+"plant",
+"whip",
+"melee",
+"directional",
+"one-shot"
+],
+"taille": [
+216,
+128
+],
+"origine": [
+60,
+114
+],
+"duree": 1.4,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "weather/aurora",
+"nom": "Aurora",
+"desc": "Rippling curtains of green-to-violet light over a starfield: folding hems burn bright, rays shimmer up into violet, and the whole sky slowly breathes.",
+"tags": [
+"weather",
+"aurora",
+"northern lights",
+"sky",
+"night",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+180
+],
+"duree": 12,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "weather/blizzard",
+"nom": "Blizzard",
+"desc": "Snow driven almost flat by a gale: streaks at three depths race past, gusts throw translucent sheets of snow across the sky and spindrift streams off the drifts.",
+"tags": [
+"weather",
+"blizzard",
+"snow",
+"wind",
+"storm",
+"winter",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+170
+],
+"duree": 8,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "weather/cherry-blossoms",
+"nom": "Cherry blossoms",
+"desc": "Pink petals flutter down on a spring breeze, tumbling in little spirals and flashing as they catch the light, with a few whole blossoms spinning among them.",
+"tags": [
+"weather",
+"cherry blossom",
+"sakura",
+"petals",
+"spring",
+"wind",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+170
+],
+"duree": 10,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "weather/clouds",
+"nom": "Clouds",
+"desc": "Layers of clouds drift past a bright moon at night: silver-lit tops, dark bellies, edges that flare where they cross the moon, forming and thinning as they go.",
+"tags": [
+"weather",
+"clouds",
+"moon",
+"night",
+"sky",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+180
+],
+"duree": 12,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "weather/falling-leaves",
+"nom": "Falling leaves",
+"desc": "Autumn leaves swing down through the air, tilting and flipping to show their pale backs, ride a gust, land flat in the litter and fade.",
+"tags": [
+"weather",
+"leaves",
+"autumn",
+"fall",
+"wind",
+"nature",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+170
+],
+"duree": 10,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "weather/fireflies",
+"nom": "Fireflies",
+"desc": "Fireflies wander over a meadow at night, each glowing up and fading on its own rhythm, trailing light and lighting the grass tips beneath them.",
+"tags": [
+"weather",
+"fireflies",
+"night",
+"glow",
+"meadow",
+"nature",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+170
+],
+"duree": 12,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "weather/fog",
+"nom": "Fog",
+"desc": "Slow banks of moonlit fog at three depths drift past each other, crests catching the light, while thin streaks of mist slide by in front.",
+"tags": [
+"weather",
+"fog",
+"mist",
+"haze",
+"night",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+170
+],
+"duree": 12,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "weather/god-rays",
+"nom": "God rays",
+"desc": "Shafts of light slant down from high on the left, breathing and swaying, pooling on the floor, as drifting dust motes light up whenever they cross a beam.",
+"tags": [
+"weather",
+"god rays",
+"light",
+"sunbeam",
+"dust",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+170
+],
+"duree": 10,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "weather/rain",
+"nom": "Rain",
+"desc": "Slanted rain at four depths: far drops fade into the dark, near ones glint and splash, drops ring the puddles and a low mist drifts over the wet floor.",
+"tags": [
+"weather",
+"rain",
+"storm",
+"water",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+170
+],
+"duree": 8,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "weather/shooting-stars",
+"nom": "Shooting stars",
+"desc": "Meteors burn across a starry sky, white heads trailing gold and rose; the big ones flare and break up, and each leaves a glowing train that twists and fades.",
+"tags": [
+"weather",
+"meteor",
+"shooting star",
+"night",
+"sky",
+"stars",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+180
+],
+"duree": 10,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "weather/snow",
+"nom": "Snow",
+"desc": "Snow at three depths in a gusty breeze: far specks, drifting flakes, big near crystals that spin and glow; they settle on a sparkling drift and melt away.",
+"tags": [
+"weather",
+"snow",
+"winter",
+"cold",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+170
+],
+"duree": 12,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "weather/storm",
+"nom": "Storm",
+"desc": "Driving rain at two depths under a churning cloud deck; a forked bolt strikes in a double flash that lights the sky and the rain, then sheet lightning glows in the clouds.",
+"tags": [
+"weather",
+"storm",
+"rain",
+"lightning",
+"thunder",
+"ambient",
+"loop"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+160,
+170
+],
+"duree": 10,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "ui/achievement",
+"nom": "Achievement",
+"desc": "A toast slides in on speed lines and settles; a gold medal pops onto it in a burst of sparkles, a shine sweeps the whole toast, then it slides away.",
+"tags": [
+"ui",
+"achievement",
+"toast",
+"medal",
+"reward",
+"text",
+"one-shot"
+],
+"taille": [
+220,
+72
+],
+"origine": [
+110,
+36
+],
+"duree": 2.4,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ui/coin-collect",
+"nom": "Coin collect",
+"desc": "A coin bursts into a fountain of spinning coins that hang, then zip one by one into a HUD counter that pops and ticks up, glints and folds away.",
+"tags": [
+"ui",
+"coins",
+"pickup",
+"reward",
+"hud",
+"counter",
+"one-shot"
+],
+"taille": [
+176,
+116
+],
+"origine": [
+60,
+102
+],
+"duree": 2.45,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ui/combo-counter",
+"nom": "Combo counter",
+"desc": "x5 COMBO rockets in on streaming speed lines, smearing, and slams to a stop: a white flash, a ring, sparks; it pulses while a timer bar drains, then whooshes out.",
+"tags": [
+"ui",
+"combo",
+"counter",
+"combat",
+"text",
+"one-shot"
+],
+"taille": [
+208,
+100
+],
+"origine": [
+104,
+50
+],
+"duree": 1.45,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ui/confetti",
+"nom": "Confetti",
+"desc": "Two party poppers bang one after the other: paper bits and curly streamers burst out, stall, then tumble and flutter down, flipping, and settle on the floor.",
+"tags": [
+"ui",
+"celebration",
+"confetti",
+"party",
+"reward",
+"one-shot"
+],
+"taille": [
+200,
+140
+],
+"origine": [
+100,
+126
+],
+"duree": 3.4,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ui/countdown",
+"nom": "Countdown",
+"desc": "3, 2, 1 slam into a timer ring that drains like a burning fuse, throwing sparks; then GO! bursts out as the ring blows into a shockwave with rays.",
+"tags": [
+"ui",
+"countdown",
+"start",
+"timer",
+"text",
+"one-shot"
+],
+"taille": [
+152,
+136
+],
+"origine": [
+76,
+68
+],
+"duree": 3.1,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ui/crit-number",
+"nom": "Crit number",
+"desc": "CRIT 128! slams in huge and white over a jagged starburst with a hard shake and speed lines, cools to fire, holds with a shine, then pops into sparks.",
+"tags": [
+"ui",
+"critical",
+"damage",
+"number",
+"combat",
+"text",
+"one-shot"
+],
+"taille": [
+152,
+120
+],
+"origine": [
+76,
+60
+],
+"duree": 1.5,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ui/damage-number",
+"nom": "Damage number",
+"desc": "A red -27 punches out of a hit spark, white for a frame, arcs up, lands with a squash and a little hop, then fades as it lifts away.",
+"tags": [
+"ui",
+"damage",
+"number",
+"combat",
+"text",
+"hit",
+"one-shot"
+],
+"taille": [
+76,
+68
+],
+"origine": [
+30,
+52
+],
+"duree": 1.05,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ui/exclamation",
+"nom": "Exclamation",
+"desc": "A bold ! springs up off the hero's head, stretching as it shoots up and squashing as it lands; surprise ticks flick out, it wobbles, then pops away.",
+"tags": [
+"ui",
+"alert",
+"surprise",
+"emote",
+"character",
+"one-shot"
+],
+"taille": [
+84,
+104
+],
+"origine": [
+42,
+92
+],
+"duree": 1.4,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "ui/health-bar-hit",
+"nom": "Health bar hit",
+"desc": "A segmented health bar takes a hit: it jolts and dips, the lost chunk flashes white and sheds chips, holds, then drains away behind a sparking edge.",
+"tags": [
+"ui",
+"health",
+"hud",
+"damage",
+"bar",
+"one-shot"
+],
+"taille": [
+160,
+64
+],
+"origine": [
+80,
+30
+],
+"duree": 2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ui/heart-lost",
+"nom": "Heart lost",
+"desc": "A HUD heart is hit: it flashes white and jolts, a crack runs down it, it splits into two halves that tumble away, leaving an empty socket that fades.",
+"tags": [
+"ui",
+"health",
+"heart",
+"hud",
+"damage",
+"one-shot"
+],
+"taille": [
+96,
+88
+],
+"origine": [
+48,
+34
+],
+"duree": 1.5,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "ui/level-up",
+"nom": "Level up",
+"desc": "Gold gathers at the feet and bursts up as a pillar of light round the hero; rings climb it, LEVEL UP! drops in letter by letter, a shine sweeps it, sparkles twinkle.",
+"tags": [
+"ui",
+"level",
+"reward",
+"text",
+"light",
+"one-shot"
+],
+"taille": [
+176,
+138
+],
+"origine": [
+88,
+114
+],
+"duree": 3.2,
+"boucle": false,
+"personnage": true
+},
+{
+"id": "ui/quest-complete",
+"nom": "Quest complete",
+"desc": "A stitched ribbon unrolls from the middle, QUEST COMPLETE types on letter by letter, a gold seal stamps down and ticks, stars pop; then it all rolls away.",
+"tags": [
+"ui",
+"quest",
+"banner",
+"reward",
+"text",
+"one-shot"
+],
+"taille": [
+204,
+92
+],
+"origine": [
+102,
+46
+],
+"duree": 2.6,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "pickups/chest-open",
+"nom": "Chest open",
+"desc": "A banded chest rattles with gold light leaking from its seam, the lid kicks open, rays fan up, and coins and gems arc out, bounce, glint and get collected.",
+"tags": [
+"pickup",
+"chest",
+"treasure",
+"loot",
+"reward",
+"gold",
+"one-shot"
+],
+"taille": [
+176,
+112
+],
+"origine": [
+88,
+96
+],
+"duree": 4.6,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "pickups/coin-spin",
+"nom": "Coin spin",
+"desc": "A thick gold coin turning on its edge: an embossed star face, a reeded rim showing as it goes edge-on, a flash sweeping the face, bobbing over its shadow.",
+"tags": [
+"pickup",
+"coin",
+"gold",
+"money",
+"loop"
+],
+"taille": [
+56,
+56
+],
+"origine": [
+28,
+48
+],
+"duree": 1.6,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "pickups/collect-burst",
+"nom": "Collect burst",
+"desc": "The moment of pickup: a white flash and a cross of light, a thin ring snapping out ahead of a softer one, twinkles thrown wide on curving paths that brake, hang and wink out.",
+"tags": [
+"pickup",
+"collect",
+"burst",
+"sparkle",
+"reward",
+"one-shot"
+],
+"taille": [
+112,
+108
+],
+"origine": [
+56,
+94
+],
+"duree": 1.35,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "pickups/crystal-shard",
+"nom": "Crystal shard",
+"desc": "A broken amber shard hovers and sways: chipped uneven faces, its top sheared off, light pulsing up through glowing cracks and flaring out of the break; splinters orbit it.",
+"tags": [
+"pickup",
+"crystal",
+"shard",
+"relic",
+"broken",
+"loop"
+],
+"taille": [
+64,
+76
+],
+"origine": [
+32,
+68
+],
+"duree": 3.2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "pickups/gem-spin",
+"nom": "Gem spin",
+"desc": "A brilliant-cut ruby turning on its axis: real facets catch the light in turn, flashes roll over the crown, refracted light slides across the floor, sparkles wink round it.",
+"tags": [
+"pickup",
+"gem",
+"jewel",
+"treasure",
+"ruby",
+"loop"
+],
+"taille": [
+64,
+64
+],
+"origine": [
+32,
+56
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "pickups/heart-pickup",
+"nom": "Heart pickup",
+"desc": "A plump glossy heart hovering over its shadow beats lub-dub: a big squash and stretch, a smaller echo, light and a thin ring pulsing out, tiny hearts drifting off.",
+"tags": [
+"pickup",
+"heart",
+"health",
+"life",
+"loop"
+],
+"taille": [
+56,
+60
+],
+"origine": [
+28,
+52
+],
+"duree": 1.2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "pickups/key-glint",
+"nom": "Key glint",
+"desc": "An ornate silver key hovering and rocking; a glint runs from its bow down the shaft to the teeth and bursts off the tip as falling sparks.",
+"tags": [
+"pickup",
+"key",
+"unlock",
+"item",
+"loop"
+],
+"taille": [
+72,
+60
+],
+"origine": [
+36,
+54
+],
+"duree": 2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "pickups/loot-beam",
+"nom": "Loot beam",
+"desc": "A dropped sword in a tall pillar of rarity light: a white core thinning to the sky, rings pulsing across the floor, motes streaming up, a glint racing up the shaft.",
+"tags": [
+"pickup",
+"loot",
+"beam",
+"rarity",
+"drop",
+"item",
+"loop"
+],
+"taille": [
+96,
+176
+],
+"origine": [
+48,
+162
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "pickups/potion",
+"nom": "Potion",
+"desc": "A round glass flask of glowing brew rocks in the air: the brew sloshes behind the rock, bubbles rise and pop, light glows through the glass, wisps curl off the cork.",
+"tags": [
+"pickup",
+"potion",
+"flask",
+"brew",
+"magic",
+"loop"
+],
+"taille": [
+56,
+72
+],
+"origine": [
+28,
+64
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "pickups/power-star",
+"nom": "Power star",
+"desc": "A fat bevelled star rocks side to side and swells on each beat, rays of light turning slowly behind it, sparks spinning off its points.",
+"tags": [
+"pickup",
+"star",
+"power-up",
+"invincible",
+"bonus",
+"loop"
+],
+"taille": [
+88,
+84
+],
+"origine": [
+44,
+76
+],
+"duree": 1.6,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "pickups/xp-orb",
+"nom": "XP orb",
+"desc": "A small glowing orb races a figure-eight, a comet tail tapering behind it along its path, flecks shed from the tail winking out, its light following it over the floor.",
+"tags": [
+"pickup",
+"xp",
+"orb",
+"experience",
+"energy",
+"loop"
+],
+"taille": [
+72,
+56
+],
+"origine": [
+36,
+48
+],
+"duree": 1.8,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "transitions/blinds",
+"nom": "Blinds",
+"desc": "Slats catch the light edge-on, then tilt shut top to bottom, lit rims glinting as warm light squeezes through the closing gaps with dust in it; then they tilt open and fade.",
+"tags": [
+"transition",
+"screen",
+"blinds",
+"slats",
+"light",
+"wipe",
+"one-shot"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+0,
+0
+],
+"duree": 2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "transitions/burn-away",
+"nom": "Burn away",
+"desc": "The screen burns in from its edges behind a ragged ember line of licking flames, embers and smoke; then the black smoulders and burns open from the middle.",
+"tags": [
+"transition",
+"screen",
+"burn",
+"fire",
+"embers",
+"smoke",
+"wipe",
+"one-shot"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+0,
+0
+],
+"duree": 3,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "transitions/crt-off",
+"nom": "CRT off",
+"desc": "The picture squeezes into a white-hot glowing line, the line into a dot that lingers as a fading afterglow; then it switches back on, dot to line to picture, with a warm-up glow.",
+"tags": [
+"transition",
+"screen",
+"crt",
+"tv",
+"retro",
+"switch",
+"wipe",
+"one-shot"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+0,
+0
+],
+"duree": 2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "transitions/diamond-wipe",
+"nom": "Diamond wipe",
+"desc": "A wave of faceted diamonds swells across the screen, rims bright and ridges lit, cooling to black as they lock; then they rise as gems again and shrink away with glints.",
+"tags": [
+"transition",
+"screen",
+"diamond",
+"lattice",
+"geometric",
+"wipe",
+"one-shot"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+0,
+0
+],
+"duree": 2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "transitions/glitch-wipe",
+"nom": "Glitch wipe",
+"desc": "Torn bands of black stutter across the screen, freezing and jerking back, their ragged edges split into magenta and cyan ghosts spitting data slivers; then they tear on through.",
+"tags": [
+"transition",
+"screen",
+"glitch",
+"digital",
+"rgb",
+"bands",
+"wipe",
+"one-shot"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+0,
+0
+],
+"duree": 1.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "transitions/iris",
+"nom": "Iris",
+"desc": "A lit iris closes onto a warm spotlight where dust drifts, holds as its rim twinkles, snaps shut into a glint, then pops open from a flash with a white-hot rim throwing sparks.",
+"tags": [
+"transition",
+"screen",
+"iris",
+"circle",
+"spotlight",
+"wipe",
+"one-shot"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+0,
+0
+],
+"duree": 2.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "transitions/pixel-dissolve",
+"nom": "Pixel dissolve",
+"desc": "Clumps of blocks wink in, each drawn in a white outline that fills black and cools, with glints; then they wink out, outlines collapsing, the last small ones sparkling away.",
+"tags": [
+"transition",
+"screen",
+"dissolve",
+"pixel",
+"blocks",
+"glint",
+"one-shot"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+0,
+0
+],
+"duree": 2.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "transitions/shatter-wipe",
+"nom": "Shatter wipe",
+"desc": "A dark glass pane drops over the screen and bounces; cracks race out from an impact with a flash, then it bursts into tumbling glass shards with lit edges that fall away.",
+"tags": [
+"transition",
+"screen",
+"shatter",
+"glass",
+"break",
+"shards",
+"wipe",
+"one-shot"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+0,
+0
+],
+"duree": 2.8,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "transitions/slash-wipe",
+"nom": "Slash wipe",
+"desc": "A white-hot blade edge slices across the screen, light ahead of it and sparks spraying back over the cover; a second cut flashes through and the cover splits apart.",
+"tags": [
+"transition",
+"screen",
+"slash",
+"blade",
+"cut",
+"sparks",
+"wipe",
+"one-shot"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+0,
+0
+],
+"duree": 1.7,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "transitions/star-iris",
+"nom": "Star iris",
+"desc": "A five-point star iris spins shut on the middle of the screen, its gold rim lit and its tips twinkling and shedding motes; it closes on a glint and spins open again from a flash.",
+"tags": [
+"transition",
+"screen",
+"iris",
+"star",
+"gold",
+"wipe",
+"one-shot"
+],
+"taille": [
+320,
+180
+],
+"origine": [
+0,
+0
+],
+"duree": 2.2,
+"boucle": false,
+"personnage": false
+},
+{
+"id": "critters/bat",
+"nom": "Bat",
+"desc": "A bat flaps in four snappy wing frames along a figure-eight, its body lifting on each downbeat, moonlight on its wing bones, red eyes glowing and glinting.",
+"tags": [
+"critter",
+"bat",
+"night",
+"flying",
+"spooky",
+"loop"
+],
+"taille": [
+112,
+80
+],
+"origine": [
+56,
+40
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "critters/bird",
+"nom": "Bird",
+"desc": "A songbird flies in place: bursts of wingbeats that lift its body on each downstroke, a glide on spread wings, its tail fanning, a loose feather drifting away.",
+"tags": [
+"critter",
+"bird",
+"flying",
+"animal",
+"loop"
+],
+"taille": [
+112,
+80
+],
+"origine": [
+56,
+40
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "critters/butterfly",
+"nom": "Butterfly",
+"desc": "An iridescent butterfly wanders a loop in bursts of quick wingbeats and open-winged glides, its veined, spotted wings shedding a twinkling trail of glowing dust.",
+"tags": [
+"critter",
+"butterfly",
+"insect",
+"flying",
+"magic",
+"glow",
+"loop"
+],
+"taille": [
+128,
+88
+],
+"origine": [
+64,
+44
+],
+"duree": 3.2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "critters/eyeball",
+"nom": "Eyeball",
+"desc": "A bloodshot eyeball floats in its fleshy lids: its glowing iris snaps from one look to the next, it blinks, and its nerve sways behind it as it bobs.",
+"tags": [
+"critter",
+"eyeball",
+"eye",
+"monster",
+"spooky",
+"float",
+"loop"
+],
+"taille": [
+96,
+108
+],
+"origine": [
+48,
+100
+],
+"duree": 3.2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "critters/fish-school",
+"nom": "Fish school",
+"desc": "A school of fish holds station in two depth rows: bodies wag into swinging tails, one darts ahead now and then, bubbles rise and caustic light ripples over them.",
+"tags": [
+"critter",
+"fish",
+"school",
+"sea",
+"underwater",
+"swim",
+"loop"
+],
+"taille": [
+136,
+80
+],
+"origine": [
+68,
+40
+],
+"duree": 4.8,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "critters/flying-skull",
+"nom": "Flying skull",
+"desc": "A cracked bone skull bobs in the air, jaw chattering, eyes burning, a fire roaring off its crown that sheds flame puffs, embers and smoke and throws warm light.",
+"tags": [
+"critter",
+"skull",
+"undead",
+"fire",
+"flying",
+"monster",
+"loop"
+],
+"taille": [
+96,
+132
+],
+"origine": [
+48,
+120
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "critters/frog",
+"nom": "Frog",
+"desc": "A frog puffs its throat, blinks, crouches and leaps to snap a buzzing fly out of the air, then lands with a squash and a puff of dust, gulps and settles.",
+"tags": [
+"critter",
+"frog",
+"animal",
+"hop",
+"ground",
+"loop"
+],
+"taille": [
+112,
+88
+],
+"origine": [
+56,
+80
+],
+"duree": 2.6,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "critters/ghost",
+"nom": "Ghost",
+"desc": "A sheet ghost bobs over the floor: its scalloped hem ripples and trails its drift, little arms flutter, it glances about and blinks, motes trickle off its hem.",
+"tags": [
+"critter",
+"ghost",
+"spirit",
+"undead",
+"spooky",
+"float",
+"loop"
+],
+"taille": [
+96,
+100
+],
+"origine": [
+48,
+90
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "critters/jellyfish",
+"nom": "Jellyfish",
+"desc": "A see-through jellyfish pulses: its bell squeezes to shove it up and relaxes as it sinks, frilled arms and long tentacles trailing, a glow inside, bubbles drifting by.",
+"tags": [
+"critter",
+"jellyfish",
+"sea",
+"underwater",
+"glow",
+"swim",
+"loop"
+],
+"taille": [
+96,
+120
+],
+"origine": [
+48,
+38
+],
+"duree": 3.2,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "critters/slime",
+"nom": "Slime",
+"desc": "A glossy slime hops in place: it squashes to wind up, stretches into the jump, rounds out in the air, splats down flinging droplets that creep back, then wobbles and blinks.",
+"tags": [
+"critter",
+"slime",
+"monster",
+"hop",
+"goo",
+"loop"
+],
+"taille": [
+112,
+88
+],
+"origine": [
+56,
+72
+],
+"duree": 1.8,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "critters/snake",
+"nom": "Snake",
+"desc": "A snake slithers along the floor, head raised: humps rise and roll back down its patterned body to the tail, dust puffs where it touches down, its forked tongue flicks.",
+"tags": [
+"critter",
+"snake",
+"reptile",
+"ground",
+"loop"
+],
+"taille": [
+136,
+56
+],
+"origine": [
+68,
+48
+],
+"duree": 2.4,
+"boucle": true,
+"personnage": false
+},
+{
+"id": "critters/wisp",
+"nom": "Wisp",
+"desc": "A will-o'-the-wisp loops a figure-eight over the floor: a little soul-flame with a face, its flame tail licking up and streaming behind, shedding puffs and sparks.",
+"tags": [
+"critter",
+"wisp",
+"spirit",
+"flame",
+"magic",
+"flying",
+"loop"
+],
+"taille": [
+128,
+104
+],
+"origine": [
+64,
+96
+],
+"duree": 3.2,
+"boucle": true,
+"personnage": false
+}
+]
+}

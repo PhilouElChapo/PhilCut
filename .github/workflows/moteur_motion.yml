@@ -10,6 +10,8 @@ on:
       - .github/workflows/moteur_motion.yml
       - outils_dev/moteur_motion.py
       - "motion/philcut-remotion/**"
+      - "motion/philcut3d/**"
+      - "motion/pixelfx-philcut/**"
   workflow_dispatch:
 
 permissions:
@@ -47,6 +49,16 @@ jobs:
           echo "Chrome : $CV"
           node node_modules/@puppeteer/browsers/lib/main-cli.js install "chrome-headless-shell@$CV" --path ../chrome
           cd ../.. && cp -r motion/philcut-remotion m/remotion && rm -rf m/remotion/node_modules
+          # 1.3.1 : la 3D de PhilCut (Three.js MIT, Rapier Apache-2.0), un seul fichier, avec les licences
+          (cd motion/philcut3d && npm ci --no-audit --no-fund && npm run -s build)
+          mkdir -p m/philcut3d && cp motion/philcut3d/dist/three-philcut.js m/philcut3d/
+          cp motion/philcut3d/node_modules/three/LICENSE m/philcut3d/LICENCE-three.txt
+          cp motion/philcut3d/node_modules/@dimforge/rapier3d-compat/LICENSE m/philcut3d/LICENCE-rapier.txt 2>/dev/null || true
+          # 1.3.1 : les effets pixel art de pixelfx (MIT), un seul fichier, avec les licences
+          (cd motion/pixelfx-philcut && npm ci --no-audit --no-fund && npm run -s build)
+          mkdir -p m/pixelfx && cp motion/pixelfx-philcut/dist/pixelfx-philcut.js m/pixelfx/
+          cp motion/pixelfx-philcut/node_modules/pixelfx/LICENSE m/pixelfx/LICENCE-pixelfx.txt
+          cp motion/pixelfx-philcut/node_modules/pixelfx/NOTICE.md m/pixelfx/NOTICE-pixelfx.md
           echo "HyperFrames $HYPERFRAMES, GSAP $GSAP, Chrome $CV, $V" > version-motion.txt
           du -sh m m/*
       - name: "Vérification : rendu HyperFrames"
@@ -70,8 +82,10 @@ jobs:
           python outils_dev/moteur_motion.py composition essai_lc libre_canons 1080 1920
           python outils_dev/moteur_motion.py composition essai_pro libre_pro 1080 1920
           python outils_dev/moteur_motion.py composition essai_ti titre_images 1920 1080
+          PHILCUT_THREE_JS="$PWD/m/philcut3d/three-philcut.js" python outils_dev/moteur_motion.py composition essai_3d libre_3d 1920 1080
+          PHILCUT_PIXELFX_JS="$PWD/m/pixelfx/pixelfx-philcut.js" python outils_dev/moteur_motion.py composition essai_px libre_pixel 1920 1080
           mkdir -p out
-          for d in essai_h essai_v essai_st essai_bd essai_pg essai_cm essai_ch essai_ap essai_ck essai_lb essai_lv essai_lp essai_lc essai_pro essai_ti; do
+          for d in essai_h essai_v essai_st essai_bd essai_pg essai_cm essai_ch essai_ap essai_ck essai_lb essai_lv essai_lp essai_lc essai_pro essai_ti essai_3d essai_px; do
             sed -i "s#https://cdn.jsdelivr.net/npm/gsap@[0-9.]*/dist/gsap.min.js#assets/gsap.min.js#" $d/index.html
             cp m/app/node_modules/gsap/dist/gsap.min.js $d/assets/
             node m/app/node_modules/hyperframes/bin/hyperframes.mjs lint $d
@@ -146,6 +160,22 @@ jobs:
           Pop-Location
           Copy-Item -Recurse motion\philcut-remotion m\remotion
           if (Test-Path m\remotion\node_modules) { Remove-Item -Recurse -Force m\remotion\node_modules }
+          Push-Location motion\philcut3d
+          & ..\..\m\node\node.exe ..\..\m\node\node_modules\npm\bin\npm-cli.js ci --no-audit --no-fund
+          & ..\..\m\node\node.exe node_modules\esbuild\bin\esbuild index.js --bundle --format=iife --global-name=P3 --minify --target=es2020 --outfile=dist/three-philcut.js
+          Pop-Location
+          New-Item -ItemType Directory -Force m\philcut3d | Out-Null
+          Copy-Item motion\philcut3d\dist\three-philcut.js m\philcut3d\
+          Copy-Item motion\philcut3d\node_modules\three\LICENSE m\philcut3d\LICENCE-three.txt
+          if (Test-Path motion\philcut3d\node_modules\@dimforge\rapier3d-compat\LICENSE) { Copy-Item motion\philcut3d\node_modules\@dimforge\rapier3d-compat\LICENSE m\philcut3d\LICENCE-rapier.txt }
+          Push-Location motion\pixelfx-philcut
+          & ..\..\m\node\node.exe ..\..\m\node\node_modules\npm\bin\npm-cli.js ci --no-audit --no-fund
+          & ..\..\m\node\node.exe node_modules\esbuild\bin\esbuild index.js --bundle --format=iife --global-name=PFX --minify --target=es2020 --outfile=dist/pixelfx-philcut.js
+          Pop-Location
+          New-Item -ItemType Directory -Force m\pixelfx | Out-Null
+          Copy-Item motion\pixelfx-philcut\dist\pixelfx-philcut.js m\pixelfx\
+          Copy-Item motion\pixelfx-philcut\node_modules\pixelfx\LICENSE m\pixelfx\LICENCE-pixelfx.txt
+          Copy-Item motion\pixelfx-philcut\node_modules\pixelfx\NOTICE.md m\pixelfx\NOTICE-pixelfx.md
           choco install ffmpeg -y --no-progress | Out-Null
       - name: "Vérification : rendu HyperFrames"
         shell: pwsh
@@ -160,6 +190,12 @@ jobs:
           New-Item -ItemType Directory -Force out | Out-Null
           & m\node\node.exe m\app\node_modules\hyperframes\bin\hyperframes.mjs render essai_h -o "$PWD\out\hyperframes_windows.mp4" --quality delivery --no-wait
           if (-not (Test-Path out\hyperframes_windows.mp4)) { Write-Host "::error::rendu HyperFrames Windows en échec"; exit 1 }
+          $env:PHILCUT_THREE_JS = "$PWD\m\philcut3d\three-philcut.js"          # 1.3.1 : la 3D sous Windows
+          python outils_dev/moteur_motion.py composition essai_3d libre_3d 1280 720
+          (Get-Content essai_3d\index.html -Raw) -replace 'https://cdn.jsdelivr.net/npm/gsap@[0-9.]*/dist/gsap.min.js', 'assets/gsap.min.js' | Set-Content essai_3d\index.html -Encoding utf8
+          Copy-Item m\app\node_modules\gsap\dist\gsap.min.js essai_3d\assets\
+          & m\node\node.exe m\app\node_modules\hyperframes\bin\hyperframes.mjs render essai_3d -o "$PWD\out\hyperframes_3d_windows.mp4" --no-wait
+          if (-not (Test-Path out\hyperframes_3d_windows.mp4)) { Write-Host "::error::rendu 3D Windows en échec"; exit 1 }
           Get-ChildItem out
       - name: Archive
         shell: pwsh

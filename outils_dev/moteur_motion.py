@@ -73,6 +73,20 @@ def _anim(genre="chiffres", L=1920, H=1080):
         a.update(titre="Une soirée au bord du lac", sous_titre="Chapitre 2",
                  images=[{"chemin": img2, "place": "haut"}, {"chemin": img, "place": "coin"}])
         return a
+    if genre == "libre_3d":                         # 1.3.1 : 3D de PhilCut (Three.js, physique Rapier, lueur, grain)
+        from app import motion_libre as ML
+        racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        with open(os.path.join(racine, "tests", "exemples", "libre_3d.txt"), encoding="utf-8") as f:
+            return ML.appliquer(ML.fiche("essai", (int(L), int(H))), ML.sections(f.read()))
+    if genre == "libre_pixel":                      # 1.3.1 : effets pixel art (pixelfx)
+        from app import motion_libre as ML
+        s = {"titre": "Pixel", "duree": "5", "plan": "0-5 s: feu de camp, feu d'artifice, papillon", "css": "", "html": "",
+             "js": 'PFX.effect("fire/campfire", {x: W * 0.25, y: H * 0.8, scale: 6});\n'
+                   'PFX.effect("explosions/firework-burst", {x: W * 0.55, y: H * 0.45, scale: 5, start: 0.5});\n'
+                   'PFX.effect("critters/butterfly", {x: W * 0.75, y: H * 0.7, scale: 6});\n'
+                   'const t = $("div", {position: "absolute", left: 0, right: 0, top: 80 * u, textAlign: "center", fontSize: 90 * u, '
+                   'color: "#fff", fontFamily: F.titre}, null, "Pixel");\ntl.fromTo(t, {opacity: 0}, {opacity: 1, duration: 0.5}, 0.3);'}
+        return ML.appliquer(ML.fiche("essai", (int(L), int(H))), s)
     if genre in ("libre", "libre_leger", "libre_canons"):   # 1.1.0 : une composition écrite comme l'IA l'écrirait (tests/exemples)
         from app import motion_libre as ML
         racine = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -700,6 +700,9 @@ class DialoguePreferences(QDialog):
             hp.addWidget(w)
         hp.addStretch(1)
         f.addRow(_("Motion design IA : look pro"), hp)
+        self.motion_pro_3d = QCheckBox(_("3D, physique et effets pixel"))        # 1.3.1
+        self.motion_pro_3d.setChecked(bool(self.params.get("motion_pro_3d", True)))
+        f.addRow("", self.motion_pro_3d)
         hp2 = QHBoxLayout()
         from PySide6.QtWidgets import QSpinBox
         self.motion_pro_tours = QSpinBox()
@@ -1314,6 +1317,7 @@ class DialoguePreferences(QDialog):
             p["motion_pro_dessins"] = self.motion_pro_dessins.isChecked()
             p["motion_pro_videos"] = self.motion_pro_videos.isChecked()
             p["motion_pro_blocs"] = self.motion_pro_blocs.isChecked()
+            p["motion_pro_3d"] = self.motion_pro_3d.isChecked()
             p["motion_pro_tours"] = self.motion_pro_tours.value()
             p["motion_pro_modele"] = self.motion_pro_modele.currentData()
             p["motion_pro_video"] = self.motion_pro_video.currentData()
