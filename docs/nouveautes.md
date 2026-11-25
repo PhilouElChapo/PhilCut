@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.6 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.7 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.7
+- Assistant video en scenes : le lien avec la scene d'avant se choisit par scene (« Enchainer sur la fin de la scene d'avant »). Coche : la scene part de la vraie fin de la precedente ; avec une image clef sur la precedente, la meme image finit l'une et commence l'autre. Decoche : sa propre image de depart, composee avec les memes fiches et le decor de la scene d'avant (son image clef si elle en a une).
 
 ### 1.3.6
 - Assistant video en scenes : une image clef que vous cochez a la main (« Image clef a la fin de ce plan ») reste gardee apres une correction ou un redecoupage.

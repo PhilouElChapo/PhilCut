@@ -530,7 +530,7 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
         precedent_change = not vieux                # 0.9.86 : seul ce qui a changé (et le plan qui en part) est refait
         if vieux:
             for cle in ("image", "image_fin", "images_ok", "sans_fin", "clef", "clef_pourquoi", "fin_reelle", "fichier", "verdict", "precision", "precision_fin",
-                        "consigne", "clef_main"):
+                        "consigne", "clef_main", "enchaine_main", "enchainer"):
                 if cle in vieux:
                     pl[cle] = vieux[cle]
             if int(vieux.get("duree") or 0) != pl["duree"]:
@@ -557,7 +557,9 @@ def uniformiser(seq, image=None):
         else:
             i += 1
     for k, pl in enumerate(seq["plans"]):
-        pl["enchainer"] = k > 0 and not scenes       # une scène part de SON image de départ : une erreur ne se propage plus
+        if not (scenes and pl.get("enchaine_main")):
+            pl["enchainer"] = k > 0 and not scenes   # une scène part de SON image de départ : une erreur ne se propage plus
+        pl["enchainer"] = pl["enchainer"] and k > 0
         if scenes and not pl.get("fin_reelle") and not pl.get("clef_main"):
             pl["clef"], pl["sans_fin"] = False, True  # pas d'image d'arrivée d'office ; celle cochée à la main est gardée
         if pl.get("fin_reelle") and k < len(seq["plans"]) - 1:

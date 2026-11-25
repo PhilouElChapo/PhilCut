@@ -110,6 +110,14 @@ class TestScenes(unittest.TestCase):
         self.assertTrue(n["plans"][1]["clef"] and not n["plans"][1]["sans_fin"])
         self.assertFalse(n["plans"][0]["clef"])
 
+    def test_enchainement_au_choix(self):
+        s = self.seq
+        s["plans"][2].update(enchainer=True, enchaine_main=True)
+        n = A.appliquer(s, A.lire_analyse(ANALYSE), self.img)
+        self.assertEqual([pl["enchainer"] for pl in n["plans"]], [False, False, True])
+        f, dep, arr = A.a_preparer(n, {"clef_gemini": "x"})
+        self.assertEqual(dep, 1)                                    # la scène enchaînée n'a pas d'image de départ à composer
+
     def test_modifier_garde_les_lieux(self):
         s = self.seq
         anc = A.demander

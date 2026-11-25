@@ -417,7 +417,8 @@ def image_depart(seq, i, params, moteur_image="gemini", precision=""):
          + _anglais(etat, True).rstrip(".") + ".") if etat else "") + (
         (" Precisely, at the start: " + _anglais(precision, True)) if precision else "")
     if i > 0 and seq.get("mode") == "scenes":        # même décor, même lumière que la scène d'avant
-        av = seq["plans"][i - 1].get("image")
+        avp = seq["plans"][i - 1]
+        av = avp.get("image_fin") if avp.get("image_fin") and not avp.get("sans_fin") else avp.get("image")
         if av and os.path.exists(av) and av not in lieux and av not in planches:
             lieux = [av] + lieux
             refs = (planches + lieux)[:4]

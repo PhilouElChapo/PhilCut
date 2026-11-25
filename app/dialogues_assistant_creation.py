@@ -1797,6 +1797,14 @@ class DialogueAssistant(QDialog):
                 bloc.addWidget(b)
             elif i == 0 and self._suite():
                 bloc.addWidget(self._aide(_("Image réelle : la fin du rush.")))
+            if i > 0 and self.seq.get("mode") == "scenes":         # 1.3.7 : le lien avec la scène d'avant, au choix
+                ce = QCheckBox(_("Enchaîner sur la fin de la scène d'avant"))
+                ce.setChecked(bool(pl.get("enchainer")))
+                ce.setToolTip(_("Cochée : la scène part de la vraie dernière image de la scène d'avant (continuité exacte, mais un "
+                                "défaut de la scène d'avant se retrouve ici). Décochée : elle part de sa propre image de départ, "
+                                "composée avec les mêmes fiches, le même décor et la même lumière (un raccord comme au cinéma)."))
+                ce.toggled.connect(lambda on, i=i: QTimer.singleShot(0, lambda: self._basculer_enchainement(i, on)))
+                bloc.addWidget(ce)
             g.addLayout(bloc, ligne, 0)
             # fin
             bloc = QVBoxLayout()
@@ -1841,6 +1849,22 @@ class DialogueAssistant(QDialog):
         if cible in self._vignettes_plans:
             vg = self._vignettes_plans[cible]
             QTimer.singleShot(0, lambda: self.zone_images.ensureWidgetVisible(vg, 40, 120))
+
+    def _basculer_enchainement(self, i, on):
+        """1.3.7 : la scène i part de la fin de la scène d'avant (cochée) ou de sa propre image de départ."""
+        pl = self.seq["plans"][i]
+        pl["enchainer"], pl["enchaine_main"] = bool(on), True
+        pl["fichier"], pl["images_ok"] = "", False
+        if on:
+            pl["image"] = ""
+            self.etat.setText(_("La scène {n} partira de la fin de la scène {p}. Pour fixer exactement ce raccord, cochez « Image "
+                                "clef à la fin de ce plan » sur la scène {p} : la même image finira l'une et commencera l'autre.",
+                                n=i + 1, p=i))
+        else:
+            self.etat.setText(_("La scène {n} aura sa propre image de départ : « Préparer les images » la compose (environ "
+                                "0,04 $).", n=i + 1))
+        Q.enregistrer(self.seq)
+        self._remplir_images((i, "depart"))
 
     def _basculer_clef(self, i, on):
         pl = self.seq["plans"][i]
