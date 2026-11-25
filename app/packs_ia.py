@@ -969,7 +969,7 @@ def en_pcm16(chemin):
         if nom == b"fmt ":
             fmt = corps
         elif nom == b"data":
-            pcm = corps
+            pcm = corps        # taille « en flux » (0x7FFFFFFF) dans l'en-tête du nouveau Piper : la tranche s'arrête au bout du fichier
         i += 8 + taille + (taille & 1)
     if not fmt or pcm is None:
         return chemin

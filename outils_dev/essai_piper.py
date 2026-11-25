@@ -37,7 +37,7 @@ def duree(wav):
         if nom == b"fmt ":
             _c, _ca, _taux, octets_s = struct.unpack("<HHII", d[i + 8:i + 20])
         elif nom == b"data":
-            n = t
+            n = min(t, len(d) - i - 8)     # le nouveau Piper laisse la taille « en flux » (0x7FFFFFFF) dans l'en-tête
         i += 8 + t + (t & 1)
     return n / float(octets_s or 1)
 

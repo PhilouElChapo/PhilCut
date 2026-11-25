@@ -71,7 +71,7 @@ class TestPiper2(unittest.TestCase):
         f = os.path.join(self.d, "f.wav")
         with open(f, "wb") as o:
             o.write(b"RIFF" + struct.pack("<I", 36 + len(x)) + b"WAVE" + b"fmt " + struct.pack("<I", 16) + fmt
-                    + b"data" + struct.pack("<I", len(x)) + x)
+                    + b"data" + struct.pack("<I", 0x7FFFFFFF) + x)        # taille « en flux », comme le nouveau Piper
         P.en_pcm16(f)
         with wave.open(f) as w:
             self.assertEqual((w.getsampwidth(), w.getframerate(), w.getnframes()), (2, 22050, 4))
