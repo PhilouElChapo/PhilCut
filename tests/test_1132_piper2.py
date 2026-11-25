@@ -64,6 +64,22 @@ class TestPiper2(unittest.TestCase):
         self.assertIn("--length_scale 0.800", a)
         self.assertIn("--noise_w", a)
 
+    def test_wav_flottant_remis_en_entiers(self):
+        import struct
+        x = struct.pack("<4f", 0.0, 0.5, -1.0, 2.0)
+        fmt = struct.pack("<HHIIHH", 3, 1, 22050, 22050 * 4, 4, 32)
+        f = os.path.join(self.d, "f.wav")
+        with open(f, "wb") as o:
+            o.write(b"RIFF" + struct.pack("<I", 36 + len(x)) + b"WAVE" + b"fmt " + struct.pack("<I", 16) + fmt
+                    + b"data" + struct.pack("<I", len(x)) + x)
+        P.en_pcm16(f)
+        with wave.open(f) as w:
+            self.assertEqual((w.getsampwidth(), w.getframerate(), w.getnframes()), (2, 22050, 4))
+            self.assertEqual(struct.unpack("<4h", w.readframes(4)), (0, 16384, -32767, 32767))
+        avant = open(f, "rb").read()
+        P.en_pcm16(f)                       # déjà en entiers : rien ne change
+        self.assertEqual(open(f, "rb").read(), avant)
+
     def test_decoupage(self):
         self.assertEqual(P.decouper_phrases("Bonjour. Ça va ?\nOui… Merci!"), ["Bonjour.", "Ça va ?", "Oui…", "Merci!"])
         self.assertEqual(P.decouper_phrases("  "), [])

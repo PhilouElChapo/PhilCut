@@ -941,6 +941,8 @@ def synthese(texte, sortie_wav, cle=None, params=None, vitesse=1.0, silence=None
                               key=lambda f: (len(os.path.basename(f)), os.path.basename(f)))
             if r.returncode != 0 or len(wavs) != len(phrases) or not all(os.path.exists(w) for w in wavs):
                 raise ErreurIA(_("La voix de synthèse a échoué : {t}", t=r.stderr.decode("utf-8", "replace")[-300:]))
+            for w in wavs:
+                en_pcm16(w)
             recoller_wav(wavs, sortie_wav, max(0.0, float(silence)))
         finally:
             shutil.rmtree(dossier_phrases, ignore_errors=True)
@@ -948,7 +950,45 @@ def synthese(texte, sortie_wav, cle=None, params=None, vitesse=1.0, silence=None
     r = subprocess.run(cmd, input=texte.encode("utf-8"), **opts)
     if r.returncode != 0 or not os.path.exists(sortie_wav):
         raise ErreurIA(_("La voix de synthèse a échoué : {t}", t=r.stderr.decode("utf-8", "replace")[-300:]))
+    en_pcm16(sortie_wav)
     return sortie_wav
+
+
+def en_pcm16(chemin):
+    """1.2.3 : le nouveau Piper écrit des WAV en virgule flottante (format 3), que le module wave ne lit pas : on les remet
+    en 16 bits entiers, sur place. Un WAV déjà en entiers n'est pas touché."""
+    import struct
+    with open(chemin, "rb") as f:
+        donnees = f.read()
+    if donnees[:4] != b"RIFF" or donnees[8:12] != b"WAVE":
+        return chemin
+    i, fmt, pcm = 12, None, None
+    while i + 8 <= len(donnees):
+        nom, taille = donnees[i:i + 4], struct.unpack("<I", donnees[i + 4:i + 8])[0]
+        corps = donnees[i + 8:i + 8 + taille]
+        if nom == b"fmt ":
+            fmt = corps
+        elif nom == b"data":
+            pcm = corps
+        i += 8 + taille + (taille & 1)
+    if not fmt or pcm is None:
+        return chemin
+    code, canaux, taux = struct.unpack("<HHI", fmt[:8])
+    bits = struct.unpack("<H", fmt[14:16])[0]
+    if code == 0xFFFE and len(fmt) >= 26:          # WAVE_FORMAT_EXTENSIBLE : le vrai format est dans le sous-format
+        code = struct.unpack("<H", fmt[24:26])[0]
+    if code != 3 or bits not in (32, 64):
+        return chemin
+    import numpy as np
+    x = np.frombuffer(pcm[:len(pcm) - len(pcm) % (bits // 8)], dtype="<f4" if bits == 32 else "<f8")
+    x = (np.clip(np.nan_to_num(x), -1.0, 1.0) * 32767.0).round().astype("<i2")
+    import wave
+    with wave.open(chemin, "wb") as w:
+        w.setnchannels(canaux)
+        w.setsampwidth(2)
+        w.setframerate(taux)
+        w.writeframes(x.tobytes())
+    return chemin
 
 
 def decouper_phrases(texte):

@@ -11,7 +11,6 @@ import os
 import subprocess
 import sys
 import urllib.request
-import wave
 
 VOIX = {
     "nouvelle": "main",
@@ -29,8 +28,18 @@ def telecharger(url, dest):
 
 
 def duree(wav):
-    with wave.open(wav) as w:
-        return w.getnframes() / float(w.getframerate())
+    """Durée d'un WAV, entiers ou virgule flottante (le nouveau Piper écrit du float 32 bits)."""
+    import struct
+    d = open(wav, "rb").read()
+    i, octets_s, n = 12, 0, 0
+    while i + 8 <= len(d):
+        nom, t = d[i:i + 4], struct.unpack("<I", d[i + 4:i + 8])[0]
+        if nom == b"fmt ":
+            _c, _ca, _taux, octets_s = struct.unpack("<HHII", d[i + 8:i + 20])
+        elif nom == b"data":
+            n = t
+        i += 8 + t + (t & 1)
+    return n / float(octets_s or 1)
 
 
 def main(moteur, travail):
