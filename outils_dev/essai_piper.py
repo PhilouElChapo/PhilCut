@@ -1,6 +1,7 @@
 """Essai réel du moteur de voix (Piper, piper1-gpl) fabriqué par moteur_piper.yml (1.2.3).
 
 Usage : python outils_dev/essai_piper.py <dossier du moteur> <dossier de travail>
+        python outils_dev/essai_piper.py philcut <moteurs-ia.json> <dossier des archives>   (avec le code de PhilCut)
 
 Vérifie, avec le moteur tel qu'il sera livré (exécutable, bibliothèques, espeak-ng-data à côté) :
 - que « piper --version » répond ;
@@ -83,5 +84,33 @@ def main(moteur, travail):
     return 1 if erreurs else 0
 
 
+def essai_philcut(manifeste, archives):
+    """Installation et lecture par le code de PhilCut : moteur « voix » et voix française du catalogue mis à jour, une
+    phrase seule puis deux phrases avec une pause (découpage, recollage, remise en 16 bits)."""
+    import tempfile
+    os.environ["PHILCUT_IA_MANIFESTE"] = manifeste
+    os.environ["PHILCUT_IA_ARCHIVES"] = archives
+    os.environ["PHILCUT_IA_DOSSIER"] = tempfile.mkdtemp()
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    from app import packs_ia as P
+    import wave
+    P.installer_moteur("voix")
+    P.installer("voix_fr_femme")
+    erreurs = []
+    for nom, silence in (("seule", None), ("pause", 0.6)):
+        wav = os.path.join(P.dossier(), f"{nom}.wav")
+        P.synthese(PHRASE, wav, "voix_fr_femme", {}, silence=silence, expressivite=0.5)
+        with wave.open(wav) as w:
+            d = w.getnframes() / float(w.getframerate())
+        print(f"PhilCut {nom} : {d:.2f} s")
+        if not 2.0 < d < 30.0:
+            erreurs.append(f"PhilCut {nom} : durée {d:.2f} s")
+    for e in erreurs:
+        print(f"::error title=Essai Piper PhilCut::{e}")
+    return 1 if erreurs else 0
+
+
 if __name__ == "__main__":
+    if sys.argv[1] == "philcut":
+        sys.exit(essai_philcut(os.path.abspath(sys.argv[2]), os.path.abspath(sys.argv[3])))
     sys.exit(main(os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2])))

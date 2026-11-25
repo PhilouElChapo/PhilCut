@@ -118,9 +118,8 @@ jobs:
           name: essai-piper-${{ matrix.systeme }}
           path: essai_piper/*.wav
 
-  publier:
+  publier:   # essai avec le code de PhilCut, puis publication si demandée
     needs: fabriquer
-    if: ${{ github.event_name == 'push' || inputs.publier }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -136,5 +135,8 @@ jobs:
           gh release download moteurs-ia -p moteurs-ia.json -D .
           cp moteurs-ia.json avant-moteurs-ia.json
           python outils_dev/moteurs_ia.py piper dist moteurs-ia.json
+          pip install -q numpy
+          python outils_dev/essai_piper.py philcut moteurs-ia.json dist
+          [ "${{ github.event_name == 'push' || inputs.publier }}" = true ] || exit 0
           gh release upload moteurs-ia dist/philcut-piper-windows-x64.zip dist/philcut-piper-linux-x64.tar.gz dist/piper1-gpl-sources.tar.gz moteurs-ia.json --clobber
           echo "::notice title=Publie::Piper piper1-gpl ${PIPER1_COMMIT:0:7} (Windows et Linux)"
