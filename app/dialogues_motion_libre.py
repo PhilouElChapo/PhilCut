@@ -75,7 +75,8 @@ class DialogueMotionLibre(QDialog):
         self.aide_moteur.setWordWrap(True)
         self.aide_moteur.setStyleSheet("color:#9aa4c0")
         f.addRow("", self.aide_moteur)
-        self.licence = QCheckBox(_("J'ai droit à la licence gratuite de Remotion (ou j'ai une licence entreprise)"))
+        from .widgets import CaseLongue                  # 1.3.9 (Philippe, 26/11 23h57) : le texte élargissait la colonne
+        self.licence = CaseLongue(_("J'ai droit à la licence gratuite de Remotion (ou j'ai une licence entreprise)"))
         self.licence.setToolTip(_("Gratuite pour un particulier, une structure de 3 personnes au plus ou une association ; au-delà, "
                                   "licence entreprise Remotion obligatoire (remotion.dev/license)"))
         self.licence.setChecked(bool(self.params.get("remotion_licence")))
@@ -156,7 +157,8 @@ class DialogueMotionLibre(QDialog):
         zg.setFrameShape(QScrollArea.NoFrame)
         zg.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         zg.setWidget(w_g)
-        zg.setFixedWidth(490)
+        # 1.3.9 (Philippe, 26/11 23h57) : jamais plus étroite que son contenu (« Recharger… » était coupé sous Windows)
+        zg.setFixedWidth(max(490, w_g.minimumSizeHint().width() + zg.verticalScrollBar().sizeHint().width() + 4))
         h.addWidget(zg)
         droite = QVBoxLayout()
         self.message = QLabel(_("L'aperçu apparaîtra ici (rendu léger sur ce poste, gratuit)."))
@@ -243,9 +245,11 @@ class DialogueMotionLibre(QDialog):
                                  "rebondit, s'effondre), lueur, grain, flou, et 244 effets pixel art (pixelfx) ; gratuits, "
                                  "calculés sur ce poste ; l'IA s'en sert quand la description le demande"))
         self.pro_3d.setChecked(bool(p.get("motion_pro_3d", True)))
-        gl.addWidget(self.pro_dessins, 0, 0)
-        gl.addWidget(self.pro_videos, 0, 1)
-        gl.addWidget(self.pro_blocs, 1, 0)
+        # 1.3.9 (Philippe, 26/11 23h57 : « Recharger… » coupé) : une case par ligne, la colonne ne s'élargit plus
+        gl.addWidget(self.pro_dessins, 0, 0, 1, 2)
+        gl.addWidget(self.pro_videos, 1, 0, 1, 2)
+        gl.addWidget(self.pro_blocs, 2, 0, 1, 2)
+        gl.addWidget(self.pro_3d, 3, 0, 1, 2)
         hr = QHBoxLayout()
         hr.addWidget(QLabel(_("Relectures")))
         self.pro_tours = QSpinBox()
@@ -255,7 +259,7 @@ class DialogueMotionLibre(QDialog):
                                     "fois au plus (0 : jamais)"))
         hr.addWidget(self.pro_tours)
         hr.addStretch(1)
-        gl.addLayout(hr, 1, 1)
+        gl.addLayout(hr, 4, 0, 1, 2)
         hm = QHBoxLayout()
         hm.addWidget(QLabel(_("Modèle qui écrit")))
         self.pro_modele = QComboBox()
@@ -263,8 +267,7 @@ class DialogueMotionLibre(QDialog):
             self.pro_modele.addItem(lib, k)
         self.pro_modele.setCurrentIndex(max(0, self.pro_modele.findData(p.get("motion_pro_modele") or "auto")))
         hm.addWidget(self.pro_modele, 1)
-        gl.addLayout(hm, 2, 0, 1, 2)
-        gl.addWidget(self.pro_3d, 3, 0, 1, 2)
+        gl.addLayout(hm, 5, 0, 1, 2)
         for w, cle in ((self.pro_dessins, "motion_pro_dessins"), (self.pro_videos, "motion_pro_videos"),
                        (self.pro_blocs, "motion_pro_blocs"), (self.pro_3d, "motion_pro_3d")):
             w.toggled.connect(lambda v, c=cle: self.params.__setitem__(c, bool(v)))

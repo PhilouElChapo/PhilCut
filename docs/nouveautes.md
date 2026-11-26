@@ -4,7 +4,10 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.9 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.10 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.10
+- Motion design IA (look pro) : la colonne de gauche n'est plus jamais plus etroite que son contenu ; « Recharger… » et les cases ne sont plus coupes a droite (les cases du look pro sont une par ligne).
 
 ### 1.3.9
 - Assistant video : les images de depart et les images clefs ont toujours le format du projet (paysage 16:9 ou portrait 9:16). Avant, Gemini suivait parfois le format des fiches et rendait une image en portrait dans un projet en paysage.
