@@ -4,7 +4,11 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.8 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.9 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.9
+- Assistant video : les images de depart et les images clefs ont toujours le format du projet (paysage 16:9 ou portrait 9:16). Avant, Gemini suivait parfois le format des fiches et rendait une image en portrait dans un projet en paysage.
+- Une creation marquee « scenes » mais encore decoupee geste par geste (plans de 3 a 4 s) propose aussi d'etre redecoupee quand on fait « Suivant » depuis « 1. Votre idee ».
 
 ### 1.3.8
 - C'est l'IA qui propose le lien entre les scenes : « enchainer » quand la scene continue exactement le meme moment au meme endroit, avec une image clef a la fin de la scene d'avant quand le raccord doit etre exact (la meme image finit l'une et commence l'autre) ; sinon un raccord de cinema. Le « pourquoi » s'affiche ; vos choix a la main restent prioritaires.

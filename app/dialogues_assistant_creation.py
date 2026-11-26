@@ -1438,7 +1438,7 @@ class DialogueAssistant(QDialog):
                 self.analyser_musique()
             else:
                 self.genre = "video"
-                if self.seq.get("plans") and self.seq.get("mode") != "scenes" and self._cloud() and (
+                if self.seq.get("plans") and self._gestes() and self._cloud() and (
                         getattr(self, "_test_redecouper", None) or (getattr(self, "_test_oui", None) is None and QMessageBox.question(
                             self, _("Découpage en scènes"),
                             _("Cette création est découpée geste par geste ({n} plans), l'ancienne méthode : les erreurs se "
@@ -1600,6 +1600,14 @@ class DialogueAssistant(QDialog):
                                 e=texte_erreur(souci)[:160]) if souci else
                               (analyse.get("remarques") or _("Vérifiez chaque carte, corrigez ce qui ne va pas, puis continuez.")))
         self._lancer(travail, _("L'assistant lit votre idée et regarde l'image") if image else _("L'assistant lit votre idée"), fin)
+
+    def _gestes(self):
+        """1.3.9 (Philippe, 26/11 23h31) : une création marquée « scènes » par une correction peut garder ses anciens plans
+        geste par geste (3-4 s) : on propose aussi de la redécouper."""
+        if self.seq.get("mode") != "scenes":
+            return True
+        durees = [float(pl.get("duree") or 0) for pl in self.seq.get("plans") or []]
+        return len(durees) > 6 and max(durees) < 8
 
     def redecouper(self):
         """1.3.5 : une création découpée geste par geste est redécoupée en scènes ; personnages, fiches et lieux gardés."""

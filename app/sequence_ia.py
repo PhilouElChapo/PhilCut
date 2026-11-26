@@ -427,12 +427,14 @@ def image_depart(seq, i, params, moteur_image="gemini", precision=""):
     if moteur_image == "gemini":
         from . import ia
         if not refs:
-            png = ia.generer_image(params, "First frame of this video shot, photorealistic still image: " + texte)
+            png = ia.generer_image(params, "First frame of this video shot, photorealistic still image: " + texte,
+                                   format_=seq.get("format", "16:9"))
         else:
             png = ia.generer_image_refs(params, "Compose the first frame of this video shot as one photorealistic still image. "
                                                 "Use the reference images for the people's appearance (a cast sheet shows several "
                                                 "of them, each labelled with its Character letter: every one of them appears as "
-                                                "drawn) and the place; other people in the place photos are not characters. " + texte, refs)
+                                                "drawn) and the place; other people in the place photos are not characters. " + texte, refs,
+                                    format_=seq.get("format", "16:9"))
         with open(sortie, "wb") as f:
             f.write(png)
         return sortie
@@ -718,7 +720,8 @@ def image_arrivee(seq, i, params, depart=None, precision=""):
     if fin and os.path.exists(fin) and fin not in refs and i < len(seq["plans"]) - 1:
         refs.append(fin)                             # relier deux rushes : tenues et lumière de l'image d'après
     action = consigne(seq, pl, params)
-    png = (ia.generer_image_refs if refs else lambda prm, c, r=None: ia.generer_image(prm, c))(
+    fmt = seq.get("format", "16:9")                  # 1.3.9 : format imposé
+    png = (ia.generer_image_refs if refs else lambda prm, c, r=None, format_=None: ia.generer_image(prm, c, format_=format_))(
         params, "KEY IMAGE of a video sequence: the exact state of the scene at the END of this shot, action completely finished "
                 "(final pose, physically plausible). The first reference images are the character and object sheets (a cast sheet "
                 "shows several of them side by side, each labelled with its Character letter): every face, hairstyle, outfit and "
@@ -728,7 +731,7 @@ def image_arrivee(seq, i, params, depart=None, precision=""):
                 "their decor, materials, light and lens exactly; the camera framing follows the Camera line (it may move, widen or "
                 "come closer). People are where the story says at that moment: whoever got into a vehicle, left or is listed as not "
                 "visible must NOT appear. One photorealistic still image, no text. " + action +
-        ((" Precisely, at the end: " + _anglais(precision, True)) if precision else ""), refs[:5])
+        ((" Precisely, at the end: " + _anglais(precision, True)) if precision else ""), refs[:5], format_=fmt)
     sortie = os.path.join(dossier(seq), f"plan{i + 1:02d}_arrivee_{int(time.time() * 1000) % 10 ** 9}.png")
     with open(sortie, "wb") as f:
         f.write(png)

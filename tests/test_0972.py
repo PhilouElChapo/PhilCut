@@ -72,7 +72,7 @@ class TestSequenceFidele(unittest.TestCase):
             png = f.read()
         appels, images_ia = [], []
         anc = (GV.generer, ia.generer_image_refs)
-        ia.generer_image_refs = lambda p, c, refs, delai=240: (images_ia.append(c[:30]), png)[1]
+        ia.generer_image_refs = lambda p, c, refs, *a, **k: (images_ia.append(c[:30]), png)[1]
 
         def faux(params, ident, texte, sortie, duree, fmt, image, *a, **k):
             appels.append((image, k.get("references"), k.get("image_fin")))

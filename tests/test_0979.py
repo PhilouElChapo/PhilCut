@@ -116,7 +116,7 @@ class TestFenetre(unittest.TestCase):
         anc = (A.demander, ia.generer_image, ia.generer_image_refs, GV.generer)
         A.demander = faux_demander
         ia.generer_image = lambda p, cns, *a, **k: png
-        ia.generer_image_refs = lambda p, cns, refs, delai=240: png
+        ia.generer_image_refs = lambda p, cns, refs, *a, **k: png
 
         def faux_generer(params, ident, texte, sortie, duree, fmt, image, *a, **k):
             moteur.lancer(["-y", "-f", "lavfi", "-i", "testsrc=size=160x90:rate=10:duration=1", "-pix_fmt", "yuv420p", sortie])

@@ -39,8 +39,8 @@ class TestTenues(unittest.TestCase):
         self.assertIn("pilot", t["en"])
         vus = {}
         anc = (ia.generer_image, ia.generer_image_refs)
-        ia.generer_image = lambda prm, c: (vus.__setitem__("c", c), PNG)[1]
-        ia.generer_image_refs = lambda prm, c, refs, delai=240: (vus.__setitem__("c", c), vus.__setitem__("r", refs), PNG)[-1]
+        ia.generer_image = lambda prm, c, *a, **k: (vus.__setitem__("c", c), PNG)[1]
+        ia.generer_image_refs = lambda prm, c, refs, *a, **k: (vus.__setitem__("c", c), vus.__setitem__("r", refs), PNG)[-1]
         try:
             d = tempfile.mkdtemp()
             seq = Q.nouvelle()

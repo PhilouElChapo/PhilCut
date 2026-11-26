@@ -117,7 +117,7 @@ class TestImagesAvantVideo(unittest.TestCase):
         self.assertEqual(Q.images_a_verifier(s, [0, 1], params, "omni-720p"), [])
         consignes = []
         anc = ia.generer_image_refs
-        ia.generer_image_refs = lambda p, c, refs, delai=240: (consignes.append(c), png)[1]
+        ia.generer_image_refs = lambda p, c, refs, *a, **k: (consignes.append(c), png)[1]
         try:
             dl = DialogueImagesPlans(None, s, params, [0, 1])
             dl._test_oui = True

@@ -26,7 +26,7 @@ class TestVisages(unittest.TestCase):
         vus = []
         anc = (ia.generer_image, ia.generer_image_refs)
         ia.generer_image = lambda p, c, *a, **k: (vus.append(("texte", c)), png)[1]
-        ia.generer_image_refs = lambda p, c, refs, delai=240: (vus.append(("refs", c, list(refs))), png)[1]
+        ia.generer_image_refs = lambda p, c, refs, *a, **k: (vus.append(("refs", c, list(refs))), png)[1]
         try:
             self.assertEqual([p["nom"] for p in Q.sans_planche(s, [0])], ["Chauffeur"])
             Q.planche_personnage(s, s["personnages"][1], {"clef_gemini": "x"})

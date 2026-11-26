@@ -31,7 +31,7 @@ class TestCasting(unittest.TestCase):
             Q.image_connue_avant = lambda seq, i: ""
             Q.consigne = lambda seq, pl, params: "Action."
             Q.dossier = lambda seq: d
-            ia.generer_image_refs = lambda params, c, refs: recu.update(c=c, refs=refs) or b"png"
+            ia.generer_image_refs = lambda params, c, refs, *a, **k: recu.update(c=c, refs=refs) or b"png"
             Q.image_arrivee({"plans": [{}]}, 0, {})
         finally:
             Q.references_du_plan, Q.images_du_plan, Q.image_connue_avant, Q.consigne, Q.dossier, ia.generer_image_refs = anc

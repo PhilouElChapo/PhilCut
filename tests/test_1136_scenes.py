@@ -80,7 +80,7 @@ class TestScenes(unittest.TestCase):
         from app import ia
         recu = {}
         anc, ancd = ia.generer_image_refs, Q.dossier
-        ia.generer_image_refs = lambda params, c, refs: recu.update(c=c, refs=refs) or b"png"
+        ia.generer_image_refs = lambda params, c, refs, *a, **k: recu.update(c=c, refs=refs) or b"png"
         Q.dossier = lambda seq: self.d
         try:
             Q.image_depart(s, 1, {}, "gemini")
@@ -179,7 +179,7 @@ class TestFenetre(unittest.TestCase):
         anc = (A.demander, ia.generer_image, ia.generer_image_refs, GV.generer, ApercuCreation.charger)
         A.demander, GV.generer = faux_demander, faux_generer
         ia.generer_image = lambda p, cns, *a, **k: png
-        ia.generer_image_refs = lambda p, cns, refs, delai=240: png
+        ia.generer_image_refs = lambda p, cns, refs, *a, **k: png
         ApercuCreation.charger = lambda *a, **k: None
         try:
             dl = ed.assistant_creation(c)

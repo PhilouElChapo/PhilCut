@@ -409,21 +409,37 @@ def modeles_image_gemini(clef):
     return _modeles_trouves["gemini_image"]
 
 
-def generer_image(params, consigne, delai=240):
+def _config_image(format_):
+    """1.3.9 (Philippe, 26/11 23h49 : images de départ en portrait dans un projet paysage) : le format est imposé à Gemini,
+    pas seulement écrit dans la consigne (il suivait le format des fiches)."""
+    c = {"responseModalities": ["TEXT", "IMAGE"]}
+    if format_ in ("16:9", "9:16", "1:1", "4:3", "3:4"):
+        c["imageConfig"] = {"aspectRatio": format_}
+    return c
+
+
+def generer_image(params, consigne, delai=240, format_=None):
     """Image créée par Gemini à partir d'une consigne seule (octets PNG ou JPEG)."""
     clef = nettoyer_clef(params.get("clef_gemini", ""))
     if not clef:
         raise ErreurIA(_("Il faut une clef Gemini (Assistant › Connecter une IA) : Claude ne dessine pas d'image."))
-    corps = {"contents": [{"role": "user", "parts": [{"text": consigne}]}], "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}}
+    corps = {"contents": [{"role": "user", "parts": [{"text": consigne}]}], "generationConfig": _config_image(format_)}
     derniere = None
     for modele in modeles_image_gemini(clef)[:4]:
         try:
             d = _http(f"{GEMINI_API}/models/{modele}:generateContent?key={clef}", corps, delai=delai)
         except ErreurIA as e:
             derniere = e
-            if getattr(e, "code", 0) == 404 or getattr(e, "code", 0) in TRANSITOIRES:
+            if getattr(e, "code", 0) == 400 and corps["generationConfig"].pop("imageConfig", None):
+                try:                                  # ancien modèle sans choix de format : on redemande sans
+                    d = _http(f"{GEMINI_API}/models/{modele}:generateContent?key={clef}", corps, delai=delai)
+                except ErreurIA as e2:
+                    derniere = e2
+                    continue
+            elif getattr(e, "code", 0) == 404 or getattr(e, "code", 0) in TRANSITOIRES:
                 continue
-            raise
+            else:
+                raise
         for c in d.get("candidates") or []:
             for p in (c.get("content") or {}).get("parts", []):
                 data = p.get("inline_data") or p.get("inlineData")
@@ -474,7 +490,7 @@ def pas_d_image(d):
     return msg
 
 
-def generer_image_refs(params, consigne, images, delai=240):
+def generer_image_refs(params, consigne, images, delai=240, format_=None):
     """Image créée par Gemini à partir d'une consigne et d'images de référence (personnes, lieu) : octets PNG ou JPEG."""
     clef = nettoyer_clef(params.get("clef_gemini", ""))
     if not clef:
@@ -486,16 +502,23 @@ def generer_image_refs(params, consigne, images, delai=240):
         mime = type_image(donnees)
         parts.append({"inline_data": {"mime_type": mime, "data": base64.b64encode(donnees).decode()}})
     parts.append({"text": consigne})
-    corps = {"contents": [{"role": "user", "parts": parts}], "generationConfig": {"responseModalities": ["TEXT", "IMAGE"]}}
+    corps = {"contents": [{"role": "user", "parts": parts}], "generationConfig": _config_image(format_)}
     derniere = None
     for modele in modeles_image_gemini(clef)[:4]:
         try:
             d = _http(f"{GEMINI_API}/models/{modele}:generateContent?key={clef}", corps, delai=delai)
         except ErreurIA as e:
             derniere = e
-            if getattr(e, "code", 0) == 404 or getattr(e, "code", 0) in TRANSITOIRES:
+            if getattr(e, "code", 0) == 400 and corps["generationConfig"].pop("imageConfig", None):
+                try:                                  # ancien modèle sans choix de format : on redemande sans
+                    d = _http(f"{GEMINI_API}/models/{modele}:generateContent?key={clef}", corps, delai=delai)
+                except ErreurIA as e2:
+                    derniere = e2
+                    continue
+            elif getattr(e, "code", 0) == 404 or getattr(e, "code", 0) in TRANSITOIRES:
                 continue
-            raise
+            else:
+                raise
         for c in d.get("candidates") or []:
             for p in (c.get("content") or {}).get("parts", []):
                 data = p.get("inline_data") or p.get("inlineData")
