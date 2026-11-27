@@ -313,14 +313,19 @@ class DialogueEnregistrement(QDialog):
 class _ChoixVoix(QComboBox):
     """Voix locales installées, puis voix Gemini si une clef est là."""
 
-    def __init__(self, params, langue=None):
+    def __init__(self, params, langue=None, ma_voix=False):
         super().__init__()
+        if ma_voix:                                  # 1.3.13 : mes voix gardées en tête (dites sur ce poste)
+            from . import voix_familles as VF, voix_clone as VC
+            if VC.manquant(params) is None:
+                for x in VF.voix_parlees(params):
+                    self.addItem(_("{n} — ma voix, sur ce poste, gratuit", n=x["nom"]), ("ma_voix", x["chemin"]))
         for c, nom in V.voix_locales():
             self.addItem(_("{n} — sur ce poste, gratuit", n=nom), ("local", c))
         if params.get("clef_gemini"):
             for nom, lib in V.VOIX_GEMINI:
                 self.addItem(_("Gemini {n} ({l}) — en ligne, payant", n=nom, l=lib), ("gemini", nom))
-        if langue:
+        if langue and not (self.count() and (self.itemData(0) or ("",))[0] == "ma_voix"):
             c = V.voix_locale_langue(langue)
             for i in range(self.count()):
                 if self.itemData(i) == ("local", c):
@@ -342,7 +347,7 @@ class DialogueSynthese(QDialog):
         self.texte.setPlaceholderText(_("Le texte que la voix doit lire…"))
         lay.addWidget(self.texte)
         f = QFormLayout()
-        self.choix = _ChoixVoix(params, "fr")
+        self.choix = _ChoixVoix(params, "fr", ma_voix=True)
         f.addRow(_("Voix"), self.choix)
         self.vitesse = QSlider(Qt.Horizontal)
         self.vitesse.setRange(70, 140)
@@ -372,6 +377,9 @@ class DialogueSynthese(QDialog):
         m, _v = self.choix.choix()
         if m == "gemini":
             self.prix.setText(_("Lecture par Gemini : environ {p} $ (votre clef, votre compte).", p=f"{V.prix_gemini(self.texte.toPlainText()):.3f}".replace(".", ",")))
+        elif m == "ma_voix":
+            self.prix.setText(_("Lecture avec votre voix gardée, sur ce poste : gratuit, rien ne sort de l'ordinateur (quelques "
+                                "secondes par phrase)."))
         elif self.choix.count():
             self.prix.setText(_("Lecture sur ce poste : gratuit, rien ne sort de l'ordinateur."))
 

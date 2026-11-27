@@ -124,9 +124,9 @@ class DialogueBibliothequeCreations(QDialog):
         self.liste.clear()
         for e in self.entrees:
             it = QListWidgetItem(f"{e['nom']}\n{B.resume(e)[:90]}")
-            ap = B.apercu(e)
-            if ap:
-                it.setIcon(QIcon(QPixmap(ap).scaled(64, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)))
+            icone = icone_entree(e)
+            if icone:
+                it.setIcon(icone)
             self.liste.addItem(it)
         self.liste.blockSignals(False)
         k = next((i for i, e in enumerate(self.entrees) if e["id"] == ident), 0 if self.entrees else -1)
@@ -822,6 +822,33 @@ class DialogueBibliothequeCreations(QDialog):
 
 
 # ------------------------------------------------------------------ pour les autres fenêtres (Séquence IA, clip, Fabrique musique)
+def icone_entree(e, l=64, h=48):
+    """La vignette de la liste ; 1.3.13 (Philippe, 27/11) : une croche ♪ en coin quand un son est déjà généré (une croche
+    seule si l'entrée n'a pas d'image)."""
+    from PySide6.QtGui import QColor, QFont, QPainter
+    ap = B.apercu(e)
+    px = QPixmap(l, h)
+    px.fill(Qt.transparent)
+    p = QPainter(px)
+    if ap:
+        im = QPixmap(ap).scaled(l, h, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        p.drawPixmap((l - im.width()) // 2, (h - im.height()) // 2, im)
+    son = B.son_genere(e)
+    if son:
+        f = QFont()
+        f.setPixelSize(h // 2 if ap else int(h * 0.8))
+        f.setBold(True)
+        p.setFont(f)
+        if ap:
+            p.setBrush(QColor(20, 20, 30, 200))
+            p.setPen(Qt.NoPen)
+            p.drawEllipse(l - h // 2 - 2, h - h // 2 - 2, h // 2, h // 2)
+        p.setPen(QColor("#b9a7ff"))
+        p.drawText(px.rect().adjusted(l - h // 2 - 2, h - h // 2 - 2, 0, 0) if ap else px.rect(), Qt.AlignCenter, "♪")
+    p.end()
+    return QIcon(px) if (ap or son) else None
+
+
 def choisir_entree(parent, params, genres, titre=None, plusieurs=False, vide=None):
     """Petite fenêtre « Depuis ma bibliothèque » : la liste des entrées des genres voulus (vignette, nom, résumé) ; renvoie
     l'entrée choisie ou None. Essais : parent._test_biblio = nom de l'entrée à prendre."""
@@ -845,9 +872,9 @@ def choisir_entree(parent, params, genres, titre=None, plusieurs=False, vide=Non
     lst.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
     for e in entrees:
         it = QListWidgetItem(f"{e['nom']}\n{B.resume(e)[:110]}")
-        ap = B.apercu(e)
-        if ap:
-            it.setIcon(QIcon(QPixmap(ap).scaled(64, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)))
+        icone = icone_entree(e)
+        if icone:
+            it.setIcon(icone)
         lst.addItem(it)
     lst.setCurrentRow(0)
     if plusieurs:                                    # 1.3.11 : Ctrl-clic ou Maj-clic pour en prendre plusieurs

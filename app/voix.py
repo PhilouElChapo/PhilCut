@@ -76,11 +76,29 @@ def lire(texte, sortie, params, moteur_voix="local", voix=None, vitesse=1.0):
         raise ErreurVoix(_("Aucun texte à lire."))
     if moteur_voix == "gemini":
         return lire_gemini(texte, sortie, params, voix or VOIX_GEMINI[0][0], vitesse)
+    if moteur_voix == "ma_voix":                     # 1.3.13 : ma voix gardée (extrait), dite sur ce poste
+        return lire_ma_voix(texte, sortie, params, voix, vitesse)
     from . import packs_ia
     try:
         return packs_ia.synthese(texte, sortie, cle=voix, params=params, vitesse=vitesse)
     except packs_ia.ErreurIA as e:
         raise ErreurVoix(str(e)) from e
+
+
+def lire_ma_voix(texte, sortie, params, reference, vitesse=1.0, langue=None):
+    """1.3.13 : le texte dit avec une voix gardée (5 à 15 s de la personne), par « Continuer avec ma voix », sur ce poste."""
+    from . import voix_clone as VC
+    manque = VC.manquant(params)
+    if manque:
+        raise ErreurVoix(manque)
+    if not reference or not os.path.exists(reference):
+        raise ErreurVoix(_("L'extrait de cette voix n'est plus dans la bibliothèque."))
+    brut = sortie if abs(vitesse - 1.0) < 0.03 else os.path.splitext(sortie)[0] + "_brut.wav"
+    VC.dire(texte, VC.lire_reference(reference, 0.0, None), brut, langue or VC.langue_defaut(params), 0.5, params)
+    if brut != sortie:
+        from . import moteur
+        moteur.lancer(["-y", "-v", "error", "-i", brut, "-filter:a", f"atempo={max(0.5, min(2.0, vitesse)):.3f}", sortie])
+    return sortie
 
 
 def prix_gemini(texte):

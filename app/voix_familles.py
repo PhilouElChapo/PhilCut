@@ -288,6 +288,49 @@ def retirer_variante(params, e, ident):
     return B.garder(params, "voix", e["nom"], e.get("description", ""), None, {"variantes": vs}, e["id"])
 
 
+# ------------------------------------------------------------------ 1.3.13 : ma voix parlée (Continuer avec ma voix, Voix off)
+def voix_parlees(params):
+    """Les voix parlées gardées (5 à 15 s de la personne qui parle), modèle et variantes : [{nom, chemin, entree, variante}],
+    par ordre alphabétique. Elles disent n'importe quel texte sur ce poste (« Continuer avec ma voix », Voix off)."""
+    out = []
+    for e in mes_voix(params):
+        f = e.get("fichiers") or {}
+        if f.get("parole") and os.path.exists(f["parole"]):
+            out.append({"nom": e["nom"], "chemin": f["parole"], "entree": e["id"], "variante": ""})
+        for v in variantes(e):
+            k = v.get("parole")
+            if k and f.get(k) and os.path.exists(f[k]):
+                out.append({"nom": f"{e['nom']} — {v['nom']}", "chemin": f[k], "entree": e["id"], "variante": v["id"]})
+    return sorted(out, key=lambda x: _net(x["nom"]))
+
+
+def garder_parole(params, nom, chemin, accord, variante=""):
+    """Garde l'extrait de voix parlée `chemin` (WAV) sous « nom » (sa voix, avec l'accord) ; `variante` (« calme »,
+    « enjouée »…) en fait une sous-famille de la même voix. Renvoie l'entrée."""
+    from . import bibliotheque_creations as B
+    if not accord:
+        raise ValueError(_("Une voix réelle se garde seulement avec l'accord de la personne (case à cocher)."))
+    nom = re.sub(r"\s+", " ", nom or "").strip()[:60]
+    if not nom:
+        raise ValueError(_("Donnez un nom à la voix."))
+    e = next((x for x in mes_voix(params) if _net(x["nom"]) == _net(nom)), None)
+    if e is None:
+        e = garder_principal(params, nom, {}, reel=True, accord=True, role="narration", source="parole")
+    variante = re.sub(r"\s+", " ", variante or "").strip()[:60]
+    if not variante:
+        return B.garder(params, "voix", e["nom"], e.get("description", ""), {"parole": chemin},
+                        {"parole": True, "reel": True, "accord": True}, e["id"])
+    vs = list((e.get("donnees") or {}).get("variantes") or [])
+    v = next((x for x in vs if _net(x.get("nom")) == _net(variante)), None)
+    if v is None:
+        v = {"id": uuid.uuid4().hex[:8], "nom": variante, "mots": [_net(variante)], "reglages": dict(reglages_de(e)),
+             "voix_decrite": dict((e.get("donnees") or {}).get("voix_decrite") or {}), "cree": time.strftime("%Y-%m-%d %H:%M")}
+        vs.append(v)
+    v["parole"] = "parole_" + v["id"]
+    return B.garder(params, "voix", e["nom"], e.get("description", ""), {v["parole"]: chemin},
+                    {"variantes": vs, "reel": True, "accord": True}, e["id"])
+
+
 def extrait_de(e, variante=None):
     """L'extrait de pré-écoute déjà gardé (rien n'est recalculé), ou ''."""
     f = e.get("fichiers") or {}

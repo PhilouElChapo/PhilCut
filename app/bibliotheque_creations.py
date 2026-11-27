@@ -193,6 +193,12 @@ def apercu(e):
     return next((c for c in f.values() if c.lower().endswith((".png", ".jpg", ".jpeg", ".webp"))), "")
 
 
+def son_genere(e):
+    """1.3.13 (Philippe, 27/11) : l'entrée a-t-elle déjà un son (extrait, morceau, voix) ? Elle porte alors une croche."""
+    return any(str(c).lower().endswith((".wav", ".mp3", ".flac", ".ogg", ".m4a", ".opus", ".aac"))
+               for c in (e.get("fichiers") or {}).values())
+
+
 def resume(e):
     """Une ligne lisible : genre, rôle de la voix ou instrument, description courte."""
     d = e.get("donnees") or {}
@@ -201,6 +207,8 @@ def resume(e):
         bouts.append(dict(ROLES_VOIX).get(d.get("role"), ""))
         if d.get("voix_seule") or (e.get("fichiers") or {}).get("voix_seule"):
             bouts.append(_("timbre gardé"))
+        if any(k == "parole" or k.startswith("parole_") for k in (e.get("fichiers") or {})):
+            bouts.append(_("voix parlée gardée"))         # 1.3.13 : dit n'importe quel texte sur ce poste
     if e["genre"] == "musicien" and d.get("instrument"):
         bouts.append(d["instrument"])
     if e["genre"] == "groupe" and d.get("membres"):

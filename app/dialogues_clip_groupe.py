@@ -158,13 +158,10 @@ class DialogueClipGroupe(QDialog):
         h.addWidget(b)
         # 1.3.12 (Philippe, 27/11 : « pourquoi Voix du chant ? ») : la chanson du clip est déjà chantée ; cette voix ne sert
         # qu'à la Fabrique musique, pour les prochains morceaux du groupe gardé. Le bouton le dit (fonction gardée).
-        b = QPushButton(_("Voix du groupe pour mes prochains morceaux…"))
-        b.setToolTip(_("Ne change rien à ce clip (la chanson est déjà chantée) : la voix gardée avec le groupe, que la Fabrique "
-                       "musique reprend pour créer ses prochains morceaux"))
-        b.clicked.connect(self._voix_chant)
-        h.addWidget(b)
+        # 1.3.13 (Philippe, 27/11 11h04 : redondant avec la voix Archangel de la bibliothèque) : plus de bouton ici ; « ☆ Garder
+        # ce groupe… » relie d'office la voix de même nom de la bibliothèque, ou propose d'en choisir une (fonction gardée)
         self.voix_chant_info = QLabel("")
-        h.addWidget(self.voix_chant_info)
+        self.voix_chant_info.hide()
         b = QPushButton(_("☆ Garder ce groupe…"))
         b.setToolTip(_("Range le groupe (et chaque musicien qui n'y est pas encore) dans « Ma bibliothèque de créations »"))
         b.clicked.connect(self._garder_groupe)
@@ -547,6 +544,17 @@ class DialogueClipGroupe(QDialog):
                                            (anc or {}).get("nom") or _("Mon groupe"))
         if not ok or not (nom or "").strip():
             return
+        if not self.clip.get("voix_chant"):              # 1.3.13 : la voix de même nom de la bibliothèque, d'office
+            from . import voix_familles as VF
+            meme = next((v for v in VF.mes_voix(self.params) if VF._net(v["nom"]) == VF._net(nom)), None)
+            if meme:
+                c = VF.choix(meme)
+                self.clip["voix_chant"] = {k: c.get(k) for k in ("nom", "entree", "variante", "catalogue") if c.get(k)}
+            elif essai is None and QMessageBox.question(
+                    self, _("Garder ce groupe"),
+                    _("Aucune voix « {n} » dans votre bibliothèque. Choisir maintenant la voix du chant du groupe (elle servira "
+                      "à la Fabrique musique pour ses prochains morceaux) ?", n=nom.strip())) == QMessageBox.Yes:
+                self._voix_chant()
         try:
             e = B.garder_groupe(self.params, nom.strip(), self.clip["groupe"], (anc or {}).get("id"),
                                 (self.clip.get("style") or {}).get("nom", "") if isinstance(self.clip.get("style"), dict) else "",
@@ -558,7 +566,9 @@ class DialogueClipGroupe(QDialog):
         self.clip["groupe_biblio"] = e["id"]
         for m, x in zip(self.clip["groupe"], e["donnees"]["membres"]):
             m.update(biblio=x["biblio"], genre=x["genre"])
-        self.etat.setText(_("✓ Groupe « {n} » gardé dans votre bibliothèque.", n=e["nom"]))
+        self.etat.setText(_("✓ Groupe « {n} » gardé dans votre bibliothèque.", n=e["nom"]) +
+                          ((" " + _("Voix du chant : {v}.", v=self.clip["voix_chant"].get("nom", "")))
+                           if self.clip.get("voix_chant") else ""))
 
     def _voix_chant(self):
         from .dialogues_mes_voix import choisir_voix

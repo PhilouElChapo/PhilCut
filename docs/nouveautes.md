@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.12 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.13 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.13
+- Ma voix dans la bibliotheque : « Continuer avec ma voix » a un bouton « ☆ Garder cette voix… » (10 a 15 s de votre voix, une fois) et une liste « Voix gardee » ; plus besoin de rechercher l'extrait. Plusieurs extraits du meme nom font des variantes (« Ma voix — calme », « Ma voix — enjouee »).
+- Voix › « Voix off lue par une voix de synthese… » : vos voix gardees sont en tete de la liste, le texte est dit avec votre voix sur ce poste, gratuitement.
+- Clip de groupe : « ☆ Garder ce groupe… » relie d'office la voix de meme nom de la bibliotheque (Archangel) ; s'il n'y en a pas, PhilCut propose d'en choisir une. Le bouton de voix du clip est retire.
+- Bibliotheque : une croche ♪ marque les entrees qui ont deja un son genere (extrait de voix, morceau) ; « voix parlee gardee » dans la description.
+- Nouveau guide : « Faire dire un texte avec ma voix, sans l'enregistrer ».
 
 ### 1.3.12
 - Clip de groupe, construction du concert (choix de Philippe, 27/11) : des plans de 6 a 10 s (une vingtaine pour une chanson, au lieu d'une cinquantaine) ; environ un plan sur quatre montre le chanteur ou la chanteuse de face, en plan moyen, visage net, pour des levres bien synchronisees ; dans les autres plans personne ne chante face camera et les instruments restent en partie caches (contre-jour, fumee, silhouettes), le rythme vient des coupes.

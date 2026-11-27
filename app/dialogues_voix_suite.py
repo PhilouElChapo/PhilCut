@@ -49,6 +49,19 @@ class DialogueVoixSuite(QDialog):
         v.addWidget(intro)
         # --- extrait de voix
         v.addWidget(QLabel(_("<b>Voix à reprendre</b>")))
+        # 1.3.13 (Philippe, 27/11) : ma voix gardée une fois dans la bibliothèque, choisie dans une liste
+        hg = QHBoxLayout()
+        hg.addWidget(QLabel(_("Voix gardée :")))
+        self.gardees = QComboBox()
+        self.gardees.currentIndexChanged.connect(self._prendre_gardee)
+        hg.addWidget(self.gardees, 1)
+        self.b_garder = QPushButton(_("☆ Garder cette voix…"))
+        self.b_garder.setToolTip(_("Range l'extrait dans « Ma bibliothèque de créations » (genre Voix) : la prochaine fois, choisissez "
+                                   "simplement la voix dans la liste. Un deuxième extrait du même nom avec une variante "
+                                   "(« calme », « enjouée ») fait une sous-famille."))
+        self.b_garder.clicked.connect(self.garder_voix)
+        hg.addWidget(self.b_garder)
+        v.addLayout(hg)
         self.source = QLabel("")
         self.source.setWordWrap(True)
         v.addWidget(self.source)
@@ -147,8 +160,93 @@ class DialogueVoixSuite(QDialog):
         hb.addWidget(self.b_fermer)
         racine.addLayout(hb)
         self._source_plan()
+        self._remplir_gardees()
         self._maj()
         self.resize(620, 680)
+
+    # ------------------------------------------------------------------ 1.3.13 : voix gardées
+    def _remplir_gardees(self, choisir=None):
+        from . import voix_familles as VF
+        self.gardees.blockSignals(True)
+        self.gardees.clear()
+        self.gardees.addItem(_("— le plan ou un fichier —"), None)
+        for x in VF.voix_parlees(self.ed.params):
+            self.gardees.addItem(x["nom"], x["chemin"])
+        k = self.gardees.findData(choisir) if choisir else -1
+        self.gardees.setCurrentIndex(max(0, k))
+        self.gardees.blockSignals(False)
+        self.gardees.setEnabled(self.gardees.count() > 1)
+        if k > 0:
+            self._prendre_gardee(k)
+
+    def _prendre_gardee(self, k):
+        ch = self.gardees.itemData(k)
+        if not ch:
+            self.fichier = None
+            self._source_plan()
+            self._maj()
+            return
+        from . import moteur
+        self.fichier = ch
+        self.ref_debut.setValue(0.0)
+        self.ref_duree.setValue(max(V.REF_MIN, min(V.REF_MAX, float((moteur.sonder(ch) or {}).get("duree") or 12.0))))
+        self.isoler.setChecked(False)                    # déjà propre : gardée isolée
+        self.accord.setChecked(True)                     # l'accord a été donné en la gardant
+        self.source.setText(_("La voix gardée « {n} ».", n=self.gardees.currentText()))
+        self._maj()
+
+    def garder_voix(self, nom=None, variante=None):
+        """Extrait (isolé si demandé) rangé dans la bibliothèque, sous un nom et une variante facultative."""
+        from PySide6.QtWidgets import QInputDialog, QLineEdit
+        if self._en_calcul() or not self._media():
+            return
+        if not self.accord.isChecked():
+            self.etat.setText(_("Cochez d'abord « C'est ma voix, ou j'ai l'accord de la personne »."))
+            return
+        if nom is None:
+            nom, ok = QInputDialog.getText(self, _("Garder cette voix"), _("Nom de la voix :"), QLineEdit.Normal, _("Ma voix"))
+            if not ok or not nom.strip():
+                return
+            variante, ok = QInputDialog.getText(self, _("Garder cette voix"),
+                                                _("Variante (facultatif : calme, enjouée, conteur…) ; vide = la voix principale :"),
+                                                QLineEdit.Normal, "")
+            if not ok:
+                return
+        source, d0, dl = self._media(), self.ref_debut.value(), self.ref_duree.value()
+        isoler, params = self.isoler.isChecked() and self.isoler.isEnabled(), self.ed.params
+
+        def travail(t):
+            import tempfile
+            from . import voix_familles as VF
+            src, deb = source, d0
+            if isoler:
+                from . import separation as S
+                r = S.separer(source, tempfile.mkdtemp(prefix="philcut-voix-"), d0, dl, params,
+                              progression=lambda f, txt="": t.avancer(0.8 * f, _("Isolement de la voix")), arret=lambda: t.arret)
+                src, deb = r["voix"], 0.0
+            ref = V.lire_reference(src, deb, dl)
+            ch = os.path.join(tempfile.mkdtemp(prefix="philcut-voix-"), "parole.wav")
+            V.ecrire(ch, ref)
+            return VF.garder_parole(params, nom.strip(), ch, True, variante or ""), ch
+
+        def fin(r, e):
+            self.barre.hide()
+            if e or not r:
+                self.etat.setText(_("✕ La voix n'a pas été gardée : {e}", e=texte_erreur(e)))
+                return
+            entree, _ch = r
+            from . import voix_familles as VF
+            garde = next((x["chemin"] for x in VF.voix_parlees(self.ed.params) if x["entree"] == entree["id"] and
+                          x["nom"] == (entree["nom"] + (f" — {variante.strip()}" if (variante or "").strip() else ""))), None)
+            self._remplir_gardees(garde)
+            self.etat.setText(_("✓ Voix gardée dans votre bibliothèque : choisissez-la dans « Voix gardée » la prochaine fois."))
+        self.barre.setValue(0)
+        self.barre.show()
+        self.tache = Tache(travail, _("Garder cette voix"))
+        self.tache.lier(self)
+        self.tache.progression.connect(lambda f, txt: self.barre.setValue(int(f * 1000)), Qt.QueuedConnection)
+        self.tache.fini.connect(fin, Qt.QueuedConnection)
+        self.tache.start()
 
     # ------------------------------------------------------------------ extrait
     def _media(self):

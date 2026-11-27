@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T133 — 1.3.13 : ma voix gardée, voix du groupe d'office, croche
+
+1. Voix › « Continuer avec ma voix… » ; prenez un fichier de 10 à 15 s de votre voix, cochez « C'est ma voix », « ☆ Garder cette voix… » : nom « Ma voix », variante vide.
+2. Refaites avec un autre extrait, même nom, variante « calme » : la liste « Voix gardée » montre « Ma voix » et « Ma voix — calme ».
+3. Rouvrez la fenêtre : choisissez « Ma voix » dans la liste, tapez deux phrases, « Fabriquer la voix » : est-ce bien votre voix ?
+4. Voix › « Voix off lue par une voix de synthèse… » : « Ma voix — ma voix, sur ce poste, gratuit » est en tête ; un paragraphe entier est lu avec votre voix.
+5. Bibliothèque : vos voix et vos morceaux générés portent une croche ♪.
+6. Clip de groupe avec Archangel : « ☆ Garder ce groupe… » nommé « Archangel » : le message dit « Voix du chant : Archangel ».
+
 ## T132 — 1.3.12 : le concert (plans longs, un sur quatre chante, lèvres sur ce poste)
 
 1. Préférences › IA locale : « Lèvres synchronisées sur ce poste » installé (environ 9 Go, une fois).

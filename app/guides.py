@@ -555,6 +555,23 @@ def _guides_integres():
              {"texte": _("« Poser le clip sous la chanson » (les plans sont remis au format du projet pour une lecture fluide), "
                          "ou « Enregistrer le clip avec la chanson… » pour un fichier à part. Edition › Annuler pour revenir.")},
          ]},
+        {"id": "ma_voix", "etat": "ok",                  # 1.3.13 (Philippe, 27/11)
+         "titre": _("Faire dire un texte avec ma voix, sans l'enregistrer"),
+         "mots": "ma voix cloner voix texte dire lire narration voix off continuer enregistrer bibliotheque variante calme",
+         "intro": _("PhilCut écoute 10 à 15 s de votre voix et dit ensuite n'importe quel texte avec elle, sur ce poste, "
+                    "gratuitement : il reprend le timbre et la manière de parler de l'extrait, il ne prolonge pas l'enregistrement. "
+                    "Votre voix, ou celle d'une personne d'accord ; jamais une personne connue."),
+         "etapes": [
+             {"texte": _("Enregistrez une fois 10 à 15 s de vous qui parlez naturellement, au calme, sans musique, avec le ton "
+                         "voulu (Voix › « Enregistrer une voix off au micro… »).")},
+             {"texte": _("Voix › « Continuer avec ma voix… » : prenez le plan ou le fichier, cochez « C'est ma voix », puis "
+                         "« ☆ Garder cette voix… » (nom « Ma voix » ; une variante comme « calme » ou « enjouée » si vous voulez)."),
+              "fait": "fenetre:DialogueVoixSuite"},
+             {"texte": _("Ensuite, plus d'extrait à chercher : choisissez-la dans « Voix gardée », tapez le texte, « Fabriquer la "
+                         "voix », écoutez, « Poser dans le film ».")},
+             {"texte": _("Pour un long texte : Voix › « Voix off lue par une voix de synthèse… » ; vos voix gardées sont en tête "
+                         "de la liste « Voix ». Mettez des points plutôt que de longues virgules.")},
+         ]},
         {"id": "levres", "etat": "ok",
          "titre": _("Faire parler un personnage sur ma voix (lèvres synchronisées)"),
          "mots": "levres bouche parler synchroniser lipsync personnage presentateur avatar chanter chanteur voix doublage",
@@ -652,7 +669,7 @@ def _guides_integres():
         {"id": "groupe_musique", "etat": "ok",
          "titre": _("Mon groupe : son style et sa voix dans la Fabrique musique, ses musiciens dans le clip"),
          "mots": "groupe musique style voix chanteur chanteuse musiciens clip archangel bibliotheque",
-         "intro": _("Un groupe gardé (clip de groupe › « ☆ Garder ce groupe… », avec « Voix du groupe pour mes prochains morceaux… ») donne son style et la voix "
+         "intro": _("Un groupe gardé (clip de groupe › « ☆ Garder ce groupe… », qui reprend d'office la voix de même nom de la bibliothèque) donne son style et la voix "
                     "de son chanteur ou de sa chanteuse ; tout reste modifiable."),
          "etapes": [
              {"texte": _("Fabrique IA › Musique › « Créer une musique par IA (Fabrique musique)… »."),
