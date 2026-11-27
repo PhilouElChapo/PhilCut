@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.11 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.12 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.12
+- Clip de groupe, construction du concert (choix de Philippe, 27/11) : des plans de 6 a 10 s (une vingtaine pour une chanson, au lieu d'une cinquantaine) ; environ un plan sur quatre montre le chanteur ou la chanteuse de face, en plan moyen, visage net, pour des levres bien synchronisees ; dans les autres plans personne ne chante face camera et les instruments restent en partie caches (contre-jour, fumee, silhouettes), le rythme vient des coupes.
+- Les levres se calculent sur ce poste d'abord (gratuit, prises illimitees), sinon par fal.ai. « Refaire les levres de ce plan » et « Levres par le cloud… » refont seulement les levres, la video payee est gardee.
+- Un refrain qui revient ne reprend plus un plan qui chante (ses levres suivaient une autre phrase).
+- « Poser le clip sous la chanson » remet d'abord chaque plan au format du projet (meme taille, meme cadence, duree exacte, sans ralenti) : la lecture de la timeline est plus fluide.
+- La case des musiciens accepte vos propres musiciens d'accord (moi, mon groupe) ; jamais une celebrite. « Voix du chant… » devient « Voix du groupe pour mes prochains morceaux… » : elle ne change rien au clip, elle sert a la Fabrique musique.
 
 ### 1.3.11
 - Assistant video, methode de montage (choix de Philippe, 27/11) : des plans de 5 a 8 s, au plus deux visages de face par plan (les autres de dos ou de loin), et des plans de coupe sans visage (mains, pieds, porte, roue, reacteur) qui cachent les raccords, comme au cinema. La colonne « De face » du tableau des plans dit qui est de face ; « Plan de coupe » pour un plan sans visage ; tout se corrige a la main.

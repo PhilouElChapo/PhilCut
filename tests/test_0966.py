@@ -78,7 +78,7 @@ class TestEcoute(unittest.TestCase):
         for p, q in zip(pl, pl[1:]):
             self.assertAlmostEqual(p["fin"], q["debut"])                      # sans trou
             self.assertTrue(any(abs(p["fin"] - m) < 0.01 for m in a["mesures"]))   # coupe sur une mesure
-            self.assertLessEqual(p["fin"] - p["debut"], 8.01)
+            self.assertLessEqual(p["fin"] - p["debut"], 10.51)                # 1.3.12 : plans de 6 à 10 s
         repris = [p for p in pl if p["reprend"] is not None]
         self.assertTrue(repris)                                              # le 2e refrain reprend le premier
         self.assertTrue(all(pl[p["reprend"]]["reprend"] is None for p in repris))
@@ -165,8 +165,10 @@ class TestFenetre(unittest.TestCase):
         self.assertIn("lever du jour", d.clip["plans"][0]["action"])
         self.assertTrue(os.path.exists(os.path.join(d.clip["dossier"], "clip.json")))
         n_avant = len(p.clips)
-        d.poser()
+        d.poser()                                                            # 1.3.12 : plans remis au format, puis posés
+        attendre(lambda: not d._en_calcul() and any("clip_groupe" in c for c in p.clips), 120)
         poses = [c for c in p.clips if "clip_groupe" in c]
+        self.assertTrue(all(abs(c.get("vitesse", 1.0) - 1.0) < 1e-6 for c in poses))   # plus de ralenti à la lecture
         self.assertEqual(len(poses), len(d.clip["plans"]))
         self.assertTrue(all(c["muet"] for c in poses))
         self.assertAlmostEqual(min(c["debut"] for c in poses), 2.0, delta=0.01)   # sous la chanson

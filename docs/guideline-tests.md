@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T132 — 1.3.12 : le concert (plans longs, un sur quatre chante, lèvres sur ce poste)
+
+1. Préférences › IA locale : « Lèvres synchronisées sur ce poste » installé (environ 9 Go, une fois).
+2. Clip de groupe sur une chanson d'environ 3 min : une vingtaine de plans de 6 à 10 s ; environ un sur quatre « Le chanteur chante face caméra », case « Chant » cochée.
+3. Fabriquer (brouillon d'abord si vous voulez) : sur les plans qui chantent, la bouche suit-elle la voix ? Sur les autres, personne ne chante face caméra, instruments en contre-jour.
+4. Un plan qui chante raté : « Refaire les lèvres de ce plan » (sur ce poste, gratuit) ; toujours raté : « Lèvres par le cloud… » (prix demandé).
+5. « Poser le clip sous la chanson » : une préparation courte, puis les plans posés. Lecture : la barre rouge avance-t-elle sans saccade ni blocage d'un bout à l'autre ? Sinon, Outils › Journal des échanges : copiez les dernières lignes.
+6. « Enregistrer le clip avec la chanson… » : le MP4 se lit avec la musique.
+
 ## T131 — 1.3.11 : le tarmac en plans de montage, prises ; clip de groupe avec mes musiciens
 
 1. Assistant › reprenez le tarmac ; « 1. Votre idée » puis « Suivant » : PhilCut propose de redécouper en plans de montage ; « Oui ».

@@ -156,10 +156,15 @@ class DialogueClipGroupe(QDialog):
         b.setToolTip(_("Les mêmes musiciens, avec leurs visages, que dans vos autres clips"))
         b.clicked.connect(self._groupe_biblio)
         h.addWidget(b)
-        # 1.3.11 (Philippe, 27/11) : « Voix du chant » n'est plus ici : la chanson est déjà chantée. La voix se choisit dans la
-        # Fabrique musique, et elle reste gardée avec le groupe.
+        # 1.3.12 (Philippe, 27/11 : « pourquoi Voix du chant ? ») : la chanson du clip est déjà chantée ; cette voix ne sert
+        # qu'à la Fabrique musique, pour les prochains morceaux du groupe gardé. Le bouton le dit (fonction gardée).
+        b = QPushButton(_("Voix du groupe pour mes prochains morceaux…"))
+        b.setToolTip(_("Ne change rien à ce clip (la chanson est déjà chantée) : la voix gardée avec le groupe, que la Fabrique "
+                       "musique reprend pour créer ses prochains morceaux"))
+        b.clicked.connect(self._voix_chant)
+        h.addWidget(b)
         self.voix_chant_info = QLabel("")
-        self.voix_chant_info.hide()
+        h.addWidget(self.voix_chant_info)
         b = QPushButton(_("☆ Garder ce groupe…"))
         b.setToolTip(_("Range le groupe (et chaque musicien qui n'y est pas encore) dans « Ma bibliothèque de créations »"))
         b.clicked.connect(self._garder_groupe)
@@ -196,6 +201,19 @@ class DialogueClipGroupe(QDialog):
         h.addWidget(self.niveau)
         h.addStretch(1)
         l3.addLayout(h)
+        # 1.3.12 (choix de Philippe, 27/11) : les lèvres d'un plan qui chante se refont seules, sur ce poste (gratuit) ou
+        # dans le cloud si le résultat ne va pas ; la vidéo payée est gardée
+        h = QHBoxLayout()
+        self.b_levres = QPushButton(_("Refaire les lèvres de ce plan"))
+        self.b_levres.setToolTip(_("Sur ce poste si c'est installé (gratuit, autant de prises que vous voulez), sinon par fal.ai"))
+        self.b_levres.clicked.connect(lambda: self.refaire_levres(False))
+        h.addWidget(self.b_levres)
+        self.b_levres_cloud = QPushButton(_("Lèvres par le cloud…"))
+        self.b_levres_cloud.setToolTip(_("Si le résultat sur ce poste ne va pas : LatentSync par fal.ai (payant, prix affiché)"))
+        self.b_levres_cloud.clicked.connect(lambda: self.refaire_levres(True))
+        h.addWidget(self.b_levres_cloud)
+        h.addStretch(1)
+        l3.addLayout(h)
         v.addWidget(g3)
         # 4. fabrication
         g4 = QGroupBox(_("4. Fabrication par le cloud"))
@@ -214,7 +232,9 @@ class DialogueClipGroupe(QDialog):
         self.images.setEnabled(bool(self.params.get("clef_gemini")))
         self.images.toggled.connect(self._maj)
         l4.addWidget(self.images)
-        self.accord = QCheckBox(_("Musiciens inventés : aucun vrai groupe, aucune personnalité"))
+        # 1.3.12 (Philippe, 27/11) : ses propres musiciens sont permis s'ils sont d'accord ; jamais une célébrité
+        self.accord = QCheckBox(_("Musiciens inventés, ou réels et d'accord pour être animés (moi, mon groupe) ; jamais une "
+                                  "célébrité ni un groupe connu"))
         self.accord.toggled.connect(self._maj)
         l4.addWidget(self.accord)
         self.cout = QLabel("")
@@ -740,7 +760,49 @@ class DialogueClipGroupe(QDialog):
             self.apercu.arreter()
             self.apercu.hide()
 
+    def refaire_levres(self, cloud=False):
+        """1.3.12 : nouvelles lèvres pour le plan choisi (qui chante), sans refaire sa vidéo."""
+        r = self.table.currentRow()
+        if not self.clip or self._en_calcul() or not 0 <= r < len(self.clip["plans"]):
+            return
+        pl = self.clip["plans"][r]
+        if not pl.get("chant"):
+            self.etat.setText(_("Ce plan ne chante pas : cochez « Chant » sur sa ligne (un plan moyen, de face)."))
+            return
+        from . import levres as LV
+        if cloud or CG.ou_levres(self.params, pl) == "cloud":
+            if not LV.clef(self.params):
+                self.etat.setText(_("Pas de clef fal.ai : « Mes clefs IA »."))
+                return
+            prix = LV.prix("latentsync", int(pl["fin"] - pl["debut"]) + 1)
+            if not getattr(self, "_test_oui", False) and QMessageBox.question(
+                    self, _("Lèvres par le cloud"), _("Refaire les lèvres du plan {i} par fal.ai : environ {p} $, facturés sur "
+                                                      "votre compte fal.ai. Continuer ?", i=r + 1, p=f"{prix:.2f}")) != QMessageBox.Yes:
+                return
+        clip, params = self.clip, self.params
+
+        def fin(res, e):
+            if res and not e:
+                self.etat.setText(_("✓ Lèvres refaites pour le plan {i}.", i=r + 1))
+                self._voir_plan(r)
+        self._lancer(lambda t: CG.refaire_levres(clip, r, params, cloud, lambda f, x: t.avancer(f, x), lambda: t.arret),
+                     _("Lèvres du plan {i}", i=r + 1), fin)
+
     def poser(self):
+        """1.3.12 : les plans sont d'abord remis au format du projet (lecture fluide), puis posés."""
+        if not self.clip or self._en_calcul():
+            return
+        self.apercu.arreter()
+        self._lire_tables()
+        clip, taille, cadence = self.clip, self.ed.projet.taille, getattr(self.ed.projet, "cadence", 25) or 25
+
+        def fin(r, e):
+            if not e:
+                self._poser()
+        self._lancer(lambda t: CG.preparer_pose(clip, taille, cadence, lambda f, x: t.avancer(f, x), lambda: t.arret),
+                     _("Préparation des plans pour la timeline"), fin)
+
+    def _poser(self):
         if not self.clip:
             return
         ed, p = self.ed, self.ed.projet

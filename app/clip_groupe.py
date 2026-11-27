@@ -259,8 +259,8 @@ _IDEES = {
                              "wide tracking shot", False)],
     ("couplet", "*"): [(_("Le chanteur au micro, gros plan"), "close-up of the singer singing into the microphone", ["chant"],
                         "close-up, slight handheld", True),
-                       (_("Le guitariste en contre-jour, le manche de la guitare"), "guitarist in backlight, guitar neck in focus", ["guitare"],
-                        "medium shot, backlight", False),
+                       (_("Le guitariste en contre-jour, silhouette dans la fumée"), "guitarist as a backlit silhouette in the haze",
+                        ["guitare"], "medium wide shot, backlight", False),
                        (_("Le bassiste, plan taille, qui hoche la tête en rythme"), "bass player nodding to the beat", ["basse"],
                         "medium shot", False),
                        (_("Le batteur vu de derrière la batterie"), "drummer seen from behind the drum kit", ["batterie"],
@@ -270,8 +270,8 @@ _IDEES = {
                        (_("Le groupe entier, lumière douce"), "the whole band playing, soft light", ["*"], "wide shot", False)],
     ("montee", "*"): [(_("Les lumières montent, travelling vers le groupe"), "lights building up, camera moving toward the band",
                        ["*"], "fast dolly-in", False),
-                      (_("Le batteur frappe les cymbales, ralenti"), "drummer hitting the cymbals in slow motion", ["batterie"],
-                       "slow motion close-up", False),
+                      (_("Le batteur en contre-jour, ralenti, éclats de lumière"), "drummer backlit in slow motion, light flares",
+                       ["batterie"], "slow motion wide shot", False),
                       (_("Le chanteur ferme les yeux, l'émotion monte"), "singer with eyes closed, emotion rising", ["chant"],
                        "close-up", True)],
     ("refrain", "concert"): [(_("Toute la scène en pleine lumière, flashs"), "full stage lit up, strobes and flashes, energetic",
@@ -306,14 +306,22 @@ def _idees(partie, lieu):
 
 
 def longueur_plan(partie, mesure_s):
-    """Nombre de mesures par plan selon la partie : plans longs au calme, courts au refrain (2 à 8 s)."""
-    cible = {"intro": 6.0, "fin": 6.0, "couplet": 4.0, "solo": 4.0, "montee": 3.0, "refrain": 3.0}.get(partie, 4.0)
+    """Nombre de mesures par plan selon la partie. 1.3.12 (choix de Philippe, 27/11) : plans de 6 à 10 s, 15 à 20 plans pour
+    une chanson (avant : 2 à 8 s, une cinquantaine de plans, incohérents et lourds à lire)."""
+    cible = {"intro": 10.0, "fin": 10.0, "couplet": 10.0, "solo": 8.0, "montee": 8.0, "refrain": 8.0}.get(partie, 8.0)
     n = max(1, int(round(cible / max(0.5, mesure_s))))
-    while n > 1 and n * mesure_s > 8.0:
+    while n > 1 and n * mesure_s > 10.0:
         n -= 1
-    while n * mesure_s < 2.0:
+    while n * mesure_s < 5.0:
         n += 1
     return n
+
+
+# 1.3.12 : le seul plan où l'on voit chanter (lèvres synchronisées) : plan moyen, de face, visage grand, bouche visible
+PLAN_CHANT = (_("Le chanteur chante face caméra, plan moyen, visage bien éclairé"),
+              "medium shot of the lead singer singing into the microphone, facing the camera, face large, well lit and in sharp "
+              "focus, mouth clearly visible", ["chant"], "steady medium shot at eye level, no camera shake", True)
+UN_SUR = 4                                            # 1.3.12 (choix de Philippe) : environ un plan sur quatre chante
 
 
 def decouper(clip):
@@ -331,7 +339,7 @@ def decouper(clip):
         n = longueur_plan(s["type"], mesure_s)
         coupes = bornes[::n]
         if coupes[-1] < bornes[-1]:
-            if bornes[-1] - coupes[-1] < n * mesure_s / 2 and len(coupes) > 1:
+            if bornes[-1] - coupes[-1] < n * mesure_s / 2 and len(coupes) > 1 and bornes[-1] - coupes[-2] <= 10.5:
                 coupes[-1] = bornes[-1]
             else:
                 coupes.append(bornes[-1])
@@ -340,14 +348,20 @@ def decouper(clip):
         if not an.get("chante"):
             idees = [i for i in idees if not i[4]] or idees
         deja = premiers.get(s["groupe"]) if clip.get("reutiliser", True) else None
+        sans_chant = [i for i in idees if not i[4]] or [i for i in _idees("couplet", "*") if not i[4]]
+        chante_ici = an.get("chante") and "chant" in roles and s["type"] not in ("intro", "fin", "solo")
         for k, (a, b) in enumerate(zip(coupes[:-1], coupes[1:])):
-            fr, en, qui, cam, chant = idees[k % len(idees)]
+            # 1.3.12 : on ne voit chanter qu'un plan sur quatre environ (lèvres synchronisées) ; ailleurs, personne ne chante
+            # face caméra, et les instruments restent en partie cachés (le rythme vient des coupes)
+            libres = sum(1 for x in plans if x["reprend"] is None)
+            fr, en, qui, cam, chant = PLAN_CHANT if chante_ici and libres % UN_SUR == 1 else sans_chant[k % len(sans_chant)]
             pl = {"debut": round(a, 3), "fin": round(b, 3), "partie": s["type"], "groupe": s["groupe"], "energie": s["energie"],
                   "action": fr, "action_en": en, "qui": sorted(roles) if "*" in qui else list(qui), "camera": cam,
                   "chant": bool(chant and an.get("chante")), "reprend": None, "consigne": "", "image": "", "fichier": "", "levres": ""}
-            if deja:
+            if deja and not pl["chant"]:
                 src = deja[(k + 1) % len(deja)]                 # même plans, autre ordre
-                if plans[src]["fin"] - plans[src]["debut"] >= b - a - 0.05:
+                # 1.3.12 : jamais un plan qui chante : ses lèvres suivent une autre phrase de la chanson
+                if plans[src]["fin"] - plans[src]["debut"] >= b - a - 0.05 and not plans[src].get("chant"):
                     pl.update(reprend=src, action=plans[src]["action"], action_en=plans[src]["action_en"], qui=plans[src]["qui"],
                               camera=plans[src]["camera"], chant=False)
             plans.append(pl)
@@ -386,6 +400,11 @@ def consigne(clip, i, traduire=True):
     morceaux = [rendu_en(clip, traduire), pl.get("action_en") or _en(pl["action"], traduire), pl.get("camera", ""), humeur]
     if qui:
         morceaux.append("Band members in this shot: " + "; ".join(fiche_membre(m, traduire) for m in qui))
+    if pl.get("chant"):                              # 1.3.12 : un visage net, une bouche visible, pour caler les lèvres
+        morceaux.append("one continuous take, the singer's face stays large, frontal, sharp and unobstructed by the microphone")
+    else:                                            # 1.3.12 : ce que les IA ne savent pas mettre en rythme reste caché
+        morceaux.append("nobody sings toward the camera, mouths not visible; instruments partly hidden by backlight, haze and "
+                        "silhouettes, no close-up on hands, strings or drumsticks")
     morceaux.append("fictional musicians, no text, no logos, no brand names")
     return ". ".join(x for x in morceaux if x)
 
@@ -405,7 +424,7 @@ def prix_detail(clip, params, avec_images=True):
         d = int(math.ceil(p["fin"] - p["debut"]))
         if m:
             v += GV.prix(m, d)
-        if p.get("chant"):
+        if p.get("chant") and ou_levres(params, p) == "cloud":      # 1.3.12 : sur ce poste, c'est gratuit
             l += LV.prix("latentsync", d)
         if avec_images:
             im += PRIX_GEMINI["image"]
@@ -480,19 +499,66 @@ def fabriquer_plan(clip, i, params, avec_images=True, progression=None, arret=la
     GV.generer(params, clip["moteur"], consigne(clip, i), sortie, int(math.ceil(d)), clip.get("format", "16:9"),
                pl.get("image") if avec_images else None, lambda f: av(0.1 + 0.7 * f, _("Plan {n} : vidéo", n=i + 1)), arret)
     pl["fichier"] = sortie
-    if pl.get("chant") and LV.clef(params):
-        av(0.82, _("Plan {n} : lèvres sur la voix", n=i + 1))
+    ou = ou_levres(params, pl)
+    if pl.get("chant") and ou:
+        av(0.82, _("Plan {n} : lèvres sur la voix ({o})", n=i + 1, o=_("sur ce poste") if ou == "local" else "fal.ai"))
         dv = float((moteur.sonder(sortie) or {}).get("duree") or d)
         video = _extrait(sortie, 0.0, min(d, dv), os.path.join(dossier(clip), f"plan{i + 1:02d}_court.mp4"))
         son = _extrait(clip["analyse"].get("voix") or clip["chemin"], pl["debut"], min(d, dv),
                        os.path.join(dossier(clip), f"plan{i + 1:02d}_voix.wav"), video=False)
-        lv = os.path.join(dossier(clip), f"plan{i + 1:02d}_levres.mp4")
-        LV.fabriquer(params, "latentsync", son, lv, video=video, arret=arret)
+        lv = os.path.join(dossier(clip), f"plan{i + 1:02d}_levres_{int(time.time())}.mp4")
+        pl["video_brute"] = sortie                       # 1.3.12 : pour refaire les lèvres sans repayer la vidéo
+        if ou == "local":
+            LV.fabriquer_local(params, son, video, lv, progression=lambda f, t="": av(0.82 + 0.16 * f, t), arret=arret)
+        else:
+            LV.fabriquer(params, "latentsync", son, lv, video=video, arret=arret)
         pl["levres"] = lv
         pl["fichier"] = lv
     av(1.0, _("Plan {n} prêt", n=i + 1))
     enregistrer(clip)
     return pl["fichier"]
+
+
+def ou_levres(params, pl=None):
+    """1.3.12 (choix de Philippe, 27/11) : les lèvres se calculent sur ce poste d'abord (gratuit, prises illimitées), dans le
+    cloud si ce poste n'est pas prêt ou si on l'a demandé pour ce plan. Renvoie "local", "cloud" ou ""."""
+    from . import levres as LV
+    if (pl or {}).get("levres_cloud") and LV.clef(params):
+        return "cloud"
+    if not LV.local_manque():
+        return "local"
+    return "cloud" if LV.clef(params) else ""
+
+
+def refaire_levres(clip, i, params, cloud=False, progression=None, arret=lambda: False):
+    """1.3.12 : refait seulement les lèvres d'un plan qui chante (la vidéo payée est gardée) ; cloud=True : par fal.ai."""
+    from . import levres as LV, moteur
+    pl = clip["plans"][i]
+    brute = pl.get("video_brute") or pl.get("fichier")
+    if not brute or not os.path.exists(brute):
+        raise ValueError(_("La vidéo de ce plan n'est plus là : fabriquez-le d'abord."))
+    av = lambda f, t: progression and progression(f, t)
+    ou = "cloud" if cloud else ou_levres(params, pl)
+    if not ou:
+        raise ValueError(_("Ni les lèvres sur ce poste ni une clef fal.ai : Préférences › IA locale, ou « Mes clefs IA »."))
+    d = pl["fin"] - pl["debut"]
+    dv = float((moteur.sonder(brute) or {}).get("duree") or d)
+    video = _extrait(brute, 0.0, min(d, dv), os.path.join(dossier(clip), f"plan{i + 1:02d}_court.mp4"))
+    son = _extrait(clip["analyse"].get("voix") or clip["chemin"], pl["debut"], min(d, dv),
+                   os.path.join(dossier(clip), f"plan{i + 1:02d}_voix.wav"), video=False)
+    lv = os.path.join(dossier(clip), f"plan{i + 1:02d}_levres_{int(time.time())}.mp4")
+    av(0.05, _("Plan {n} : lèvres sur la voix ({o})", n=i + 1, o=_("sur ce poste") if ou == "local" else "fal.ai"))
+    if ou == "local":
+        LV.fabriquer_local(params, son, video, lv, progression=lambda f, t="": av(0.05 + 0.93 * f, t), arret=arret)
+    else:
+        LV.fabriquer(params, "latentsync", son, lv, video=video, arret=arret)
+    pl["video_brute"] = brute
+    pl["prises_levres"] = [x for x in (pl.get("prises_levres") or []) if os.path.exists(x)] + \
+        ([pl["levres"]] if pl.get("levres") and os.path.exists(pl["levres"]) else [])
+    pl["levres"] = pl["fichier"] = lv
+    av(1.0, _("Plan {n} prêt", n=i + 1))
+    enregistrer(clip)
+    return lv
 
 
 def fichier_du_plan(clip, i):
@@ -512,6 +578,35 @@ def piste_libre(projet, debut, fin):
     return projet.ajouter_piste("video")
 
 
+def preparer_pose(clip, taille, cadence=25, progression=None, arret=lambda: False):
+    """1.3.12 (Philippe, 27/11 : la lecture saccadait et la barre rouge se bloquait une fois le clip posé) : chaque plan est
+    remis au format du projet (même taille, même cadence, une image clef par seconde, durée exacte de sa mesure, vitesse 1)
+    avant d'être posé : le lecteur n'a plus à changer de format ni de vitesse à chaque coupe."""
+    from . import moteur
+    L, H = taille
+    a_faire = [(i, p) for i, p in enumerate(clip["plans"]) if fichier_du_plan(clip, i) and os.path.exists(fichier_du_plan(clip, i))]
+    for k, (i, p) in enumerate(a_faire):
+        if arret():
+            raise InterruptedError
+        src = fichier_du_plan(clip, i)
+        besoin = p["fin"] - p["debut"]
+        sortie = os.path.join(dossier(clip), f"plan{i + 1:02d}_pose_{L}x{H}_{int(besoin * 1000)}.mp4")
+        if os.path.exists(sortie) and os.path.getmtime(sortie) >= os.path.getmtime(src):
+            p["pose"] = sortie
+            continue
+        dispo = float((moteur.sonder(src) or {}).get("duree") or besoin)
+        lent = max(1.0, besoin / max(0.1, dispo))          # plan un peu court : ralenti ici, une fois, pas à la lecture
+        moteur.lancer(["-y", "-v", "error", "-i", src, "-an", "-vf",
+                       f"scale={L}:{H}:force_original_aspect_ratio=increase,crop={L}:{H},setsar=1,"
+                       f"setpts={lent:.4f}*(PTS-STARTPTS),fps={cadence},trim=duration={besoin:.3f},setpts=PTS-STARTPTS",
+                       "-c:v", "libx264", "-preset", "veryfast", "-crf", "18", "-g", str(int(cadence)), "-pix_fmt", "yuv420p",
+                       "-movflags", "+faststart", sortie])
+        p["pose"] = sortie
+        progression and progression((k + 1) / len(a_faire), _("Plan {n} prêt à poser", n=i + 1))
+    enregistrer(clip)
+    return len(a_faire)
+
+
 def monter(projet, clip, t0, fenetre=None):
     """Pose les plans fabriqués sous la chanson (le début de la chanson tombe à t0 sur la timeline), coupes sur les mesures,
     plans muets (la musique reste celle de la piste). fenetre : (de, à) dans la chanson, le passage réellement posé (un
@@ -526,6 +621,8 @@ def monter(projet, clip, t0, fenetre=None):
     medias, n = {}, 0
     for i, p in plans:
         f = fichier_du_plan(clip, i)
+        if p.get("pose") and os.path.exists(p["pose"]) and os.path.getmtime(p["pose"]) >= os.path.getmtime(f):
+            f = p["pose"]                                # 1.3.12 : au format du projet, durée exacte
         if f not in medias:
             m = projet.ajouter_media(f, moteur.sonder(f))
             m["nom"] = _("Clip : {a}", a=p["action"][:40])

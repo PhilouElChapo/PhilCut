@@ -533,8 +533,10 @@ def _guides_integres():
          "titre": _("Créer le clip d'un groupe d'après une chanson"),
          "mots": "clip groupe concert scene chanson musique musiciens chanteur batteur guitariste video clip dessin anime refrain",
          "intro": _("PhilCut écoute la chanson (tempo, mesures, intro, couplets, refrains, voix), invente le groupe et propose les "
-                    "plans calés sur les mesures. Vous corrigez tout ; la fabrication passe par le cloud, prix total demandé avant. "
-                    "Des musiciens inventés, jamais un vrai groupe."),
+                    "plans calés sur les mesures : 6 à 10 s, environ un plan sur quatre où l'on voit chanter (lèvres synchronisées, "
+                    "sur ce poste d'abord), les autres en ambiance, instruments en partie cachés. Vous corrigez tout ; la "
+                    "fabrication passe par le cloud, prix total demandé avant. Musiciens inventés ou les vôtres (d'accord), "
+                    "jamais un groupe connu."),
          "etapes": [
              {"texte": _("Clic droit sur la chanson dans la timeline › « Créer le clip du groupe d'après ce morceau… » (ou Fabrique "
                          "IA › Vidéo › « Clip de groupe d'après une chanson… »). Depuis la Fabrique musique : ligne « Clip vidéo » "
@@ -546,10 +548,12 @@ def _guides_integres():
              {"texte": _("Lieu (concert ou ailleurs), dessin animé ou non ; décrivez les musiciens comme vous les voulez.")},
              {"texte": _("Relisez les plans (modifiables), ou « Idées avec l'IA » ; gardez « Un refrain qui revient reprend les "
                          "plans du premier » pour payer moins.")},
-             {"texte": _("Choisissez le moteur, cochez « Musiciens inventés », « Fabriquer les plans » (prix demandé). Vous pouvez "
+             {"texte": _("Choisissez le moteur, cochez la case des musiciens (inventés, ou les vôtres et d'accord), « Fabriquer les plans » (prix demandé). Vous pouvez "
                          "fermer : la barre du bas suit.")},
-             {"texte": _("Cliquez chaque ligne pour regarder le plan, puis « Poser le clip sous la chanson ». Edition › Annuler "
-                         "pour revenir.")},
+             {"texte": _("Cliquez chaque ligne pour regarder le plan. Lèvres ratées : « Refaire les lèvres de ce plan » (gratuit "
+                         "sur ce poste), ou « Lèvres par le cloud… ».")},
+             {"texte": _("« Poser le clip sous la chanson » (les plans sont remis au format du projet pour une lecture fluide), "
+                         "ou « Enregistrer le clip avec la chanson… » pour un fichier à part. Edition › Annuler pour revenir.")},
          ]},
         {"id": "levres", "etat": "ok",
          "titre": _("Faire parler un personnage sur ma voix (lèvres synchronisées)"),
@@ -648,7 +652,7 @@ def _guides_integres():
         {"id": "groupe_musique", "etat": "ok",
          "titre": _("Mon groupe : son style et sa voix dans la Fabrique musique, ses musiciens dans le clip"),
          "mots": "groupe musique style voix chanteur chanteuse musiciens clip archangel bibliotheque",
-         "intro": _("Un groupe gardé (clip de groupe › « ☆ Garder ce groupe… », avec « Voix du chant… ») donne son style et la voix "
+         "intro": _("Un groupe gardé (clip de groupe › « ☆ Garder ce groupe… », avec « Voix du groupe pour mes prochains morceaux… ») donne son style et la voix "
                     "de son chanteur ou de sa chanteuse ; tout reste modifiable."),
          "etapes": [
              {"texte": _("Fabrique IA › Musique › « Créer une musique par IA (Fabrique musique)… »."),
