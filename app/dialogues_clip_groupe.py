@@ -1,6 +1,7 @@
 """Fenêtre « Clip de groupe d'après la chanson » (0.9.66), non bloquante. 1. PhilCut écoute le morceau ; 2. lieu, rendu et
 musiciens inventés ; 3. plans calés sur les mesures, modifiables (idées par l'IA sur clic) ; 4. fabrication par le cloud,
 prix total demandé avant ; 5. aperçu de chaque plan, puis pose sous la chanson (un seul Annuler)."""
+import copy
 import os
 
 from PySide6.QtCore import QRectF, Qt
@@ -105,7 +106,7 @@ class DialogueClipGroupe(QDialog):
         l1.addWidget(self.resume)
         v.addWidget(g1)
         # 2. scène et groupe
-        g2 = QGroupBox(_("2. La scène et le groupe (musiciens inventés)"))
+        g2 = QGroupBox(_("2. La scène et le groupe"))
         l2 = QVBoxLayout(g2)
         h = QHBoxLayout()
         h.addWidget(QLabel(_("Lieu")))
@@ -138,9 +139,10 @@ class DialogueClipGroupe(QDialog):
         b = QPushButton(_("Retirer"))
         b.clicked.connect(self._retirer_membre)
         h.addWidget(b)
-        b = QPushButton(_("Depuis ma bibliothèque…"))
-        b.setToolTip(_("Un musicien gardé (avec son visage) : il joue tel quel dans ce clip"))
-        b.clicked.connect(self._membre_biblio)
+        b = QPushButton(_("Mes musiciens…"))
+        b.setToolTip(_("Vos musiciens gardés (avec leur visage), un ou plusieurs à la fois (Ctrl-clic) : chacun prend la place du "
+                       "musicien proposé qui joue le même instrument, sinon il s'ajoute"))
+        b.clicked.connect(lambda: self._membre_biblio(plusieurs=True))
         h.addWidget(b)
         b = QPushButton(_("☆ Garder"))
         b.setToolTip(_("Ranger le musicien choisi dans « Ma bibliothèque de créations »"))
@@ -154,12 +156,10 @@ class DialogueClipGroupe(QDialog):
         b.setToolTip(_("Les mêmes musiciens, avec leurs visages, que dans vos autres clips"))
         b.clicked.connect(self._groupe_biblio)
         h.addWidget(b)
-        b = QPushButton(_("Voix du chant…"))               # 1.2.0 : la voix du chanteur ou de la chanteuse, gardée avec le groupe
-        b.setToolTip(_("Choisir dans « Mes voix… » la voix du chanteur ou de la chanteuse : elle suit le groupe dans la Fabrique musique"))
-        b.clicked.connect(self._voix_chant)
-        h.addWidget(b)
+        # 1.3.11 (Philippe, 27/11) : « Voix du chant » n'est plus ici : la chanson est déjà chantée. La voix se choisit dans la
+        # Fabrique musique, et elle reste gardée avec le groupe.
         self.voix_chant_info = QLabel("")
-        h.addWidget(self.voix_chant_info)
+        self.voix_chant_info.hide()
         b = QPushButton(_("☆ Garder ce groupe…"))
         b.setToolTip(_("Range le groupe (et chaque musicien qui n'y est pas encore) dans « Ma bibliothèque de créations »"))
         b.clicked.connect(self._garder_groupe)
@@ -248,6 +248,11 @@ class DialogueClipGroupe(QDialog):
         self.b_poser = QPushButton(_("Poser le clip sous la chanson"))
         self.b_poser.clicked.connect(self.poser)
         hb.addWidget(self.b_poser)
+        self.b_exporter = QPushButton(_("Enregistrer le clip avec la chanson…"))     # 1.3.11 (Philippe, 27/11)
+        self.b_exporter.setToolTip(_("Un fichier vidéo à part (MP4) : les plans à leur place, avec la chanson ; rien n'est posé "
+                                     "dans le film"))
+        self.b_exporter.clicked.connect(self.exporter)
+        hb.addWidget(self.b_exporter)
         hb.addStretch(1)
         b = QPushButton(_("Fermer"))
         b.clicked.connect(self.close)
@@ -326,9 +331,11 @@ class DialogueClipGroupe(QDialog):
                 texte = _("Tous les plans sont prêts : regardez-les (cliquez une ligne), puis « Poser le clip sous la chanson ».")
             self.cout.setText(manque or texte)
             self.b_poser.setEnabled(fait > 0 and not self._en_calcul())
+            self.b_exporter.setEnabled(fait > 0 and not self._en_calcul())
         else:
             self.cout.setText(manque)
             self.b_poser.setEnabled(False)
+            self.b_exporter.setEnabled(False)
         self.cout.setStyleSheet("font-weight:600;color:#c98a00" if manque else "font-weight:600")
         self.b_fabriquer.setEnabled(pret and not manque and self.accord.isChecked() and not self._en_calcul()
                                     and bool(CG.a_fabriquer(self.clip)))
@@ -422,25 +429,48 @@ class DialogueClipGroupe(QDialog):
         self._ligne_membre(self.clip["groupe"][-1])
         self._maj()
 
-    def _membre_biblio(self):
-        """0.9.83 : un musicien (ou un personnage) de la bibliothèque rejoint le groupe, avec son image."""
+    def _membre_biblio(self, plusieurs=False):
+        """0.9.83 : un musicien (ou un personnage) de la bibliothèque rejoint le groupe, avec son image.
+        1.3.11 (Philippe, 27/11) : plusieurs à la fois, et chacun prend la place du musicien proposé (pas encore à vous) qui
+        joue le même instrument : plus besoin de retirer la liste proposée."""
         from . import bibliotheque_creations as B
         from .dialogues_bibliotheque_creations import choisir_entree
         if not self.clip:
             return
-        e = choisir_entree(self, self.params, ("musicien", "personnage"))
-        if e is None:
+        choix = choisir_entree(self, self.params, ("musicien", "personnage", "groupe"), _("Mes musiciens"), plusieurs=plusieurs,
+                               vide=_("Aucun musicien gardé dans votre bibliothèque. Fabrique IA › « Ma bibliothèque de "
+                                      "créations… » › « Nouveau… » › Musicien (ou Personnage), avec ses photos ; ou « ☆ Garder » "
+                                      "sur un musicien de ce tableau."))
+        choix = choix if plusieurs else ([choix] if choix else [])
+        if not choix:
             return
         self._lire_tables()
-        d = e.get("donnees") or {}
-        texte = d.get("instrument", "") + " " + e.get("description", "")
         import re
-        roles = (["chant"] if re.search(r"chant|voix|vocal|sing", d.get("instrument", ""), re.I) else []) or \
-            CG._roles_depuis_texte(texte) or ["claviers"]
-        self.clip["groupe"].append({"role": roles[0], "nom": e["nom"], "description": e.get("description", ""),
-                                    "image": (e.get("fichiers") or {}).get("planche") or B.apercu(e), "biblio": e["id"],
-                                    "genre": e["genre"]})
-        self._ligne_membre(self.clip["groupe"][-1])
+        nouveaux = []
+        for e in choix:
+            if e["genre"] == "groupe":
+                nouveaux += [{"role": m.get("role") if m.get("role") in CG.ROLES else
+                              (CG._roles_depuis_texte(m.get("role", "") + " " + m.get("description", "")) or ["claviers"])[0],
+                              "nom": m.get("nom", ""), "description": m.get("description", ""), "image": m.get("image", ""),
+                              "biblio": m.get("biblio"), "genre": m.get("genre", "musicien")} for m in B.membres(self.params, e)]
+                continue
+            d = e.get("donnees") or {}
+            texte = d.get("instrument", "") + " " + e.get("description", "")
+            roles = (["chant"] if re.search(r"chant|voix|vocal|sing", d.get("instrument", ""), re.I) else []) or \
+                CG._roles_depuis_texte(texte) or ["claviers"]
+            nouveaux.append({"role": roles[0], "nom": e["nom"], "description": e.get("description", ""),
+                             "image": (e.get("fichiers") or {}).get("planche") or B.apercu(e), "biblio": e["id"], "genre": e["genre"]})
+        for m in nouveaux:
+            if any(x.get("biblio") and x.get("biblio") == m.get("biblio") for x in self.clip["groupe"]):
+                continue                                # déjà dans le groupe
+            k = next((j for j, x in enumerate(self.clip["groupe"]) if x["role"] == m["role"] and not x.get("biblio")), None)
+            if k is None:
+                self.clip["groupe"].append(m)
+            else:
+                self.clip["groupe"][k] = m              # remplace le musicien proposé du même instrument
+        self.table_groupe.setRowCount(0)
+        for m in self.clip["groupe"]:
+            self._ligne_membre(m)
         self._maj()
 
     def _groupe_biblio(self, e=None):
@@ -452,7 +482,10 @@ class DialogueClipGroupe(QDialog):
             return
         demande = e is None
         if demande:
-            e = choisir_entree(self, self.params, ("groupe",), _("Prendre un groupe"))
+            e = choisir_entree(self, self.params, ("groupe",), _("Prendre un groupe"), vide=_(
+                "Aucun groupe n'est encore gardé dans votre bibliothèque (un morceau, un style ou une voix gardés ne sont pas un "
+                "groupe). Mettez vos musiciens dans le tableau avec « Mes musiciens… », puis « ☆ Garder ce groupe… » : il "
+                "reviendra d'un clic dans chaque clip."))
         if e is None:
             return
         self._lire_tables()
@@ -727,6 +760,32 @@ class DialogueClipGroupe(QDialog):
         n = CG.monter(p, self.clip, t0, fen)
         ed.rafraichir()
         self.etat.setText(_("✓ {n} plans posés sous la chanson, chaque coupe sur une mesure. Edition › Annuler pour revenir.", n=n))
+
+    def exporter(self, sortie=None):
+        """1.3.11 : le clip en un fichier à part, avec la chanson (la vidéo et la musique ensemble)."""
+        from .widgets import enregistrer_fichier
+        if not self.clip or self._en_calcul():
+            return
+        self._lire_tables()
+        chanson = self.clip.get("chemin") or self.chemin
+        if not chanson or not os.path.exists(chanson):
+            self.etat.setText(_("✕ La chanson n'est plus là : {c}", c=chanson or "?"))
+            return
+        if sortie is None:
+            sortie = getattr(self, "_test_sortie", None) or enregistrer_fichier(
+                self, _("Enregistrer le clip avec la chanson"),
+                os.path.splitext(os.path.basename(chanson))[0] + "_clip.mp4", "MP4 (*.mp4)", "videos", self.params)
+        if not sortie:
+            return
+        if not sortie.lower().endswith(".mp4"):
+            sortie += ".mp4"
+        clip = copy.deepcopy(self.clip)
+
+        def fin(r, e):
+            if r and not e:
+                self.etat.setText(_("✓ Clip enregistré avec la chanson : {f}", f=r))
+        self._lancer(lambda t: CG.exporter(clip, chanson, sortie, lambda x: t.avancer(x, _("Enregistrement du clip"))),
+                     _("Enregistrement du clip avec la chanson"), fin)
 
     def closeEvent(self, ev):
         from .widgets import garder_calcul

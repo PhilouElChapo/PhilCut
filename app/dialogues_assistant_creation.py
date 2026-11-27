@@ -806,15 +806,18 @@ class DialogueAssistant(QDialog):
     def _page_plans(self):
         w = QWidget()
         v = QVBoxLayout(w)
-        v.addWidget(self._titre(_("Voici les scènes : chacune se joue d'une traite")))
-        v.addWidget(self._aide(_("Chaque ligne est une scène entière (8 à 15 s) : ce qui s'y passe, dans l'ordre. Corrigez le texte, "
+        v.addWidget(self._titre(_("Voici les plans, montés comme au cinéma")))
+        v.addWidget(self._aide(_("Chaque ligne est un plan de 5 à 8 s, joué d'une traite ; au plus deux visages de face, et des plans "
+                                 "de coupe sans visage (mains, pieds, porte, roue) qui cachent les raccords. Corrigez le texte, "
                                  "qui on voit (noms séparés par une virgule ; vide = personne, seulement le décor ou un objet), le "
-                                 "cadrage ou la durée. Les personnes qui ne sont plus visibles (dans la voiture, sorties) ne "
+                                 "cadrage, la durée ou qui est de face. Les personnes qui ne sont plus visibles (dans la voiture, sorties) ne "
                                  "reviennent pas : survolez « Qui » pour voir où elles sont. Chaque scène part de sa propre image "
                                  "de départ, que vous validez à l'étape suivante.")))
-        self.t_plans = QTableWidget(0, 4)
-        self.t_plans.setHorizontalHeaderLabels([_("Ce qu'on voit"), _("Qui"), _("Cadrage"), _("Durée (s)")])
-        self._table(self.t_plans, (1, 3), 0)
+        self.t_plans = QTableWidget(0, 5)
+        self.t_plans.setHorizontalHeaderLabels([_("Ce qu'on voit"), _("Qui"), _("Cadrage"), _("Durée (s)"), _("De face")])
+        self.t_plans.horizontalHeaderItem(4).setToolTip(_("Au plus deux personnes vues de face ; les autres sont de dos ou de loin. "
+                                                          "« Plan de coupe » : aucun visage (mains, pieds, porte, roue…)"))
+        self._table(self.t_plans, (1, 3, 4), 0)
         v.addWidget(self.t_plans, 1)
         h = QHBoxLayout()
         for lib, fn in ((_("Ajouter un plan"), self._ajouter_plan), (_("Retirer"), lambda: self._retirer(self.t_plans)),
@@ -901,7 +904,13 @@ class DialogueAssistant(QDialog):
         r = t.rowCount()
         t.insertRow(r)
         it = QTableWidgetItem(pl.get("action", ""))
-        it.setData(Qt.UserRole, {k: pl.get(k) for k in ("hors_champ", "visibles_fixes") if pl.get(k)})
+        # 1.3.11 : tout ce que l'IA a proposé suit la ligne (avant, le départ, le lien et l'image clef proposés se perdaient
+        # dès qu'on passait par cette page)
+        meta = {k: pl.get(k) for k in ("hors_champ", "visibles_fixes", "enchainer_ia", "lien_pourquoi", "clef", "clef_pourquoi")
+                if pl.get(k)}
+        if pl.get("etat_depart") or pl.get("depart"):
+            meta["depart"] = pl.get("etat_depart") or pl.get("depart")
+        it.setData(Qt.UserRole, meta)
         t.setItem(r, 0, it)
         qui = QTableWidgetItem(", ".join(pl.get("personnages") or []) if (pl.get("personnages") or pl.get("visibles_fixes"))
                                else ", ".join(p["nom"] for p in self.seq.get("personnages") or []))
@@ -910,6 +919,7 @@ class DialogueAssistant(QDialog):
         t.setItem(r, 1, qui)
         t.setItem(r, 2, QTableWidgetItem(pl.get("camera", "")))
         t.setItem(r, 3, QTableWidgetItem(str(int(pl.get("duree") or Q.DUREE_PLAN))))
+        t.setItem(r, 4, QTableWidgetItem(_("Plan de coupe") if pl.get("coupe") else ", ".join(pl.get("visages") or [])))
 
     def verifier_continuite(self):
         """La scripte (0.9.86) : qui est visible plan par plan, où sont les autres, quel cadrage."""
@@ -963,9 +973,13 @@ class DialogueAssistant(QDialog):
                 except (ValueError, AttributeError):
                     duree = Q.DUREE_PLAN
                 camera = (self.t_plans.item(r, 2).text() if self.t_plans.item(r, 2) else "").strip()
-                pl = {"action": action, "personnages": qui, "duree": max(3, min(15, duree)), "camera": camera,
+                pl = {"action": action, "personnages": qui, "duree": max(2, min(15, duree)), "camera": camera,
                       "visibles_fixes": True}                 # 0.9.86 : ce que montre « Qui » fait foi (vide = personne)
-                pl.update({k: v for k, v in (self.t_plans.item(r, 0).data(Qt.UserRole) or {}).items() if k == "hors_champ"})
+                pl.update({k: v for k, v in (self.t_plans.item(r, 0).data(Qt.UserRole) or {}).items() if k != "visibles_fixes"})
+                face = (self.t_plans.item(r, 4).text() if self.t_plans.columnCount() > 4 and self.t_plans.item(r, 4) else "").strip()
+                pl["coupe"] = "coupe" in face.lower() or face.lower() == _("Plan de coupe").lower()
+                pl["visages"] = [] if pl["coupe"] else [noms[n.strip().lower()] for n in face.split(",")
+                                                        if n.strip().lower() in noms][:2]
                 plans.append(pl)
         else:
             plans = A.etat(self.seq)["plans"]
@@ -1208,9 +1222,17 @@ class DialogueAssistant(QDialog):
         self.apercu.hide()
         v.addWidget(self.apercu, 2)
         h = QHBoxLayout()
-        self.b_refaire = QPushButton(_("Refaire ce plan…"))
+        self.b_refaire = QPushButton(_("Une autre prise…"))
+        self.b_refaire.setToolTip(_("Refait ce plan ; la prise actuelle est gardée, vous choisissez ensuite la meilleure"))
         self.b_refaire.clicked.connect(self.refaire_plan)
         h.addWidget(self.b_refaire)
+        # 1.3.11 (choix de Philippe, 27/11) : chaque essai est gardé comme une prise ; on monte la meilleure
+        self.l_prise = QLabel(_("Prise :"))
+        h.addWidget(self.l_prise)
+        self.c_prise = QComboBox()
+        self.c_prise.setToolTip(_("Chaque nouvel essai d'un plan est gardé : choisissez la prise qui sera posée dans le film"))
+        self.c_prise.currentIndexChanged.connect(self._choisir_prise)
+        h.addWidget(self.c_prise)
         self.b_reprendre = QPushButton(_("Fabriquer les plans qui manquent"))
         self.b_reprendre.clicked.connect(self.fabriquer)
         h.addWidget(self.b_reprendre)
@@ -1440,11 +1462,11 @@ class DialogueAssistant(QDialog):
                 self.genre = "video"
                 if self.seq.get("plans") and self._gestes() and self._cloud() and (
                         getattr(self, "_test_redecouper", None) or (getattr(self, "_test_oui", None) is None and QMessageBox.question(
-                            self, _("Découpage en scènes"),
-                            _("Cette création est découpée geste par geste ({n} plans), l'ancienne méthode : les erreurs se "
-                              "propageaient d'un plan à l'autre. La redécouper en quelques scènes de 8 à 15 s ? Les personnages, "
-                              "leurs fiches et les lieux sont gardés ; les images et vidéos des anciens plans ne servent plus "
-                              "(environ 0,01 $).", n=len(self.seq["plans"]))) == QMessageBox.Yes)):
+                            self, _("Découpage en plans de montage"),
+                            _("Cette création ({n} plans) est découpée avec une ancienne méthode. La redécouper en plans de "
+                              "montage, comme au cinéma : 5 à 8 s, au plus deux visages de face, et des plans de coupe sans visage "
+                              "qui cachent les raccords ? Les personnages, leurs fiches et les lieux sont gardés ; les images et "
+                              "vidéos des anciens plans ne servent plus (environ 0,01 $).", n=len(self.seq["plans"]))) == QMessageBox.Yes)):
                     self.redecouper()                 # 1.3.5
                     return
                 if self.seq.get("plans") and self.seq.get("histoire") == self.c_histoire.texte() and \
@@ -1604,10 +1626,8 @@ class DialogueAssistant(QDialog):
     def _gestes(self):
         """1.3.9 (Philippe, 26/11 23h31) : une création marquée « scènes » par une correction peut garder ses anciens plans
         geste par geste (3-4 s) : on propose aussi de la redécouper."""
-        if self.seq.get("mode") != "scenes":
-            return True
-        durees = [float(pl.get("duree") or 0) for pl in self.seq.get("plans") or []]
-        return len(durees) > 6 and max(durees) < 8
+        # 1.3.11 : toute création qui n'est pas encore en plans de montage (deux visages au plus, plans de coupe)
+        return not self.seq.get("montage")
 
     def redecouper(self):
         """1.3.5 : une création découpée geste par geste est redécoupée en scènes ; personnages, fiches et lieux gardés."""
@@ -1616,7 +1636,7 @@ class DialogueAssistant(QDialog):
         self.aller(P_PLANS)
         self.seq["brouillon_vu"] = False
         self._garder_persos = (copy.deepcopy(self.seq["personnages"]), copy.deepcopy(self.seq.get("lieux") or []))
-        self.libre.setText(_("Redécoupe toute l'histoire en scènes, selon les règles, sans changer aucun personnage ni lieu "
+        self.libre.setText(_("Redécoupe toute l'histoire en plans de montage selon les règles (5 à 8 s, au plus deux visages de face, des plans de coupe sans visage), sans changer aucun personnage ni lieu "
                              "(mêmes noms, mêmes descriptions, mot pour mot). L'histoire : {h}", h=self.c_histoire.texte()))
         self.dire()
 
@@ -2160,13 +2180,44 @@ class DialogueAssistant(QDialog):
                 self.fabriquer()
         self._lancer(lambda t: C.proposer(self.params, seq, d, niveau), _("Le correcteur cherche la cause"), fin)
 
+    def _prises(self, pl):
+        """1.3.11 : les prises d'un plan qui existent encore, la prise posée comprise."""
+        out = [f for f in pl.get("prises") or [] if f and os.path.exists(f)]
+        if pl.get("fichier") and os.path.exists(pl["fichier"]) and pl["fichier"] not in out:
+            out.append(pl["fichier"])
+        return out
+
     def _voir_plan(self, r):
         if 0 <= r < len(self.seq["plans"]):
-            f = self.seq["plans"][r].get("fichier")
+            pl = self.seq["plans"][r]
+            f = pl.get("fichier")
             if f and os.path.exists(f):
                 self.apercu.charger(f, video=True)
                 self.apercu.show()
+            if hasattr(self, "c_prise"):
+                prises = self._prises(pl)
+                self.c_prise.blockSignals(True)
+                self.c_prise.clear()
+                for k, x in enumerate(prises):
+                    self.c_prise.addItem(_("Prise {n}", n=k + 1), x)
+                self.c_prise.setCurrentIndex(max(0, self.c_prise.findData(f)))
+                self.c_prise.blockSignals(False)
+                self.c_prise.setVisible(len(prises) > 1)
+                self.l_prise.setVisible(len(prises) > 1)
         self._maj()
+
+    def _choisir_prise(self, k):
+        r = self.l_plans.currentRow()
+        f = self.c_prise.itemData(k)
+        if not (0 <= r < len(self.seq["plans"])) or not f or not os.path.exists(f):
+            return
+        pl = self.seq["plans"][r]
+        pl["prises"] = self._prises(pl)
+        pl["fichier"], pl["verdict"] = f, None
+        Q.enregistrer(self.seq)
+        self.apercu.charger(f, video=True)
+        self.apercu.show()
+        self.etat.setText(_("Plan {i} : prise {n} choisie ; c'est elle qui sera posée dans le film.", i=r + 1, n=k + 1))
 
     def fabriquer(self):
         self.file = [i for i, pl in enumerate(self.seq["plans"]) if not (pl.get("fichier") and os.path.exists(pl["fichier"]))]
@@ -2187,8 +2238,8 @@ class DialogueAssistant(QDialog):
             self._plan_en_cours = -1
             self._remplir_video()
             rates = [i + 1 for i, pl in enumerate(self.seq["plans"]) if pl.get("verdict") and not pl["verdict"].get("ok")]
-            self.etat.setText(_("Terminé. L'assistant conseille de revoir le(s) plan(s) {l} : cliquez-le, regardez, puis « Refaire ce "
-                                "plan… » ou gardez-le.", l=", ".join(map(str, rates))) if rates else
+            self.etat.setText(_("Terminé. L'assistant conseille de revoir le(s) plan(s) {l} : cliquez-le, regardez, puis « Une autre "
+                                "prise… » ou gardez-le.", l=", ".join(map(str, rates))) if rates else
                               _("Terminé : regardez les plans, puis « Poser dans le film »."))
             self._maj()
             return
@@ -2262,13 +2313,14 @@ class DialogueAssistant(QDialog):
         prix = sum(A.prix_plan(self.seq, j, self.seq.get("moteur") or self.moteur.currentData(), self.params) for j in a_refaire)
         aussi = (" " + _("Les plans {l}, faits d'un seul tenant avec lui, sont refaits aussi (ils partent de sa fin).",
                          l=", ".join(str(j + 1) for j in a_refaire[1:]))) if len(a_refaire) > 1 else ""
-        texte, ok = self._precision(_("Refaire le plan {i}", i=i + 1), _(
-            "Environ {p}. Ce qu'il faut changer dans l'image d'arrivée (facultatif ; vide = même images, nouvel essai) :",
+        texte, ok = self._precision(_("Une autre prise du plan {i}", i=i + 1), _(
+            "Environ {p} ; la prise actuelle est gardée. Ce qu'il faut changer dans l'image d'arrivée (facultatif ; vide = même images, nouvel essai) :",
             p=A.argent(prix)) + aussi)
         if not ok:
             return
         self.apercu.arreter()
         for j in a_refaire:
+            self.seq["plans"][j]["prises"] = self._prises(self.seq["plans"][j])      # 1.3.11 : l'ancienne prise est gardée
             self.seq["plans"][j]["fichier"], self.seq["plans"][j]["verdict"] = "", None
             self.seq["plans"][j].pop("groupe", None)
         pl = self.seq["plans"][i]

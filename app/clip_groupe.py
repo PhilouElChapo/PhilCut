@@ -541,6 +541,41 @@ def monter(projet, clip, t0, fenetre=None):
     return n
 
 
+def exporter(clip, chanson, sortie, progression=None):
+    """1.3.11 (Philippe, 27/11) : le clip enregistré à part, en un fichier vidéo avec la chanson : chaque plan à sa place
+    (coupes sur les mesures), du noir là où un plan manque. Renvoie le chemin."""
+    from . import moteur
+    W, H = (720, 1280) if clip.get("format") == "9:16" else (1280, 720)
+    plans = sorted(((p["debut"], p["fin"], fichier_du_plan(clip, i)) for i, p in enumerate(clip["plans"])), key=lambda x: x[0])
+    morceaux, t = [], 0.0
+    for a, b, f in plans:
+        if a > t + 0.04:
+            morceaux.append((a - t, None))
+        if b > max(a, t):
+            morceaux.append((b - max(a, t), f if f and os.path.exists(f) else None))
+        t = max(t, b)
+    if not morceaux:
+        raise ValueError(_("Aucun plan à enregistrer."))
+    args, chaines, k = [], [], 0
+    for n, (d, f) in enumerate(morceaux):
+        if f:
+            dispo = float((moteur.sonder(f) or {}).get("duree") or d)
+            lent = max(1.0, d / max(0.1, dispo))          # plan un peu court : ralenti pour tenir sa mesure
+            args += ["-i", f]
+            chaines.append(f"[{k}:v]scale={W}:{H}:force_original_aspect_ratio=decrease,pad={W}:{H}:(ow-iw)/2:(oh-ih)/2,"
+                           f"setsar=1,setpts={lent:.4f}*(PTS-STARTPTS),fps=25,trim=duration={d:.3f},setpts=PTS-STARTPTS[v{n}];")
+            k += 1
+        else:
+            chaines.append(f"color=c=black:s={W}x{H}:r=25:d={d:.3f},setsar=1[v{n}];")
+    args += ["-i", chanson]
+    filtre = "".join(chaines) + "".join(f"[v{n}]" for n in range(len(morceaux))) + f"concat=n={len(morceaux)}:v=1:a=0[out]"
+    progression and progression(0.1)
+    moteur.lancer(["-y"] + args + ["-filter_complex", filtre, "-map", "[out]", "-map", f"{k}:a:0", "-c:v", "libx264",
+                   "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-shortest", sortie])
+    progression and progression(1.0)
+    return sortie
+
+
 # ------------------------------------------------------------------ idées de plans par l'IA (sur clic)
 CONSIGNE_IDEES = """Tu es réalisateur de clips musicaux. On te donne une chanson analysée (parties, énergie, paroles éventuelles),
 le lieu, le rendu et les musiciens INVENTÉS du groupe, puis la liste des plans déjà calés sur les mesures.

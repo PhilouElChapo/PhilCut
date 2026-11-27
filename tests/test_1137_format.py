@@ -29,11 +29,10 @@ class TestFormat(unittest.TestCase):
         class F:
             seq = {"mode": "scenes", "plans": [{"duree": 3}] * 11}
         self.assertTrue(D._gestes(F()))
-        F.seq = {"mode": "scenes", "plans": [{"duree": 12}, {"duree": 12}, {"duree": 10}, {"duree": 15}]}
+        F.seq = {"mode": "scenes", "montage": True, "plans": [{"duree": 6}] * 8}     # 1.3.11 : déjà en plans de montage
         self.assertFalse(D._gestes(F()))
         F.seq = {"mode": "", "plans": [{"duree": 12}]}
         self.assertTrue(D._gestes(F()))
-
 
 if __name__ == "__main__":
     unittest.main()

@@ -822,18 +822,20 @@ class DialogueBibliothequeCreations(QDialog):
 
 
 # ------------------------------------------------------------------ pour les autres fenêtres (Séquence IA, clip, Fabrique musique)
-def choisir_entree(parent, params, genres, titre=None):
+def choisir_entree(parent, params, genres, titre=None, plusieurs=False, vide=None):
     """Petite fenêtre « Depuis ma bibliothèque » : la liste des entrées des genres voulus (vignette, nom, résumé) ; renvoie
     l'entrée choisie ou None. Essais : parent._test_biblio = nom de l'entrée à prendre."""
     entrees = B.lister(params, genres)
     essai = getattr(parent, "_test_biblio", None)
     if essai is not None:
+        if plusieurs:                                # 1.3.11 : plusieurs à la fois (noms séparés par « | »)
+            return [e for n in str(essai).split("|") for e in entrees if e["nom"] == n]
         return next((e for e in entrees if e["nom"] == essai), None)
     if not entrees:
         QMessageBox.information(parent, titre or _("Ma bibliothèque de créations"),
-                                _("Rien encore de ce genre dans votre bibliothèque : « ☆ Garder » sur une création, ou Fabrique IA › "
-                                  "« Ma bibliothèque de créations… » › « Nouveau… »."))
-        return None
+                                vide or _("Rien encore de ce genre dans votre bibliothèque : « ☆ Garder » sur une création, ou "
+                                          "Fabrique IA › « Ma bibliothèque de créations… » › « Nouveau… »."))
+        return [] if plusieurs else None
     d = QDialog(parent)
     d.setWindowTitle(titre or _("Depuis ma bibliothèque"))
     v = QVBoxLayout(d)
@@ -848,7 +850,14 @@ def choisir_entree(parent, params, genres, titre=None):
             it.setIcon(QIcon(QPixmap(ap).scaled(64, 48, Qt.KeepAspectRatio, Qt.SmoothTransformation)))
         lst.addItem(it)
     lst.setCurrentRow(0)
-    lst.itemDoubleClicked.connect(lambda _i: d.accept())
+    if plusieurs:                                    # 1.3.11 : Ctrl-clic ou Maj-clic pour en prendre plusieurs
+        from PySide6.QtWidgets import QAbstractItemView
+        lst.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        lb = QLabel(_("Ctrl-clic pour en prendre plusieurs."))
+        lb.setWordWrap(True)
+        v.addWidget(lb)
+    else:
+        lst.itemDoubleClicked.connect(lambda _i: d.accept())
     v.addWidget(lst, 1)
     h = QHBoxLayout()
     h.addStretch(1)
@@ -859,7 +868,9 @@ def choisir_entree(parent, params, genres, titre=None):
     v.addLayout(h)
     d.resize(560, 420)
     if d.exec() != QDialog.Accepted or lst.currentRow() < 0:
-        return None
+        return [] if plusieurs else None
+    if plusieurs:
+        return [entrees[lst.row(it)] for it in sorted(lst.selectedItems(), key=lst.row)]
     return entrees[lst.currentRow()]
 
 

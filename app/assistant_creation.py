@@ -36,7 +36,8 @@ A partir de l'histoire de l'utilisateur, rends un objet JSON :
  "plans": [{{"action": "...", "personnages": ["nom", ...], "hors_champ": "où sont ceux qu'on ne voit plus, ou vide",
  "depart": "état de la scène à sa première image",
  "enchainer": true ou false, "pourquoi_lien": "…",
- "lieu": "nom du lieu ou vide", "duree": 8 à 15, "camera": "cadrage et mouvement : plan large, plan moyen, gros plan ; fixe,
+ "visages": ["nom", ...], "coupe": true ou false,
+ "lieu": "nom du lieu ou vide", "duree": 3 à 8, "camera": "cadrage et mouvement : plan large, plan moyen, gros plan ; fixe,
  recule, s'approche, accompagne…", "image_clef": true ou false, "pourquoi_clef": "si image_clef : en quelques mots, ce
  qu'elle doit fixer (« elles sont déjà dans la voiture »), sinon vide"}}],
  "remarques": "une phrase pour l'utilisateur, ou vide"}}
@@ -48,12 +49,17 @@ Règles impératives :
   description physique complète (âge, allure, vêtements).
 - Un objet important qui revient dans plusieurs plans (véhicule, accessoire) : genre = "objet", décrit précisément (couleur,
   forme), sans marque.
-- DES SCENES, PAS DES GESTES (1.3.5) : chaque « plan » est une SCENE entière de 8 à 15 secondes, filmée d'une traite
-  (« l'accueil », « la montée dans l'avion »). Son « action » raconte dans l'ordre ce qui s'y passe, en 2 à 4 phrases
-  courtes ; ce qui se passe EN MEME TEMPS reste dans la même scène et la même phrase (« Le pilote et l'hôtesse arrivent
-  côte à côte », « le pilote serre la main des deux femmes pendant que l'hôtesse sourit à côté »). Ne coupe JAMAIS une
-  phrase à deux sujets en deux plans. Une nouvelle scène seulement quand le moment change vraiment : nouveau lieu, saut
-  dans le temps, ou plus de 15 secondes. 3 à 6 scènes pour une histoire courte.
+- DES PLANS DE MONTAGE (1.3.11, choix de Philippe le 27/11) : la séquence est montée comme au cinéma, en plans de 5 à
+  8 secondes, chacun filmé d'une traite. Son « action » raconte ce qui s'y passe en 1 à 3 phrases courtes ; ce qui se
+  passe EN MEME TEMPS reste dans le même plan (« le pilote serre la main des deux femmes pendant que l'hôtesse sourit »).
+- AU PLUS DEUX VISAGES par plan : « visages » liste les personnes dont on voit le visage (0, 1 ou 2). Les autres personnes
+  du plan (dans « personnages ») sont vues de dos, de loin ou en amorce floue, jamais de face. Pour un moment à quatre
+  personnes, fais deux plans (un champ, un contrechamp) ou cadre deux visages et garde les autres de dos.
+- DES PLANS DE COUPE : entre deux plans à visages, ajoute quand c'est utile un plan de coupe de 3 à 5 s, SANS AUCUN
+  VISAGE (« coupe »: true, « visages » vide) : deux mains qui se serrent, des pieds sur les marches, une main sur la
+  rampe, la porte qui se ferme, une roue, un réacteur, un détail du décor. Il fait avancer l'histoire et cache les
+  raccords. Ses « personnages » sont ceux dont on voit une partie (mains, pieds, tenue) ; jamais leur visage.
+- 5 à 10 plans pour une histoire courte, dont 2 à 4 plans de coupe.
 - « depart » : l'état exact de la scène à sa PREMIERE image, avant toute action (qui est où, dans quelle posture, ce
   qu'on voit du décor) : « Les deux femmes debout devant l'avion, porte ouverte, escalier sorti ; le pilote et
   l'hôtesse à droite, à dix mètres ». Chaque scène repart d'une image neuve : écris « depart » pour qu'il prolonge la
@@ -78,16 +84,17 @@ Règles impératives :
   reconnaissables.
 - Un lieu = un décor où se passent un ou plusieurs plans (l'escalier, la rue devant l'entrée…) ; au plus 4 lieux.
 - Chaque événement de l'histoire est dans une scène, dans l'ordre, jusqu'au DERNIER (un départ, un roulage, un décollage,
-  une porte qui se ferme comptent chacun) : relis l'histoire à la fin et ajoute ce qui manque. Au plus 8 scènes. Ecris nom,
+  une porte qui se ferme comptent chacun) : relis l'histoire à la fin et ajoute ce qui manque. Au plus 10 plans. Ecris nom,
   description, action, depart et caméra en {langue}.
 """
 
 CONSIGNE_MODIFIER = """Tu aides à préparer une séquence vidéo par IA. Voici son état (JSON) et une demande de l'utilisateur.
 Rends l'état modifié, au même format : {{"personnages": [...], "plans": [...], "message": "ce que tu as changé, en une
 phrase"}}. Ne change que ce qui est demandé ; garde mot pour mot les noms, descriptions et actions qui ne sont pas concernés.
-Mêmes règles : un personnage = une personne ; chaque plan est une scène entière de 8 à 15 s (ce qui se passe dans
-l'ordre, les actions simultanées ensemble, jamais une phrase coupée en deux plans) avec « depart » (l'état de sa première
-image) ; un véhicule qui s'en va a sa scène sans personnage ; chaque plan liste ses personnages ; aucun nom de personne
+Mêmes règles : un personnage = une personne ; chaque plan dure de 5 à 8 s (3 à 5 s pour un plan de coupe), filmé d'une
+traite (les actions simultanées ensemble, jamais une phrase coupée en deux plans), avec « depart » (l'état de sa première
+image), « visages » (au plus deux personnes vues de face, les autres de dos ou de loin) et « coupe » (true : plan de coupe
+sans aucun visage : mains, pieds, porte, roue, détail) ; un véhicule qui s'en va a sa scène sans personnage ; chaque plan liste ses personnages ; aucun nom de personne
 réelle. Ecris en {langue}."""
 
 CONSIGNE_VERIFIER = """Tu contrôles un plan vidéo fabriqué par une IA. Les {n} premières images sont les fiches de référence
@@ -182,7 +189,8 @@ def lire_analyse(d):
         noms = [n for n in (_texte(x, 40) for x in (pl.get("personnages") or []) if x) if n.lower() in vus]
         lieu = _texte(pl.get("lieu"), 40)
         plans.append({"action": _texte(pl.get("action"), 700), "personnages": noms, "duree": max(3, min(15, duree)),
-                      "depart": _texte(pl.get("depart"), 400),
+                      "depart": _texte(pl.get("depart"), 400), "coupe": bool(pl.get("coupe")),
+                      "visages": [n for n in (_texte(x, 40) for x in (pl.get("visages") or []) if x) if n.lower() in vus][:2],
                       "enchainer_ia": bool(pl.get("enchainer")) and bool(plans), "lien_pourquoi": _texte(pl.get("pourquoi_lien"), 160),
                       "camera": _texte(pl.get("camera"), 160), "lieu": lieu if lieu.lower() in vus_l else "",
                       "hors_champ": _texte(pl.get("hors_champ"), 200), "visibles_fixes": True,
@@ -527,6 +535,11 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
             if a.get(cle):
                 pl[cle] = a[cle]
         pl["etat_depart"] = a.get("depart", "")     # 1.3.5 : l'état de la première image de la scène
+        pl["coupe"] = bool(a.get("coupe"))          # 1.3.11 : plan de coupe, sans visage
+        if a.get("coupe"):
+            pl["visages"] = []
+        elif a.get("visages") is not None:
+            pl["visages"] = relier_noms(a.get("visages"), connus)[:2]
         pl["enchainer_ia"] = bool(a.get("enchainer_ia"))       # 1.3.8 : le lien proposé par l'IA
         pl["lien_pourquoi"] = a.get("lien_pourquoi", "")
         pl["clef"] = bool(a.get("clef"))            # 0.9.87 : image de fin imposée seulement aux images clefs
@@ -551,6 +564,7 @@ def appliquer(seq, analyse, image=None, image_cartes=None):
     seq["personnages"], seq["plans"] = persos, plans
     if MODE_SCENES:
         seq["mode"] = "scenes"                       # 1.3.5 (choix de Philippe, 25/11 22h50) : des scènes, pas des gestes
+        seq["montage"] = True                        # 1.3.11 : plans de montage, deux visages au plus, plans de coupe
     uniformiser(seq, image)
     return seq
 
@@ -600,7 +614,7 @@ def etat(seq):
                       for x in seq.get("lieux") or []],
             "plans": [{"action": pl["action"], "personnages": pl.get("personnages") or [], "duree": pl.get("duree"),
                        "camera": pl.get("camera", ""), "lieu": pl.get("lieu", ""), "hors_champ": pl.get("hors_champ", ""),
-                       "depart": pl.get("etat_depart", ""),
+                       "depart": pl.get("etat_depart", ""), "visages": pl.get("visages") or [], "coupe": bool(pl.get("coupe")),
                        "visibles_fixes": bool(pl.get("visibles_fixes"))} for pl in seq["plans"]]}
 
 

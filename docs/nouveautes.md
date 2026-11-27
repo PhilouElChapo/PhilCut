@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.10 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.3.11 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.3.11
+- Assistant video, methode de montage (choix de Philippe, 27/11) : des plans de 5 a 8 s, au plus deux visages de face par plan (les autres de dos ou de loin), et des plans de coupe sans visage (mains, pieds, porte, roue, reacteur) qui cachent les raccords, comme au cinema. La colonne « De face » du tableau des plans dit qui est de face ; « Plan de coupe » pour un plan sans visage ; tout se corrige a la main.
+- Le depart, le lien avec le plan d'avant et l'image clef proposes par l'IA ne se perdent plus en passant par « 3. Les plans ».
+- « Une autre prise… » remplace « Refaire ce plan… » : chaque essai d'un plan est garde, et « Prise » choisit celle qui sera posee dans le film.
+- Une creation decoupee avec une ancienne methode propose d'etre redecoupee en plans de montage (« 1. Votre idee » puis « Suivant »).
+- Clip de groupe : « Mes musiciens… » prend un ou plusieurs musiciens (ou un groupe) de la bibliotheque ; chacun remplace le musicien propose du meme instrument, plus besoin de retirer la liste. « Prendre un groupe » explique quoi faire quand aucun groupe n'est encore garde. La mention « musiciens inventes » et le bouton « Voix du chant » (la chanson est deja chantee) sont retires de cette fenetre ; la voix reste gardee avec le groupe.
+- Clip de groupe : « Enregistrer le clip avec la chanson… » fait un fichier MP4 a part, les plans a leur place avec la musique.
 
 ### 1.3.10
 - Motion design IA (look pro) : la colonne de gauche n'est plus jamais plus etroite que son contenu ; « Recharger… » et les cases ne sont plus coupes a droite (les cases du look pro sont une par ligne).

@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T131 — 1.3.11 : le tarmac en plans de montage, prises ; clip de groupe avec mes musiciens
+
+1. Assistant › reprenez le tarmac ; « 1. Votre idée » puis « Suivant » : PhilCut propose de redécouper en plans de montage ; « Oui ».
+2. Page des plans : 6 à 10 plans de 5 à 8 s, dont 2 à 4 « Plan de coupe » (colonne « De face ») : mains, pieds sur les marches, porte, roues. Dans chaque plan, au plus deux noms dans « De face ». Corrigez à la main si besoin.
+3. « Préparer les images » : sur les plans de coupe, aucun visage ; sur les autres, ceux qui ne sont pas « de face » sont de dos ou de loin. Toutes les images en paysage.
+4. Brouillon, puis la vraie vidéo. Sur un plan raté : « Une autre prise… » ; la liste « Prise » apparaît ; choisissez la meilleure ; c'est elle qui est posée.
+5. Clip de groupe : « Mes musiciens… », Ctrl-clic sur deux de vos musiciens : ils remplacent les musiciens proposés du même instrument, sans rien retirer. « ☆ Garder ce groupe… » ; puis dans un autre clip « Prendre un groupe de ma bibliothèque… » le retrouve.
+6. Clip de groupe, plans faits : « Enregistrer le clip avec la chanson… » : le MP4 se lit avec la musique, chaque plan à sa place.
+
 ## T130 — 1.3.5 : le tarmac en scènes, brouillon avant de payer
 
 1. Assistant › « Reprendre une création en cours… » › le tarmac ; cliquez « 1. Votre idée » en haut, puis « Suivant » : PhilCut propose de redécouper en scènes ; « Oui ».
@@ -262,7 +271,7 @@ Il faut une clef fal.ai avec un peu de crédit.
 1. Assistant : reprendre l'essai limousine (ou le restaurant) avec le moteur « Kling O3 Référence ». A l'étape des images, une seule « Image clef » au milieu (là où la scène doit être respectée).
 2. Lancer la vidéo : la barre dit « Fabrication des plans 1 à 3 d'un seul tenant » ; dans la liste, ⛓ relie les plans faits ensemble.
 3. Regarder les plans à la suite : les gestes continuent-ils d'un plan à l'autre, sans arrêt ni saut ? Les visages restent-ils ceux des fiches ?
-4. « Refaire ce plan… » sur le 2e plan d'un groupe : le message dit que les suivants du même calcul sont refaits aussi ; le prix les compte.
+4. « Une autre prise… » sur le 2e plan d'un groupe : le message dit que les suivants du même calcul sont refaits aussi ; le prix les compte.
 5. Préférences › IA locale : décocher « Faire d'un seul calcul les plans d'un même moment », refaire un essai : plan par plan comme avant.
 6. Bibliothèque toute faite : chaque entrée (sauf les matières) montre son image d'exemple.
 
@@ -375,7 +384,7 @@ Il faut une clef fal.ai avec un peu de crédit.
 3. « Qui et quoi » : une ligne par femme, une pour le chauffeur (inventé), une pour la limousine (objet) ? Corriger une description dans le tableau, puis écrire en bas « le chauffeur plus âgé, casquette » : la ligne change.
 4. « Les plans » : une seule action par plan ; changer une durée ; écrire en bas « un plan de plus où elles saluent ».
 5. « Préparer les images » : le budget prévu est annoncé et demandé ; les fiches et les images de départ et d'arrivée s'affichent ; cliquer une image pour l'agrandir ; « Corriger… » sur une arrivée : la nouvelle image correspond-elle ?
-6. « Tout me va : fabriquer la vidéo » : chaque plan est relu (✓ ou ⚠ avec la raison). « Refaire ce plan… » sur un plan signalé : le dépensé monte ; s'il dépasse le prévu, il passe en rouge avec « dépassé ».
+6. « Tout me va : fabriquer la vidéo » : chaque plan est relu (✓ ou ⚠ avec la raison). « Une autre prise… » sur un plan signalé : le dépensé monte ; s'il dépasse le prévu, il passe en rouge avec « dépassé ».
 7. « Poser dans le film » : les plans arrivent à la suite du rush ; Ctrl+Z revient.
 8. Pendant une fabrication : « Réduire », puis fermer la fenêtre : rien n'est perdu (« Afficher la fenêtre »).
 9. « Le régler moi-même… » : la même histoire s'ouvre dans la Séquence IA.

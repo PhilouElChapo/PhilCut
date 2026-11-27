@@ -159,7 +159,7 @@ def _guides_integres():
              {"texte": _("Revenir en arrière : « ‹ Précédent » ou un clic sur une étape du fil en haut ; en avançant à nouveau, seul ce "
                          "qui a changé est refait. « Régler moi-même… » ouvre la Séquence IA, et « ‹ Retour à l'assistant » y "
                          "ramène.")},
-             {"texte": _("Chaque plan est relu : ✓ ou ⚠ avec la raison. « Refaire ce plan… » si besoin, puis « Poser dans le film ».")},
+             {"texte": _("Chaque plan est relu : ✓ ou ⚠ avec la raison. « Une autre prise… » si besoin (chaque prise est gardée ; « Prise » choisit la meilleure), puis « Poser dans le film ».")},
          ]},
         {"id": "atelier_bibliotheque", "etat": "ok",
          "titre": _("Créer ses personnages, lieux et tenues dans la bibliothèque (réels, inspirés ou inventés)"),
@@ -329,7 +329,7 @@ def _guides_integres():
                          "chaque image clef ferme un moment.")},
              {"texte": _("Lancez la vidéo : « Fabrication des plans 2 à 4 d'un seul tenant » ; dans la liste, ⛓ relie les plans "
                          "faits ensemble.")},
-             {"texte": _("« Refaire ce plan… » refait aussi les plans suivants du même calcul (ils partent de sa fin).")},
+             {"texte": _("« Une autre prise… » refait aussi les plans suivants du même calcul (ils partent de sa fin).")},
              {"texte": _("Pour revenir au plan par plan : Edition › Préférences › IA locale, décochez « Faire d'un seul "
                          "calcul les plans d'un même moment ».")},
          ]},

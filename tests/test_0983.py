@@ -60,8 +60,11 @@ class TestBibliothequePartout(unittest.TestCase):
         n = len(dl.clip["groupe"])
         dl._test_biblio = "Bassiste gris"
         dl._membre_biblio()
-        m2 = dl.clip["groupe"][-1]
-        self.assertEqual((len(dl.clip["groupe"]), m2["role"], m2["nom"]), (n + 1, "basse", "Bassiste gris"))
+        # 1.3.11 : il prend la place du bassiste proposé (même instrument) au lieu de s'ajouter
+        m2 = next(m for m in dl.clip["groupe"] if m["nom"] == "Bassiste gris")
+        attendu = n if any(g["role"] == "basse" for g in CG.groupe_propose({"caption_en": "rock"})) else n + 1
+        self.assertEqual((len(dl.clip["groupe"]), m2["role"]), (attendu, "basse"))
+        self.assertEqual(dl.table_groupe.rowCount(), attendu)
         self.assertTrue(os.path.exists(m2["image"]))            # son visage suit : il n'est pas redessiné
 
     def test_fabrique_musique(self):

@@ -51,7 +51,7 @@ class TestScenes(unittest.TestCase):
         self.assertEqual(A.etat(s)["plans"][1]["depart"], s["plans"][1]["etat_depart"])
         f, dep, arr = A.a_preparer(s, {"clef_gemini": "x"})
         self.assertEqual((dep, arr), (2, 0))                         # une image de départ par scène (la 1re est le rush)
-        self.assertIn("SCENE entière de 8 à 15 secondes", A.CONSIGNE_ANALYSE)
+        self.assertIn("PLANS DE MONTAGE", A.CONSIGNE_ANALYSE)
         self.assertIn("sans aucun personnage visible", A.CONSIGNE_ANALYSE)
 
     def test_references_propres(self):
@@ -214,13 +214,15 @@ class TestFenetre(unittest.TestCase):
             self.assertFalse(dl._brouillon_d_abord())
             # une ancienne création (geste par geste) : « 1. Votre idée » puis Suivant propose de la redécouper en scènes
             dl.seq["mode"] = ""
+            dl.seq.pop("montage", None)
             fiches = [p.get("planche") for p in dl.seq["personnages"]]
             dl._test_redecouper = True
             dl.aller(D.P_IDEE)
             dl.suivant()
             self.assertTrue(attendre(lambda: not dl._en_calcul() and dl.seq.get("mode") == "scenes"))
             self.assertEqual(dl.pages.currentIndex(), D.P_PLANS)
-            self.assertIn("Redécoupe toute l'histoire en scènes", demandes[-1])
+            self.assertIn("Redécoupe toute l'histoire en plans de montage", demandes[-1])
+            self.assertTrue(dl.seq.get("montage"))
             self.assertEqual([p.get("planche") for p in dl.seq["personnages"]], fiches)      # les fiches payées sont gardées
         finally:
             A.demander, ia.generer_image, ia.generer_image_refs, GV.generer, ApercuCreation.charger = anc

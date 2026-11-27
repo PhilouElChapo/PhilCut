@@ -257,6 +257,16 @@ def consigne(seq, pl, params=None, traduire=True):
         action += " Important: " + _anglais(pl["precision"], traduire).rstrip(".") + "."
     f = "vertical 9:16" if seq.get("format") == "9:16" else "widescreen 16:9"
     morceaux = [f"Cinematic shot, {f}, about {int(pl.get('duree') or DUREE_PLAN)} seconds."]
+    if seq.get("montage") and pl.get("coupe"):       # 1.3.11 : plan de coupe, aucun visage
+        morceaux.append("Close-up insert shot (cutaway): tight framing on hands, feet, a door, a wheel or a detail, as written in "
+                        "Action. NO FACE is visible at all, nobody looks at the camera.")
+    elif seq.get("montage") and isinstance(pl.get("visages"), list):
+        dos = [f"Character {chr(65 + rangs[n.lower()])}" for n in visibles(seq, pl) if n.lower() in rangs
+               and n.lower() not in {x.lower() for x in pl["visages"]}]
+        if dos:                                      # 1.3.11 : au plus deux visages de face, les autres de dos ou de loin
+            face = ", ".join(f"Character {chr(65 + rangs[x.lower()])}" for x in pl["visages"] if x.lower() in rangs)
+            morceaux.append(("Only " + face + " show their face. " if face else "") + ", ".join(dos) +
+                            " stay with their back to the camera or far in the background, face never visible.")
     if seq.get("mode") == "scenes":                  # 1.3.5 : une scène entière, d'une traite
         morceaux.append("One continuous take, no cut. The events of Action happen once each, in the order written, at a natural "
                         "pace; things written in the same sentence happen at the same time. Vehicles keep their exact real "

@@ -188,7 +188,7 @@ class TestFenetre(unittest.TestCase):
             self.assertEqual(len(appels), n)
             dl.suivant()
             self.assertEqual(dl.pages.currentIndex(), D.P_PLANS)
-            self.assertEqual(dl.t_plans.columnCount(), 4)
+            self.assertEqual(dl.t_plans.columnCount(), 5)      # 1.3.11 : « De face »
             self.assertEqual(dl.t_plans.item(0, 2).text(), "plan large")
             self.assertEqual(dl.t_plans.item(1, 1).text(), "")                # personne de visible
             self.assertIn("partie", dl.t_plans.item(1, 1).toolTip())

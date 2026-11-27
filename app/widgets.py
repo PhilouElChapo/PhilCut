@@ -437,6 +437,15 @@ def ouvrir_fichier(parent, titre, filtre, genre="images", params=None):
     return p
 
 
+def enregistrer_fichier(parent, titre, nom, filtre, genre="videos", params=None):
+    """1.3.11 : où enregistrer un fichier ; part du dossier du système (Vidéos…) puis du dernier utilisé pour ce genre."""
+    from PySide6.QtWidgets import QFileDialog
+    p, _f = QFileDialog.getSaveFileName(parent, titre, os.path.join(dossier_depart(parent, genre, params), nom), filtre)
+    if p:
+        retenir_dossier(parent, genre, p, params)
+    return p
+
+
 def ouvrir_fichiers(parent, titre, filtre, genre="videos", params=None):
     from PySide6.QtWidgets import QFileDialog
     ps, _f = QFileDialog.getOpenFileNames(parent, titre, dossier_depart(parent, genre, params), filtre)
