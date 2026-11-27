@@ -4,7 +4,14 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.4.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.4.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.4.1
+- Volume du film (norme EBU R128) : PhilCut mesure le film sur ce poste, gratuitement (volume integre en LUFS, crete vraie, plage). Dans la barre du bas, « ♪ … LUFS » donne pendant la lecture le volume sur 3 s a la ligne rouge et celui du film entier, en couleur selon la cible ; un clic : mesurer, choisir la cible.
+- Cibles toutes pretes : YouTube, Instagram et TikTok, ecran LED (-14 LUFS), podcast (-16), television (-23), ou selon la destination de l'export. Par defaut dans Preferences › Export, et par film dans l'Inspecteur (sans selection) ou la barre du bas.
+- L'export ramene le film a sa cible, puis mesure le fichier fait et affiche son volume. Preferences › Export : « Ramener le volume du film a la cible » decoche laisse le son tel quel ; PhilCut previent alors avant l'export si le film mesure est loin de la cible, avec « Corriger ».
+- « Dites-le en clair » : « mesure le volume du film », « vise la television ».
+- Nouveau guide : « Mettre le film au bon volume ».
 
 ### 1.4.0
 - Piloter PhilCut par une IA, premier lot (choix de Philippe, 27/11) : un registre de commandes, ou chaque action est declaree une seule fois. « Dites-le en clair » connait maintenant le montage courant : poser un rush, supprimer, deplacer, raccourcir ou dupliquer un plan, changer l'ordre, retirer ou garder une partie du film, refermer les trous, regler le son d'un plan, ajouter, regler, renommer ou retirer une piste, placer la ligne rouge, retirer les marqueurs.

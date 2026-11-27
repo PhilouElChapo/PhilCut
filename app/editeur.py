@@ -1168,6 +1168,9 @@ class Editeur(QWidget):
     def _temps(self, t):
         m, s = divmod(t, 60)
         self.lbl_temps.setText(f"{int(m)}:{s:04.1f}")
+        f = self.window()
+        if hasattr(f, "maj_son") and self.projet.d.get("son_mesure"):      # 1.4.1 : volume à la ligne rouge
+            f.maj_son(self, t)
 
     def _curseur(self, t):
         if not self.apercu.en_lecture:

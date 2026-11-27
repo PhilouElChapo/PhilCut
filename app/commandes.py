@@ -279,6 +279,37 @@ def _son_plan(ctx, a):
     return bool(cs)
 
 
+def _lib_cible(k):
+    from . import niveau_sonore as NS
+    return dict(NS.choix_cibles()).get(k, _("celle des Préférences"))
+
+
+@declarer("cible_son", "son", _("Choisir le volume cible du film"),
+          '{"cible": "youtube" | "instagram" | "ecran_led" | "television" | "podcast" | "auto" (selon la destination) | "" (celle des '
+          'Préférences)}',
+          lambda a: _("Volume cible du film : {c}", c=_lib_cible(a.get("cible"))))
+def _cible_son(ctx, a):
+    from . import niveau_sonore as NS
+    k = a.get("cible") or ""
+    if k and k != "auto" and k not in NS.CIBLES:
+        return False
+    if k:
+        ctx.projet.d["son_cible"] = k
+    else:
+        ctx.projet.d.pop("son_cible", None)
+    return True
+
+
+@declarer("mesurer_son", "son", _("Mesurer le volume du film"), "{} (mesure EBU R128 sur ce poste, gratuite)",
+          lambda a: _("Mesurer le volume du film (sur ce poste, gratuit)"))
+def _mesurer_son(ctx, a):
+    f = ctx.ed.window() if hasattr(ctx.ed, "window") else None
+    if f is None or not hasattr(f, "mesurer_son"):
+        return False
+    f.mesurer_son(ctx.ed)
+    return True
+
+
 # ------------------------------------------------------------------ famille « pistes »
 @declarer("ajouter_piste", "pistes", _("Ajouter une piste"), '{"genre": "video" | "audio"} (4 au plus de chaque)',
           lambda a: _("Ajouter une piste {g}", g=_("vidéo") if a.get("genre") == "video" else _("audio")))

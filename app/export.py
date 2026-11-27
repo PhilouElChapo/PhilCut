@@ -166,6 +166,9 @@ class Exportateur:
         self._n = 0
         self.journal = []
         self.sans_son = False       # image seule (aperçu fidèle) : pas de piste audio dans le graphe
+        # 1.4.1 : volume du film ramené à la cible (choix du projet, sinon destination) ; « tel quel » si demandé
+        self.normaliser = not self.p.d.get("son_tel_quel")
+        self.lufs = float(self.p.d.get("son_lufs") or LUFS.get(destination, -14))
 
     # ---------------------------------------------------------------- utilitaires
     def _entree(self, *args):
@@ -729,9 +732,10 @@ class Exportateur:
             else:
                 self.filtres.append("".join(f"[{s}]" for s in pistes) + f"amix=inputs={len(pistes)}:duration=longest:normalize=0[{mix}]")
         out = self._nom("aout")
-        lufs = LUFS.get(self.dest, -14)
+        lufs = self.lufs
+        norme = f"loudnorm=I={lufs:g}:TP=-1.5:LRA=11," if self.normaliser else ""
         # format de sortie explicite : FFmpeg 4.x ne sait pas toujours le deviner (piste entièrement silencieuse)
-        self.filtres.append(f"[{mix}]loudnorm=I={lufs}:TP=-1.5:LRA=11,aresample=48000,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo[{out}]")
+        self.filtres.append(f"[{mix}]{norme}aresample=48000,aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo[{out}]")
         return out
 
     def _atempo(self, c):

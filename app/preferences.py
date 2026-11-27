@@ -214,6 +214,19 @@ class DialoguePreferences(QDialog):
                 self.enc.setCurrentIndex(self.enc.count() - 1)
         f.addRow(_("Encodeur (ce poste)"), self.enc)
         f.addRow(QLabel(_("<span style='color:#999'>FFmpeg {v} · encodeurs trouvés : {e}</span>", v=moteur.version() or "?", e=", ".join(moteur.nom_encodeur(x) for x in moteur.encodeurs()))))
+        # 1.4.1 : volume du film
+        from . import niveau_sonore as NS
+        self.son_cible = QComboBox()
+        for k, lib in NS.choix_cibles():
+            self.son_cible.addItem(lib, k)
+        self.son_cible.setCurrentIndex(max(0, self.son_cible.findData(self.params.get("son_cible") or "auto")))
+        self.son_cible.setToolTip(_("Le volume visé par défaut (EBU R128) ; chaque film peut avoir le sien (Inspecteur, barre du bas)"))
+        f.addRow(_("Volume cible du film"), self.son_cible)
+        self.son_normaliser = QCheckBox(_("Ramener le volume du film à la cible à l'export (conseillé)"))
+        self.son_normaliser.setChecked(self.params.get("son_normaliser", True))
+        self.son_normaliser.setToolTip(_("Décoché : le son est laissé tel quel ; PhilCut prévient avant l'export si le film mesuré est loin "
+                                         "de la cible, avec « Corriger »"))
+        f.addRow(self.son_normaliser)
         self.ducking = QCheckBox(_("Baisser automatiquement la musique sous la voix (ducking)"))
         self.ducking.setChecked(self.params.get("ducking", True))
         f.addRow(self.ducking)
@@ -1267,6 +1280,8 @@ class DialoguePreferences(QDialog):
         from .export import regler_fondus
         regler_fondus(p)
         p["ducking"] = self.ducking.isChecked()
+        p["son_cible"] = self.son_cible.currentData() or "auto"
+        p["son_normaliser"] = self.son_normaliser.isChecked()
         p["musiques_dossier"] = self.musiques.text().strip()
         p["assistant_niveau"] = self.niveau.currentData()
         p["ia_consignes_recette"] = self.consignes.toPlainText().strip()

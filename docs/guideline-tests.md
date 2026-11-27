@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T135 — 1.4.1 : volume du film (LUFS)
+
+1. Un projet avec du son. Cliquez dans le vide de la timeline : l'Inspecteur montre « Volume du film » ; « Mesurer le volume du film » : la barre du bas suit la mesure.
+2. A la fin, la barre du bas affiche « ♪ … LUFS · film … » en couleur ; lancez la lecture : le chiffre de gauche bouge avec la ligne rouge.
+3. Changez le volume d'un plan : l'indicateur passe à « ♪ à mesurer ».
+4. Cible « Télévision » dans l'Inspecteur, exportez : le message de fin (barre du bas) donne le volume du fichier, proche de -23 LUFS.
+5. Préférences › Export : décochez « Ramener le volume du film à la cible » ; mesurez un film trop faible, exportez : l'avertissement propose « Corriger », « Exporter tel quel », « Annuler ».
+6. Les fenêtres et l'Inspecteur restent lisibles en 1024 × 768.
+
 ## T134 — 1.4.0 : piloter le montage par « Dites-le en clair » (registre de commandes)
 
 1. Un projet avec 5 plans. « Dites-le en clair… », sans IA : « supprime le plan 2 » puis « mets le plan 3 en premier » : la liste montre l'action, « Faire » ; le montage reste collé.

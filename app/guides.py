@@ -586,6 +586,21 @@ def _guides_integres():
              {"texte": _("Lisez la liste des actions, décochez celles que vous ne voulez pas, puis faites-les. Une piste "
                          "verrouillée n'est jamais modifiée. Edition › Annuler défait tout d'un coup.")},
          ]},
+        {"id": "volume_film", "etat": "ok",              # 1.4.1 (Philippe, 27/11)
+         "titre": _("Mettre le film au bon volume (LUFS)"),
+         "mots": "volume son lufs niveau fort faible youtube instagram television ebur128 normaliser crete sature cible",
+         "intro": _("Le volume d'un film se mesure en LUFS (norme EBU R128). YouTube et Instagram visent -14 LUFS, la télévision "
+                    "-23. PhilCut mesure le film sur ce poste, gratuitement, et l'export le ramène à la cible."),
+         "etapes": [
+             {"texte": _("Sans rien sélectionner, l'Inspecteur montre « Volume du film » : choisissez la cible, puis « Mesurer le "
+                         "volume du film ». La mesure tourne en arrière-plan (barre du bas).")},
+             {"texte": _("Dans la barre du bas, « ♪ … LUFS » donne le volume sur 3 s à la ligne rouge pendant la lecture, et celui du "
+                         "film entier : vert au bon niveau, jaune trop faible, orange trop fort, rouge si les crêtes saturent. Un clic "
+                         "ouvre le même menu (mesurer, cible).")},
+             {"texte": _("A l'export, le film est ramené à sa cible, et le volume du fichier fait est mesuré et affiché. Préférences "
+                         "› Export : décochez « Ramener le volume du film à la cible » pour le laisser tel quel ; PhilCut prévient "
+                         "alors s'il est loin de la cible, avec « Corriger ».")},
+         ]},
         {"id": "levres", "etat": "ok",
          "titre": _("Faire parler un personnage sur ma voix (lèvres synchronisées)"),
          "mots": "levres bouche parler synchroniser lipsync personnage presentateur avatar chanter chanteur voix doublage",

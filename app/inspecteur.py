@@ -488,8 +488,40 @@ class Inspecteur(QWidget):
             b = QPushButton(_("Plan sous le curseur : « {n} »", n=c.get("nom", "")))
             b.clicked.connect(lambda: self.ed.timeline.selectionner(c["id"]) or self.montrer_clip(c["id"]))
             lay.addWidget(b)
+        if self.projet is not None:
+            self._volume_film(lay)
         lay.addStretch(1)
         self._poser()
+
+    def _volume_film(self, lay):
+        """1.4.1 : le volume du film entier, sa cible et « Mesurer » (sans sélection)."""
+        from PySide6.QtWidgets import QComboBox, QGroupBox, QVBoxLayout as _V
+        from . import niveau_sonore as NS
+        g = QGroupBox(_("Volume du film"))
+        v = _V(g)
+        f = self.ed.window()
+        params = getattr(f, "params", {}) or {}
+        mes = NS.a_jour(self.projet)
+        _k, lufs, crete = NS.cible(self.projet, params)
+        lb = QLabel(NS.verdict(mes, lufs, crete)[1] if mes else _("Pas encore mesuré, ou le son a changé depuis la dernière mesure."))
+        lb.setWordWrap(True)
+        v.addWidget(lb)
+        cb = QComboBox()
+        cb.addItem(_("Celle des Préférences"), "")
+        for k, lib in NS.choix_cibles():
+            cb.addItem(lib, k)
+        cb.setCurrentIndex(max(0, cb.findData(self.projet.d.get("son_cible") or "")))
+        cb.setToolTip(_("Le volume visé pour ce film ; l'export l'y ramène (sauf « tel quel » dans les Préférences)"))
+        cb.currentIndexChanged.connect(lambda _i: hasattr(f, "_cible_son") and f._cible_son(self.ed, cb.currentData()))
+        h = QHBoxLayout()
+        h.addWidget(QLabel(_("Cible")))
+        h.addWidget(cb, 1)
+        v.addLayout(h)
+        b = QPushButton(_("Mesurer le volume du film"))
+        b.setToolTip(_("Sur ce poste, gratuit : le son est mélangé comme à l'export, puis mesuré (EBU R128)"))
+        b.clicked.connect(lambda: hasattr(f, "mesurer_son") and f.mesurer_son(self.ed))
+        v.addWidget(b)
+        lay.addWidget(g)
 
     def montrer_selection(self, ids):
         if not ids:

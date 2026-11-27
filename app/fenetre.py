@@ -88,6 +88,7 @@ class Fenetre(QMainWindow):
         self.onglets.setTabsClosable(True)
         self.onglets.setMovable(True)
         self.onglets.tabCloseRequested.connect(self.fermer_onglet)
+        self.onglets.currentChanged.connect(lambda _i: self.maj_son())
         self.onglets.setStyleSheet("QTabBar::tab{padding:9px 18px;font-size:13px} QTabWidget::pane{border:none}")
         self.accueil = PageAccueil(self.params)
         self.accueil.nouveau.connect(self.nouveau_projet)
@@ -115,6 +116,13 @@ class Fenetre(QMainWindow):
         self.b_activite.setCursor(Qt.PointingHandCursor)
         self.b_activite.setToolTip(_("Ce que PhilCut fait en ce moment (imports, exports, IA, téléchargements). Clic : le détail."))
         self.b_activite.clicked.connect(self.voir_activite)
+        # 1.4.1 : volume du film (LUFS) à la ligne rouge, d'après la dernière mesure ; clic : mesurer, cible
+        self.b_son = QPushButton("♪ —")
+        self.b_son.setFlat(True)
+        self.b_son.setCursor(Qt.PointingHandCursor)
+        self.b_son.setToolTip(_("Volume du film (EBU R128) : clic pour le mesurer ou choisir la cible"))
+        self.b_son.clicked.connect(self.menu_son)
+        self.statusBar().addPermanentWidget(self.b_son)
         self.statusBar().addPermanentWidget(self.b_activite)
         self.fenetre_activite = None
         self.centre.change.connect(self._etat_activite)
@@ -859,8 +867,28 @@ class Fenetre(QMainWindow):
         dest, enc, qual = d.dest.currentData(), d.enc.currentData(), d.qualite.currentData()
         st = list(ed.projet.d.get("sous_titres") or [])
         ed.projet.d["ducking"] = self.params.get("ducking", True)
+        # 1.4.1 : volume du film. Ramené à la cible (conseillé) ; laissé tel quel s'il est demandé, après avertissement
+        from . import niveau_sonore as NS
+        tel_quel = not self.params.get("son_normaliser", True)
+        _k, lufs, crete = NS.cible(ed.projet, self.params, dest)
+        if tel_quel:
+            mes = NS.a_jour(ed.projet)
+            etat, phrase = NS.verdict(mes, lufs, crete) if mes else ("ok", "")
+            if etat != "ok":
+                q = QMessageBox(QMessageBox.Warning, _("Volume du film"), phrase + "\n\n" + _(
+                    "Vous avez choisi de laisser le volume tel quel (Préférences › Export). « Corriger » le ramène à la cible "
+                    "pour cet export."), QMessageBox.NoButton, self)
+                b_corr = q.addButton(_("Corriger"), QMessageBox.AcceptRole)
+                b_tel = q.addButton(_("Exporter tel quel"), QMessageBox.DestructiveRole)
+                q.addButton(_("Annuler"), QMessageBox.RejectRole)
+                q.exec()
+                if q.clickedButton() is b_corr:
+                    tel_quel = False
+                elif q.clickedButton() is not b_tel:
+                    return
         import copy
         projet_copie = copy.deepcopy(ed.projet)
+        projet_copie.d["son_tel_quel"], projet_copie.d["son_lufs"] = tel_quel, lufs
         travaux = [(projet_copie, sortie, dest)]
         noms = {sortie}
         for dest2 in d.autres_formats():                    # exports en série (0.9.25) : un fichier par format coché
@@ -871,7 +899,9 @@ class Fenetre(QMainWindow):
                 b, x = os.path.splitext(nom)
                 nom = f"{b}_{dest2}{x}"
             noms.add(nom)
-            travaux.append((export.autre_format(ed.projet, dest2), nom, dest2))
+            pj2 = export.autre_format(ed.projet, dest2)
+            pj2.d["son_tel_quel"], pj2.d["son_lufs"] = tel_quel, NS.cible(ed.projet, self.params, dest2)[1]
+            travaux.append((pj2, nom, dest2))
 
         def travail(tache):
             journal = []
@@ -880,6 +910,12 @@ class Fenetre(QMainWindow):
                 try:
                     ex.lancer(progression=lambda f, k=k: tache.avancer((k + f) / len(travaux), os.path.basename(sor)),
                               arret=lambda: tache.arret, sous_titres=st)
+                    try:                             # 1.4.1 : le volume du fichier fait, mesuré et dit
+                        m = NS.mesurer(sor)
+                        journal.append("♪ " + _("Son de {f} : {v}", f=os.path.basename(sor),
+                                         v=NS.verdict(m, pj.d["son_lufs"], -1.0)[1]))
+                    except Exception as e:               # noqa: BLE001 : le film est fait, la mesure est un plus
+                        journal.append(f"Mesure du son : {e}")
                     if d.srt.isChecked() and st:
                         with open(os.path.splitext(sor)[0] + ".srt", "w", encoding="utf-8") as f:
                             f.write(titres.srt(st))
@@ -908,6 +944,9 @@ class Fenetre(QMainWindow):
         if ed:
             ed.projet.d["dernier_export"] = sortie
         ecrire("export", f"✓ {sortie}" + (f" ({'; '.join(journal)})" if journal else ""))
+        son = [j for j in journal or [] if j.startswith("♪ ")]
+        if son:
+            self.statusBar().showMessage(son[0], 15000)
         if deposer:
             self.partager(sortie)
 
@@ -1857,6 +1896,96 @@ class Fenetre(QMainWindow):
         self.fenetre_activite.show()
         self.fenetre_activite.raise_()
         self.fenetre_activite.activateWindow()
+
+    # ---------------------------------------------------------------- volume du film (1.4.1)
+    def maj_son(self, ed=None, t=None):
+        """L'indicateur de la barre du bas : le volume court terme mesuré à la ligne rouge, coloré selon la cible."""
+        from . import niveau_sonore as NS
+        if not hasattr(self, "b_son"):
+            return
+        ed = ed or self.editeur_courant()
+        if not ed:
+            self.b_son.setText("♪ —")
+            self.b_son.setStyleSheet("")
+            return
+        mes = NS.a_jour(ed.projet)
+        _k, lufs, crete = NS.cible(ed.projet, self.params)
+        if not mes:
+            self.b_son.setText(_("♪ à mesurer") if ed.projet.d.get("son_mesure") else "♪ —")
+            self.b_son.setStyleSheet(f"color:{theme.COULEURS['texte2']}")
+            self.b_son.setToolTip(_("Volume du film pas encore mesuré (ou le son a changé depuis) : clic › « Mesurer le volume du film »"))
+            return
+        if t is None:
+            t = float(getattr(ed.timeline, "position", 0.0) or 0.0)
+        v = NS.court_terme(mes, t)
+        etat, phrase = NS.verdict(mes, lufs, crete)
+        self.b_son.setText(_("♪ {v} LUFS · film {i}", v=f"{v:.0f}" if v is not None and v > -69 else "—", i=f"{mes['integre']:.1f}"))
+        self.b_son.setStyleSheet("color:%s" % {"ok": "#4cd47a", "fort": "#ff8c5c", "sature": "#ff5c5c"}.get(etat, "#ffcc4d"))
+        self.b_son.setToolTip(phrase + "\n" + _("A gauche : le volume sur 3 s à la ligne rouge ; à droite : le film entier. Clic : mesurer, "
+                                                 "cible."))
+
+    def menu_son(self):
+        from . import niveau_sonore as NS
+        ed = self.editeur_courant()
+        m = QMenu(self)
+        if not ed:
+            m.addAction(_("Ouvrez un projet pour mesurer son volume")).setEnabled(False)
+            m.exec(self.b_son.mapToGlobal(self.b_son.rect().topLeft()))
+            return
+        m.addAction(_("Mesurer le volume du film"), lambda: self.mesurer_son(ed))
+        sm = m.addMenu(_("Cible de ce film"))
+        actuel = ed.projet.d.get("son_cible") or ""
+        defaut = sm.addAction(_("Celle des Préférences"))
+        defaut.setCheckable(True)
+        defaut.setChecked(not actuel)
+        defaut.triggered.connect(lambda: self._cible_son(ed, ""))
+        for k, lib in NS.choix_cibles():
+            a = sm.addAction(lib)
+            a.setCheckable(True)
+            a.setChecked(actuel == k)
+            a.triggered.connect(lambda _c=False, k=k: self._cible_son(ed, k))
+        m.addAction(_("Réglages du volume (Préférences › Export)…"), lambda: self.preferences("Export"))
+        m.exec(self.b_son.mapToGlobal(self.b_son.rect().topLeft()))
+
+    def _cible_son(self, ed, k):
+        ed.projet.marquer()
+        if k:
+            ed.projet.d["son_cible"] = k
+        else:
+            ed.projet.d.pop("son_cible", None)
+        ed.projet.modifie = True
+        self.maj_son(ed)
+        if hasattr(ed, "inspecteur") and ed.inspecteur._cible is None:
+            ed.inspecteur.vide()
+
+    def mesurer_son(self, ed=None):
+        """Mesure du film entier, hors de la fenêtre, avec sa progression (barre du bas, Centre d'activité)."""
+        from . import niveau_sonore as NS
+        from .taches import Tache
+        ed = ed or self.editeur_courant()
+        if not ed or not ed.projet.clips:
+            self.statusBar().showMessage(_("Rien à mesurer : posez des plans dans la timeline."), 6000)
+            return
+        import copy
+        pj, params = copy.deepcopy(ed.projet), self.params
+        t = Tache(lambda tache: NS.mesurer_projet(pj, params, lambda f, x="": tache.avancer(f, x), lambda: tache.arret),
+                  _("Mesure du volume du film"))
+        self.taches.append(t)
+        ed.encart.suivre(t, _("Mesure du volume du film"))
+
+        def fin(r, e):
+            if e or not r:
+                return
+            ed.projet.d["son_mesure"] = r
+            ed.projet.modifie = True
+            self.maj_son(ed)
+            _k, lufs, crete = NS.cible(ed.projet, self.params)
+            self.statusBar().showMessage(NS.verdict(r, lufs, crete)[1], 15000)
+            if hasattr(ed, "inspecteur") and ed.inspecteur._cible is None:
+                ed.inspecteur.vide()
+        t.fini.connect(fin)
+        t.start()
+        return t
 
     def _etat_activite(self):
         txt, actif = self.centre.resume()
