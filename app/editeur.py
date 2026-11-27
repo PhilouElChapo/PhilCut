@@ -163,6 +163,7 @@ class Bibliotheque(QListWidget):
     analyser = Signal(object)              # liste d'ids à analyser avec l'IA locale (vide = tous)
     trier = Signal(object)                 # 0.9.49 : liste d'ids à trier (doublons, flou, tremblé, son ; vide = tous)
     etiquette = Signal(str, str)           # media_id, texte lu : poser une étiquette
+    multicam = Signal(object)              # 1.4.2 : 2 à 4 rushes du même moment à caler en multicaméra
 
     def filtrer(self, texte):
         self._filtre = texte or ""
@@ -228,6 +229,10 @@ class Bibliotheque(QListWidget):
         m.addAction(icone("ia"), _("Analyser tous les rushes avec l'IA locale"), lambda: self.analyser.emit([]))
         sel = [x.data(Qt.UserRole) for x in self.selectedItems()]
         if len(sel) > 1:
+            videos = [i for i in sel if (self.projet.media(i) or {}).get("genre") == "video"] if self.projet else []
+            if 2 <= len(videos) <= 4:                    # 1.4.2
+                m.addAction(icone("piste_video"), _("Synchroniser en multicaméra ({n} angles)…", n=len(videos)),
+                            lambda: self.multicam.emit(videos))
             m.addAction(_("Trier ces {n} rushes (doublons, flou, tremblé, son, silences)", n=len(sel)), lambda: self.trier.emit(sel))
         m.addAction(_("Trier les rushes (doublons, flou, tremblé, son, silences)"), lambda: self.trier.emit([]))
         m.exec(self.mapToGlobal(pos))
@@ -594,6 +599,7 @@ class Editeur(QWidget):
         self.recherche_medias.textChanged.connect(self.biblio.filtrer)
         self.biblio.analyser.connect(self.analyser_rushes)
         self.biblio.trier.connect(lambda ids: self.trier_rushes(ids or None))
+        self.biblio.multicam.connect(self.multicam)
         self.biblio.etiquette.connect(self._etiquette_texte_lu)
         self.biblio.ajouter.connect(lambda i: self.ajouter_a_la_timeline(i))
         self.biblio.fiche.connect(self.montrer_fiche)
@@ -1839,7 +1845,50 @@ class Editeur(QWidget):
                 c["effets"].append({"id": "ralenti_fluide", "params": {}})
         self.rafraichir()
 
+    # ---------------------------------------------------------------- multicaméra (1.4.2)
+    def multicam(self, ids=None):
+        """Caler 2 à 4 rushes du même moment ; sans liste : les vidéos choisies dans la colonne des médias."""
+        from PySide6.QtWidgets import QMessageBox
+        from .dialogues_multicam import DialogueMulticam
+        from .widgets import non_bloquante
+        if not ids:
+            ids = [x.data(Qt.UserRole) for x in self.biblio.selectedItems()]
+            ids = [i for i in ids if (self.projet.media(i) or {}).get("genre") == "video"]
+        if not 2 <= len(ids) <= 4:
+            QMessageBox.information(self, _("Multicaméra"), _(
+                "Dans la colonne des médias, choisissez de 2 à 4 vidéos du même moment (Ctrl-clic), puis clic droit › "
+                "« Synchroniser en multicaméra »."))
+            return None
+        return non_bloquante(self, ("multicam", tuple(ids)), lambda: DialogueMulticam(self, ids))
+
+    def mosaique(self, mc_id=None):
+        """La mosaïque d'un multicaméra (celui du plan sélectionné ou sous la ligne rouge, sans identifiant)."""
+        from .dialogues_multicam import DialogueMosaique
+        from .widgets import non_bloquante
+        if not mc_id:
+            c = self._clip_selectionne() or self.projet.clip_a(self.timeline.position)
+            mc_id = (c or {}).get("multicam")
+        if not mc_id or mc_id not in (self.projet.d.get("multicams") or {}):
+            self.encart.message(_("Pas de plan multicaméra ici : clic droit sur 2 à 4 vidéos › « Synchroniser en multicaméra »."), 8000)
+            return None
+        return non_bloquante(self, ("mosaique", mc_id), lambda: DialogueMosaique(self, mc_id))
+
     def _demande_menu(self, ident, quoi):
+        if quoi.startswith("angle:") or quoi == "mosaique":           # 1.4.2
+            from . import multicam as MC
+            c = self.projet.clip(ident)
+            if not c:
+                return
+            if quoi == "mosaique":
+                self.mosaique(c.get("multicam"))
+                return
+            self.projet.marquer()
+            if MC.changer_angle(self.projet, c, int(quoi.split(":")[1])):
+                self.rafraichir()
+            else:
+                self.projet.annuler()
+                self.encart.message(_("Cet angle n'a pas d'image sur toute la durée de ce plan : coupez le plan d'abord."), 8000)
+            return
         if quoi == "ou_media":
             c = self.projet.clip(ident)
             if c and (self.projet.media(c.get("media")) or {}).get("a_calculer"):      # création demandée ailleurs, à calculer ici

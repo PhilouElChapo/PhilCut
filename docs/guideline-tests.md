@@ -23,6 +23,16 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T136 — 1.4.2 : multicaméra
+
+1. Importez 2 à 4 vidéos d'un même vol (GoPro, téléphone, lunettes). Ctrl-clic sur elles, clic droit › « Synchroniser en multicaméra ».
+2. « Caler les angles » : la colonne « Calé » dit « par le son » ou « par l'heure des fichiers » ; sinon corrigez le décalage à la main. Notez si votre son est utile sur chaque caméra.
+3. Choisissez le son du film (le plus propre), « Créer le plan multicaméra » : un plan sur la piste vidéo, le son sur sa piste « Son multicaméra ».
+4. La mosaïque s'ouvre : lecture, clic sur un angle (ou touches 1 à 4) au bon moment ; les images restent-elles synchrones entre elles ? Le cadre rouge suit-il l'angle à l'écran ?
+5. « Proposer les angles » : le montage proposé vous convient-il comme point de départ ?
+6. Clic droit sur une coupe › « Changer d'angle » ; Edition › Annuler revient en arrière.
+7. Exportez : le son ne saute pas aux coupes.
+
 ## T135 — 1.4.1 : volume du film (LUFS)
 
 1. Un projet avec du son. Cliquez dans le vide de la timeline : l'Inspecteur montre « Volume du film » ; « Mesurer le volume du film » : la barre du bas suit la mesure.

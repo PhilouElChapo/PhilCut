@@ -601,6 +601,24 @@ def _guides_integres():
                          "› Export : décochez « Ramener le volume du film à la cible » pour le laisser tel quel ; PhilCut prévient "
                          "alors s'il est loin de la cible, avec « Corriger ».")},
          ]},
+        {"id": "multicam", "etat": "ok",                 # 1.4.2 (Philippe, 27/11)
+         "titre": _("Monter plusieurs caméras du même moment (multicaméra)"),
+         "mots": "multicamera multicam angles cameras gopro telephone lunettes synchroniser caler son mosaique vol cockpit",
+         "intro": _("Jusqu'à 4 caméras du même moment (GoPro du cockpit, téléphone, lunettes) : PhilCut les cale entre elles par le "
+                    "son, sinon par l'heure des fichiers, puis vous choisissez l'angle dans une mosaïque pendant la lecture. Une "
+                    "seule source son court sous tous les angles."),
+         "etapes": [
+             {"texte": _("Dans la colonne des médias, choisissez 2 à 4 vidéos (Ctrl-clic), clic droit › « Synchroniser en "
+                         "multicaméra » (ou Montage › Montage automatique › Multicaméra).")},
+             {"texte": _("« Caler les angles » (sur ce poste, gratuit). Corrigez un décalage à la main si besoin, choisissez l'angle "
+                         "principal (première ligne) et le son du film, puis « Créer le plan multicaméra »."),
+              "fait": "fenetre:DialogueMulticam"},
+             {"texte": _("La mosaïque s'ouvre : lancez la lecture et cliquez l'angle voulu (ou touches 1 à 4) ; le cadre rouge montre "
+                         "l'angle à l'écran. « Proposer les angles » fait un premier montage que vous corrigez."),
+              "fait": "fenetre:DialogueMosaique"},
+             {"texte": _("Chaque coupe est un plan normal : clic droit › « Changer d'angle » ou « Mosaïque multicaméra… ». Edition › "
+                         "Annuler défait chaque coupe.")},
+         ]},
         {"id": "levres", "etat": "ok",
          "titre": _("Faire parler un personnage sur ma voix (lèvres synchronisées)"),
          "mots": "levres bouche parler synchroniser lipsync personnage presentateur avatar chanter chanteur voix doublage",

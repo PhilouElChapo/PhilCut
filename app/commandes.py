@@ -96,8 +96,12 @@ def etat(projet, t0=0.0):
         cs = projet.clips_piste(p)
         marques = [x for x, oui in (("muette", projet.piste_muette(p)), ("verrouillée", projet.piste_verrouillee(p))) if oui]
         lignes.append(f"Piste {p}" + (f" ({', '.join(marques)})" if marques else "") + " : " +
-                      ("; ".join(f"{i + 1}: {c.get('nom', '')} ({c['debut']:.1f}–{fin_clip(c):.1f} s)" for i, c in enumerate(cs[:80]))
+                      ("; ".join(f"{i + 1}: {c.get('nom', '')} ({c['debut']:.1f}–{fin_clip(c):.1f} s"
+                                 f"{', multicaméra angle ' + str(int(c.get('angle') or 0) + 1) if c.get('multicam') else ''})"
+                                 for i, c in enumerate(cs[:80]))
                        or "vide"))
+    for mc in (projet.d.get("multicams") or {}).values():
+        lignes.append("Multicaméra : " + "; ".join(f"angle {k + 1} = {a.get('nom', '')}" for k, a in enumerate(mc["angles"])))
     if projet.marqueurs:
         lignes.append("Marqueurs : " + "; ".join(f"{m['t']:.1f} s {m.get('texte', '')}".strip() for m in projet.marqueurs[:40]))
     return "\n".join(lignes)
@@ -254,6 +258,27 @@ def _refermer_trous(ctx, a):
             ctx.projet.resserrer(p)
             fait = True
     return fait
+
+
+@declarer("changer_angle", "montage", _("Changer l'angle d'un plan multicaméra"),
+          '{"plan": numéro sur la piste video, "angle": 1..4}',
+          lambda a: _("Montrer l'angle {n} sur {q}", n=a.get("angle"), q=_qui(a)))
+def _changer_angle(ctx, a):
+    from . import multicam as MC
+    cs = ctx.plans(a)
+    if not cs or not ctx.libre(cs[0]["piste"]) or not isinstance(a.get("angle"), (int, float)):
+        return False
+    return MC.changer_angle(ctx.projet, cs[0], int(a["angle"]) - 1)
+
+
+@declarer("couper_angle", "montage", _("Couper un plan multicaméra sur un angle"),
+          '{"t": secondes de la timeline, "angle": 1..4} (à partir de t, le plan multicaméra montre cet angle)',
+          lambda a: _("A {s} s, passer à l'angle {n}", s=a.get("t"), n=a.get("angle")))
+def _couper_angle(ctx, a):
+    from . import multicam as MC
+    if not ctx.libre("video") or not all(isinstance(a.get(k), (int, float)) for k in ("t", "angle")):
+        return False
+    return MC.couper_angle(ctx.projet, float(a["t"]), int(a["angle"]) - 1) is not None
 
 
 # ------------------------------------------------------------------ famille « son »

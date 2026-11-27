@@ -264,6 +264,9 @@ class Fenetre(QMainWindow):
                 (icone("sous_titres"), _("Couper en supprimant des phrases (texte de ce qui est dit)…"),
                  _("PhilCut écrit ce qui est dit dans la vidéo : effacer une phrase coupe la vidéo à cet endroit ; « euh » et silences "
                    "enlevés d'un clic"), lambda: self._ed(lambda ed: ed.monter_par_texte()), "Ctrl+T"),
+                (icone("piste_video"), _("Multicaméra (plusieurs caméras du même moment)…"),
+                 _("2 à 4 vidéos du même moment calées par le son ; vous choisissez l'angle dans une mosaïque pendant la lecture"),
+                 lambda: self._ed(lambda ed: ed.multicam()), None),
                 (icone("image"), _("Présentation de photos animée…"), _("Lancer de cartes, explosion en particules, puzzle, mur de photos, "
                                                                          "carrousel 3D, éventail, polaroïds sur une corde"),
                  lambda: self._editeur_ou_nouveau().presentation_photos(), None),

@@ -4,7 +4,15 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.4.1 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.4.2 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.4.2
+- Multicamera : jusqu'a 4 videos du meme moment (GoPro du cockpit, telephone, lunettes). Colonne des medias, Ctrl-clic sur 2 a 4 videos, clic droit › « Synchroniser en multicamera » (ou Montage › Montage automatique › Multicamera).
+- « Caler les angles », sur ce poste et gratuit : par le son (au centieme de seconde), sinon par l'heure des fichiers, sinon a la main (chaque decalage reste modifiable). Vous choisissez l'angle principal et la source son : une seule court sous tous les angles, sur sa propre piste.
+- La mosaique 2 × 2 suit la ligne rouge pendant la lecture : un clic sur un angle, ou les touches 1 a 4, coupe et montre cet angle ; le cadre rouge montre l'angle a l'ecran. Un angle qui s'arrete avant la fin du plan rend la suite a l'angle d'avant.
+- « Proposer les angles » : un premier montage sur ce poste (plans de 3 a 10 s, l'angle qui bouge le plus), que vous corrigez.
+- Chaque coupe est un plan normal : clic droit › « Changer d'angle » ou « Mosaique multicamera… » ; Edition › Annuler defait chaque coupe. « Dites-le en clair » sait aussi changer l'angle d'un plan.
+- Nouveau guide : « Monter plusieurs cameras du meme moment ».
 
 ### 1.4.1
 - Volume du film (norme EBU R128) : PhilCut mesure le film sur ce poste, gratuitement (volume integre en LUFS, crete vraie, plage). Dans la barre du bas, « ♪ … LUFS » donne pendant la lecture le volume sur 3 s a la ligne rouge et celui du film entier, en couleur selon la cible ; un clic : mesurer, choisir la cible.

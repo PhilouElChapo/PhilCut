@@ -1300,6 +1300,16 @@ class Timeline(QGraphicsView):
         if clip and clip["piste"].startswith("video"):
             m.addAction(_("Étalonnage (couleurs, avant / après)…"), lambda: self.demande_menu.emit(clip["id"], "etalonner"))
             m.addAction(_("Prolonger ce plan (image tenue, ralenti ou IA)…"), lambda: self.demande_menu.emit(clip["id"], "prolonger"))
+        mc = (self.projet.d.get("multicams") or {}).get(clip.get("multicam") or "") if self.projet else None
+        if mc and clip["piste"].startswith("video"):              # 1.4.2 : multicaméra
+            sm = m.addMenu(_("Changer d'angle"))
+            for k, a in enumerate(mc["angles"]):
+                act = sm.addAction(_("Angle {n} : {r}", n=k + 1, r=a.get("nom", "")),
+                                   lambda k=k: self.demande_menu.emit(clip["id"], f"angle:{k}"))
+                act.setCheckable(True)
+                act.setChecked(int(clip.get("angle") or 0) == k)
+            m.addAction(_("Mosaïque multicaméra…"), lambda: self.demande_menu.emit(clip["id"], "mosaique"))
+            m.addSeparator()
         m.addAction(_("Couper ici"), lambda: (self.aller_a(t), self.couper_au_curseur()))
         self._menu_pistes(m, piste)
         m.addAction(_("Enregistrer l'image à cet endroit…"), lambda: (self.aller_a(t), self.demande_menu.emit("", "image")))
