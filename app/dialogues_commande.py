@@ -121,7 +121,8 @@ class DialogueCommande(QDialog):
         projet, params = self.ed.projet, self.ed.params
         self._demande = getattr(self, "_demande", 0) + 1     # seule la dernière demande compte
         n = self._demande
-        self.tache = Tache(lambda t: C.comprendre(phrase, projet, params, niv), _("Dites-le en clair"))
+        t0 = float(getattr(self.ed.timeline, "position", 0.0) or 0.0)
+        self.tache = Tache(lambda t: C.comprendre(phrase, projet, params, niv, t0), _("Dites-le en clair"))
         self.tache.fini.connect(lambda r, e, n=n: self._si_ouvert(n, r, e))
         self.tache.lier(self)
         self.tache.start()
@@ -179,7 +180,8 @@ class DialogueCommande(QDialog):
         src = {"regles": _("compris sans IA")}.get(r.get("source"), r.get("source", ""))
         if not self.actions:
             self.etat.setText(_("Je n'ai pas compris d'action dans cette phrase. Essayez avec des mots comme musique, titre, effet, "
-                                "flèche, ralenti, couper… ou choisissez l'IA locale ou cloud.") +
+                                "flèche, ralenti, couper, supprimer le plan 3, refermer les trous… ou choisissez l'IA locale ou "
+                                "cloud, qui connaissent tout le montage courant (poser, déplacer, raccourcir, ordre, pistes).") +
                               (f"<br><span style='color:#ff8c5c'>{r['avertissement']}</span>" if r.get("avertissement") else ""))
             self.b_faire.setEnabled(False)
             return
@@ -238,7 +240,10 @@ class DialogueCommande(QDialog):
         if any(a.get("action") == "ranger_rushes" for a in acts) and hasattr(self.ed, "biblio"):
             self.ed.biblio.remplir(self.ed.projet)
         self.ed.rafraichir()
-        self.ed.encart.message(_("{n} action(s) faite(s). Edition › Annuler défait tout d'un coup.", n=n), 8000)
+        verrou = getattr(C.appliquer, "refuses", [])     # 1.4.0 : une piste verrouillée n'est jamais modifiée
+        self.ed.encart.message(_("{n} action(s) faite(s). Edition › Annuler défait tout d'un coup.", n=n) +
+                               ((" " + _("Piste(s) verrouillée(s) laissée(s) intacte(s) : {p}.", p=", ".join(verrou))) if verrou else ""),
+                               8000)
         self.accept()
 
     def done(self, r):

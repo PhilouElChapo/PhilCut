@@ -4,7 +4,13 @@ PhilCut pour Windows, tout en un (Python, Qt, OpenCV et FFmpeg embarques).
 Linux : PhilCut_linux_x86_64.tar.gz (FFmpeg du systeme : paquet ffmpeg). Flatpak a venir.
 Guide de test : docs/guideline-tests.md
 
-## Nouveautes de 1.3.13 (comprend tout ce qui est sorti depuis la 0.4.4)
+## Nouveautes de 1.4.0 (comprend tout ce qui est sorti depuis la 0.4.4)
+
+### 1.4.0
+- Piloter PhilCut par une IA, premier lot (choix de Philippe, 27/11) : un registre de commandes, ou chaque action est declaree une seule fois. « Dites-le en clair » connait maintenant le montage courant : poser un rush, supprimer, deplacer, raccourcir ou dupliquer un plan, changer l'ordre, retirer ou garder une partie du film, refermer les trous, regler le son d'un plan, ajouter, regler, renommer ou retirer une piste, placer la ligne rouge, retirer les marqueurs.
+- Claude, Gemini ou l'IA de ce poste voient tout le montage (medias, pistes, plans numerotes, marqueurs, ligne rouge) pour repondre par des commandes precises. Rien n'est fait sans votre clic ; un seul Annuler defait tout ; une piste verrouillee n'est jamais modifiee.
+- Sans IA, les demandes simples sont comprises : « supprime le plan 3 », « mets le plan 3 en premier », « duplique le plan 1 », « referme les trous », « rends muette la piste musique ».
+- Nouveau guide : « Monter en le disant ».
 
 ### 1.3.13
 - Ma voix dans la bibliotheque : « Continuer avec ma voix » a un bouton « ☆ Garder cette voix… » (10 a 15 s de votre voix, une fois) et une liste « Voix gardee » ; plus besoin de rechercher l'extrait. Plusieurs extraits du meme nom font des variantes (« Ma voix — calme », « Ma voix — enjouee »).

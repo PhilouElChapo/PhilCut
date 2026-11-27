@@ -40,7 +40,7 @@ class TestDitesLe(unittest.TestCase):
         ed = f._editeur_ou_nouveau()
         ancien = C.comprendre
 
-        def lent(phrase, projet, params, niv):
+        def lent(phrase, projet, params, niv, t0=0.0):
             time.sleep(0.4)
             return {"actions": C.regles(phrase), "source": "regles"}
         C.comprendre = lent

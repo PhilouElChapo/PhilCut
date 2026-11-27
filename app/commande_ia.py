@@ -20,6 +20,27 @@ ACTIONS = {
     "trier_rushes": _("Trier les rushes"),
 }
 
+# 1.4.0 : les 16 actions historiques ci-dessus, avec leur famille, plus toutes celles du registre (app/commandes.py)
+FAMILLES_HISTORIQUES = {"musique": "son", "couper_musique": "son", "fondus_musique": "son", "volume": "son", "effet": "habillage",
+                        "transition": "habillage", "vitesse": "montage", "texte": "habillage", "fleche": "habillage",
+                        "goodie": "habillage", "couper": "montage", "look": "couleur", "etalonnage": "couleur",
+                        "ranger_rushes": "rushes", "marqueur": "reperes", "trier_rushes": "rushes"}
+
+
+def connues():
+    """Toutes les actions que PhilCut sait faire sur demande : {nom: libellé}."""
+    from . import commandes as K
+    return dict(ACTIONS, **{n: c.libelle for n, c in K.REGISTRE.items()})
+
+
+def consigne():
+    from . import commandes as K
+    return (CONSIGNE + "\nActions de montage (les plans se désignent par leur numéro sur leur piste, à partir de 1 ; les pistes "
+            "par video, video2…, audio (la musique), audio2…, voix ; une piste verrouillée ne se modifie pas) :\n" + K.consigne() +
+            "\nFais le moins d'actions possible, dans l'ordre où elles doivent être faites ; après une action qui change les "
+            "numéros de plans (suppression, ordre), les numéros suivants désignent le nouvel état.")
+
+
 CONSIGNE = """Tu traduis une demande de montage vidéo en actions pour le logiciel PhilCut. Réponds UNIQUEMENT en JSON :
 {"actions": [ ... ]} avec, pour chaque action, "action" parmi :
 - "musique" {"ambiance": energique|calme|cinema|joyeuse|acoustique|piano|electro|aventure}
@@ -87,6 +108,28 @@ def regles(phrase):
     for brut in [m for m in morceaux if m and m.strip()]:
         t = _sans_accents(brut)
         tm = _temps(t)
+        piste = next((p for mot, p in (("musique", "audio"), ("voix", "voix"), ("video", "video")) if re.search(rf"piste\s+(?:de\s+)?(?:la\s+)?{mot}", t)), None)
+        nums = re.findall(r"plans?\s+(\d+(?:\s*(?:,|et)\s*\d+)*)", t)
+        if re.search(r"\b(supprime|enleve|retire|efface)\w*\b", t) and nums and not re.search(r"effet|transition|texte|titre|marqueur", t):
+            out.append(dict({"action": "supprimer_plan", "plans": [int(x) for x in re.findall(r"\d+", nums[0])]},
+                            **({"piste": piste} if piste else {})))
+            continue
+        if re.search(r"\b(referme|resserre|bouche|supprime|enleve)\w*\s+(?:tous\s+)?les\s+(trous|vides|blancs)", t):
+            out.append({"action": "refermer_trous", "piste": piste or ("toutes" if "tout" in t else "video")})
+            continue
+        if re.search(r"\bdupli(que|quer)\b|\bcopie\w*\b", t) and nums:
+            out.append({"action": "dupliquer_plan", "plan": int(re.findall(r"\d+", nums[0])[0])})
+            continue
+        if piste and re.search(r"\bmuette?\b|coupe le son de la piste|\bverrouille", t):
+            out.append({"action": "regler_piste", "piste": piste, "quoi": "verrou" if "verrouille" in t else "muette",
+                        "etat": not re.search(r"\b(plus|remets?|deverrouille|reactive)\b", t)})
+            continue
+        m_ordre = re.search(r"plan\s+(\d+)\s+(?:en|a la)\s+(?:position\s+)?(\d+|premier|premiere|debut|dernier|derniere|fin)", t)
+        if m_ordre and re.search(r"\b(mets|met|place|deplace|passe)\b", t):
+            pos = m_ordre.group(2)
+            out.append({"action": "changer_ordre", "plan": int(m_ordre.group(1)),
+                        "position": 1 if pos in ("premier", "premiere", "debut") else (999 if pos in ("dernier", "derniere", "fin") else int(pos))})
+            continue
         if re.search(r"\b(rushes?|rush|medias?|bibliotheque|les plans|quels plans)\b", t) and not re.search(r"plans? \d|\beffet|\bsur (?:le|les|tous)\b", t) and (
                 re.search(r"rate|flou|tremb|doublon|defaut|a revoir|mauvais|probleme", t) or
                 (re.search(r"\btrie|\btri\b", t) and not re.search(r"\bpar\b", t))):
@@ -204,30 +247,30 @@ def regles(phrase):
     return out
 
 
-def comprendre(phrase, projet, params, niveau="recettes"):
+def comprendre(phrase, projet, params, niveau="recettes", t0=0.0):
     """Les actions pour cette phrase, selon le niveau. Revient aux règles si l'IA ne répond pas."""
     base = regles(phrase)
     if niveau == "recettes":
         return {"actions": base, "source": "regles"}
     from . import effets as E
     ids = ", ".join(sorted(E.CATALOGUE))
-    plans = [f"plan {i + 1} : {c.get('nom', '')} ({c['debut']:.1f} s)" for i, c in enumerate(projet.clips_piste("video"))]
-    texte = _("Demande : {p}\nDurée du montage : {d:.1f} s\nPlans : {l}\nIdentifiants d'effets : {i}\nGoodies : {g}",
-              p=phrase, d=projet.duree(), l="; ".join(plans) or "aucun", i=ids, g=", ".join(_genres_goodies()))
+    from . import commandes as K
+    texte = (f"Demande : {phrase}\n{K.etat(projet, t0)}\nIdentifiants d'effets : {ids}\n"
+             f"Goodies : {', '.join(_genres_goodies())}")
     try:
         if niveau == "locale":
             from . import ia_locale
             modele = ia_locale.modele_actif(params)
             if not modele:
                 raise RuntimeError(_("Aucun modèle local : cochez-en un dans Préférences › IA locale."))
-            brut = ia_locale.generer(modele, texte, [], systeme=CONSIGNE, json_attendu=True, params=params)
+            brut = ia_locale.generer(modele, texte, [], systeme=consigne(), json_attendu=True, params=params)
             src = "locale:" + modele
         else:
             from . import ia
-            brut = ia.demander(params, CONSIGNE, texte, json_attendu=True, max_jetons=1500)
+            brut = ia.demander(params, consigne(), texte, json_attendu=True, max_jetons=2500)
             src = "cloud:" + ia.nom_moteur(params)
         d = brut if isinstance(brut, dict) else lire_json(brut)
-        acts = [a for a in (d.get("actions") or []) if isinstance(a, dict) and a.get("action") in ACTIONS]
+        acts = [a for a in (d.get("actions") or []) if isinstance(a, dict) and a.get("action") in connues()]
         acts = [a for a in acts if a["action"] not in ("effet", "transition", "look") or a.get("id") in E.CATALOGUE]
         return {"actions": acts or base, "source": src if acts else "regles"}
     except Exception as e:       # noqa: BLE001
@@ -259,6 +302,9 @@ def decrire(a):
     """Une ligne lisible pour la fenêtre de confirmation."""
     from . import effets as E
     k = a.get("action")
+    from . import commandes as K
+    if k in K.REGISTRE:
+        return K.REGISTRE[k].decrire(a)
     nom_eff = (E.CATALOGUE.get(a.get("id") or "") or (None, a.get("id", "")))[1]
     plans = a.get("plans")
     qui = _("tous les plans") if plans == "tous" else (_("le plan sélectionné") if plans in (None, "selection") else
@@ -400,10 +446,16 @@ def appliquer(actions, ed):
         return [c] if c else []
     faits = 0
     musique_posee = False
+    from . import commandes as K
+    ctx = K.Contexte(ed)
     for a in actions:
         k = a.get("action")
         try:
-            if k == "musique":
+            if k in K.REGISTRE:                      # 1.4.0 : le registre
+                faits += 1 if K.faire(ctx, a) else 0
+                videos = sorted(projet.clips_piste("video"), key=lambda c: c["debut"])
+                fin_v = max([fin_clip(c) for c in videos] or [projet.duree()])
+            elif k == "musique":
                 if not projet.clips_piste("audio"):
                     ed.musique_auto(a.get("ambiance") or None)
                     musique_posee = True
@@ -497,4 +549,5 @@ def appliquer(actions, ed):
             from .journal import ecrire
             ecrire("commande", f"{k} : {e}")
     projet.modifie = True
+    appliquer.refuses = list(ctx.refuses)            # pistes verrouillées laissées intactes (dit à l'utilisateur)
     return faits

@@ -572,6 +572,20 @@ def _guides_integres():
              {"texte": _("Pour un long texte : Voix › « Voix off lue par une voix de synthèse… » ; vos voix gardées sont en tête "
                          "de la liste « Voix ». Mettez des points plutôt que de longues virgules.")},
          ]},
+        {"id": "piloter", "etat": "ok",                  # 1.4.0 (Philippe, 27/11)
+         "titre": _("Monter en le disant : « Dites-le en clair »"),
+         "mots": "dites le en clair piloter ia phrase commande supprimer plan ordre deplacer raccourcir piste trous claude",
+         "intro": _("Une phrase devient des actions de montage : supprimer ou déplacer un plan, changer l'ordre, raccourcir, "
+                    "dupliquer, retirer une partie, refermer les trous, régler une piste, le son d'un plan, en plus de la musique, "
+                    "des textes, des effets et de l'étalonnage. Rien n'est fait sans votre clic, et un seul Annuler défait tout."),
+         "etapes": [
+             {"texte": _("Ouvrez « Dites-le en clair… » et écrivez, par exemple : « mets le plan 3 en premier, supprime le plan 5 "
+                         "et referme les trous »."), "fait": "fenetre:DialogueCommande"},
+             {"texte": _("Choisissez qui comprend : sans IA (les demandes simples), l'IA de ce poste (gratuit), ou Claude ou Gemini "
+                         "avec votre clef (coût affiché), qui voient tout le montage : médias, pistes, plans numérotés.")},
+             {"texte": _("Lisez la liste des actions, décochez celles que vous ne voulez pas, puis faites-les. Une piste "
+                         "verrouillée n'est jamais modifiée. Edition › Annuler défait tout d'un coup.")},
+         ]},
         {"id": "levres", "etat": "ok",
          "titre": _("Faire parler un personnage sur ma voix (lèvres synchronisées)"),
          "mots": "levres bouche parler synchroniser lipsync personnage presentateur avatar chanter chanteur voix doublage",

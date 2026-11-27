@@ -23,6 +23,15 @@ Avant de commencer : copier ces fichiers dans un dossier `PhilCut-tests` sur le 
 4. Faire échouer volontairement NVENC (encodeur absent sur un autre poste) : PhilCut retombe sur x264 et le note dans le journal.
 5. « Déposer sur le Drive » après export : le fichier arrive dans `PhilCut/Exports` de l'emplacement de synchro.
 
+## T134 — 1.4.0 : piloter le montage par « Dites-le en clair » (registre de commandes)
+
+1. Un projet avec 5 plans. « Dites-le en clair… », sans IA : « supprime le plan 2 » puis « mets le plan 3 en premier » : la liste montre l'action, « Faire » ; le montage reste collé.
+2. Avec Claude (coût affiché) : « mets le dernier plan en premier, raccourcis le plan 2 de 2 secondes à la fin, duplique le plan 3 et baisse le son du plan 1 à 50 % ». Les actions listées correspondent-elles ? Faites-les.
+3. Edition › Annuler, une seule fois : tout revient comme avant.
+4. Verrouillez la piste vidéo, demandez « supprime le plan 1 » : rien ne change et le message nomme la piste verrouillée.
+5. « retire la partie de 10 s à 15 s » : toutes les pistes sont raccourcies, la suite se recolle.
+6. Même essai avec l'IA de ce poste : dites-moi si elle comprend aussi bien.
+
 ## T133 — 1.3.13 : ma voix gardée, voix du groupe d'office, croche
 
 1. Voix › « Continuer avec ma voix… » ; prenez un fichier de 10 à 15 s de votre voix, cochez « C'est ma voix », « ☆ Garder cette voix… » : nom « Ma voix », variante vide.
