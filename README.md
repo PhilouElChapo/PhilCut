@@ -1,5 +1,13 @@
 # PhilCut
 
+**The free video editor that edits with you: CapCut-style effects, an assistant that proposes a full edit from your
+clips, and AI that runs on your own PC — Windows and Linux, synced across your computers.**
+*Free and open source (GPL v3), no subscription, no account, no watermark. Documentation in French below.*
+
+**Le montage vidéo libre qui monte avec vous : des effets façon CapCut, un assistant qui propose un montage complet à
+partir de vos rushes, et une IA qui tourne sur votre propre PC — Windows et Linux, synchronisé entre vos postes.**
+Libre et gratuit (GPL v3), sans abonnement, sans compte, sans filigrane.
+
 Montage vidéo libre pour Windows et Linux : simple, efficace, « effet wahou ». Bande vidéo, bande son, et à partir de là on coupe, on insère, on rajoute. Un assistant analyse les rushes et propose un montage complet (logo, musique, plans, textes, effets, Goodies) que l'on accepte élément par élément. Vos rushes restent où ils sont ; rien n'est envoyé à une IA sans votre clic.
 
 **Licence : GNU GPL v3** (voir [LICENSE](LICENSE)). PhilCut est fourni sans aucune garantie.
